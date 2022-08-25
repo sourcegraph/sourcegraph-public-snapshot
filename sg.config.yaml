@@ -329,12 +329,12 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
@@ -343,7 +343,7 @@ commands:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
-      yarn --no-progress
+      yarn
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
