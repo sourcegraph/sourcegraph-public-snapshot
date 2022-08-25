@@ -233,6 +233,7 @@ interface Alert {
 
 interface ProposedQuery {
     description?: string | null
+    resultCountString?: string | null
     query: string
 }
 

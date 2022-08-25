@@ -14,6 +14,13 @@ interface LuckySearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
 }
 
+const processDescription = (description: string): string => {
+    const split = description.split(' ⚬ ')
+
+    split[0] = split[0][0].toUpperCase() + split[0].slice(1)
+    return split.join(', ')
+}
+
 export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckySearchProps>> = ({ alert }) => {
     const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseLuckySearch')
 
@@ -55,13 +62,14 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                                         search: formatSearchParameters(new URLSearchParams({ q: entry.query })),
                                     })}
                                 >
+                                    {`${processDescription(entry.description || '')}`}
+                                    {entry.resultCountString}
                                     <span className={styles.suggestion}>
                                         <SyntaxHighlightedSearchQuery
                                             query={entry.query}
                                             searchPatternType={SearchPatternType.standard}
                                         />
                                     </span>
-                                    <i>{`— ${entry.description}`}</i>
                                 </Link>
                             </li>
                         ))}

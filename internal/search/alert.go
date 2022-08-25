@@ -48,9 +48,10 @@ func (m *MaxAlerter) Add(a *Alert) {
 }
 
 type ProposedQuery struct {
-	Description string
-	Query       string
-	PatternType query.SearchType
+	Description       string
+	ResultCountString string
+	Query             string
+	PatternType       query.SearchType
 }
 
 func (q *ProposedQuery) QueryString() string {

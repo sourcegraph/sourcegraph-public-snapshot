@@ -181,8 +181,9 @@ type EventAlert struct {
 
 // ProposedQuery is a suggested query to run when we emit an alert.
 type ProposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
+	Description       string `json:"description,omitempty"`
+	Query             string `json:"query"`
+	ResultCountString string `json:"resultCountString,omitempty"`
 }
 
 // EventError emulates a JavaScript error with a message property

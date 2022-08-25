@@ -232,9 +232,10 @@ func (n *notifier) New(count int) error {
 
 	return &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.ProposedQuery{{
-			Description: fmt.Sprintf("%s (%s)", n.description, resultCountString),
-			Query:       query.StringHuman(n.query.ToParseTree()),
-			PatternType: query.SearchTypeLucky,
+			Description:       n.description,
+			ResultCountString: resultCountString,
+			Query:             query.StringHuman(n.query.ToParseTree()),
+			PatternType:       query.SearchTypeLucky,
 		}},
 	}
 }
