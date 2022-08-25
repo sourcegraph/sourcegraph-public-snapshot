@@ -154,8 +154,8 @@ func (r *regexpReplacer) HasCaptureGroups() bool {
 }
 
 var (
-	multiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
-	unsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
+	MultiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
+	UnsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
 )
 
 func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (PatternReplacer, error) {
@@ -172,12 +172,12 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		})
 	})
 	if len(patterns) > 1 {
-		return nil, multiplePatternErr
+		return nil, MultiplePatternErr
 	}
 
 	pattern := patterns[0]
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
-		return nil, unsupportedPatternTypeErr
+		return nil, UnsupportedPatternTypeErr
 	}
 
 	regexpGroups := findGroups(pattern.Value)
