@@ -18,13 +18,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A OtherSource yields repositories from a single Other connection configured
-// in Sourcegraph via the external services configuration.
-type OtherSource struct {
-	svc    *types.ExternalService
-	conn   *schema.OtherExternalServiceConnection
-	client httpcli.Doer
-}
+type (
+	// A OtherSource yields repositories from a single Other connection configured
+	// in Sourcegraph via the external services configuration.
+	OtherSource struct {
+		svc    *types.ExternalService
+		conn   *schema.OtherExternalServiceConnection
+		client httpcli.Doer
+	}
+
+	// A srcExposeItem is the object model returned by src-cli when serving git repos
+	srcExposeItem struct {
+		URI       string `json:"uri"`
+		Name      string `json:"name"`
+		ClonePath string `json:"clonePath"`
+	}
+)
 
 // NewOtherSource returns a new OtherSource from the given external service.
 func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
@@ -169,7 +178,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 
 	var data struct {
-		Items []*types.Repo
+		Items []*srcExposeItem
 	}
 	err = json.Unmarshal(b, &data)
 	if err != nil {
@@ -182,42 +191,43 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 
 	urn := s.svc.URN()
+	repos := make([]*types.Repo, 0, len(data.Items))
 	for _, r := range data.Items {
-		// The only required field is URI
-		if r.URI == "" {
-			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
+		repo := &types.Repo{
+			URI: r.URI,
+		}
+		// The only required fields are URI and ClonePath
+		if r.URI == "" || r.ClonePath == "" {
+			return nil, errors.Errorf("repo without URI and/or ClonePath returned from src-expose: %+v", r)
 		}
 
 		// Fields that src-expose isn't allowed to control
-		r.ExternalRepo = api.ExternalRepoSpec{
-			ID:          r.URI,
+		repo.ExternalRepo = api.ExternalRepoSpec{
+			ID:          repo.URI,
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
 
-		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/")
-		// If the repo is not a bare repo, add a .git
-		if !strings.HasSuffix(cloneURL, ".git") {
-			cloneURL += "/.git"
-		}
-		r.Sources = map[string]*types.SourceInfo{
+		cloneURL := clonePrefix + strings.TrimPrefix(r.ClonePath, "/")
+
+		repo.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL,
 			},
 		}
-		r.Metadata = &extsvc.OtherRepoMetadata{
+		repo.Metadata = &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
 		}
 		// The only required field left is Name
-		name := string(r.Name)
+		name := r.Name
 		if name == "" {
 			name = r.URI
 		}
 		// Remove any trailing .git in the name if exists (bare repos)
-		r.Name = api.RepoName(strings.TrimSuffix(name, ".git"))
-
+		repo.Name = api.RepoName(strings.TrimSuffix(name, ".git"))
+		repos = append(repos, repo)
 	}
 
-	return data.Items, nil
+	return repos, nil
 }
