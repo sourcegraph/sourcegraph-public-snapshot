@@ -686,14 +686,18 @@ type WorkspaceFileResolver interface {
 	Path() string
 	Name() string
 	IsDirectory() bool
-	Content() string
-	ByteSize() int32
-	Binary() bool
-	RichHTML() string
-	URL() string
+	Content(ctx context.Context) (string, error)
+	ByteSize(ctx context.Context) (int32, error)
+	Binary(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context) (string, error)
+	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
-	//Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+
+	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToWorkspaceFile() (WorkspaceFileResolver, bool)
 }
 
 type CommonChangesetsStatsResolver interface {

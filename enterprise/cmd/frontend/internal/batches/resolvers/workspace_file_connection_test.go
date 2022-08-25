@@ -36,7 +36,7 @@ func TestBatchSpecMountConnectionResolver_TotalCount(t *testing.T) {
 	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
-	resolver := batchSpecMountConnectionResolver{
+	resolver := workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
@@ -64,7 +64,7 @@ func TestBatchSpecMountConnectionResolver_PageInfo_SinglePage(t *testing.T) {
 	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
-	resolver := batchSpecMountConnectionResolver{
+	resolver := workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
@@ -92,7 +92,7 @@ func TestBatchSpecMountConnectionResolver_PageInfo_MultiplePages(t *testing.T) {
 	err = createBatchSpecMounts(ctx, bstore, specID, 10)
 	require.NoError(t, err)
 
-	resolver := batchSpecMountConnectionResolver{
+	resolver := workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			LimitOpts: store.LimitOpts{
@@ -109,7 +109,7 @@ func TestBatchSpecMountConnectionResolver_PageInfo_MultiplePages(t *testing.T) {
 
 	cursor, err := strconv.ParseInt(*pageInfo.EndCursor(), 10, 32)
 	require.NoError(t, err)
-	resolver = batchSpecMountConnectionResolver{
+	resolver = workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			LimitOpts: store.LimitOpts{
@@ -142,7 +142,7 @@ func TestBatchSpecMountConnectionResolver_Nodes(t *testing.T) {
 	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
-	resolver := batchSpecMountConnectionResolver{
+	resolver := workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
@@ -168,7 +168,7 @@ func TestBatchSpecMountConnectionResolver_Nodes_Empty(t *testing.T) {
 	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
 
-	resolver := batchSpecMountConnectionResolver{
+	resolver := workspaceFileConnectionResolver{
 		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
