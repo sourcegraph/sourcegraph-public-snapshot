@@ -416,10 +416,6 @@ kubectl delete svc sourcegraph-frontend
 kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
 ```
 
-### Language server deployment
-
-Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in favor of [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). As a consequence, Sourcegraph 3.0 does not automatically run or manage language servers. If you had code navigation enabled in 2.x, you will need to follow the instructions for each language extension and deploy them individually. Read the [code navigation documentation](https://docs.sourcegraph.com/user/code_intelligence).
-
 ### HTTPS / TLS
 
 Sourcegraph 3.0 removed HTTPS / TLS features from Sourcegraph in favor of relying on [Kubernetes Ingress Resources](https://kubernetes.io/docs/concepts/services-networking/ingress/). As a consequence, Sourcegraph 3.0 does not expose TLS as the NodePort 30433. Instead you need to ensure you have setup and configured either an ingress controller (recommended) or an explicit NGINX service. See [ingress controller documentation](../deploy/kubernetes/configure.md#ingress-controller-recommended), [NGINX service documentation](../deploy/kubernetes/configure.md#nginx-service), and [configure TLS/SSL documentation](../deploy/kubernetes/configure.md#configure-tlsssl).

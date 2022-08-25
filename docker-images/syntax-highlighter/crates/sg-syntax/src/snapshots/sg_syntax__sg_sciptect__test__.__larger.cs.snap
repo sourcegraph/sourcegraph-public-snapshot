@@ -3,482 +3,485 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
-//  ^^^^^^^^^^ Comment
+//  ^^^^^^^^^^ Comment  comment.line.double-slash.cs
   // repo:^github\.com/radzenhq/radzen-blazor$ file:^Radzen\.Blazor\.Tests/DataGridTests\.cs
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.cs
   
   using AngleSharp.Dom;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^^^^^ IdentifierNamespace
-//                ^ PunctuationBracket
-//                 ^^^ IdentifierNamespace
-//                    ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                 ^^^ IdentifierNamespace  meta.path.cs
+//                    ^ PunctuationDelimiter  punctuation.terminator.cs
   using Bunit;
-//^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierNamespace
-//           ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^ IdentifierNamespace  meta.path.cs
+//           ^ PunctuationDelimiter  punctuation.terminator.cs
   using Microsoft.AspNetCore.Components;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierNamespace
-//               ^ PunctuationBracket
-//                ^^^^^^^^^^ IdentifierNamespace
-//                          ^ PunctuationBracket
-//                           ^^^^^^^^^^ IdentifierNamespace
-//                                     ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//               ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                          ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                           ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                                     ^ PunctuationDelimiter  punctuation.terminator.cs
   using Microsoft.AspNetCore.Components.Rendering;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierNamespace
-//               ^ PunctuationBracket
-//                ^^^^^^^^^^ IdentifierNamespace
-//                          ^ PunctuationBracket
-//                           ^^^^^^^^^^ IdentifierNamespace
-//                                     ^ PunctuationBracket
-//                                      ^^^^^^^^^ IdentifierNamespace
-//                                               ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//               ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                          ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                           ^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                                     ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                                      ^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                                               ^ PunctuationDelimiter  punctuation.terminator.cs
   using System;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^ IdentifierNamespace  meta.path.cs
+//            ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Collections.Generic;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationBracket
-//             ^^^^^^^^^^^ IdentifierNamespace
-//                        ^ PunctuationBracket
-//                         ^^^^^^^ IdentifierNamespace
-//                                ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^ IdentifierNamespace  meta.path.cs
+//            ^ PunctuationBracket  punctuation.separator.namespace.cs
+//             ^^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                        ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                         ^^^^^^^ IdentifierNamespace  meta.path.cs
+//                                ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Linq;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationBracket
-//             ^^^^ IdentifierNamespace
-//                 ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^ IdentifierNamespace  meta.path.cs
+//            ^ PunctuationBracket  punctuation.separator.namespace.cs
+//             ^^^^ IdentifierNamespace  meta.path.cs
+//                 ^ PunctuationDelimiter  punctuation.terminator.cs
   using System.Text.RegularExpressions;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationBracket
-//             ^^^^ IdentifierNamespace
-//                 ^ PunctuationBracket
-//                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
-//                                    ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^ IdentifierNamespace  meta.path.cs
+//            ^ PunctuationBracket  punctuation.separator.namespace.cs
+//             ^^^^ IdentifierNamespace  meta.path.cs
+//                 ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace  meta.path.cs
+//                                    ^ PunctuationDelimiter  punctuation.terminator.cs
   using Xunit;
-//^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierNamespace
-//           ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^ IdentifierNamespace  meta.path.cs
+//           ^ PunctuationDelimiter  punctuation.terminator.cs
   namespace Radzen.Blazor.
-//^^^^^^^^^ IdentifierNamespace
-//                ^ PunctuationBracket
-//                       ^ PunctuationBracket
+//^^^^^^^^^ IdentifierNamespace  storage.type.namespace.cs
+//          ^^^^^^ Identifier  punctuation.separator.namespace.cs
+//                ^ PunctuationBracket  punctuation.separator.namespace.cs
+//                 ^^^^^^ Identifier  punctuation.separator.namespace.cs
+//                       ^ PunctuationBracket  punctuation.separator.namespace.cs
   {
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.begin.cs
       public class DataGridTests
-//    ^^^^^^ IdentifierKeyword
-//           ^^^^^ IdentifierType
+//    ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
+//           ^^^^^ IdentifierType  storage.type.class.cs
+//                 ^^^^^^^^^^^^^ Identifier  entity.name.class.cs
       {
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.begin.cs
           // Css classes tests
-//        ^^^^^^^^^^^^^^^^^^^^ Comment
+//        ^^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.cs
           [Fact]
-//        ^ PunctuationBracket
-//         ^^^^ Identifier
-//             ^ PunctuationBracket
+//        ^ PunctuationBracket  punctuation.definition.annotation.begin.cs
+//         ^^^^ Identifier  variable.annotation.cs
+//             ^ PunctuationBracket  punctuation.definition.annotation.end.cs
           public void DataGrid_Renders_CssClass()
-//        ^^^^^^ IdentifierKeyword
-//               ^^^^ IdentifierType
-//                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
-//                                             ^ PunctuationBracket
-//                                              ^ PunctuationBracket
+//        ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
+//               ^^^^ IdentifierType  storage.type.cs
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.cs
+//                                             ^ PunctuationBracket  punctuation.section.parameters.begin.cs
+//                                              ^ PunctuationBracket  punctuation.section.parameters.end.cs
           {
-//        ^ PunctuationBracket
+//        ^ PunctuationBracket  punctuation.section.block.begin.cs
               using var ctx = new TestContext();
-//            ^^^^^ IdentifierType
-//                  ^^^ Identifier
-//                      ^^^ Identifier
-//                          ^ IdentifierOperator
-//                            ^^^ IdentifierOperator
-//                                ^^^^^^^^^^^ IdentifierType
-//                                           ^ PunctuationBracket
-//                                            ^ PunctuationBracket
-//                                             ^ PunctuationDelimiter
+//            ^^^^^ IdentifierType  support.type.cs
+//                  ^^^ Identifier  variable.other.cs
+//                      ^^^ Identifier  variable.other.cs
+//                          ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                            ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                ^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                            ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                             ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-//            ^^^ Identifier
-//               ^ PunctuationBracket
-//                ^^^^^^^^^ Identifier
-//                         ^ PunctuationBracket
-//                          ^^^^ Identifier
-//                               ^ IdentifierOperator
-//                                 ^^^^^^^^^^^^^ Identifier
-//                                              ^ PunctuationBracket
-//                                               ^^^^^ Identifier
-//                                                    ^ PunctuationDelimiter
+//            ^^^ Identifier  variable.other.cs
+//               ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                ^^^^^^^^^ Identifier  variable.other.cs
+//                         ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                          ^^^^ Identifier  variable.other.cs
+//                               ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                 ^^^^^^^^^^^^^ Identifier  variable.other.cs
+//                                              ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                               ^^^^^ Identifier  variable.other.cs
+//                                                    ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               ctx.JSInterop.SetupModule("_content/Radzen.Blazor/Radzen.Blazor.js");
-//            ^^^ Identifier
-//               ^ PunctuationBracket
-//                ^^^^^^^^^ Identifier
-//                         ^ PunctuationBracket
-//                          ^^^^^^^^^^^ IdentifierFunction
-//                                     ^ PunctuationBracket
-//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                                               ^ PunctuationBracket
-//                                                                                ^ PunctuationDelimiter
+//            ^^^ Identifier  variable.other.cs
+//               ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                ^^^^^^^^^ Identifier  variable.other.cs
+//                         ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                          ^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                     ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.cs
+//                                                                               ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                                ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
-//            ^^^ IdentifierType
-//                ^^^^^^^^^ Identifier
-//                          ^ IdentifierOperator
-//                            ^^^ Identifier
-//                               ^ PunctuationBracket
-//                                ^^^^^^^^^^^^^^^ IdentifierFunction
-//                                               ^ PunctuationBracket
-//                                                ^^^^^^^^^^ IdentifierType
-//                                                          ^ PunctuationBracket
-//                                                           ^^^^^^^ IdentifierType
-//                                                                  ^ PunctuationBracket
-//                                                                   ^ PunctuationBracket
-//                                                                    ^ PunctuationBracket
-//                                                                     ^^^^^^^^^^^^^^^^ Identifier
-//                                                                                      ^^ IdentifierType
+//            ^^^ IdentifierType  storage.type.variable.cs
+//                ^^^^^^^^^ Identifier  variable.other.cs
+//                          ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                            ^^^ Identifier  variable.other.cs
+//                               ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                ^^^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                               ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                ^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                          ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                           ^^^^^^^ IdentifierType  support.type.cs
+//                                                                  ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                   ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                    ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                                     ^^^^^^^^^^^^^^^^ Identifier  variable.parameter.cs
+//                                                                                      ^^ IdentifierType  storage.type.function.lambda.cs
               {
-//            ^ PunctuationBracket
+//            ^ PunctuationBracket  punctuation.section.block.begin.cs
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
-//                ^^^^^^^^^^^^^^^^ Identifier
-//                                ^ PunctuationBracket
-//                                 ^^^ IdentifierFunction
-//                                    ^ PunctuationBracket
-//                                     ^^^^^^^^^^^ IdentifierType
-//                                                ^ PunctuationBracket
-//                                                 ^^^^^^^ IdentifierType
-//                                                        ^ PunctuationBracket
-//                                                         ^ PunctuationBracket
-//                                                          ^ PunctuationBracket
-//                                                           ^ Identifier
-//                                                             ^^ IdentifierType
-//                                                                ^ Identifier
-//                                                                 ^ PunctuationBracket
-//                                                                  ^^^^ Identifier
-//                                                                      ^ PunctuationBracket
-//                                                                        ^^^ IdentifierOperator
-//                                                                           ^ PunctuationBracket
-//                                                                            ^ PunctuationBracket
-//                                                                              ^ PunctuationBracket
-//                                                                                ^^^ IdentifierOperator
-//                                                                                    ^ PunctuationBracket
-//                                                                                      ^^ Identifier
-//                                                                                         ^ IdentifierOperator
-//                                                                                           ^ NumericLiteral
-//                                                                                             ^ PunctuationBracket
-//                                                                                              ^ PunctuationBracket
-//                                                                                                ^^^ IdentifierOperator
-//                                                                                                    ^ PunctuationBracket
-//                                                                                                      ^^ Identifier
-//                                                                                                         ^ IdentifierOperator
-//                                                                                                           ^ NumericLiteral
-//                                                                                                             ^ PunctuationBracket
-//                                                                                                              ^ PunctuationBracket
-//                                                                                                                ^^^ IdentifierOperator
-//                                                                                                                    ^ PunctuationBracket
-//                                                                                                                      ^^ Identifier
-//                                                                                                                         ^ IdentifierOperator
-//                                                                                                                           ^ NumericLiteral
-//                                                                                                                             ^ PunctuationBracket
-//                                                                                                                               ^ PunctuationBracket
-//                                                                                                                                ^ PunctuationBracket
-//                                                                                                                                 ^ PunctuationDelimiter
+//                ^^^^^^^^^^^^^^^^ Identifier  variable.other.cs
+//                                ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                 ^^^ IdentifierFunction  variable.function.cs
+//                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                     ^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                 ^^^^^^^ IdentifierType  support.type.cs
+//                                                        ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                         ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                          ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                           ^ Identifier  variable.parameter.cs
+//                                                             ^^ IdentifierType  storage.type.function.lambda.cs
+//                                                                ^ Identifier  variable.other.cs
+//                                                                 ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                                  ^^^^ Identifier  variable.other.cs
+//                                                                      ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                        ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                           ^ PunctuationBracket  punctuation.section.brackets.begin.cs
+//                                                                            ^ PunctuationBracket  punctuation.section.brackets.end.cs
+//                                                                              ^ PunctuationBracket  punctuation.section.braces.begin.cs
+//                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                              ^ PunctuationBracket  punctuation.separator.array-element.cs
+//                                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                                              ^ PunctuationBracket  punctuation.separator.array-element.cs
+//                                                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                                                               ^ PunctuationBracket  punctuation.section.braces.end.cs
+//                                                                                                                                ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                                                                                 ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
-//                ^^^^^^^^^^^^^^^^ Identifier
-//                                ^ PunctuationBracket
-//                                 ^^^ IdentifierFunction
-//                                    ^ PunctuationBracket
-//                                     ^^^^^^^^^^^^^^ IdentifierType
-//                                                   ^ PunctuationBracket
-//                                                    ^ PunctuationBracket
-//                                                     ^ Identifier
-//                                                       ^^ IdentifierType
-//                                                          ^ Identifier
-//                                                           ^ PunctuationBracket
-//                                                            ^^^^^^^ Identifier
-//                                                                   ^ PunctuationBracket
-//                                                                     ^^^^^^^ Identifier
-//                                                                             ^^ IdentifierType
+//                ^^^^^^^^^^^^^^^^ Identifier  variable.other.cs
+//                                ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                 ^^^ IdentifierFunction  variable.function.cs
+//                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                     ^^^^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                   ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                    ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                     ^ Identifier  variable.parameter.cs
+//                                                       ^^ IdentifierType  storage.type.function.lambda.cs
+//                                                          ^ Identifier  variable.other.cs
+//                                                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                            ^^^^^^^ Identifier  variable.other.cs
+//                                                                   ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                     ^^^^^^^ Identifier  variable.parameter.cs
+//                                                                             ^^ IdentifierType  storage.type.function.lambda.cs
                   {
-//                ^ PunctuationBracket
+//                ^ PunctuationBracket  punctuation.section.block.begin.cs
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^ IdentifierFunction
-//                                         ^ PunctuationBracket
-//                                          ^ NumericLiteral
-//                                           ^ PunctuationBracket
-//                                             ^^^^^^ IdentifierOperator
-//                                                   ^ PunctuationBracket
-//                                                    ^^^^^^^^^^^^^^^^ IdentifierType
-//                                                                    ^ PunctuationBracket
-//                                                                     ^^^^^^^ IdentifierType
-//                                                                            ^ PunctuationBracket
-//                                                                             ^ PunctuationBracket
-//                                                                              ^ PunctuationBracket
-//                                                                               ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                         ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                          ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                           ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                             ^^^^^^ IdentifierOperator  keyword.operator.reflection.cs
+//                                                   ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                    ^^^^^^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                                     ^^^^^^^ IdentifierType  support.type.cs
+//                                                                            ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                             ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                              ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                               ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                       builder.AddAttribute(1, "Property", "Id");
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^ IdentifierFunction
-//                                        ^ PunctuationBracket
-//                                         ^ NumericLiteral
-//                                          ^ PunctuationBracket
-//                                            ^^^^^^^^^^ StringLiteral
-//                                                      ^ PunctuationBracket
-//                                                        ^^^^ StringLiteral
-//                                                            ^ PunctuationBracket
-//                                                             ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                        ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                         ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                          ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                            ^^^^^^^^^^ StringLiteral  string.quoted.double.cs
+//                                                      ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                        ^^^^ StringLiteral  string.quoted.double.cs
+//                                                            ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                             ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                       builder.CloseComponent();
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^^ IdentifierFunction
-//                                          ^ PunctuationBracket
-//                                           ^ PunctuationBracket
-//                                            ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                          ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                           ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                            ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                   });
-//                ^ PunctuationBracket
-//                 ^ PunctuationBracket
-//                  ^ PunctuationDelimiter
+//                ^ PunctuationBracket  punctuation.section.block.end.cs
+//                 ^ PunctuationBracket  punctuation.section.group.end.cs
+//                  ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               });
-//            ^ PunctuationBracket
-//             ^ PunctuationBracket
-//              ^ PunctuationDelimiter
+//            ^ PunctuationBracket  punctuation.section.block.end.cs
+//             ^ PunctuationBracket  punctuation.section.group.end.cs
+//              ^ PunctuationDelimiter  punctuation.terminator.statement.cs
   
               // Main
-//            ^^^^^^^ Comment
+//            ^^^^^^^ Comment  comment.line.double-slash.cs
               Assert.Contains(@$"rz-datatable-scrollable-wrapper", component.Markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                               ^ PunctuationBracket
-//                                                                 ^^^^^^^^^ Identifier
-//                                                                          ^ PunctuationBracket
-//                                                                           ^^^^^^ Identifier
-//                                                                                 ^ PunctuationBracket
-//                                                                                  ^ PunctuationDelimiter
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.raw.cs
+//                                                               ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                 ^^^^^^^^^ Identifier  variable.other.cs
+//                                                                          ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                                           ^^^^^^ Identifier  variable.other.cs
+//                                                                                 ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                                  ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               Assert.Contains(@$"rz-datatable-scrollable-view", component.Markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                            ^ PunctuationBracket
-//                                                              ^^^^^^^^^ Identifier
-//                                                                       ^ PunctuationBracket
-//                                                                        ^^^^^^ Identifier
-//                                                                              ^ PunctuationBracket
-//                                                                               ^ PunctuationDelimiter
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.raw.cs
+//                                                            ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                              ^^^^^^^^^ Identifier  variable.other.cs
+//                                                                       ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                                        ^^^^^^ Identifier  variable.other.cs
+//                                                                              ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                               ^ PunctuationDelimiter  punctuation.terminator.statement.cs
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
-//            ^^^ IdentifierType
-//                ^^^^^^^^^ Identifier
-//                          ^ IdentifierOperator
-//                            ^^^ Identifier
-//                               ^ PunctuationBracket
-//                                ^^^^^^^^^^^^^^^ IdentifierFunction
-//                                               ^ PunctuationBracket
-//                                                ^^^^^^^^^^ IdentifierType
-//                                                          ^ PunctuationBracket
-//                                                           ^^^^^^^ IdentifierType
-//                                                                  ^ PunctuationBracket
-//                                                                   ^ PunctuationBracket
-//                                                                    ^ PunctuationBracket
-//                                                                     ^^^^^^^^^^^^^^^^ Identifier
-//                                                                                      ^^ IdentifierType
+//            ^^^ IdentifierType  storage.type.variable.cs
+//                ^^^^^^^^^ Identifier  variable.other.cs
+//                          ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                            ^^^ Identifier  variable.other.cs
+//                               ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                ^^^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                               ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                ^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                          ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                           ^^^^^^^ IdentifierType  support.type.cs
+//                                                                  ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                   ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                    ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                                     ^^^^^^^^^^^^^^^^ Identifier  variable.parameter.cs
+//                                                                                      ^^ IdentifierType  storage.type.function.lambda.cs
               {
-//            ^ PunctuationBracket
+//            ^ PunctuationBracket  punctuation.section.block.begin.cs
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
-//                ^^^^^^^^^^^^^^^^ Identifier
-//                                ^ PunctuationBracket
-//                                 ^^^ IdentifierFunction
-//                                    ^ PunctuationBracket
-//                                     ^^^^^^^^^^^ IdentifierType
-//                                                ^ PunctuationBracket
-//                                                 ^^^^^^^ IdentifierType
-//                                                        ^ PunctuationBracket
-//                                                         ^ PunctuationBracket
-//                                                          ^ PunctuationBracket
-//                                                           ^ Identifier
-//                                                             ^^ IdentifierType
-//                                                                ^ Identifier
-//                                                                 ^ PunctuationBracket
-//                                                                  ^^^^ Identifier
-//                                                                      ^ PunctuationBracket
-//                                                                        ^^^ IdentifierOperator
-//                                                                           ^ PunctuationBracket
-//                                                                            ^ PunctuationBracket
-//                                                                              ^ PunctuationBracket
-//                                                                                ^^^ IdentifierOperator
-//                                                                                    ^ PunctuationBracket
-//                                                                                      ^^ Identifier
-//                                                                                         ^ IdentifierOperator
-//                                                                                           ^ NumericLiteral
-//                                                                                             ^ PunctuationBracket
-//                                                                                              ^ PunctuationBracket
-//                                                                                                ^^^ IdentifierOperator
-//                                                                                                    ^ PunctuationBracket
-//                                                                                                      ^^ Identifier
-//                                                                                                         ^ IdentifierOperator
-//                                                                                                           ^ NumericLiteral
-//                                                                                                             ^ PunctuationBracket
-//                                                                                                              ^ PunctuationBracket
-//                                                                                                                ^^^ IdentifierOperator
-//                                                                                                                    ^ PunctuationBracket
-//                                                                                                                      ^^ Identifier
-//                                                                                                                         ^ IdentifierOperator
-//                                                                                                                           ^ NumericLiteral
-//                                                                                                                             ^ PunctuationBracket
-//                                                                                                                               ^ PunctuationBracket
-//                                                                                                                                ^ PunctuationBracket
-//                                                                                                                                 ^ PunctuationDelimiter
+//                ^^^^^^^^^^^^^^^^ Identifier  variable.other.cs
+//                                ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                 ^^^ IdentifierFunction  variable.function.cs
+//                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                     ^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                 ^^^^^^^ IdentifierType  support.type.cs
+//                                                        ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                         ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                          ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                           ^ Identifier  variable.parameter.cs
+//                                                             ^^ IdentifierType  storage.type.function.lambda.cs
+//                                                                ^ Identifier  variable.other.cs
+//                                                                 ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                                  ^^^^ Identifier  variable.other.cs
+//                                                                      ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                        ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                           ^ PunctuationBracket  punctuation.section.brackets.begin.cs
+//                                                                            ^ PunctuationBracket  punctuation.section.brackets.end.cs
+//                                                                              ^ PunctuationBracket  punctuation.section.braces.begin.cs
+//                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                              ^ PunctuationBracket  punctuation.separator.array-element.cs
+//                                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                                              ^ PunctuationBracket  punctuation.separator.array-element.cs
+//                                                                                                                ^^^ IdentifierOperator  keyword.operator.new.cs
+//                                                                                                                    ^ PunctuationBracket  punctuation.section.block.begin.cs
+//                                                                                                                      ^^ Identifier  variable.other.member.cs
+//                                                                                                                         ^ IdentifierOperator  keyword.operator.assignment.cs
+//                                                                                                                           ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                                                                                                             ^ PunctuationBracket  punctuation.section.block.end.cs
+//                                                                                                                               ^ PunctuationBracket  punctuation.section.braces.end.cs
+//                                                                                                                                ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                                                                                 ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
-//                ^^^^^^^^^^^^^^^^ Identifier
-//                                ^ PunctuationBracket
-//                                 ^^^ IdentifierFunction
-//                                    ^ PunctuationBracket
-//                                     ^^^^^^^^^^^^^^ IdentifierType
-//                                                   ^ PunctuationBracket
-//                                                    ^ PunctuationBracket
-//                                                     ^ Identifier
-//                                                       ^^ IdentifierType
-//                                                          ^ Identifier
-//                                                           ^ PunctuationBracket
-//                                                            ^^^^^^^ Identifier
-//                                                                   ^ PunctuationBracket
-//                                                                     ^^^^^^^ Identifier
-//                                                                             ^^ IdentifierType
+//                ^^^^^^^^^^^^^^^^ Identifier  variable.other.cs
+//                                ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                 ^^^ IdentifierFunction  variable.function.cs
+//                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                     ^^^^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                   ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                    ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                     ^ Identifier  variable.parameter.cs
+//                                                       ^^ IdentifierType  storage.type.function.lambda.cs
+//                                                          ^ Identifier  variable.other.cs
+//                                                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                            ^^^^^^^ Identifier  variable.other.cs
+//                                                                   ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                     ^^^^^^^ Identifier  variable.parameter.cs
+//                                                                             ^^ IdentifierType  storage.type.function.lambda.cs
                   {
-//                ^ PunctuationBracket
+//                ^ PunctuationBracket  punctuation.section.block.begin.cs
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^ IdentifierFunction
-//                                         ^ PunctuationBracket
-//                                          ^ NumericLiteral
-//                                           ^ PunctuationBracket
-//                                             ^^^^^^ IdentifierOperator
-//                                                   ^ PunctuationBracket
-//                                                    ^^^^^^^^^^^^^^^^ IdentifierType
-//                                                                    ^ PunctuationBracket
-//                                                                     ^^^^^^^ IdentifierType
-//                                                                            ^ PunctuationBracket
-//                                                                             ^ PunctuationBracket
-//                                                                              ^ PunctuationBracket
-//                                                                               ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                         ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                          ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                           ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                             ^^^^^^ IdentifierOperator  keyword.operator.reflection.cs
+//                                                   ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                    ^^^^^^^^^^^^^^^^ IdentifierType  support.type.cs
+//                                                                    ^ PunctuationBracket  punctuation.definition.generic.begin.cs
+//                                                                     ^^^^^^^ IdentifierType  support.type.cs
+//                                                                            ^ PunctuationBracket  punctuation.definition.generic.end.cs
+//                                                                             ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                              ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                               ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                       builder.AddAttribute(1, "Property", "Id");
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^ IdentifierFunction
-//                                        ^ PunctuationBracket
-//                                         ^ NumericLiteral
-//                                          ^ PunctuationBracket
-//                                            ^^^^^^^^^^ StringLiteral
-//                                                      ^ PunctuationBracket
-//                                                        ^^^^ StringLiteral
-//                                                            ^ PunctuationBracket
-//                                                             ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                        ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                         ^ NumericLiteral  constant.numeric.integer.decimal.cs
+//                                          ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                            ^^^^^^^^^^ StringLiteral  string.quoted.double.cs
+//                                                      ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                        ^^^^ StringLiteral  string.quoted.double.cs
+//                                                            ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                             ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                       builder.CloseComponent();
-//                    ^^^^^^^ Identifier
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^^ IdentifierFunction
-//                                          ^ PunctuationBracket
-//                                           ^ PunctuationBracket
-//                                            ^ PunctuationDelimiter
+//                    ^^^^^^^ Identifier  variable.other.cs
+//                           ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                            ^^^^^^^^^^^^^^ IdentifierFunction  variable.function.cs
+//                                          ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                           ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                            ^ PunctuationDelimiter  punctuation.terminator.statement.cs
                   });
-//                ^ PunctuationBracket
-//                 ^ PunctuationBracket
-//                  ^ PunctuationDelimiter
+//                ^ PunctuationBracket  punctuation.section.block.end.cs
+//                 ^ PunctuationBracket  punctuation.section.group.end.cs
+//                  ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               });
-//            ^ PunctuationBracket
-//             ^ PunctuationBracket
-//              ^ PunctuationDelimiter
+//            ^ PunctuationBracket  punctuation.section.block.end.cs
+//             ^ PunctuationBracket  punctuation.section.group.end.cs
+//              ^ PunctuationDelimiter  punctuation.terminator.statement.cs
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
-//            ^^^ IdentifierType
-//                ^^^^^^ Identifier
-//                       ^ IdentifierOperator
-//                         ^^^ IdentifierOperator
-//                             ^^^^^ IdentifierType
-//                                  ^ PunctuationBracket
-//                                   ^^^^^^^^ StringLiteral
-//                                           ^ PunctuationBracket
-//                                            ^ PunctuationBracket
-//                                             ^^^^^^^ IdentifierFunction
-//                                                    ^ PunctuationBracket
-//                                                     ^^^^^^^^^ Identifier
-//                                                              ^ PunctuationBracket
-//                                                               ^^^^^^ Identifier
-//                                                                     ^ PunctuationBracket
-//                                                                       ^^ StringLiteral
-//                                                                         ^ PunctuationBracket
-//                                                                          ^ PunctuationBracket
-//                                                                           ^^^^ IdentifierFunction
-//                                                                               ^ PunctuationBracket
-//                                                                                ^ PunctuationBracket
-//                                                                                 ^ PunctuationDelimiter
+//            ^^^ IdentifierType  storage.type.variable.cs
+//                ^^^^^^ Identifier  variable.other.cs
+//                       ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                         ^^^ IdentifierOperator  keyword.operator.new.cs
+//                             ^^^^^ IdentifierType  support.type.cs
+//                                  ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                   ^^^^^^^^ StringLiteral  string.quoted.double.raw.cs
+//                                           ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                            ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                             ^^^^^^^ IdentifierFunction  variable.function.cs
+//                                                    ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                     ^^^^^^^^^ Identifier  variable.other.cs
+//                                                              ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                               ^^^^^^ Identifier  variable.other.cs
+//                                                                     ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                                       ^^ StringLiteral  string.quoted.double.cs
+//                                                                         ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                          ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                                                                           ^^^^ IdentifierFunction  variable.function.cs
+//                                                                               ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                                                                                ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                                                 ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               Assert.Contains(@$"""rz-cell-data"">1", markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteralEscape
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteralEscape
-//                                               ^^^ StringLiteral
-//                                                  ^ PunctuationBracket
-//                                                    ^^^^^^ Identifier
-//                                                          ^ PunctuationBracket
-//                                                           ^ PunctuationDelimiter
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^^ StringLiteral  constant.character.escape.cs
+//                               ^^ StringLiteralEscape  constant.character.escape.cs
+//                                 ^^^^^^^^^^^^ StringLiteral  constant.character.escape.cs
+//                                             ^^ StringLiteralEscape  constant.character.escape.cs
+//                                               ^^^ StringLiteral  string.quoted.double.raw.cs
+//                                                  ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                    ^^^^^^ Identifier  variable.other.cs
+//                                                          ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                           ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               Assert.Contains(@$"""rz-cell-data"">2", markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteralEscape
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteralEscape
-//                                               ^^^ StringLiteral
-//                                                  ^ PunctuationBracket
-//                                                    ^^^^^^ Identifier
-//                                                          ^ PunctuationBracket
-//                                                           ^ PunctuationDelimiter
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^^ StringLiteral  constant.character.escape.cs
+//                               ^^ StringLiteralEscape  constant.character.escape.cs
+//                                 ^^^^^^^^^^^^ StringLiteral  constant.character.escape.cs
+//                                             ^^ StringLiteralEscape  constant.character.escape.cs
+//                                               ^^^ StringLiteral  string.quoted.double.raw.cs
+//                                                  ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                    ^^^^^^ Identifier  variable.other.cs
+//                                                          ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                           ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               Assert.Contains(@$"""rz-cell-data"">3", markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteralEscape
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteralEscape
-//                                               ^^^ StringLiteral
-//                                                  ^ PunctuationBracket
-//                                                    ^^^^^^ Identifier
-//                                                          ^ PunctuationBracket
-//                                                           ^ PunctuationDelimiter
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^^ StringLiteral  constant.character.escape.cs
+//                               ^^ StringLiteralEscape  constant.character.escape.cs
+//                                 ^^^^^^^^^^^^ StringLiteral  constant.character.escape.cs
+//                                             ^^ StringLiteralEscape  constant.character.escape.cs
+//                                               ^^^ StringLiteral  string.quoted.double.raw.cs
+//                                                  ^ PunctuationBracket  punctuation.separator.argument.cs
+//                                                    ^^^^^^ Identifier  variable.other.cs
+//                                                          ^ PunctuationBracket  punctuation.section.group.end.cs
+//                                                           ^ PunctuationDelimiter  punctuation.terminator.statement.cs
               Assert.Contains(@"
-//            ^^^^^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^ StringLiteral 53:28..55:1
+//            ^^^^^^ Identifier  variable.other.cs
+//                  ^ PunctuationBracket  punctuation.accessor.dot.cs
+//                   ^^^^^^^^ IdentifierFunction  variable.function.cs
+//                           ^ PunctuationBracket  punctuation.section.group.begin.cs
+//                            ^^ StringLiteral 53:28..55:1  string.quoted.double.raw.cs
   Lorem Ipsum
   ", component.Markup);
-// ^ PunctuationBracket
-//   ^^^^^^^^^ Identifier
-//            ^ PunctuationBracket
-//             ^^^^^^ Identifier
-//                   ^ PunctuationBracket
-//                    ^ PunctuationDelimiter
+// ^ PunctuationBracket  punctuation.separator.argument.cs
+//   ^^^^^^^^^ Identifier  variable.other.cs
+//            ^ PunctuationBracket  punctuation.accessor.dot.cs
+//             ^^^^^^ Identifier  variable.other.cs
+//                   ^ PunctuationBracket  punctuation.section.group.end.cs
+//                    ^ PunctuationDelimiter  punctuation.terminator.statement.cs
           }
-//        ^ PunctuationBracket
+//        ^ PunctuationBracket  punctuation.section.block.end.cs
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.end.cs
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.cs
 

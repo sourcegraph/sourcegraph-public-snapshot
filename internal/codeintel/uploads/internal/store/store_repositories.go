@@ -33,6 +33,20 @@ func (s *store) SetRepositoriesForRetentionScan(ctx context.Context, processDela
 	)))
 }
 
+func (s *store) SetRepositoriesForRetentionScanWithTime(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
+		repositoryIDsForRetentionScanQuery,
+		now,
+		int(processDelay/time.Second),
+		limit,
+		now,
+		now,
+	)))
+}
+
 const repositoryIDsForRetentionScanQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_repositories.go:setRepositoriesForRetentionScan
 WITH candidate_repositories AS (

@@ -504,7 +504,7 @@
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-yellow);
+        color: var(--hl-pink);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierBuiltinType {
@@ -551,7 +551,7 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-property);
+        color: var(--hl-pink);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -584,12 +584,13 @@
     .hl-typed-NumericLiteral {
         color: var(--hl-purple);
     }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-2);
+    }
 
     // color: var(--hl-gray-3);
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagAttribute {
     // }
     // .hl-typed-TagDelimiter {
     // }
@@ -929,7 +930,7 @@
         color: var(--hl-gray-1);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-purple);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierNull {
@@ -1001,13 +1002,14 @@
         color: var(--hl-red);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-green);
+        color: var(--hl-green-1);
+    }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-3);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagAttribute {
     // }
     // .hl-typed-TagDelimiter {
     // }

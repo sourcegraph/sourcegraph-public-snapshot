@@ -3,301 +3,397 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   export class MyClass {
-//^^^^^^ IdentifierKeyword
-//       ^^^^^ IdentifierKeyword
-//             ^^^^^^^ IdentifierType
-//                     ^ PunctuationBracket
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^ IdentifierKeyword  storage.type.class.ts
+//             ^^^^^^^ IdentifierType  entity.name.type.class.ts
+//                     ^ PunctuationBracket  punctuation.definition.block.ts
     public static myValue: string;
-//  ^^^^^^ IdentifierKeyword
-//         ^^^^^^ IdentifierKeyword
-//                ^^^^^^^ Identifier
-//                       ^ IdentifierOperator
-//                         ^^^^^^ IdentifierType
-//                               ^ PunctuationDelimiter
+//  ^^^^^^ IdentifierKeyword  storage.modifier.ts
+//         ^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                ^^^^^^^ Identifier  variable.object.property.ts
+//                       ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                         ^^^^^^ IdentifierType  support.type.primitive.ts
+//                               ^ PunctuationDelimiter  punctuation.terminator.statement.ts
     constructor(init: string) {
-//  ^^^^^^^^^^^ IdentifierKeyword
-//             ^ PunctuationBracket
-//              ^^^^ Identifier
-//                  ^ IdentifierOperator
-//                    ^^^^^^ IdentifierType
-//                          ^ PunctuationBracket
-//                            ^ PunctuationBracket
+//  ^^^^^^^^^^^ IdentifierKeyword  storage.type.ts
+//             ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//              ^^^^ Identifier  variable.parameter.ts
+//                  ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                    ^^^^^^ IdentifierType  support.type.primitive.ts
+//                          ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                            ^ PunctuationBracket  punctuation.definition.block.ts
       this.myValue = init;
-//    ^^^^ Identifier
-//        ^ PunctuationBracket
-//         ^^^^^^^ Identifier
-//                 ^ IdentifierOperator
-//                   ^^^^ Identifier
-//                       ^ PunctuationDelimiter
+//    ^^^^ IdentifierBuiltin  variable.language.this.ts
+//        ^ PunctuationBracket  punctuation.accessor.ts
+//         ^^^^^^^ Identifier  variable.other.property.ts
+//                 ^ IdentifierOperator  keyword.operator.assignment.ts
+//                   ^^^^ Identifier  variable.other.readwrite.ts
+//                       ^ PunctuationDelimiter  punctuation.terminator.statement.ts
     }
-//  ^ PunctuationBracket
+//  ^ PunctuationBracket  punctuation.definition.block.ts
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.block.ts
+  export abstract class MyAbstractClass {}
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                ^^^^^ IdentifierKeyword  storage.type.class.ts
+//                      ^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.class.ts
+//                                      ^ PunctuationBracket  punctuation.definition.block.ts
+//                                       ^ PunctuationBracket  punctuation.definition.block.ts
   import fs = require("fs");
-//^^^^^^ IdentifierKeyword
-//       ^^ Identifier
-//          ^ IdentifierOperator
-//            ^^^^^^^ IdentifierKeyword
-//                   ^ PunctuationBracket
-//                    ^^^^ StringLiteral
-//                        ^ PunctuationBracket
-//                         ^ PunctuationDelimiter
+//^^^^^^ IdentifierKeyword  keyword.control.import.ts
+//       ^^ Identifier  variable.other.readwrite.alias.ts
+//          ^ IdentifierOperator  keyword.operator.assignment.ts
+//            ^^^^^^^ IdentifierKeyword  keyword.control.require.ts
+//                   ^ PunctuationBracket  meta.brace.round.ts
+//                    ^^^^ StringLiteral  string.quoted.double.ts
+//                        ^ PunctuationBracket  meta.brace.round.ts
+//                         ^ PunctuationDelimiter  punctuation.terminator.statement.ts
   declare module MyModule {
-//^^^^^^^ IdentifierKeyword
-//        ^^^^^^ IdentifierKeyword
-//               ^^^^^^^^ IdentifierType
-//                        ^ PunctuationBracket
+//^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//        ^^^^^^ IdentifierKeyword  storage.type.namespace.ts
+//               ^^^^^^^^ IdentifierType  entity.name.type.module.ts
+//                        ^ PunctuationBracket  punctuation.definition.block.ts
     export interface MyInterface extends Other {
-//  ^^^^^^ IdentifierKeyword
-//         ^^^^^^^^^ IdentifierKeyword
-//                   ^^^^^^^^^^^ IdentifierType
-//                               ^^^^^^^ IdentifierKeyword
-//                                             ^ PunctuationBracket
+//  ^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//         ^^^^^^^^^ IdentifierKeyword  storage.type.interface.ts
+//                   ^^^^^^^^^^^ IdentifierType  entity.name.type.interface.ts
+//                               ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                                       ^^^^^ Identifier  entity.other.inherited-class.ts
+//                                             ^ PunctuationBracket  punctuation.definition.block.ts
       myProperty: any;
-//    ^^^^^^^^^^ Identifier
-//              ^ IdentifierOperator
-//                ^^^ IdentifierType
-//                   ^ PunctuationDelimiter
+//    ^^^^^^^^^^ Identifier  variable.object.property.ts
+//              ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                ^^^ IdentifierType  support.type.primitive.ts
+//                   ^ PunctuationDelimiter  punctuation.terminator.statement.ts
       myKeyoff: keyof MyClass;
-//    ^^^^^^^^ Identifier
-//            ^ IdentifierOperator
-//              ^^^^^ IdentifierKeyword
-//                    ^^^^^^^ IdentifierType
-//                           ^ PunctuationDelimiter
+//    ^^^^^^^^ Identifier  variable.object.property.ts
+//            ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//              ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//                    ^^^^^^^ IdentifierType  entity.name.type.ts
+//                           ^ PunctuationDelimiter  punctuation.terminator.statement.ts
     }
-//  ^ PunctuationBracket
+//  ^ PunctuationBracket  punctuation.definition.block.ts
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.block.ts
   declare magicNumber number;
-//^^^^^^^ IdentifierKeyword
-//        ^^^^^^^^^^^ Identifier
-//                    ^^^^^^ Identifier
-//                          ^ PunctuationDelimiter
+//^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//        ^^^^^^^^^^^ Identifier  variable.other.readwrite.ts
+//                    ^^^^^^ Identifier  variable.other.readwrite.ts
+//                          ^ PunctuationDelimiter  punctuation.terminator.statement.ts
   myArray.forEach(() => { }); // fat arrow syntax
-//^^^^^^^ Identifier
-//       ^ PunctuationBracket
-//        ^^^^^^^ IdentifierFunction
-//               ^ PunctuationBracket
-//                ^ PunctuationBracket
-//                 ^ PunctuationBracket
-//                   ^^ IdentifierType
-//                      ^ PunctuationBracket
-//                        ^ PunctuationBracket
-//                         ^ PunctuationBracket
-//                          ^ PunctuationDelimiter
-//                            ^^ Comment
-//                              ^^^^^^^^^^^^^^^^^ Comment
+//^^^^^^^ Identifier  variable.other.object.ts
+//       ^ PunctuationBracket  punctuation.accessor.ts
+//        ^^^^^^^ IdentifierFunction  support.function.dom.ts
+//               ^ PunctuationBracket  meta.brace.round.ts
+//                ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//                 ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                   ^^ IdentifierType  storage.type.function.arrow.ts
+//                      ^ PunctuationBracket  punctuation.definition.block.ts
+//                        ^ PunctuationBracket  punctuation.definition.block.ts
+//                         ^ PunctuationBracket  meta.brace.round.ts
+//                          ^ PunctuationDelimiter  punctuation.terminator.statement.ts
+//                            ^^ Comment  comment.line.double-slash.ts
+//                              ^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.ts
   const oneOf = (a:number): number => a + 1
-//^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierFunction
-//            ^ IdentifierOperator
-//              ^ PunctuationBracket
-//               ^ Identifier
-//                ^ IdentifierOperator
-//                 ^^^^^^ IdentifierType
-//                       ^ PunctuationBracket
-//                        ^ IdentifierOperator
-//                         ^ IdentifierType
-//                          ^^^^^^ IdentifierType
-//                                ^ IdentifierType
-//                                 ^^ IdentifierType
-//                                    ^ Identifier
-//                                      ^ IdentifierOperator
-//                                        ^ NumericLiteral
-  export const a = 42
-//^^^^^^ IdentifierKeyword
-//       ^^^^^ IdentifierKeyword
-//             ^ Identifier
-//               ^ IdentifierOperator
-//                 ^^ NumericLiteral
-  export let b = 42
-//^^^^^^ IdentifierKeyword
-//       ^^^ IdentifierKeyword
-//           ^ Identifier
-//             ^ IdentifierOperator
-//               ^^ NumericLiteral
-  export var c = 42
-//^^^^^^ IdentifierKeyword
-//       ^^^ IdentifierKeyword
-//           ^ Identifier
-//             ^ IdentifierOperator
-//               ^^ NumericLiteral
-  export var d1 = {e2:41}
-//^^^^^^ IdentifierKeyword
-//       ^^^ IdentifierKeyword
-//           ^^ Identifier
-//              ^ IdentifierOperator
-//                ^ PunctuationBracket
-//                 ^^ IdentifierAttribute
-//                   ^ PunctuationBracket
-//                    ^^ NumericLiteral
-//                      ^ PunctuationBracket
-  export var d = {
-//^^^^^^ IdentifierKeyword
-//       ^^^ IdentifierKeyword
-//           ^ Identifier
-//             ^ IdentifierOperator
-//               ^ PunctuationBracket
-      key1: 1,
-//    ^^^^ IdentifierAttribute
-//        ^ PunctuationBracket
-//          ^ NumericLiteral
-//           ^ PunctuationBracket
-      key2: null,
-//    ^^^^ IdentifierAttribute
-//        ^ PunctuationBracket
-//          ^^^^ IdentifierBuiltin
-//              ^ PunctuationBracket
-      key3: `abc${d1.e2}`,
-//    ^^^^ IdentifierAttribute
-//        ^ PunctuationBracket
-//          ^ PunctuationBracket
-//           ^^^^^^^^^^^ StringLiteral
-//              ^^ PunctuationBracket
-//                ^^ Identifier
-//                  ^ PunctuationBracket
-//                   ^^ Identifier
-//                     ^ PunctuationBracket
-//                      ^ PunctuationBracket
-//                       ^ PunctuationBracket
+//^^^^^ IdentifierKeyword  storage.type.ts
+//      ^^^^^ IdentifierFunction  entity.name.function.ts
+//            ^ IdentifierOperator  keyword.operator.assignment.ts
+//              ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//               ^ Identifier  variable.parameter.ts
+//                ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                 ^^^^^^ IdentifierType  support.type.primitive.ts
+//                       ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                        ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                         ^ IdentifierType  support.type.primitive.ts
+//                          ^^^^^^ IdentifierType  support.type.primitive.ts
+//                                ^ IdentifierType  meta.return.type.arrow.ts
+//                                 ^^ IdentifierType  storage.type.function.arrow.ts
+//                                    ^ Identifier  variable.other.readwrite.ts
+//                                      ^ IdentifierOperator  keyword.operator.arithmetic.ts
+//                                        ^ NumericLiteral  constant.numeric.decimal.ts
+  export enum Day {
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^ IdentifierKeyword  storage.type.enum.ts
+//            ^^^ IdentifierType  entity.name.type.enum.ts
+//                ^ PunctuationBracket  punctuation.definition.block.ts
+      Weekday = 1,
+//    ^^^^^^^ Identifier  variable.other.enummember.ts
+//            ^ IdentifierOperator  keyword.operator.assignment.ts
+//              ^ NumericLiteral  constant.numeric.decimal.ts
+//               ^ PunctuationBracket  punctuation.separator.comma.ts
+      Weekend = 2
+//    ^^^^^^^ Identifier  variable.other.enummember.ts
+//            ^ IdentifierOperator  keyword.operator.assignment.ts
+//              ^ NumericLiteral  constant.numeric.decimal.ts
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.block.ts
+  export type MyNumber = number
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^ IdentifierKeyword  storage.type.type.ts
+//            ^^^^^^^^ IdentifierType  entity.name.type.alias.ts
+//                     ^ IdentifierOperator  keyword.operator.assignment.ts
+//                       ^^^^^^ IdentifierType  support.type.primitive.ts
+  export const a = 42
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^ IdentifierKeyword  storage.type.ts
+//             ^ Identifier  variable.other.constant.ts
+//               ^ IdentifierOperator  keyword.operator.assignment.ts
+//                 ^^ NumericLiteral  constant.numeric.decimal.ts
+  const aa = 42
+//^^^^^ IdentifierKeyword  storage.type.ts
+//      ^^ Identifier  variable.other.constant.ts
+//         ^ IdentifierOperator  keyword.operator.assignment.ts
+//           ^^ NumericLiteral  constant.numeric.decimal.ts
+  export let b = 42
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^ IdentifierKeyword  storage.type.ts
+//           ^ Identifier  variable.other.readwrite.ts
+//             ^ IdentifierOperator  keyword.operator.assignment.ts
+//               ^^ NumericLiteral  constant.numeric.decimal.ts
+  export var c = 42
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^ IdentifierKeyword  storage.type.ts
+//           ^ Identifier  variable.other.readwrite.ts
+//             ^ IdentifierOperator  keyword.operator.assignment.ts
+//               ^^ NumericLiteral  constant.numeric.decimal.ts
+  export var d1 = {e2:41}
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^ IdentifierKeyword  storage.type.ts
+//           ^^ Identifier  variable.other.readwrite.ts
+//              ^ IdentifierOperator  keyword.operator.assignment.ts
+//                ^ PunctuationBracket  punctuation.definition.block.ts
+//                 ^^ IdentifierAttribute  meta.object-literal.key.ts
+//                   ^ PunctuationBracket  punctuation.separator.key-value.ts
+//                    ^^ NumericLiteral  constant.numeric.decimal.ts
+//                      ^ PunctuationBracket  punctuation.definition.block.ts
+  export var d = {
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^ IdentifierKeyword  storage.type.ts
+//           ^ Identifier  variable.other.readwrite.ts
+//             ^ IdentifierOperator  keyword.operator.assignment.ts
+//               ^ PunctuationBracket  punctuation.definition.block.ts
+      key1: 1,
+//    ^^^^ IdentifierAttribute  meta.object-literal.key.ts
+//        ^ PunctuationBracket  punctuation.separator.key-value.ts
+//          ^ NumericLiteral  constant.numeric.decimal.ts
+//           ^ PunctuationBracket  punctuation.separator.comma.ts
+      key2: null,
+//    ^^^^ IdentifierAttribute  meta.object-literal.key.ts
+//        ^ PunctuationBracket  punctuation.separator.key-value.ts
+//          ^^^^ IdentifierBuiltin  constant.language.null.ts
+//              ^ PunctuationBracket  punctuation.separator.comma.ts
+      key3: `abc${d1.e2}`,
+//    ^^^^ IdentifierAttribute  meta.object-literal.key.ts
+//        ^ PunctuationBracket  punctuation.separator.key-value.ts
+//          ^ PunctuationBracket  punctuation.definition.string.template.begin.ts
+//           ^^^^^^^^^^^ StringLiteral  punctuation.definition.string.template.end.ts
+//              ^^ PunctuationBracket  punctuation.definition.template-expression.begin.ts
+//                ^^ Identifier  variable.other.object.ts
+//                  ^ PunctuationBracket  punctuation.accessor.ts
+//                   ^^ Identifier  variable.other.property.ts
+//                     ^ PunctuationBracket  punctuation.definition.template-expression.end.ts
+//                      ^ PunctuationBracket  punctuation.definition.string.template.end.ts
+//                       ^ PunctuationBracket  punctuation.separator.comma.ts
+  }
+//^ PunctuationBracket  punctuation.definition.block.ts
   export var e = Object.keys(d) as MyClass
-//^^^^^^ IdentifierKeyword
-//       ^^^ IdentifierKeyword
-//           ^ Identifier
-//             ^ IdentifierOperator
-//               ^^^^^^ IdentifierType
-//                     ^ PunctuationBracket
-//                      ^^^^ IdentifierFunction
-//                          ^ PunctuationBracket
-//                           ^ Identifier
-//                            ^ PunctuationBracket
-//                              ^^ IdentifierKeyword
-//                                 ^^^^^^^ IdentifierType
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^ IdentifierKeyword  storage.type.ts
+//           ^ Identifier  variable.other.readwrite.ts
+//             ^ IdentifierOperator  keyword.operator.assignment.ts
+//               ^^^^^^ IdentifierType  support.class.builtin.ts
+//                     ^ PunctuationBracket  punctuation.accessor.ts
+//                      ^^^^ IdentifierFunction  support.function.dom.ts
+//                          ^ PunctuationBracket  meta.brace.round.ts
+//                           ^ Identifier  variable.other.readwrite.ts
+//                            ^ PunctuationBracket  meta.brace.round.ts
+//                              ^^ IdentifierKeyword  keyword.control.as.ts
+//                                 ^^^^^^^ IdentifierType  entity.name.type.ts
   export function f() {}
-//^^^^^^ IdentifierKeyword
-//       ^^^^^^^^ IdentifierKeyword
-//                ^ IdentifierFunction
-//                 ^ PunctuationBracket
-//                  ^ PunctuationBracket
-//                    ^ PunctuationBracket
-//                     ^ PunctuationBracket
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^^^^ IdentifierKeyword  storage.type.function.ts
+//                ^ IdentifierFunction  entity.name.function.ts
+//                 ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//                  ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                    ^ PunctuationBracket  punctuation.definition.block.ts
+//                     ^ PunctuationBracket  punctuation.definition.block.ts
   
   const negatedFilterToNegatableFilter: { [key: string]: MyClass } = null as any
-//^^^^^ IdentifierKeyword
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
-//                                    ^ IdentifierOperator
-//                                      ^ PunctuationBracket
-//                                        ^ PunctuationBracket
-//                                         ^^^ Identifier
-//                                            ^ IdentifierOperator
-//                                              ^^^^^^ IdentifierType
-//                                                    ^ PunctuationBracket
-//                                                     ^ IdentifierOperator
-//                                                       ^^^^^^^ IdentifierType
-//                                                               ^ PunctuationBracket
-//                                                                 ^ IdentifierOperator
-//                                                                   ^^^^ IdentifierBuiltin
-//                                                                        ^^ IdentifierKeyword
-//                                                                           ^^^ IdentifierType
+//^^^^^ IdentifierKeyword  storage.type.ts
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier  variable.other.constant.ts
+//                                    ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                                      ^ PunctuationBracket  punctuation.definition.block.ts
+//                                        ^ PunctuationBracket  meta.brace.square.ts
+//                                         ^^^ Identifier  variable.parameter.ts
+//                                            ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                                              ^^^^^^ IdentifierType  support.type.primitive.ts
+//                                                    ^ PunctuationBracket  meta.brace.square.ts
+//                                                     ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                                                       ^^^^^^^ IdentifierType  entity.name.type.ts
+//                                                               ^ PunctuationBracket  punctuation.definition.block.ts
+//                                                                 ^ IdentifierOperator  keyword.operator.assignment.ts
+//                                                                   ^^^^ IdentifierBuiltin  constant.language.null.ts
+//                                                                        ^^ IdentifierKeyword  keyword.control.as.ts
+//                                                                           ^^^ IdentifierType  support.type.primitive.ts
   
   const scanToken = <T extends Term = Literal>(
-//^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierFunction
-//                ^ IdentifierOperator
-//                  ^ PunctuationBracket
-//                   ^ IdentifierType
-//                     ^^^^^^^ IdentifierKeyword
-//                             ^^^^ IdentifierType
-//                                  ^ IdentifierOperator
-//                                    ^^^^^^^ IdentifierType
-//                                           ^ PunctuationBracket
-//                                            ^ PunctuationBracket
+//^^^^^ IdentifierKeyword  storage.type.ts
+//      ^^^^^^^^^ IdentifierFunction  entity.name.function.ts
+//                ^ IdentifierOperator  keyword.operator.assignment.ts
+//                  ^ PunctuationBracket  punctuation.definition.typeparameters.begin.ts
+//                   ^ IdentifierType  entity.name.type.ts
+//                     ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                             ^^^^ IdentifierType  entity.name.type.ts
+//                                  ^ IdentifierOperator  keyword.operator.assignment.ts
+//                                    ^^^^^^^ IdentifierType  entity.name.type.ts
+//                                           ^ PunctuationBracket  punctuation.definition.typeparameters.end.ts
+//                                            ^ PunctuationBracket  meta.brace.round.ts
       regexp: RegExp,
-//    ^^^^^^ Identifier
-//          ^ IdentifierOperator
-//            ^^^^^^ IdentifierType
-//                  ^ PunctuationBracket
+//    ^^^^^^ Identifier  variable.parameter.ts
+//          ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//            ^^^^^^ IdentifierType  entity.name.type.ts
+//                  ^ PunctuationBracket  punctuation.separator.parameter.ts
       output?: T | ((input: string, range: CharacterRange) => T),
-//    ^^^^^^ Identifier
-//          ^ IdentifierOperator
-//           ^ IdentifierOperator
-//             ^ IdentifierType
-//               ^ IdentifierOperator
-//                 ^ PunctuationBracket
-//                  ^ PunctuationBracket
-//                   ^^^^^ Identifier
-//                        ^ IdentifierOperator
-//                          ^^^^^^ IdentifierType
-//                                ^ PunctuationBracket
-//                                  ^^^^^ Identifier
-//                                       ^ IdentifierOperator
-//                                         ^^^^^^^^^^^^^^ IdentifierType
-//                                                       ^ PunctuationBracket
-//                                                         ^^ IdentifierType
-//                                                            ^ IdentifierType
-//                                                             ^ PunctuationBracket
-//                                                              ^ PunctuationBracket
+//    ^^^^^^ Identifier  variable.parameter.ts
+//          ^ IdentifierOperator  keyword.operator.optional.ts
+//           ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//             ^ IdentifierType  entity.name.type.ts
+//               ^ IdentifierOperator  keyword.operator.type.ts
+//                 ^ PunctuationBracket  meta.brace.round.ts
+//                  ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//                   ^^^^^ Identifier  variable.parameter.ts
+//                        ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                          ^^^^^^ IdentifierType  support.type.primitive.ts
+//                                ^ PunctuationBracket  punctuation.separator.parameter.ts
+//                                  ^^^^^ Identifier  variable.parameter.ts
+//                                       ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                                         ^^^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
+//                                                       ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                                                         ^^ IdentifierType  storage.type.function.arrow.ts
+//                                                            ^ IdentifierType  entity.name.type.ts
+//                                                             ^ PunctuationBracket  meta.brace.round.ts
+//                                                              ^ PunctuationBracket  punctuation.separator.parameter.ts
       expected?: string
-//    ^^^^^^^^ Identifier
-//            ^ IdentifierOperator
-//             ^ IdentifierOperator
-//               ^^^^^^ IdentifierType
+//    ^^^^^^^^ Identifier  variable.parameter.ts
+//            ^ IdentifierOperator  keyword.operator.optional.ts
+//             ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//               ^^^^^^ IdentifierType  support.type.primitive.ts
   ): Parser<T> => {
-//^ PunctuationBracket
-// ^ IdentifierOperator
-//  ^ IdentifierType
-//   ^^^^^^ IdentifierType
-//         ^ PunctuationBracket
-//         ^^^^ IdentifierType
-//          ^ IdentifierType
-//           ^ PunctuationBracket
-//             ^^ IdentifierType
-//                ^ PunctuationBracket
+//^ PunctuationBracket  meta.brace.round.ts
+// ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//  ^ IdentifierType  entity.name.type.ts
+//   ^^^^^^ IdentifierType  entity.name.type.ts
+//         ^ PunctuationBracket  punctuation.definition.typeparameters.begin.ts
+//         ^^^^ IdentifierType  meta.return.type.arrow.ts
+//          ^ IdentifierType  entity.name.type.ts
+//           ^ PunctuationBracket  punctuation.definition.typeparameters.end.ts
+//             ^^ IdentifierType  storage.type.function.arrow.ts
+//                ^ PunctuationBracket  punctuation.definition.block.ts
       if (!regexp.source.startsWith('^')) {
-//    ^^ IdentifierKeyword
-//       ^ PunctuationBracket
-//        ^ IdentifierOperator
-//         ^^^^^^ Identifier
-//               ^ PunctuationBracket
-//                ^^^^^^ Identifier
-//                      ^ PunctuationBracket
-//                       ^^^^^^^^^^ IdentifierFunction
-//                                 ^ PunctuationBracket
-//                                  ^^^ StringLiteral
-//                                     ^ PunctuationBracket
-//                                      ^ PunctuationBracket
-//                                        ^ PunctuationBracket
+//    ^^ IdentifierKeyword  keyword.control.conditional.ts
+//       ^ PunctuationBracket  meta.brace.round.ts
+//        ^ IdentifierOperator  keyword.operator.logical.ts
+//         ^^^^^^ Identifier  variable.other.object.ts
+//               ^ PunctuationBracket  punctuation.accessor.ts
+//                ^^^^^^ Identifier  support.variable.property.dom.ts
+//                      ^ PunctuationBracket  punctuation.accessor.ts
+//                       ^^^^^^^^^^ IdentifierFunction  entity.name.function.ts
+//                                 ^ PunctuationBracket  meta.brace.round.ts
+//                                  ^^^ StringLiteral  string.quoted.single.ts
+//                                     ^ PunctuationBracket  meta.brace.round.ts
+//                                      ^ PunctuationBracket  meta.brace.round.ts
+//                                        ^ PunctuationBracket  punctuation.definition.block.ts
           regexp = new RegExp(`^${regexp.source}`, regexp.flags)
-//        ^^^^^^ Identifier
-//               ^ IdentifierOperator
-//                 ^^^ IdentifierOperator
-//                     ^^^^^^ IdentifierType
-//                           ^ PunctuationBracket
-//                            ^ PunctuationBracket
-//                             ^^^^^^^^^^^^^^^^^ StringLiteral
-//                              ^^ PunctuationBracket
-//                                ^^^^^^ Identifier
-//                                      ^ PunctuationBracket
-//                                       ^^^^^^ Identifier
-//                                             ^ PunctuationBracket
-//                                              ^ PunctuationBracket
-//                                               ^ PunctuationBracket
-//                                                 ^^^^^^ Identifier
-//                                                       ^ PunctuationBracket
-//                                                        ^^^^^ Identifier
-//                                                             ^ PunctuationBracket
+//        ^^^^^^ Identifier  variable.other.readwrite.ts
+//               ^ IdentifierOperator  keyword.operator.assignment.ts
+//                 ^^^ IdentifierOperator  keyword.operator.new.ts
+//                     ^^^^^^ IdentifierType  entity.name.type.ts
+//                           ^ PunctuationBracket  meta.brace.round.ts
+//                            ^ PunctuationBracket  punctuation.definition.string.template.begin.ts
+//                             ^^^^^^^^^^^^^^^^^ StringLiteral  punctuation.definition.string.template.end.ts
+//                              ^^ PunctuationBracket  punctuation.definition.template-expression.begin.ts
+//                                ^^^^^^ Identifier  variable.other.object.ts
+//                                      ^ PunctuationBracket  punctuation.accessor.ts
+//                                       ^^^^^^ Identifier  support.variable.property.dom.ts
+//                                             ^ PunctuationBracket  punctuation.definition.template-expression.end.ts
+//                                              ^ PunctuationBracket  punctuation.definition.string.template.end.ts
+//                                               ^ PunctuationBracket  punctuation.separator.comma.ts
+//                                                 ^^^^^^ Identifier  variable.other.object.ts
+//                                                       ^ PunctuationBracket  punctuation.accessor.ts
+//                                                        ^^^^^ Identifier  variable.other.property.ts
+//                                                             ^ PunctuationBracket  meta.brace.round.ts
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.definition.block.ts
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.block.ts
   
   export const URI: typeof URL
-//^^^^^^ IdentifierKeyword
-//       ^^^^^ IdentifierKeyword
-//             ^^^ Identifier
-//                ^ IdentifierOperator
-//                  ^^^^^^ IdentifierKeyword
-//                         ^^^ IdentifierType
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^ IdentifierKeyword  storage.type.ts
+//             ^^^ Identifier  variable.other.constant.ts
+//                ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                  ^^^^^^ IdentifierKeyword  keyword.operator.expression.typeof.ts
+//                         ^^^ IdentifierType  entity.name.type.ts
+  
+  export class SiteAdminUsageStatisticsPage extends React.Component<
+//^^^^^^ IdentifierKeyword  keyword.control.export.ts
+//       ^^^^^ IdentifierKeyword  storage.type.class.ts
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.class.ts
+//                                          ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//                                                  ^^^^^ IdentifierType  entity.name.type.module.ts
+//                                                       ^ PunctuationBracket  punctuation.accessor.ts
+//                                                        ^^^^^^^^^ Identifier  entity.other.inherited-class.ts
+//                                                                 ^ PunctuationBracket  punctuation.definition.typeparameters.begin.ts
+      SiteAdminUsageStatisticsPageProps,
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
+//                                     ^ PunctuationBracket  punctuation.separator.comma.ts
+      SiteAdminUsageStatisticsPageState
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
+  > {
+//^ PunctuationBracket  punctuation.definition.typeparameters.end.ts
+//  ^ PunctuationBracket  punctuation.definition.block.ts
+      private loadLatestChartFromStorage(): keyof ChartOptions {
+//    ^^^^^^^ IdentifierKeyword  storage.modifier.ts
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.ts
+//                                      ^ PunctuationBracket  punctuation.definition.parameters.begin.ts
+//                                       ^ PunctuationBracket  punctuation.definition.parameters.end.ts
+//                                        ^ IdentifierOperator  keyword.operator.type.annotation.ts
+//                                         ^ IdentifierType  keyword.operator.expression.keyof.ts
+//                                          ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//                                               ^ IdentifierType  entity.name.type.ts
+//                                                ^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
+//                                                            ^ IdentifierType  meta.return.type.ts
+//                                                             ^ PunctuationBracket  punctuation.definition.block.ts
+          const latest = localStorage.getItem(CHART_ID_KEY)
+//        ^^^^^ IdentifierKeyword  storage.type.ts
+//              ^^^^^^ Identifier  variable.other.constant.ts
+//                     ^ IdentifierOperator  keyword.operator.assignment.ts
+//                       ^^^^^^^^^^^^ Identifier  variable.other.object.ts
+//                                   ^ PunctuationBracket  punctuation.accessor.ts
+//                                    ^^^^^^^ IdentifierFunction  support.function.dom.ts
+//                                           ^ PunctuationBracket  meta.brace.round.ts
+//                                            ^^^^^^^^^^^^ Identifier  variable.other.constant.ts
+//                                                        ^ PunctuationBracket  meta.brace.round.ts
+          return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
+//        ^^^^^^ IdentifierKeyword  keyword.control.flow.ts
+//               ^^^^^^ Identifier  variable.other.readwrite.ts
+//                      ^^ IdentifierOperator  keyword.operator.logical.ts
+//                         ^^^^^^ Identifier  variable.other.readwrite.ts
+//                                ^^ IdentifierOperator  keyword.operator.expression.in.ts
+//                                   ^^^^^^^^^^^^^^^^^^^^^ Identifier  variable.other.readwrite.ts
+//                                                         ^ IdentifierOperator  keyword.operator.ternary.ts
+//                                                           ^ PunctuationBracket  meta.brace.round.ts
+//                                                            ^^^^^^ Identifier  variable.other.readwrite.ts
+//                                                                   ^^ IdentifierKeyword  keyword.control.as.ts
+//                                                                      ^^^^^ IdentifierKeyword  keyword.operator.expression.keyof.ts
+//                                                                            ^^^^^^^^^^^^ IdentifierType  entity.name.type.ts
+//                                                                                        ^ PunctuationBracket  meta.brace.round.ts
+//                                                                                          ^ IdentifierOperator  keyword.operator.ternary.ts
+//                                                                                            ^^^^^^ StringLiteral  string.quoted.single.ts
+      }
+//    ^ PunctuationBracket  punctuation.definition.block.ts
+  
+  }
+//^ PunctuationBracket  punctuation.definition.block.ts
 

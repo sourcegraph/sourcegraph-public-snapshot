@@ -5920,19 +5920,19 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## executor: executor_processor_total
+## executor: executor_handlers
 
-<p class="subtitle">handler operations every 5m</p>
+<p class="subtitle">executor active handlers</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 5m0s
+- <span class="badge badge-critical">critical</span> executor: 0 active executor handlers and > 0 queue size for 5m0s
 
 <details>
 <summary>Technical details</summary>
 
 Custom alert query: `
-		(sum(src_executor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) OR vector(0)) == 0
+		(sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) OR vector(0)) == 0
 			AND
 		(sum by (queue)(src_executor_total{job=~"^sourcegraph-executors.*"})) > 0
 	`
@@ -5944,12 +5944,12 @@ Custom alert query: `
 - Check to see the state of any compute VMs, they may be taking longer than expected to boot.
 - Make sure the executors appear under Site Admin > Executors.
 - Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-processor-total).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-handlers).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "critical_executor_executor_processor_total"
+  "critical_executor_executor_handlers"
 ]
 ```
 
@@ -5959,11 +5959,11 @@ Custom alert query: `
 
 ## executor: executor_processor_error_rate
 
-<p class="subtitle">handler operation error rate over 5m</p>
+<p class="subtitle">executor operation error rate over 5m</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> executor: 100%+ handler operation error rate over 5m for 1h0m0s
+- <span class="badge badge-critical">critical</span> executor: 100%+ executor operation error rate over 5m for 1h0m0s
 
 <details>
 <summary>Technical details</summary>

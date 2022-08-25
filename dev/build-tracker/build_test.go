@@ -43,27 +43,6 @@ func TestUpdateFromEvent(t *testing.T) {
 		Job: job.Job,
 	}
 
-	t.Run("original author get preserved over nil", func(t *testing.T) {
-		build := event.build()
-		otherEvent := event
-		otherEvent.Build.Author = nil
-
-		build.updateFromEvent(&otherEvent)
-
-		require.NotNil(t, build.Author)
-	})
-
-	t.Run("original author get preserved if new author is empty", func(t *testing.T) {
-		build := event.build()
-		otherEvent := event
-		otherEvent.Build.Author = &buildkite.Author{}
-
-		build.updateFromEvent(&otherEvent)
-
-		require.NotNil(t, build.Author)
-		require.Equal(t, build.Author, event.Build.Author)
-	})
-
 	t.Run("build gets updated with new build", func(t *testing.T) {
 		build := event.build()
 		otherEvent := event

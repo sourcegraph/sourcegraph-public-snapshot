@@ -144,12 +144,10 @@ func TestCreateBatchSpec(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
-			Spec: &batcheslib.ChangesetSpec{
-				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				ExternalID:     "123",
-			},
-			RepoID: repo.ID,
-			UserID: userID,
+			BaseRepoID: repo.ID,
+			UserID:     userID,
+			ExternalID: "123",
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := bstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
 			t.Fatal(err)
@@ -475,7 +473,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if have, want := cs.RepoID, repo.ID; have != want {
+	if have, want := cs.BaseRepoID, repo.ID; have != want {
 		t.Fatalf("wrong RepoID. want=%d, have=%d", want, have)
 	}
 }
@@ -527,8 +525,6 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
-
 	falsy := overridable.FromBoolOrString(false)
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: bt.TestRawBatchSpec,
@@ -554,12 +550,10 @@ func TestApplyBatchChange(t *testing.T) {
 
 	changesetSpec := &btypes.ChangesetSpec{
 		BatchSpecID: batchSpec.ID,
-		Spec: &batcheslib.ChangesetSpec{
-			BaseRepository: string(repoAPIID),
-			ExternalID:     "123",
-		},
-		RepoID: repo.ID,
-		UserID: userID,
+		BaseRepoID:  repo.ID,
+		UserID:      userID,
+		Type:        btypes.ChangesetSpecTypeExisting,
+		ExternalID:  "123",
 	}
 	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
@@ -975,6 +969,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-1",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		// We need a couple more changeset specs to make this useful: we need to
@@ -987,6 +982,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: otherBatchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-2",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		publishedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
@@ -994,6 +990,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-3",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 			Published: true,
 		})
 
@@ -1174,10 +1171,9 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			for i := range changesetSpecs {
 				changesetSpecs[i] = &btypes.ChangesetSpec{
 					BatchSpecID: batchSpec.ID,
-					Spec: &batcheslib.ChangesetSpec{
-						ExternalID: "123",
-					},
-					RepoID: repo.ID,
+					BaseRepoID:  repo.ID,
+					ExternalID:  "123",
+					Type:        btypes.ChangesetSpecTypeExisting,
 				}
 				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
 				require.NoError(t, err)
@@ -2173,12 +2169,14 @@ func TestPublishChangesets(t *testing.T) {
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 	})
 	unpublishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 		Published: true,
 	})
@@ -2186,6 +2184,7 @@ func TestPublishChangesets(t *testing.T) {
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: otherBatchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 	})
 	publishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{

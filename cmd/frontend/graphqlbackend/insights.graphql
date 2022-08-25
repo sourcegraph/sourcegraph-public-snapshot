@@ -1207,7 +1207,7 @@ type SearchQueryAggregate {
     A result of aggregating a search query for the specified aggregation mode.
     Limit - is the maximum number of aggregation groups to return, this limit will not override any internal limits.
     """
-    aggregations(mode: SearchAggregationMode = REPO, limit: Int = 50): SearchAggregationResult
+    aggregations(mode: SearchAggregationMode, limit: Int = 50): SearchAggregationResult
 }
 
 """
