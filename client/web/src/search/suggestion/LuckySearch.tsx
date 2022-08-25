@@ -1,4 +1,4 @@
-import { mdiChevronDown, mdiChevronUp, mdiInformationOutline } from '@mdi/js'
+import { mdiArrowRight, mdiChevronDown, mdiChevronUp, mdiInformationOutline } from '@mdi/js'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -55,15 +55,26 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                 <CollapsePanel>
                     <ul className={styles.container}>
                         {alert?.proposedQueries?.map(entry => (
-                            <li key={entry.query}>
+                            <li key={entry.query} className={styles.listItem}>
                                 <Link
                                     to={createLinkUrl({
                                         pathname: '/search',
                                         search: formatSearchParameters(new URLSearchParams({ q: entry.query })),
                                     })}
+                                    className={styles.link}
                                 >
-                                    {`${processDescription(entry.description || '')}`}
-                                    {entry.resultCountString}
+                                    <span>
+                                        <span className={styles.description}>{`${processDescription(
+                                            entry.description || ''
+                                        )}`}</span>
+                                        {entry.resultCountString && (
+                                            <>
+                                                {' '}
+                                                <span className="text-muted">({entry.resultCountString})</span>
+                                            </>
+                                        )}
+                                    </span>
+                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                                     <span className={styles.suggestion}>
                                         <SyntaxHighlightedSearchQuery
                                             query={entry.query}
