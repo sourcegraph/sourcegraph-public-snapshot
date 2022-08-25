@@ -64,6 +64,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureACLs, license(plan(team)), true)
 		check(t, FeatureACLs, license(plan(enterprise0)), true)
 		check(t, FeatureACLs, license(plan(enterprise0), string(FeatureACLs)), true)
+
+		check(t, FeatureACLs, license(plan(business0)), true)
+		check(t, FeatureACLs, license(plan(enterprise1)), true)
 	})
 
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
