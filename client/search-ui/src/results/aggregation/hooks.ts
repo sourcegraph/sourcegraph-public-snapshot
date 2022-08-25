@@ -52,7 +52,7 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = `${SearchAggregationMode}` | ''
+type SerializedAggregationMode = SearchAggregationMode | ''
 
 const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => mode ?? ''
 
@@ -94,7 +94,7 @@ export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode
     return [aggregationMode, setAggregationMode]
 }
 
-type SerializedAggregationUIMode = `${AggregationUIMode}`
+type SerializedAggregationUIMode = AggregationUIMode
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => uiMode
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
@@ -177,17 +177,16 @@ interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
-    limit?: number
+    limit: number
 }
 
-interface SearchAggregationResults {
-    data: GetSearchAggregationResult | undefined
-    loading: boolean
-    error: Error | undefined
-}
+type SearchAggregationResults =
+    | { data: undefined; loading: true; error: undefined }
+    | { data: undefined; loading: false; error: Error }
+    | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit = 10 } = input
+    const { query, patternType, aggregationMode, limit } = input
 
     const [, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
@@ -200,22 +199,37 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
 
     const calculatedAggregationMode = getCalculatedAggregationMode(data)
 
-    // Sync calculated aggregation mode with initial aggregation mode
     useEffect(() => {
-        // Catch initial state when aggregation mode isn't set and BE calculated
-        // aggregation mode automatically on the backend based on given query
+        // When we load the search result page in the first time we don't have picked
+        // aggregation mode yet (unless we open the search result page with predefined
+        // aggregation mode in the page URL)
+        // In case when we don't have set aggregation mode on the FE, BE will
+        // calculate this mode based on query that we pass to the aggregation
+        // query (see AGGREGATION_SEARCH_QUERY).
+        // When this happens we should take calculated aggregation mode and set its
+        // value on the frontend (UI controls, update URL value of aggregation mode)
+
+        // Catch initial page mount when aggregation mode isn't set on the FE and BE
+        // calculated aggregation mode automatically on the backend based on given query
         if (calculatedAggregationMode && aggregationMode === null) {
             setAggregationMode(calculatedAggregationMode)
         }
     }, [setAggregationMode, calculatedAggregationMode, aggregationMode])
 
+    if (loading) {
+        return { data: undefined, error: undefined, loading: true }
+    }
+
+    const calculatedError = getAggregationError(error, data)
+
+    if (calculatedError) {
+        return { data: undefined, error: calculatedError, loading: false }
+    }
+
     return {
-        data,
-        loading,
-        // We need to handle error properly for cases when we got errors
-        // in error field (network request error, gql error) or in data
-        // response (data aggregation error)
-        error: getAggregationError(error, data),
+        data: data as GetSearchAggregationResult,
+        error: undefined,
+        loading: false,
     }
 }
 
@@ -233,11 +247,7 @@ function getAggregationError(apolloError?: ApolloError, response?: GetSearchAggr
     return
 }
 
-export function getAggregationData(response?: GetSearchAggregationResult | null): SearchAggregationDatum[] {
-    if (!response) {
-        return []
-    }
-
+export function getAggregationData(response: GetSearchAggregationResult): SearchAggregationDatum[] {
     const aggregationResult = response.searchQueryAggregate?.aggregations
 
     switch (aggregationResult?.__typename) {
@@ -260,11 +270,7 @@ function getCalculatedAggregationMode(response?: GetSearchAggregationResult): Se
     return aggregationResult?.mode ?? null
 }
 
-export function getOtherGroupCount(response?: GetSearchAggregationResult): number {
-    if (!response) {
-        return 0
-    }
-
+export function getOtherGroupCount(response: GetSearchAggregationResult): number {
     const aggregationResult = response.searchQueryAggregate?.aggregations
 
     switch (aggregationResult?.__typename) {
