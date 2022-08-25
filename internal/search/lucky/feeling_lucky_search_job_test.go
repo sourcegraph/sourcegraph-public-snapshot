@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
@@ -83,12 +84,12 @@ func TestGeneratedSearchJob(t *testing.T) {
 		if err == nil {
 			return ""
 		}
-		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Description
+		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].ResultCountString
 	}
 
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
-	autogold.Want("1 result", autogold.Raw("test (1 result)")).Equal(t, autogold.Raw(test(1)))
-	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Want("1 result", autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
+	autogold.Want("limit results", autogold.Raw("500+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
 func TestNewFeelingLuckySearchJob_ResultCount(t *testing.T) {
