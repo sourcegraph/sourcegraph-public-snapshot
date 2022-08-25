@@ -40,17 +40,17 @@ func (r *workspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.WorkspaceFileResolver, error) {
+func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchWorkspaceFileResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) == 0 {
-		return []graphqlbackend.WorkspaceFileResolver{}, nil
+		return []graphqlbackend.BatchWorkspaceFileResolver{}, nil
 	}
 
-	resolvers := make([]graphqlbackend.WorkspaceFileResolver, len(nodes))
+	resolvers := make([]graphqlbackend.BatchWorkspaceFileResolver, len(nodes))
 	for i, node := range nodes {
 		resolvers[i] = &workspaceFileResolver{
 			batchSpecRandID: r.opts.BatchSpecRandID,

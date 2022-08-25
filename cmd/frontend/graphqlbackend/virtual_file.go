@@ -34,9 +34,9 @@ func (r *VirtualFileResolver) Path() string      { return r.stat.Name() }
 func (r *VirtualFileResolver) Name() string      { return path.Base(r.stat.Name()) }
 func (r *VirtualFileResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
-func (r *VirtualFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool)       { return nil, false }
-func (r *VirtualFileResolver) ToVirtualFile() (*VirtualFileResolver, bool)    { return r, true }
-func (r *VirtualFileResolver) ToWorkspaceFile() (WorkspaceFileResolver, bool) { return nil, false }
+func (r *VirtualFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool)            { return nil, false }
+func (r *VirtualFileResolver) ToVirtualFile() (*VirtualFileResolver, bool)         { return r, true }
+func (r *VirtualFileResolver) ToWorkspaceFile() (BatchWorkspaceFileResolver, bool) { return nil, false }
 
 func (r *VirtualFileResolver) URL(ctx context.Context) (string, error) {
 	// Todo: allow viewing arbitrary files in the webapp.

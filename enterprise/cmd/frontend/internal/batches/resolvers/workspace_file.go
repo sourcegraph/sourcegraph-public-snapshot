@@ -18,7 +18,7 @@ func marshalWorkspaceFileRandID(id string) graphql.ID {
 	return relay.MarshalID(workspaceFileIDKind, id)
 }
 
-var _ graphqlbackend.WorkspaceFileResolver = &workspaceFileResolver{}
+var _ graphqlbackend.BatchWorkspaceFileResolver = &workspaceFileResolver{}
 
 type workspaceFileResolver struct {
 	batchSpecRandID string
@@ -96,6 +96,6 @@ func (r *workspaceFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileReso
 	return nil, false
 }
 
-func (r *workspaceFileResolver) ToWorkspaceFile() (graphqlbackend.WorkspaceFileResolver, bool) {
+func (r *workspaceFileResolver) ToWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {
 	return r, true
 }
