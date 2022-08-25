@@ -182,7 +182,7 @@ interface SearchAggregationDataInput {
 
 type SearchAggregationResults =
     | { data: undefined; loading: true; error: undefined }
-    | { data: undefined; loading: false; error: Error }
+    | { data: GetSearchAggregationResult | undefined; loading: false; error: Error }
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
@@ -223,7 +223,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
     const calculatedError = getAggregationError(error, data)
 
     if (calculatedError) {
-        return { data: undefined, error: calculatedError, loading: false }
+        return { data, error: calculatedError, loading: false }
     }
 
     return {
