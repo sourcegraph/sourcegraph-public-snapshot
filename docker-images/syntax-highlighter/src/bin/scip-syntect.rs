@@ -33,7 +33,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut html_generator =
         ClassedHTMLGenerator::new_with_class_style(syntax_def, &syntax_set, ClassStyle::Spaced);
     for line in contents.lines() {
-        html_generator.parse_html_for_line(line);
+        html_generator.parse_html_for_line_which_includes_newline(line);
     }
     let html = html_generator.finalize();
     println!("{}", html);

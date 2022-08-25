@@ -14,9 +14,10 @@ import (
 	regexp "github.com/grafana/regexp"
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
+	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -2226,7 +2227,7 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []dbstore.Index, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []shared.Index, r1 error) {
 				return
 			},
 		},
@@ -2243,7 +2244,7 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) ([]shared.Index, error) {
 				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
 			},
 		},
@@ -2272,15 +2273,15 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // IndexEnqueuerQueueIndexesFunc describes the behavior when the
 // QueueIndexes method of the parent MockIndexEnqueuer instance is invoked.
 type IndexEnqueuerQueueIndexesFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)
-	hooks       []func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)
+	defaultHook func(context.Context, int, string, string, bool, bool) ([]shared.Index, error)
+	hooks       []func(context.Context, int, string, string, bool, bool) ([]shared.Index, error)
 	history     []IndexEnqueuerQueueIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]dbstore.Index, error) {
+func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]shared.Index, error) {
 	r0, r1 := m.QueueIndexesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.QueueIndexesFunc.appendCall(IndexEnqueuerQueueIndexesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -2289,7 +2290,7 @@ func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, 
 // SetDefaultHook sets function that is called when the QueueIndexes method
 // of the parent MockIndexEnqueuer instance is invoked and the hook queue is
 // empty.
-func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]shared.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -2297,7 +2298,7 @@ func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context
 // QueueIndexes method of the parent MockIndexEnqueuer instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]shared.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2305,20 +2306,20 @@ func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultReturn(r0 []shared.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]shared.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexEnqueuerQueueIndexesFunc) PushReturn(r0 []dbstore.Index, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) PushReturn(r0 []shared.Index, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]shared.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]shared.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2371,7 +2372,7 @@ type IndexEnqueuerQueueIndexesFuncCall struct {
 	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []dbstore.Index
+	Result0 []shared.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3446,7 +3447,7 @@ func NewMockPackageReferenceScanner() *MockPackageReferenceScanner {
 			},
 		},
 		NextFunc: &PackageReferenceScannerNextFunc{
-			defaultHook: func() (r0 shared.PackageReference, r1 bool, r2 error) {
+			defaultHook: func() (r0 shared1.PackageReference, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -3464,7 +3465,7 @@ func NewStrictMockPackageReferenceScanner() *MockPackageReferenceScanner {
 			},
 		},
 		NextFunc: &PackageReferenceScannerNextFunc{
-			defaultHook: func() (shared.PackageReference, bool, error) {
+			defaultHook: func() (shared1.PackageReference, bool, error) {
 				panic("unexpected invocation of MockPackageReferenceScanner.Next")
 			},
 		},
@@ -3587,15 +3588,15 @@ func (c PackageReferenceScannerCloseFuncCall) Results() []interface{} {
 // PackageReferenceScannerNextFunc describes the behavior when the Next
 // method of the parent MockPackageReferenceScanner instance is invoked.
 type PackageReferenceScannerNextFunc struct {
-	defaultHook func() (shared.PackageReference, bool, error)
-	hooks       []func() (shared.PackageReference, bool, error)
+	defaultHook func() (shared1.PackageReference, bool, error)
+	hooks       []func() (shared1.PackageReference, bool, error)
 	history     []PackageReferenceScannerNextFuncCall
 	mutex       sync.Mutex
 }
 
 // Next delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockPackageReferenceScanner) Next() (shared.PackageReference, bool, error) {
+func (m *MockPackageReferenceScanner) Next() (shared1.PackageReference, bool, error) {
 	r0, r1, r2 := m.NextFunc.nextHook()()
 	m.NextFunc.appendCall(PackageReferenceScannerNextFuncCall{r0, r1, r2})
 	return r0, r1, r2
@@ -3604,7 +3605,7 @@ func (m *MockPackageReferenceScanner) Next() (shared.PackageReference, bool, err
 // SetDefaultHook sets function that is called when the Next method of the
 // parent MockPackageReferenceScanner instance is invoked and the hook queue
 // is empty.
-func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared1.PackageReference, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -3612,7 +3613,7 @@ func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared.Pac
 // Next method of the parent MockPackageReferenceScanner instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared1.PackageReference, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3620,20 +3621,20 @@ func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared.PackageRe
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 shared.PackageReference, r1 bool, r2 error) {
-	f.SetDefaultHook(func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 shared1.PackageReference, r1 bool, r2 error) {
+	f.SetDefaultHook(func() (shared1.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PackageReferenceScannerNextFunc) PushReturn(r0 shared.PackageReference, r1 bool, r2 error) {
-	f.PushHook(func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) PushReturn(r0 shared1.PackageReference, r1 bool, r2 error) {
+	f.PushHook(func() (shared1.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *PackageReferenceScannerNextFunc) nextHook() func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) nextHook() func() (shared1.PackageReference, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3668,7 +3669,7 @@ func (f *PackageReferenceScannerNextFunc) History() []PackageReferenceScannerNex
 type PackageReferenceScannerNextFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.PackageReference
+	Result0 shared1.PackageReference
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool

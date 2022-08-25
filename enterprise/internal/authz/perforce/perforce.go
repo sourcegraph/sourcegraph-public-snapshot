@@ -12,6 +12,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -29,6 +30,8 @@ const cacheTTL = time.Hour
 
 // Provider implements authz.Provider for Perforce depot permissions.
 type Provider struct {
+	logger log.Logger
+
 	urn      string
 	codeHost *extsvc.CodeHost
 	depots   []extsvc.RepoID
@@ -60,9 +63,10 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(urn, host, user, password string, depots []extsvc.RepoID, db database.DB) *Provider {
+func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID, db database.DB) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
+		logger:             logger,
 		urn:                urn,
 		codeHost:           extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
 		depots:             depots,
@@ -175,11 +179,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	// Pull permissions from protects file.
 	perms := &authz.ExternalUserPermissions{}
 	if len(p.depots) == 0 {
-		err = errors.Wrap(scanProtects(rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
+		err = errors.Wrap(scanProtects(p.logger, rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
 	} else {
 		// SubRepoPermissions-enabled code path
 		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
-		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
+		err = errors.Wrap(scanProtects(p.logger, rc, fullRepoPermsScanner(p.logger, perms, p.depots)), "fullRepoPermsScanner")
 	}
 
 	// As per interface definition for this method, implementation should return
@@ -346,7 +350,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	defer func() { _ = rc.Close() }()
 
 	users := make(map[string]struct{})
-	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
+	if err := scanProtects(p.logger, rc, allUsersScanner(ctx, p, users)); err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
 

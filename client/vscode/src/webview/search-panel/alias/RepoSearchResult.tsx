@@ -7,7 +7,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SearchResultStyles as styles, LastSyncedIcon, ResultContainer } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 export interface RepoSearchResultProps {
@@ -36,9 +36,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
             <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
-                <button type="button" className="btn btn-text-link" onClick={() => openRepo(result)}>
+                <Button className="btn-text-link" onClick={() => openRepo(result)}>
                     {displayRepoName(getRepoMatchLabel(result))}
-                </button>
+                </Button>
             </span>
         </div>
     )
