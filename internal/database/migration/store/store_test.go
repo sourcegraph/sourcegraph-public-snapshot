@@ -97,7 +97,7 @@ func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string
 // the migration_logs table has an entry with the given initial version.
 func testViaMigrationLogs(t *testing.T, schemaName string, initialVersion int, expectedVersions []int) {
 	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
-		if err := setupGolangMigrateTest(ctx, store, schemaName, initialVersion); err != nil {
+		if err := setupMigrationLogsTest(ctx, store, schemaName, initialVersion); err != nil {
 			t.Fatalf("unexpected error preparing migration_logs tests: %s", err)
 		}
 	})
