@@ -11,25 +11,25 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
-var _ graphqlbackend.BatchSpecMountConnectionResolver = &batchSpecMountConnectionResolver{}
+var _ graphqlbackend.WorkspaceFileConnectionResolver = &workspaceFileConnectionResolver{}
 
-type batchSpecMountConnectionResolver struct {
+type workspaceFileConnectionResolver struct {
 	store *store.Store
 	opts  store.ListBatchSpecMountsOpts
 
 	// Cache results because they are used by multiple fields.
-	once   sync.Once
-	mounts []*btypes.BatchSpecMount
-	next   int64
-	err    error
+	once  sync.Once
+	files []*btypes.BatchSpecMount
+	next  int64
+	err   error
 }
 
-func (r *batchSpecMountConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *workspaceFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountBatchSpecMounts(ctx, r.opts)
 	return int32(count), err
 }
 
-func (r *batchSpecMountConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *workspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -40,29 +40,29 @@ func (r *batchSpecMountConnectionResolver) PageInfo(ctx context.Context) (*graph
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *batchSpecMountConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecMountResolver, error) {
+func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.WorkspaceFileResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) == 0 {
-		return []graphqlbackend.BatchSpecMountResolver{}, nil
+		return []graphqlbackend.WorkspaceFileResolver{}, nil
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecMountResolver, len(nodes))
+	resolvers := make([]graphqlbackend.WorkspaceFileResolver, len(nodes))
 	for i, node := range nodes {
-		resolvers[i] = &batchSpecMountResolver{
+		resolvers[i] = &workspaceFileResolver{
 			batchSpecRandID: r.opts.BatchSpecRandID,
-			mount:           node,
+			file:            node,
 		}
 	}
 	return resolvers, nil
 }
 
-func (r *batchSpecMountConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecMount, int64, error) {
+func (r *workspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecMount, int64, error) {
 	r.once.Do(func() {
-		r.mounts, r.next, r.err = r.store.ListBatchSpecMounts(ctx, r.opts)
+		r.files, r.next, r.err = r.store.ListBatchSpecMounts(ctx, r.opts)
 	})
-	return r.mounts, r.next, r.err
+	return r.files, r.next, r.err
 }

@@ -39,13 +39,13 @@ type HighlightArgs struct {
 	Format             string
 }
 
-type highlightedFileResolver struct {
+type HighlightedFileResolver struct {
 	aborted  bool
 	response *highlight.HighlightedCode
 }
 
-func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string {
+func (h *HighlightedFileResolver) Aborted() bool { return h.aborted }
+func (h *HighlightedFileResolver) HTML() string {
 	html, err := h.response.HTML()
 	if err != nil {
 		return ""
@@ -53,7 +53,7 @@ func (h *highlightedFileResolver) HTML() string {
 
 	return string(html)
 }
-func (h *highlightedFileResolver) LSIF() string {
+func (h *HighlightedFileResolver) LSIF() string {
 	if h.response == nil {
 		return "{}"
 	}
@@ -71,7 +71,7 @@ func (h *highlightedFileResolver) LSIF() string {
 
 	return lsif
 }
-func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
+func (h *HighlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
 	if h.response != nil && h.response.LSIF() != nil {
 		return h.response.LinesForRanges(args.Ranges)
 	}
@@ -79,9 +79,9 @@ func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.Li
 	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
 }
 
-func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
+func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*HighlightedFileResolver, error) {
 	var (
-		result          = &highlightedFileResolver{}
+		result          = &HighlightedFileResolver{}
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
