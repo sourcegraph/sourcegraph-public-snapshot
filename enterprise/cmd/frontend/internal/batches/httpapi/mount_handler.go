@@ -48,9 +48,7 @@ func NewMountHandler(
 		return handler
 	}
 
-	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
-	// visibility check with the remote code host (if enabled via site configuration).
-	//return authMiddleware(handler, db, operations.authMiddleware)
+	// 🚨 SECURITY: TODO
 	return handler
 }
 
