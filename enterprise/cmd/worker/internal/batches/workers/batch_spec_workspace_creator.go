@@ -64,13 +64,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
-		AllowTransformChanges: true,
-		AllowConditionalExec:  true,
-		// The global env is always mocked to be empty for executors, so we just
-		// want to throw a validation error here for now.
-		AllowArrayEnvironments: false,
-	})
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec))
 	if err != nil {
 		return err
 	}

@@ -168,8 +168,5 @@ func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, resu
 		Path:             path,
 	}
 
-	return batches.BuildChangesetSpecs(input, batches.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	})
+	return batches.BuildChangesetSpecs(input)
 }
