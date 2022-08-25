@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 #set -euo pipefail
 
 if [[ -z ${BUILD_OVERVIEW} ]]; then
-    echo "Build overview is empty. Not generating information
+    echo "Build overview is empty. Not generating information"
     exit 0
 fi
 
@@ -14,8 +14,8 @@ mkdir -p annotations
 file="./annotations/Build overview.md"
 
 echo ${BUILD_OVERVIEW} | jq -r '. | "Run type: `\(.RunType)`<br/>"' >> "$file"
-echo -e "Diff"
+echo -e "Diff" >> "$file"
 echo -e "\`\`\`<br/>" >> "$file"
-echo ${BUILD_OVERVIEW} | jq -r '. | "Diff: `\(.Diff)`<br/>"' >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r '.Diff' >> "$file"
 echo -e "\`\`\`<br/>" >> "$file"
-echo ${BUILD_OVERVIEW} | jq -r '. | "Message flags: `\(.MessageFlags)`<br/>"' >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`"'
