@@ -451,6 +451,8 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
+	// Forked until PR is merged upstream TODO @jhchabran
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
@@ -459,8 +461,6 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
-	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220823190616-afb3dd6ab55c
 )
 
 // Status unclear replace directives
