@@ -15,6 +15,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
+import { PrefetchableFile } from '../repo/blob/PrefetchableFile'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -55,6 +57,9 @@ interface FileProps extends ThemeProps {
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
+    const { commitID, repoName } = useTreeRootContext()
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSidebarFilePrefetch ?? false)
+
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.
@@ -109,7 +114,12 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             </TreeLayerRowContents>
                         )
                     ) : (
-                        <TreeLayerRowContentsLink
+                        <PrefetchableFile
+                            prefetch={prefetchFileEnabled}
+                            revision={commitID}
+                            repoName={repoName}
+                            filePath={props.entryInfo.path}
+                            as={TreeLayerRowContentsLink}
                             className="test-tree-file-link"
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
@@ -119,6 +129,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             // needed because of dynamic styling
                             style={offsetStyle}
                             tabIndex={-1}
+                            isSelected={props.isSelected}
                         >
                             <TreeLayerRowContentsText className="d-flex">
                                 <TreeRowIcon onClick={props.noopRowClick}>
@@ -131,7 +142,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 <TreeRowLabel className="test-file-decorable-name">{props.entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
-                        </TreeLayerRowContentsLink>
+                        </PrefetchableFile>
                     )}
                     {props.index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
