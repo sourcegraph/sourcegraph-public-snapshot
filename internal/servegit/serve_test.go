@@ -32,7 +32,7 @@ func TestReposHandler(t *testing.T) {
 		repos: []string{"project1", "project2"},
 	}, {
 		name:  "nested",
-		repos: []string{"project1", "project1/subproject", "project2", "dir/project3", "dir/project4.bare"},
+		repos: []string{"project1", "project2", "dir/project3", "dir/project4.bare"},
 	}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -47,65 +47,14 @@ func TestReposHandler(t *testing.T) {
 
 			var want []Repo
 			for _, name := range tc.repos {
-				want = append(want, Repo{Name: name, URI: path.Join("/repos", name)})
-			}
-			testReposHandler(t, h, want)
-		})
-
-		// Now do the same test, but we root it under a repo we serve. This is
-		// to test we properly serve up the root repo as something other than
-		// "."
-		t.Run("rooted-"+tc.name, func(t *testing.T) {
-			repos := []string{"project-root"}
-			for _, name := range tc.repos {
-				repos = append(repos, filepath.Join("project-root", name))
-			}
-
-			root := gitInitRepos(t, repos...)
-
-			// This is the difference to above, we point our root at the git repo
-			root = filepath.Join(root, "project-root")
-
-			h := (&Serve{
-				Info:  testLogger(t),
-				Debug: discardLogger,
-				Addr:  testAddress,
-				Root:  root,
-			}).handler()
-
-			// project-root is served from /repos, etc
-			want := []Repo{{Name: "project-root", URI: "/repos"}}
-			for _, name := range tc.repos {
-				want = append(want, Repo{Name: path.Join("project-root", name), URI: path.Join("/repos", name)})
-			}
-			testReposHandler(t, h, want)
-		})
-
-		// Ensure everything still works if root is a symlink
-		t.Run("rooted-"+tc.name, func(t *testing.T) {
-			root := gitInitRepos(t, tc.repos...)
-
-			// This is the difference, we create a symlink for root
-			{
-				tmp := t.TempDir()
-
-				symlink := filepath.Join(tmp, "symlink-root")
-				if err := os.Symlink(root, symlink); err != nil {
-					t.Fatal(err)
+				isBare := strings.HasSuffix(name, ".bare")
+				uri := path.Join("/repos", name)
+				clonePath := uri
+				if !isBare {
+					clonePath += "/.git"
 				}
-				root = symlink
-			}
+				want = append(want, Repo{Name: name, URI: uri, ClonePath: clonePath})
 
-			h := (&Serve{
-				Info:  testLogger(t),
-				Debug: discardLogger,
-				Addr:  testAddress,
-				Root:  root,
-			}).handler()
-
-			var want []Repo
-			for _, name := range tc.repos {
-				want = append(want, Repo{Name: name, URI: path.Join("/repos", name)})
 			}
 			testReposHandler(t, h, want)
 		})
@@ -173,6 +122,14 @@ func gitInitBare(t *testing.T, path string) {
 	}
 }
 
+func gitInit(t *testing.T, path string) {
+	cmd := exec.Command("git", "init")
+	cmd.Dir = path
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func gitInitRepos(t *testing.T, names ...string) string {
 	root := t.TempDir()
 	root = filepath.Join(root, "repos-root")
@@ -183,10 +140,11 @@ func gitInitRepos(t *testing.T, names ...string) string {
 			t.Fatal(err)
 		}
 
-		if !strings.HasSuffix(p, ".bare") {
-			p = filepath.Join(p, ".git")
+		if strings.HasSuffix(p, ".bare") {
+			gitInitBare(t, p)
+		} else {
+			gitInit(t, p)
 		}
-		gitInitBare(t, p)
 	}
 
 	return root

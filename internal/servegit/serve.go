@@ -60,8 +60,9 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 type Repo struct {
-	Name string
-	URI  string
+	Name      string
+	URI       string
+	ClonePath string
 }
 
 func (s *Serve) handler() http.Handler {
@@ -178,8 +179,8 @@ func (s *Serve) Repos() ([]Repo, error) {
 			return nil
 		}
 
-		// We recurse into bare repositories to find subprojects. Prevent
-		// recursing into .git
+		// Previously we recursed into bare repositories which is why this check was here.
+		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
 		if filepath.Base(path) == ".git" {
 			return filepath.SkipDir
 		}
@@ -204,20 +205,24 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 		name := filepath.ToSlash(subpath)
 		reposRootIsRepo = reposRootIsRepo || name == "."
-		repos = append(repos, Repo{
-			Name: name,
-			URI:  pathpkg.Join("/repos", name),
-		})
+		cloneURI := pathpkg.Join("/repos", name)
+		clonePath := cloneURI
 
-		// Check whether a repository is a bare repository or not.
-		//
-		// Bare repositories shouldn't have any further child
-		// repositories. Only regular git worktrees can have children.
-		if isBare {
-			return filepath.SkipDir
+		// Regular git repos won't clone without the full path to the .git directory.
+		if isGit {
+			clonePath += "/.git"
 		}
 
-		return nil
+		repos = append(repos, Repo{
+			Name:      name,
+			URI:       cloneURI,
+			ClonePath: clonePath,
+		})
+
+		// At this point we know the directory is either a git repo or a bare git repo,
+		// we don't need to recurse further to save time.
+		// TODO: Look into whether it is useful to support git submodules
+		return filepath.SkipDir
 	})
 
 	if err != nil {
