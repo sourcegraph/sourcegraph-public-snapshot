@@ -17,6 +17,15 @@ $spacers: (
     5: $spacer * 3,
 );
 
+// Sizes
+$sizes: (
+    25: 25%,
+    50: 50%,
+    75: 75%,
+    100: 100%,
+    auto: auto,
+);
+
 :root {
     --spacer: #{$spacer};
     --font-size-base: #{$font-size-base};

@@ -83,6 +83,8 @@ $enable-transitions: false;
 @import './collapse';
 @import './grid';
 @import './utilities';
+@import './screenreaders';
+@import './text';
 
 * {
     box-sizing: border-box;

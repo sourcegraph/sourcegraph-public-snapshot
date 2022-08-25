@@ -1,6 +1,6 @@
+// Utilies classes extracted from bootstrap library.
 $overflows: auto, hidden;
 $positions: static, relative, absolute, fixed, sticky;
-$emphasized-link-hover-darken-percentage: 15%;
 $displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex;
 
 :root {
@@ -300,32 +300,6 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
     }
 }
 
-// Screanreader
-
-.sr-only {
-    position: absolute;
-    width: 0.0625rem;
-    height: 0.0625rem;
-    padding: 0;
-    margin: -0.0625rem; // Fix for https://github.com/twbs/bootstrap/issues/25686
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-.sr-only-focusable {
-    &:active,
-    &:focus {
-        position: static;
-        width: auto;
-        height: auto;
-        overflow: visible;
-        clip: auto;
-        white-space: normal;
-    }
-}
-
 // Shadows
 
 .shadow {
@@ -466,118 +440,6 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
         // IE10 bugfix, see https://stackoverflow.com/questions/16947967/ie10-hover-pseudo-class-doesnt-work-without-background-color
         background-color: rgba(0, 0, 0, 0);
     }
-}
-
-// Text
-
-.text-monospace {
-    font-family: var(--code-font-family) !important;
-}
-
-// Alignment
-
-.text-justify {
-    text-align: justify !important;
-}
-
-.text-wrap {
-    white-space: normal !important;
-}
-
-.text-nowrap {
-    white-space: nowrap !important;
-}
-
-.text-truncate {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
-// Responsive alignment
-
-@each $breakpoint in map-keys($grid-breakpoints) {
-    @include media-breakpoint-up($breakpoint) {
-        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
-
-        .text#{$infix}-left {
-            text-align: left !important;
-        }
-        .text#{$infix}-right {
-            text-align: right !important;
-        }
-        .text#{$infix}-center {
-            text-align: center !important;
-        }
-    }
-}
-
-// Transformation
-
-.text-lowercase {
-    text-transform: lowercase !important;
-}
-
-.text-uppercase {
-    text-transform: uppercase !important;
-}
-
-.text-capitalize {
-    text-transform: capitalize !important;
-}
-
-// Weight and italics
-
-.font-weight-normal {
-    font-weight: var(--font-weight-normal) !important;
-}
-
-.font-weight-bold {
-    font-weight: var(--font-weight-bold) !important;
-}
-
-.font-italic {
-    font-style: italic !important;
-}
-
-// Contextual colors
-
-.text-white {
-    color: var(--white) !important;
-}
-
-@each $color, $value in $theme-colors {
-    .text-#{$color} {
-        color: $value !important;
-    }
-
-    @if $emphasized-link-hover-darken-percentage != 0 {
-        a.text-#{$color} {
-            &:hover,
-            &:focus {
-                color: darken($value, $emphasized-link-hover-darken-percentage) !important;
-            }
-        }
-    }
-}
-
-.text-body {
-    color: var(--body-color) !important;
-}
-
-.text-muted {
-    color: var(--text-muted) !important;
-}
-
-// Misc
-
-.text-decoration-none {
-    text-decoration: none !important;
-}
-
-.text-break {
-    word-break: break-word !important; // IE & < Edge 18
-    overflow-wrap: break-word !important;
 }
 
 // Visibility
