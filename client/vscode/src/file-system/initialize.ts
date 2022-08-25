@@ -32,7 +32,6 @@ export function initializeSourcegraphFileSystem({
             if (typeof uri === 'string') {
                 await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
             } else {
-                 
                 log.error(`extension.openRemoteFile(${uri}) argument is not a string`)
             }
         })

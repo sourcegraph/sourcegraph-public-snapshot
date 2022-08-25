@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { readConfiguration } from './readConfiguration'
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
+import { readConfiguration } from './readConfiguration'
 import { getInstanceVersionNumber } from '../backend/instanceVersion'
 
 export function accessTokenSetting(): string | undefined {
