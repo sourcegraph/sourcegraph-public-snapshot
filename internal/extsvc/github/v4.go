@@ -693,9 +693,8 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 				}
 				return nil, err
 			}
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	return &result.Repository.DefaultBranchRef.Target.History, nil
 }
@@ -779,9 +778,8 @@ func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*Relea
 				}
 				return nil, err
 			}
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	return &result.Repository.Releases, nil
