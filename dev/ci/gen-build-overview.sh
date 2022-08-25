@@ -14,8 +14,5 @@ mkdir -p annotations
 file="./annotations/Build overview.md"
 
 echo ${BUILD_OVERVIEW} | jq -r '. | "Run type: `\(.RunType)`<br/>"' >> "$file"
-echo -e "Diff" >> "$file"
-echo -e "\`\`\`<br/>" >> "$file"
-echo ${BUILD_OVERVIEW} | jq -r '.Diff' >> "$file"
-echo -e "\`\`\`<br/>" >> "$file"
-echo ${BUILD_OVERVIEW} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`"'
+echo ${BUILD_OVERVIEW} | jq -r '. | "Detected Diff changes: `\(.Diff)`<br/>"' >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`<br/>"' >> "$file"
