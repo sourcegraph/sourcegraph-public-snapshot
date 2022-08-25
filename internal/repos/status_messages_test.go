@@ -82,14 +82,14 @@ func TestStatusMessages(t *testing.T) {
 		err       string
 	}{
 		{
-			name:            "all cloned",
+			name:            "site-admin: all cloned",
 			gitserverCloned: []string{"foobar"},
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			res:             nil,
 		},
 		{
-			name:            "nothing cloned",
+			name:            "site-admin: one repository not cloned",
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{},
@@ -99,13 +99,30 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
+						Message: "1 repository cloning...",
 					},
 				},
 			},
 		},
 		{
-			name:            "subset cloned",
+			name:            "site-admin: multiple repositories not cloned",
+			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:            admin,
+			gitserverCloned: []string{},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					Cloning: &CloningProgress{
+						Message: "2 repositories cloning...",
+					},
+				},
+			},
+		},
+		{
+			name:            "site-admin: subset cloned",
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar"},
@@ -116,16 +133,17 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
+						Message: "1 repository cloning...",
 					},
 				},
 			},
 		},
 		{
-			name:   "non admin users should only count their own non cloned repos",
+			name:   "non-admins: only count their own non cloned repos",
 			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": userService,
+				"barfoo": siteLevelService,
 			},
 			user: nonAdmin,
 			res: []StatusMessage{
@@ -137,14 +155,14 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:            "more cloned than stored",
+			name:            "site-admin: more cloned than stored",
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar", "barfoo"},
 			res:             nil,
 		},
 		{
-			name:            "cloned different than stored",
+			name:            "site-admin: cloned different than stored",
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"one", "two", "three"},
@@ -155,13 +173,13 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "Some repositories cloning...",
+						Message: "2 repositories cloning...",
 					},
 				},
 			},
 		},
 		{
-			name:             "one repo failed to sync",
+			name:             "site-admin: one repo failed to sync",
 			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:             admin,
 			gitserverCloned:  []string{"foobar", "barfoo"},
@@ -173,13 +191,13 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "Some repositories could not be synced",
+						Message: "1 repository could not be synced",
 					},
 				},
 			},
 		},
 		{
-			name:             "two repos failed to sync",
+			name:             "site-admin: two repos failed to sync",
 			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:             admin,
 			gitserverCloned:  []string{"foobar", "barfoo"},
@@ -191,7 +209,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "Some repositories could not be synced",
+						Message: "2 repositories could not be synced",
 					},
 				},
 			},
@@ -276,11 +294,6 @@ func TestStatusMessages(t *testing.T) {
 				})
 				require.NoError(t, err)
 			}
-			t.Cleanup(func() {
-				q := sqlf.Sprintf(`DELETE FROM gitserver_repos`)
-				_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-				require.NoError(t, err)
-			})
 
 			// Set up ownership of repos
 			if tc.repoOwner != nil {

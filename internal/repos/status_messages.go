@@ -30,6 +30,10 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
+	// Return early since we don't have any affiliated external services
+	if len(externalServiceSyncErrors) == 0 {
+		return messages, nil
+	}
 
 	extsvcIDs := make([]int64, 0, len(externalServiceSyncErrors))
 
@@ -46,47 +50,72 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 		}
 	}
 
-	// Return early since the user doesn't have any affiliated external services
-	if len(extsvcIDs) == 0 {
+	// If the user is not a site-admin we can't rely on the stats table for
+	// counts and need to query the repo/gitserver_repos tables. But since the
+	// COUNTs aren't cheap, we filter down and use limit=1 to check whether >=1
+	// repos with the given parameters exist.
+	if !u.SiteAdmin {
+		opts := database.ReposListOptions{
+			NoCloned:           true,
+			ExternalServiceIDs: extsvcIDs,
+			LimitOffset: &database.LimitOffset{
+				Limit: 1,
+			},
+		}
+		notCloned, err := db.Repos().ListMinimalRepos(ctx, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "listing not-cloned repos")
+		}
+		if len(notCloned) > 0 {
+			messages = append(messages, StatusMessage{
+				Cloning: &CloningProgress{
+					Message: "Some repositories cloning...",
+				},
+			})
+		}
+
+		// Look for any repository that we could not sync
+		opts = database.ReposListOptions{
+			FailedFetch:        true,
+			ExternalServiceIDs: extsvcIDs,
+			LimitOffset: &database.LimitOffset{
+				Limit: 1,
+			},
+		}
+		failedSync, err := db.Repos().ListMinimalRepos(ctx, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "counting repo sync failures")
+		}
+		if len(failedSync) > 0 {
+			messages = append(messages, StatusMessage{
+				SyncError: &SyncError{
+					Message: "Some repositories could not be synced",
+				},
+			})
+		}
 		return messages, nil
 	}
 
-	// Look for any repository that is not yet been cloned
-	opts := database.ReposListOptions{
-		NoCloned:           true,
-		ExternalServiceIDs: extsvcIDs,
-		LimitOffset: &database.LimitOffset{
-			Limit: 1,
-		},
-	}
-	notCloned, err := db.Repos().ListMinimalRepos(ctx, opts)
+	// If the user is a site-admin we assume they can see all repositories
+	// (since authz was only enforced for admins in the old sourcegraph-dot-com
+	// Cloud v1 model).
+	stats, err := db.RepoStatistics().GetRepoStatistics(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "listing not-cloned repos")
+		return nil, errors.Wrap(err, "loading repo statistics")
 	}
-	if len(notCloned) > 0 {
+
+	if uncloned := stats.NotCloned + stats.Cloning; uncloned > 0 {
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s cloning...", len(notCloned), pluralize(len(notCloned), "repository", "repositories")),
+				Message: fmt.Sprintf("%d %s cloning...", uncloned, pluralize(uncloned, "repository", "repositories")),
 			},
 		})
 	}
 
-	// Look for any repository that we could not sync
-	opts = database.ReposListOptions{
-		FailedFetch:        true,
-		ExternalServiceIDs: extsvcIDs,
-		LimitOffset: &database.LimitOffset{
-			Limit: 1,
-		},
-	}
-	failedSync, err := db.Repos().ListMinimalRepos(ctx, opts)
-	if err != nil {
-		return nil, errors.Wrap(err, "counting repo sync failures")
-	}
-	if len(failedSync) > 0 {
+	if stats.FailedFetch > 0 {
 		messages = append(messages, StatusMessage{
 			SyncError: &SyncError{
-				Message: fmt.Sprintf("%d %s could not be synced", len(failedSync), pluralize(len(failedSync), "repository", "repositories")),
+				Message: fmt.Sprintf("%d %s could not be synced", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
 			},
 		})
 	}
