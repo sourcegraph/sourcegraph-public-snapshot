@@ -13,8 +13,9 @@ mkdir -p annotations
 
 file="./annotations/Build overview.md"
 
-echo -e "Run Type: \`$( echo ${BUILD_OVERVIEW} | jq '.RunType' )\`<br/>" >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r '. | "Run type: `\(.RunType)`<br/>"' >> "$file"
 echo -e "Diff"
 echo -e "\`\`\`<br/>" >> "$file"
-echo -e "$(echo ${BUILD_OVERVIEW} | jq '.Diff' )<br/>" >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r '. | "Diff: `\(.Diff)`<br/>"' >> "$file"
 echo -e "\`\`\`<br/>" >> "$file"
+echo ${BUILD_OVERVIEW} | jq -r '. | "Message flags: `\(.MessageFlags)`<br/>"' >> "$file"

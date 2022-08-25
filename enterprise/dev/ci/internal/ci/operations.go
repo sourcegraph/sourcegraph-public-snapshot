@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
