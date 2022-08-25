@@ -6376,9 +6376,25 @@ type AnalyticsCodeIntelRepositoryResult {
     """
     name: String!
     """
+    Language
+    """
+    language: String!
+    """
+    Event kind
+    """
+    kind: String!
+    """
+    Event precision (either "search-based" or "precise")
+    """
+    precision: String!
+    """
     Event count
     """
     events: Float!
+    """
+    Has precise
+    """
+    hasPrecise: Boolean!
 }
 
 """

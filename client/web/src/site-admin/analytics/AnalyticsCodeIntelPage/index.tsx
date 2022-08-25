@@ -1,7 +1,7 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { startCase } from 'lodash'
+import { groupBy, startCase, sumBy } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -48,6 +48,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsCodeIntel')
     }, [])
+
+    type Kind = 'inApp' | 'codeHost' | 'crossRepo' | 'precise'
+
+    const [kindToMinPerItem, setKindToMinPerItem] = useState<Record<Kind, number>>({
+        inApp: 0.5,
+        codeHost: 1.5,
+        crossRepo: 3,
+        precise: 1,
+    })
+
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
@@ -132,7 +142,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
         ]
 
-        const calculatorProps = {
+        const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
             page: 'CodeIntel',
             label: 'Intel events',
             dateRange: dateRange.value,
@@ -143,28 +153,32 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             items: [
                 {
                     label: 'In app code navigation',
-                    minPerItem: 0.5,
+                    minPerItem: kindToMinPerItem.inApp,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, inApp: minPerItem })),
                     value: inAppEvents.summary.totalCount,
                     description:
                         'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
-                    minPerItem: 1.5,
+                    minPerItem: kindToMinPerItem.codeHost,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
                     value: codeHostEvents.summary.totalCount,
                     description:
                         'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
-                    minPerItem: 3,
+                    minPerItem: kindToMinPerItem.crossRepo,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
                 {
                     label: 'Precise code intel*',
-                    minPerItem: 1,
+                    minPerItem: kindToMinPerItem.precise,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, precise: minPerItem })),
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
@@ -173,7 +187,15 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         }
 
         return [stats, legends, calculatorProps]
-    }, [data, dateRange.value, aggregation.selected])
+    }, [
+        data,
+        dateRange.value,
+        aggregation.selected,
+        kindToMinPerItem.codeHost,
+        kindToMinPerItem.crossRepo,
+        kindToMinPerItem.inApp,
+        kindToMinPerItem.precise,
+    ])
 
     if (error) {
         throw error
@@ -186,34 +208,57 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     const repos = data?.site.analytics.repos
     const groupingLabel = startCase(grouping.value.toLowerCase())
 
-    const topRepos: {
-        name: string
-        events: number
-        hoursSaved: number
-        preciseEnabled: boolean
-        preciseNavigation: string
-    }[] = [
-        {
-            name: 'github.com/gorilla/mux',
-            events: 10000,
-            hoursSaved: 10,
-            preciseEnabled: true,
-            preciseNavigation: '80% Precise coverage for Go, set up precise navigation for Python',
-        },
-        {
-            name: 'github.com/sourcegraph/sourcegraph',
-            events: 2000,
-            hoursSaved: 5,
-            preciseEnabled: false,
-            preciseNavigation: 'Set up precise navigation for Java',
-        },
-    ]
-
     const preciseFraction = data
         ? data.site.analytics.codeIntel.preciseEvents.summary.totalCount /
           (data.site.analytics.codeIntel.preciseEvents.summary.totalCount +
               data.site.analytics.codeIntel.searchBasedEvents.summary.totalCount)
         : undefined
+
+    interface TopRepo {
+        repoName: string
+        events: number
+        hoursSaved: number
+        preciseEnabled: boolean
+        preciseNavigation: JSX.Element
+    }
+
+    const topRepos: TopRepo[] | undefined = (() => {
+        const allRows = data?.site.analytics.codeIntelTopRepositories
+        if (!allRows) {
+            return undefined
+        }
+
+        return Object.entries(groupBy(allRows, row => row.name)).map(([name, rows]) => ({
+            repoName: name,
+            events: sumBy(rows, row => row.events),
+            hoursSaved: sumBy(
+                rows,
+                row => (((kindToMinPerItem[row.kind as Kind] as number | undefined) ?? 0) * row.events) / 60
+            ),
+            preciseEnabled: rows[0]?.hasPrecise ?? false,
+            preciseNavigation: ((): JSX.Element => {
+                const items = Object.entries(groupBy(rows, row => row.language)).map(([lang, rows]) => {
+                    const searchBased = sumBy(
+                        rows.filter(row => row.precision === 'search-based'),
+                        row => row.events
+                    )
+                    const precise = sumBy(
+                        rows.filter(row => row.precision === 'precise'),
+                        row => row.events
+                    )
+                    const total = searchBased + precise
+
+                    return (
+                        <div key={lang}>
+                            <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
+                            <strong>{lang}</strong>
+                        </div>
+                    )
+                })
+                return <>{items}</>
+            })(),
+        }))
+    })()
 
     return (
         <>
@@ -303,20 +348,22 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         </div>
                     )}
                     <H4 className="my-3">Top repositories</H4>
-                    {data && (
+                    {topRepos && (
                         <div className={styles.repos}>
                             <div className="text-muted text-nowrap">{/* Repository */}</div>
                             <div className="text-center text-muted text-nowrap">Events</div>
                             <div className="text-center text-muted text-nowrap">Hours saved</div>
                             <div className="text-center text-muted text-nowrap">Precise enabled</div>
                             <div className="text-muted text-nowrap">Precise navigation</div>
-                            {data.site.analytics.codeIntelTopRepositories.map((repo, index) => (
+                            {topRepos.map((repo, index) => (
                                 <React.Fragment key={index}>
-                                    <td className="text-muted">{repo.name}</td>
+                                    <td className="text-muted">{repo.repoName}</td>
                                     <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
-                                    <td className="text-center font-weight-bold">TODO</td>
-                                    <td className="text-center font-weight-bold">TODO</td>
-                                    <td>TODO</td>
+                                    <td className="text-center font-weight-bold">{formatNumber(repo.hoursSaved)}</td>
+                                    <td className="text-center font-weight-bold">
+                                        {repo.preciseEnabled ? 'Yes' : 'No'}
+                                    </td>
+                                    <td>{repo.preciseNavigation}</td>
                                 </React.Fragment>
                             ))}
                         </div>

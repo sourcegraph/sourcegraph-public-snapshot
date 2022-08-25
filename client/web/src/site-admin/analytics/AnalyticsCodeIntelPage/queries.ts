@@ -62,7 +62,11 @@ export const CODEINTEL_STATISTICS = gql`
                 }
                 codeIntelTopRepositories(dateRange: $dateRange) {
                     name
+                    language
+                    kind
+                    precision
                     events
+                    hasPrecise
                 }
             }
         }
