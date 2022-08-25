@@ -1978,7 +1978,7 @@ type SiteConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
-	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might cause memory issues for the frontend
+	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
