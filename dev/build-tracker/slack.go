@@ -143,7 +143,7 @@ func commitLink(msg, commit string) string {
 
 func slackMention(teammate *team.Teammate) string {
 	if teammate.SlackID == "" {
-		return fmt.Sprintf("%s (%s) - We could not locate your Slack ID. Please check that your information in team.yml of the Handbook is correct", teammate.Name, teammate.Email)
+		return fmt.Sprintf("%s (%s) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", teammate.Name, teammate.Email)
 	}
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
