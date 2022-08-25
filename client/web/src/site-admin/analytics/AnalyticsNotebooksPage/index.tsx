@@ -128,7 +128,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Notebooks</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Notebooks</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

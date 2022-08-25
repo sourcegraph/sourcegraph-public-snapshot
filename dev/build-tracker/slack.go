@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,22 +44,14 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
-	if build.Author == nil {
-		return nil, errors.New("nil Author")
-	}
 	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
-func (c *NotificationClient) send(build *Build) error {
+func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
-	logger.Debug("creating slack json", log.Int("buildNumber", build.number()))
+	logger.Debug("creating slack json")
 
-	teammate, err := c.getTeammateForBuild(build)
-	if err != nil {
-		logger.Error("failed to find teammate", log.Error(err))
-	}
-
-	blocks, err := createMessageBlocks(logger, teammate, build)
+	blocks, err := c.createMessageBlocks(build)
 	if err != nil {
 		return err
 	}
@@ -148,23 +141,15 @@ func commitLink(msg, commit string) string {
 	return fmt.Sprintf("<%s|%s>", sgURL, msg)
 }
 
-func slackMention(teammate *team.Teammate, build *Build) string {
-	if teammate == nil {
-		authorName := build.authorName()
-		if authorName == "" {
-			authorName = "N/A"
-		}
-		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", authorName)
-	}
-
+func slackMention(teammate *team.Teammate) string {
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
-func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
+func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
-	failedSection := fmt.Sprintf("%s\n\n", commitLink(msg, build.commit()))
-	failedSection += "*Failed jobs*\n\n"
+	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
+	failedSection += "*Failed jobs:*\n\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
 			failedSection += fmt.Sprintf("• %s", *j.Name)
@@ -175,7 +160,18 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		}
 	}
 
-	author := slackMention(teammate, build)
+	c.logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
+	teammate, err := c.getTeammateForBuild(build)
+	var author string
+	if err != nil {
+		c.logger.Error("failed to find teammate", log.Error(err))
+		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
+		// so we set author here to that msg, so that the message can be conveyed to the person in slack
+		author = err.Error()
+	} else {
+		author = slackMention(teammate)
+	}
+
 	grafanaURL, err := grafanaURLFor(build)
 	if err != nil {
 		return nil, err
@@ -183,8 +179,9 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", build.number()), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(build), true, false),
 		),
+		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
@@ -193,28 +190,6 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			},
 			nil,
 		),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
-		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
-		slack.NewSectionBlock(
-			&slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: `:books: *More information on flakes*
-• *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>*
-• *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>*
-
-_:sourcegraph: disable flakes on sight and save your fellow teammate some time!_`,
-			},
-			nil,
-			nil,
-		),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
 		slack.NewActionBlock(
 			"",
 			[]slack.BlockElement{
@@ -232,11 +207,40 @@ _:sourcegraph: disable flakes on sight and save your fellow teammate some time!_
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
 					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
 				},
 			}...,
+		),
+
+		&slack.DividerBlock{Type: slack.MBTDivider},
+
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{
+				Type: slack.MarkdownType,
+				Text: `:books: *More information on flakes*
+• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>
+• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>
+
+_Disable flakes on sight and save your fellow teammate some time!_`,
+			},
+			nil,
+			nil,
 		),
 	}
 
 	return blocks, nil
+}
+
+func generateSlackHeader(build *Build) string {
+	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
+	switch build.ConsecutiveFailure {
+	case 0, 1: // no suffix
+	case 2:
+		header += " (2nd failure)"
+	case 3:
+		header += " (:exclamation: 3rd failure)"
+	default:
+		header += fmt.Sprintf(" (:bangbang: %dth failure)", build.ConsecutiveFailure)
+	}
+	return header
 }

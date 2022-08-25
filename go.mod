@@ -35,7 +35,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.3.3
+	github.com/derision-test/go-mockgen v1.3.4
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -69,7 +69,6 @@ require (
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
-	github.com/google/zoekt v0.0.0-20211108135652-f8e8ada171c7
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/handlers v1.5.1
@@ -79,7 +78,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20220203092117-edae16afa87b
-	github.com/grafana/regexp v0.0.0-20220304095617-2e8d9baf4ac2
+	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -93,6 +92,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
@@ -141,14 +141,13 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20220707160925-6a936691c838
+	github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
 	github.com/stretchr/testify v1.8.0
 	github.com/stripe/stripe-go v70.15.0+incompatible
-	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
 	github.com/tidwall/gjson v1.14.0
@@ -156,7 +155,7 @@ require (
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
-	github.com/uber/jaeger-lib v2.4.1+incompatible
+	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/urfave/cli/v2 v2.6.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
@@ -165,21 +164,21 @@ require (
 	go.opentelemetry.io/collector v0.56.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 	go.opentelemetry.io/contrib/propagators/ot v1.7.0
-	go.opentelemetry.io/otel v1.8.0
+	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.8.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.8.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.8.0
-	go.opentelemetry.io/otel/sdk v1.8.0
-	go.opentelemetry.io/otel/trace v1.8.0
+	go.opentelemetry.io/otel/sdk v1.9.0
+	go.opentelemetry.io/otel/trace v1.9.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.22.0
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8
+	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	gonum.org/v1/gonum v0.11.0
@@ -200,7 +199,12 @@ require (
 
 require github.com/hmarr/codeowners v0.4.0
 
-require github.com/stretchr/objx v0.4.0 // indirect
+require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+
+require (
+	github.com/sourcegraph/zoekt v0.0.0-20220816140334-c9182fcd2a2e
+	github.com/stretchr/objx v0.4.0 // indirect
+)
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
@@ -427,8 +431,6 @@ require (
 // These entries indicate permanent replace directives due to significant changes from upstream
 // or intentional forks.
 replace (
-	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220719111241-09ac1ff91e8c
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

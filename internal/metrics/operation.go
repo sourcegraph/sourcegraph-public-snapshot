@@ -11,9 +11,10 @@ import (
 // It is modeled after the RED method, which defines three characteristics for
 // monitoring services:
 //
-//  - number (rate) of requests per second
-//  - number of errors/failed operations
-//  - amount of time per operation
+//   - number (rate) of requests per second
+//   - number of errors/failed operations
+//   - amount of time per operation
+//
 // https://thenewstack.io/monitoring-microservices-red-method/.
 type REDMetrics struct {
 	Count    *prometheus.CounterVec   // How many things were processed?
@@ -29,6 +30,7 @@ func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
 
 	if err != nil && *err != nil {
 		m.Errors.WithLabelValues(lvals...).Inc()
+		m.Count.WithLabelValues(lvals...).Add(0)
 	} else {
 		m.Duration.WithLabelValues(lvals...).Observe(secs)
 		m.Count.WithLabelValues(lvals...).Add(count)

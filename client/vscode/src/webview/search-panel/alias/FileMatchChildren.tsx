@@ -10,7 +10,6 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
-    isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import {
@@ -147,14 +146,6 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
-    // fetch (instead of the entire file.)
-    const optimizeHighlighting =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
-
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
@@ -168,14 +159,12 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? grouped.map(
-                              (group): IHighlightLineRange => ({
-                                  startLine: group.startLine,
-                                  endLine: group.endLine,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    ranges: grouped.map(
+                        (group): IHighlightLineRange => ({
+                            startLine: group.startLine,
+                            endLine: group.endLine,
+                        })
+                    ),
                 },
                 false
             ).pipe(
@@ -185,13 +174,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: Date.now() - startTime },
                         { durationMs: Date.now() - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
+        [result, fetchHighlightedFileLineRanges, grouped, telemetryService]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {

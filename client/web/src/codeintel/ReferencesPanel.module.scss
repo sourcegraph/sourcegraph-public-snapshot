@@ -1,4 +1,5 @@
 $filter-input-height: 2.5rem;
+
 .filter {
     height: $filter-input-height;
     padding-left: 1rem;
@@ -17,7 +18,7 @@ $filter-input-height: 2.5rem;
     }
 
     input::placeholder {
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
         color: var(--gray-07);
     }
 
@@ -32,7 +33,7 @@ $filter-input-height: 2.5rem;
     }
 }
 
-$group-header-font-size: 0.75rem;
+$group-header-font-size: 0.875rem;
 $group-divider-height: 0.25rem;
 
 .repo-location-group {
@@ -161,12 +162,14 @@ $group-divider-height: 0.25rem;
         overflow: scroll;
         -ms-overflow-style: none;
     }
+
     ul::-webkit-scrollbar {
         display: none;
     }
 }
 
 $card-header-height: 1.5rem;
+
 .card-header {
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;

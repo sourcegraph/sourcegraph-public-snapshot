@@ -24,7 +24,6 @@ import (
 // modified when inserting or updating a changeset spec.
 var changesetSpecInsertColumns = []string{
 	"rand_id",
-	"spec",
 	"batch_spec_id",
 	"repo_id",
 	"user_id",
@@ -35,12 +34,18 @@ var changesetSpecInsertColumns = []string{
 	"updated_at",
 	"fork_namespace",
 
-	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
-	// contain normalized data from `spec` and are used for JOINs and WHERE
-	// conditions.
 	"external_id",
 	"head_ref",
 	"title",
+	"base_rev",
+	"base_ref",
+	"body",
+	"published",
+	"diff",
+	"commit_message",
+	"commit_author_name",
+	"commit_author_email",
+	"type",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -48,7 +53,6 @@ var changesetSpecInsertColumns = []string{
 var changesetSpecColumns = SQLColumns{
 	"changeset_specs.id",
 	"changeset_specs.rand_id",
-	"changeset_specs.spec",
 	"changeset_specs.batch_spec_id",
 	"changeset_specs.repo_id",
 	"changeset_specs.user_id",
@@ -58,6 +62,18 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
 	"changeset_specs.fork_namespace",
+	"changeset_specs.external_id",
+	"changeset_specs.head_ref",
+	"changeset_specs.title",
+	"changeset_specs.base_rev",
+	"changeset_specs.base_ref",
+	"changeset_specs.body",
+	"changeset_specs.published",
+	"changeset_specs.diff",
+	"changeset_specs.commit_message",
+	"changeset_specs.commit_author_name",
+	"changeset_specs.commit_author_email",
+	"changeset_specs.type",
 }
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
@@ -69,11 +85,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 
 	inserter := func(inserter *batch.Inserter) error {
 		for _, c := range cs {
-			spec, err := jsonbColumn(c.Spec)
-			if err != nil {
-				return err
-			}
-
 			if c.CreatedAt.IsZero() {
 				c.CreatedAt = s.now()
 			}
@@ -82,31 +93,22 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.UpdatedAt = c.CreatedAt
 			}
 
-			var externalID, headRef, title *string
-			if c.Spec != nil {
-				if c.Spec.ExternalID != "" {
-					externalID = &c.Spec.ExternalID
-				}
-				if c.Spec.HeadRef != "" {
-					headRef = &c.Spec.HeadRef
-				}
-				if c.Spec.Title != "" {
-					title = &c.Spec.Title
-				}
-			}
-
 			if c.RandID == "" {
 				if c.RandID, err = RandomID(); err != nil {
 					return errors.Wrap(err, "creating RandID failed")
 				}
 			}
 
+			published, err := json.Marshal(c.Published)
+			if err != nil {
+				return err
+			}
+
 			if err := inserter.Insert(
 				ctx,
 				c.RandID,
-				spec,
 				nullInt64Column(c.BatchSpecID),
-				c.RepoID,
+				c.BaseRepoID,
 				nullInt32Column(c.UserID),
 				c.DiffStatAdded,
 				c.DiffStatChanged,
@@ -114,9 +116,18 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.CreatedAt,
 				c.UpdatedAt,
 				c.ForkNamespace,
-				&dbutil.NullString{S: externalID},
-				&dbutil.NullString{S: headRef},
-				&dbutil.NullString{S: title},
+				dbutil.NewNullString(c.ExternalID),
+				dbutil.NewNullString(c.HeadRef),
+				dbutil.NewNullString(c.Title),
+				dbutil.NewNullString(c.BaseRev),
+				dbutil.NewNullString(c.BaseRef),
+				dbutil.NewNullString(c.Body),
+				published,
+				c.Diff,
+				dbutil.NewNullString(c.CommitMessage),
+				dbutil.NewNullString(c.CommitAuthorName),
+				dbutil.NewNullString(c.CommitAuthorEmail),
+				c.Type,
 			); err != nil {
 				return err
 			}
@@ -526,14 +537,13 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 }
 
 func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
-	var spec json.RawMessage
-
+	var published []byte
+	var typ string
 	err := s.Scan(
 		&c.ID,
 		&c.RandID,
-		&spec,
 		&dbutil.NullInt64{N: &c.BatchSpecID},
-		&c.RepoID,
+		&c.BaseRepoID,
 		&dbutil.NullInt32{N: &c.UserID},
 		&c.DiffStatAdded,
 		&c.DiffStatChanged,
@@ -541,15 +551,27 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&c.ForkNamespace,
+		&dbutil.NullString{S: &c.ExternalID},
+		&dbutil.NullString{S: &c.HeadRef},
+		&dbutil.NullString{S: &c.Title},
+		&dbutil.NullString{S: &c.BaseRev},
+		&dbutil.NullString{S: &c.BaseRef},
+		&dbutil.NullString{S: &c.Body},
+		&published,
+		&c.Diff,
+		&dbutil.NullString{S: &c.CommitMessage},
+		&dbutil.NullString{S: &c.CommitAuthorName},
+		&dbutil.NullString{S: &c.CommitAuthorEmail},
+		&typ,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.Spec = new(batcheslib.ChangesetSpec)
-	if err = json.Unmarshal(spec, c.Spec); err != nil {
-		return errors.Wrap(err, "scanChangesetSpec: failed to unmarshal spec")
+	c.Type = btypes.ChangesetSpecType(typ)
+
+	if err := json.Unmarshal(published, &c.Published); err != nil {
+		return err
 	}
 
 	return nil

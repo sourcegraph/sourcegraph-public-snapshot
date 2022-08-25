@@ -9,7 +9,8 @@
 
 > NOTE: This document is a work-in-progress.
 
-Telemetry describes the logging of user events, such as a page view or search. Telemetry data is collected by each Sourcegraph instance and is not sent to Sourcegraph.com (except in aggregate form as documented in "[Pings](../../admin/pings.md)").
+Telemetry describes the logging of user events, such as a page view or search. Telemetry data is collected by each Sourcegraph instance and is not sent to Sourcegraph.com (except in aggregate form as documented in "[Pings](../../admin/pings.md)"). Some select managed instances enable
+event level (non-aggregated) [telemetry](./data-usage-pipeline.md).
 
 ## Action telemetry
 

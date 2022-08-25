@@ -2,6 +2,7 @@
 package types
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -532,6 +533,13 @@ func ParseCloneStatus(s string) CloneStatus {
 	}
 }
 
+// ParseCloneStatusFromGraphQL converts the raw value of the GraphQL enum
+// CloneStatus into the corresponding CloneStatus defined here. If the GraphQL
+// value can't be matched to a CloneStatus, CloneStatusUnknown is returned.
+func ParseCloneStatusFromGraphQL(s string) CloneStatus {
+	return ParseCloneStatus(strings.ToLower(s))
+}
+
 // GitserverRepo  represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
@@ -554,7 +562,7 @@ type ExternalService struct {
 	ID              int64
 	Kind            string
 	DisplayName     string
-	Config          string
+	Config          *extsvc.EncryptableConfig
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       time.Time
@@ -605,9 +613,9 @@ func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && 
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
-func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
 	if e.ID != n.ID {
-		return false
+		return false, nil
 	}
 
 	if !strings.EqualFold(e.Kind, n.Kind) {
@@ -618,8 +626,18 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DisplayName, modified = n.DisplayName, true
 	}
 
-	if e.Config != n.Config {
-		e.Config, modified = n.Config, true
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	nConfig, err := n.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+	if eConfig != nConfig {
+		e.Config.Set(nConfig)
+		modified = true
 	}
 
 	if !e.UpdatedAt.Equal(n.UpdatedAt) {
@@ -630,12 +648,12 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
-	return modified
+	return modified, nil
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg any, _ error) {
-	return extsvc.ParseConfig(e.Kind, e.Config)
+func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) {
+	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
 }
 
 // Clone returns a clone of the given external service.
@@ -662,12 +680,17 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService() api.ExternalService {
+func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
+	rawConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return api.ExternalService{}, err
+	}
+
 	return api.ExternalService{
 		ID:              e.ID,
 		Kind:            e.Kind,
 		DisplayName:     e.DisplayName,
-		Config:          e.Config,
+		Config:          rawConfig,
 		CreatedAt:       e.CreatedAt,
 		UpdatedAt:       e.UpdatedAt,
 		DeletedAt:       e.DeletedAt,
@@ -677,7 +700,7 @@ func (e *ExternalService) ToAPIService() api.ExternalService {
 		NamespaceOrgID:  e.NamespaceOrgID,
 		Unrestricted:    e.Unrestricted,
 		CloudDefault:    e.CloudDefault,
-	}
+	}, nil
 }
 
 // ExternalServices is a utility type with convenience methods for operating on
@@ -1187,14 +1210,6 @@ type SiteUsageSummary struct {
 	IntegrationUniquesMonth int32
 	IntegrationUniquesWeek  int32
 	IntegrationUniquesDay   int32
-	ManageUniquesMonth      int32
-	CodeUniquesMonth        int32
-	VerifyUniquesMonth      int32
-	MonitorUniquesMonth     int32
-	ManageUniquesWeek       int32
-	CodeUniquesWeek         int32
-	VerifyUniquesWeek       int32
-	MonitorUniquesWeek      int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and

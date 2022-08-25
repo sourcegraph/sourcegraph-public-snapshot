@@ -13,17 +13,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
-	sglog "github.com/sourcegraph/log"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 
-	sentrylib "github.com/getsentry/sentry-go"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -58,6 +58,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,7 +138,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, sglog.NewSentrySinkWith(
+		sglog.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	hc := &check.HealthChecker{Checks: []check.Check{
@@ -277,6 +282,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
+	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
@@ -348,7 +354,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
-		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewGitHubAppSetupHandler,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

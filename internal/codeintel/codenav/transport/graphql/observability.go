@@ -22,10 +22,12 @@ type operations struct {
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
+
+	getGitBlobLSIFDataResolver *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_symbols_transport_graphql",
 		metrics.WithLabels("op"),
@@ -36,7 +38,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.codenav.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
@@ -50,6 +52,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
+
+		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
 	}
 }
 

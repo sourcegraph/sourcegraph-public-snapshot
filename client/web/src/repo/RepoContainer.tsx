@@ -59,6 +59,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
+import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -124,6 +125,7 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -274,6 +276,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         }, [repoOrError, resolvedRevisionOrError, coreWorkflowImprovementsEnabled, props.telemetryService])
     )
 
+    const { extensionsController } = props
+
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
         const workspaceRootUri =
@@ -284,8 +288,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 revision: resolvedRevisionOrError.commitID,
             })
 
-        if (workspaceRootUri) {
-            props.extensionsController.extHostAPI
+        if (workspaceRootUri && extensionsController !== null) {
+            extensionsController.extHostAPI
                 .then(extensionHostAPI =>
                     extensionHostAPI.addWorkspaceRoot({
                         uri: workspaceRootUri,
@@ -299,15 +303,15 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
         // Clear the Sourcegraph extensions model's roots when navigating away.
         return () => {
-            if (workspaceRootUri) {
-                props.extensionsController.extHostAPI
+            if (workspaceRootUri && extensionsController !== null) {
+                extensionsController.extHostAPI
                     .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
                     .catch(error => {
                         console.error('Error removing workspace root', error)
                     })
             }
         }
-    }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
+    }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
@@ -381,7 +385,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={props.authenticatedUser}
                     platformContext={props.platformContext}
-                    extensionsController={props.extensionsController}
+                    extensionsController={extensionsController}
                     telemetryService={props.telemetryService}
                 />
                 <RepoHeaderContributionPortal
@@ -461,6 +465,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                         // must exactly match how the revision was encoded in the URL
                                         routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                         useActionItemsBar={useActionItemsBar}
+                                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                     />
                                 )}
                             />

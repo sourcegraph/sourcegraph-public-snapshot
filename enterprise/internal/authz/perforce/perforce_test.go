@@ -2,7 +2,6 @@ package perforce
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -72,10 +72,10 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 				AccountID:   "alice@example.com",
 			},
 			AccountData: extsvc.AccountData{
-				Data: (*json.RawMessage)(&accountData),
+				Data: extsvc.NewUnencryptedData(accountData),
 			},
 		}
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want got):\n%s", diff)
 		}
 	})
@@ -236,7 +236,7 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 					AccountData: extsvc.AccountData{
-						Data: (*json.RawMessage)(&accountData),
+						Data: extsvc.NewUnencryptedData(accountData),
 					},
 				},
 				authz.FetchPermsOptions{},
@@ -269,7 +269,7 @@ read user alice * -//Sourcegraph/Security/...
 					ServiceID:   "ssl:111.222.333.444:1666",
 				},
 				AccountData: extsvc.AccountData{
-					Data: (*json.RawMessage)(&accountData),
+					Data: extsvc.NewUnencryptedData(accountData),
 				},
 			},
 			authz.FetchPermsOptions{},

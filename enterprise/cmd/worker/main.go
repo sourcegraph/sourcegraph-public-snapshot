@@ -62,6 +62,7 @@ func main() {
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-upload-backfiller":      freshcodeintel.NewUploadBackfillerJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
 
 		// temporary
@@ -69,7 +70,7 @@ func main() {
 		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
-	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrations); err != nil {
+	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

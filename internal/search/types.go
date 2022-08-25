@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	zoektquery "github.com/google/zoekt/query"
 	otlog "github.com/opentracing/opentracing-go/log"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -345,6 +345,9 @@ func (f *Features) String() string {
 	return flagMap.String()
 }
 
+// RepoOptions is the source of truth for the options a user specified
+// in their search query that affect which repos should be searched.
+// When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string

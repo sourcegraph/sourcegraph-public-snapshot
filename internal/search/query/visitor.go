@@ -102,7 +102,7 @@ func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pre
 		}
 
 		predName, predArgs := ParseAsPredicate(value)
-		if predName != zeroPred.Name() { // NOTE(camdencheek): we don't handle aliases here
+		if DefaultPredicateRegistry.Get(zeroPred.Field(), predName).Name() != zeroPred.Name() { // allow aliases
 			return // skip unrequested predicates
 		}
 

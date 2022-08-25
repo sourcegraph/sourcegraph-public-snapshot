@@ -251,7 +251,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				return err
 			}
 			changesetSpec.BatchSpecID = spec.ID
-			changesetSpec.RepoID = workspace.dbWorkspace.RepoID
+			changesetSpec.BaseRepoID = workspace.dbWorkspace.RepoID
 			changesetSpec.UserID = spec.UserID
 
 			specs = append(specs, changesetSpec)
@@ -331,7 +331,7 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 			return nil, err
 		}
 		changesetSpec.UserID = userID
-		changesetSpec.RepoID = repoID
+		changesetSpec.BaseRepoID = repoID
 		changesetSpec.BatchSpecID = batchSpecID
 
 		cs = append(cs, changesetSpec)

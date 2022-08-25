@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,6 +51,10 @@ type RepoUpdaterClient interface {
 	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
+type ReposStore interface {
+	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+}
+
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
@@ -68,7 +73,7 @@ type GitserverClient interface {
 }
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]dbstore.Index, error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]autoindexingShared.Index, error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }
 

@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { boolean, number, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -11,18 +10,18 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewList',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
 }
 
 export default config
 
-export const DefaultStory: Story = () => {
-    const count = number('Count', 1)
+export const DefaultStory: Story = args => {
+    const count = args.count
     return (
         <WebStory>
             {props => (
                 <WorkspacesPreviewList
-                    isStale={boolean('Stale', false)}
+                    isStale={args.isStale}
                     showCached={false}
                     error={undefined}
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -36,7 +35,7 @@ export const DefaultStory: Story = () => {
                                 endCursor: null,
                             },
                         },
-                        hasNextPage: boolean('Has Next Page', false),
+                        hasNextPage: args.hasNextPage,
                         fetchMore: action('Fetch More'),
                     }}
                     {...props}
@@ -44,6 +43,23 @@ export const DefaultStory: Story = () => {
             )}
         </WebStory>
     )
+}
+DefaultStory.argTypes = {
+    count: {
+        name: 'name',
+        control: { type: 'number' },
+        defaultValue: 1,
+    },
+    isStale: {
+        name: 'Stale',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    hasNextPage: {
+        name: 'Has Next Page',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
 }
 
 DefaultStory.storyName = 'default'

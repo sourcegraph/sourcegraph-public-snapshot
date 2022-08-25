@@ -10,7 +10,7 @@
 
 [Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
-- [automatically indexing a repository for precise code navigation](../code_intelligence/explanations/auto_indexing.md)
+- [automatically indexing a repository for precise code navigation](../code_navigation/explanations/auto_indexing.md)
 - [running batch changes](../batch_changes/explanations/server_side.md)
 
 ## Requirements
@@ -183,12 +183,12 @@ If executor instances boot correctly and can authenticate with the Sourcegraph f
 
 ### Examples
 
-The following are complete examples of provisioning a _single_ executor type using each of the provided Terraform modules. In these examples, executors pull from the queue `codeintel`, which controls [auto-indexing](../code_intelligence/explanations/auto_indexing.md).
+The following are complete examples of provisioning a _single_ executor type using each of the provided Terraform modules. In these examples, executors pull from the queue `codeintel`, which controls [auto-indexing](../code_navigation/explanations/auto_indexing.md).
 
 - [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/single-executor)
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/single-executor)
 
-The following are complete examples of provisioning _multiple_ executor types using the provided Terraform submodules. In these examples, two pools of executors pull from the `codeintel` and `batches` queues, which control [auto-indexing](../code_intelligence/explanations/auto_indexing.md) and  [running batch changes server-side](../batch_changes/explanations/server_side.md), respectively.
+The following are complete examples of provisioning _multiple_ executor types using the provided Terraform submodules. In these examples, two pools of executors pull from the `codeintel` and `batches` queues, which control [auto-indexing](../code_navigation/explanations/auto_indexing.md) and  [running batch changes server-side](../batch_changes/explanations/server_side.md), respectively.
 
 - [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/multiple-executors)
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)

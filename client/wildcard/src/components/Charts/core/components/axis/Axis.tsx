@@ -29,6 +29,7 @@ type OwnSharedAxisProps = Omit<SharedAxisProps<AxisScale>, 'tickLabelProps'>
 export interface AxisLeftProps extends OwnSharedAxisProps {
     width: number
     height: number
+    pixelsPerTick?: number
 }
 
 export const AxisLeft = memo(
@@ -39,9 +40,10 @@ export const AxisLeft = memo(
             top,
             width,
             height,
+            pixelsPerTick = 40,
             tickComponent = Tick,
             tickFormat = formatYTick,
-            tickValues = getYScaleTicks({ scale, space: height }),
+            tickValues = getYScaleTicks({ scale, space: height, pixelsPerTick }),
             ...attributes
         } = props
 

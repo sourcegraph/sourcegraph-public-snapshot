@@ -668,6 +668,9 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
+	// CloneStatus if set will only return repos of that clone status.
+	CloneStatus types.CloneStatus
+
 	// NoPrivate excludes private repositories from the list.
 	NoPrivate bool
 
@@ -1010,6 +1013,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 	}
+	if opt.CloneStatus != types.CloneStatusUnknown {
+		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
+	}
+
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
@@ -1089,7 +1096,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -1175,9 +1182,11 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
 type ListIndexableReposOptions struct {
-	// If true, will only include uncloned indexable repos
-	OnlyUncloned bool
-	// If true, we include user added private repos
+	// CloneStatus if set will only return indexable repos of that clone
+	// status.
+	CloneStatus types.CloneStatus
+
+	// IncludePrivate when true will include user added private repos.
 	IncludePrivate bool
 
 	*LimitOffset
@@ -1200,12 +1209,12 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	var where, joins []*sqlf.Query
 
-	if opts.OnlyUncloned {
+	if opts.CloneStatus != types.CloneStatusUnknown {
 		joins = append(joins, sqlf.Sprintf(
 			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"gr.clone_status = %s", types.CloneStatusNotCloned,
+			"gr.clone_status = %s", opts.CloneStatus,
 		))
 	}
 

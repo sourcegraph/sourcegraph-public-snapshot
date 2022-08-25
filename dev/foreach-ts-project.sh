@@ -28,7 +28,8 @@ DIRS=(
   client/storybook
   client/client-api
   client/jetbrains
-  client/observability
+  client/observability-client
+  client/observability-server
   dev/release
 )
 

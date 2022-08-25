@@ -33,13 +33,13 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
 	batchChangeAPIID := marshalBatchChangeID(batchChange.ID)
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
-	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repos[0].ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -79,11 +79,11 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 			FinishedAt:    now,
 		},
 	}
-	if err := cstore.CreateChangesetJob(ctx, jobs...); err != nil {
+	if err := bstore.CreateChangesetJob(ctx, jobs...); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(bstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

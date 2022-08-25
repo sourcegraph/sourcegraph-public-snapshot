@@ -33,6 +33,20 @@ func (s *store) SetRepositoriesForRetentionScan(ctx context.Context, processDela
 	)))
 }
 
+func (s *store) SetRepositoriesForRetentionScanWithTime(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
+		repositoryIDsForRetentionScanQuery,
+		now,
+		int(processDelay/time.Second),
+		limit,
+		now,
+		now,
+	)))
+}
+
 const repositoryIDsForRetentionScanQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_repositories.go:setRepositoriesForRetentionScan
 WITH candidate_repositories AS (
@@ -63,7 +77,17 @@ RETURNING repository_id
 `
 
 // SetRepositoryAsDirty marks the given repository's commit graph as out of date.
-func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
+func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setRepositoryAsDirtyQuery, repositoryID))
+}
+
+// SetRepositoryAsDirtyWithTx marks the given repository's commit graph as out of date.
+func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
 	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -177,4 +201,20 @@ func (s *store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]
 const repoNamesQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_repositories.go:RepoNames
 SELECT id, name FROM repo WHERE id = ANY(%s)
+`
+
+// HasRepository determines if there is LSIF data for the given repository.
+func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	_, found, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
+	return found, err
+}
+
+const hasRepositoryQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:HasRepository
+SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `

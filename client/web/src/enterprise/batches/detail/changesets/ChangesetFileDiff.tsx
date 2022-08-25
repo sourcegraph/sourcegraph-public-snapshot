@@ -82,10 +82,16 @@ export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<
         if (!extensionInfo || !range) {
             return
         }
+        const extensionsController = extensionInfo.extensionsController
+
+        if (extensionsController === null) {
+            return undefined
+        }
         const baseRevision = commitOIDForGitRevision(range.base)
         const headRevision = commitOIDForGitRevision(range.head)
         return {
             ...extensionInfo,
+            extensionsController,
             head: {
                 commitID: headRevision,
                 repoID: repositoryID,
