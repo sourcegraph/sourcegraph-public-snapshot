@@ -90,28 +90,17 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		return task
 	}
 
-	featuresAllEnabled := ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	}
-	featuresWithoutOptionalPublished := ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   false,
-	}
-
 	tests := []struct {
 		name string
 
-		input    *ChangesetSpecInput
-		features ChangesetSpecFeatureFlags
+		input *ChangesetSpecInput
 
 		want    []*ChangesetSpec
 		wantErr string
 	}{
 		{
-			name:     "success",
-			input:    defaultInput,
-			features: featuresAllEnabled,
+			name:  "success",
+			input: defaultInput,
 			want: []*ChangesetSpec{
 				defaultChangesetSpec,
 			},
@@ -123,7 +112,6 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@my-branch": true}]`
 				input.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: true}
@@ -137,7 +125,6 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
 				input.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: nil}
@@ -146,46 +133,22 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			wantErr: "",
 		},
 		{
-			name: "publish by branch not matching on an old Sourcegraph version",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
-				input.Template.Published = parsePublishedFieldString(t, published)
-			}),
-			features: featuresWithoutOptionalPublished,
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Published = PublishedValue{Val: false}
-				}),
-			},
-			wantErr: "",
-		},
-		{
-			name: "publish in UI on a supported version",
+			name: "publish in UI",
 			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
 				input.Template.Published = nil
 			}),
-			features: featuresAllEnabled,
 			want: []*ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
 					s.Published = PublishedValue{Val: nil}
 				}),
 			},
 			wantErr: "",
-		},
-		{
-			name: "publish in UI on an unsupported version",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				input.Template.Published = nil
-			}),
-			features: featuresWithoutOptionalPublished,
-			want:     nil,
-			wantErr:  errOptionalPublishedUnsupported.Error(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input, tt.features)
+			have, err := BuildChangesetSpecs(tt.input)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {

@@ -14,7 +14,8 @@ const (
 	SearchStream  = "search.stream"
 	ComputeStream = "compute.stream"
 
-	SrcCli = "src-cli"
+	SrcCli             = "src-cli"
+	SrcCliVersionCache = "src-cli.version-cache"
 
 	Registry = "registry"
 
@@ -58,6 +59,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
+	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo

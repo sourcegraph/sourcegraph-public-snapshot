@@ -324,3 +324,80 @@ func TestPathAggregation(t *testing.T) {
 		})
 	}
 }
+
+func TestCaptureGroupAggregation(t *testing.T) {
+	testCases := []struct {
+		mode        types.SearchAggregationMode
+		searchEvent streaming.SearchEvent
+		query       string
+		want        autogold.Value
+	}{
+		{types.CAPTURE_GROUP_AGGREGATION_MODE, streaming.SearchEvent{}, "TEST", autogold.Want("no results", map[string]int{})},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python3.9")},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("two keys from 1 chunk", map[string]int{"2.7": 1, "3.9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+				},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count multiple results", map[string]int{"2.7": 2, "3.9": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+				},
+			},
+			`python(?:[0-9])\.([0-9])`,
+			autogold.Want("skips non capturing group", map[string]int{"7": 1, "9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
+			autogold.Want("capture match respects case:no", map[string]int{"2.7": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
+			autogold.Want("capture match respects case:yes", map[string]int{}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			aggregator := testAggregator{results: make(map[string]int)}
+			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
+			if err != nil {
+				t.Errorf("expected test not to error, got %v", err)
+				t.FailNow()
+			}
+			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra.Send(tc.searchEvent)
+			tc.want.Equal(t, aggregator.results)
+		})
+	}
+}
