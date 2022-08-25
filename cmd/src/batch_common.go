@@ -177,37 +177,17 @@ func batchDefaultCacheDir() string {
 	if err != nil {
 		return ""
 	}
-
-	// Check if there's an old campaigns cache directory but not a new batch
-	// directory: if so, we should rename the old directory and carry on.
-	//
-	// TODO(campaigns-deprecation): we can remove this migration shim after June
-	// 2021.
-	old := path.Join(uc, "sourcegraph", "campaigns")
 	dir := path.Join(uc, "sourcegraph", "batch")
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if _, err := os.Stat(old); os.IsExist(err) {
-			// We'll just try to do this without checking for an error: if it
-			// fails, we'll carry on and let the normal cache directory handling
-			// logic take care of it.
-			os.Rename(old, dir)
-		}
-	}
 
 	return dir
 }
 
 // batchDefaultTempDirPrefix returns the prefix to be passed to ioutil.TempFile.
-// If one of the environment variables SRC_BATCH_TMP_DIR or
-// SRC_CAMPAIGNS_TMP_DIR is set, that is used as the prefix. Otherwise we use
-// "/tmp".
+// If the environment variable SRC_BATCH_TMP_DIR is set, that is used as the prefix.
+// Otherwise we use "/tmp".
 func batchDefaultTempDirPrefix() string {
-	// TODO(campaigns-deprecation): we can remove this migration shim in
-	// Sourcegraph 4.0.
-	for _, env := range []string{"SRC_BATCH_TMP_DIR", "SRC_CAMPAIGNS_TMP_DIR"} {
-		if p := os.Getenv(env); p != "" {
-			return p
-		}
+	if p := os.Getenv("SRC_BATCH_TMP_DIR"); p != "" {
+		return p
 	}
 
 	// On macOS, we use an explicit prefix for our temp directories, because
@@ -280,7 +260,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	imageCache := docker.NewImageCache()
 
-	if err := svc.DetermineFeatureFlags(ctx); err != nil {
+	if err := validateSourcegraphVersionConstraint(ctx, svc); err != nil {
 		return err
 	}
 
@@ -399,7 +379,6 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 				GlobalEnv:           os.Environ(),
 				IsRemote:            false,
 			},
-			Features:  svc.Features(),
 			Logger:    logManager,
 			Cache:     executor.NewDiskCache(opts.flags.cacheDir),
 			GlobalEnv: os.Environ(),
@@ -603,4 +582,15 @@ func getBatchParallelism(ctx context.Context, flag int) (int, error) {
 	}
 
 	return docker.NCPU(ctx)
+}
+
+func validateSourcegraphVersionConstraint(ctx context.Context, svc *service.Service) error {
+	ffs, err := svc.DetermineFeatureFlags(ctx)
+	if err != nil {
+		return err
+	}
+	if ffs.Sourcegraph40 {
+		return nil
+	}
+	return errors.Newf("\n\n * Warning:\n This version of src-cli requires Sourcegraph version 4.0 or newer. If you're not on Sourcegraph 4.0 or newer, please use the 3.x release of src-cli that corresponds to your Sourcegraph version.\n\n")
 }

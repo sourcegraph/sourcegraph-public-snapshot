@@ -82,7 +82,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`}}},
 				},
 			},
-			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
+			opts: NewCoordinatorOpts{},
 
 			wantCacheEntries: 2,
 			wantSpecs: []*batcheslib.ChangesetSpec{
@@ -150,7 +150,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					},
 				},
 			},
-			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
+			opts: NewCoordinatorOpts{},
 
 			wantCacheEntries: 1,
 			wantSpecs: []*batcheslib.ChangesetSpec{
@@ -201,7 +201,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: nestedChangesDiff}}},
 				},
 			},
-			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
+			opts: NewCoordinatorOpts{},
 
 			// TODO: Fix comment.
 			// We have 4 ChangesetSpecs, but we only want 2 cache entries,
@@ -249,7 +249,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`, StepIndex: 0}}},
 				},
 			},
-			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
+			opts: NewCoordinatorOpts{},
 
 			wantCacheEntries: 2,
 			wantSpecs: []*batcheslib.ChangesetSpec{

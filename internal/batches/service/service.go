@@ -23,8 +23,7 @@ import (
 )
 
 type Service struct {
-	client   api.Client
-	features batches.FeatureFlags
+	client api.Client
 }
 
 type Opts struct {
@@ -73,49 +72,70 @@ func (svc *Service) getSourcegraphVersion(ctx context.Context) (string, error) {
 	return result.Site.ProductVersion, err
 }
 
-// DetermineFeatureFlags fetches the version of the configured Sourcegraph
-// instance and then sets flags on the Service itself to use features available
-// in that version, e.g. gzip compression.
-func (svc *Service) DetermineFeatureFlags(ctx context.Context) error {
+// DetermineFeatureFlags fetches the version of the configured Sourcegraph and
+// returns the enabled features.
+func (svc *Service) DetermineFeatureFlags(ctx context.Context) (*batches.FeatureFlags, error) {
 	version, err := svc.getSourcegraphVersion(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to query Sourcegraph version to check for available features")
+		return nil, errors.Wrap(err, "failed to query Sourcegraph version to check for available features")
 	}
-
-	return svc.SetFeatureFlagsForVersion(version)
+	ffs := &batches.FeatureFlags{}
+	return ffs, ffs.SetFromVersion(version)
 }
 
-func (svc *Service) SetFeatureFlagsForVersion(version string) error {
-	return svc.features.SetFromVersion(version)
-}
-
-// TODO(campaigns-deprecation): this shim can be removed in Sourcegraph 4.0.
-func (svc *Service) newOperations() graphql.Operations {
-	return graphql.NewOperations(
-		svc.client,
-		svc.features.BatchChanges,
-		svc.features.UseGzipCompression,
-	)
-}
-
-func (svc *Service) newRequest(query string, vars map[string]interface{}) api.Request {
-	if svc.features.UseGzipCompression {
-		return svc.client.NewGzippedRequest(query, vars)
+const applyBatchChangeMutation = `
+mutation ApplyBatchChange($batchSpec: ID!) {
+	applyBatchChange(batchSpec: $batchSpec) {
+		...batchChangeFields
 	}
-	return svc.client.NewRequest(query, vars)
 }
+
+fragment batchChangeFields on BatchChange {
+    url
+}
+`
 
 func (svc *Service) ApplyBatchChange(ctx context.Context, spec graphql.BatchSpecID) (*graphql.BatchChange, error) {
-	return svc.newOperations().ApplyBatchChange(ctx, spec)
+	var result struct {
+		BatchChange *graphql.BatchChange `json:"applyBatchChange"`
+	}
+	if ok, err := svc.client.NewRequest(applyBatchChangeMutation, map[string]interface{}{
+		"batchSpec": spec,
+	}).Do(ctx, &result); err != nil || !ok {
+		return nil, err
+	}
+	return result.BatchChange, nil
 }
 
+const createBatchSpecMutation = `
+mutation CreateBatchSpec(
+    $namespace: ID!,
+    $spec: String!,
+    $changesetSpecs: [ID!]!
+) {
+    createBatchSpec(
+        namespace: $namespace, 
+        batchSpec: $spec,
+        changesetSpecs: $changesetSpecs
+    ) {
+        id
+        applyURL
+    }
+}
+`
+
 func (svc *Service) CreateBatchSpec(ctx context.Context, namespace, spec string, ids []graphql.ChangesetSpecID) (graphql.BatchSpecID, string, error) {
-	result, err := svc.newOperations().CreateBatchSpec(ctx, namespace, spec, ids)
-	if err != nil {
+	var result struct {
+		CreateBatchSpec graphql.CreateBatchSpecResponse
+	}
+	if ok, err := svc.client.NewRequest(createBatchSpecMutation, map[string]interface{}{
+		"namespace":      namespace,
+		"spec":           spec,
+		"changesetSpecs": ids,
+	}).Do(ctx, &result); err != nil || !ok {
 		return "", "", err
 	}
-
-	return result.ID, result.ApplyURL, nil
+	return result.CreateBatchSpec.ID, result.CreateBatchSpec.ApplyURL, nil
 }
 
 const createChangesetSpecMutation = `
@@ -142,7 +162,7 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batcheslib.Ch
 			ID string
 		}
 	}
-	if ok, err := svc.newRequest(createChangesetSpecMutation, map[string]interface{}{
+	if ok, err := svc.client.NewRequest(createChangesetSpecMutation, map[string]interface{}{
 		"spec": string(raw),
 	}).Do(ctx, &result); err != nil || !ok {
 		return "", err
@@ -196,7 +216,7 @@ func (svc *Service) ResolveWorkspacesForBatchSpec(ctx context.Context, spec *bat
 			SearchResultPaths  []string
 		}
 	}
-	if ok, err := svc.newRequest(resolveWorkspacesForBatchSpecQuery, map[string]interface{}{
+	if ok, err := svc.client.NewRequest(resolveWorkspacesForBatchSpecQuery, map[string]interface{}{
 		"spec": string(raw),
 	}).Do(ctx, &result); err != nil || !ok {
 		return nil, nil, err
@@ -364,10 +384,6 @@ func (svc *Service) BuildTasks(attributes *templatelib.BatchChangeAttributes, st
 	return buildTasks(attributes, steps, workspaces)
 }
 
-func (svc *Service) Features() batches.FeatureFlags {
-	return svc.features
-}
-
 func (svc *Service) CreateImportChangesetSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*batcheslib.ChangesetSpec, error) {
 	return batcheslib.BuildImportChangesetSpecs(ctx, batchSpec.ImportChangesets, func(ctx context.Context, repoNames []string) (_ map[string]string, errs error) {
 		repoNameIDs := map[string]string{}
@@ -451,11 +467,7 @@ func (e *duplicateBranchesErr) Error() string {
 }
 
 func (svc *Service) ParseBatchSpec(dir string, data []byte, isRemote bool) (*batcheslib.BatchSpec, error) {
-	spec, err := batcheslib.ParseBatchSpec(data, batcheslib.ParseBatchSpecOptions{
-		AllowArrayEnvironments: svc.features.AllowArrayEnvironments,
-		AllowTransformChanges:  svc.features.AllowTransformChanges,
-		AllowConditionalExec:   svc.features.AllowConditionalExec,
-	})
+	spec, err := batcheslib.ParseBatchSpec(data)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
@@ -530,11 +542,6 @@ changesetTemplate:
     message: Append Hello World to all README.md files
 `
 
-const exampleSpecPublishFlagTmpl = `
-  # Change published to true once you're ready to create changesets on the code host.
-  published: false
-`
-
 func (svc *Service) GenerateExampleSpec(ctx context.Context, fileName string) error {
 	// Try to create file. Bail out, if it already exists.
 	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
@@ -546,11 +553,7 @@ func (svc *Service) GenerateExampleSpec(ctx context.Context, fileName string) er
 	}
 	defer f.Close()
 
-	t := exampleSpecTmpl
-	if !svc.features.AllowOptionalPublished {
-		t += exampleSpecPublishFlagTmpl
-	}
-	tmpl, err := template.New("").Parse(t)
+	tmpl, err := template.New("").Parse(exampleSpecTmpl)
 	if err != nil {
 		return err
 	}

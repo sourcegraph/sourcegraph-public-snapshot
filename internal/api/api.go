@@ -16,6 +16,7 @@ import (
 	ioaux "github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
+
 	"github.com/sourcegraph/src-cli/internal/version"
 )
 
@@ -27,13 +28,6 @@ type Client interface {
 
 	// NewRequest creates a GraphQL request.
 	NewRequest(query string, vars map[string]interface{}) Request
-
-	// NewGzippedRequest creates a GraphQL request with gzip compression turned on.
-	NewGzippedRequest(query string, vars map[string]interface{}) Request
-
-	// NewGzippedQuery is a convenience wrapper around NewQuery with gzip
-	// compression turned on.
-	NewGzippedQuery(query string) Request
 
 	// NewHTTPRequest creates an http.Request for the Sourcegraph API.
 	//
@@ -72,7 +66,6 @@ type request struct {
 	client *client
 	query  string
 	vars   map[string]interface{}
-	gzip   bool
 }
 
 // ClientOpts encapsulates the options given to NewClient.
@@ -130,19 +123,6 @@ func (c *client) NewRequest(query string, vars map[string]interface{}) Request {
 		query:  query,
 		vars:   vars,
 	}
-}
-
-func (c *client) NewGzippedRequest(query string, vars map[string]interface{}) Request {
-	return &request{
-		client: c,
-		query:  query,
-		vars:   vars,
-		gzip:   true,
-	}
-}
-
-func (c *client) NewGzippedQuery(query string) Request {
-	return c.NewGzippedRequest(query, nil)
 }
 
 func (c *client) Do(req *http.Request) (*http.Response, error) {
@@ -216,9 +196,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	}
 
 	var bufBody io.Reader = bytes.NewBuffer(reqBody)
-	if r.gzip {
-		bufBody = gzipReader(bufBody)
-	}
+	bufBody = gzipReader(bufBody)
 
 	// Create the HTTP request.
 	req, err := r.client.NewHTTPRequest(ctx, "POST", ".api/graphql", bufBody)
@@ -226,9 +204,8 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		return false, err
 	}
 
-	if r.gzip {
-		req.Header.Set("Content-Encoding", "gzip")
-	}
+	// Use gzip compression.
+	req.Header.Set("Content-Encoding", "gzip")
 
 	// Perform the request.
 	resp, err := r.client.httpClient.Do(req)

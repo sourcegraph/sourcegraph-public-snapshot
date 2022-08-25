@@ -48,7 +48,7 @@ Examples:
 			Client: cfg.apiClient(apiFlags, flagSet.Output()),
 		})
 
-		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+		if err := validateSourcegraphVersionConstraint(ctx, svc); err != nil {
 			return err
 		}
 

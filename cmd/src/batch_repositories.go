@@ -64,7 +64,7 @@ Examples:
 			Client: client,
 		})
 
-		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+		if err := validateSourcegraphVersionConstraint(ctx, svc); err != nil {
 			return err
 		}
 

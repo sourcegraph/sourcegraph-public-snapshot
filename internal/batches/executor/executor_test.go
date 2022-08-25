@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
 	"github.com/sourcegraph/src-cli/internal/api"
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
@@ -508,18 +507,6 @@ func addToPath(t *testing.T, relPath string) {
 		t.Fatal(err)
 	}
 	os.Setenv("PATH", fmt.Sprintf("%s%c%s", dummyDockerPath, os.PathListSeparator, os.Getenv("PATH")))
-}
-
-func featuresAllEnabled() batches.FeatureFlags {
-	return batches.FeatureFlags{
-		AllowArrayEnvironments:   true,
-		IncludeAutoAuthorDetails: true,
-		UseGzipCompression:       true,
-		AllowTransformChanges:    true,
-		AllowWorkspaces:          true,
-		AllowConditionalExec:     true,
-		AllowOptionalPublished:   true,
-	}
 }
 
 func TestExecutor_CachedStepResults(t *testing.T) {

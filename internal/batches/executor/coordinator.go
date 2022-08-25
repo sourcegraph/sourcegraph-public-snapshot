@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 )
 
@@ -34,8 +33,6 @@ type NewCoordinatorOpts struct {
 	Logger    log.LogManager
 	GlobalEnv []string
 
-	// Used by batcheslib.BuildChangesetSpecs
-	Features batches.FeatureFlags
 	IsRemote bool
 }
 
@@ -124,10 +121,7 @@ func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batch
 		},
 	}
 
-	return batcheslib.BuildChangesetSpecs(input, batcheslib.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: c.opts.Features.IncludeAutoAuthorDetails,
-		AllowOptionalPublished:   c.opts.Features.AllowOptionalPublished,
-	})
+	return batcheslib.BuildChangesetSpecs(input)
 }
 
 func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {

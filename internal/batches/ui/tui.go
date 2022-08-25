@@ -274,7 +274,7 @@ func prettyPrintBatchUnlicensedError(out *output.Output, err error) error {
 				// verbose mode, but let the original error bubble up rather
 				// than this one.
 				out.Verbosef("Unexpected error parsing the GraphQL error: %v", cerr)
-			} else if code == "ErrCampaignsUnlicensed" || code == "ErrBatchChangesUnlicensed" {
+			} else if code == "ErrBatchChangesUnlicensed" {
 				// OK, let's print a better message, then return an
 				// exitCodeError to suppress the normal automatic error block.
 				// Note that we have hand wrapped the output at 80 (printable)

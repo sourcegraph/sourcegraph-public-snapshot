@@ -9,16 +9,7 @@ import (
 // FeatureFlags represent features that are only available on certain
 // Sourcegraph versions and we therefore have to detect at runtime.
 type FeatureFlags struct {
-	AllowArrayEnvironments   bool
-	IncludeAutoAuthorDetails bool
-	UseGzipCompression       bool
-	AllowTransformChanges    bool
-	AllowWorkspaces          bool
-	BatchChanges             bool
-	AllowConditionalExec     bool
-	AllowOptionalPublished   bool
-	ServerSideBatchChanges   bool
-	BitbucketCloud           bool
+	Sourcegraph40 bool
 }
 
 func (ff *FeatureFlags) SetFromVersion(version string) error {
@@ -34,16 +25,9 @@ func (ff *FeatureFlags) SetFromVersion(version string) error {
 		// ">= 3.23.0". However, the same version IS considered to satisfy the constraint
 		// "3.23.0-0". See
 		// https://github.com/Masterminds/semver#working-with-prerelease-versions for more.
-		{&ff.AllowArrayEnvironments, ">= 3.23.0-0", "2020-11-24"},
-		{&ff.IncludeAutoAuthorDetails, ">= 3.20.0-0", "2020-09-10"},
-		{&ff.UseGzipCompression, ">= 3.21.0-0", "2020-10-12"},
-		{&ff.AllowTransformChanges, ">= 3.23.0-0", "2020-12-11"},
-		{&ff.AllowWorkspaces, ">= 3.25.0-0", "2021-01-29"},
-		{&ff.BatchChanges, ">= 3.26.0-0", "2021-03-07"},
-		{&ff.AllowConditionalExec, ">= 3.28.0-0", "2021-05-05"},
-		{&ff.AllowOptionalPublished, ">= 3.30.0-0", "2021-06-21"},
-		{&ff.ServerSideBatchChanges, ">= 3.37.0-0", "2022-02-08"},
-		{&ff.BitbucketCloud, ">= 3.40.0-0", "2022-04-20"},
+		// Example usage:
+		// {&ff.FlagName, ">= 3.23.0-0", "2020-11-24"},
+		{&ff.Sourcegraph40, ">= 4.0.0-0", "2022-08-24"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {
