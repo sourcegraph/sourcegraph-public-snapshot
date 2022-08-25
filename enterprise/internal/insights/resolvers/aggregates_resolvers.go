@@ -134,14 +134,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 }
 
 func getDefaultAggregationMode(searchQuery, patternType string) (types.SearchAggregationMode, error) {
-	//TODO(insights): uncomment when capture group aggregation is supported.
-	//captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
-	//if err != nil {
-	//	return "", err
-	//}
-	//if captureGroup {
-	//	return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
-	//}
+	captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
+	if err != nil {
+		return "", err
+	}
+	if captureGroup {
+		return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
+	}
 	author, err := canAggregateByAuthor(searchQuery, patternType)
 	if err != nil {
 		return "", err
@@ -268,11 +267,10 @@ func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, erro
 
 func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
-		types.REPO_AGGREGATION_MODE:   canAggregateByRepo,
-		types.PATH_AGGREGATION_MODE:   canAggregateByPath,
-		types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
-		// TODO(insights): these paths should be uncommented as they are implemented. Logic for allowing the aggregation should be double-checked.
-		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
+		types.REPO_AGGREGATION_MODE:          canAggregateByRepo,
+		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
+		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
+		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
 	if !ok {
