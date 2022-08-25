@@ -624,6 +624,28 @@ func TestNewPlanJob(t *testing.T) {
           (repoOpts.hasKVPs[0].key . tag))
         (REPOSEARCH
           (repoOpts.hasKVPs[0].key . tag))))))`),
+		}, {
+			query:      `(...)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeStructural,
+			want: autogold.Want("stream structural search", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . literal)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (ZOEKTGLOBALTEXTSEARCH
+          (query . regex:"(:_)")
+          (type . text)
+          )
+        (REPOSCOMPUTEEXCLUDED
+          )
+        (REPOSEARCH
+          (repoOpts.repoFilters.0 . (:[_])))))))`),
 		},
 	}
 

@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The recommended [src-cli](https://github.com/sourcegraph/src-cli) version is now reported consistently. [#39468](https://github.com/sourcegraph/sourcegraph/issues/39468)
+- A performance issue affecting structural search causing results to not stream. It is much faster now. [#40872](https://github.com/sourcegraph/sourcegraph/pull/40872)
 
 ### Removed
 
