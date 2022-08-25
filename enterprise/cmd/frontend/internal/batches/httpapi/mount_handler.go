@@ -2,13 +2,10 @@ package httpapi
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -27,6 +24,7 @@ type MountHandler struct {
 }
 
 type BatchesStore interface {
+	CountBatchSpecMounts(context.Context, store.ListBatchSpecMountsOpts) (int, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
 	GetBatchSpecMount(context.Context, store.GetBatchSpecMountOpts) (*btypes.BatchSpecMount, error)
 	UpsertBatchSpecMount(context.Context, *btypes.BatchSpecMount) error
@@ -60,6 +58,8 @@ func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		h.get(w, r)
+	case http.MethodHead:
+		h.exists(w, r)
 	case http.MethodPost:
 		h.upload(w, r)
 	default:
@@ -68,21 +68,20 @@ func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MountHandler) get(w http.ResponseWriter, r *http.Request) {
-	//batchSpecID := mux.Vars(r)["spec"]
-	//batchSpecRandID, err := unmarshalRandID(batchSpecID)
-	//if err != nil {
-	//	http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
-	//	return
-	//}
+	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
+	batchSpecID := mux.Vars(r)["spec"]
+	if batchSpecID == "" {
+		http.Error(w, fmt.Sprintf("batch spec id not provided"), http.StatusBadRequest)
+		return
+	}
 	batchSpecMountID := mux.Vars(r)["mount"]
-	batchSpecMountRandID, err := unmarshalRandID(batchSpecMountID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("mount id is malformed: %s", err), http.StatusBadRequest)
+	if batchSpecMountID == "" {
+		http.Error(w, fmt.Sprintf("mount id not provided"), http.StatusBadRequest)
 		return
 	}
 
 	mount, err := h.store.GetBatchSpecMount(r.Context(), store.GetBatchSpecMountOpts{
-		RandID: batchSpecMountRandID,
+		RandID: batchSpecMountID,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to lookup mount file metadata: %s", err), http.StatusInternalServerError)
@@ -94,11 +93,37 @@ func (h *MountHandler) get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *MountHandler) exists(w http.ResponseWriter, r *http.Request) {
+	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
+	batchSpecID := mux.Vars(r)["spec"]
+	if batchSpecID == "" {
+		http.Error(w, fmt.Sprintf("batch spec id not provided"), http.StatusBadRequest)
+		return
+	}
+	batchSpecMountID := mux.Vars(r)["mount"]
+	if batchSpecMountID == "" {
+		http.Error(w, fmt.Sprintf("mount id not provided"), http.StatusBadRequest)
+		return
+	}
+
+	count, err := h.store.CountBatchSpecMounts(r.Context(), store.ListBatchSpecMountsOpts{RandID: batchSpecMountID})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to check if file exists: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Either the count is 1 or zero.
+	if count == 1 {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
 func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
 	batchSpecID := mux.Vars(r)["spec"]
-	randID, err := unmarshalRandID(batchSpecID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
+	if batchSpecID == "" {
+		http.Error(w, fmt.Sprintf("batch spec id not provided"), http.StatusBadRequest)
 		return
 	}
 
@@ -120,7 +145,7 @@ func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	spec, err := h.store.GetBatchSpec(r.Context(), store.GetBatchSpecOpts{
-		RandID: randID,
+		RandID: batchSpecID,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to lookup batch spec: %s", err), http.StatusInternalServerError)
@@ -168,21 +193,4 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 		return err
 	}
 	return nil
-}
-
-func unmarshalRandID(id string) (batchSpecRandID string, err error) {
-	err = unmarshalID(id, &batchSpecRandID)
-	return
-}
-
-func unmarshalID(id string, v interface{}) error {
-	s, err := base64.URLEncoding.DecodeString(id)
-	if err != nil {
-		return err
-	}
-	i := strings.IndexByte(string(s), ':')
-	if i == -1 {
-		return errors.New("invalid randID")
-	}
-	return json.Unmarshal(s[i+1:], v)
 }
