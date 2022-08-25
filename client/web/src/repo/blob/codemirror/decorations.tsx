@@ -148,7 +148,7 @@ class TextDocumentDecorationManager implements PluginValue {
                                 // This shouldn't be possible but just in case
                                 return null
                             }
-                            const lineNumber = view.state.doc.lineAt(lineBlock.from).number
+                            const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
                             const lineItems = items.get(lineNumber)
                             if (!lineItems || lineItems.length === 0) {
                                 return null
@@ -212,13 +212,6 @@ function longestColumnDecorations(mappedDecorations: DecorationMapByLine | undef
     return result
 }
 
-const getCellsByLine = (line: number): HTMLElement[] => {
-    const lineCell = document.querySelector<HTMLElement>(
-        `.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`
-    )
-    const codeCell = document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
-}
-
 const getLineNumberCell = (line: number): HTMLElement | null =>
     document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
 const getCodeCell = (line: number): HTMLElement | null =>
@@ -235,7 +228,7 @@ class ColumnDecoratorMarker extends GutterMarker {
     constructor(
         public readonly items: TextDocumentDecoration[],
         public readonly isLightTheme: boolean,
-        public readonly line?: number
+        public readonly line: number
     ) {
         super()
     }

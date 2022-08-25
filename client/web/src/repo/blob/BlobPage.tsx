@@ -484,7 +484,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
-                        blameDecorations={blameDecorations}
+                        blameHunks={blameDecorations}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
                 </TraceSpanProvider>

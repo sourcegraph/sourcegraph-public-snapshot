@@ -1,17 +1,11 @@
 import React, { useLayoutEffect, useCallback, useEffect } from 'react'
 
+import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import isAbsoluteUrl from 'is-absolute-url'
-import iterate from 'iterare'
-import { toNumber } from 'lodash'
+import { truncate } from 'lodash'
 import ReactDOM from 'react-dom'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 
-import { isDefined, property } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import {
-    decorationAttachmentStyleForTheme,
-    DecorationMapByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Popover,
@@ -23,11 +17,12 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
+import { BlameHunk } from '../blame/useBlameDecorations'
+
 import styles from './ColumnDecorator.module.scss'
 
 export interface LineDecoratorProps extends ThemeProps {
-    extensionID: string
-    decorations: DecorationMapByLine
+    blameHunks?: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -42,114 +37,102 @@ const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove
 /**
  * Component that prepends lines of code with attachments set by extensions
  */
-export const ColumnDecorator = React.memo<LineDecoratorProps>(
-    ({ decorations, isLightTheme, codeViewElements, extensionID }) => {
-        const [portalNodes, setPortalNodes] = React.useState<
-            Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>
-        >()
+export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, codeViewElements, blameHunks }) => {
+    const [cells, setCells] = React.useState<[HTMLTableCellElement, BlameHunk | undefined][]>([])
 
-        // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
-        // after mount/decoration updates, but before the browser has painted DOM updates.
-        // This prevents users from seeing inconsistent states where changes handled by React have been
-        // painted, but DOM manipulation handled by these effects are painted on the next tick.
-        useLayoutEffect(() => {
-            const addedCells = new Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>()
+    // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
+    // after mount/decoration updates, but before the browser has painted DOM updates.
+    // This prevents users from seeing inconsistent states where changes handled by React have been
+    // painted, but DOM manipulation handled by these effects are painted on the next tick.
+    useLayoutEffect(() => {
+        const addedCells: [HTMLTableCellElement, BlameHunk | undefined][] = []
 
-            const cleanup = (): void => {
-                // remove added cells
-                for (const [cell] of addedCells) {
-                    const row = cell.closest('tr')
-                    cell.remove()
+        const cleanup = (): void => {
+            // remove added cells
+            for (const [cell] of addedCells) {
+                const row = cell.closest('tr')
+                cell.remove()
 
-                    // if no other columns with decorations
-                    if (!row?.querySelector(`.${styles.decoration}`)) {
-                        // remove line number cell extra horizontal padding
-                        row?.querySelector('td.line')?.classList.remove('px-2')
-                    }
+                // if no other columns with decorations
+                if (!row?.querySelector(`.${styles.decoration}`)) {
+                    // remove line number cell extra horizontal padding
+                    row?.querySelector('td.line')?.classList.remove('px-2')
                 }
-
-                // reset state
-                setPortalNodes(undefined)
             }
 
-            const subscription = codeViewElements.subscribe(codeView => {
-                if (codeView) {
-                    const table = codeView.firstElementChild as HTMLTableElement
-
-                    for (let index = 0; index < table.rows.length; index++) {
-                        const row = table.rows[index]
-                        const className = extensionID.replace(/\//g, '-')
-
-                        let cell = row.querySelector<HTMLTableCellElement>(`td.${className}`)
-                        if (!cell) {
-                            cell = row.insertCell(1)
-                            cell.classList.add(styles.decoration, className)
-
-                            // add line number cell extra horizontal padding
-                            row.querySelector('td.line')?.classList.add('px-2')
-
-                            // add decorations wrapper
-                            const wrapper = document.createElement('div')
-                            wrapper.classList.add(styles.wrapper)
-                            cell.append(wrapper)
-
-                            // add extra spacers to first and last rows (if table has only one row add both spacers)
-                            if (index === 0) {
-                                const spacer = document.createElement('div')
-                                spacer.classList.add('top-spacer')
-                                cell.prepend(spacer)
-                            }
-
-                            if (index === table.rows.length - 1) {
-                                const spacer = document.createElement('div')
-                                spacer.classList.add('bottom-spacer')
-                                cell.append(spacer)
-                            }
-                        }
-
-                        const currentLineDecorations = decorations.get(index + 1)
-
-                        // store created cells
-                        addedCells.set(cell, currentLineDecorations)
-                    }
-
-                    setPortalNodes(addedCells)
-                } else {
-                    // code view ref passed `null`, so element is leaving DOM
-                    cleanup()
-                }
-            })
-
-            return () => {
-                subscription.unsubscribe()
-                cleanup()
-            }
-        }, [codeViewElements, decorations, extensionID])
-
-        if (!portalNodes?.size) {
-            return null
+            // reset state
+            setCells([])
         }
 
-        return (
-            <>
-                {iterate(portalNodes)
-                    .map(([portalRoot, lineDecorations]) =>
-                        ReactDOM.createPortal(
-                            <ColumnDecoratorContents
-                                line={toNumber(portalRoot.previousElementSibling?.dataset.line)} // TODO: use more stable way to get line number
-                                lineDecorations={lineDecorations}
-                                isLightTheme={isLightTheme}
-                                onSelect={selectRow}
-                                onDeselect={deselectRow}
-                            />,
-                            portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
-                        )
-                    )
-                    .toArray()}
-            </>
-        )
-    }
-)
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+
+                for (let index = 0; index < table.rows.length; index++) {
+                    const row = table.rows[index]
+                    let cell = row.querySelector<HTMLTableCellElement>(`td.${styles.decoration}`)
+                    if (!cell) {
+                        cell = row.insertCell(1)
+                        cell.classList.add(styles.decoration)
+
+                        // add line number cell extra horizontal padding
+                        row.querySelector('td.line')?.classList.add('px-2')
+
+                        // add decorations wrapper
+                        const wrapper = document.createElement('div')
+                        wrapper.classList.add(styles.wrapper)
+                        cell.append(wrapper)
+
+                        // add extra spacers to first and last rows (if table has only one row add both spacers)
+                        if (index === 0) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('top-spacer')
+                            cell.prepend(spacer)
+                        }
+
+                        if (index === table.rows.length - 1) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('bottom-spacer')
+                            cell.append(spacer)
+                        }
+                    }
+
+                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine === index)
+
+                    // store created cells
+                    addedCells.push([cell, currentLineDecorations])
+                }
+
+                setCells(addedCells)
+            } else {
+                // code view ref passed `null`, so element is leaving DOM
+                cleanup()
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+            cleanup()
+        }
+    }, [codeViewElements, blameHunks])
+
+    return (
+        <>
+            {cells.map(([portalRoot, blameHunk], index) =>
+                ReactDOM.createPortal(
+                    <ColumnDecoratorContents
+                        line={index + 1}
+                        blameHunk={blameHunk}
+                        isLightTheme={isLightTheme}
+                        onSelect={selectRow}
+                        onDeselect={deselectRow}
+                    />,
+                    portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
+                )
+            )}
+        </>
+    )
+})
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
 let timeoutId: NodeJS.Timeout | null = null
@@ -207,13 +190,15 @@ const usePopover = ({
     return { isOpen, open, close, closeWithTimeout, resetCloseTimeout: resetTimeout }
 }
 
+const now = Date.now()
+
 export const ColumnDecoratorContents: React.FunctionComponent<{
-    line?: number
-    lineDecorations: TextDocumentDecoration[] | undefined
+    line: number
+    blameHunk?: BlameHunk
     isLightTheme: boolean
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, lineDecorations, isLightTheme, onSelect, onDeselect }) => {
+}> = ({ line, blameHunk, isLightTheme, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
     const onOpen = useCallback(() => {
         if (typeof line === 'number' && onSelect) {
@@ -234,47 +219,49 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
 
     const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen, close, open])
 
+    if (!blameHunk) {
+        return null
+    }
+
+    const displayName = truncate(blameHunk.author.person.displayName, { length: 25 })
+    const username = blameHunk.author.person.user ? `(${blameHunk.author.person.user.username}) ` : ''
+    const dateString = formatDistanceStrict(new Date(blameHunk.author.date), now, { addSuffix: true })
+    const linkURL = new URL(blameHunk.commit.url, 'https://sourcegraph.com').href
+    const hoverMessage = `${blameHunk.author.person.email} • ${truncate(blameHunk.message, { length: 1000 })}`
+    const content = `${dateString} • ${username}${displayName} [${truncate(blameHunk.message, { length: 45 })}]`
+
     return (
-        <>
-            {lineDecorations?.filter(property('after', isDefined)).map(decoration => {
-                const attachment = decoration.after
-                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+        <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
+            <PopoverTrigger
+                as={Link}
+                // style={{ color: style.color }}
+                to={linkURL}
+                // Use target to open external URLs
+                target={linkURL && isAbsoluteUrl(linkURL) ? '_blank' : undefined}
+                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                rel="noreferrer noopener"
+                onFocus={open}
+                onBlur={close}
+                onMouseEnter={open}
+                onMouseLeave={closeWithTimeout}
+            >
+                <span
+                    className={styles.contents}
+                    data-line-decoration-attachment-content={true}
+                    data-contents={content}
+                />
+            </PopoverTrigger>
 
-                return (
-                    <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
-                        <PopoverTrigger
-                            as={Link}
-                            style={{ color: style.color }}
-                            to={attachment.linkURL!}
-                            // Use target to open external URLs
-                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                            rel="noreferrer noopener"
-                            onFocus={open}
-                            onBlur={close}
-                            onMouseEnter={open}
-                            onMouseLeave={closeWithTimeout}
-                        >
-                            <span
-                                className={styles.contents}
-                                data-line-decoration-attachment-content={true}
-                                data-contents={attachment.contentText || ''}
-                            />
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                            targetPadding={createRectangle(0, 0, 10, 10)}
-                            position={Position.top}
-                            focusLocked={false}
-                            onMouseEnter={resetCloseTimeout}
-                            onMouseLeave={close}
-                        >
-                            {attachment.hoverMessage}
-                        </PopoverContent>
-                    </Popover>
-                )
-            })}
-        </>
+            <PopoverContent
+                targetPadding={createRectangle(0, 0, 10, 10)}
+                position={Position.top}
+                focusLocked={false}
+                onMouseEnter={resetCloseTimeout}
+                onMouseLeave={close}
+            >
+                {hoverMessage}
+            </PopoverContent>
+        </Popover>
     )
 }
 

@@ -92,6 +92,7 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
+import { BlameHunk } from '../blame/useBlameDecorations'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { ColumnDecorator } from './ColumnDecorator'
@@ -131,7 +132,7 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
-    blameDecorations?: TextDocumentDecoration[]
+    blameHunks?: BlameHunk[]
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -661,25 +662,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
 
-    // Memoize column and inline decorations to avoid clearing and setting decorations
-    // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
-    const decorations: {
-        column: [TextDocumentDecorationType, DecorationMapByLine][]
-        inline: DecorationMapByLine
-    } = useMemo(() => {
-        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
-        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
-            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
-
+    // Memoize decorations to avoid clearing and setting decorations in `LineDecorator`s on renders in which decorations haven't changed.
+    const decorations: DecorationMapByLine = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            return groupDecorations(decorationsOrError, enableExtensionsDecorationsColumnView, {
-                column: columnWithBlame,
-                inline: [],
-            })
+            return groupDecorationsByLine(
+                decorationsOrError.reduce((accumulator, [type, items]) => {
+                    accumulator.push(...items)
+                    return accumulator
+                }, [] as TextDocumentDecoration[])
+            )
         }
 
-        return { column: columnWithBlame, inline: new Map() }
-    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
+        return new Map()
+    }, [props.disableDecorations, props.blameHunks, decorationsOrError, enableExtensionsDecorationsColumnView])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -844,17 +839,13 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {decorations.column.map(([{ extensionID }, items]) => (
-                    <ColumnDecorator
-                        key={extensionID}
-                        isLightTheme={isLightTheme}
-                        extensionID={extensionID!}
-                        decorations={items}
-                        codeViewElements={codeViewElements}
-                    />
-                ))}
+                <ColumnDecorator
+                    isLightTheme={isLightTheme}
+                    blameHunks={props.blameHunks}
+                    codeViewElements={codeViewElements}
+                />
 
-                {iterate(decorations.inline)
+                {iterate(decorations)
                     .map(([line, items]) => {
                         const portalID = toPortalID(line)
                         return (
