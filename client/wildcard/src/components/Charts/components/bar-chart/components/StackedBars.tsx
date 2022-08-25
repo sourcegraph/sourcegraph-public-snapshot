@@ -1,4 +1,4 @@
-import { ComponentProps, ReactElement } from 'react'
+import { ComponentProps, MouseEvent, ReactElement } from 'react'
 
 import { Group } from '@visx/group'
 import { BarRounded } from '@visx/shape'
@@ -16,7 +16,7 @@ interface StackedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumColor: (datum: Datum) => string | undefined
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
-    onBarClick: (datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum) => void
 }
 
 export function StackedBars<Datum>(props: StackedBarsProps<Datum>): ReactElement {
@@ -60,7 +60,7 @@ export function StackedBars<Datum>(props: StackedBarsProps<Datum>): ReactElement
                                 bottom={isFirstBar}
                                 top={isLastBar}
                                 onMouseEnter={() => onBarHover(stackedDatum.datum, category)}
-                                onClick={() => onBarClick(stackedDatum.datum)}
+                                onClick={event => onBarClick(event, stackedDatum.datum)}
                                 onMouseLeave={onBarLeave}
                             />
                         )
