@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -161,6 +162,40 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	}
+}
+
+func TestHasCommit(t *testing.T) {
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
+
+	testCases := []struct {
+		repositoryID int
+		commit       string
+		exists       bool
+	}{
+		{50, makeCommit(1), true},
+		{50, makeCommit(2), false},
+		{51, makeCommit(1), false},
+	}
+
+	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
+	insertNearestUploads(t, db, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
+
+		t.Run(name, func(t *testing.T) {
+			exists, err := store.HasCommit(context.Background(), testCase.repositoryID, testCase.commit)
+			if err != nil {
+				t.Fatalf("unexpected error checking if commit exists: %s", err)
+			}
+			if exists != testCase.exists {
+				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
+			}
+		})
 	}
 }
 

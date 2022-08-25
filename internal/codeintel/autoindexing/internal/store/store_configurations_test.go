@@ -1,8 +1,10 @@
-package dbstore
+package store
 
 import (
 	"context"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -16,7 +18,7 @@ import (
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testStore(db)
+	store := New(db, &observation.TestContext)
 
 	expectedConfigurationData := []byte(`{
 		"foo": "bar",
@@ -58,7 +60,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 func TestUpdateIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testStore(db)
+	store := New(db, &observation.TestContext)
 
 	query := sqlf.Sprintf(
 		`INSERT INTO repo (id, name) VALUES (%s, %s)`,

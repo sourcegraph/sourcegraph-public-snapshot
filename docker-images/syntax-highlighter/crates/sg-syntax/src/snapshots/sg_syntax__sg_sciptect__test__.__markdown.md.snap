@@ -221,13 +221,32 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^ Identifier  entity.name.section.markdown
   
   **Example:** [`repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rtr+AND+newRouter&patternType=literal)
+//^^^^^^^^^^^^ Identifier  markup.bold.markdown
+//             ^ StringLiteral  meta.link.inline.markdown
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  markup.raw.inline.markdown
+//                                                                           ^ StringLiteral  meta.link.inline.markdown
+//                                                                            ^ StringLiteral  meta.link.inline.markdown
+//                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier  markup.underline.link.markdown
+//                                                                                                                                                                                                    ^ StringLiteral  meta.link.inline.markdown
   
   Hello
   
   This folder contains client code that is **branded**, i.e. it implements the visual design language we use across our web app and e.g. in the options menu of the browser extension.
+//                                         ^^^^^^^^^^^ Identifier  markup.bold.markdown
   Code in here can use Bootstrap and must not adapt styles of the code host (for more details, see [Styling UI in the handbook](../../doc/dev/background-information/web/styling.md)).
+//                                                                                                 ^ StringLiteral  meta.link.inline.markdown
+//                                                                                                                            ^ StringLiteral  meta.link.inline.markdown
+//                                                                                                                             ^ StringLiteral  meta.link.inline.markdown
+//                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier  markup.underline.link.markdown
+//                                                                                                                                                                                 ^ StringLiteral  meta.link.inline.markdown
   
   Any code that is code host agnostic should go into [`../shared`](../shared) instead.
+//                                                   ^ StringLiteral  meta.link.inline.markdown
+//                                                    ^^^^^^^^^^^ StringLiteral  markup.raw.inline.markdown
+//                                                               ^ StringLiteral  meta.link.inline.markdown
+//                                                                ^ StringLiteral  meta.link.inline.markdown
+//                                                                 ^^^^^^^^^ Identifier  markup.underline.link.markdown
+//                                                                          ^ StringLiteral  meta.link.inline.markdown
   
   #### Heading
 //^^^^^ Identifier  markup.heading.markdown
