@@ -366,7 +366,7 @@ type BatchSpecResolver interface {
 
 	Source() string
 
-	Mounts(ctx context.Context, args *ListBatchSpecMountArgs) (BatchSpecMountConnectionResolver, error)
+	Files(ctx context.Context, args *ListWorkspaceFilesArgs) (WorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -596,7 +596,7 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
-type ListBatchSpecMountArgs struct {
+type ListWorkspaceFilesArgs struct {
 	First     int32
 	After     *string
 	BatchSpec graphql.ID
@@ -671,20 +671,29 @@ type BatchSpecConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type BatchSpecMountConnectionResolver interface {
+type WorkspaceFileConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]BatchSpecMountResolver, error)
+	Nodes(ctx context.Context) ([]WorkspaceFileResolver, error)
 }
 
-type BatchSpecMountResolver interface {
+type WorkspaceFileResolver interface {
 	ID() graphql.ID
-	FileName() string
-	Path() string
-	Size() int32
 	ModifiedAt() DateTime
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+
+	Path() string
+	Name() string
+	IsDirectory() bool
+	Content() string
+	ByteSize() int32
+	Binary() bool
+	RichHTML() string
+	URL() string
+	CanonicalURL() string
+	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
+	//Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
 }
 
 type CommonChangesetsStatsResolver interface {

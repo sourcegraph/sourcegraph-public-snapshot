@@ -514,7 +514,7 @@ func TestBatchSpecResolver_Mounts(t *testing.T) {
 	}
 
 	after := "1"
-	connectionResolver, err := resolver.Mounts(ctx, &graphqlbackend.ListBatchSpecMountArgs{
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListWorkspaceFilesArgs{
 		First:     int32(10),
 		After:     &after,
 		BatchSpec: "123",

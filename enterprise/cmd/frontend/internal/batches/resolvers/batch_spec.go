@@ -617,7 +617,7 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 	return r.canAdminister, r.canAdministerErr
 }
 
-func (r *batchSpecResolver) Mounts(ctx context.Context, args *graphqlbackend.ListBatchSpecMountArgs) (_ graphqlbackend.BatchSpecMountConnectionResolver, err error) {
+func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListWorkspaceFilesArgs) (_ graphqlbackend.WorkspaceFileConnectionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs", fmt.Sprintf("First: %d, After: %v", args.First, args.After))
 	defer func() {
 		tr.SetError(err)

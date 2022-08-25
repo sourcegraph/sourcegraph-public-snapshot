@@ -11,7 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
-var _ graphqlbackend.BatchSpecMountConnectionResolver = &batchSpecMountConnectionResolver{}
+var _ graphqlbackend.WorkspaceFileConnectionResolver = &batchSpecMountConnectionResolver{}
 
 type batchSpecMountConnectionResolver struct {
 	store *store.Store
@@ -40,17 +40,17 @@ func (r *batchSpecMountConnectionResolver) PageInfo(ctx context.Context) (*graph
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *batchSpecMountConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecMountResolver, error) {
+func (r *batchSpecMountConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.WorkspaceFileResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) == 0 {
-		return []graphqlbackend.BatchSpecMountResolver{}, nil
+		return []graphqlbackend.WorkspaceFileResolver{}, nil
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecMountResolver, len(nodes))
+	resolvers := make([]graphqlbackend.WorkspaceFileResolver, len(nodes))
 	for i, node := range nodes {
 		resolvers[i] = &batchSpecMountResolver{
 			batchSpecRandID: r.opts.BatchSpecRandID,

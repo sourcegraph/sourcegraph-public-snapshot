@@ -40,9 +40,9 @@ func TestBatchSpecMountResolver(t *testing.T) {
 			expected: graphql.ID("QmF0Y2hTcGVjTW91bnQ6Ijk4N3h5eiI="),
 		},
 		{
-			name: "FileName",
+			name: "Name",
 			getActual: func() interface{} {
-				return resolver.FileName()
+				return resolver.Name()
 			},
 			expected: "hello.txt",
 		},
@@ -54,7 +54,7 @@ func TestBatchSpecMountResolver(t *testing.T) {
 			expected: "foo/bar",
 		},
 		{
-			name: "Size",
+			name: "ByteSize",
 			getActual: func() interface{} {
 				return resolver.Size()
 			},
