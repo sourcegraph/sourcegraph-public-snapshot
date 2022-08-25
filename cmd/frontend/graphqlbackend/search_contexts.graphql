@@ -192,7 +192,7 @@ input SearchContextInput {
     Search context name. Not the same as the search context spec. Search context namespace and search context name
     are used to construct the fully-qualified search context spec.
     Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
+    "@user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx."
     """
     name: String!
     """
@@ -226,7 +226,7 @@ input SearchContextEditInput {
     Search context name. Not the same as the search context spec. Search context namespace and search context name
     are used to construct the fully-qualified search context spec.
     Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
+    "@user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx."
     """
     name: String!
     """
