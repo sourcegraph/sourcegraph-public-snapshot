@@ -3540,7 +3540,7 @@ type WorkspaceFileConnection {
 """
 The metadata of a file being used in a batch spec step.
 """
-type WorkspaceFile implements File2 {
+type WorkspaceFile implements File2 & Node {
     """
     The ID of the mount.
     """
