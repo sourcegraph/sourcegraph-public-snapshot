@@ -17,6 +17,7 @@ import {
     BarChart,
     LegendList,
     LegendItem,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
@@ -222,6 +223,13 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         preciseNavigation: JSX.Element
     }
 
+    const urls: Record<string, string> = {
+        python: 'https://github.com/sourcegraph/scip-python',
+        typescript: 'https://github.com/sourcegraph/scip-typescript',
+        java: 'https://github.com/sourcegraph/scip-java',
+        ruby: 'https://github.com/sourcegraph/scip-ruby',
+    }
+
     const topRepos: TopRepo[] | undefined = (() => {
         const allRows = data?.site.analytics.codeIntelTopRepositories
         if (!allRows) {
@@ -248,12 +256,22 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     )
                     const total = searchBased + precise
 
-                    return (
-                        <div key={lang}>
-                            <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
-                            <strong>{lang}</strong>
-                        </div>
-                    )
+                    if (precise > 0) {
+                        return (
+                            <div key={lang}>
+                                <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
+                                <strong>{lang}</strong>
+                            </div>
+                        )
+                    }
+                    if (lang in urls) {
+                        return (
+                            <div key={lang}>
+                                Configure precise navigation for <Link to={urls[lang]}>{lang}</Link>
+                            </div>
+                        )
+                    }
+                    return <></>
                 })
                 return <>{items}</>
             })(),
