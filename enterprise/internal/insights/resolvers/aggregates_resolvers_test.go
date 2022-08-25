@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,6 +31,9 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
+			}
+			if err != nil && tc.err != nil && !strings.Contains(err.Error(), tc.err.Error()) {
+				t.Errorf("expected error %v to contain %v", err, tc.err)
 			}
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
@@ -181,7 +185,7 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "type:diff fork:leo func(.*)",
 			patternType:  "regexp",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("pattern parsing"),
 		},
 		{
 			name:         "cannot aggregate for select:repo query",
@@ -212,6 +216,13 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "func(t *testing.T)",
 			patternType:  "literal",
 			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with multiple steps",
+			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
+			patternType:  "regexp",
+			canAggregate: false,
+			err:          errors.New("pattern replacement does not support queries with multiple patterns"),
 		},
 	}
 	suite := canAggregateBySuite{

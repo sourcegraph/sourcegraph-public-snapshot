@@ -390,7 +390,11 @@ func TestCaptureGroupAggregation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
-			countFunc, _ := GetCountFuncForMode(tc.query, "regexp", tc.mode)
+			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
+			if err != nil {
+				t.Errorf("expected test not to error, got %v", err)
+				t.FailNow()
+			}
 			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
