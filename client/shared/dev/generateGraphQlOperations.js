@@ -135,7 +135,7 @@ async function generateGraphQlOperations() {
               onlyOperationTypes: true,
               noExport: false,
               enumValues: '@sourcegraph/shared/src/graphql-operations',
-              interfaceNameForOperations: 'SearchGraphQlOperations',
+              interfaceNameForOperations: 'SearchUIGraphQlOperations',
             },
             plugins: SHARED_PLUGINS,
           },

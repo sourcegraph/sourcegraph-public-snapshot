@@ -1,7 +1,8 @@
 import expect from 'expect'
 import { test } from 'mocha'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
+import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/search'
+import { GetSearchAggregationResult } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -12,6 +13,68 @@ import { WebGraphQlOperations } from '../graphql-operations'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 
+const aggregationDefaultMock: GetSearchAggregationResult = {
+    searchQueryAggregate: {
+        __typename: 'SearchQueryAggregate',
+        aggregations: {
+            __typename: 'ExhaustiveSearchAggregationResult',
+            mode: SearchAggregationMode.REPO,
+            otherGroupCount: 100,
+            groups: [
+                {
+                    __typename: 'AggregationGroup',
+                    label: 'sourcegraph/sourcegraph',
+                    count: 100,
+                    query: 'context:global insights repo:sourcegraph/sourcegraph',
+                },
+                {
+                    __typename: 'AggregationGroup',
+                    label: 'sourcegraph/about',
+                    count: 80,
+                    query: 'context:global insights repo:sourecegraph/about',
+                },
+                {
+                    __typename: 'AggregationGroup',
+                    label: 'sourcegraph/search-insight',
+                    count: 60,
+                    query: 'context:global insights repo:sourecegraph/search-insight',
+                },
+                {
+                    __typename: 'AggregationGroup',
+                    label: 'sourcegraph/lang-stats',
+                    count: 40,
+                    query: 'context:global insights repo:sourecegraph/lang-stats',
+                },
+            ],
+        },
+        modeAvailability: [
+            {
+                __typename: 'AggregationModeAvailability',
+                mode: SearchAggregationMode.REPO,
+                available: true,
+                reasonUnavailable: null,
+            },
+            {
+                __typename: 'AggregationModeAvailability',
+                mode: SearchAggregationMode.PATH,
+                available: true,
+                reasonUnavailable: null,
+            },
+            {
+                __typename: 'AggregationModeAvailability',
+                mode: SearchAggregationMode.AUTHOR,
+                available: true,
+                reasonUnavailable: null,
+            },
+            {
+                __typename: 'AggregationModeAvailability',
+                mode: SearchAggregationMode.CAPTURE_GROUP,
+                available: true,
+                reasonUnavailable: null,
+            },
+        ],
+    },
+}
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'matches',
@@ -45,9 +108,7 @@ const mockDefaultStreamEvents: SearchEvent[] = [
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    IsSearchContextAvailable: () => ({
-        isSearchContextAvailable: true,
-    }),
+    IsSearchContextAvailable: () => ({ isSearchContextAvailable: true }),
     UserAreaUserProfile: () => ({
         user: {
             __typename: 'User',
@@ -64,7 +125,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe('Search aggregation', () => {
+describe.only('Search aggregation', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -77,7 +138,10 @@ describe('Search aggregation', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideGraphQL(commonSearchGraphQLResults)
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            GetSearchAggregation: () => aggregationDefaultMock,
+        })
         testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
     })
 
@@ -119,10 +183,16 @@ describe('Search aggregation', () => {
 
             await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
 
-            const aggregationModesIds = ['repo', 'file', 'author', 'captureGroup']
+            // 'REPO', 'PATH', 'AUTHOR', 'CAPTURE_GROUP'
+            const aggregationCases = [
+                { mode: 'REPO', id: 'repo-aggregation-mode' },
+                { mode: 'PATH', id: 'file-aggregation-mode' },
+                { mode: 'AUTHOR', id: 'author-aggregation-mode' },
+                { mode: 'CAPTURE_GROUP', id: 'captureGroup-aggregation-mode' },
+            ]
 
-            for (const mode of aggregationModesIds) {
-                await driver.page.click(`[data-testid="${mode}-aggregation-mode"]`)
+            for (const testCase of aggregationCases) {
+                await driver.page.click(`[data-testid="${testCase.id}"]`)
 
                 await driver.page.waitForFunction(
                     (expectedQuery: string, mode: string) => {
@@ -134,7 +204,7 @@ describe('Search aggregation', () => {
                     },
                     { timeout: 5000 },
                     `${origQuery}`,
-                    mode
+                    testCase.mode
                 )
             }
         })
@@ -170,7 +240,7 @@ describe('Search aggregation', () => {
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'file' &&
+                        aggregationMode === 'PATH' &&
                         aggregationUIMode === 'searchPage'
                     )
                 },
@@ -193,7 +263,7 @@ describe('Search aggregation', () => {
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'author' &&
+                        aggregationMode === 'AUTHOR' &&
                         aggregationUIMode === 'sidebar'
                     )
                 },
