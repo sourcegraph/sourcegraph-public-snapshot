@@ -69,7 +69,8 @@ const aggregationModeDeserializer = (
         case 'CAPTURE_GROUP':
             return SearchAggregationMode.CAPTURE_GROUP
 
-        default: return null
+        default:
+            return null
     }
 }
 
