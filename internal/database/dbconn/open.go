@@ -75,6 +75,8 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 
 // extendedDriver wraps sqlHooks' driver to provide a conn that implements Ping, ResetSession
 // and CheckNamedValue, which is mandatory as otelsql is instrumenting these methods.
+// For all mandatory methods the sqlHooks driver is used. For the optional methods namely Ping, ResetSession and CheckNamedValue 
+// (which the sqlHooks driver does not implement), extendedConn goes to the original default driver.
 //
 //                             Ping()
 //                             ResetSession()
