@@ -81,7 +81,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
-	if op, err := buildOverviewAnnotation(c); err == nil {
+	if op, err := exposeBuildMetadata(c); err == nil {
 		ops.Append(op)
 	}
 

@@ -928,9 +928,10 @@ func uploadBuildeventTrace() operations.Operation {
 	}
 }
 
-func buildOverviewAnnotation(c Config) (operations.Operation, error) {
+func exposeBuildMetadata(c Config) (operations.Operation, error) {
 	overview := struct {
 		RunType      string       `json:"RunType"`
+		Version      string       `json:"Version"`
 		Diff         string       `json:"Diff"`
 		MessageFlags MessageFlags `json:"MessageFlags"`
 	}{
@@ -945,7 +946,7 @@ func buildOverviewAnnotation(c Config) (operations.Operation, error) {
 
 	return func(p *bk.Pipeline) {
 		p.AddStep("Build overview",
-			bk.Env("BUILD_OVERVIEW", string(data)),
+			bk.Env("BUILD_METADATA", string(data)),
 			bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					Type:         bk.AnnotationTypeInfo,
