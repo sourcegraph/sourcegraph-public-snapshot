@@ -55,6 +55,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 
 		teammate, err := client.getTeammateForBuild(build)
 		require.NoError(t, err)
+		require.NotEqual(t, teammate.SlackID, "")
 		require.Equal(t, teammate.Name, "Ryan Slade")
 	})
 	t.Run("commit author preferred over build author", func(t *testing.T) {
