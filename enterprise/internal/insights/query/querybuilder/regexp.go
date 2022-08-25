@@ -145,7 +145,12 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 }
 
 func (r *regexpReplacer) HasCaptureGroups() bool {
-	return len(r.groups) != 0
+	for _, g := range r.groups {
+		if g.capturing {
+			return true
+		}
+	}
+	return false
 }
 
 var (
