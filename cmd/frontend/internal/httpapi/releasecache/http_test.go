@@ -58,7 +58,7 @@ func TestHandler_HandleBranch(t *testing.T) {
 
 		handler.handleBranch(rec, "3.43")
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "\"3.43.9\"", string(rec.Body.String()))
+		assert.Equal(t, "\"3.43.9\"", rec.Body.String())
 	})
 }
 
