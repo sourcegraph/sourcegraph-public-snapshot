@@ -139,6 +139,7 @@ func (h *handler) handleWebhook(w http.ResponseWriter, r *http.Request) {
 type signatureValidator func(signature string, payload []byte, secret []byte) error
 
 func (h *handler) doHandleWebhook(w http.ResponseWriter, r *http.Request, signatureValidator signatureValidator) {
+	defer r.Body.Close()
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Warn("error reading payload", log.Error(err))
