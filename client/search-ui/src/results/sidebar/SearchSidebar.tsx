@@ -23,6 +23,8 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code, Icon } from '@sourcegraph/wildcard'
 
+import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
+
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
@@ -69,14 +71,20 @@ const selectFromQueryState = ({
     queryState: { query },
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 }: SearchQueryState): {
     query: string
     setQueryState: SearchQueryState['setQueryState']
     submitSearch: SearchQueryState['submitSearch']
+    searchQueryFromURL: SearchQueryState['searchQueryFromURL']
+    searchPatternType: SearchQueryState['searchPatternType']
 } => ({
     query,
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 })
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -88,7 +96,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     // The zustand store for search query state is referenced through context
     // because there may be different global stores across clients
     // (e.g. VS Code extension, web app)
-    const { query, setQueryState, submitSearch } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const {
+        query,
+        searchQueryFromURL,
+        searchPatternType,
+        setQueryState,
+        submitSearch,
+    } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const [aggregationUIMode] = useAggregationUIMode()
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
@@ -167,6 +182,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [props.filters, onDynamicFilterClicked]
     )
 
+    const handleAggregationBarLinkClick = (query: string): void => {
+        submitQueryWithProps([{ type: 'replaceQuery', value: query }])
+    }
+
     let body
 
     // collapsedSections is undefined on first render. To prevent the sections
@@ -175,15 +194,19 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     if (collapsedSections) {
         body = (
             <>
-                {props.enableSearchAggregation && (
+                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && (
                     <SearchSidebarSection
                         sectionId={SectionID.GROUPED_BY}
                         className={styles.item}
-                        header="Grouped by"
+                        header="Group results by"
                         startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
                         onToggle={persistToggleState}
                     >
-                        <SearchAggregations />
+                        <SearchAggregations
+                            query={searchQueryFromURL}
+                            patternType={searchPatternType}
+                            onQuerySubmit={handleAggregationBarLinkClick}
+                        />
                     </SearchSidebarSection>
                 )}
 

@@ -3,6 +3,8 @@ package resolvers
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -220,4 +222,82 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 		t:                  t,
 	}
 	suite.Test_canAggregateBy()
+}
+
+func Test_getDefaultAggregationMode(t *testing.T) {
+	testCases := []struct {
+		name        string
+		query       string
+		patternType string
+		want        types.SearchAggregationMode
+		err         error
+	}{
+		{
+			name:  "invalid query returns error",
+			query: "func fork:leo",
+			want:  "",
+			err:   errors.New("ParseQuery"),
+		},
+		{
+			name:        "literal type query does not return capture group mode",
+			query:       "func([0-9]+)",
+			patternType: "literal",
+			want:        types.REPO_AGGREGATION_MODE,
+		},
+		{
+			name:  "query with regex no capture group returns repo",
+			query: "func [0-9] case:yes",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+		//{
+		//	name:  "query with capture group returns capture group",
+		//	query: "repo:contains.path(README) todo(\\w+)",
+		//	want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
+		//},
+		{
+			name:  "type:commit query returns author",
+			query: "type:commit fix",
+			want:  types.AUTHOR_AGGREGATION_MODE,
+		},
+		{
+			name:  "type:diff query returns author",
+			query: "type:diff fix",
+			want:  types.AUTHOR_AGGREGATION_MODE,
+		},
+		{
+			name:  "query for single repo returns path",
+			query: "repo:^github\\.com/sourcegraph/sourcegraph$ insights",
+			want:  types.PATH_AGGREGATION_MODE,
+		},
+		{
+			name:  "query not for single repo returns repo",
+			query: "repo:^github.com/sourcegraph insights",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+		{
+			name:  "query with repo predicate returns repo",
+			query: "repo:contains.path(README) insights",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+		{
+			name:  "defaults to repo",
+			query: "getDefaultAggregationMode file:insights",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pt := "regexp"
+			if tc.patternType != "" {
+				pt = tc.patternType
+			}
+			mode, err := getDefaultAggregationMode(tc.query, pt)
+			if (err != nil && tc.err == nil) || (err == nil && tc.err != nil) {
+				t.Errorf("expected different error behavior: got %v, want %v", err, tc.err)
+			}
+			if mode != tc.want {
+				t.Errorf("expected mode %v, got %v", tc.want, mode)
+			}
+		})
+	}
 }

@@ -51,7 +51,7 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(build)
+	blocks, err := c.createMessageBlocks(logger, build)
 	if err != nil {
 		return err
 	}
@@ -142,10 +142,13 @@ func commitLink(msg, commit string) string {
 }
 
 func slackMention(teammate *team.Teammate) string {
+	if teammate.SlackID == "" {
+		return fmt.Sprintf("%s (%s) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", teammate.Name, teammate.Email)
+	}
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
-func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, error) {
+func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
 	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
@@ -160,7 +163,7 @@ func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, e
 		}
 	}
 
-	c.logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
+	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
 	teammate, err := c.getTeammateForBuild(build)
 	var author string
 	if err != nil {
@@ -169,6 +172,14 @@ func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, e
 		// so we set author here to that msg, so that the message can be conveyed to the person in slack
 		author = err.Error()
 	} else {
+		logger.Debug("teammate found", log.Object("teammate",
+			log.String("slackID", teammate.SlackID),
+			log.String("key", teammate.Key),
+			log.String("email", teammate.Email),
+			log.String("handbook", teammate.HandbookLink),
+			log.String("slackName", teammate.SlackName),
+			log.String("github", teammate.GitHub),
+		))
 		author = slackMention(teammate)
 	}
 
