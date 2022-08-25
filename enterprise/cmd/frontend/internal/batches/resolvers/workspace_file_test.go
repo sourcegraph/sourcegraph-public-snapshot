@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestBatchSpecMountResolver(t *testing.T) {
+func TestWorkspaceFileResolver(t *testing.T) {
 	date := time.Date(2022, 1, 2, 3, 5, 6, 0, time.UTC)
 
 	resolver := workspaceFileResolver{
