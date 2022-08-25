@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { getDocumentNode } from '@sourcegraph/http-client/out/src'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
