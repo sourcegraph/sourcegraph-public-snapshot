@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed support for bare repositories using the src-cli and other codehost type. [#40863](https://github.com/sourcegraph/sourcegraph/pull/40863)
+- Fixed support for bare repositories using the src-cli and other codehost type. This requires the latest version of src-cli. [#40863](https://github.com/sourcegraph/sourcegraph/pull/40863)
 
 ### Removed
 
