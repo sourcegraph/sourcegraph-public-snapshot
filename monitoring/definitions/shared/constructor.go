@@ -48,7 +48,7 @@ type ObservableConstructorOptions struct {
 	By []string
 
 	// RangeWindow allows setting a custom window for functions like `rate` and `increase`. By default it is
-	// generally 5m.
+	// set to 5m.
 	RangeWindow model.Duration
 }
 
