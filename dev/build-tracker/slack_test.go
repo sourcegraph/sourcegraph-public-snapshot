@@ -30,7 +30,7 @@ func TestSlackMention(t *testing.T) {
 			GitHub:  "bobbyb",
 		})
 
-		require.Equal(t, "Bob Burgers (bob@burgers.com) - We could not locate your Slack ID. Please check that your information in team.yml of the Handbook is correct", result)
+		require.Equal(t, "Bob Burgers (bob@burgers.com) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", result)
 	})
 	t.Run("Use SlackID if it exists", func(t *testing.T) {
 		result := slackMention(&team.Teammate{
