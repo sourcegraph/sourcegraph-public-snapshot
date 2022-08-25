@@ -2084,7 +2084,7 @@ type SiteConfiguration struct {
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
 type SrcCliVersionCache struct {
-	// Enabled description: Enables the src-cli current version API endpoint.
+	// Enabled description: Enables the src-cli version cache API endpoint.
 	Enabled bool `json:"enabled"`
 	// Github description: GitHub configuration, both for queries and receiving release webhooks.
 	Github Github `json:"github"`

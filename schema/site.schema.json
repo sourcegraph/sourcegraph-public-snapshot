@@ -1443,7 +1443,7 @@
           "group": "Sourcegraph.com",
           "properties": {
             "enabled": {
-              "description": "Enables the src-cli current version API endpoint.",
+              "description": "Enables the src-cli version cache API endpoint.",
               "type": "boolean",
               "default": false
             },
