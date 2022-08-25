@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -618,17 +617,11 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 }
 
 func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListWorkspaceFilesArgs) (_ graphqlbackend.WorkspaceFileConnectionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs", fmt.Sprintf("First: %d, After: %v", args.First, args.After))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err = validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
 	opts := store.ListBatchSpecMountsOpts{
@@ -653,5 +646,5 @@ func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.List
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecMountConnectionResolver{store: r.store, opts: opts}, nil
+	return &workspaceFileConnectionResolver{store: r.store, opts: opts}, nil
 }
