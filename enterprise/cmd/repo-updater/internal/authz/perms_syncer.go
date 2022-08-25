@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1359,12 +1360,12 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 }
 
 // isDisabled returns true if the background permissions syncing is not enabled.
-// It is enabled for all plans including the free one.
 // It is not enabled if:
 //   - Permissions user mapping (aka explicit permissions API) is enabled
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
+		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
 

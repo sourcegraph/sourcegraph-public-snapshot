@@ -162,6 +162,10 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -182,6 +186,10 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 }
 
 func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -208,6 +216,10 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
+	}
+
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
