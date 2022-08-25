@@ -25,19 +25,9 @@ type Build struct {
 	ConsecutiveFailure int `json:"consecutiveFailures"`
 }
 
-// updateFromEvent updates the current build with the build and pipeline from the event. Care is taken
-// to ensure the author is retained as the build from the event might not have an author, whereas the original build
-// does!
+// updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
-	old := b.Build
-
 	b.Build = e.Build
-	// sometimes (typically when a build is retried) the "new" build won't have the author in it.
-	// so we make sure to retain the author, if the new build does not contain one!
-	// TODO(burmudar): maybe we should just always preserve the old author ?
-	if b.Build.Author == nil || b.Build.Author.Name == "" || b.Build.Author.Email == "" {
-		b.Build.Author = old.Author
-	}
 	b.Pipeline = e.pipeline()
 }
 

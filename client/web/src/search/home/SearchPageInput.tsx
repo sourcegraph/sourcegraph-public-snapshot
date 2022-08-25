@@ -23,6 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
@@ -75,10 +76,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [hideSearchHistory] = useFeatureFlag('search-input-hide-history')
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && !hideSearchHistory
                 ? [
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
@@ -93,10 +95,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                   ]
                 : [],
         [
+            coreWorkflowImprovementsEnabled,
             props.authenticatedUser,
             props.selectedSearchContextSpec,
-            coreWorkflowImprovementsEnabled,
             props.telemetryService,
+            hideSearchHistory,
         ]
     )
 

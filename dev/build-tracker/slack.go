@@ -44,9 +44,6 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
-	if build.Author == nil {
-		return nil, errors.New("nil Author")
-	}
 	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
@@ -54,13 +51,7 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	logger.Debug("getting teammate information", log.String("authorName", build.authorName()), log.String("authorEmail", build.authorEmail()))
-	teammate, err := c.getTeammateForBuild(build)
-	if err != nil {
-		logger.Error("failed to find teammate", log.Error(err))
-	}
-
-	blocks, err := createMessageBlocks(logger, teammate, build)
+	blocks, err := c.createMessageBlocks(build)
 	if err != nil {
 		return err
 	}
@@ -150,19 +141,11 @@ func commitLink(msg, commit string) string {
 	return fmt.Sprintf("<%s|%s>", sgURL, msg)
 }
 
-func slackMention(teammate *team.Teammate, build *Build) string {
-	if teammate == nil {
-		authorName := build.authorName()
-		if authorName == "" {
-			authorName = "N/A"
-		}
-		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", authorName)
-	}
-
+func slackMention(teammate *team.Teammate) string {
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
-func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
+func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
 	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
@@ -177,7 +160,18 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		}
 	}
 
-	author := slackMention(teammate, build)
+	c.logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
+	teammate, err := c.getTeammateForBuild(build)
+	var author string
+	if err != nil {
+		c.logger.Error("failed to find teammate", log.Error(err))
+		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
+		// so we set author here to that msg, so that the message can be conveyed to the person in slack
+		author = err.Error()
+	} else {
+		author = slackMention(teammate)
+	}
+
 	grafanaURL, err := grafanaURLFor(build)
 	if err != nil {
 		return nil, err

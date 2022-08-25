@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,9 +115,9 @@ func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	return len(rs) > 0, err
 }
 
-func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
+func getUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
+	return usagestats.GetUsersActiveTodayCount(ctx, db)
 }
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
@@ -427,7 +426,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		// For the time being, instances will report daily active users through the legacy package via this argument,
 		// as well as using the new package through the `act` argument below. This will allow comparison during the
 		// transition.
-		count, err := getUsersActiveTodayCount(ctx)
+		count, err := getUsersActiveTodayCount(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}

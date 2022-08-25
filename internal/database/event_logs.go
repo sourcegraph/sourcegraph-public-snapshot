@@ -88,7 +88,7 @@ type EventLogStore interface {
 	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
 
 	// CountUniqueUsersAll provides a count of unique active users in a given time span.
-	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error)
+	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error)
 
 	// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
 	CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error)
@@ -99,10 +99,9 @@ type EventLogStore interface {
 	// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
 	CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error)
 
-	// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
-	// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
-	// entry for each period in the time span.
-	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
+	// SiteUsageMultiplePeriods provides a count of unique active users in given time spans, broken up into periods of
+	// a given type. The value of `now` should be the current time in UTC.
+	SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
 
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
@@ -126,7 +125,7 @@ type EventLogStore interface {
 	// MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
 	MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error)
 
-	SiteUsage(ctx context.Context) (types.SiteUsageSummary, error)
+	SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error)
 
 	// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
 	// '%codeintel%' events in the event_logs table.
@@ -394,10 +393,19 @@ func (l *eventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf
 	return &t, err
 }
 
+// SiteUsageValues is a set of UsageValues representing usage on daily, weekly, and monthly bases.
+type SiteUsageValues struct {
+	DAUs []UsageValue
+	WAUs []UsageValue
+	MAUs []UsageValue
+}
+
 // UsageValue is a single count of usage for a time period starting on a given date.
 type UsageValue struct {
-	Start time.Time
-	Count int
+	Start           time.Time
+	Type            PeriodType
+	Count           int
+	CountRegistered int
 }
 
 // PeriodType is the type of period in which to count events and unique users.
@@ -461,14 +469,32 @@ func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.
 	return time.Time{}, false
 }
 
+var nonActiveUserEvents = []string{
+	"ViewSignIn",
+	"ViewSignUp",
+	"SignOutAttempted",
+	"SignOutFailed",
+	"SignOutSucceeded",
+	"SignInAttempted",
+	"SignInFailed",
+	"SignInSucceeded",
+	"PasswordResetRequested",
+	"PasswordRandomized",
+	"PasswordChanged",
+	"EmailVerified",
+	"ExternalAuthSignupFailed",
+	"ExternalAuthSignupSucceeded",
+}
+
 // CountUniqueUsersOptions provides options for counting unique users.
 type CountUniqueUsersOptions struct {
-	// If true, only include registered users. Otherwise, include all users.
-	RegisteredOnly bool
-	// If true, only include code host integration users. Otherwise, include all users.
-	IntegrationOnly bool
 	// If set, adds additional restrictions on the event types.
 	EventFilters *EventFilterOptions
+	// If set, excludes backend system users
+	ExcludeSystemUsers bool
+	// If set, excludes events that don't meet the criteria of "active" usage of Sourcegraph.
+	// These are mostly actions taken by signed-out users.
+	ExcludeNonActiveUsers bool
 }
 
 // EventFilterOptions provides options for filtering events.
@@ -511,24 +537,14 @@ func jsonSettingFragment(setting string, value any) string {
 	return string(raw)
 }
 
-func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
+func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		if opt.RegisteredOnly {
-			conds = append(conds, sqlf.Sprintf("user_id > 0"))
+		if opt.ExcludeSystemUsers {
+			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
 		}
-		if opt.IntegrationOnly {
-			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
+		if opt.ExcludeNonActiveUsers {
+			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(nonActiveUserEvents, "','")+"')"))
 		}
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -549,57 +565,160 @@ func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodTyp
 			}
 		}
 	}
-
-	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
+	return conds
 }
 
-func (l *eventLogStore) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT "+userIDQueryFragment), interval, period, startDate, endDate, conds)
+func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	startDateDays, _ := calcStartDate(now, Daily, dayPeriods)
+	endDateDays, _ := calcEndDate(startDateDays, Daily, dayPeriods)
+	startDateWeeks, _ := calcStartDate(now, Weekly, weekPeriods)
+	endDateWeeks, _ := calcEndDate(startDateWeeks, Weekly, weekPeriods)
+	startDateMonths, _ := calcStartDate(now, Monthly, monthPeriods)
+	endDateMonths, _ := calcEndDate(startDateMonths, Monthly, monthPeriods)
+
+	conds := createCountUniqueUserConds(opt)
+
+	return l.siteUsageMultiplePeriodsBySQL(ctx, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, conds)
 }
 
-func (l *eventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
-	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(%s) AS count
-		FROM event_logs
-		WHERE (%s)
-		GROUP BY period`, period, countExpr, sqlf.Join(conds, ") AND ("))
-	q := sqlf.Sprintf(`WITH all_periods AS (%s), count_by_period AS (%s)
-		SELECT all_periods.period, COALESCE(count, 0)
-		FROM all_periods
-		LEFT OUTER JOIN count_by_period ON all_periods.period = (count_by_period.period)::timestamp
-		ORDER BY period DESC`, allPeriods, countByPeriod)
+func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths time.Time, conds []*sqlf.Query) (*types.SiteUsageStatistics, error) {
+	q := sqlf.Sprintf(siteUsageMultiplePeriodsQuery, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, sqlf.Join(conds, ") AND ("))
+
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	counts := []UsageValue{}
+	dauCounts := []*types.SiteActivityPeriod{}
+	wauCounts := []*types.SiteActivityPeriod{}
+	mauCounts := []*types.SiteActivityPeriod{}
 	for rows.Next() {
 		var v UsageValue
-		err := rows.Scan(&v.Start, &v.Count)
+		err := rows.Scan(&v.Start, &v.Type, &v.Count, &v.CountRegistered)
 		if err != nil {
 			return nil, err
 		}
 		v.Start = v.Start.UTC()
-		counts = append(counts, v)
+		if v.Type == "day" {
+			dauCounts = append(dauCounts, &types.SiteActivityPeriod{
+				StartTime:           v.Start,
+				UserCount:           int32(v.Count),
+				RegisteredUserCount: int32(v.CountRegistered),
+				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
+				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
+				IntegrationUserCount: 0,
+			})
+		}
+		if v.Type == "week" {
+			wauCounts = append(wauCounts, &types.SiteActivityPeriod{
+				StartTime:           v.Start,
+				UserCount:           int32(v.Count),
+				RegisteredUserCount: int32(v.CountRegistered),
+				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
+				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
+				IntegrationUserCount: 0,
+			})
+		}
+		if v.Type == "month" {
+			mauCounts = append(mauCounts, &types.SiteActivityPeriod{
+				StartTime:           v.Start,
+				UserCount:           int32(v.Count),
+				RegisteredUserCount: int32(v.CountRegistered),
+				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
+				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
+				IntegrationUserCount: 0,
+			})
+		}
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return counts, nil
+	return &types.SiteUsageStatistics{
+		DAUs: dauCounts,
+		WAUs: wauCounts,
+		MAUs: mauCounts,
+	}, nil
 }
 
-func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, nil)
+var siteUsageMultiplePeriodsQuery = `
+WITH all_periods AS (
+  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 day')::interval)  AS period, 'day' AS type
+  UNION ALL
+  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 week')::interval) AS period, 'week' AS type
+  UNION ALL
+  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 month')::interval) AS period, 'month' AS type),
+unique_users_by_dwm AS (
+  SELECT
+    ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
+	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
+	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
+	user_id > 0 AS registered,
+	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
+  FROM event_logs
+  WHERE (%s)
+  GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
+),
+unique_users_by_day AS (
+  SELECT
+	day_period,
+	COUNT(DISTINCT aggregated_user_id) as count,
+	COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+  FROM unique_users_by_dwm
+  GROUP BY day_period
+),
+unique_users_by_week AS (
+  SELECT
+	week_period,
+	COUNT(DISTINCT aggregated_user_id) as count,
+	COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+  FROM unique_users_by_dwm
+  GROUP BY week_period
+),
+unique_users_by_month AS (
+  SELECT
+    month_period,
+    COUNT(DISTINCT aggregated_user_id) as count,
+    COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+  FROM unique_users_by_dwm
+  GROUP BY month_period
+)
+SELECT
+  all_periods.period,
+  all_periods.type,
+  COALESCE(CASE WHEN all_periods.type = 'day'
+    THEN unique_users_by_day.count
+	ELSE CASE WHEN all_periods.type = 'week'
+      THEN unique_users_by_week.count
+      ELSE unique_users_by_month.count
+    END
+  END, 0) count,
+  COALESCE(CASE WHEN all_periods.type = 'day'
+    THEN unique_users_by_day.count_registered
+    ELSE CASE WHEN all_periods.type = 'week'
+      THEN unique_users_by_week.count_registered
+      ELSE unique_users_by_month.count_registered
+	END
+  END, 0) count_registered
+FROM all_periods
+LEFT OUTER JOIN unique_users_by_day ON all_periods.type = 'day' AND all_periods.period = (unique_users_by_day.day_period)::timestamp
+LEFT OUTER JOIN unique_users_by_week ON all_periods.type = 'week' AND all_periods.period = (unique_users_by_week.week_period)::timestamp
+LEFT OUTER JOIN unique_users_by_month ON all_periods.type = 'month' AND all_periods.period = (unique_users_by_month.month_period)::timestamp
+ORDER BY period DESC
+`
+
+func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
+	conds := createCountUniqueUserConds(opt)
+
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, conds)
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name LIKE %s ", namePrefix+"%")})
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name = %s", name)})
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
@@ -607,16 +726,17 @@ func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startD
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ","))})
 }
 
-func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
-	if querySuffix == nil {
-		querySuffix = sqlf.Sprintf("")
+func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
+	if len(conds) == 0 {
+		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
+	fmt.Println(sqlf.Join(conds, ") AND ("))
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
-		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) %s`, startDate, endDate, querySuffix)
+		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))
 	r := l.QueryRow(ctx, q)
 	var count int
 	err := r.Scan(&count)
@@ -690,12 +810,33 @@ GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
 
-func (l *eventLogStore) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
-	return l.siteUsage(ctx, time.Now().UTC())
+// SiteUsageOptions specifies the options for Site Usage calculations.
+type SiteUsageOptions struct {
+	// Exclude backend system users.
+	ExcludeSystemUsers bool
+	// Exclude events that don't meet the criteria of "active" usage of Sourcegraph. These are mostly actions taken by signed-out users.
+	ExcludeNonActiveUsers bool
 }
 
-func (l *eventLogStore) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
-	query := sqlf.Sprintf(siteUsageQuery, now, now, now, now)
+func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
+	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
+		ExcludeSystemUsers:    true,
+		ExcludeNonActiveUsers: true,
+	})
+}
+
+func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt != nil {
+		if opt.ExcludeSystemUsers {
+			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
+		}
+		if opt.ExcludeNonActiveUsers {
+			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(nonActiveUserEvents, "','")+"')"))
+		}
+	}
+
+	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, sqlf.Join(conds, ") AND ("))
 
 	err = l.QueryRow(ctx, query).Scan(
 		&summary.Month,
@@ -710,20 +851,12 @@ func (l *eventLogStore) siteUsage(ctx context.Context, now time.Time) (summary t
 		&summary.IntegrationUniquesMonth,
 		&summary.IntegrationUniquesWeek,
 		&summary.IntegrationUniquesDay,
-		&summary.ManageUniquesMonth,
-		&summary.CodeUniquesMonth,
-		&summary.VerifyUniquesMonth,
-		&summary.MonitorUniquesMonth,
-		&summary.ManageUniquesWeek,
-		&summary.CodeUniquesWeek,
-		&summary.VerifyUniquesWeek,
-		&summary.MonitorUniquesWeek,
 	)
 
 	return summary, err
 }
 
-var siteUsageQuery = `
+var siteUsageCurrentPeriodsQuery = `
 SELECT
   current_month,
   current_week,
@@ -740,62 +873,7 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_day,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name LIKE 'ViewSiteAdmin%%%%'
-  ) AS manage_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'ViewRepository',
-      'ViewBlob',
-      'ViewTree',
-      'SearchResultsQueried'
-    )
-  ) AS code_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'SavedSearchEmailClicked',
-      'SavedSearchSlackClicked',
-      'SavedSearchEmailNotificationSent'
-    )
-  ) AS verify_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'DiffSearchResultsQueried'
-    )
-  ) AS monitor_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name LIKE 'ViewSiteAdmin%%%%'
-  ) AS manage_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'ViewRepository',
-      'ViewBlob',
-      'ViewTree',
-      'SearchResultsQueried'
-    )
-  ) AS code_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'SavedSearchEmailClicked',
-      'SavedSearchSlackClicked',
-      'SavedSearchEmailNotificationSent'
-    )
-  ) AS verify_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'DiffSearchResultsQueried'
-    )
-  ) AS monitor_uniques_week
-
+  	AS integration_uniques_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
   SELECT
@@ -810,7 +888,7 @@ FROM (
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
-  WHERE timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s)
 ) events
 
 GROUP BY current_month, current_week, current_day

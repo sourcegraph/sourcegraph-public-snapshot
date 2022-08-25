@@ -93,7 +93,7 @@ type QueueSizeGroupOptions struct {
 // Requires any of the following:
 //   - gauge of the format `src_{options.MetricNameRoot}_total`
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
-// 	 - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
+//   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 //
 // The queue size metric should be created via a Prometheus gauge function in the Go backend. For
 // instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in
