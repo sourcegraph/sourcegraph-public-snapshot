@@ -64,6 +64,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         >
             {stacked ? (
                 <StackedBars
+                    aria-label="chart content group"
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}
@@ -77,6 +78,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                 />
             ) : (
                 <GroupedBars
+                    aria-label="chart content group"
                     activeSegment={activeSegment}
                     categories={categories}
                     xScale={xScale}

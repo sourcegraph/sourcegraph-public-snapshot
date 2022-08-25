@@ -74,15 +74,21 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
             </div>
 
             {loading ? (
-                <AggregationChartCard type={AggregationCardMode.Loading} className={styles.chartContainer} />
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
+                    type={AggregationCardMode.Loading}
+                    className={styles.chartContainer}
+                />
             ) : error ? (
                 <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
                     type={AggregationCardMode.Error}
                     errorMessage={error.message}
                     className={styles.chartContainer}
                 />
             ) : (
                 <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
                     mode={aggregationMode}
                     type={AggregationCardMode.Data}
                     data={getAggregationData(data)}

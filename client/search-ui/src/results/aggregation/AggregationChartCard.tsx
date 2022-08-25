@@ -37,7 +37,7 @@ interface AggregationChartCardSharedProps extends HTMLAttributes<HTMLDivElement>
 type AggregationChartCardProps = AggregationChartCardSharedProps & AggregationChartCardStateProps
 
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement {
-    const { type, mode, className, missingCount, onBarLinkClick } = props
+    const { type, mode, className, missingCount, onBarLinkClick, 'aria-label': ariaLabel } = props
 
     const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
         event.preventDefault()
@@ -66,6 +66,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
             {parent => (
                 <>
                     <AggregationChart
+                        aria-label={ariaLabel}
                         width={parent.width}
                         height={parent.height}
                         data={props.data}

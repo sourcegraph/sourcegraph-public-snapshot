@@ -12,6 +12,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { createEditorAPI } from './utils'
 
 const aggregationDefaultMock: GetSearchAggregationResult = {
     searchQueryAggregate: {
@@ -125,7 +126,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe.only('Search aggregation', () => {
+const QUERY_INPUT_SELECTOR = '[data-testid="searchbox"] .test-query-input'
+
+describe('Search aggregation', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -270,6 +273,30 @@ describe.only('Search aggregation', () => {
                 { timeout: 5000 },
                 `${origQuery}`
             )
+        })
+
+        test('should update the search box query when user clicks on one of aggregation bars', async () => {
+            const origQuery = 'context:global insights('
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+            )
+
+            const editor = await createEditorAPI(driver, QUERY_INPUT_SELECTOR)
+            await editor.waitForIt()
+
+            await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+            await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
+
+            expect(await editor.getValue()).toStrictEqual('context:global insights repo:sourcegraph/sourcegraph')
+
+            await driver.page.click('[data-testid="expand-aggregation-ui"]')
+            await driver.page.waitForSelector('[aria-label="Expanded search aggregation chart"]')
+            await driver.page.click(
+                '[aria-label="Expanded search aggregation chart"] [ aria-label="chart content group"] g:nth-child(2) a'
+            )
+
+            expect(await editor.getValue()).toStrictEqual('context:global insights repo:sourecegraph/about')
         })
     })
 })
