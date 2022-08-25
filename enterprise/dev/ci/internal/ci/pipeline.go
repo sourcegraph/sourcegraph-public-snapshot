@@ -80,11 +80,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
-	ops.Append(
-		wait, // wait for all steps to pass
-		//uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-		buildOverviewAnnotation(),
-	)
+
+	if op, err := buildOverviewAnnotation(c); err == nil {
+		ops.Append(op)
+	}
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
@@ -96,13 +95,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			withAgentLostRetries,
 		},
 	}
-	// Toggle profiling of each step
-	if c.MessageFlags.ProfilingEnabled {
-		pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
-	}
+	// // Toggle profiling of each step
+	// if c.MessageFlags.ProfilingEnabled {
+	// 	pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
+	// }
 
 	// Apply operations on pipeline
 	ops.Apply(pipeline)
+
+	// Validate generated pipeline have unique keys
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
+		return nil, err
+	}
 
 	return pipeline, nil
 
@@ -320,7 +324,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Append(
 		wait,                    // wait for all steps to pass
 		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-		buildOverviewAnnotation(),
 	)
 
 	// Construct pipeline

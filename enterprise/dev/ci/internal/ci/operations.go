@@ -1,6 +1,8 @@
 package ci
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -927,9 +929,24 @@ func uploadBuildeventTrace() operations.Operation {
 	}
 }
 
-func buildOverviewAnnotation() operations.Operation {
+func buildOverviewAnnotation(c Config) (operations.Operation, error) {
+	overview := struct {
+		RunType      string       `json:"RunType"`
+		Diff         string       `json:"Diff"`
+		MessageFlags MessageFlags `json:"MessageFlags"`
+	}{
+		RunType:      c.RunType.String(),
+		Diff:         c.Diff.String(),
+		MessageFlags: c.MessageFlags,
+	}
+	data, err := json.Marshal(&overview)
+	if err != nil {
+		return nil, err
+	}
+
 	return func(p *bk.Pipeline) {
 		p.AddStep("Build overview",
+			bk.Env("BUILD_OVERVIEW", string(data)),
 			bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					Type:         bk.AnnotationTypeInfo,
@@ -937,7 +954,7 @@ func buildOverviewAnnotation() operations.Operation {
 				},
 			}),
 		)
-	}
+	}, nil
 }
 
 // Request render.com to create client preview app for current PR
