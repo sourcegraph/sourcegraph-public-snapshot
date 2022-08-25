@@ -6,12 +6,13 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -55,18 +56,16 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		]
 	}`
 
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
-
+	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
@@ -83,17 +82,17 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		}
 	}
 
-	var indexes []store.Index
+	var indexes []shared.Index
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []store.Index{
+	expectedIndexes := []shared.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -111,7 +110,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -130,7 +129,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 }
 
 func TestQueueIndexesInDatabase(t *testing.T) {
-	indexConfiguration := store.IndexConfiguration{
+	indexConfiguration := shared.IndexConfiguration{
 		ID:           1,
 		RepositoryID: 42,
 		Data: []byte(`{
@@ -165,20 +164,18 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		}`),
 	}
 
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
-
+	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
@@ -209,17 +206,17 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		}
 	}
 
-	var indexes []store.Index
+	var indexes []shared.Index
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []store.Index{
+	expectedIndexes := []shared.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -237,7 +234,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -279,10 +276,8 @@ index_jobs:
 `)
 
 func TestQueueIndexesInRepository(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
@@ -292,10 +287,10 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		return file == "sourcegraph.yaml", nil
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
-
+	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
 	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -315,17 +310,17 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		}
 	}
 
-	var indexes []store.Index
+	var indexes []shared.Index
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []store.Index{
+	expectedIndexes := []shared.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -343,7 +338,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 			RepositoryID: 42,
 			Commit:       "c42",
 			State:        "queued",
-			DockerSteps: []store.DockerStep{
+			DockerSteps: []shared.DockerStep{
 				{
 					Root:     "/",
 					Image:    "node:12",
@@ -362,11 +357,8 @@ func TestQueueIndexesInRepository(t *testing.T) {
 }
 
 func TestQueueIndexesInferred(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
-	mockDBStore.RepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
@@ -382,7 +374,8 @@ func TestQueueIndexesInferred(t *testing.T) {
 			return nil, nil
 		}
 	})
-
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
 		switch rn {
@@ -395,7 +388,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 		}
 	})
 
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
 	for _, id := range []int{41, 42, 43, 44} {
 		if _, err := scheduler.QueueIndexes(context.Background(), id, "HEAD", "", false, false); err != nil {
@@ -434,10 +427,8 @@ func TestQueueIndexesInferred(t *testing.T) {
 }
 
 func TestQueueIndexesInferredTooLarge(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 
 	var paths []string
 	for i := 0; i < 25; i++ {
@@ -455,11 +446,11 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 
 		return nil, nil
 	})
-
+	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
 	maximumIndexJobsPerInferredConfiguration = 20
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
 	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -471,17 +462,13 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 }
 
 func TestQueueIndexesForPackage(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
+	mockDBStore := NewMockStore()
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []shared.Index) ([]shared.Index, error) { return indexes, nil })
 	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
-	mockDBStore.RepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repoID int, versionString string) (api.CommitID, error) {
 		if repoID != 42 || versionString != "4e7eeb0f8a96" {
-
 			t.Errorf("unexpected (repoID, versionString) (%v, %v) supplied to EnqueueRepoUpdate", repoID, versionString)
 		}
 		return "c42", nil
@@ -495,6 +482,9 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}
 		return &protocol.RepoUpdateResponse{ID: 42}, nil
 	})
+
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
@@ -513,7 +503,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}, nil
 	})
 
-	scheduler := newService(nil, mockDBStore, mockGitserverClient, mockRepoUpdater, inferenceService, &observation.TestContext)
+	scheduler := newService(mockDBStore, mockUploadSvc, mockGitserverClient, mockRepoUpdater, inferenceService, &observation.TestContext)
 
 	_ = scheduler.QueueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
@@ -538,17 +528,17 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	if len(mockDBStore.InsertIndexesFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to InsertIndexes. want=%d have=%d", 1, len(mockDBStore.InsertIndexesFunc.History()))
 	} else {
-		var indexes []store.Index
+		var indexes []shared.Index
 		for _, call := range mockDBStore.InsertIndexesFunc.History() {
 			indexes = append(indexes, call.Result0...)
 		}
 
-		expectedIndexes := []store.Index{
+		expectedIndexes := []shared.Index{
 			{
 				RepositoryID: 42,
 				Commit:       "c42",
 				State:        "queued",
-				DockerSteps: []store.DockerStep{
+				DockerSteps: []shared.DockerStep{
 					{
 						Image:    "sourcegraph/lsif-go:latest",
 						Commands: []string{"go mod download"},

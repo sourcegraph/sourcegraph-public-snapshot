@@ -1,5 +1,6 @@
 golang 1.18.1
 nodejs 16.7.0
+# Keep using binary from classic yarn, package manager yarn 3.x is defined in package.json
 yarn 1.22.19
 fd 7.4.0
 shfmt 3.5.0
