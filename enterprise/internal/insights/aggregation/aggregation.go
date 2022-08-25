@@ -1,6 +1,7 @@
 package aggregation
 
 import (
+	"context"
 	"regexp"
 	"time"
 
@@ -8,10 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -192,6 +196,19 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	return modeCountFunc, nil
 }
 
+func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
+	return &searchAggregationResults{
+		tabulator: tabulator,
+		countFunc: countFunc,
+		progress: client.ProgressAggregator{
+			Start:     time.Now(),
+			RepoNamer: client.RepoNamer(ctx, db),
+			Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+		},
+	}
+}
+
+// TODO: make this a test-only function?
 func NewSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
 	return &searchAggregationResults{
 		tabulator: tabulator,

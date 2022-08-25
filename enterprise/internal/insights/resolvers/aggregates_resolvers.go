@@ -106,7 +106,8 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*searchTimeLimitSeconds)
 	defer cancelReqContext()
 	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc)
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithProgress(ctx, tabulationFunc, countingFunc, r.baseInsightResolver.postgresDB)
+
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
