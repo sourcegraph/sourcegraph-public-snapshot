@@ -18,10 +18,6 @@ export function endpointPortSetting(): number {
     return port ? parseInt(port, 10) : 443
 }
 
-export function endpointProtocolSetting(): string {
-    return new URL(endpointSetting()).protocol
-}
-
 export function endpointAccessTokenSetting(): boolean {
     if (readConfiguration().get<string>('accessToken')) {
         return true
