@@ -2,6 +2,7 @@ package uploads
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sort"
 	"time"
@@ -43,6 +44,7 @@ type service interface {
 
 	// Repositories
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
@@ -154,42 +156,61 @@ func (s *Service) UploadsVisibleToCommit(ctx context.Context, commit string) (up
 }
 
 func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("minimumTimeSinceLastCheck in ms", int(minimumTimeSinceLastCheck.Milliseconds())),
+			log.Int("limit", limit),
+			log.String("now", now.String()),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
 }
 
 func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("now", now.String())},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
 }
 
 func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error) {
-	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.Int("maximumCommitLag in ms", int(maximumCommitLag.Milliseconds())), log.String("now", now.String())},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
 }
 
 func (s *Service) GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error) {
-	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, nil, observation.Args{})
+	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, nil, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetOldestCommitDate(ctx, repositoryID)
 }
 
 func (s *Service) SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
-	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.SetRepositoryAsDirty(ctx, repositoryID)
 }
 
 func (s *Service) UpdateDirtyRepositories(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.updateDirtyRepositories.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateDirtyRepositories.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("maxAgeForNonStaleBranches in ms", int(maxAgeForNonStaleBranches.Milliseconds())),
+			log.Int("maxAgeForNonStaleTags in ms", int(maxAgeForNonStaleTags.Milliseconds())),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	repositoryIDs, err := s.GetDirtyRepositories(ctx)
@@ -303,17 +324,36 @@ func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 }
 
 func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("processDelay in ms", int(processDelay.Milliseconds())), log.Int("limit", limit)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
 }
 
 func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) {
-	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.RepoName(ctx, repositoryID)
+}
+
+func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("table", table),
+			log.String("column", column),
+			log.Int("processDelay in ms", int(processDelay.Milliseconds())),
+			log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+			log.Int("repositoryMatchLimit", *repositoryMatchLimit),
+			log.Int("limit", limit),
+			log.String("now", now.String()),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
 func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
@@ -331,42 +371,69 @@ func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err 
 }
 
 func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetUploads(ctx, opts)
 }
 
 func (s *Service) GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.String("commit", commit),
+			log.Int("limit", limit),
+			log.Int("offset", offset),
+			log.String("orderedMonikers", fmt.Sprintf("%v", orderedMonikers)),
+			log.String("ignoreIDs", fmt.Sprintf("%v", ignoreIDs)),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetUploadIDsWithReferences(ctx, orderedMonikers, ignoreIDs, repositoryID, commit, limit, offset, trace)
 }
 
 func (s *Service) UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) (err error) {
-	ctx, _, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.String("graph", fmt.Sprintf("%v", graph)),
+			log.String("refDescriptions", fmt.Sprintf("%v", refDescriptions)),
+			log.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+			log.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
+			log.Int("dirtyToken", dirtyToken),
+			log.String("now", now.String()),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, now)
 }
 
 func (s *Service) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error) {
-	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("protectedIDs", fmt.Sprintf("%v", protectedIDs)), log.String("expiredIDs", fmt.Sprintf("%v", expiredIDs))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdateUploadRetention(ctx, protectedIDs, expiredIDs)
 }
 
 func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) (err error) {
-	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("batchSize", batchSize)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
 }
 
 func (s *Service) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error) {
-	ctx, _, endObservation := s.operations.updateUploadsReferenceCounts.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateUploadsReferenceCounts.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdateUploadsReferenceCounts(ctx, ids, dependencyUpdateType)
@@ -380,14 +447,18 @@ func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (count int, err 
 }
 
 func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("uploadedBefore", uploadedBefore.String())},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
 }
 
 func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("now", now.String())},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploadsWithoutRepository(ctx, now)
@@ -414,7 +485,9 @@ const numAncestors = 100
 // this commit will.
 //
 func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
@@ -467,28 +540,42 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 }
 
 func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
+			log.Bool("rootMustEnclosePath", rootMustEnclosePath), log.String("indexer", indexer),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
 func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
+			log.Bool("rootMustEnclosePath", rootMustEnclosePath), log.String("indexer", indexer),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, commitGraph)
 }
 
 func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("monikers", fmt.Sprintf("%v", monikers))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
 func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("total_ids", len(ids)), log.String("ids", fmt.Sprintf("%v", ids))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetDumpsByIDs(ctx, ids)
@@ -535,21 +622,27 @@ func (s *Service) HardDeleteExpiredUploads(ctx context.Context) (count int, err 
 }
 
 func (s *Service) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
-	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("dumpID", dumpID), log.String("packages", fmt.Sprintf("%v", packages))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdatePackages(ctx, dumpID, packages)
 }
 
 func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
-	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("dumpID", dumpID), log.String("references", fmt.Sprintf("%v", references))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
 }
 
 func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("maxAge", maxAge.String()), log.String("now", now.String())},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteOldAuditLogs(ctx, maxAge, now)
@@ -576,7 +669,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 
 	for _, sourcedCommits := range batch {
 		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, tx, sourcedCommits.RepositoryID, commit)
+			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
 			if err != nil {
 				return err
 			}
@@ -596,7 +689,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 	return nil
 }
 
-func (s *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
+func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
 	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !gitdomain.IsRepoNotExist(err) {
 		return "", errors.Wrap(err, "gitserver.CommitDate")

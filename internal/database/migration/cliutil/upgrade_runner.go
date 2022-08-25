@@ -100,17 +100,19 @@ func runUpgrade(
 		}
 	}
 
-	// After successful upgrade, set the new instance version. The frontend still checks on
-	// startup that the previously running instance version was only one minor version away.
-	// If we run the upload without updating that value, the new instance will refuse to
-	// start without manual modification of the database.
-	//
-	// Note that we don't want to get rid of that check entirely from the frontend, as we do
-	// still want to catch the cases where site-admins "jump forward" several versions while
-	// using the zero-downtime upgrade path (not this upgrade utility).
+	if !dryRun {
+		// After successful upgrade, set the new instance version. The frontend still checks on
+		// startup that the previously running instance version was only one minor version away.
+		// If we run the upload without updating that value, the new instance will refuse to
+		// start without manual modification of the database.
+		//
+		// Note that we don't want to get rid of that check entirely from the frontend, as we do
+		// still want to catch the cases where site-admins "jump forward" several versions while
+		// using the zero-downtime upgrade path (not this upgrade utility).
 
-	if err := updateVersion(ctx, r, plan.to); err != nil {
-		return err
+		if err := updateVersion(ctx, r, plan.to); err != nil {
+			return err
+		}
 	}
 
 	return nil

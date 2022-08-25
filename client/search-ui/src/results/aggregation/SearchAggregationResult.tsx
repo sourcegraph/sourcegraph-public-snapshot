@@ -1,28 +1,48 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { mdiArrowCollapse, mdiPlus } from '@mdi/js'
-import { ParentSize } from '@visx/responsive'
+import { mdiArrowCollapse } from '@mdi/js'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
-import { AggregationChart } from './AggregationChart'
+import { AggregationCardMode, AggregationChartCard } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
-import { useAggregationSearchMode, useAggregationUIMode } from './hooks'
-import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data'
+import {
+    getAggregationData,
+    getOtherGroupCount,
+    useAggregationSearchMode,
+    useAggregationUIMode,
+    useSearchAggregationData,
+} from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-const getValue = (datum: LanguageUsageDatum): number => datum.value
-const getColor = (datum: LanguageUsageDatum): string => datum.fill
-const getLink = (datum: LanguageUsageDatum): string => datum.linkURL
-const getName = (datum: LanguageUsageDatum): string => datum.name
+interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
+    /**
+     * Current submitted query, note that this query isn't a live query
+     * that is synced with typed query in the search box, this query is submitted
+     * see `searchQueryFromURL` state in the global query Zustand store.
+     */
+    query: string
 
-interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {}
+    /** Current search query pattern type. */
+    patternType: SearchPatternType
 
-export const SearchAggregationResult: FC<SearchAggregationResultProps> = attributes => {
-    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
+    /**
+     * Emits whenever a user clicks one of aggregation chart segments (bars).
+     * That should update the query and re-trigger search (but this should be connected
+     * to this UI through its consumer)
+     */
+    onQuerySubmit: (newQuery: string) => void
+}
+
+export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
+    const { query, patternType, onQuerySubmit, ...attributes } = props
+
     const [, setAggregationUIMode] = useAggregationUIMode()
+    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
+    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 30 })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
@@ -46,37 +66,48 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = attribu
             <hr className="mt-2 mb-3" />
 
             <div className={styles.controls}>
-                <AggregationModeControls mode={aggregationMode} onModeChange={setAggregationMode} />
-
-                <Button variant="secondary" outline={true}>
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlus} />
-                    Save insight
-                </Button>
+                <AggregationModeControls
+                    mode={aggregationMode}
+                    availability={data?.searchQueryAggregate?.modeAvailability}
+                    onModeChange={setAggregationMode}
+                />
             </div>
 
-            <ParentSize className={styles.chartContainer}>
-                {parent => (
-                    <AggregationChart
-                        mode={aggregationMode}
-                        width={parent.width}
-                        height={parent.height}
-                        data={LANGUAGE_USAGE_DATA}
-                        getDatumName={getName}
-                        getDatumValue={getValue}
-                        getDatumColor={getColor}
-                        getDatumLink={getLink}
-                    />
-                )}
-            </ParentSize>
+            {loading ? (
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
+                    type={AggregationCardMode.Loading}
+                    className={styles.chartContainer}
+                />
+            ) : error ? (
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
+                    type={AggregationCardMode.Error}
+                    errorMessage={error.message}
+                    className={styles.chartContainer}
+                />
+            ) : (
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
+                    mode={aggregationMode}
+                    type={AggregationCardMode.Data}
+                    data={getAggregationData(data)}
+                    missingCount={getOtherGroupCount(data)}
+                    className={styles.chartContainer}
+                    onBarLinkClick={onQuerySubmit}
+                />
+            )}
 
-            <ul className={styles.listResult}>
-                {LANGUAGE_USAGE_DATA.map(datum => (
-                    <li key={getName(datum)} className={styles.listResultItem}>
-                        <span>{getName(datum)}</span>
-                        <span>{getValue(datum)}</span>
-                    </li>
-                ))}
-            </ul>
+            {data && (
+                <ul className={styles.listResult}>
+                    {getAggregationData(data).map(datum => (
+                        <li key={datum.label} className={styles.listResultItem}>
+                            <span>{datum.label}</span>
+                            <span>{datum.count}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </section>
     )
 }

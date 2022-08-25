@@ -109,7 +109,6 @@
 - filename: internal/codeintel/autoindexing/background/scheduler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler
   interfaces:
-    - DBStore
     - PolicyMatcher
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference

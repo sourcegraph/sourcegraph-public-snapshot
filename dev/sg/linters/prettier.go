@@ -12,8 +12,7 @@ import (
 )
 
 var prettier = &linter{
-	Name:    "Prettier",
-	Enabled: disabled("seems to produce unreliable results"),
+	Name: "Prettier",
 	// TODO unfortunate that we have to use 'dev/ci/yarn-run.sh'
 	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
 		return root.Run(run.Cmd(ctx, "dev/ci/yarn-run.sh format:check")).

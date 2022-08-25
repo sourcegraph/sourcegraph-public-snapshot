@@ -6,7 +6,7 @@ import { QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card } from '@sourcegraph/wildcard'
+import { Card, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
@@ -63,7 +63,7 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
                                 </div>
                             </div>
                         </Card>
-                        <p className={styles.searchExampleLabel}>{example.label}</p>
+                        <Text className={styles.searchExampleLabel}>{example.label}</Text>
                     </div>
                 ))}
             </div>
