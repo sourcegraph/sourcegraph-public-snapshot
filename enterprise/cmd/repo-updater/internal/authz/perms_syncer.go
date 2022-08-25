@@ -807,20 +807,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
 	}
 
-	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
-	s.permsUpdateLock.Lock()
-	defer s.permsUpdateLock.Unlock()
-
-	err = s.permsStore.SetUserPermissions(ctx, p)
-	if err != nil {
-		return errors.Wrap(err, "set user permissions")
-	}
-
-	logger.Debug("synced",
-		log.Int("count", len(p.IDs)),
-		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
-	)
-
 	// Set sub-repository permissions
 	srp := s.db.SubRepoPerms()
 	for spec, perm := range subRepoPerms {
@@ -834,6 +820,20 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			log.Int("count", len(subRepoPerms)),
 		)
 	}
+
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
+	err = s.permsStore.SetUserPermissions(ctx, p)
+	if err != nil {
+		return errors.Wrap(err, "set user permissions")
+	}
+
+	logger.Debug("synced",
+		log.Int("count", len(p.IDs)),
+		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
+	)
 
 	return nil
 }
