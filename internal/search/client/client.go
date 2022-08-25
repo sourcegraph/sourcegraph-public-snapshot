@@ -161,6 +161,25 @@ func (e *QueryError) Error() string {
 	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
 }
 
+func SearchTypeFromString(patternType string) (query.SearchType, error) {
+	switch patternType {
+	case "standard":
+		return query.SearchTypeStandard, nil
+	case "literal":
+		return query.SearchTypeLiteral, nil
+	case "regexp":
+		return query.SearchTypeRegex, nil
+	case "structural":
+		return query.SearchTypeStructural, nil
+	case "lucky":
+		return query.SearchTypeLucky, nil
+	case "keyword":
+		return query.SearchTypeKeyword, nil
+	default:
+		return -1, errors.Errorf("unrecognized patternType %q", patternType)
+	}
+}
+
 // detectSearchType returns the search type to perform. The search type derives
 // from three sources: the version and patternType parameters passed to the
 // search endpoint and the `patternType:` filter in the input query string which
@@ -168,22 +187,7 @@ func (e *QueryError) Error() string {
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
-		switch *patternType {
-		case "standard":
-			searchType = query.SearchTypeStandard
-		case "literal":
-			searchType = query.SearchTypeLiteral
-		case "regexp":
-			searchType = query.SearchTypeRegex
-		case "structural":
-			searchType = query.SearchTypeStructural
-		case "lucky":
-			searchType = query.SearchTypeLucky
-		case "keyword":
-			searchType = query.SearchTypeKeyword
-		default:
-			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
-		}
+		return SearchTypeFromString(*patternType)
 	} else {
 		switch version {
 		case "V1":

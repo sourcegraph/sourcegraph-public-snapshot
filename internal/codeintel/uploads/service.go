@@ -311,7 +311,7 @@ func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDe
 }
 
 func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) {
-	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.RepoName(ctx, repositoryID)
@@ -584,7 +584,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 
 	for _, sourcedCommits := range batch {
 		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, tx, sourcedCommits.RepositoryID, commit)
+			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
 			if err != nil {
 				return err
 			}
@@ -604,7 +604,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 	return nil
 }
 
-func (s *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
+func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
 	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !gitdomain.IsRepoNotExist(err) {
 		return "", errors.Wrap(err, "gitserver.CommitDate")

@@ -298,17 +298,18 @@ Available testsuites in `sg.config.yaml`:
 * bext-build
 * bext-e2e
 * bext-integration
+* client
+* client-e2e
+* client-regression
 * docsite
-* frontend
-* frontend-e2e
 * web-integration
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
-$ sg test frontend
-$ sg test frontend-e2e
+$ sg test client
+$ sg test client-e2e
 
 # List available test suites:
 $ sg test -help
@@ -712,18 +713,6 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
-
-### sg migration upgrade
-
-Upgrade Sourcegraph instance databases to a target version.
-
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--from="<value>"`: The source (current) instance version. Must be of the form `v{Major}.{Minor}`.
-* `--skip-version-check`: Skip validation of the instance's current version.
-* `--to="<value>"`: The target instance version. Must be of the form `v{Major}.{Minor}`.
 
 ### sg migration leaves
 

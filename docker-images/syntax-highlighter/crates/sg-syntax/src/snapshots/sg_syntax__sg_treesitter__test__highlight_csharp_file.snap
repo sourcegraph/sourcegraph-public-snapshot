@@ -1,10 +1,9 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 476
 expression: "dump_document(&document, src)"
 ---
   using System;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^ IdentifierNamespace 
+//            ^ PunctuationDelimiter 
 

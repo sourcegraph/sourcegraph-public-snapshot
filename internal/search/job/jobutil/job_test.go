@@ -553,10 +553,10 @@ func TestNewPlanJob(t *testing.T) {
           NoopJob)))))`),
 	},
 		{
-			query:      `repo:contains.file(a) repo:contains.content(b)`,
+			query:      `repo:contains.path(a) repo:contains.content(b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
-			want: autogold.Want("repo contains file and repo contains content", `
+			want: autogold.Want("repo contains path and repo contains content", `
 (ALERT
   (query . )
   (originalQuery . )
@@ -571,10 +571,10 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSEARCH
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))))))`),
 		}, {
-			query:      `repo:contains(file:a content:b)`,
+			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
-			want: autogold.Want("repo contains file and content", `
+			want: autogold.Want("repo contains path and content", `
 (ALERT
   (query . )
   (originalQuery . )
@@ -772,16 +772,16 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 		output: autogold.Want("79", `{"Pattern":"package diff provides","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:noexist.go) test`,
+		input:  `repo:contains.file(path:noexist.go) test`,
 		output: autogold.Want("83", `{"Pattern":"test","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:go.mod) count:100 fmt`,
+		input:  `repo:contains.file(path:go.mod) count:100 fmt`,
 		output: autogold.Want("87", `{"Pattern":"fmt","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":100,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `type:commit LSIF`,
 		output: autogold.Want("90", `{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:diff.pb.go) type:commit LSIF`,
+		input:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
 		output: autogold.Want("91", `{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
 	}, {
 		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
@@ -811,7 +811,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `patterntype:regexp // literal slash`,
 		output: autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains.file(Dockerfile)`,
+		input:  `repo:contains.path(Dockerfile)`,
 		output: autogold.Want("108", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `repohasfile:Dockerfile`,

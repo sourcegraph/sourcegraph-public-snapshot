@@ -1,63 +1,110 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
   ---
+  name: hello
+//^^^^ StringLiteralKey  entity.name.tag.yaml
+//    ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//      ^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   json:
-//^^^^ StringLiteral
+//^^^^ StringLiteralKey  entity.name.tag.yaml
+//    ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
   - rigid
-//  ^^^^^ StringLiteral
+//^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//  ^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   - better for data interchange
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   yaml:
-//^^^^ StringLiteral
+//^^^^ StringLiteralKey  entity.name.tag.yaml
+//    ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
   - slim and flexible
-//  ^^^^^^^^^^^^^^^^^ StringLiteral
+//^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//  ^^^^^^^^^^^^^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   - better for configuration
-//  ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//  ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   object:
-//^^^^^^ StringLiteral
+//^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//      ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
     key: value
-//  ^^^ StringLiteral
-//       ^^^^^ StringLiteral
+//  ^^^ StringLiteralKey  entity.name.tag.yaml
+//     ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//       ^^^^^ StringLiteral  string.unquoted.plain.out.yaml
     array:
-//  ^^^^^ StringLiteral
+//  ^^^^^ StringLiteralKey  entity.name.tag.yaml
+//       ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+    - array_value: [1,2,3]
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//               ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//                 ^ PunctuationBracket  punctuation.definition.sequence.begin.yaml
+//                  ^ NumericLiteral  constant.numeric.integer.decimal.yaml
+//                   ^ PunctuationBracket  punctuation.separator.sequence.yaml
+//                    ^ NumericLiteral  constant.numeric.integer.decimal.yaml
+//                     ^ PunctuationBracket  punctuation.separator.sequence.yaml
+//                      ^ NumericLiteral  constant.numeric.integer.decimal.yaml
+//                       ^ PunctuationBracket  punctuation.definition.sequence.end.yaml
     - null_value:
-//    ^^^^^^^^^^ StringLiteral
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//              ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
     - boolean: true
-//    ^^^^^^^ StringLiteral
-//             ^^^^ IdentifierBuiltin
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//           ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//             ^^^^ IdentifierBuiltin  constant.language.boolean.yaml
     - integer: 1
-//    ^^^^^^^ StringLiteral
-//             ^ NumericLiteral
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//           ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//             ^ NumericLiteral  constant.numeric.integer.decimal.yaml
     - alias: aliases are like variables
-//    ^^^^^ StringLiteral
-//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^ StringLiteralKey  entity.name.tag.yaml
+//         ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.unquoted.plain.out.yaml
     - alias: aliases are like variables
-//    ^^^^^ StringLiteral
-//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^ StringLiteralKey  entity.name.tag.yaml
+//         ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.unquoted.plain.out.yaml
   paragraph: |
-//^^^^^^^^^ StringLiteral
-//           ^ IdentifierKeyword
+//^^^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//         ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//           ^ IdentifierKeyword  keyword.control.flow.block-scalar.literal.yaml
     Blank lines denote
+//^^^^^^^^^^^^^^^^^^^^ StringLiteral 18:0..20:0  string.unquoted.block.yaml
     paragraph breaks
   content: |-
-//^^^^^^^ StringLiteral
-//         ^ IdentifierKeyword
-//          ^ IdentifierKeyword
+//^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//       ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//         ^ IdentifierKeyword  keyword.control.flow.block-scalar.literal.yaml
+//          ^ IdentifierKeyword  storage.modifier.chomping-indicator.yaml
     Or we
+//^^^^^^^ StringLiteral 21:0..25:0  string.unquoted.block.yaml
     can auto
     convert line breaks
     to save space
   alias:
-//^^^^^ StringLiteral
-    bar: baz
-//  ^^^ StringLiteral
-//       ^^^ StringLiteral
+//^^^^^ StringLiteralKey  entity.name.tag.yaml
+//     ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+    - "media/**"
+//  ^ PunctuationBracket  punctuation.definition.block.sequence.item.yaml
+//    ^^^^^^^^^^ StringLiteral  string.quoted.double.yaml
+  jobs:
+//^^^^ StringLiteralKey  entity.name.tag.yaml
+//    ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+  bar: baz
+//^^^ StringLiteralKey  entity.name.tag.yaml
+//   ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//     ^^^ StringLiteral  string.unquoted.plain.out.yaml
   alias_reuse:
-//^^^^^^^^^^^ StringLiteral
+//^^^^^^^^^^^ StringLiteralKey  entity.name.tag.yaml
+//           ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
     bar: baz
-//  ^^^ StringLiteral
-//       ^^^ StringLiteral
+//  ^^^ StringLiteralKey  entity.name.tag.yaml
+//     ^ PunctuationBracket  punctuation.separator.key-value.mapping.yaml
+//       ^^^ StringLiteral  string.unquoted.plain.out.yaml
 

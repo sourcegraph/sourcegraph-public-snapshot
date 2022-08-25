@@ -70,6 +70,7 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdater)
 	policySvc := policies.GetService(databaseDB, uploadSvc, gitserverClient)
 
+	// Initialize services
 	return []goroutine.BackgroundRoutine{
 		scheduler.NewScheduler(autoindexingSvc, policySvc, uploadSvc, policyMatcher, observationContext),
 	}, nil
