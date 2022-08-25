@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestBatchSpecMountConnectionResolver_TotalCount(t *testing.T) {
+func TestWorkspaceFileConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -30,154 +30,134 @@ func TestBatchSpecMountConnectionResolver_TotalCount(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
-
 	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, bstore, specID, 1)
-	require.NoError(t, err)
 
-	resolver := workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			BatchSpecID: specID,
-		},
-	}
+	t.Run("TotalCount", func(t *testing.T) {
+		t.Cleanup(func() {
+			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+				BatchSpecID: specID,
+			})
+		})
 
-	count, err := resolver.TotalCount(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int32(1), count)
-}
+		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		require.NoError(t, err)
 
-func TestBatchSpecMountConnectionResolver_PageInfo_SinglePage(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	bstore := store.New(db, &observation.TestContext, nil)
-
-	specID, err := createBatchSpec(t, db, ctx, bstore)
-	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, bstore, specID, 1)
-	require.NoError(t, err)
-
-	resolver := workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			BatchSpecID: specID,
-		},
-	}
-
-	pageInfo, err := resolver.PageInfo(ctx)
-	assert.NoError(t, err)
-	assert.False(t, pageInfo.HasNextPage())
-	assert.Nil(t, pageInfo.EndCursor())
-}
-
-func TestBatchSpecMountConnectionResolver_PageInfo_MultiplePages(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
-
-	specID, err := createBatchSpec(t, db, ctx, bstore)
-	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, bstore, specID, 10)
-	require.NoError(t, err)
-
-	resolver := workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			LimitOpts: store.LimitOpts{
-				Limit: 5,
+		resolver := workspaceFileConnectionResolver{
+			store: bstore,
+			opts: store.ListBatchSpecMountsOpts{
+				BatchSpecID: specID,
 			},
-			BatchSpecID: specID,
-		},
-	}
+		}
 
-	pageInfo, err := resolver.PageInfo(ctx)
-	assert.NoError(t, err)
-	assert.True(t, pageInfo.HasNextPage())
-	assert.NotNil(t, pageInfo.EndCursor())
+		count, err := resolver.TotalCount(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int32(1), count)
+	})
 
-	cursor, err := strconv.ParseInt(*pageInfo.EndCursor(), 10, 32)
-	require.NoError(t, err)
-	resolver = workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			LimitOpts: store.LimitOpts{
-				Limit: 5,
+	t.Run("PageInfo Single Page", func(t *testing.T) {
+		t.Cleanup(func() {
+			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+				BatchSpecID: specID,
+			})
+		})
+
+		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		require.NoError(t, err)
+
+		resolver := workspaceFileConnectionResolver{
+			store: bstore,
+			opts: store.ListBatchSpecMountsOpts{
+				BatchSpecID: specID,
 			},
-			BatchSpecID: specID,
-			Cursor:      cursor,
-		},
-	}
+		}
 
-	pageInfo, err = resolver.PageInfo(ctx)
-	assert.NoError(t, err)
-	assert.False(t, pageInfo.HasNextPage())
-	assert.Nil(t, pageInfo.EndCursor())
-}
+		pageInfo, err := resolver.PageInfo(ctx)
+		assert.NoError(t, err)
+		assert.False(t, pageInfo.HasNextPage())
+		assert.Nil(t, pageInfo.EndCursor())
+	})
 
-func TestBatchSpecMountConnectionResolver_Nodes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
+	t.Run("PageInfo Multiple Pages", func(t *testing.T) {
+		t.Cleanup(func() {
+			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+				BatchSpecID: specID,
+			})
+		})
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		err := createBatchSpecMounts(ctx, bstore, specID, 10)
+		require.NoError(t, err)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+		resolver := workspaceFileConnectionResolver{
+			store: bstore,
+			opts: store.ListBatchSpecMountsOpts{
+				LimitOpts: store.LimitOpts{
+					Limit: 5,
+				},
+				BatchSpecID: specID,
+			},
+		}
 
-	specID, err := createBatchSpec(t, db, ctx, bstore)
-	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, bstore, specID, 1)
-	require.NoError(t, err)
+		pageInfo, err := resolver.PageInfo(ctx)
+		assert.NoError(t, err)
+		assert.True(t, pageInfo.HasNextPage())
+		assert.NotNil(t, pageInfo.EndCursor())
 
-	resolver := workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			BatchSpecID: specID,
-		},
-	}
+		cursor, err := strconv.ParseInt(*pageInfo.EndCursor(), 10, 32)
+		require.NoError(t, err)
+		resolver = workspaceFileConnectionResolver{
+			store: bstore,
+			opts: store.ListBatchSpecMountsOpts{
+				LimitOpts: store.LimitOpts{
+					Limit: 5,
+				},
+				BatchSpecID: specID,
+				Cursor:      cursor,
+			},
+		}
 
-	nodes, err := resolver.Nodes(ctx)
-	assert.NoError(t, err)
-	assert.Len(t, nodes, 1)
-}
+		pageInfo, err = resolver.PageInfo(ctx)
+		assert.NoError(t, err)
+		assert.False(t, pageInfo.HasNextPage())
+		assert.Nil(t, pageInfo.EndCursor())
+	})
 
-func TestBatchSpecMountConnectionResolver_Nodes_Empty(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
+	t.Run("Nodes", func(t *testing.T) {
+		t.Cleanup(func() {
+			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+				BatchSpecID: specID,
+			})
+		})
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		require.NoError(t, err)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+		resolver := workspaceFileConnectionResolver{
+			store: bstore,
+			opts: store.ListBatchSpecMountsOpts{
+				BatchSpecID: specID,
+			},
+		}
 
-	specID, err := createBatchSpec(t, db, ctx, bstore)
-	require.NoError(t, err)
+		nodes, err := resolver.Nodes(ctx)
+		assert.NoError(t, err)
+		assert.Len(t, nodes, 1)
+	})
 
-	resolver := workspaceFileConnectionResolver{
-		store: bstore,
-		opts: store.ListBatchSpecMountsOpts{
-			BatchSpecID: specID,
-		},
-	}
+	t.Run("Nodes Empty", func(t *testing.T) {
+		t.Cleanup(func() {
+			resolver := workspaceFileConnectionResolver{
+				store: bstore,
+				opts: store.ListBatchSpecMountsOpts{
+					BatchSpecID: specID,
+				},
+			}
 
-	nodes, err := resolver.Nodes(ctx)
-	assert.NoError(t, err)
-	assert.Len(t, nodes, 0)
+			nodes, err := resolver.Nodes(ctx)
+			assert.NoError(t, err)
+			assert.Len(t, nodes, 0)
+		})
+	})
 }
 
 func createBatchSpec(t *testing.T, db database.DB, ctx context.Context, bstore *store.Store) (int64, error) {
