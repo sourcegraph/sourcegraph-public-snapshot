@@ -2,16 +2,21 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestSetRepositoryAsDirty(t *testing.T) {
@@ -76,5 +81,152 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	}
 	if age.Round(time.Second) != 30*time.Minute {
 		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
+func TestHasRepository(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	testCases := []struct {
+		repositoryID int
+		exists       bool
+	}{
+		{50, true},
+		{51, false},
+		{52, false},
+	}
+
+	insertUploads(t, db, shared.Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, db, shared.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
+
+		t.Run(name, func(t *testing.T) {
+			exists, err := store.HasRepository(context.Background(), testCase.repositoryID)
+			if err != nil {
+				t.Fatalf("unexpected error checking if repository exists: %s", err)
+			}
+			if exists != testCase.exists {
+				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
+			}
+		})
+	}
+}
+
+func TestSetRepositoriesForRetentionScan(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, RepositoryID: 50, State: "completed"},
+		shared.Upload{ID: 2, RepositoryID: 51, State: "completed"},
+		shared.Upload{ID: 3, RepositoryID: 52, State: "completed"},
+		shared.Upload{ID: 4, RepositoryID: 53, State: "completed"},
+		shared.Upload{ID: 5, RepositoryID: 54, State: "errored"},
+		shared.Upload{ID: 6, RepositoryID: 54, State: "deleted"},
+	)
+
+	now := timeutil.Now()
+
+	for _, repositoryID := range []int{50, 51, 52, 53, 54} {
+		// Only call this to insert a record into the lsif_dirty_repositories table
+		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
+			t.Fatalf("unexpected error marking repository as dirty`: %s", err)
+		}
+
+		// Only call this to update the updated_at field in the lsif_dirty_repositories table
+		if err := store.UpdateUploadsVisibleToCommits(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+			t.Fatalf("unexpected error updating commit graph: %s", err)
+		}
+	}
+
+	// Can return null last_index_scan
+	if repositories, err := store.SetRepositoriesForRetentionScan(context.Background(), time.Hour, 2); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 20 minutes later, first two repositories are still on cooldown
+	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 30 minutes later, all repositories are still on cooldown
+	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 90 minutes later, all repositories are visible
+	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Make repository 5 newly visible
+	if _, err := db.ExecContext(context.Background(), `UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
+		t.Fatalf("unexpected error updating upload: %s", err)
+	}
+
+	// 95 minutes later, only new repository is visible
+	if repositoryIDs, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+}
+
+func TestSkipsDeletedRepositories(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertRepo(t, db, 50, "should not be dirty")
+	deleteRepo(t, db, 50, time.Now())
+
+	insertRepo(t, db, 51, "should be dirty")
+
+	// NOTE: We did not insert 52, so it should not show up as dirty, even though we mark it below.
+
+	for _, repositoryID := range []int{50, 51, 52} {
+		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
+			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+		}
+	}
+
+	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if diff := cmp.Diff([]int{51}, keys); diff != "" {
+		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+	}
+}
+
+// Marks a repo as deleted
+func deleteRepo(t testing.TB, db database.DB, id int, deleted_at time.Time) {
+	query := sqlf.Sprintf(
+		`UPDATE repo SET deleted_at = %s WHERE id = %s`,
+		deleted_at,
+		id,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while deleting repository: %s", err)
 	}
 }

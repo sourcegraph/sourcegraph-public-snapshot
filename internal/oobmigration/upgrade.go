@@ -44,7 +44,7 @@ func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) (
 		}
 
 		deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
-		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) == VersionOrderBefore) {
+		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) != VersionOrderAfter) {
 			// Skip migrations not deprecated within the the instance upgrade interval
 			continue
 		}

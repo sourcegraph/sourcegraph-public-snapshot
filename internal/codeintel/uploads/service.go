@@ -42,6 +42,7 @@ type service interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 
 	// Repositories
+	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
@@ -306,6 +307,13 @@ func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDe
 	defer endObservation(1, observation.Args{})
 
 	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
+}
+
+func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) {
+	ctx, _, endObservation := s.operations.getRepoName.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.RepoName(ctx, repositoryID)
 }
 
 func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
@@ -588,8 +596,8 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 	return nil
 }
 
-func (m *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
-	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
+func (s *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
+	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !gitdomain.IsRepoNotExist(err) {
 		return "", errors.Wrap(err, "gitserver.CommitDate")
 	}

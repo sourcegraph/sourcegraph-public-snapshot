@@ -1493,6 +1493,66 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('highlight repo:has.file predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.file(path:foo content:bar)'))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 31,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 34,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
     test('highlight repo:has.description predicate', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
