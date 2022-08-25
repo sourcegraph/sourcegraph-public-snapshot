@@ -730,6 +730,6 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 
 		acctIds := []int32{}
 		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
-		require.NoError(t, err)
+		require.Error(t, err)
 	})
 }
