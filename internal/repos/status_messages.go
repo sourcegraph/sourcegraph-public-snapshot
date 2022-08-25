@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -105,9 +106,16 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 	}
 
 	if uncloned := stats.NotCloned + stats.Cloning; uncloned > 0 {
+		var sentences []string
+		if stats.NotCloned > 0 {
+			sentences = append(sentences, fmt.Sprintf("%d %s enqueued for cloning.", stats.NotCloned, pluralize(stats.NotCloned, "repository", "repositories")))
+		}
+		if stats.Cloning > 0 {
+			sentences = append(sentences, fmt.Sprintf("%d %s currently cloning...", stats.Cloning, pluralize(stats.Cloning, "repository", "repositories")))
+		}
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s cloning...", uncloned, pluralize(uncloned, "repository", "repositories")),
+				Message: strings.Join(sentences, " "),
 			},
 		})
 	}
