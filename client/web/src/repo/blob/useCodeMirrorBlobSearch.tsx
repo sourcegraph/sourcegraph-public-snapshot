@@ -16,7 +16,7 @@ export interface UseCodeMirrorBlobSearch {
 }
 
 /**
- * Returns everything you need to trigger search in CodeMirror:
+ * Returns everything you need to trigger search in CodeMirrorBlob:
  *
  * searchShortcut - to be rendered in Layout
  * triggerSeachIfAvailable - for manual triggering in any callback
