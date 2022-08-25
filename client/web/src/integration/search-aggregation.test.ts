@@ -1,3 +1,4 @@
+import delay from 'delay'
 import expect from 'expect'
 import { test } from 'mocha'
 
@@ -186,7 +187,9 @@ describe('Search aggregation', () => {
 
             await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
 
-            // 'REPO', 'PATH', 'AUTHOR', 'CAPTURE_GROUP'
+            // Wait for FE sets correct aggregation mode based on BE response
+            await delay(100)
+
             const aggregationCases = [
                 { mode: 'REPO', id: 'repo-aggregation-mode' },
                 { mode: 'PATH', id: 'file-aggregation-mode' },
