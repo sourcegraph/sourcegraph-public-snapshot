@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -617,11 +616,7 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 }
 
 func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListWorkspaceFilesArgs) (_ graphqlbackend.WorkspaceFileConnectionResolver, err error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
-		return nil, err
-	}
-
-	if err = validateFirstParamDefaults(args.First); err != nil {
+	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
 	opts := store.ListBatchSpecMountsOpts{
