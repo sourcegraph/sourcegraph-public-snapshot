@@ -231,6 +231,10 @@ describe('Search aggregation', () => {
             )
 
             await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+
+            // Wait for FE sets correct aggregation mode based on BE response
+            await delay(100)
+
             await driver.page.click('[data-testid="file-aggregation-mode"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
 
