@@ -4,12 +4,12 @@ import { EditorView } from '@codemirror/view'
 
 export interface CodeMirrorContext {
     setCodeMirrorBlobEditor: (editor: EditorView | undefined) => void
-    triggerSearchIfAvailable: () => void
+    triggerSearchIfAvailable: () => boolean
 }
 
 export const CodeMirrorContext = React.createContext<CodeMirrorContext>({
     setCodeMirrorBlobEditor: () => undefined,
-    triggerSearchIfAvailable: () => undefined,
+    triggerSearchIfAvailable: () => false,
 })
 
 export const useCodeMirrorContext = (): CodeMirrorContext => useContext(CodeMirrorContext)

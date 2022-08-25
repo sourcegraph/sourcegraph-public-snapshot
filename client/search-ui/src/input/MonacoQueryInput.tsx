@@ -74,7 +74,7 @@ export interface MonacoQueryInputProps
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     // Used to trigger CodeMirrorBlob internal search
-    onTriggerSearch?: () => void
+    onTriggerSearch?: () => boolean
     autoFocus?: boolean
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.

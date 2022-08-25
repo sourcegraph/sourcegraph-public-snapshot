@@ -11,7 +11,8 @@ import { useExperimentalFeatures } from '../../stores'
 export interface UseCodeMirrorBlobSearch {
     searchShortcut: React.ReactNode
     isCodeMirrorAvailable: boolean
-    triggerSearchIfAvailable: () => void
+    // Returns true if blob search was triggered
+    triggerSearchIfAvailable: () => boolean
     setCodeMirrorBlobEditor: (editor: EditorView | undefined) => void
 }
 
@@ -40,7 +41,9 @@ export function useCodeMirrorBlobSearch(): UseCodeMirrorBlobSearch {
     const searchCallback = useCallback(() => {
         if (codeMirrorEditorRef.current) {
             openSearchPanel(codeMirrorEditorRef.current)
+            return true
         }
+        return false
     }, [])
 
     return {

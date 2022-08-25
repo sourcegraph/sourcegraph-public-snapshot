@@ -483,8 +483,7 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             run: view => {
                 const { onTriggerSearch } = view.state.field(callbacks)
                 if (onTriggerSearch) {
-                    onTriggerSearch()
-                    return true
+                    return onTriggerSearch()
                 }
                 return false
             },
