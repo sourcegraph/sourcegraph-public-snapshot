@@ -276,6 +276,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 }
 
 func removeExternalServiceAfterTest(t *testing.T, esID string) {
+	t.Helper()
 	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, true)
 		if err != nil {

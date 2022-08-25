@@ -67,6 +67,7 @@ func TestSiteConfig(t *testing.T) {
 }
 
 func removeTestUserAfterTest(t *testing.T, userID string) {
+	t.Helper()
 	t.Cleanup(func() {
 		if err := client.DeleteUser(userID, true); err != nil {
 			t.Fatal(err)
