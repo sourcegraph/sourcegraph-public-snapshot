@@ -44,7 +44,7 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("no mux vars", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", "/no-vars", nil)
+		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
 		require.NoError(t, err)
 
 		handler.ServeHTTP(rec, req)
@@ -53,7 +53,7 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", "/", nil)
+		req, err := http.NewRequest(http.MethodGet, "/", nil)
 		require.NoError(t, err)
 
 		req = mux.SetURLVars(req, map[string]string{"rest": "unknown"})
@@ -64,7 +64,7 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("version", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", "/version", nil)
+		req, err := http.NewRequest(http.MethodGet, "/version", nil)
 		require.NoError(t, err)
 
 		req = mux.SetURLVars(req, map[string]string{"rest": "version"})
@@ -78,7 +78,7 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 		for _, filename := range allowedFilenames {
 			t.Run(filename, func(t *testing.T) {
 				rec := httptest.NewRecorder()
-				req, err := http.NewRequest("GET", "/"+filename, nil)
+				req, err := http.NewRequest(http.MethodGet, "/"+filename, nil)
 				require.NoError(t, err)
 
 				req = mux.SetURLVars(req, map[string]string{"rest": filename})

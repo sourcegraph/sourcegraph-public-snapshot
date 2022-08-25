@@ -129,7 +129,8 @@ func (h *srcCliVersionHandler) updateCachedVersion() (string, error) {
 		return "", errors.New("parsing minimum version")
 	}
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%d.%d", srcCliVersionCache, minimumVersion.Major(), minimumVersion.Minor()), nil)
+	url := fmt.Sprintf("%s/%d.%d", srcCliVersionCache, minimumVersion.Major(), minimumVersion.Minor())
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "building request")
 	}
