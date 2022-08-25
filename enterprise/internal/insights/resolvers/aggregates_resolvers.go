@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -16,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const searchTimeLimitSeconds = 2
-
-// TODO: move to a setting
-const aggregationBufferSize = 500
+const (
+	defaultAggregationBufferSize = 500
+	searchTimeLimitSeconds       = 2
+)
 
 type searchAggregateResolver struct {
 	baseInsightResolver
@@ -88,6 +90,10 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}, nil
 	}
 
+	aggregationBufferSize := conf.Get().InsightsAggregationsBufferSize
+	if aggregationBufferSize <= 0 {
+		aggregationBufferSize = defaultAggregationBufferSize
+	}
 	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
 	tabulationErrors := []error{}
 	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
