@@ -84,7 +84,7 @@ func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool
 			JOIN repo ON repo.id = (argument->>'repositoryId')::int
 			GROUP BY repo.id, repo.name
 			ORDER BY COUNT(*) DESC
-			LIMIT 10
+			LIMIT 5
 		)
 		SELECT repo_name, lang, event_kind, event_precision, event_count, has_precise
 		FROM
