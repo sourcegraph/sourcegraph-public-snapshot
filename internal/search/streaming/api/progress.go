@@ -16,7 +16,6 @@ type RepoNamer func(ids []api.RepoID) (names []api.RepoName)
 // BuildProgressEvent builds a progress event from a final results resolver.
 func BuildProgressEvent(stats ProgressStats, namer RepoNamer) Progress {
 	stats.namer = namer
-	//stats.Timedout = []api.RepoID{1, 2}
 
 	skipped := []Skipped{}
 
