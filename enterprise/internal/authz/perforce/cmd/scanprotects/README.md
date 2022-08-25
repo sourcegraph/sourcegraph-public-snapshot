@@ -1,9 +1,8 @@
 # scanprotects
 
-`scanprotects` is a command line tool that can scan a Perforce protection table and output debug information about how it was interpreted. 
+`scanprotects` is a command line tool that can scan a Perforce protection table and output debug information about how it was interpreted.
 
 It is intended to be used to debug our parsing logic for protection tables as we often don't have access to them ourselves, so, instead we can send this program to the customer and ask them to run it against their `p4 protects` output.
-
 
 ## Usage
 
