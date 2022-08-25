@@ -1,3 +1,7 @@
+- filename: cmd/frontend/internal/httpapi/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/httpcli
+  interfaces:
+    - Doer
 - filename: cmd/frontend/internal/httpapi/releasecache/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
   interfaces:

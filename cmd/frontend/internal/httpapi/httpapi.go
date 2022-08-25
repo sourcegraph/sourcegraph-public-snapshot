@@ -112,8 +112,7 @@ func NewHandler(
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
-	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
+	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
