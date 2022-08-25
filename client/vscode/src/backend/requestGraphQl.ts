@@ -1,5 +1,6 @@
 import { asError } from '@sourcegraph/common'
 import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
+
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
