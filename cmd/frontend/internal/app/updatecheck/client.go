@@ -316,7 +316,7 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
-	logFunc := logFuncFrom(logger.Scoped("updatecheck.getDependencyVersions", "gets the version of various dependency services"))
+	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
 	var (
 		err error
 		dv  dependencyVersions
@@ -428,7 +428,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
 	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
 	if err != nil {
-		logFunc("updatecheck.getAndMarshalCodeInsightsCriticalTelemetry failed", log.Error(err))
+		logFunc("getAndMarshalCodeInsightsCriticalTelemetry failed", log.Error(err))
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -439,7 +439,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		// transition.
 		count, err := getUsersActiveTodayCount(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getUsersActiveToday failed", log.Error(err))
+			logFunc("getUsersActiveToday failed", log.Error(err))
 		}
 		r.UniqueUsers = int32(count)
 
@@ -451,84 +451,84 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.HasRepos, err = hasRepos(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.hasRepos failed", log.Error(err))
+			logFunc("hasRepos failed", log.Error(err))
 		}
 
 		r.EverSearched, err = hasSearchOccurred(ctx)
 		if err != nil {
-			logFunc("updatecheck.hasSearchOccurred failed", log.Error(err))
+			logFunc("hasSearchOccurred failed", log.Error(err))
 		}
 		r.EverFindRefs, err = hasFindRefsOccurred(ctx)
 		if err != nil {
-			logFunc("updatecheck.hasFindRefsOccurred failed", log.Error(err))
+			logFunc("hasFindRefsOccurred failed", log.Error(err))
 		}
 		r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 		}
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
 		}
 
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalSavedSearchesJSON failed", log.Error(err))
+			logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
 		}
 
 		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalHomepagePanelsJSON failed", log.Error(err))
+			logFunc("getAndMarshalHomepagePanelsJSON failed", log.Error(err))
 		}
 
 		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalSearchOnboardingJSON failed", log.Error(err))
+			logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
 		}
 
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalRepositoriesJSON failed", log.Error(err))
+			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
 		}
 
 		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
+			logFunc("getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
 		}
 
 		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
+			logFunc("getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
 		}
 
 		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
 		}
 
 		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalNotebooksUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalNotebooksUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
 		}
 
 		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
+			logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
+			logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
 		}
 
 		r.ExternalServices, err = externalServiceKinds(ctx, db)
@@ -550,7 +550,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 			defer wg.Done()
 			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
 			if err != nil {
-				logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", log.Error(err))
+				logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
 			}
 		}()
 
@@ -559,7 +559,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 			defer wg.Done()
 			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
 			if err != nil {
-				logFunc("updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
 			}
 		}()
 
@@ -568,7 +568,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 			defer wg.Done()
 			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
 			if err != nil {
-				logFunc("updatecheck.getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
 			}
 		}()
 
@@ -576,12 +576,12 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	} else {
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalRepositoriesJSON failed", log.Error(err))
+			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
 		}
 
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, true)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", log.Error(err))
+			logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
 		}
 	}
 
@@ -700,8 +700,9 @@ func Start(logger log.Logger, db database.DB) {
 	}
 
 	const delay = 30 * time.Minute
+	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
 	for {
-		check(logger, db)
+		check(scopedLog, db)
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second

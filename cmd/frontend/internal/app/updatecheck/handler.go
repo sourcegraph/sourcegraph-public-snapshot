@@ -58,16 +58,16 @@ func getLatestRelease(deployType string) build {
 	}
 }
 
-func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+func HandlerWithLog(logger log.Logger) http.HandlerFunc {
 	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
 	return func(w http.ResponseWriter, r *http.Request) {
-		Handler(scopedLog, w, r)
+		handler(scopedLog, w, r)
 	}
 }
 
 // Handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
-func Handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
+func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
