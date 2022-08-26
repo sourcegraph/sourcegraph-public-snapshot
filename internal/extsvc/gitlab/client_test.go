@@ -17,7 +17,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -152,19 +151,14 @@ func TestGetOAuthContext(t *testing.T) {
 	)
 	defer conf.Mock(nil)
 
-	gitlabDotComAPIURL, err := url.Parse("https://gitlab.com/api/v4/")
-	require.NoError(t, err)
-	selfHostGitLabAPIURL, err := url.Parse("https://gitlab.example.com/api/v4/")
-	require.NoError(t, err)
-
 	tests := []struct {
 		name    string
-		baseURL *url.URL
+		baseURL string
 		want    *oauthutil.OAuthContext
 	}{
 		{
 			name:    "match with API URL",
-			baseURL: gitlabDotComAPIURL,
+			baseURL: "https://gitlab.com/api/v4/",
 			want: &oauthutil.OAuthContext{
 				ClientID:     "my-client-id",
 				ClientSecret: "my-client-secret",
@@ -178,7 +172,7 @@ func TestGetOAuthContext(t *testing.T) {
 		},
 		{
 			name:    "match with root URL",
-			baseURL: extsvc.GitLabDotComURL,
+			baseURL: "https://gitlab.com/",
 			want: &oauthutil.OAuthContext{
 				ClientID:     "my-client-id",
 				ClientSecret: "my-client-secret",
@@ -192,7 +186,7 @@ func TestGetOAuthContext(t *testing.T) {
 		},
 		{
 			name:    "no match",
-			baseURL: selfHostGitLabAPIURL,
+			baseURL: "https://gitlab.example.com/api/v4/",
 			want:    nil,
 		},
 	}

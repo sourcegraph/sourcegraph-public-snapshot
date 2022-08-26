@@ -234,7 +234,7 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, getOAuthContext(c.baseURL), req, result)
+	return c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
@@ -346,7 +346,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	_, _, err = c.doWithBaseURL(ctx, getOAuthContext(c.baseURL), req, &v)
+	_, _, err = c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
 	}
@@ -437,18 +437,16 @@ var MockGetOAuthContext func() *oauthutil.OAuthContext
 
 // getOAuthContext matches the corresponding auth provider using the given
 // baseURL and returns the oauthutil.OAuthContext of it.
-func getOAuthContext(baseURL *url.URL) *oauthutil.OAuthContext {
+func getOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
 
-	baseURL.Path = "" // Cut out path like "/api/v4"
-	rootURL := strings.TrimSuffix(baseURL.String(), "/")
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab != nil {
 			p := authProvider.Gitlab
 			glURL := strings.TrimSuffix(p.Url, "/")
-			if glURL != rootURL {
+			if !strings.HasPrefix(baseURL, glURL) {
 				continue
 			}
 
