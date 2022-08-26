@@ -339,7 +339,7 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
 	// Only the first capture group will be used for aggregation.
 	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
-	// If this error is returned, it means there are no capture groups.
+	// If this error is returned, it means there are no capture groups or this query contains multiple steps.
 	if err == querybuilder.UnsupportedPatternTypeErr || err == querybuilder.MultiplePatternErr {
 		return false, nil
 	}
