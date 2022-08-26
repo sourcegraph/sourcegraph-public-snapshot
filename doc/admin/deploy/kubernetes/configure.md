@@ -520,8 +520,40 @@ spec:
 ## Configure a tracing backend
 Sourcegraph currently supports exporting tracing data several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
+By default, trace data is exported through logging. Follow these steps to add a config for a different backend:
+
+1. Add a `ConfigMap` for the OpenTelemetry Collector. A template file can be found in [configure/otel-collector/otel-collector.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/blob/configure/otel-collector/otel-collector.ConfigMap.yaml). Make the necessary changes to the `exporters` and `service` blocks to connect to your backend as described in the documentation linked above.
+1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml) to include the `ConfigMap` as a `volume` and `volumeMount`. Update the `command` of the `otel-collector` container to point to the mounted config. See the snippet below for a shortened example:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+spec:
+  template:
+    spec:
+      containers:
+        - name: otel-collector
+          command:
+            - "/bin/otelcol-sourcegraph"
+            - "--config=/etc/otel-collector/config.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel-collector
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector
+            items:
+              - key: config.yaml
+                path: config.yaml
+```
+1. Apply the `ConfigMap` and edited `Deployment` manifests.
+
+
 ### Enable the bundled Jaeger deployment
-If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger). Read the [Overlays](./kustomize.md#overlays) section below about overlays.
+If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC
 
