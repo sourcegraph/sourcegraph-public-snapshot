@@ -7,6 +7,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
@@ -48,7 +49,7 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 	// Create trace provider
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(resource)),
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		oteltracesdk.WithSampler(&shouldTracePolicySampler{ratio: 0.1}),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
 
@@ -88,4 +89,23 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceNamespaceKey.String(r.Namespace),
 		semconv.ServiceInstanceIDKey.String(r.InstanceID),
 		semconv.ServiceVersionKey.String(r.Version))
+}
+
+type shouldTracePolicySampler struct {
+	ratio float64
+}
+
+// ShouldSample enables sampling only when the parent context doesn't carry a policy.ShouldTrace policy.
+// See policy.ShouldTrace.
+func (s *shouldTracePolicySampler) ShouldSample(parameters oteltracesdk.SamplingParameters) oteltracesdk.SamplingResult {
+	if policy.ShouldTrace(parameters.ParentContext) {
+		return oteltracesdk.AlwaysSample().ShouldSample(parameters)
+	}
+	// Many components still emit traces even if the policy is not set to ShouldTrace.
+	// Therefore, unless we're explicitly asked to trace, we enable sampling.
+	return oteltracesdk.TraceIDRatioBased(s.ratio).ShouldSample(parameters)
+}
+
+func (s *shouldTracePolicySampler) Description() string {
+	return "shouldTracePolicySampler"
 }
