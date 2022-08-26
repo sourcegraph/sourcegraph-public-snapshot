@@ -17,7 +17,7 @@ const traceKey = traceContextKey("trace")
 // SpanContext. External callers should likely use CopyContext, as this properly propagates all
 // tracing context from one context to another.
 func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
-	ctx = oteltrace.ContextWithSpan(ctx, tr.otelSpan)
+	ctx = oteltrace.ContextWithSpan(ctx, tr.oteltraceSpan)
 	ctx = context.WithValue(ctx, traceKey, tr)
 	return ctx
 }

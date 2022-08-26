@@ -35,9 +35,9 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 
 	// Set up the split trace.
 	trace := &Trace{
-		family:   family,
-		otelSpan: otelSpan,
-		ntTrace:  ntTrace,
+		family:        family,
+		oteltraceSpan: otelSpan,
+		nettraceTrace: ntTrace,
 	}
 	if parent := TraceFromContext(ctx); parent != nil {
 		ntTrace.LazyPrintf("parent: %s", parent.family)
