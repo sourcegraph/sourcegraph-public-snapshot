@@ -177,10 +177,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}
 
 	// override site config first
-	if err := overrideSiteConfig(ctx, db); err != nil {
+	if err := overrideSiteConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
+	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
 	conf.Init()
 	conf.MustValidateDefaults()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
@@ -190,13 +190,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return errors.Wrap(err, "failed to initialize encryption keyring")
 	}
 
-	if err := overrideGlobalSettings(ctx, db); err != nil {
+	if err := overrideGlobalSettings(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override global settings")
 	}
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
-	if err := overrideExtSvcConfig(ctx, db); err != nil {
+	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override external service config")
 	}
 
@@ -252,7 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		}
 	}
 
-	printConfigValidation()
+	printConfigValidation(logger)
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
