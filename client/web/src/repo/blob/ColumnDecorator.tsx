@@ -1,8 +1,5 @@
 import React, { useLayoutEffect, useCallback, useEffect } from 'react'
 
-import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import isAbsoluteUrl from 'is-absolute-url'
-import { truncate } from 'lodash'
 import ReactDOM from 'react-dom'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 
@@ -223,22 +220,13 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
         return null
     }
 
-    const displayName = truncate(blameHunk.author.person.displayName, { length: 25 })
-    const username = blameHunk.author.person.user ? `(${blameHunk.author.person.user.username}) ` : ''
-    const dateString = formatDistanceStrict(new Date(blameHunk.author.date), now, { addSuffix: true })
-    const linkURL = new URL(blameHunk.commit.url, 'https://sourcegraph.com').href
-    const hoverMessage = `${blameHunk.author.person.email} • ${truncate(blameHunk.message, { length: 1000 })}`
-    const content = `${dateString} • ${username}${displayName} [${truncate(blameHunk.message, { length: 45 })}]`
-
     return (
         <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
             <PopoverTrigger
                 as={Link}
                 // style={{ color: style.color }}
-                to={linkURL}
-                // Use target to open external URLs
-                target={linkURL && isAbsoluteUrl(linkURL) ? '_blank' : undefined}
-                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                to={blameHunk.displayInfo.linkURL}
+                target="_blank"
                 rel="noreferrer noopener"
                 onFocus={open}
                 onBlur={close}
@@ -248,7 +236,7 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                 <span
                     className={styles.contents}
                     data-line-decoration-attachment-content={true}
-                    data-contents={content}
+                    data-contents={blameHunk.displayInfo.message}
                 />
             </PopoverTrigger>
 
@@ -259,7 +247,11 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                 onMouseEnter={resetCloseTimeout}
                 onMouseLeave={close}
             >
-                {hoverMessage}
+                <div>
+                    {blameHunk.displayInfo.displayName} {blameHunk.displayInfo.dateString}
+                    <hr />
+                    {blameHunk.message}
+                </div>
             </PopoverContent>
         </Popover>
     )

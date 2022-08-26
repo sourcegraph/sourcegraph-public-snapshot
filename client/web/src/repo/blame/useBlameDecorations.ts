@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+import { formatDistanceStrict } from 'date-fns'
+import { truncate } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -14,9 +16,17 @@ import { useExperimentalFeatures } from '../../stores'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
+interface BlameHunkDisplayInfo {
+    displayName: string
+    username: string
+    dateString: string
+    linkURL: string
+    message: string
+}
+
 export type BlameHunk = NonNullable<
     NonNullable<NonNullable<GitBlameResult['repository']>['commit']>['blob']
->['blame'][number]
+>['blame'][number] & { displayInfo: BlameHunkDisplayInfo }
 
 const fetchBlame = memoizeObservable(
     ({
@@ -27,7 +37,7 @@ const fetchBlame = memoizeObservable(
         repoName: string
         commitID: string
         filePath: string
-    }): Observable<BlameHunk[] | undefined> =>
+    }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
             gql`
                 query GitBlame($repo: String!, $rev: String!, $path: String!) {
@@ -66,23 +76,62 @@ const fetchBlame = memoizeObservable(
     makeRepoURI
 )
 
-export const useBlameDecorations = (args?: {
-    repoName: string
-    commitID: string
-    filePath: string
-}): BlameHunk[] | undefined => {
-    const { repoName, commitID, filePath } = args ?? {}
+const now = Date.now()
+
+/**
+ * Get display info shared between status bar items and text document decorations.
+ */
+const getDisplayInfoFromHunk = (
+    { author, commit, message }: Omit<BlameHunk, 'displayInfo'>,
+    sourcegraphURL: string
+): BlameHunkDisplayInfo => {
+    const displayName = truncate(author.person.displayName, { length: 25 })
+    const username = author.person.user ? `(${author.person.user.username}) ` : ''
+    const dateString = formatDistanceStrict(new Date(author.date), now, { addSuffix: true })
+    const linkURL = new URL(commit.url, sourcegraphURL).href
+    const content = `${dateString} • ${username}${displayName} [${truncate(message, { length: 45 })}]`
+
+    return {
+        displayName,
+        username,
+        dateString,
+        linkURL,
+        message: content,
+    }
+}
+
+export const useBlameDecorations = (
+    {
+        repoName,
+        commitID,
+        filePath,
+    }: {
+        repoName: string
+        commitID: string
+        filePath: string
+    },
+    sourcegraphURL: string
+): BlameHunk[] | undefined => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
         useMemo(
             () =>
-                extensionsAsCoreFeatures && commitID && repoName && filePath && isBlameVisible
+                extensionsAsCoreFeatures && isBlameVisible
                     ? fetchBlame({ commitID, repoName, filePath })
                     : of(undefined),
             [extensionsAsCoreFeatures, isBlameVisible, commitID, repoName, filePath]
         )
     )
 
-    return hunks
+    const hunksWithDisplayInfo = useMemo(
+        () =>
+            hunks?.map(hunk => ({
+                ...hunk,
+                displayInfo: getDisplayInfoFromHunk(hunk, sourcegraphURL),
+            })),
+        [hunks, sourcegraphURL]
+    )
+
+    return hunksWithDisplayInfo
 }

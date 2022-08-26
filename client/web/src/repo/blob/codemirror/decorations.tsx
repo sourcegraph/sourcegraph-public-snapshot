@@ -3,7 +3,7 @@
  * text document decorations to CodeMirror decorations. Text document
  * decorations are provided via the {@link showTextDocumentDecorations} facet.
  */
-import { Compartment, Extension, Facet, Prec, RangeSetBuilder } from '@codemirror/state'
+import { Compartment, Extension, Facet, RangeSetBuilder } from '@codemirror/state'
 import {
     Decoration,
     DecorationSet,
@@ -20,9 +20,9 @@ import { createRoot, Root } from 'react-dom/client'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 
-import { groupDecorations } from '../Blob'
+import { BlameHunk } from '../../blame/useBlameDecorations'
 import { ColumnDecoratorContents } from '../ColumnDecorator'
 import { LineDecoratorContents } from '../LineDecorator'
 
@@ -30,15 +30,6 @@ import columnDecoratorStyles from '../ColumnDecorator.module.scss'
 import lineDecoratorStyles from '../LineDecorator.module.scss'
 
 export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
-type GroupedDecorations = ReturnType<typeof groupDecorations>
-
-/**
- * Facet to specify whether or not enable column decorations.
- */
-export const enableExtensionsDecorationsColumnView = Facet.define<boolean, boolean>({
-    combine: values => values[0],
-    static: true,
-})
 
 /**
  * {@link TextDocumentDecorationMangar} creates {@link gutter}s dynamically.
@@ -54,58 +45,31 @@ const decorationGutters = new Compartment()
  */
 class TextDocumentDecorationManager implements PluginValue {
     public inlineDecorations: DecorationSet = Decoration.none
-    public groupedDecorations: GroupedDecorations = { column: [], inline: new Map() }
-    private gutters: Map<string, { gutter: Extension; items: DecorationMapByLine }> = new Map()
-    private reset: number | null = null
+    public decorations: DecorationMapByLine = new Map()
 
     constructor(private readonly view: EditorView) {
-        this.updateDecorations(
-            view.state.facet(showTextDocumentDecorations),
-            view.state.facet(enableExtensionsDecorationsColumnView),
-            !view.state.facet(EditorView.darkTheme)
-        )
+        this.updateDecorations(view.state.facet(showTextDocumentDecorations), !view.state.facet(EditorView.darkTheme))
     }
 
     public update(update: ViewUpdate): void {
         const currentDecorations = update.state.facet(showTextDocumentDecorations)
-        const currentEnabledColumnView = update.state.facet(enableExtensionsDecorationsColumnView)
         const isLightTheme = !update.state.facet(EditorView.darkTheme)
 
-        if (
-            update.startState.facet(showTextDocumentDecorations) !== currentDecorations ||
-            update.startState.facet(enableExtensionsDecorationsColumnView) !== currentEnabledColumnView
-        ) {
-            this.updateDecorations(currentDecorations, currentEnabledColumnView, isLightTheme)
+        if (update.startState.facet(showTextDocumentDecorations) !== currentDecorations) {
+            this.updateDecorations(currentDecorations, isLightTheme)
         } else if (update.viewportChanged || isLightTheme !== !update.startState.facet(EditorView.darkTheme)) {
-            this.updateInlineDecorations(this.groupedDecorations.inline, isLightTheme)
-            // Updating column decorators is handled but the gutter extension itself
+            this.updateInlineDecorations(this.decorations, isLightTheme)
         }
     }
 
-    private updateDecorations(
-        specs: TextDocumentDecorationSpec[],
-        enableColumnView: boolean,
-        isLightTheme: boolean
-    ): void {
-        this.groupedDecorations = groupDecorations(specs, enableColumnView)
-        this.updateInlineDecorations(this.groupedDecorations.inline, isLightTheme)
-
-        if (this.updateGutters()) {
-            // We cannot synchronously dispatch another transaction during
-            // an update, so we schedule it but also cancel pending
-            // transactions should this be called multiple times in a row
-            if (this.reset !== null) {
-                window.clearTimeout(this.reset)
-            }
-            this.reset = window.setTimeout(() => {
-                this.view.dispatch({
-                    effects: decorationGutters.reconfigure(Array.from(this.gutters.values(), ({ gutter }) => gutter)),
-                })
-            }, 50)
-        }
+    private updateDecorations(specs: TextDocumentDecorationSpec[], isLightTheme: boolean): void {
+        this.decorations = groupDecorationsByLine(
+            specs.reduce((acc, [, items]) => [...acc, ...items], [] as TextDocumentDecoration[])
+        )
+        this.updateInlineDecorations(this.decorations, isLightTheme)
     }
 
-    private updateInlineDecorations(decorations: GroupedDecorations['inline'], isLightTheme: boolean): void {
+    private updateInlineDecorations(decorations: DecorationMapByLine, isLightTheme: boolean): void {
         const builder = new RangeSetBuilder<Decoration>()
 
         // Only render decorations for the currently visible lines
@@ -121,175 +85,6 @@ class TextDocumentDecorationManager implements PluginValue {
             }
         }
         this.inlineDecorations = builder.finish()
-    }
-
-    /**
-     * Create or remove gutters.
-     */
-    private updateGutters(): boolean {
-        let change = false
-        const seen: Set<string> = new Set()
-
-        for (const [{ extensionID }, items] of this.groupedDecorations.column) {
-            if (!extensionID) {
-                continue
-            }
-
-            seen.add(extensionID)
-            if (!this.gutters.has(extensionID)) {
-                const className = extensionID.replace(/\//g, '-')
-
-                this.gutters.set(extensionID, {
-                    gutter: gutter({
-                        class: `${columnDecoratorStyles.decoration} ${className}`,
-                        lineMarker: (view, lineBlock) => {
-                            const items = this.gutters.get(extensionID)?.items
-                            if (!items) {
-                                // This shouldn't be possible but just in case
-                                return null
-                            }
-                            const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
-                            const lineItems = items.get(lineNumber)
-                            if (!lineItems || lineItems.length === 0) {
-                                return null
-                            }
-                            return new ColumnDecoratorMarker(
-                                lineItems,
-                                !view.state.facet(EditorView.darkTheme),
-                                lineNumber
-                            )
-                        },
-                        // Without a spacer the whole gutter flickers when the
-                        // decorations for the visible lines are re-rendered
-                        // TODO: update spacer when decorations change
-                        initialSpacer: () => {
-                            const decorations = longestColumnDecorations(this.gutters.get(extensionID)?.items)
-                            return new ColumnDecoratorMarker(decorations, /* value doesn't matter for spacer */ true)
-                        },
-                        // Markers need to be updated when theme changes
-                        lineMarkerChange: update =>
-                            update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
-                    }),
-                    items,
-                })
-                change = true
-            } else {
-                this.gutters.get(extensionID)!.items = items
-            }
-        }
-
-        for (const id of this.gutters.keys()) {
-            if (!seen.has(id)) {
-                this.gutters.delete(id)
-                change = true
-            }
-        }
-
-        return change
-    }
-}
-
-/**
- * Used to find the decoration(s) with the longest text, so that they can be
- * used as gutter spacer.
- */
-function longestColumnDecorations(mappedDecorations: DecorationMapByLine | undefined): TextDocumentDecoration[] {
-    if (!mappedDecorations) {
-        return []
-    }
-
-    let longest = 0
-    let result: TextDocumentDecoration[] = []
-
-    for (const decorations of mappedDecorations.values()) {
-        const size = decorations.reduce((size, decoration) => size + (decoration.after?.contentText?.length ?? 0), 0)
-        if (size > longest) {
-            longest = size
-            result = decorations
-        }
-    }
-
-    return result
-}
-
-const getLineNumberCell = (line: number): HTMLElement | null =>
-    document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
-const getCodeCell = (line: number): HTMLElement | null =>
-    document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
-
-/**
- * Widget class for rendering column Sourcegrpah text document decorations inside
- * CodeMirror.
- */
-class ColumnDecoratorMarker extends GutterMarker {
-    private container: HTMLElement | null = null
-    private reactRoot: Root | null = null
-
-    constructor(
-        public readonly items: TextDocumentDecoration[],
-        public readonly isLightTheme: boolean,
-        public readonly line: number
-    ) {
-        super()
-    }
-
-    /* eslint-disable-next-line id-length*/
-    public eq(other: ColumnDecoratorMarker): boolean {
-        // TODO: Find out why gutter markers still flicker when gutter is
-        // redrawn
-        return isEqual(this.items, other.items) && this.isLightTheme === other.isLightTheme
-    }
-
-    public toDOM(): HTMLElement {
-        if (!this.container) {
-            this.container = document.createElement('span')
-            this.reactRoot = createRoot(this.container)
-            this.reactRoot.render(
-                <ColumnDecoratorContents
-                    line={this.line}
-                    lineDecorations={this.items}
-                    isLightTheme={this.isLightTheme}
-                    onSelect={this.selectRow}
-                    onDeselect={this.deselectRow}
-                />
-            )
-        }
-        return this.container
-    }
-
-    private getDecorationCell = (): HTMLElement | null | undefined => this.container?.closest('.cm-gutterElement')
-
-    private selectRow = (line: number): void => {
-        const lineNumberCell = getLineNumberCell(line)
-        const decorationCell = this.getDecorationCell()
-        const codeCell = getCodeCell(line)
-        if (!lineNumberCell || !decorationCell || !codeCell) {
-            return
-        }
-
-        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
-            cell.classList.add('highlighted-line')
-        }
-    }
-
-    private deselectRow = (line: number): void => {
-        const lineNumberCell = getLineNumberCell(line)
-        const decorationCell = this.getDecorationCell()
-        const codeCell = getCodeCell(line)
-        if (!lineNumberCell || !decorationCell || !codeCell) {
-            return
-        }
-
-        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
-            cell.classList.remove('highlighted-line')
-        }
-    }
-
-    public destroy(): void {
-        this.container?.remove()
-        // setTimeout seems necessary to prevent React from complaining that the
-        // root is synchronously unmounted while rendering is in progress
-        setTimeout(() => this.reactRoot?.unmount(), 0)
     }
 }
 
@@ -341,6 +136,100 @@ class LineDecorationWidget extends WidgetType {
     }
 }
 
+/**
+ * Used to find the decoration(s) with the longest text, so that they can be
+ * used as gutter spacer.
+ */
+function longestColumnDecorations(hunks: BlameHunk[] | undefined): BlameHunk | undefined {
+    return hunks?.reduce((acc, hunk) => {
+        if (!acc || hunk.displayInfo.message.length > acc.displayInfo.message.length) {
+            return hunk
+        }
+        return acc
+    }, undefined as BlameHunk | undefined)
+}
+
+const getLineNumberCell = (line: number): HTMLElement | null =>
+    document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
+const getCodeCell = (line: number): HTMLElement | null =>
+    document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
+
+/**
+ * Widget class for rendering column Sourcegrpah text document decorations inside
+ * CodeMirror.
+ */
+class ColumnDecoratorMarker extends GutterMarker {
+    private container: HTMLElement | null = null
+    private reactRoot: Root | null = null
+
+    constructor(
+        public readonly item: BlameHunk | undefined,
+        public readonly isLightTheme: boolean,
+        public readonly line: number
+    ) {
+        super()
+    }
+
+    /* eslint-disable-next-line id-length*/
+    public eq(other: ColumnDecoratorMarker): boolean {
+        // TODO: Find out why gutter markers still flicker when gutter is
+        // redrawn
+        return isEqual(this.item, other.item)
+    }
+
+    public toDOM(): HTMLElement {
+        if (!this.container) {
+            this.container = document.createElement('span')
+            this.reactRoot = createRoot(this.container)
+            this.reactRoot.render(
+                <ColumnDecoratorContents
+                    line={this.line}
+                    blameHunk={this.item}
+                    isLightTheme={this.isLightTheme}
+                    onSelect={this.selectRow}
+                    onDeselect={this.deselectRow}
+                />
+            )
+        }
+        return this.container
+    }
+
+    private getDecorationCell = (): HTMLElement | null | undefined => this.container?.closest('.cm-gutterElement')
+
+    private selectRow = (line: number): void => {
+        const lineNumberCell = getLineNumberCell(line)
+        const decorationCell = this.getDecorationCell()
+        const codeCell = getCodeCell(line)
+        if (!lineNumberCell || !decorationCell || !codeCell) {
+            return
+        }
+
+        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
+            cell.classList.add('highlighted-line')
+        }
+    }
+
+    private deselectRow = (line: number): void => {
+        const lineNumberCell = getLineNumberCell(line)
+        const decorationCell = this.getDecorationCell()
+        const codeCell = getCodeCell(line)
+        if (!lineNumberCell || !decorationCell || !codeCell) {
+            return
+        }
+
+        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
+            cell.classList.remove('highlighted-line')
+        }
+    }
+
+    public destroy(): void {
+        this.container?.remove()
+        // setTimeout seems necessary to prevent React from complaining that the
+        // root is synchronously unmounted while rendering is in progress
+        setTimeout(() => this.reactRoot?.unmount(), 0)
+    }
+}
+
 // Needed to make sure column and inline decorations are rendered correctly
 const columnTheme = EditorView.theme({
     [`.${columnDecoratorStyles.decoration} a`]: {
@@ -364,8 +253,108 @@ export const showTextDocumentDecorations = Facet.define<TextDocumentDecorationSp
     combine: decorations => decorations.flat(),
     compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: [
-        Prec.lowest(enableExtensionsDecorationsColumnView.of(false)),
         ViewPlugin.fromClass(TextDocumentDecorationManager, {
+            decorations: manager => manager.inlineDecorations,
+        }),
+    ],
+})
+
+class GitBlameDecorationManager implements PluginValue {
+    public inlineDecorations: DecorationSet = Decoration.none
+    private gutters: Map<string, { gutter: Extension; items: BlameHunk[] }> = new Map()
+    private reset: number | null = null
+
+    constructor(private readonly view: EditorView) {
+        this.updateDecorations(view.state.facet(showGitBlameDecorations))
+    }
+
+    public update(update: ViewUpdate): void {
+        const currentDecorations = update.state.facet(showGitBlameDecorations)
+
+        if (update.startState.facet(showGitBlameDecorations) !== currentDecorations) {
+            this.updateDecorations(currentDecorations)
+        }
+    }
+
+    private updateDecorations(specs: BlameHunk[]): void {
+        if (this.updateGutters(specs)) {
+            // We cannot synchronously dispatch another transaction during
+            // an update, so we schedule it but also cancel pending
+            // transactions should this be called multiple times in a row
+            if (this.reset !== null) {
+                window.clearTimeout(this.reset)
+            }
+            this.reset = window.setTimeout(() => {
+                this.view.dispatch({
+                    effects: decorationGutters.reconfigure(Array.from(this.gutters.values(), ({ gutter }) => gutter)),
+                })
+            }, 50)
+        }
+    }
+
+    /**
+     * Create or remove gutters.
+     */
+    private updateGutters(specs: BlameHunk[]): boolean {
+        let change = false
+        const seen: Set<string> = new Set()
+
+        seen.add('blame')
+        if (!this.gutters.has('blame')) {
+            this.gutters.set('blame', {
+                gutter: gutter({
+                    class: columnDecoratorStyles.decoration,
+                    lineMarker: (view, lineBlock) => {
+                        const items = this.gutters.get('blame')?.items
+                        if (!items) {
+                            // This shouldn't be possible but just in case
+                            return null
+                        }
+                        const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
+                        const lineItems = items.find(hunk => hunk.startLine === lineNumber)
+                        if (!lineItems) {
+                            return null
+                        }
+                        return new ColumnDecoratorMarker(lineItems, !view.state.facet(EditorView.darkTheme), lineNumber)
+                    },
+                    // Without a spacer the whole gutter flickers when the
+                    // decorations for the visible lines are re-rendered
+                    // TODO: update spacer when decorations change
+                    initialSpacer: () => {
+                        const hunk = longestColumnDecorations(this.gutters.get('blame')?.items)
+                        return new ColumnDecoratorMarker(hunk, /* value doesn't matter for spacer */ true, 0)
+                    },
+                    // Markers need to be updated when theme changes
+                    lineMarkerChange: update =>
+                        update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
+                }),
+                items: specs,
+            })
+            change = true
+        } else {
+            this.gutters.get('blame')!.items = specs
+        }
+        // }
+
+        for (const id of this.gutters.keys()) {
+            if (!seen.has(id)) {
+                this.gutters.delete(id)
+                change = true
+            }
+        }
+
+        return change
+    }
+}
+
+/**
+ * Facet to show git blame decorations.
+ */
+export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
+    combine: decorations => decorations.flat(),
+    compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
+    enables: [
+        ViewPlugin.fromClass(GitBlameDecorationManager, {
             decorations: manager => manager.inlineDecorations,
         }),
         decorationGutters.of([]),

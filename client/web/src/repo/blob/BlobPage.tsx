@@ -284,7 +284,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
 
     useBlobPanelViews(props)
 
-    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
+    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&

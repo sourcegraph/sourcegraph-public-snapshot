@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
-import { isEqual, sortBy } from 'lodash'
+import { isEqual } from 'lodash'
 import {
     BehaviorSubject,
     combineLatest,
@@ -59,11 +59,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import {
-    createDecorationType,
-    DecorationMapByLine,
-    groupDecorationsByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -91,7 +87,6 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { BlameHunk } from '../blame/useBlameDecorations'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -104,8 +99,6 @@ import styles from './Blob.module.scss'
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
-
-export const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -660,21 +653,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
-
     // Memoize decorations to avoid clearing and setting decorations in `LineDecorator`s on renders in which decorations haven't changed.
     const decorations: DecorationMapByLine = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             return groupDecorationsByLine(
-                decorationsOrError.reduce((accumulator, [type, items]) => {
-                    accumulator.push(...items)
-                    return accumulator
-                }, [] as TextDocumentDecoration[])
+                decorationsOrError.reduce(
+                    (accumulator, [, items]) => [...accumulator, ...items],
+                    [] as TextDocumentDecoration[]
+                )
             )
         }
 
         return new Map()
-    }, [props.disableDecorations, props.blameHunks, decorationsOrError, enableExtensionsDecorationsColumnView])
+    }, [decorationsOrError])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -925,33 +916,5 @@ export function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
-    }
-}
-
-export function groupDecorations(
-    decorations: [TextDocumentDecorationType, TextDocumentDecoration[]][],
-    enableExtensionsDecorationsColumnView: boolean,
-    initialValue: { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: TextDocumentDecoration[] } = {
-        column: [],
-        inline: [],
-    }
-): { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: DecorationMapByLine } {
-    const { column, inline } = decorations.reduce((accumulator, [type, items]) => {
-        if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-            const groupedByLine = groupDecorationsByLine(items)
-            if (groupedByLine.size > 0) {
-                accumulator.column.push([type, groupedByLine])
-            }
-        } else {
-            accumulator.inline.push(...items)
-        }
-
-        return accumulator
-    }, initialValue)
-
-    return {
-        // if extension contributes with a few decoration types let them go one by one
-        column: sortBy(column, ([{ extensionID }]) => extensionID),
-        inline: groupDecorationsByLine(inline),
     }
 }
