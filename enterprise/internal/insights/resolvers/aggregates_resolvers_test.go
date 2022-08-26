@@ -224,7 +224,6 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
 			patternType:  "regexp",
 			canAggregate: false,
-			err:          errors.New("pattern replacement does not support queries with multiple patterns"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -288,6 +287,24 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 		{
 			name:  "query with repo predicate returns repo",
 			query: "repo:contains.path(README) insights",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp type:commit query returns author",
+			// this query contains two non-capture group regexps so wouldn't support capture group aggregation.
+			query: "type:commit TODO \\w+ [0-9]",
+			want:  types.AUTHOR_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp single repo query returns path",
+			// this query contains an or so wouldn't support capture group aggregation.
+			query: "repo:^github\\.com/sourcegraph/sourcegraph$ TODO \\w+ or  var[0-9]",
+			want:  types.PATH_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp query returns repo",
+			// this query contains an or so wouldn't support capture group aggregation.
+			query: "TODO \\w+ or  var[0-9]",
 			want:  types.REPO_AGGREGATION_MODE,
 		},
 		{
