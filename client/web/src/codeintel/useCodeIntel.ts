@@ -75,17 +75,9 @@ interface UseCodeIntelParameters {
     getSetting: SettingsGetter
 }
 
-export const useCodeIntel = ({
-    variables,
-    searchToken,
-    spec,
-    fileContent,
-    isFork,
-    isArchived,
-    getSetting,
-}: UseCodeIntelParameters): UseCodeIntelResult => {
+export function useCodeIntel(parameters: UseCodeIntelParameters): UseCodeIntelResult {
     const shouldMixPreciseAndSearchBasedReferences = (): boolean =>
-        getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
+        parameters.getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
 
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
@@ -135,6 +127,7 @@ export const useCodeIntel = ({
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
+    const variables = parameters.variables
     useEffect(() => {
         // We need to fetch again if the variables change
         shouldFetchPrecise.current = true
@@ -160,16 +153,11 @@ export const useCodeIntel = ({
         commit: variables.commit,
         path: variables.path,
         filter: variables.filter ?? undefined,
-        searchToken,
         position: {
             line: variables.line,
             character: variables.character,
         },
-        fileContent,
-        spec,
-        isFork,
-        isArchived,
-        getSetting,
+        ...parameters,
     })
 
     const { error, loading } = useQuery<
