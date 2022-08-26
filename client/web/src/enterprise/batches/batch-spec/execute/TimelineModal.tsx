@@ -2,13 +2,22 @@ import React, { useMemo } from 'react'
 
 import { mdiClose, mdiTimerSand, mdiCheck, mdiAlertCircle, mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
-import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { Button, Modal, Icon, H3, H4, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
+import { HeroPage } from '../../../../components/HeroPage'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
-import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    BatchSpecWorkspaceState,
+    VisibleBatchSpecWorkspaceFields,
+    GetSourcegraphVersionResult,
+    GetSourcegraphVersionVariables,
+} from '../../../../graphql-operations'
+import { GET_SOURCEGRAPH_VERSION } from '../../../executors/backend'
 import { ExecutorNode } from '../../../executors/ExecutorsListPage'
 
 import styles from './TimelineModal.module.scss'
@@ -21,26 +30,48 @@ export interface TimelineModalProps {
 export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<TimelineModalProps>> = ({
     node,
     onCancel,
-}) => (
-    <Modal className={styles.modalBody} position="center" onDismiss={onCancel} aria-label="Execution timeline">
-        <div className={styles.modalHeader}>
-            <H3 className="mb-0">Execution timeline</H3>
-            <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
-                <VisuallyHidden>Close</VisuallyHidden>
-                <Icon aria-hidden={true} svgPath={mdiClose} />
-            </Button>
-        </div>
-        <div className={styles.modalContent}>
-            <ExecutionTimeline node={node} />
-            {node.executor && (
-                <>
-                    <H4 className="mt-2">Executor</H4>
-                    <ExecutorNode node={node.executor} />
-                </>
-            )}
-        </div>
-    </Modal>
-)
+}) => {
+    const { data, loading, error } = useQuery<GetSourcegraphVersionResult, GetSourcegraphVersionVariables>(
+        GET_SOURCEGRAPH_VERSION,
+        {
+            fetchPolicy: 'cache-and-network',
+        }
+    )
+
+    if (loading) {
+        return
+    }
+
+    if (error || !data?.site) {
+        const title = error ? String(error) : 'Unable to fetch sourcegraph version.'
+        return <HeroPage icon={AlertCircleIcon} title={title} />
+    }
+
+    const executorNode = loading ? (
+        <LoadingSpinner />
+    ) : (
+        <>
+            <H4 className="mt-2">Executor</H4>
+            <ExecutorNode node={node.executor} sourcegraphVersion={data.site.productVersion} />
+        </>
+    )
+
+    return (
+        <Modal className={styles.modalBody} position="center" onDismiss={onCancel} aria-label="Execution timeline">
+            <div className={styles.modalHeader}>
+                <H3 className="mb-0">Execution timeline</H3>
+                <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
+                    <VisuallyHidden>Close</VisuallyHidden>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
+                </Button>
+            </div>
+            <div className={styles.modalContent}>
+                <ExecutionTimeline node={node} />
+                {node.executor && executorNode}
+            </div>
+        </Modal>
+    )
+}
 
 interface ExecutionTimelineProps {
     node: VisibleBatchSpecWorkspaceFields
