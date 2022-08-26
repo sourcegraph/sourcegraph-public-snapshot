@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +26,7 @@ type Trace struct {
 
 // New returns a new Trace with the specified family and title.
 func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
-	tr := Tracer{Tracer: ot.GetTracer(ctx)}
+	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
 	return tr.New(ctx, family, title, tags...)
 }
 

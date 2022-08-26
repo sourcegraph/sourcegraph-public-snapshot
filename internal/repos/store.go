@@ -9,8 +9,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -121,7 +121,7 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 

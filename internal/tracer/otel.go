@@ -53,7 +53,7 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 	)
 
 	// Set up bridge for converting opentracing API calls to OpenTelemetry.
-	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
+	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("internal/tracer.BridgeTracer"))
 	bridge.SetTextMapPropagator(compositePropagator)
 
 	// Set up logging
