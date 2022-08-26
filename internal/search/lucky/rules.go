@@ -56,7 +56,7 @@ var rulesWiden = []rule{
 	},
 }
 
-func mapNodes(b query.Basic, searchType query.SearchType, f func(nodes []query.Node) ([]query.Node, bool)) *query.Basic {
+func mapNodes(b query.Basic, searchType query.SearchType, f func(pattern query.Pattern, parameters query.Parameters) (query.Pattern, query.Parameters, bool)) *query.Basic {
 	// Go back all the way to the raw tree representation :-). We just parse
 	// the string as regex, since parsing with regex annotates quoted
 	// patterns.
@@ -65,12 +65,12 @@ func mapNodes(b query.Basic, searchType query.SearchType, f func(nodes []query.N
 		return nil
 	}
 
-	newParseTree, changed := f(rawParseTree)
+	pattern, parameters, changed := f(pattern, parameters)
 	if !changed {
 		return nil
 	}
 
-	newParseTree = query.NewOperator(newParseTree, query.And) // Reduce with NewOperator to obtain valid partitioning.
+	newParseTree = query.NewOperator([]query.Node{pattern, parameters...}, query.And) // Reduce with NewOperator to obtain valid partitioning.
 	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
 	if err != nil {
 		return nil
