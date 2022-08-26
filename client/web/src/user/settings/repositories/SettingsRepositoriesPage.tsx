@@ -154,7 +154,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchUserRepositoriesCount, owner.id])
+    }, [fetchExternalServices, owner.id])
 
     const TWO_SECONDS = 2
 
@@ -177,7 +177,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     // }
                 })
             ),
-        [owner.id, status, updateReposList, listUserRepositories]
+        [owner.id, status, updateReposList]
     )
 
     useObservable(
