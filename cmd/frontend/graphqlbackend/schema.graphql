@@ -2238,6 +2238,17 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
+    """
+    Additional optional information provided
+    """
+    annotation: SearchQueryDescriptionAnnotation
+}
+
+"""
+Additional information provided by a proposed query
+"""
+type SearchQueryDescriptionAnnotation {
+    resultCountString: String
 }
 
 """

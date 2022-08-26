@@ -1,6 +1,9 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/search"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+)
 
 // searchQueryDescription is a type for the SearchQueryDescription resolver used
 // by SearchAlert. This name is a bit of a misnomer but cannot be changed: It
@@ -21,4 +24,12 @@ func (q searchQueryDescription) Description() *string {
 	}
 
 	return &q.query.Description
+}
+
+func (q searchQueryDescription) Annotations() *map[streamhttp.AnnotationKey]string {
+	if q.query.Annotations == nil {
+		return nil
+	}
+
+	return &q.query.Annotations
 }
