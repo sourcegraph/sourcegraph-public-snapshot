@@ -21,6 +21,7 @@ type operations struct {
 	hasCommit                 *observation.Operation
 
 	// Repositories
+	getRepositoriesForIndexScan     *observation.Operation
 	getRepositoriesMaxStaleAge      *observation.Operation
 	setRepositoryAsDirty            *observation.Operation
 	setRepositoryAsDirtyWithTx      *observation.Operation
@@ -93,6 +94,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasCommit:                 op("HasCommit"),
 
 		// Repositories
+		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
 		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
 		getDirtyRepositories:            op("GetDirtyRepositories"),
 		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),

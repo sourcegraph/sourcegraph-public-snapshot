@@ -371,6 +371,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				UseIndex:         f.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				RepoOpts:         repoOptions,
+				BatchRetry:       searchInputs.Protocol == search.Batch,
 			})
 		}
 
@@ -472,10 +473,6 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return *count
 	}
 
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
 	switch p {
 	case search.Batch:
 		return limits.DefaultMaxSearchResults
@@ -512,10 +509,6 @@ func mapSlice(values []string, f func(string) string) []string {
 func count(b query.Basic, p search.Protocol) int {
 	if count := b.Count(); count != nil {
 		return *count
-	}
-
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
 	}
 
 	switch p {

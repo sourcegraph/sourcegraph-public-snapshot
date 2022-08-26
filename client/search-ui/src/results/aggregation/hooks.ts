@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { ApolloError, gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
@@ -69,11 +69,8 @@ const aggregationModeDeserializer = (
         case 'CAPTURE_GROUP':
             return SearchAggregationMode.CAPTURE_GROUP
 
-        // TODO Return null FE default value instead REPO when aggregation type
-        // will be provided by the backend.
-        // see https://github.com/sourcegraph/sourcegraph/issues/40425
         default:
-            return SearchAggregationMode.REPO
+            return null
     }
 }
 
@@ -182,7 +179,7 @@ interface SearchAggregationDataInput {
 
 type SearchAggregationResults =
     | { data: undefined; loading: true; error: undefined }
-    | { data: undefined; loading: false; error: Error }
+    | { data: GetSearchAggregationResult | undefined; loading: false; error: Error }
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
@@ -194,27 +191,26 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         {
             fetchPolicy: 'cache-first',
             variables: { query, patternType, mode: aggregationMode, limit },
+            onCompleted: data => {
+                const calculatedAggregationMode = getCalculatedAggregationMode(data)
+
+                // When we load the search result page in the first time we don't have picked
+                // aggregation mode yet (unless we open the search result page with predefined
+                // aggregation mode in the page URL)
+                // In case when we don't have set aggregation mode on the FE, BE will
+                // calculate this mode based on query that we pass to the aggregation
+                // query (see AGGREGATION_SEARCH_QUERY).
+                // When this happens we should take calculated aggregation mode and set its
+                // value on the frontend (UI controls, update URL value of aggregation mode)
+
+                // Catch initial page mount when aggregation mode isn't set on the FE and BE
+                // calculated aggregation mode automatically on the backend based on given query
+                if (calculatedAggregationMode && aggregationMode === null) {
+                    setAggregationMode(calculatedAggregationMode)
+                }
+            },
         }
     )
-
-    const calculatedAggregationMode = getCalculatedAggregationMode(data)
-
-    useEffect(() => {
-        // When we load the search result page in the first time we don't have picked
-        // aggregation mode yet (unless we open the search result page with predefined
-        // aggregation mode in the page URL)
-        // In case when we don't have set aggregation mode on the FE, BE will
-        // calculate this mode based on query that we pass to the aggregation
-        // query (see AGGREGATION_SEARCH_QUERY).
-        // When this happens we should take calculated aggregation mode and set its
-        // value on the frontend (UI controls, update URL value of aggregation mode)
-
-        // Catch initial page mount when aggregation mode isn't set on the FE and BE
-        // calculated aggregation mode automatically on the backend based on given query
-        if (calculatedAggregationMode && aggregationMode === null) {
-            setAggregationMode(calculatedAggregationMode)
-        }
-    }, [setAggregationMode, calculatedAggregationMode, aggregationMode])
 
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
@@ -223,7 +219,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
     const calculatedError = getAggregationError(error, data)
 
     if (calculatedError) {
-        return { data: undefined, error: calculatedError, loading: false }
+        return { data, error: calculatedError, loading: false }
     }
 
     return {

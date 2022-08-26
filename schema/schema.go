@@ -470,6 +470,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+	SrcCliVersionCache *SrcCliVersionCache `json:"srcCliVersionCache,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
@@ -962,6 +964,18 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
+}
+
+// Github description: GitHub configuration, both for queries and receiving release webhooks.
+type Github struct {
+	// Repository description: The repository to get the latest version of.
+	Repository *Repository `json:"repository,omitempty"`
+	// Token description: The access token to use when communicating with GitHub.
+	Token string `json:"token"`
+	// Uri description: The URI of the GitHub instance.
+	Uri string `json:"uri,omitempty"`
+	// WebhookSecret description: The release webhook secret.
+	WebhookSecret string `json:"webhookSecret"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1535,6 +1549,14 @@ type Repos struct {
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
 }
+
+// Repository description: The repository to get the latest version of.
+type Repository struct {
+	// Name description: The repository name.
+	Name string `json:"name,omitempty"`
+	// Owner description: The repository namespace.
+	Owner string `json:"owner,omitempty"`
+}
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
@@ -2060,6 +2082,16 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+}
+
+// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+type SrcCliVersionCache struct {
+	// Enabled description: Enables the src-cli version cache API endpoint.
+	Enabled bool `json:"enabled"`
+	// Github description: GitHub configuration, both for queries and receiving release webhooks.
+	Github Github `json:"github"`
+	// Interval description: The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.
+	Interval string `json:"interval,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the required changes.

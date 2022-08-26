@@ -99,7 +99,6 @@ Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
 - Stylelint (all)
-- Puppeteer tests for VS Code extension
 - Upload build trace
 
 ### Tagged release
