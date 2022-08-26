@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -66,4 +67,8 @@ func (s *storeShim) MarkFailed(ctx context.Context, id int, errorMessage string)
 
 func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
 	return s.queueStore.CanceledJobs(ctx, s.queueName, knownIDs)
+}
+
+type FileStore interface {
+	Get(ctx context.Context, path string) (io.ReadCloser, error)
 }

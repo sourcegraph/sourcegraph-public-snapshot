@@ -1,6 +1,10 @@
 package executor
 
-import "github.com/sourcegraph/sourcegraph/internal/workerutil"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+)
 
 // Job describes a series of steps to perform within an executor.
 type Job struct {
@@ -15,6 +19,9 @@ type Job struct {
 	// RepositoryDirectory is the relative path to which the repo is cloned. If
 	// unset, defaults to the workspace root.
 	RepositoryDirectory string `json:"repositoryDirectory"`
+
+	Mounts         []Mount `json:"mounts"`
+	MountDirectory string  `json:"mountDirectory"`
 
 	// Commit is the revhash that should be checked out prior to job execution.
 	Commit string `json:"commit"`
@@ -79,6 +86,13 @@ type CliStep struct {
 
 	// Env specifies a set of NAME=value pairs to supply to the src command.
 	Env []string `json:"env"`
+}
+
+type Mount struct {
+	FileName string    `json:"fileName"`
+	Path     string    `json:"path"`
+	Modified time.Time `json:"modified"`
+	URL      string    `json:"url"`
 }
 
 type DequeueRequest struct {

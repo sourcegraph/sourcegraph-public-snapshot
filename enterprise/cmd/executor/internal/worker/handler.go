@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,7 @@ import (
 type handler struct {
 	nameSet       *janitor.NameSet
 	store         workerutil.Store
+	uploadStore   FileStore
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
@@ -175,6 +177,31 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
+	// Write mount files
+	for _, mount := range job.Mounts {
+		content, err := h.uploadStore.Get(ctx, mount.URL)
+		if err != nil {
+			return err
+		}
+		defer content.Close()
+		path := filepath.Join(workspaceRoot, job.MountDirectory, mount.Path, mount.FileName)
+		// Ensure the path exists.
+		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+			return err
+		}
+		f, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if _, err = io.Copy(f, content); err != nil {
+			return err
+		}
+		if err = os.Chtimes(path, mount.Modified, mount.Modified); err != nil {
+			return err
+		}
+	}
+
 	logger.Info("Setting up VM")
 
 	// Setup Firecracker VM (if enabled)
@@ -183,7 +210,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
-		// cancellation error we don't want to skip cleaning up the resources that we've
+		// cancellation error we don't want to skip cleaning up the resources that we'vew
 		// allocated for the current task.
 		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)

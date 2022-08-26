@@ -12,7 +12,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/batches"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
@@ -55,8 +56,11 @@ type Options struct {
 	// WorkerOptions configures the worker behavior.
 	WorkerOptions workerutil.WorkerOptions
 
-	// ClientOptions configures the client that interacts with the queue API.
-	ClientOptions apiclient.Options
+	// QueueOptions configures the client that interacts with the queue API.
+	QueueOptions queue.Options
+
+	// QueueOptions configures the client that interacts with the queue API.
+	BatchesOptions batches.Options
 
 	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
 	FirecrackerOptions command.FirecrackerOptions
@@ -81,16 +85,18 @@ type Options struct {
 // it thinks may have been dropped.
 func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore := apiclient.New(options.ClientOptions, gatherer, observationContext)
+	queueStore := queue.New(options.QueueOptions, gatherer, observationContext)
+	uploadStore := batches.New(options.BatchesOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
 	if !connectToFrontend(queueStore, options) {
 		os.Exit(1)
 	}
 
-	handler := &handler{
+	h := &handler{
 		nameSet:       nameSet,
 		store:         store,
+		uploadStore:   uploadStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
@@ -98,16 +104,16 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
+	return workerutil.NewWorker(ctx, store, h, options.WorkerOptions)
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
 // For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
 // in dev environments where the executor may start up before the frontend. This method returns true
 // after a ping is successful and returns false if a user signal is received.
-func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
+func connectToFrontend(queueStore *queue.Client, options Options) bool {
 	start := time.Now()
-	log15.Info("Connecting to Sourcegraph instance", "url", options.ClientOptions.EndpointOptions.URL)
+	log15.Info("Connecting to Sourcegraph instance", "url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
