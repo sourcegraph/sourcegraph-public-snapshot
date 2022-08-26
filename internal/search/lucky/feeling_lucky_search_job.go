@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -229,13 +230,15 @@ func (n *notifier) New(count int) error {
 	} else {
 		resultCountString = fmt.Sprintf("%d additional results", count)
 	}
+	annotations := make(map[streamhttp.AnnotationKey]string)
+	annotations[streamhttp.AnnotationKeyResultCountString] = resultCountString
 
 	return &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.ProposedQuery{{
-			Description:       n.description,
-			ResultCountString: resultCountString,
-			Query:             query.StringHuman(n.query.ToParseTree()),
-			PatternType:       query.SearchTypeLucky,
+			Description: n.description,
+			Annotations: annotations,
+			Query:       query.StringHuman(n.query.ToParseTree()),
+			PatternType: query.SearchTypeLucky,
 		}},
 	}
 }

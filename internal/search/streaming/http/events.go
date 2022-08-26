@@ -179,11 +179,17 @@ type EventAlert struct {
 	ProposedQueries []ProposedQuery `json:"proposedQueries"`
 }
 
+type AnnotationKey string
+
+const (
+	AnnotationKeyResultCountString AnnotationKey = "resultCountString"
+)
+
 // ProposedQuery is a suggested query to run when we emit an alert.
 type ProposedQuery struct {
-	Description       string `json:"description,omitempty"`
-	Query             string `json:"query"`
-	ResultCountString string `json:"resultCountString,omitempty"`
+	Description string                   `json:"description,omitempty"`
+	Query       string                   `json:"query"`
+	Annotations map[AnnotationKey]string `json:"annotations,omitempty"`
 }
 
 // EventError emulates a JavaScript error with a message property

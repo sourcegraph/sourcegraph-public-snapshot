@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
 func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
@@ -84,7 +85,7 @@ func TestGeneratedSearchJob(t *testing.T) {
 		if err == nil {
 			return ""
 		}
-		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].ResultCountString
+		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Annotations[streamhttp.AnnotationKeyResultCountString]
 	}
 
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))

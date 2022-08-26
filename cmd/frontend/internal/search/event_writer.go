@@ -55,9 +55,9 @@ func (e *eventWriter) Alert(alert *search.Alert) error {
 	var pqs []streamhttp.ProposedQuery
 	for _, pq := range alert.ProposedQueries {
 		pqs = append(pqs, streamhttp.ProposedQuery{
-			Description:       pq.Description,
-			Query:             pq.QueryString(),
-			ResultCountString: pq.ResultCountString,
+			Description: pq.Description,
+			Query:       pq.QueryString(),
+			Annotations: pq.Annotations,
 		})
 	}
 	return e.inner.Event("alert", streamhttp.EventAlert{
