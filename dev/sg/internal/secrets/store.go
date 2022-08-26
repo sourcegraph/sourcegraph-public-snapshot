@@ -13,8 +13,6 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
-	"github.com/sourcegraph/run"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -135,35 +133,21 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 	}
 
 	// Get secret from provider
-	var err error
-	switch secret.Provider {
-
-	case ExternalProviderGCloud:
-		client, err := s.getSecretmanagerClient(ctx)
-		if err != nil {
-			return "", err
-		}
-		var result *secretmanagerpb.AccessSecretVersionResponse
-		result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
-		})
-		if err == nil {
-			value.Value = string(result.Payload.Data)
-		}
-
-	case ExternalProvider1Pass:
-		value.Value, err = run.Cmd(ctx, "op read",
-			run.Arg(fmt.Sprintf("op://%s/%s/%s", secret.Project, secret.Name, secret.Field)),
-			`--account="team-sourcegraph.1password.com"`).
-			Run().String()
-
-	default:
-		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
+	client, err := s.getSecretmanagerClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	var result *secretmanagerpb.AccessSecretVersionResponse
+	result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
+	})
+	if err == nil {
+		value.Value = string(result.Payload.Data)
 	}
 
 	if err != nil {
-		errMessaage := fmt.Sprintf("%s: failed to access secret %q from %q",
-			secret.Provider, secret.Name, secret.Project)
+		errMessaage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
+			secret.Name, secret.Project)
 		// Some secret providers use their respective CLI, if not found the user might not
 		// have run 'sg setup' to set up the relevant tool.
 		if strings.Contains(err.Error(), "command not found") {
