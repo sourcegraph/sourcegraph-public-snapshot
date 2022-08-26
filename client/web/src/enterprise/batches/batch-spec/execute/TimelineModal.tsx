@@ -39,22 +39,13 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
     )
 
     if (loading) {
-        return
+        return <LoadingSpinner />
     }
 
     if (error || !data?.site) {
         const title = error ? String(error) : 'Unable to fetch sourcegraph version.'
         return <HeroPage icon={AlertCircleIcon} title={title} />
     }
-
-    const executorNode = loading ? (
-        <LoadingSpinner />
-    ) : (
-        <>
-            <H4 className="mt-2">Executor</H4>
-            <ExecutorNode node={node.executor} sourcegraphVersion={data.site.productVersion} />
-        </>
-    )
 
     return (
         <Modal className={styles.modalBody} position="center" onDismiss={onCancel} aria-label="Execution timeline">
@@ -67,7 +58,12 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
             </div>
             <div className={styles.modalContent}>
                 <ExecutionTimeline node={node} />
-                {node.executor && executorNode}
+                {node.executor && (
+                    <>
+                        <H4 className="mt-2">Executor</H4>
+                        <ExecutorNode node={node.executor} sourcegraphVersion={data.site.productVersion} />
+                    </>
+                )}
             </div>
         </Modal>
     )
