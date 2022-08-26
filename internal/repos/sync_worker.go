@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -95,7 +95,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 	} else {
 		observationContext = &observation.Context{
 			Logger:     log.Scoped("sync_worker", ""),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: r,
 		}
 	}

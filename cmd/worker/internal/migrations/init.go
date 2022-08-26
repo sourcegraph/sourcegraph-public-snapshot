@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -50,7 +50,7 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "migrator routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
