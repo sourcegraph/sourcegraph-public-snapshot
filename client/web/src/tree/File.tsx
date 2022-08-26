@@ -51,63 +51,78 @@ interface FileProps extends ThemeProps {
     isSelected: boolean
     customIconPath?: string
     enableMergedFileSymbolSidebar: boolean
+    isGoUpTreeLink?: boolean
 
     // For core workflow inline symbols redesign
     location: H.Location
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
+    const {
+        isActive,
+        isSelected,
+        isGoUpTreeLink,
+        className,
+        entryInfo,
+        linkRowClick,
+        noopRowClick,
+        fileDecorations,
+        isLightTheme,
+        depth,
+        index,
+        location,
+        enableMergedFileSymbolSidebar,
+        customIconPath,
+    } = props
+
     const { commitID, repoName } = useTreeRootContext()
-    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSidebarFilePrefetch ?? false)
+    const isSidebarFilePrefetchEnabled = useExperimentalFeatures(
+        features => features.enableSidebarFilePrefetch ?? false
+    )
 
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.
-            fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-            isLightTheme={props.isLightTheme}
-            isActive={props.isActive}
+            fileDecorations={fileDecorations?.filter(decoration => decoration?.where !== 'page')}
+            isLightTheme={isLightTheme}
+            isActive={isActive}
         />
     )
 
-    const offsetStyle = getTreeItemOffset(props.depth)
+    const offsetStyle = getTreeItemOffset(depth)
 
     return (
         <>
-            <TreeRow
-                key={props.entryInfo.path}
-                className={props.className}
-                isActive={props.isActive}
-                isSelected={props.isSelected}
-            >
+            <TreeRow key={entryInfo.path} className={className} isActive={isActive} isSelected={isSelected}>
                 <TreeLayerCell className="test-sidebar-file-decorable">
-                    {props.entryInfo.submodule ? (
-                        props.entryInfo.url ? (
+                    {entryInfo.submodule ? (
+                        entryInfo.url ? (
                             <TreeLayerRowContentsLink
-                                to={props.entryInfo.url}
-                                onClick={props.linkRowClick}
+                                to={entryInfo.url}
+                                onClick={linkRowClick}
                                 draggable={false}
-                                title={'Submodule: ' + props.entryInfo.submodule.url}
-                                data-tree-path={props.entryInfo.path}
+                                title={'Submodule: ' + entryInfo.submodule.url}
+                                data-tree-path={entryInfo.path}
                             >
                                 <TreeLayerRowContentsText>
                                     {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
-                                    <TreeRowIcon style={offsetStyle} onClick={props.noopRowClick}>
+                                    <TreeRowIcon style={offsetStyle} onClick={noopRowClick}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
-                                        {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
+                                        {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
                                     {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContentsLink>
                         ) : (
-                            <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
+                            <TreeLayerRowContents title={'Submodule: ' + entryInfo.submodule.url}>
                                 <TreeLayerRowContentsText>
                                     <TreeRowIcon style={offsetStyle}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
-                                        {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
+                                        {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
                                     {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
@@ -115,46 +130,46 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                         )
                     ) : (
                         <PrefetchableFile
-                            prefetch={prefetchFileEnabled}
+                            isPrefetchEnabled={isSidebarFilePrefetchEnabled && !isActive && !isGoUpTreeLink}
+                            isSelected={isSelected}
                             revision={commitID}
                             repoName={repoName}
-                            filePath={props.entryInfo.path}
+                            filePath={entryInfo.path}
                             as={TreeLayerRowContentsLink}
                             className="test-tree-file-link"
-                            to={props.entryInfo.url}
-                            onClick={props.linkRowClick}
-                            data-tree-path={props.entryInfo.path}
+                            to={entryInfo.url}
+                            onClick={linkRowClick}
+                            data-tree-path={entryInfo.path}
                             draggable={false}
-                            title={props.entryInfo.path}
+                            title={entryInfo.path}
                             // needed because of dynamic styling
                             style={offsetStyle}
                             tabIndex={-1}
-                            isSelected={props.isSelected}
                         >
                             <TreeLayerRowContentsText className="d-flex">
-                                <TreeRowIcon onClick={props.noopRowClick}>
+                                <TreeRowIcon onClick={noopRowClick}>
                                     <Icon
                                         className={treeStyles.treeIcon}
-                                        svgPath={props.customIconPath || mdiFileDocumentOutline}
+                                        svgPath={customIconPath || mdiFileDocumentOutline}
                                         aria-hidden={true}
                                     />
                                 </TreeRowIcon>
-                                <TreeRowLabel className="test-file-decorable-name">{props.entryInfo.name}</TreeRowLabel>
+                                <TreeRowLabel className="test-file-decorable-name">{entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
                         </PrefetchableFile>
                     )}
-                    {props.index === MAX_TREE_ENTRIES - 1 && (
+                    {index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
                             variant="warning"
-                            style={getTreeItemOffset(props.depth + 1)}
+                            style={getTreeItemOffset(depth + 1)}
                             error="Too many entries. Use search to find a specific file."
                         />
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {props.enableMergedFileSymbolSidebar && props.isActive && (
-                <Symbols activePath={props.entryInfo.path} location={props.location} style={offsetStyle} />
+            {enableMergedFileSymbolSidebar && isActive && (
+                <Symbols activePath={entryInfo.path} location={location} style={offsetStyle} />
             )}
         </>
     )
