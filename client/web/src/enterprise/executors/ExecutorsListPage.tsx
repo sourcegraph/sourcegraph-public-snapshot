@@ -2,11 +2,9 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
-import { parse, isAfter } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
-import semver from 'semver'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
@@ -37,6 +35,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { GET_SOURCEGRAPH_VERSION } from './backend'
 import { queryExecutors as defaultQueryExecutors } from './useExecutors'
+import { isExecutorVersionOutdated } from './utils'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -162,66 +161,15 @@ export interface ExecutorNodeProps {
     sourcegraphVersion: string
 }
 
-/**
- * Valid build date examples for sourcegraph
- * 169135_2022-08-25_a2b623dce148
- * 169120_2022-08-25_a94c7eb7beca
- *
- * Valid build date example for executor (patch)
- * executor-patch-notest-es-ignite-debug_168065_2022-08-18_e94e18c4ebcc_patch
- */
-const buildDateRegex = /^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+/
-const developmentVersion = '0.0.0+dev'
-
 export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({
     node,
     sourcegraphVersion,
 }) => {
-    const isOutdated = useMemo(() => {
-        const isDevelopment = node.executorVersion === developmentVersion && sourcegraphVersion === developmentVersion
-
-        // We don't need to have this check when in development as the executors will also be
-        // in development mode. We also don't need this check for inactive executors.
-        if (!isDevelopment && node.active) {
-            const semverExecutorVersion = semver.parse(node.executorVersion)
-            const semverSourcegraphVersion = semver.parse(sourcegraphVersion)
-
-            if (semverExecutorVersion && semverSourcegraphVersion) {
-                // if the sourcegraph version is greater than the executor version, the
-                // executor needs to be updated to match the sourcegraph version.
-                return semver.gt(semverSourcegraphVersion, semverExecutorVersion)
-            }
-
-            // version is not in semver. We need to use the `buildDateRegex` to parse
-            // the build date and compare.
-            const sourcegraphBuildDateMatch = sourcegraphVersion.match(buildDateRegex)
-            const executorBuildDateMatch = node.executorVersion.match(buildDateRegex)
-
-            const isSourcegraphBuildDateValid = sourcegraphBuildDateMatch && sourcegraphBuildDateMatch.length > 1
-            const isExecutorBuildDateValid = executorBuildDateMatch && executorBuildDateMatch.length > 1
-
-            if (isSourcegraphBuildDateValid && isExecutorBuildDateValid) {
-                const [, sourcegraphBuildDate] = sourcegraphBuildDateMatch
-                const [, executorBuildDate] = executorBuildDateMatch
-
-                /**
-                 * Syntax: isAfter(date, dateToCompare)
-                 *
-                 * date	            Date | Number	the date that should be after the other one to return true
-                 * dateToCompare	Date | Number	the date to compare with
-                 */
-                return isAfter(
-                    parse(sourcegraphBuildDate, 'yyyy-MM-dd', new Date()),
-                    parse(executorBuildDate, 'yyyy-MM-dd', new Date())
-                )
-            }
-
-            // if all of the above fail, we assume the executor is outdated and something is wrong.
-            return true
-        }
-
-        return false
-    }, [node.active, node.executorVersion, sourcegraphVersion])
+    const isOutdated = useMemo(() => isExecutorVersionOutdated(node.active, node.executorVersion, sourcegraphVersion), [
+        node.active,
+        node.executorVersion,
+        sourcegraphVersion,
+    ])
 
     return (
         <li className="list-group-item">
