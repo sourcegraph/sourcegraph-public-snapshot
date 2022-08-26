@@ -21,8 +21,7 @@ export const isExecutorVersionOutdated = (
 ): boolean => {
     const isDevelopment = executorVersion === developmentVersion && sourcegraphVersion === developmentVersion
 
-    // We don't need to have this check when in development as the executors will also be
-    // in development mode. We also don't need this check for inactive executors.
+    // Executors can only be outdated when they aren't in development mode and are active.
     if (!isDevelopment && isActive) {
         const semverExecutorVersion = semver.parse(executorVersion)
         const semverSourcegraphVersion = semver.parse(sourcegraphVersion)
