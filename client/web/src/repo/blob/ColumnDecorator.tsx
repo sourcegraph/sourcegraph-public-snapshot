@@ -241,8 +241,8 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
             </PopoverTrigger>
 
             <PopoverContent
-                targetPadding={createRectangle(0, 0, 10, 10)}
-                position={Position.top}
+                targetPadding={createRectangle(0, 0, 8, 8)}
+                position={Position.topStart}
                 focusLocked={false}
                 onMouseEnter={resetCloseTimeout}
                 onMouseLeave={close}
