@@ -673,11 +673,11 @@ func TestExternalAccounts_UpdateGitHubAppInstallations(t *testing.T) {
 }
 
 func TestExternalAccounts_TouchExpiredList(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
 	t.Run("non-empty list", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip()
-		}
-		t.Parallel()
 		logger := logtest.Scoped(t)
 		db := NewDB(logger, dbtest.NewDB(logger, t))
 		ctx := context.Background()
@@ -720,16 +720,12 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		require.Equal(t, 0, len(accts))
 	})
 	t.Run("empty list", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip()
-		}
-		t.Parallel()
 		logger := logtest.Scoped(t)
 		db := NewDB(logger, dbtest.NewDB(logger, t))
 		ctx := context.Background()
 
 		acctIds := []int32{}
 		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
-		require.Error(t, err)
+		require.NoError(t, err)
 	})
 }

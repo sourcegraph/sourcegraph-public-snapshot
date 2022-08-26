@@ -443,10 +443,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					return nil, nil, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
 				}
 
-				acctIDs := make([]int32, len(linkedAccts)+1)
-				acctIDs[0] = acct.ID
-				for i, linkedAcct := range linkedAccts {
-					acctIDs[i+1] = linkedAcct.ID
+				acctIDs := make([]int32, 0, len(linkedAccts)+1)
+				acctIDs = append(acctIDs, acct.ID)
+				for _, linkedAcct := range linkedAccts {
+					acctIDs = append(acctIDs, linkedAcct.ID)
 				}
 				if err = accounts.TouchExpired(ctx, acctIDs...); err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account IDs %v", acctIDs)

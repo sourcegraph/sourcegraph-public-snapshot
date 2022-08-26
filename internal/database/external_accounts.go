@@ -301,7 +301,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
 	// If no ids are supplied, return an error, as this should be unintentional
 	if len(ids) == 0 {
-		return errors.New("empty ids list provided")
+		return nil
 	}
 
 	idStrings := make([]string, len(ids))
