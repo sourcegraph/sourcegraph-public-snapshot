@@ -1,4 +1,4 @@
-import { mdiArrowRight, mdiChevronDown, mdiChevronUp, mdiInformationOutline } from '@mdi/js'
+import { mdiArrowRight, mdiChevronDown, mdiChevronUp, mdiHelpCircleOutline } from '@mdi/js'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -41,7 +41,7 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                                     className="ml-1"
                                     tabIndex={0}
                                     aria-label="More information"
-                                    svgPath={mdiInformationOutline}
+                                    svgPath={mdiHelpCircleOutline}
                                 />
                             </Tooltip>
                         </span>
