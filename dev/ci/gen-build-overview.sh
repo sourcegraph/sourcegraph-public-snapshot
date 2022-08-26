@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
+set -x
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 #set -euo pipefail
 
 if [[ -z ${BUILD_METADATA} ]]; then
-    echo "Build overview is empty. Not generating information"
+    echo "Build metadata is empty. Not generating information"
     exit 0
 fi
 
-echo "--- Generating build metadataannotation"
+echo "--- Generating build metadata annotation"
 mkdir -p annotations
 
-file="./annotations/Build metadata.md"
+file="./annotations/Build\ metadata.md"
 
 # extract all the data we want
 runType=$(echo ${BUILD_METADATA} | jq -r '. | "Run type: `\(.RunType)`<br/>"')
@@ -26,7 +27,7 @@ if [[ -z $version ]]; then
     echo "$version" >> "$file"
 fi
 
-cat <<EOF >> $"file"
+cat <<EOF >>"$file"
 ${runType}
 ${diff}
 ${messageFlags}
