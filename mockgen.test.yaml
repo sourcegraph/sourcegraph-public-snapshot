@@ -1,3 +1,11 @@
+- filename: cmd/frontend/internal/httpapi/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/httpcli
+  interfaces:
+    - Doer
+- filename: cmd/frontend/internal/httpapi/releasecache/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
+  interfaces:
+    - ReleaseCache
 - filename: cmd/symbols/fetcher/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:
@@ -109,7 +117,6 @@
 - filename: internal/codeintel/autoindexing/background/scheduler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler
   interfaces:
-    - DBStore
     - PolicyMatcher
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference

@@ -1,8 +1,5 @@
 .aggregation-group {
-    &--sm {
-        .aggregation-type-control {
-            padding-left: 0.375rem;
-            padding-right: 0.375rem;
-        }
-    }
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }

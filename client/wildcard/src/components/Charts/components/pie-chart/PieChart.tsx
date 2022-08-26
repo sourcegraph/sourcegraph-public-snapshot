@@ -105,7 +105,7 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
                                         aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getDatumName(
                                             arc.data
                                         )}. Value: ${getSubtitle(arc, total)}.`}
-                                        onClick={onDatumLinkClick}
+                                        onClick={event => onDatumLinkClick(event, arc.data)}
                                     >
                                         <PieArc
                                             arc={arc}

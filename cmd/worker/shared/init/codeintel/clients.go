@@ -1,8 +1,8 @@
 package codeintel
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -23,7 +23,7 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client,
 	logger := log.Scoped("client.gitserver", "gitserver client")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -43,7 +43,7 @@ func InitRepoUpdaterClient() *repoupdater.Client {
 var initRepoUpdaterClient = memo.NewMemoizedConstructor(func() (*repoupdater.Client, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("client.repo-updater", "repo-updater client"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

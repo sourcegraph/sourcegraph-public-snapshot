@@ -113,13 +113,18 @@ code {
 }
 
 .btn-text-link {
-    color: var(--vscode-textLink-foreground);
+    color: var(--vscode-textLink-foreground) !important;
     padding: 0 !important;
     margin: 0 !important;
     font-weight: var(--vscode-editor-font-weight) !important;
     font-size: var(--vscode-editor-font-size) !important;
     background-color: transparent !important;
     text-align: left;
+
+    &:hover,
+    &:focus {
+        color: var(--vscode-foreground) !important;
+    }
 }
 
 .input,

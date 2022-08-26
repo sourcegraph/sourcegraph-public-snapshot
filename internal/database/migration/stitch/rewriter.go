@@ -234,7 +234,7 @@ func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _ oobmigrat
 //
 // See https://github.com/sourcegraph/sourcegraph/pull/29395.
 func reorderMigrations(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
-	if schemaName != "frontend" || !(version.Major == 3 && version.Minor < 36) {
+	if schemaName != "frontend" || !(version.Major == 3 && version.Minor == 35) {
 		// Rename occurred at v3.36
 		return
 	}
