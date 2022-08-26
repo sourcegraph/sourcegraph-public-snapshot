@@ -11,7 +11,11 @@ import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } fr
 /**
  * Makes sure that default values are applied consistently for the cache key and the `fetchBlob` function.
  */
-const applyDefaultValuesToFetchBlobOptions = ({ disableTimeout = false, format = HighlightResponseFormat.HTML_HIGHLIGHT, ...options }: FetchBlobOptions): Required<FetchBlobOptions> => ({
+const applyDefaultValuesToFetchBlobOptions = ({
+    disableTimeout = false,
+    format = HighlightResponseFormat.HTML_HIGHLIGHT,
+    ...options
+}: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
