@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,20 +31,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func printConfigValidation() {
+func printConfigValidation(logger log.Logger) {
+	logger = logger.Scoped("configValidation", "")
 	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
+		logger.Warn("unable to validate Sourcegraph site configuration", log.Error(err))
 		return
 	}
 
 	if len(messages) > 0 {
-		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		log15.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
+		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
 		for _, verr := range messages {
-			log15.Warn(verr.String())
+			logger.Warn(verr.String())
 		}
-		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
 }
 
@@ -101,7 +102,8 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 	return []byte(formatted), nil
 }
 
-func overrideSiteConfig(ctx context.Context, db database.DB) error {
+func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideSiteConfig", "")
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
@@ -130,11 +132,12 @@ func overrideSiteConfig(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	go watchUpdate(ctx, path, updateFunc)
+	go watchUpdate(ctx, logger, path, updateFunc)
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, db database.DB) error {
+func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideGlobalSettings", "")
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
@@ -167,13 +170,13 @@ func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	if err := update(ctx); err != nil {
 		return err
 	}
-	go watchUpdate(ctx, path, update)
+	go watchUpdate(ctx, logger, path, update)
 
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
-	log := log15.Root().New("svc", "config.file")
+func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+	logger = logger.Scoped("overrideExtSvcConfig", "")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
@@ -201,7 +204,7 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 			return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 		}
 		if len(rawConfigs) == 0 {
-			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
+			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
 		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
@@ -313,14 +316,14 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 
 		// Apply the delta update.
 		for extSvc := range toRemove {
-			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
+			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
 			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
-			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
+			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
 			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
@@ -328,7 +331,7 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 
 		ps := confGet().AuthProviders
 		for id, extSvc := range toUpdate {
-			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
+			logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
 
 			rawConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
@@ -346,30 +349,30 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	go watchUpdate(ctx, path, update)
+	go watchUpdate(ctx, logger, path, update)
 
 	return nil
 }
 
-func watchUpdate(ctx context.Context, path string, update func(context.Context) error) {
-	log := log15.Root().New("svc", "config.file")
+func watchUpdate(ctx context.Context, logger log.Logger, path string, update func(context.Context) error) {
+	logger = logger.Scoped("watch", "")
 	events, err := watchPaths(ctx, path)
 	if err != nil {
-		log.Error("failed to watch config override files", "error", err)
+		logger.Error("failed to watch config override files", log.Error(err))
 		return
 	}
 	for err := range events {
 		if err != nil {
-			log.Warn("error while watching config override files", "error", err)
+			logger.Warn("error while watching config override files", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("watch_failed").Inc()
 			continue
 		}
 
 		if err := update(ctx); err != nil {
-			log.Error("failed to update configuration from modified config override file", "error", err, "file", path)
+			logger.Error("failed to update configuration from modified config override file", log.Error(err), log.String("file", path))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
 		} else {
-			log.Info("updated configuration from modified config override files", "file", path)
+			logger.Info("updated configuration from modified config override files", log.String("file", path))
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		}
 	}
