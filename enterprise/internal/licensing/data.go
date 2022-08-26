@@ -35,12 +35,12 @@ const (
 	// OAuth, GitLab OAuth, SAML, and OpenID.
 	FeatureSSO Feature = "sso"
 
-	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
-	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
+	// FeatureACLs is whether the Background Permissions Syncing may be be used for
+	// setting repository permissions.
 	FeatureACLs Feature = "acls"
 
 	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
-	// sycing repository permissions.
+	// setting repository permissions.
 	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
