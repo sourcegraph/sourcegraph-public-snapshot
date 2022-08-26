@@ -2038,8 +2038,6 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b h1:Mly
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b/go.mod h1:0MLTrjQI8EuVmvykEhcfr/7X0xmaDAZrqMgxIq3OXHk=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
-github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037 h1:gk2cs5tfGFtpZfaK5sKnn3Y4iyzrpCfdpncZhTKLz5E=
 github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
@@ -2066,6 +2064,8 @@ github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021 h1:IngqLdQQ/n42Abc
 github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021/go.mod h1:UxiwB6C3xk3xOySJpW1R0MDUyfGuJRFS5Z8C+SA5p2I=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
+github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5 h1:gv92/ctwOCyj13tV94TX/FYXrHNdZMmGYc46AdLnmzM=
+github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5/go.mod h1:AfMs/2M3s2GnTKqPBnX5pwNPDxmXCt0poaM8efznH7Q=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
 github.com/sourcegraph/run v0.9.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
 github.com/sourcegraph/scip v0.1.0 h1:kTs0CJaLQvcRZjg+HpGrcJPNX2Tx31+d6szWio3ZOkQ=
@@ -2074,8 +2074,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20220824152405-063a4dfa220d h1:U5lNtPTVDnNeH4t9lTkJR7HisG8hQqUDeo+saDTP4gk=
-github.com/sourcegraph/zoekt v0.0.0-20220824152405-063a4dfa220d/go.mod h1:AX7MgGrXM3phFyARUAPMGjRdAdhK8suOWfeCLwzui9Q=
+github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab h1:7jOdmpHHxiUui22sw20/QdqhcOJOuJd0EcMooTvr2S0=
+github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab/go.mod h1:AX7MgGrXM3phFyARUAPMGjRdAdhK8suOWfeCLwzui9Q=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
