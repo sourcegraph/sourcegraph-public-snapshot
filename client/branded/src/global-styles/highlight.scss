@@ -486,26 +486,29 @@
     // .hl-typed-$SYNTAX_KIND
 
     .hl-typed-Comment {
-        color: var(--hl-dark-green);
+        color: var(--hl-gray-0);
     }
     .hl-typed-PunctuationDelimiter {
-        color: var(--hl-orange);
+        color: var(--hl-gray-0);
     }
     .hl-typed-PunctuationBracket {
-        color: var(--hl-orange);
+        color: var(--hl-gray-0);
     }
     .hl-typed-IdentifierKeyword {
-        color: var(--hl-dark-blue-3);
+        color: var(--hl-green);
     }
     .hl-typed-IdentifierOperator {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-gray-3);
     }
     .hl-typed-Identifier {
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-pink);
         // filter: brightness(105%);
+    }
+    .hl-typed-IdentifierBuiltinType {
+        color: var(--hl-green);
     }
     .hl-typed-IdentifierNull {
         color: var(--hl-orange);
@@ -515,7 +518,7 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-yellow);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--hl-dark-blue-1);
@@ -545,13 +548,10 @@
         color: var(--hl-yellow);
     }
     .hl-typed-IdentifierType {
-        color: var(--hl-blue);
-    }
-    .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-blue);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-purple);
+        color: var(--hl-pink);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -567,7 +567,7 @@
     // }
 
     .hl-typed-StringLiteral {
-        color: var(--hl-red);
+        color: var(--hl-cyan);
     }
     .hl-typed-StringLiteralEscape {
         color: var(--hl-red);
@@ -582,13 +582,15 @@
         color: var(--hl-red);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-green-1);
+        color: var(--hl-purple);
+    }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-2);
     }
 
+    // color: var(--hl-gray-3);
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagAttribute {
     // }
     // .hl-typed-TagDelimiter {
     // }
@@ -901,27 +903,34 @@
     //
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
+    --hl-scip-identifier: #859900;
 
     .hl-typed-Comment {
         color: var(--hl-dark-green);
     }
     .hl-typed-PunctuationDelimiter {
-        color: var(--hl-orange);
+        color: var(--hl-gray-2);
     }
     .hl-typed-PunctuationBracket {
-        color: var(--hl-orange);
+        color: var(--hl-gray-2);
     }
     .hl-typed-IdentifierKeyword {
-        color: var(--hl-dark-blue-3);
+        color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierOperator {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-gray-0);
     }
     .hl-typed-Identifier {
         color: var(--hl-blue);
     }
+    .hl-typed-IdentifierFunction {
+        color: var(--hl-dark-yellow);
+    }
+    .hl-typed-IdentifierType {
+        color: var(--hl-gray-1);
+    }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-purple);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierNull {
@@ -932,10 +941,10 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierMutableGlobal {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-blue);
     }
     .hl-typed-IdentifierParameter {
         color: var(--hl-blue);
@@ -949,9 +958,6 @@
     .hl-typed-IdentifierModule {
         color: var(--hl-blue);
     }
-    .hl-typed-IdentifierFunction {
-        color: var(--hl-yellow);
-    }
     .hl-typed-IdentifierFunctionDefinition {
         color: var(--hl-yellow);
     }
@@ -961,11 +967,8 @@
     .hl-typed-IdentifierMacroDefinition {
         color: var(--hl-yellow);
     }
-    .hl-typed-IdentifierType {
-        color: var(--hl-blue);
-    }
     .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-blue);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
         color: var(--hl-purple);
@@ -1001,11 +1004,12 @@
     .hl-typed-NumericLiteral {
         color: var(--hl-green-1);
     }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-3);
+    }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagAttribute {
     // }
     // .hl-typed-TagDelimiter {
     // }

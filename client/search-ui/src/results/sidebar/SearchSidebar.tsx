@@ -23,10 +23,13 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code, Icon } from '@sourcegraph/wildcard'
 
+import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
+
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
 import { RevisionsProps } from './revisions'
+import { SearchAggregations } from './SearchAggregations'
 import { getSearchReferenceFactory } from './SearchReference'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
@@ -57,23 +60,34 @@ export interface SearchSidebarProps
      * Used e.g. in the VS Code extension to update search query state.
      */
     forceButton?: boolean
+
+    /**
+     * Enables search compute-based aggregations filter panel
+     */
+    enableSearchAggregation?: boolean
 }
 
 const selectFromQueryState = ({
     queryState: { query },
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 }: SearchQueryState): {
     query: string
     setQueryState: SearchQueryState['setQueryState']
     submitSearch: SearchQueryState['submitSearch']
+    searchQueryFromURL: SearchQueryState['searchQueryFromURL']
+    searchPatternType: SearchQueryState['searchPatternType']
 } => ({
     query,
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 })
 
-export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<SearchSidebarProps>> = props => {
+export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -82,7 +96,14 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     // The zustand store for search query state is referenced through context
     // because there may be different global stores across clients
     // (e.g. VS Code extension, web app)
-    const { query, setQueryState, submitSearch } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const {
+        query,
+        searchQueryFromURL,
+        searchPatternType,
+        setQueryState,
+        submitSearch,
+    } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const [aggregationUIMode] = useAggregationUIMode()
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
@@ -161,6 +182,10 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
         [props.filters, onDynamicFilterClicked]
     )
 
+    const handleAggregationBarLinkClick = (query: string): void => {
+        submitQueryWithProps([{ type: 'replaceQuery', value: query }])
+    }
+
     let body
 
     // collapsedSections is undefined on first render. To prevent the sections
@@ -169,6 +194,22 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     if (collapsedSections) {
         body = (
             <>
+                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.GROUPED_BY}
+                        className={styles.item}
+                        header="Group results by"
+                        startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
+                        onToggle={persistToggleState}
+                    >
+                        <SearchAggregations
+                            query={searchQueryFromURL}
+                            patternType={searchPatternType}
+                            onQuerySubmit={handleAggregationBarLinkClick}
+                        />
+                    </SearchSidebarSection>
+                )}
+
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
                     className={styles.item}

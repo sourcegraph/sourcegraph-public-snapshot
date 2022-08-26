@@ -11,7 +11,8 @@ import (
 
 func NewScheduler(
 	autoindexingSvc *autoindexing.Service,
-	dbStore DBStore,
+	policySvc PolicyService,
+	uploadSvc UploadService,
 	policyMatcher PolicyMatcher,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -30,7 +31,8 @@ func NewScheduler(
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), ConfigInst.Interval, &scheduler{
 		autoindexingSvc: autoindexingSvc,
-		dbStore:         dbStore,
+		policySvc:       policySvc,
+		uploadSvc:       uploadSvc,
 		policyMatcher:   policyMatcher,
 	}, handleIndexScheduler)
 }

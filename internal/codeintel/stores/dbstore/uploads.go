@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -134,32 +133,6 @@ var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCoun
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
-
-// scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
-func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstUpload(rows, err)
-}
-
-// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
-func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	visibilities := map[int]int{}
-	for rows.Next() {
-		var id int
-		var count int
-		if err := rows.Scan(&id, &count); err != nil {
-			return nil, err
-		}
-
-		visibilities[id] = count
-	}
-
-	return visibilities, nil
-}
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
@@ -847,107 +820,6 @@ WITH locked_uploads AS (
 DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
 `
 
-// SelectRepositoriesForIndexScan returns a set of repository identifiers that should be considered
-// for indexing jobs. Repositories that were returned previously from this call within the given
-// process delay are not returned.
-//
-// If allowGlobalPolicies is false, then configuration policies that define neither a repository id
-// nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
-// repositories known to the instance.
-func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
-	return s.selectRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
-}
-
-func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-		log.Int("limit", limit),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	limitExpression := sqlf.Sprintf("")
-	if repositoryMatchLimit != nil {
-		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
-	}
-
-	replacer := strings.NewReplacer("{column_name}", column)
-	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
-		replacer.Replace(selectRepositoriesForIndexScanQuery),
-		allowGlobalPolicies,
-		limitExpression,
-		quote(table),
-		now,
-		int(processDelay/time.Second),
-		limit,
-		quote(table),
-		now,
-		now,
-	)))
-}
-
-func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
-
-const selectRepositoriesForIndexScanQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
-WITH
-repositories_matching_policy AS (
-	(
-		SELECT r.id FROM repo r WHERE EXISTS (
-			SELECT 1
-			FROM lsif_configuration_policies p
-			WHERE
-				p.indexing_enabled AND
-				p.repository_id IS NULL AND
-				p.repository_patterns IS NULL AND
-				%s -- completely enable or disable this query
-		)
-		ORDER BY stars DESC NULLS LAST, id
-		%s
-	)
-
-	UNION ALL
-
-	SELECT p.repository_id AS id
-	FROM lsif_configuration_policies p
-	WHERE
-		p.indexing_enabled AND
-		p.repository_id IS NOT NULL
-
-	UNION ALL
-
-	SELECT rpl.repo_id AS id
-	FROM lsif_configuration_policies p
-	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
-	WHERE p.indexing_enabled
-),
-candidate_repositories AS (
-	SELECT r.id AS id
-	FROM repo r
-	WHERE
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL AND
-		r.id IN (SELECT id FROM repositories_matching_policy)
-),
-repositories AS (
-	SELECT cr.id
-	FROM candidate_repositories cr
-	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
-
-	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null {column_name} (which has never been checked).
-	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
-	ORDER BY
-		lrs.{column_name} NULLS FIRST,
-		cr.id -- tie breaker
-	LIMIT %s
-)
-INSERT INTO %s (repository_id, {column_name})
-SELECT r.id, %s::timestamp FROM repositories r
-ON CONFLICT (repository_id) DO UPDATE
-SET {column_name} = %s
-RETURNING repository_id
-`
-
 // SelectRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
 // data and a fresh associated commit graph. Repositories that were returned previously from this call
 // within the  given process delay are not returned.
@@ -1195,16 +1067,19 @@ ranked_uploads_providing_packages AS (
 canonical_package_reference_counts AS (
 	SELECT
 		ru.id,
-		count(*) AS count
-	FROM ranked_uploads_providing_packages ru
-	JOIN lsif_references r
-	ON
-		r.scheme = ru.scheme AND
-		r.name = ru.name AND
-		r.version = ru.version AND
-		r.dump_id != ru.id
+		rc.count
+	FROM ranked_uploads_providing_packages ru,
+	LATERAL (
+		SELECT
+			COUNT(*) AS count
+		FROM lsif_references r
+		WHERE
+			r.scheme = ru.scheme AND
+			r.name = ru.name AND
+			r.version = ru.version AND
+			r.dump_id != ru.id
+	) rc
 	WHERE ru.rank = 1
-	GROUP BY ru.id
 ),
 
 -- Count (and ranks) the set of edges that cross over from the target list of uploads

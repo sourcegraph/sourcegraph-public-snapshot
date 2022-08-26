@@ -1,6 +1,10 @@
 package httpheader
 
 import (
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,8 +25,28 @@ func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
 	return pc, false
 }
 
-func init() {
+const pkgName = "httpheader"
+
+func Init() {
 	conf.ContributeValidator(validateConfig)
+
+	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
+	go func() {
+		conf.Watch(func() {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Warn("Check license for SSO (HTTP header)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
+			newPC, _ := getProviderConfig()
+			if newPC == nil {
+				providers.Update(pkgName, nil)
+				return
+			}
+			providers.Update(pkgName, []providers.Provider{&provider{c: newPC}})
+		})
+	}()
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -33,7 +57,7 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		}
 	}
 	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 http-header auth provider may be used`))
+		problems = append(problems, conf.NewSiteProblem(`at most 1 HTTP header auth provider may be set in site config`))
 	}
 	return problems
 }

@@ -51,7 +51,6 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { Owner } from '../cloud-ga'
 import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
-import { OrgUserNeedsGithubUpgrade } from '../codeHosts/OrgUserNeedsGithubUpgrade'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
@@ -337,7 +336,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     orgDisplayName={owner.name}
                 />
             )}
-            {!isUserOwner && authenticatedUser && org && org.viewerNeedsCodeHostUpdate && <OrgUserNeedsGithubUpgrade />}
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"

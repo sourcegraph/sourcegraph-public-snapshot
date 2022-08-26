@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
@@ -17,6 +16,12 @@ const StoryConfig: Meta = {
             <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
         ),
     ],
+    argTypes: {
+        useMaxValuesForYScale: {
+            type: 'boolean',
+            defaultValue: false,
+        },
+    },
     parameters: { chromatic: { disableSnapshots: false } },
 }
 
@@ -45,7 +50,7 @@ const SimpleChartTemplate: Story<TemplateProps> = args => (
     </ParentSize>
 )
 
-export const SmartAxisDemo: Story = () => (
+export const SmartAxisDemo: Story = args => (
     <section style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
         <SimpleChartTemplate
             xScale={scaleTime<number>({
@@ -54,7 +59,7 @@ export const SmartAxisDemo: Story = () => (
                 clamp: true,
             })}
             yScale={scaleLinear({
-                domain: [0, boolean('useMaxValuesForYScale', false) ? 1000000000000000000000000000000000000 : 10000],
+                domain: [0, args.useMaxValuesForYScale ? 1000000000000000000000000000000000000 : 10000],
                 nice: true,
                 clamp: true,
             })}
@@ -69,7 +74,7 @@ export const SmartAxisDemo: Story = () => (
                 padding: 0.2,
             })}
             yScale={scaleLinear({
-                domain: [0, boolean('useMaxValuesForYScale', false) ? 1000000000000000000000000000000000000 : 10000],
+                domain: [0, args.useMaxValuesForYScale ? 1000000000000000000000000000000000000 : 10000],
                 nice: true,
                 clamp: true,
             })}

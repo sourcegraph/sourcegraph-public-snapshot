@@ -49,7 +49,7 @@ func main() {
   // you should make sure to call before application exit (namely via `defer`)
   //
   // Repeated calls to `log.Init` will panic. Make sure to call this exactly once in `main`!
-  liblog := sglog.Init(sglog.Resource{
+  liblog := log.Init(log.Resource{
     Name:       env.MyName,
     Version:    version.Version(),
     InstanceID: hostname.Get(),

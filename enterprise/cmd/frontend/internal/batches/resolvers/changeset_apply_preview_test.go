@@ -40,23 +40,23 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	// Create a batch spec for the target batch change.
 	oldBatchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, oldBatchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, oldBatchSpec); err != nil {
 		t.Fatal(err)
 	}
 	// Create a batch change and create a new spec targetting the same batch change again.
 	batchChangeName := "test-apply-preview-resolver"
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID, batchChange.ID)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, batchChangeName, userID, oldBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, batchChangeName, userID, batchChange.ID)
 
-	esStore := database.ExternalServicesWith(logger, cstore)
-	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -70,24 +70,26 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, 2)
 	for i, r := range rs[:2] {
-		s := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+		s := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      r.ID,
 			HeadRef:   fmt.Sprintf("d34db33f-%d", i),
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
 	// Add one changeset that doesn't match any new spec anymore but was there before (close, detach).
-	closingChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+	closingChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      rs[2].ID,
 		BatchSpec: oldBatchSpec.ID,
 		HeadRef:   "d34db33f-2",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
-	closingChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	closingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             rs[2].ID,
 		BatchChange:      batchChange.ID,
 		CurrentSpec:      closingChangesetSpec.ID,
@@ -95,13 +97,14 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	})
 
 	// Add one changeset that doesn't matches a new spec (update).
-	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		BatchSpec: oldBatchSpec.ID,
 		User:      userID,
-		Repo:      changesetSpecs[1].RepoID,
-		HeadRef:   changesetSpecs[1].Spec.HeadRef,
+		Repo:      changesetSpecs[1].BaseRepoID,
+		HeadRef:   changesetSpecs[1].HeadRef,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
-	updatedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	updatedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
 		BatchChange:        batchChange.ID,
 		CurrentSpec:        updatedChangesetSpec.ID,
@@ -109,7 +112,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,12 +381,12 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
 
 		// We need to modify the changeset spec to not have a published field.
-		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
-		spec, err := json.Marshal(newFx.specPublished.Spec)
+		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
+		published, err := json.Marshal(newFx.specPublished.Published)
 		if err != nil {
 			t.Fatal(err)
 		}
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, published, newFx.specPublished.ID)
 		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
@@ -528,6 +531,7 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 			Published: true,
 		}),
 		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
@@ -535,24 +539,28 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be draft " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be unpublished " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be omitted " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 	}
 }

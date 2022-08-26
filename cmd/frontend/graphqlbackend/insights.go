@@ -22,7 +22,6 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
 	SearchQueryAggregate(ctx context.Context, args SearchQueryArgs) (SearchQueryAggregateResolver, error)
 
 	// Mutations
@@ -453,28 +452,9 @@ type SearchInsightLivePreviewSeriesResolver interface {
 	Label(ctx context.Context) (string, error)
 }
 
-type SearchQueryInsightsResolver interface {
-	ThirtyDayPercentChange(ctx context.Context) (int32, error)
-	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
-}
-
-type SearchQueryInsightsNotAvailable interface {
-	Message(ctx context.Context) string
-}
-
-type SearchQueryInsightsArgs struct {
-	Query       string `json:"query"`
-	PatternType string `json:"patternType"`
-}
-
 type SearchQueryArgs struct {
 	Query       string `json:"query"`
 	PatternType string `json:"patternType"`
-}
-
-type SearchQueryInsightsResult interface {
-	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
-	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }
 
 type SearchQueryAggregateResolver interface {
@@ -493,6 +473,7 @@ type ExhaustiveSearchAggregationResultResolver interface {
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	OtherGroupCount() (*int32, error)
+	Mode() (string, error)
 }
 
 type NonExhaustiveSearchAggregationResultResolver interface {
@@ -500,6 +481,7 @@ type NonExhaustiveSearchAggregationResultResolver interface {
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	ApproximateOtherGroupCount() (*int32, error)
+	Mode() (string, error)
 }
 
 type AggregationGroup interface {
@@ -510,6 +492,7 @@ type AggregationGroup interface {
 
 type SearchAggregationNotAvailable interface {
 	Reason() string
+	Mode() string
 }
 
 type SearchAggregationResultResolver interface {
@@ -519,6 +502,6 @@ type SearchAggregationResultResolver interface {
 }
 
 type AggregationsArgs struct {
-	Mode  string `json:"mode"` //enum
-	Limit int32  `json:"limit"`
+	Mode  *string `json:"mode"` //enum
+	Limit int32   `json:"limit"`
 }

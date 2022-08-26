@@ -18,7 +18,7 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { HighlightResponseFormat, IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
@@ -149,36 +149,46 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
-    // fetch (instead of the entire file.)
-    const optimizeHighlighting =
+
+    /**
+     * If LazyFileResultSyntaxHighlighting is enabled, we fetch plaintext
+     * line ranges _alongside_ the typical highlighted line ranges.
+     */
+    const enableLazyFileResultSyntaxHighlighting =
         props.settingsCascade.final &&
         !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
+        props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
-    const fetchHighlightedFileMatchLineRanges = React.useCallback(
-        (startLine: number, endLine: number) => {
-            const startTime = Date.now()
-            return fetchHighlightedFileLineRanges(
+    const fetchFileRangeMatches = useCallback(
+        (args: { format?: HighlightResponseFormat; ranges: IHighlightLineRange[] }): Observable<string[][]> =>
+            fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? grouped.map(
-                              (group): IHighlightLineRange => ({
-                                  startLine: group.startLine,
-                                  endLine: group.endLine,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    format: args.format,
+                    ranges: args.ranges,
                 },
                 false
-            ).pipe(
+            ),
+        [result, fetchHighlightedFileLineRanges]
+    )
+
+    const fetchHighlightedFileMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
+            const startTime = Date.now()
+            return fetchFileRangeMatches({
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                ranges: grouped.map(
+                    (group): IHighlightLineRange => ({
+                        startLine: group.startLine,
+                        endLine: group.endLine,
+                    })
+                ),
+            }).pipe(
                 map(lines => {
                     const endTime = Date.now()
                     telemetryService.log(
@@ -186,13 +196,30 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
+        [fetchFileRangeMatches, grouped, telemetryService]
+    )
+
+    const fetchPlainTextFileMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) =>
+            fetchFileRangeMatches({
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
+                ranges: grouped.map(
+                    (group): IHighlightLineRange => ({
+                        startLine: group.startLine,
+                        endLine: group.endLine,
+                    })
+                ),
+            }).pipe(
+                map(
+                    lines =>
+                        lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
+                )
+            ),
+        [fetchFileRangeMatches, grouped]
     )
 
     const fetchHighlightedSymbolMatchLineRanges = React.useCallback(
@@ -202,23 +229,15 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             }
 
             const startTime = Date.now()
-            return fetchHighlightedFileLineRanges(
-                {
-                    repoName: result.repository,
-                    commitID: result.commit || '',
-                    filePath: result.path,
-                    disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? result.symbols.map(
-                              (symbol): IHighlightLineRange => ({
-                                  startLine: symbol.line - 1,
-                                  endLine: symbol.line,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
-                },
-                false
-            ).pipe(
+            return fetchFileRangeMatches({
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                ranges: result.symbols.map(
+                    (symbol): IHighlightLineRange => ({
+                        startLine: symbol.line - 1,
+                        endLine: symbol.line,
+                    })
+                ),
+            }).pipe(
                 map(lines => {
                     const endTime = Date.now()
                     telemetryService.log(
@@ -226,17 +245,39 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[
-                              result.symbols.findIndex(
-                                  symbol => symbol.line - 1 === startLine && symbol.line === endLine
-                              )
-                          ]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[
+                        result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
+                    ]
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, optimizeHighlighting, telemetryService]
+        [result, fetchFileRangeMatches, telemetryService]
+    )
+
+    const fetchPlainTextSymbolMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
+            if (result.type !== 'symbol') {
+                return of([])
+            }
+
+            return fetchFileRangeMatches({
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
+                ranges: result.symbols.map(
+                    (symbol): IHighlightLineRange => ({
+                        startLine: symbol.line - 1,
+                        endLine: symbol.line,
+                    })
+                ),
+            }).pipe(
+                map(
+                    lines =>
+                        lines[
+                            result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
+                        ]
+                )
+            )
+        },
+        [result, fetchFileRangeMatches]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -365,6 +406,9 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             startLine={symbol.line - 1}
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                            fetchPlainTextFileRangeLines={
+                                enableLazyFileResultSyntaxHighlighting ? fetchPlainTextSymbolMatchLineRanges : undefined
+                            }
                             viewerUpdates={viewerUpdates}
                             hoverifier={props.hoverifier}
                             onCopy={logEventOnCopy}
@@ -406,6 +450,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
+                                    fetchPlainTextFileRangeLines={
+                                        enableLazyFileResultSyntaxHighlighting
+                                            ? fetchPlainTextFileMatchLineRanges
+                                            : undefined
+                                    }
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}

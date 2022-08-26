@@ -292,7 +292,7 @@
               "default": false
             },
             "certificates": {
-              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: git will only respect these certificates and will ignore system certificates. Remember to include system certificates in this setting.",
               "type": "array",
               "items": {
                 "type": "string",
@@ -519,7 +519,8 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": true
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "examples": [
@@ -1400,6 +1401,32 @@
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
+    "gitHubApp": {
+      "description": "The config options for Sourcegraph GitHub App.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "description": "The slug of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "appID": {
+          "description": "The app ID of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "privateKey": {
+          "description": "The base64-encoded private key of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1409,29 +1436,57 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
-        "githubApp.cloud": {
-          "description": "The config options for Sourcegraph Cloud GitHub App.",
+        "srcCliVersionCache": {
+          "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
+          "required": ["enabled", "github"],
+          "group": "Sourcegraph.com",
           "properties": {
-            "slug": {
-              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "enabled": {
+              "description": "Enables the src-cli version cache API endpoint.",
+              "type": "boolean",
+              "default": false
             },
-            "appID": {
-              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "github": {
+              "description": "GitHub configuration, both for queries and receiving release webhooks.",
+              "type": "object",
+              "required": ["token", "webhookSecret"],
+              "properties": {
+                "repository": {
+                  "description": "The repository to get the latest version of.",
+                  "type": "object",
+                  "properties": {
+                    "owner": {
+                      "description": "The repository namespace.",
+                      "type": "string",
+                      "default": "sourcegraph"
+                    },
+                    "name": {
+                      "description": "The repository name.",
+                      "type": "string",
+                      "default": "src-cli"
+                    }
+                  }
+                },
+                "token": {
+                  "description": "The access token to use when communicating with GitHub.",
+                  "type": "string"
+                },
+                "uri": {
+                  "description": "The URI of the GitHub instance.",
+                  "type": "string",
+                  "default": "https://github.com"
+                },
+                "webhookSecret": {
+                  "description": "The release webhook secret.",
+                  "type": "string"
+                }
+              }
             },
-            "privateKey": {
-              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "clientID": {
+            "interval": {
+              "description": "The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.",
               "type": "string",
-              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
-            },
-            "clientSecret": {
-              "type": "string",
-              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+              "default": "1h"
             }
           }
         }

@@ -1,9 +1,9 @@
-import { ReactElement, SVGProps, useMemo } from 'react'
+import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
-import { noop } from 'lodash'
 
+import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
@@ -12,10 +12,18 @@ import { getGroupedCategories } from './utils/get-grouped-categories'
 
 const DEFAULT_LINK_GETTER = (): null => null
 
-interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
+export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
     width: number
     height: number
     stacked?: boolean
+
+    // TODO: Move these specific only to the axis label UI props to the axis components
+    // see https://github.com/sourcegraph/sourcegraph/issues/40009
+    pixelsPerYTick?: number
+    pixelsPerXTick?: number
+    maxAngleXTick?: number
+    getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
+    getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
 }
 
@@ -24,14 +32,19 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         width: outerWidth,
         height: outerHeight,
         data,
+        pixelsPerYTick,
+        pixelsPerXTick,
+        maxAngleXTick,
         stacked = false,
         getDatumHover,
+        getScaleXTicks,
+        getTruncatedXTick,
         getDatumName,
         getDatumValue,
         getDatumColor,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
-        onDatumLinkClick = noop,
+        onDatumLinkClick,
         ...attributes
     } = props
 
@@ -57,20 +70,25 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const handleBarClick = (datum: Datum): void => {
+    const handleBarClick = (event: MouseEvent, datum: Datum): void => {
         const link = getDatumLink(datum)
 
-        if (link) {
+        onDatumLinkClick?.(event, datum)
+
+        if (!event.isDefaultPrevented() && link) {
             window.open(link)
         }
-
-        onDatumLinkClick(datum)
     }
 
     return (
         <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
-            <SvgAxisLeft />
-            <SvgAxisBottom />
+            <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
+            <SvgAxisBottom
+                pixelsPerTick={pixelsPerXTick}
+                maxRotateAngle={maxAngleXTick}
+                getTruncatedTick={getTruncatedXTick}
+                getScaleTicks={getScaleXTicks}
+            />
 
             <SvgContent<ScaleBand<string>, any>>
                 {({ yScale, xScale, content }) => (

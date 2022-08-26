@@ -25,30 +25,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 type Services struct {
-	dbStore     *store.Store
-	lsifStore   *lsifstore.Store
-	repoStore   database.RepoStore
-	uploadStore uploadstore.Store
+	dbStore   *store.Store
+	lsifStore *lsifstore.Store
 
-	// shared with executorqueue
+	// shared with executor queue
 	InternalUploadHandler http.Handler
 	ExternalUploadHandler http.Handler
 
-	locker          *locker.Locker
 	gitserverClient *gitserver.Client
-	indexEnqueuer   *autoindexing.Service
 
 	// used by resolvers
-	UploadsSvc  *uploads.Service
-	CodeNavSvc  *codenav.Service
-	PoliciesSvc *policies.Service
+	AutoIndexingSvc *autoindexing.Service
+	UploadsSvc      *uploads.Service
+	CodeNavSvc      *codenav.Service
+	PoliciesSvc     *policies.Service
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
@@ -60,13 +55,15 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	// Connect to database
-	codeIntelDB := mustInitializeCodeIntelDB(logger)
-
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
-	locker := locker.NewWith(db, "codeintel")
-	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
+
+	// Connect to the separate LSIF database
+	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
+
+	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
+	lsifStore := lsifstore.NewStore(codeIntelDBConnection, siteConfig, observationContext)
+	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		logger.Fatal("Failed to initialize upload store", log.Error(err))
@@ -77,11 +74,10 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize services
-	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
-	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
-	codenavSvc := codenav.GetService(db, lsif, uploadSvc, gitserverClient)
+	uploadSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
+	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
-	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
@@ -108,21 +104,18 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	externalUploadHandler := newUploadHandler(false)
 
 	return &Services{
-		dbStore:     dbStore,
-		lsifStore:   lsifStore,
-		repoStore:   database.ReposWith(logger, dbStore.Store),
-		uploadStore: uploadStore,
+		dbStore:   dbStore,
+		lsifStore: lsifStore,
 
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,
 
-		locker:          locker,
 		gitserverClient: gitserverClient,
-		indexEnqueuer:   indexEnqueuer,
 
-		UploadsSvc:  uploadSvc,
-		CodeNavSvc:  codenavSvc,
-		PoliciesSvc: policySvc,
+		AutoIndexingSvc: autoindexingSvc,
+		UploadsSvc:      uploadSvc,
+		CodeNavSvc:      codenavSvc,
+		PoliciesSvc:     policySvc,
 	}, nil
 }
 

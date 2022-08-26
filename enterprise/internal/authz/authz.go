@@ -144,7 +144,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(gitLabConns) > 0 {
-		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg.SiteConfig(), gitLabConns)
+		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns)
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
 		warnings = append(warnings, glWarnings...)
@@ -237,6 +237,7 @@ func ProviderFromExternalService(
 		)
 	case *schema.GitLabConnection:
 		providers, problems, _ = gitlab.NewAuthzProviders(
+			db,
 			siteConfig,
 			[]*types.GitLabConnection{
 				{

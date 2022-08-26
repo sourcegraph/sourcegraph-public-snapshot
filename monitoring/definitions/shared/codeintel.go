@@ -265,15 +265,17 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 // src_executor_total
 // src_executor_processor_total
 // src_executor_queued_duration_seconds_total
-func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.Group {
+func (codeIntelligence) NewExecutorQueueGroup(containerName, queueFilter string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
+			// if updating this, also update in NewExecutorProcessorGroup
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
+				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
 				By:                    []string{"queue"},
 			},
 		},
@@ -290,18 +292,26 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 	})
 }
 
+// src_executor_total
 // src_executor_processor_total
 // src_executor_processor_duration_seconds_bucket
 // src_executor_processor_errors_total
 // src_executor_processor_handlers
 func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitoring.Group {
+	// TODO: pass in as variable like in NewExecutorQueueGroup?
 	filters := []string{`queue=~"${queue:regex}"`}
 
 	constructorOptions := ObservableConstructorOptions{
 		MetricNameRoot:        "executor",
 		JobLabel:              "sg_job",
-		MetricDescriptionRoot: "handler",
+		MetricDescriptionRoot: "executor",
 		Filters:               filters,
+	}
+
+	queueConstructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "unprocessed executor job",
+		By:                    []string{"queue"},
 	}
 
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
@@ -328,38 +338,19 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 				problem is not know to be resolved until jobs start succeeding again.
 			`),
 		},
-		Handlers: NoAlertsOption("none"),
+		Handlers: CriticalOption(
+			monitoring.Alert().
+				CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+				CustomDescription("0 active executor handlers and > 0 queue size").
+				LessOrEqual(0).
+				// ~5min for scale-from-zero
+				For(time.Minute*5),
+			`
+			- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+			- Make sure the executors appear under Site Admin > Executors.
+			- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+		`),
 	})
-}
-
-// src_executor_run_lock_wait_total
-// src_executor_run_lock_held_total
-func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
-	constructor := func(metricNameRoot, legend string) Observable {
-		filters := makeFilters("sg_job", containerName)
-		return Observable{
-			Name:        metricNameRoot + "_total",
-			Description: fmt.Sprintf("milliseconds %s every 5m", legend),
-			Owner:       monitoring.ObservableOwnerCodeIntel,
-			Query:       fmt.Sprintf(`sum(increase(src_%s_total{%s}[5m]))`, metricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(legend).Unit(monitoring.Milliseconds),
-		}
-	}
-
-	return monitoring.Group{
-		Title:  "Run lock contention",
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				constructor("executor_run_lock_wait", "wait").WithNoAlerts(`
-					Number of milliseconds spent waiting for the run lock every 5m
-				`).Observable(),
-				constructor("executor_run_lock_held", "held").WithNoAlerts(`
-					Number of milliseconds spent holding for the run lock every 5m
-				`).Observable(),
-			},
-		},
-	}
 }
 
 // src_apiworker_command_total

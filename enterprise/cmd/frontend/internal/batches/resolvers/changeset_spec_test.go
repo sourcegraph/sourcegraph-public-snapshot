@@ -34,11 +34,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := database.UsersWith(logger, cstore).Create(ctx, database.NewUser{
+	user, err := database.UsersWith(logger, bstore).Create(ctx, database.NewUser{
 		Username:        "mary",
 		Email:           bt.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -48,7 +48,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := database.ReposWith(logger, cstore)
+	repoStore := database.ReposWith(logger, bstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -63,11 +63,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	batchSpec.NamespaceUserID = userID
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,27 +87,27 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
-							ID: spec.Spec.BaseRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
 						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
 						HeadRepository: apitest.Repository{
-							ID: spec.Spec.HeadRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
-						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
-						Title:   spec.Spec.Title,
-						Body:    spec.Spec.Body,
+						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:   spec.Title,
+						Body:    spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
-									Email: spec.Spec.Commits[0].AuthorEmail,
+									Email: spec.CommitAuthorEmail,
 									Name:  user.Username,
 									User: &apitest.User{
 										ID: string(graphqlbackend.MarshalUserID(user.ID)),
 									},
 								},
-								Diff:    spec.Spec.Commits[0].Diff,
-								Message: spec.Spec.Commits[0].Message,
+								Diff:    string(spec.Diff),
+								Message: spec.CommitMessage,
 								Subject: "git commit message",
 								Body:    "and some more content in a second paragraph.",
 							},
@@ -142,27 +142,27 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
-							ID: spec.Spec.BaseRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
 						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
 						HeadRepository: apitest.Repository{
-							ID: spec.Spec.HeadRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
-						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
-						Title:   spec.Spec.Title,
-						Body:    spec.Spec.Body,
+						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:   spec.Title,
+						Body:    spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
-									Email: spec.Spec.Commits[0].AuthorEmail,
+									Email: spec.CommitAuthorEmail,
 									Name:  user.Username,
 									User: &apitest.User{
 										ID: string(graphqlbackend.MarshalUserID(user.ID)),
 									},
 								},
-								Diff:    spec.Spec.Commits[0].Diff,
-								Message: spec.Spec.Commits[0].Message,
+								Diff:    string(spec.Diff),
+								Message: spec.CommitMessage,
 								Subject: "git commit message",
 								Body:    "and some more content in a second paragraph.",
 							},
@@ -197,27 +197,27 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
-							ID: spec.Spec.BaseRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
 						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
 						HeadRepository: apitest.Repository{
-							ID: spec.Spec.HeadRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
-						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
-						Title:   spec.Spec.Title,
-						Body:    spec.Spec.Body,
+						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:   spec.Title,
+						Body:    spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
-									Email: spec.Spec.Commits[0].AuthorEmail,
+									Email: spec.CommitAuthorEmail,
 									Name:  user.Username,
 									User: &apitest.User{
 										ID: string(graphqlbackend.MarshalUserID(user.ID)),
 									},
 								},
-								Diff:    spec.Spec.Commits[0].Diff,
-								Message: spec.Spec.Commits[0].Message,
+								Diff:    string(spec.Diff),
+								Message: spec.CommitMessage,
 								Subject: "git commit message",
 								Body:    "and some more content in a second paragraph.",
 							},
@@ -252,9 +252,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "ExistingChangesetReference",
 						BaseRepository: apitest.Repository{
-							ID: spec.Spec.BaseRepository,
+							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
 						},
-						ExternalID: spec.Spec.ExternalID,
+						ExternalID: spec.ExternalID,
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
@@ -269,10 +269,10 @@ func TestChangesetSpecResolver(t *testing.T) {
 				t.Fatal(err)
 			}
 			spec.UserID = userID
-			spec.RepoID = repo.ID
+			spec.BaseRepoID = repo.ID
 			spec.BatchSpecID = batchSpec.ID
 
-			if err := cstore.CreateChangesetSpec(ctx, spec); err != nil {
+			if err := bstore.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 

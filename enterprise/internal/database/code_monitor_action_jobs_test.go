@@ -73,7 +73,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestScanActionJobs(t *testing.T) {
+func TestScanActionJob(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, userCTX := newTestUser(ctx, t, db)
 	fixtures := s.insertTestMonitor(userCTX, t)
@@ -89,8 +89,10 @@ func TestScanActionJobs(t *testing.T) {
 	actionJobID := actionJobs[0].ID
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), actionJobID))
-	record, _, err := ScanActionJobRecord(rows, err)
-	require.NoError(t, err)
 
-	require.Equal(t, int(actionJobID), record.RecordID())
+	require.True(t, rows.Next())
+	require.NoError(t, err)
+	job, err := ScanActionJob(rows)
+	require.NoError(t, err)
+	require.Equal(t, int(actionJobID), job.RecordID())
 }
