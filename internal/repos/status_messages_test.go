@@ -116,7 +116,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "1 repository currently cloning...",
 					},
 				},
 			},
@@ -139,6 +139,37 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
+			name: "site-admin: multiple not cloned, multiple cloning, multiple cloned",
+			repos: []*types.Repo{
+				{Name: "repo-1"},
+				{Name: "repo-2"},
+				{Name: "repo-3"},
+				{Name: "repo-4"},
+				{Name: "repo-5"},
+				{Name: "repo-6"},
+			},
+			user: admin,
+			cloneStatus: map[string]types.CloneStatus{
+				"repo-1": types.CloneStatusCloning,
+				"repo-2": types.CloneStatusCloning,
+				"repo-3": types.CloneStatusNotCloned,
+				"repo-4": types.CloneStatusNotCloned,
+				"repo-5": types.CloneStatusCloned,
+				"repo-6": types.CloneStatusCloned,
+			},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					Cloning: &CloningProgress{
+						Message: "2 repositories enqueued for cloning. 2 repositories currently cloning...",
+					},
+				},
+			},
+		},
+		{
 			name:        "site-admin: subset cloned",
 			repos:       []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:        admin,
@@ -150,7 +181,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "1 repository enqueued for cloning.",
 					},
 				},
 			},
@@ -197,7 +228,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories cloning...",
+						Message: "2 repositories enqueued for cloning.",
 					},
 				},
 			},
