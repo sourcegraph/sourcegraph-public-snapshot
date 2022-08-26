@@ -12,7 +12,7 @@ fi
 echo "--- Generating build metadata annotation"
 mkdir -p annotations
 
-file="./annotations/Build\ metadata.md"
+file="./annotations/Build metadata.md"
 
 # extract all the data we want
 runType=$(echo ${BUILD_METADATA} | jq -r '. | "Run type: `\(.RunType)`<br/>"')
