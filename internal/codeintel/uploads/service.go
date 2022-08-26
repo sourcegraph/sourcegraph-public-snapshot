@@ -346,7 +346,6 @@ func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column
 			log.String("column", column),
 			log.Int("processDelay in ms", int(processDelay.Milliseconds())),
 			log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-			log.Int("repositoryMatchLimit", *repositoryMatchLimit),
 			log.Int("limit", limit),
 			log.String("now", now.String()),
 		},
