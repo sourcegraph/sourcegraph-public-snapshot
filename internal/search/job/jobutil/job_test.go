@@ -636,7 +636,7 @@ func TestNewPlanJob(t *testing.T) {
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
-      (limit . 30)
+      (limit . 500)
       (PARALLEL
         (REPOSCOMPUTEEXCLUDED
           )
