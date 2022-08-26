@@ -233,7 +233,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		// Set the changeset UI publication state if necessary.
 		if r.publicationStates != nil && mappingChangesetSpec != nil {
 			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
-				if !mappingChangesetSpec.Spec.Published.Nil() {
+				if !mappingChangesetSpec.Published.Nil() {
 					r.planErr = errors.Newf("changeset spec %q has the published field set in its spec", mappingChangesetSpec.RandID)
 					return
 				}

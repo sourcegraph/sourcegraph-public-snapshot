@@ -11,13 +11,12 @@ import {
     ActivationProps,
     ActivationStep,
 } from '@sourcegraph/shared/src/components/activation/Activation'
-import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { PageRoutes } from '../routes.constants'
-import { logUserEvent, logEvent } from '../user/settings/backend'
+import { logEvent } from '../user/settings/backend'
 
 /**
  * Fetches activation status from server.
@@ -183,7 +182,6 @@ const getActivationSteps = (authenticatedUser: AuthenticatedUser): ActivationSte
  */
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
-        logUserEvent(UserEvent.CODEINTELREFS)
         logEvent('CodeIntelRefs')
     }
 }

@@ -1458,13 +1458,14 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(repos))
 		for _, r := range repos {
 			c := &btypes.ChangesetSpec{
-				RepoID:          r.ID,
+				BaseRepoID:      r.ID,
 				UserID:          userID,
 				BatchSpecID:     batchSpec.ID,
 				DiffStatAdded:   4,
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
-				Spec:            &batcheslib.ChangesetSpec{ExternalID: "123"},
+				ExternalID:      "123",
+				Type:            btypes.ChangesetSpecTypeExisting,
 			}
 			if err := bstore.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)
@@ -1492,8 +1493,8 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		// Now we set permissions and filter out the repository of one changeset
-		filteredRepo := changesetSpecs[0].RepoID
-		accessibleRepo := changesetSpecs[1].RepoID
+		filteredRepo := changesetSpecs[0].BaseRepoID
+		accessibleRepo := changesetSpecs[1].BaseRepoID
 		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
@@ -1514,7 +1515,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Query the single changesetSpec nodes again
 		for _, c := range changesetSpecs {
 			// The changesetSpec whose repository has been filtered should be hidden
-			if c.RepoID == filteredRepo {
+			if c.BaseRepoID == filteredRepo {
 				testChangesetSpecResponse(t, s, userCtx, c.RandID, "HiddenChangesetSpec")
 			} else {
 				testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")

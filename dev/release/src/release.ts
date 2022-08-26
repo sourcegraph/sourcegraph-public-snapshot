@@ -149,12 +149,20 @@ const steps: Step[] = [
                     ...calendarTime(config.releaseDate),
                 },
                 {
-                    title: `Deploy Sourcegraph ${name} to managed instances`,
+                    title: `Start deploying Sourcegraph ${name} to Cloud instances`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     transparency: 'transparent',
                     ...calendarTime(config.oneWorkingDayAfterRelease),
+                },
+                {
+                    title: `All Cloud instances upgraded to Sourcegraph ${name}`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    transparency: 'transparent',
+                    ...calendarTime(config.oneWorkingWeekAfterRelease),
                 },
             ]
 

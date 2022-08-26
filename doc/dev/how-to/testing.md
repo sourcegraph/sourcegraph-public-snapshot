@@ -251,7 +251,7 @@ There is a default mock JSContext that you can extend with object spread syntax 
 ### End-to-end tests
 
 End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
-They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/end-to-end).
+They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
 
@@ -259,19 +259,72 @@ Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/
 
 #### Running end-to-end tests
 
-To run all end-to-end tests locally, a local instance needs to be running.
-To run the tests against it, **create a user `test` with password `testtesttest` and promote it site admin**.
-Then run in the repository root:
+##### Starting a local instance
+
+To run all end-to-end tests locally, a local instance needs to be running:
 
 ```
-env TEST_USER_PASSWORD=testtesttest GITHUB_TOKEN=<token> yarn test-e2e
+sg start enterprise-e2e
 ```
 
-There's a GitHub test token in `../dev-private/enterprise/dev/external-services-config.json`.
+You can also run tests against an existing server image (note that this test must
+be run with SOURCEGRAPH_BASE_URL=http://localhost:7080 for the following to work):
+
+```
+TAG=insiders sg run server
+```
+
+##### Starting end-to-end tests
+
+In the repository root:
+
+```
+GH_TOKEN=XXX sg test client-e2e
+```
+
+You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
+If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will be set for you.
+
+If you run the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test client-e2e
+```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
-For regression tests, you can also run tests selectively with a command like `yarn run test:regression:search` in the `web/` directory, which runs the tests for search functionality.
+##### Starting regression tests
+
+1. Log in as a `test` user. If the user does not exist then see below for more information on how to create a user.
+2. Create a site-admin access token with the `site-admin:sudo` scope. The access tokens page can be found under user settings.
+3. Create your personal `GITHUB_TOKEN`. It should have access to all the repos in the Sourcegraph GitHub required to run these tests without scopes.
+4. Run in the repository root:
+
+```
+GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+```
+
+And if you're running the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+```
+
+Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
+
+##### Fixing authentication issues
+
+If you run into authentication issues, **create a user and promote it to site admin**:
+
+```
+sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
+```
+
+The above command resets the database and creates a user like. If the command completes succesfully you'll see the following output:
+
+```
+  👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
+```
 
 #### Writing end-to-end tests
 

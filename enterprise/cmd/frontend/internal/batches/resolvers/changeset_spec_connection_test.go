@@ -64,7 +64,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		}
 		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
-		s.RepoID = r.ID
+		s.BaseRepoID = r.ID
 
 		if err := bstore.CreateChangesetSpec(ctx, s); err != nil {
 			t.Fatal(err)

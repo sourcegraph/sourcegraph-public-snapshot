@@ -504,6 +504,6 @@ type SearchAggregationResultResolver interface {
 }
 
 type AggregationsArgs struct {
-	Mode  string `json:"mode"` //enum
-	Limit int32  `json:"limit"`
+	Mode  *string `json:"mode"` //enum
+	Limit int32   `json:"limit"`
 }
