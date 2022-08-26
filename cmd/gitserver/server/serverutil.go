@@ -102,7 +102,7 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
+func getTlsExternal() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
@@ -132,18 +132,20 @@ var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
 		SSLNoVerify: c.InsecureSkipVerify,
 		SSLCAInfo:   sslCAInfo,
 	}
-})
+}
 
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	tls := conf.Cached(getTlsExternal)()
+
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal())
+		configureRemoteGitCommand(cmd, tls)
 	}
 
 	var b interface {
