@@ -73,6 +73,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 data={data?.searchQueryAggregate?.aggregations}
                 loading={loading}
                 error={error}
+                size="md"
                 className={styles.chartContainer}
                 onBarLinkClick={onQuerySubmit}
             />

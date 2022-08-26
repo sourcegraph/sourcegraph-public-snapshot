@@ -3,7 +3,7 @@ import { HTMLAttributes, ReactElement, MouseEvent } from 'react'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -59,16 +59,22 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     error?: Error
     loading: boolean
     mode?: SearchAggregationMode | null
+    size?: 'sm' | 'md'
     onBarLinkClick?: (query: string) => void
 }
 
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
-    const { data, error, loading, mode, className, onBarLinkClick, 'aria-label': ariaLabel } = props
+    const { data, error, loading, mode, className, size = 'sm', 'aria-label': ariaLabel, onBarLinkClick } = props
 
+    // Internal error
     if (error) {
         return (
-            <div className={classNames(className, styles.errorContainer)}>
-                <ErrorAlert className={styles.error} error={error} />
+            <div
+                className={classNames(className, styles.errorContainer, {
+                    [styles.errorContainerSmall]: size === 'sm',
+                })}
+            >
+                <ErrorAlert error={error} className={styles.errorAlert} />
             </div>
         )
     }
@@ -77,15 +83,19 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (loading || aggregationError) {
         return (
-            <div className={classNames(styles.container, className)}>
-                <div className={styles.chartOverlay}>
+            <div
+                className={classNames(styles.errorContainer, className, {
+                    [styles.errorContainerSmall]: size === 'sm',
+                })}
+            >
+                <div className={styles.errorMessage}>
                     {loading ? (
                         'Loading...'
                     ) : aggregationError ? (
-                        <div>
-                            We couldn’t provide aggregation for this query. {aggregationError?.message}.{' '}
-                            <Link to="">Learn more</Link>
-                        </div>
+                        <>
+                            We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />
+                            . <Link to="">Learn more</Link>
+                        </>
                     ) : null}
                 </div>
             </div>
