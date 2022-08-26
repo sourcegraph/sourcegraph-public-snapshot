@@ -86,6 +86,10 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
 
     const querySubject = useMemo(() => new Subject<string>(), [])
 
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
     if (error || !data?.site) {
         const title = error ? String(error) : 'Unable to fetch sourcegraph version.'
         return <HeroPage icon={AlertCircleIcon} title={title} />
@@ -124,33 +128,29 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 </Text>
             </Container>
             <Container>
-                {loading ? (
-                    <LoadingSpinner />
-                ) : (
-                    <FilteredConnection<
-                        ExecutorFields,
-                        {
-                            sourcegraphVersion: string
-                        }
-                    >
-                        listComponent="ul"
-                        listClassName="list-group mb-2"
-                        showMoreClassName="mb-0"
-                        noun="executor"
-                        pluralNoun="executors"
-                        querySubject={querySubject}
-                        nodeComponent={ExecutorNode}
-                        nodeComponentProps={{
-                            sourcegraphVersion: data.site.productVersion,
-                        }}
-                        queryConnection={queryExecutorsCallback}
-                        history={history}
-                        location={props.location}
-                        cursorPaging={true}
-                        filters={filters}
-                        emptyElement={<NoExecutors />}
-                    />
-                )}
+                <FilteredConnection<
+                    ExecutorFields,
+                    {
+                        sourcegraphVersion: string
+                    }
+                >
+                    listComponent="ul"
+                    listClassName="list-group mb-2"
+                    showMoreClassName="mb-0"
+                    noun="executor"
+                    pluralNoun="executors"
+                    querySubject={querySubject}
+                    nodeComponent={ExecutorNode}
+                    nodeComponentProps={{
+                        sourcegraphVersion: data.site.productVersion,
+                    }}
+                    queryConnection={queryExecutorsCallback}
+                    history={history}
+                    location={props.location}
+                    cursorPaging={true}
+                    filters={filters}
+                    emptyElement={<NoExecutors />}
+                />
             </Container>
         </>
     )
