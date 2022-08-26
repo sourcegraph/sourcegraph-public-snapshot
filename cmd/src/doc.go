@@ -58,7 +58,7 @@ Examples:
 			"config":       &configCommands,
 			"extensions":   &extensionsCommands,
 			"extsvc":       &extsvcCommands,
-			"lsif":         &lsifCommands,
+			"code-intel":   &codeintelCommands,
 			"orgs":         &orgsCommands,
 			"orgs members": &orgsMembersCommands,
 			"repos":        &reposCommands,
