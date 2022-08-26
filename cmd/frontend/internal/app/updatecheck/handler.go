@@ -58,6 +58,8 @@ func getLatestRelease(deployType string) build {
 	}
 }
 
+// HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
+// logger is created and the handler that is returned uses the logger internally.
 func HandlerWithLog(logger log.Logger) http.HandlerFunc {
 	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +67,7 @@ func HandlerWithLog(logger log.Logger) http.HandlerFunc {
 	}
 }
 
-// Handler is an HTTP handler that responds with information about software updates
+// handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
 func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
