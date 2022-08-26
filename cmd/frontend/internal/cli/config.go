@@ -396,7 +396,7 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 			continue
 		}
 		if err := watcher.Add(p); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to add %s to watcher", p)
 		}
 	}
 
