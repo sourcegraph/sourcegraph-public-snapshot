@@ -945,9 +945,9 @@ func exposeBuildMetadata(c Config) (operations.Operation, error) {
 	}
 
 	return func(p *bk.Pipeline) {
-		p.AddStep("Build overview",
+		p.AddStep("Pipeline metadata",
 			bk.Env("BUILD_METADATA", string(data)),
-			bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
+			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					Type:         bk.AnnotationTypeInfo,
 					IncludeNames: false,

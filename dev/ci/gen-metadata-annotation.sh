@@ -32,5 +32,5 @@ ${runType}
 ${diff}
 ${messageFlags}
 <br/>
-If you see this emoji ⚠️A next to your job, the job **Soft Failed**.
+_Note that a Job has **Soft Failed** when you see this icon ⚠️._
 EOF
