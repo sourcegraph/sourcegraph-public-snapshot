@@ -94,7 +94,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, c
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine === index)
+                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cells
                     addedCells.push([cell, currentLineDecorations])
@@ -224,10 +224,10 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
         <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
             <PopoverTrigger
                 as={Link}
-                // style={{ color: style.color }}
                 to={blameHunk.displayInfo.linkURL}
                 target="_blank"
                 rel="noreferrer noopener"
+                className={styles.item}
                 onFocus={open}
                 onBlur={close}
                 onMouseEnter={open}

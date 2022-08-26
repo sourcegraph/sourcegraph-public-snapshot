@@ -29,10 +29,15 @@ tr:global(.highlighted) {
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
+
+    &:hover {
+        text-decoration: none;
+    }
 }
 
 .contents {
     white-space: pre;
+    color: var(--text-muted);
 
     &::before {
         content: attr(data-contents);

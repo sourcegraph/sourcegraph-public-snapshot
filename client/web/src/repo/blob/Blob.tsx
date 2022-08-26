@@ -773,19 +773,23 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
 
-                if (firstRow && !firstRow.querySelector('.top-spacer')) {
+                if (firstRow) {
                     for (const cell of firstRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('top-spacer')
-                        cell.prepend(spacer)
+                        if (!cell.querySelector('.top-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('top-spacer')
+                            cell.prepend(spacer)
+                        }
                     }
                 }
 
-                if (lastRow && !lastRow.querySelector('.bottom-spacer')) {
+                if (lastRow) {
                     for (const cell of lastRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('bottom-spacer')
-                        cell.append(spacer)
+                        if (!cell.querySelector('.bottom-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('bottom-spacer')
+                            cell.append(spacer)
+                        }
                     }
                 }
             }
