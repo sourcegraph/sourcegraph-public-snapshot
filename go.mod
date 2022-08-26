@@ -461,6 +461,8 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+	// Pending: https://github.com/open-telemetry/opentelemetry-go/pull/3116
+	go.opentelemetry.io/otel/bridge/opentracing => github.com/sourcegraph/opentelemetry-go/bridge/opentracing v0.0.0-20220826165103-0ffe14b750f9
 )
 
 // Status unclear replace directives

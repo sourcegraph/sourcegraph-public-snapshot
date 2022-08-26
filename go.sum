@@ -2064,6 +2064,8 @@ github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021 h1:IngqLdQQ/n42Abc
 github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021/go.mod h1:UxiwB6C3xk3xOySJpW1R0MDUyfGuJRFS5Z8C+SA5p2I=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
+github.com/sourcegraph/opentelemetry-go/bridge/opentracing v0.0.0-20220826165103-0ffe14b750f9 h1:Yb1zxlm9zEdXzS6ZZRUsNrzCfcxaJHKveyeYgUl3iZk=
+github.com/sourcegraph/opentelemetry-go/bridge/opentracing v0.0.0-20220826165103-0ffe14b750f9/go.mod h1:QYKRAmt+MWDoudzsVKYSutcVs9scYhc2K6YspGV/LLw=
 github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5 h1:gv92/ctwOCyj13tV94TX/FYXrHNdZMmGYc46AdLnmzM=
 github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5/go.mod h1:AfMs/2M3s2GnTKqPBnX5pwNPDxmXCt0poaM8efznH7Q=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
