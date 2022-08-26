@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -124,7 +123,7 @@ func ExternalServiceKindSupported(kind string) error {
 // result instead of using the entire repoupdater client implementation, we use a thinner API which
 // only needs the SyncExternalService method to be defined on the object.
 type repoupdaterClient interface {
-	SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error)
+	SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
 }
 
 // SyncExternalService will eagerly trigger a repo-updater sync. It accepts a
@@ -149,11 +148,6 @@ func SyncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 		}
 	}()
 
-	apiService, err := svc.ToAPIService(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.SyncExternalService(ctx, apiService)
+	_, err = client.SyncExternalService(ctx, svc.ID)
 	return err
 }

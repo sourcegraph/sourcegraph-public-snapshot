@@ -821,7 +821,7 @@ func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
 			return nil
 		},
 	}
-	err := externalServiceValidate(ctx, protocol.ExternalServiceSyncRequest{}, src)
+	err := externalServiceValidate(ctx, &types.ExternalService{}, src)
 	if err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}
