@@ -94,6 +94,7 @@ var planFeatures = map[Plan][]Feature{
 	team: {
 		FeatureACLs,
 		FeatureSSO,
+		FeatureExplicitPermissionsAPI,
 	},
 	enterprise0: {
 		FeatureACLs,
