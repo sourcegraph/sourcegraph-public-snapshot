@@ -5,9 +5,9 @@ import { Subscription } from 'rxjs'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { HighlightResponseFormat } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 
 import { fetchBlob } from './backend'
-import { useExperimentalFeatures } from '../../stores'
 
 interface PrefetchableFileProps {
     revision: string
@@ -43,7 +43,7 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
             repoName,
             format: enableCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT,
         }).subscribe()
-    }, [filePath, repoName, revision])
+    }, [filePath, repoName, revision, enableCodeMirror])
 
     const stopPrefetch = useCallback(() => {
         if (observable.current && !observable.current.closed) {
