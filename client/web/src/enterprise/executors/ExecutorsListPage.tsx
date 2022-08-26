@@ -5,7 +5,7 @@ import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -50,7 +50,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+    useEffect(() => eventLogger.logPageView('ExecutorsList'))
 
     const history = useHistory()
 
@@ -76,6 +76,10 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 className="mb-3"
             />
 
+            <Alert variant="info">
+            <H4>You've reached the executors limit.</H4>
+            In <Link to="/test">Sourcegraph Business</Link> you can set up to 2 executors. Contact your account executive to expand this limit.
+            </Alert>
             <Container className="mb-3">
                 <H3>Setting up executors</H3>
                 <Text className="mb-0">
