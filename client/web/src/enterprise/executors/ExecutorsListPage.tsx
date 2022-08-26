@@ -62,6 +62,10 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
 
     const querySubject = useMemo(() => new Subject<string>(), [])
 
+    const licenseType = "Sourcegraph Business"
+    const maxExecutors = 2
+    const extraExecutors = false
+
     return (
         <>
             <PageTitle title="Executor instances" />
@@ -78,7 +82,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
 
             <Alert variant="info">
             <H4>You've reached the executors limit.</H4>
-            In <Link to="/test">Sourcegraph Business</Link> you can set up to 2 executors. Contact your account executive to expand this limit.
+            {extraExecutors ? (<>You</>) : (<>In <Link to="/test">{licenseType}</Link> you</>)} can set up to {maxExecutors} executors. Contact your account executive to expand this limit.
             </Alert>
             <Container className="mb-3">
                 <H3>Setting up executors</H3>
