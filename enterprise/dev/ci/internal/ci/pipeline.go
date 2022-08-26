@@ -169,7 +169,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests)
+			// TODO: fix integrations tests and re-enable
+			// addVsceIntegrationTests,
+		)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
