@@ -349,6 +349,7 @@ func newStore(handle basestore.TransactableHandle, options Options, observationC
 		columnReplacer:                  strings.NewReplacer(replacements...),
 		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
 		operations:                      newOperations(options.Name, observationContext),
+		logger:                          logger,
 	}
 }
 
@@ -361,6 +362,7 @@ func (s *store) With(other basestore.ShareableStore) Store {
 		columnReplacer:                  s.columnReplacer,
 		modifiedColumnExpressionMatches: s.modifiedColumnExpressionMatches,
 		operations:                      s.operations,
+		logger:                          s.logger,
 	}
 }
 
@@ -807,6 +809,7 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	if !ok {
 		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
 		if debugErr != nil {
+			println("foo", s.logger, "foo")
 			s.logger.Error("failed to fetch debug information for job",
 				log.Int("recordID", id),
 				log.Error(debugErr),
