@@ -30,6 +30,8 @@ interface SearchAggregationsProps {
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
+    disableProactiveSearchAggregations?: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected

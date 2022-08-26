@@ -89,6 +89,7 @@ export const StreamingSearchResults: React.FunctionComponent<
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
     const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
+    const [disableProactiveSearchAggregations] = useFeatureFlag('disable-proactive-insight-aggregation', false)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -278,6 +279,7 @@ export const StreamingSearchResults: React.FunctionComponent<
 
             <SearchSidebar
                 enableSearchAggregation={enableSearchAggregations}
+                disableProactiveSearchAggregations={disableProactiveSearchAggregations}
                 activation={props.activation}
                 caseSensitive={caseSensitive}
                 patternType={patternType}

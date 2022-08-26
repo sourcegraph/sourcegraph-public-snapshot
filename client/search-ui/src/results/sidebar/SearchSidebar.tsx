@@ -65,6 +65,11 @@ export interface SearchSidebarProps
      * Enables search compute-based aggregations filter panel
      */
     enableSearchAggregation?: boolean
+
+    /**
+     * Disables practively fetching search aggregations
+     */
+    disableProactiveSearchAggregations?: boolean
 }
 
 const selectFromQueryState = ({
@@ -205,6 +210,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         <SearchAggregations
                             query={searchQueryFromURL}
                             patternType={searchPatternType}
+                            disableProactiveSearchAggregations={props.disableProactiveSearchAggregations}
                             onQuerySubmit={handleAggregationBarLinkClick}
                         />
                     </SearchSidebarSection>
