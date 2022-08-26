@@ -59,6 +59,7 @@ export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, 
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
     repoID: Scalars['ID']
+    enableMergedFileSymbolSidebar: boolean
 }
 
 const LOADING = 'loading' as const
@@ -230,6 +231,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                     onHover={this.fetchChildContents}
                                                     setChildNodes={this.setChildNode}
                                                     fileDecorationsByPath={this.state.fileDecorationsByPath}
+                                                    enableMergedFileSymbolSidebar={
+                                                        this.props.enableMergedFileSymbolSidebar
+                                                    }
                                                 />
                                             </TreeRootContext.Provider>
                                         )

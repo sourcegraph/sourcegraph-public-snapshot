@@ -2,69 +2,86 @@ import { FC, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonGroup } from '@sourcegraph/wildcard'
+import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
-import { AggregationMode } from './types'
+import { SearchAggregationModeAvailability } from '../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 
 interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
-    mode: AggregationMode
-    onModeChange: (nextMode: AggregationMode) => void
+    mode: SearchAggregationMode | null
+    availability?: SearchAggregationModeAvailability[]
     size?: 'sm' | 'lg'
+    onModeChange: (nextMode: SearchAggregationMode) => void
 }
 
 export const AggregationModeControls: FC<AggregationModeControlsProps> = props => {
-    const { mode, onModeChange, size, className, ...attributes } = props
+    const { mode, availability = [], onModeChange, size, className, ...attributes } = props
+
+    const availabilityGroups = availability.reduce((store, availability) => {
+        store[availability.mode] = availability
+
+        return store
+    }, {} as Partial<Record<SearchAggregationMode, SearchAggregationModeAvailability>>)
 
     return (
-        <ButtonGroup
+        <div
             {...attributes}
             aria-label="Aggregation mode picker"
-            className={classNames(className, { [styles.aggregationGroupSm]: size === 'sm' })}
+            className={classNames(className, styles.aggregationGroup)}
         >
-            <Button
-                className={styles.aggregationTypeControl}
-                variant="secondary"
-                size={size}
-                outline={mode !== AggregationMode.Repository}
-                data-testid="repo-aggregation-mode"
-                onClick={() => onModeChange(AggregationMode.Repository)}
-            >
-                Repo
-            </Button>
+            <Tooltip content={availabilityGroups[SearchAggregationMode.REPO]?.reasonUnavailable}>
+                <Button
+                    variant="secondary"
+                    size={size}
+                    outline={mode !== SearchAggregationMode.REPO}
+                    data-testid="repo-aggregation-mode"
+                    disabled={!availabilityGroups[SearchAggregationMode.REPO]?.available}
+                    onClick={() => onModeChange(SearchAggregationMode.REPO)}
+                >
+                    Repository
+                </Button>
+            </Tooltip>
 
-            <Button
-                className={styles.aggregationTypeControl}
-                variant="secondary"
-                size={size}
-                outline={mode !== AggregationMode.FilePath}
-                data-testid="file-aggregation-mode"
-                onClick={() => onModeChange(AggregationMode.FilePath)}
-            >
-                File
-            </Button>
+            <Tooltip content={availabilityGroups[SearchAggregationMode.PATH]?.reasonUnavailable}>
+                <Button
+                    variant="secondary"
+                    size={size}
+                    outline={mode !== SearchAggregationMode.PATH}
+                    disabled={!availabilityGroups[SearchAggregationMode.PATH]?.available}
+                    data-testid="file-aggregation-mode"
+                    onClick={() => onModeChange(SearchAggregationMode.PATH)}
+                >
+                    File
+                </Button>
+            </Tooltip>
 
-            <Button
-                className={styles.aggregationTypeControl}
-                variant="secondary"
-                size={size}
-                outline={mode !== AggregationMode.Author}
-                data-testid="author-aggregation-mode"
-                onClick={() => onModeChange(AggregationMode.Author)}
-            >
-                Author
-            </Button>
-            <Button
-                className={styles.aggregationTypeControl}
-                variant="secondary"
-                size={size}
-                outline={mode !== AggregationMode.CaptureGroups}
-                data-testid="captureGroup-aggregation-mode"
-                onClick={() => onModeChange(AggregationMode.CaptureGroups)}
-            >
-                Capture group
-            </Button>
-        </ButtonGroup>
+            <Tooltip content={availabilityGroups[SearchAggregationMode.AUTHOR]?.reasonUnavailable}>
+                <Button
+                    variant="secondary"
+                    size={size}
+                    outline={mode !== SearchAggregationMode.AUTHOR}
+                    disabled={!availabilityGroups[SearchAggregationMode.AUTHOR]?.available}
+                    data-testid="author-aggregation-mode"
+                    onClick={() => onModeChange(SearchAggregationMode.AUTHOR)}
+                >
+                    Author
+                </Button>
+            </Tooltip>
+
+            <Tooltip content={availabilityGroups[SearchAggregationMode.CAPTURE_GROUP]?.reasonUnavailable}>
+                <Button
+                    variant="secondary"
+                    size={size}
+                    outline={mode !== SearchAggregationMode.CAPTURE_GROUP}
+                    disabled={!availabilityGroups[SearchAggregationMode.CAPTURE_GROUP]?.available}
+                    data-testid="captureGroup-aggregation-mode"
+                    onClick={() => onModeChange(SearchAggregationMode.CAPTURE_GROUP)}
+                >
+                    Capture group
+                </Button>
+            </Tooltip>
+        </div>
     )
 }

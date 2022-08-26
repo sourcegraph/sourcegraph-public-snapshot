@@ -589,6 +589,11 @@ func (s *Syncer) SyncExternalService(
 	seen := make(map[api.RepoID]struct{})
 	var errs error
 	fatal := func(err error) bool {
+		// If the error is just a warning, then it is not fatal.
+		if errors.IsWarning(err) && !errcode.IsAccountSuspended(err) {
+			return false
+		}
+
 		return errcode.IsUnauthorized(err) ||
 			errcode.IsForbidden(err) ||
 			errcode.IsAccountSuspended(err)
@@ -602,9 +607,9 @@ func (s *Syncer) SyncExternalService(
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
-
 			if fatal(err) {
 				// Delete all external service repos of this external service
+				logger.Error("stopping external service sync due to fatal error from codehost", log.Error(err))
 				seen = map[api.RepoID]struct{}{}
 				break
 			}
@@ -631,7 +636,6 @@ func (s *Syncer) SyncExternalService(
 
 			continue
 		}
-
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
 		}
@@ -656,7 +660,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	// We don't delete any repos of site-level external services if there were any
-	// errors during a sync.
+	// non-warning errors during a sync.
 	//
 	// Only user or organization external services will delete
 	// repos in a sync run with fatal errors.
@@ -664,14 +668,38 @@ func (s *Syncer) SyncExternalService(
 	// Site-level external services can own lots of repos and are managed by site admins.
 	// It's preferable to have them fix any invalidated token manually rather than deleting the repos automatically.
 	deleted := 0
-	if errs == nil || (!svc.IsSiteOwned() && fatal(errs)) {
+
+	// If all of our errors are warnings and either Forbidden or Unauthorized,
+	// we want to proceed with the deletion. This is to be able to properly sync
+	// repos (by removing ones if code-host permissions have changed).
+	abortDeletion := false
+	if errs != nil {
+		var ref errors.MultiError
+		if errors.As(errs, &ref) {
+			for _, e := range ref.Errors() {
+				if errors.IsWarning(e) {
+					baseError := errors.Unwrap(e)
+					if !errcode.IsForbidden(baseError) && !errcode.IsUnauthorized(baseError) {
+						abortDeletion = true
+						break
+					}
+					continue
+				}
+				abortDeletion = true
+				break
+			}
+		}
+	}
+
+	if !abortDeletion || (!svc.IsSiteOwned() && fatal(errs)) {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
 		// We don't want to delete all repos that weren't seen if we had a lot of
 		// spurious errors since that could cause lots of repos to be deleted, only to be
-		// added the next sync. We delete only if we had no errors or we had one of the
-		// fatal errors.
+		// added the next sync. We delete only if we had no errors,
+		// or all of our errors are warnings and either Forbidden or Unauthorized,
+		// or we had one of the fatal errors and the service is not site owned.
 		var deletedErr error
 		deleted, deletedErr = s.delete(ctx, svc, seen)
 		if deletedErr != nil {

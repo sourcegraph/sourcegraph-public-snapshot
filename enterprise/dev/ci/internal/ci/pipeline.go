@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.42.0"
+	const minimumUpgradeableVersion = "3.43.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -169,7 +169,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests)
+			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+			// addVsceIntegrationTests,
+		)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name

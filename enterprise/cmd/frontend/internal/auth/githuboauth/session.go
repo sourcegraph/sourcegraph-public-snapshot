@@ -103,13 +103,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 	}
 
-	installations, err := ghClient.GetUserInstallations(ctx)
-	if err != nil {
-		// Only log a warning, since we still want to create the user account
-		// even if we fail to get installations.
-		log15.Warn("Could not get GitHub App installations", "error", err)
-	}
-
 	for i, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
@@ -129,27 +122,36 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			for _, installation := range installations {
-				accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
-				_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
-					UserProps: database.NewUser{
-						Username:        login,
-						Email:           attempt.email,
-						EmailIsVerified: true,
-						DisplayName:     deref(ghUser.Name),
-						AvatarURL:       deref(ghUser.AvatarURL),
-					},
-					ExternalAccount: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeGitHubApp,
-						ServiceID:   s.ServiceID,
-						ClientID:    s.clientID,
-						AccountID:   accountID,
-					},
-					CreateIfNotExist: attempt.createIfNotExist,
-				})
-
+			// Check if GitHub App access token
+			if githubsvc.IsGitHubAppAccessToken(token.AccessToken) {
+				installations, err := ghClient.GetUserInstallations(ctx)
 				if err != nil {
-					log15.Warn("Error while saving associated user installation", "error", err)
+					// Only log a warning, since we still want to create the user account
+					// even if we fail to get installations.
+					log15.Warn("Could not get GitHub App installations", "error", err)
+				}
+				for _, installation := range installations {
+					accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
+					_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+						UserProps: database.NewUser{
+							Username:        login,
+							Email:           attempt.email,
+							EmailIsVerified: true,
+							DisplayName:     deref(ghUser.Name),
+							AvatarURL:       deref(ghUser.AvatarURL),
+						},
+						ExternalAccount: extsvc.AccountSpec{
+							ServiceType: extsvc.TypeGitHubApp,
+							ServiceID:   s.ServiceID,
+							ClientID:    s.clientID,
+							AccountID:   accountID,
+						},
+						CreateIfNotExist: attempt.createIfNotExist,
+					})
+
+					if err != nil {
+						log15.Warn("Error while saving associated user installation", "error", err)
+					}
 				}
 			}
 

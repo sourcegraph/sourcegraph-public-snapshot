@@ -6,6 +6,7 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -113,6 +114,7 @@ func peek(pattern string, currentIndex, peekOffset int) byte {
 
 type PatternReplacer interface {
 	Replace(replacement string) (BasicQuery, error)
+	HasCaptureGroups() bool
 }
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
@@ -140,6 +142,15 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	}
 
 	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
+}
+
+func (r *regexpReplacer) HasCaptureGroups() bool {
+	for _, g := range r.groups {
+		if g.capturing {
+			return true
+		}
+	}
+	return false
 }
 
 var (

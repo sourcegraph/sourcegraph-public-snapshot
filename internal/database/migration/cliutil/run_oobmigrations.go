@@ -3,6 +3,7 @@ package cliutil
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -78,7 +79,7 @@ func runOutOfBandMigrations(
 	registerMigrations oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 	ids []int,
-) error {
+) (err error) {
 	store := oobmigration.NewStoreWithDB(db)
 	runner := outOfBandMigrationRunnerWithStore(store)
 	if err := runner.SynchronizeMetadata(ctx); err != nil {
@@ -98,9 +99,9 @@ func runOutOfBandMigrations(
 			ids = append(ids, migration.ID)
 		}
 	}
+	sort.Ints(ids)
 
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
-
 	if dryRun {
 		return nil
 	}
@@ -108,37 +109,55 @@ func runOutOfBandMigrations(
 	go runner.StartPartial(ids)
 	defer runner.Stop()
 
-	for range time.NewTicker(time.Second).C {
+	bars := make([]output.ProgressBar, 0, len(ids))
+	for _, id := range ids {
+		bars = append(bars, output.ProgressBar{
+			Label: fmt.Sprintf("Migration #%d", id),
+			Max:   1.0,
+		})
+	}
+	progress := out.Progress(bars, nil)
+	defer func() {
+		progress.Destroy()
+
+		if err == nil {
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
+		} else {
+			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Out of band migrations failed: %s", err))
+		}
+	}()
+
+	ticker := time.NewTicker(time.Second).C
+	for {
 		migrations, err := getMigrations(ctx, store, ids)
 		if err != nil {
 			return err
 		}
-
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
-		incomplete := migrations[:0]
+		for i, m := range migrations {
+			progress.SetValue(i, m.Progress)
+		}
+
+		complete := true
 		for _, m := range migrations {
 			if !m.Complete() {
-				incomplete = append(incomplete, m)
+				complete = false
 			}
 		}
-		if len(incomplete) == 0 {
-			break
+		if complete {
+			return nil
 		}
-		for _, m := range incomplete {
-			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker:
 		}
 	}
-
-	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
-	return nil
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
-	if len(ids) == 0 {
-		return store.List(ctx)
-	}
-
 	migrations := make([]oobmigration.Migration, 0, len(ids))
 	for _, id := range ids {
 		migration, ok, err := store.GetByID(ctx, id)

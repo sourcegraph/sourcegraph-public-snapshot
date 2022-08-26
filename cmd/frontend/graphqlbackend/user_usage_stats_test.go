@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 func TestUser_UsageStatistics(t *testing.T) {
@@ -15,12 +15,12 @@ func TestUser_UsageStatistics(t *testing.T) {
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
-	usagestatsdeprecated.MockGetByUserID = func(userID int32) (*types.UserUsageStatistics, error) {
+	usagestats.MockGetByUserID = func(userID int32) (*types.UserUsageStatistics, error) {
 		return &types.UserUsageStatistics{
 			SearchQueries: 2,
 		}, nil
 	}
-	defer func() { usagestatsdeprecated.MockGetByUserID = nil }()
+	defer func() { usagestats.MockGetByUserID = nil }()
 
 	RunTests(t, []*Test{
 		{

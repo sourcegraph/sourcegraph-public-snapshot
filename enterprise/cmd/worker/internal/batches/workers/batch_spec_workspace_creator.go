@@ -64,13 +64,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
-		AllowTransformChanges: true,
-		AllowConditionalExec:  true,
-		// The global env is always mocked to be empty for executors, so we just
-		// want to throw a validation error here for now.
-		AllowArrayEnvironments: false,
-	})
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec))
 	if err != nil {
 		return err
 	}
@@ -251,7 +245,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				return err
 			}
 			changesetSpec.BatchSpecID = spec.ID
-			changesetSpec.RepoID = workspace.dbWorkspace.RepoID
+			changesetSpec.BaseRepoID = workspace.dbWorkspace.RepoID
 			changesetSpec.UserID = spec.UserID
 
 			specs = append(specs, changesetSpec)
@@ -331,7 +325,7 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 			return nil, err
 		}
 		changesetSpec.UserID = userID
-		changesetSpec.RepoID = repoID
+		changesetSpec.BaseRepoID = repoID
 		changesetSpec.BatchSpecID = batchSpecID
 
 		cs = append(cs, changesetSpec)

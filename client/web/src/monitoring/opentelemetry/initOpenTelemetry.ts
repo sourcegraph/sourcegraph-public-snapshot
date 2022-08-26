@@ -41,11 +41,11 @@ export function initOpenTelemetry(): void {
 
         const url = isAbsoluteUrl(openTelemetry.endpoint)
             ? openTelemetry.endpoint
-            : `${externalURL}/${openTelemetry.endpoint}`
+            : new URL(openTelemetry.endpoint, externalURL).toString()
 
         // As per spec non-signal-specific configuration should have signal-specific paths appended.
         // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#endpoint-urls-for-otlphttp
-        const collectorExporter = new OTLPTraceExporter({ url: url + '/v1/traces' })
+        const collectorExporter = new OTLPTraceExporter({ url: new URL('/v1/traces', url).toString() })
 
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
         provider.addSpanProcessor(new SharedSpanStoreProcessor())

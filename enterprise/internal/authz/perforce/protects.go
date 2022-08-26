@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gobwas/glob"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -183,6 +183,17 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	return false
 }
 
+// PerformDebugScan will scan protections rules from r and log detailed
+// information about how each line was parsed.
+func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID) (*authz.ExternalUserPermissions, error) {
+	perms := &authz.ExternalUserPermissions{
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+	}
+	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
+	err := scanProtects(logger, r, scanner)
+	return perms, err
+}
+
 // protectsScanner provides callbacks for scanning the output of `p4 protects`.
 type protectsScanner struct {
 	// Called on the parsed contents of each `p4 protects` line.
@@ -194,7 +205,8 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(rc io.Reader, s *protectsScanner) error {
+func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
+	logger = logger.Scoped("scanProtects", "")
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -213,9 +225,12 @@ func scanProtects(rc io.Reader, s *protectsScanner) error {
 		// Trim whitespace
 		line = strings.TrimSpace(line)
 
+		logger.Debug("Scanning protects line", log.String("line", line))
+
 		// Split into fields
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
+			logger.Debug("Line has less than 5 fields, discarding")
 			continue
 		}
 
@@ -234,6 +249,7 @@ func scanProtects(rc io.Reader, s *protectsScanner) error {
 		// We only care about read access. If the permission doesn't change read access,
 		// then we exit early.
 		if !parsedLine.affectsReadAccess() {
+			logger.Debug("Line does not affect read access, discarding")
 			continue
 		}
 
@@ -308,18 +324,20 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
 // authorization, including sub-repo perms and exact depot-as-repo matches.
-func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
+func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
+	logger = logger.Scoped("fullRepoPermsScanner", "")
 	// Get glob equivalents of all depots
 	var configuredDepotMatches []globMatch
 	for _, depot := range configuredDepots {
 		// treat depots as wildcards
 		m, err := convertToGlobMatch(string(depot) + "**")
 		if err != nil {
-			log15.Error("unexpected failure to convert depot to pattern - using a no-op pattern",
-				"depot", depot,
-				"error", err)
+			logger.Error("unexpected failure to convert depot to pattern - using a no-op pattern",
+				log.String("depot", string(depot)),
+				log.Error(err))
 			continue
 		}
+		logger.Debug("Converted depot to glob", log.String("depot", string(depot)), log.String("glob", m.pattern))
 		// preserve original name by overriding the wildcard version of the original text
 		m.original = string(depot)
 		configuredDepotMatches = append(configuredDepotMatches, m)
@@ -357,12 +375,20 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 			// Depots that this match pertains to
 			depots := relevantDepots(match)
 
+			depotStrings := make([]string, len(depots))
+			for i := range depots {
+				depotStrings[i] = string(depots[i])
+			}
+			logger.Debug("Relevant depots", log.Strings("depots", depotStrings))
+
 			// Handle inclusions
 			if !line.isExclusion {
 				// Grant access to specified paths
 				for _, depot := range depots {
 					srp := getSubRepoPerms(depot)
-					srp.PathIncludes = append(srp.PathIncludes, convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)...)
+					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
+					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
+					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
 
 					var i int
 					for _, exclude := range srp.PathExcludes {
@@ -375,6 +401,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 						}
 						checkWithDepotAdded := !strings.HasPrefix(originalExclude.pattern, "//") && match.Match(string(depot)+originalExclude.pattern)
 						if originalExclude.Match(match.original) || checkWithDepotAdded {
+							logger.Debug("Removing conflicting exclude rule", log.String("rule", originalExclude.pattern))
 							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
 						} else {
 							i++
@@ -390,22 +417,26 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 
 				// Special case: exclude entire depot
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
+					logger.Debug("Exclude entire depot, removing all include rules")
 					srp.PathIncludes = nil
 				}
 
-				srp.PathExcludes = append(srp.PathExcludes, convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)...)
+				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
+				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
+				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
 
 				var i int
 				for _, include := range srp.PathIncludes {
 					// Perforce ACLs can have conflicting rules and the later one wins, so
 					// if we get a match here we drop the existing rule.
-					includeGlob, exists := patternsToGlob[include]
+					originalInclude, exists := patternsToGlob[include]
 					if !exists {
 						i++
 						continue
 					}
-					checkWithDepotAdded := !strings.HasPrefix(includeGlob.pattern, "//") && match.Match(string(depot)+includeGlob.pattern)
-					if match.Match(includeGlob.original) || checkWithDepotAdded {
+					checkWithDepotAdded := !strings.HasPrefix(originalInclude.pattern, "//") && match.Match(string(depot)+originalInclude.pattern)
+					if match.Match(originalInclude.original) || checkWithDepotAdded {
+						logger.Debug("Removing conflicting include rule", log.String("rule", originalInclude.pattern))
 						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
 					} else {
 						i++
@@ -450,6 +481,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 }
 
 func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {
+	logger := log.Scoped("convertRulesForWildcardDepotMatch", "")
 	if !strings.Contains(match.pattern, "**") && !strings.Contains(match.pattern, "*") {
 		return []string{match.pattern}
 	}
@@ -463,7 +495,7 @@ func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, pat
 		maybePathRule := strings.Join(parts[i+1:], "/")
 		depotMatchGlob, err := glob.Compile(maybeDepotMatch, '/')
 		if err != nil {
-			log15.Warn(fmt.Sprintf("error compiling %s to glob: %v", maybeDepotMatch, err))
+			logger.Warn(fmt.Sprintf("error compiling %s to glob: %v", maybeDepotMatch, err))
 			continue
 		}
 		if depotMatchGlob.Match(trimmedDepot) {
@@ -479,7 +511,7 @@ func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, pat
 				depotOnlyMatchesDoubleWildcard = false
 				newGlobMatch, err := convertToGlobMatch(maybePathRule)
 				if err != nil {
-					log15.Warn(fmt.Sprintf("error converting to glob match: %s\n", err))
+					logger.Warn(fmt.Sprintf("error converting to glob match: %s\n", err))
 				}
 				patternsToGlob[newGlobMatch.pattern] = newGlobMatch
 			}
@@ -495,6 +527,7 @@ func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, pat
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
 func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *protectsScanner {
+	logger := log.Scoped("allUsersScanner", "")
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			if line.isExclusion {
@@ -512,7 +545,7 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 						return err
 					}
 				default:
-					log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
+					logger.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", log.String("type", line.entityType))
 				}
 
 				return nil
@@ -536,7 +569,7 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 					return err
 				}
 			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
+				logger.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", log.String("type", line.entityType))
 			}
 
 			return nil
