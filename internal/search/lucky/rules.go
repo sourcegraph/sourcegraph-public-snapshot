@@ -56,38 +56,17 @@ var rulesWiden = []rule{
 	},
 }
 
-// unquotePatterns is a rule that unquotes all patterns in the input query (it
-// removes quotes, and honors escape sequences inside quoted values).
-func unquotePatterns(b query.Basic) *query.Basic {
+func mapNodes(b query.Basic, searchType query.SearchType, f func(nodes []query.Node) ([]query.Node, bool)) *query.Basic {
 	// Go back all the way to the raw tree representation :-). We just parse
 	// the string as regex, since parsing with regex annotates quoted
 	// patterns.
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeRegex)
+	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), searchType)
 	if err != nil {
 		return nil
 	}
 
-	changed := false // track whether we've successfully changed any pattern, which means this rule applies.
-	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if annotation.Labels.IsSet(query.Quoted) && !annotation.Labels.IsSet(query.IsAlias) {
-			changed = true
-			annotation.Labels.Unset(query.Quoted)
-			annotation.Labels.Set(query.Literal)
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
-			}
-		}
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
-		}
-	})
-
+	newParseTree, changed := f(rawParseTree)
 	if !changed {
-		// No unquoting happened, so we don't run the search.
 		return nil
 	}
 
@@ -104,17 +83,41 @@ func unquotePatterns(b query.Basic) *query.Basic {
 	return &newBasic
 }
 
+// unquotePatterns is a rule that unquotes all patterns in the input query (it
+// removes quotes, and honors escape sequences inside quoted values).
+func unquotePatterns(b query.Basic) *query.Basic {
+	f := func(tree []query.Node) ([]query.Node, bool) {
+		changed := false // track whether we've successfully changed any pattern, which means this rule applies.
+		newParseTree := query.MapPattern(tree, func(value string, negated bool, annotation query.Annotation) query.Node {
+			if annotation.Labels.IsSet(query.Quoted) && !annotation.Labels.IsSet(query.IsAlias) {
+				changed = true
+				annotation.Labels.Unset(query.Quoted)
+				annotation.Labels.Set(query.Literal)
+				return query.Pattern{
+					Value:      value,
+					Negated:    negated,
+					Annotation: annotation,
+				}
+			}
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		})
+
+		return newParseTree, changed
+	}
+
+	return mapNodes(b, query.SearchTypeRegex, f)
+}
+
 // regexpPatterns converts literal patterns into regular expression patterns.
 // The conversion is a heuristic and happens based on whether the pattern has
 // indicative regular expression metasyntax. It would be overly aggressive to
 // convert patterns containing _any_ potential metasyntax, since a pattern like
 // my.config.yaml contains two `.` (match any character in regexp).
 func regexpPatterns(b query.Basic) *query.Basic {
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
-	if err != nil {
-		return nil
-	}
-
 	// we decide to interpret patterns as regular expressions if the number of
 	// significant metasyntax operators exceed this threshold
 	METASYNTAX_THRESHOLD := 2
@@ -173,59 +176,49 @@ func regexpPatterns(b query.Basic) *query.Basic {
 		return count
 	}
 
-	changed := false
-	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if annotation.Labels.IsSet(query.Regexp) {
+	f := func(tree []query.Node) ([]query.Node, bool) {
+		changed := false
+		newParseTree := query.MapPattern(tree, func(value string, negated bool, annotation query.Annotation) query.Node {
+			if annotation.Labels.IsSet(query.Regexp) {
+				return query.Pattern{
+					Value:      value,
+					Negated:    negated,
+					Annotation: annotation,
+				}
+			}
+
+			re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+			if err != nil {
+				return query.Pattern{
+					Value:      value,
+					Negated:    negated,
+					Annotation: annotation,
+				}
+			}
+
+			count := countMetaSyntax([]*syntax.Regexp{re})
+			if count < METASYNTAX_THRESHOLD {
+				return query.Pattern{
+					Value:      value,
+					Negated:    negated,
+					Annotation: annotation,
+				}
+			}
+
+			changed = true
+			annotation.Labels.Unset(query.Literal)
+			annotation.Labels.Set(query.Regexp)
 			return query.Pattern{
 				Value:      value,
 				Negated:    negated,
 				Annotation: annotation,
 			}
-		}
+		})
 
-		re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
-			}
-		}
-
-		count := countMetaSyntax([]*syntax.Regexp{re})
-		if count < METASYNTAX_THRESHOLD {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
-			}
-		}
-
-		changed = true
-		annotation.Labels.Unset(query.Literal)
-		annotation.Labels.Set(query.Regexp)
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
-		}
-	})
-
-	if !changed {
-		return nil
+		return newParseTree, changed
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
-	if err != nil {
-		return nil
-	}
-
-	newBasic, err := query.ToBasicQuery(newNodes)
-	if err != nil {
-		return nil
-	}
-
-	return &newBasic
+	return mapNodes(b, query.SearchTypeStandard, f)
 }
 
 // UnorderedPatterns generates a query that interprets all recognized patterns
@@ -234,27 +227,7 @@ func regexpPatterns(b query.Basic) *query.Basic {
 // because parsing maintains the invariant that `concat` nodes only ever have
 // pattern children.
 func unorderedPatterns(b query.Basic) *query.Basic {
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
-	if err != nil {
-		return nil
-	}
-
-	newParseTree, changed := mapConcat(rawParseTree)
-	if !changed {
-		return nil
-	}
-
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
-	if err != nil {
-		return nil
-	}
-
-	newBasic, err := query.ToBasicQuery(newNodes)
-	if err != nil {
-		return nil
-	}
-
-	return &newBasic
+	return mapNodes(b, query.SearchTypeStandard, mapConcat)
 }
 
 func mapConcat(q []query.Node) ([]query.Node, bool) {
@@ -603,45 +576,34 @@ func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
 // patternsToCodeHostFilters converts patterns to `repo` or `path` filters if they
 // can be interpreted as URIs.
 func patternsToCodeHostFilters(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
-	if err != nil {
-		return nil
-	}
+	f := func(tree []query.Node) ([]query.Node, bool) {
+		filterParams := []query.Node{}
+		changed := false
+		newParseTree := query.MapPattern(tree, func(value string, negated bool, annotation query.Annotation) query.Node {
+			if params := patternToCodeHostFilters(value, negated); params != nil {
+				changed = true
+				filterParams = append(filterParams, *params...)
+				// Collect the param and delete pattern. We're going to
+				// add those parameters after. We can't map patterns
+				// in-place because that might create parameters in
+				// concat nodes.
+				return nil
+			}
 
-	filterParams := []query.Node{}
-	changed := false
-	newParseTree := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if params := patternToCodeHostFilters(value, negated); params != nil {
-			changed = true
-			filterParams = append(filterParams, *params...)
-			// Collect the param and delete pattern. We're going to
-			// add those parameters after. We can't map patterns
-			// in-place because that might create parameters in
-			// concat nodes.
-			return nil
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		})
+
+		if !changed {
+			return nil, false
 		}
 
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
-		}
-	})
-
-	if !changed {
-		return nil
+		newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
+		return newParseTree, changed
 	}
 
-	newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
-	if err != nil {
-		return nil
-	}
-
-	newBasic, err := query.ToBasicQuery(newNodes)
-	if err != nil {
-		return nil
-	}
-
-	return &newBasic
+	return mapNodes(b, query.SearchTypeStandard, f)
 }
