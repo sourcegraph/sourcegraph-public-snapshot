@@ -38,7 +38,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
     // include LSIF because this is used for languages that are configured
     // to be processed with tree sitter (and is used when explicitly
     // requested via JSON_SCIP).
-    const html = format === HighlightResponseFormat.HTML_PLAINTEXT || format === HighlightResponseFormat.HTML_HIGHLIGHT
+    const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
 
     return requestGraphQL<BlobResult, BlobVariables>(
         gql`
