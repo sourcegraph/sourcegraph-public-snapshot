@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, H4, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -210,6 +210,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
+    const storageStatus = "full"
+
     return (
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
@@ -227,6 +229,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 </Link>
                 .
             </Text>
+            <Alert variant={storageStatus === "full" ? "danger" : "warning"}>
+                <H4>{storageStatus === "full" ? <>You've used all 100GB of storage</> : <>Your Sourcegraph is almost full</>}</H4>
+                {storageStatus !== "full" ? <>You're about to reach the 100GB storage limit. </> : <></>}Upgrade to Sourcegraph Enterprise for unlimited storage for your code.
+            </Alert>
             <Container className="mb-3">
                 {error && !loading && (
                     <Alert variant="warning" as="p">

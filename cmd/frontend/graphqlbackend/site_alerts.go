@@ -111,6 +111,8 @@ func init() {
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
+    AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
+
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err == nil {
@@ -176,6 +178,12 @@ func init() {
 
 	// Warn if customer is using GitLab on a version < 12.0.
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
+}
+
+func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
+    // messageFull := "You've used all 100GB of storage. Upgrade to for unlimited storage for your code."
+    messageAlmost := "You're about to reach the 100GB storage limit. Upgrade to for unlimited storage for your code."
+    return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: messageAlmost}}
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
