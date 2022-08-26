@@ -518,27 +518,10 @@ spec:
 ```
 
 ## Configure a tracing backend
-Sourcegraph currently supports exporting tracing data to the following backends:
-- Any backend implementing the [OpenTelemetry Protocol](https://opentelemetry.io/docs/reference/specification/protocol/), over gRPC or HTTP
-- Jaeger
-- Google Cloud Trace
-- Grafana Loki
-- Log output
-
-Exporting is handled by the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/), which needs to be configured to export to your backend of choice.  
-If you do not currently have any tracing backend configured, you can [enable the optional Jaeger deployment](#enable-the-bundled-jaeger-deployment) that ships with the reference repository.
+Sourcegraph currently supports exporting tracing data several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
 ### Enable the bundled Jaeger deployment
-
-### Connect to an OTLP backend
-
-### Connect to Jaeger
-
-### Connect to Google Cloud Trace
-
-### Connect to Grafana Loki
-
-### Connect to logging
+If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger). Read the [Overlays](./kustomize.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC
 
