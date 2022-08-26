@@ -1435,6 +1435,60 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "srcCliVersionCache": {
+          "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
+          "type": "object",
+          "required": ["enabled", "github"],
+          "group": "Sourcegraph.com",
+          "properties": {
+            "enabled": {
+              "description": "Enables the src-cli version cache API endpoint.",
+              "type": "boolean",
+              "default": false
+            },
+            "github": {
+              "description": "GitHub configuration, both for queries and receiving release webhooks.",
+              "type": "object",
+              "required": ["token", "webhookSecret"],
+              "properties": {
+                "repository": {
+                  "description": "The repository to get the latest version of.",
+                  "type": "object",
+                  "properties": {
+                    "owner": {
+                      "description": "The repository namespace.",
+                      "type": "string",
+                      "default": "sourcegraph"
+                    },
+                    "name": {
+                      "description": "The repository name.",
+                      "type": "string",
+                      "default": "src-cli"
+                    }
+                  }
+                },
+                "token": {
+                  "description": "The access token to use when communicating with GitHub.",
+                  "type": "string"
+                },
+                "uri": {
+                  "description": "The URI of the GitHub instance.",
+                  "type": "string",
+                  "default": "https://github.com"
+                },
+                "webhookSecret": {
+                  "description": "The release webhook secret.",
+                  "type": "string"
+                }
+              }
+            },
+            "interval": {
+              "description": "The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.",
+              "type": "string",
+              "default": "1h"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"

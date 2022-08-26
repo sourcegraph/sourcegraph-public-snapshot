@@ -20,6 +20,7 @@
     "threeWorkingDaysBeforeRelease": "17 August 2022 10:00 PST",
     "releaseDate": "22 August 2022 10:00 PST",
     "oneWorkingDayAfterRelease": "23 August 2022 10:00 PST",
+    "oneWorkingWeekAfterRelease": "29 August 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

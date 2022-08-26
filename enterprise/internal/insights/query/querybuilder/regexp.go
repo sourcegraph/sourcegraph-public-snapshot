@@ -6,6 +6,7 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -144,7 +145,12 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 }
 
 func (r *regexpReplacer) HasCaptureGroups() bool {
-	return len(r.groups) != 0
+	for _, g := range r.groups {
+		if g.capturing {
+			return true
+		}
+	}
+	return false
 }
 
 var (

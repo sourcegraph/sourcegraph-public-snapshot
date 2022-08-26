@@ -1,10 +1,16 @@
 package store
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"math"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -605,7 +611,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 }
 
-func TestCalculateVisibleUploads(t *testing.T) {
+func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
@@ -638,7 +644,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		makeCommit(8): {{IsDefaultBranch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -661,6 +667,538 @@ func TestCalculateVisibleUploads(t *testing.T) {
 
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	// 1 --+-- [2] ---- 3
+	//     |
+	//     +--- 4 --+-- 5 -- 6
+	//              |
+	//              +-- 7 -- 8
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(2)},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(2): {1},
+		makeCommit(3): {1},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	// 1 -- [2]
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(2), Root: "root1/"},
+		{ID: 2, Commit: makeCommit(2), Root: "root2/"},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(2): {{IsDefaultBranch: true}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(2): {1, 2},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	// 1 -- 2 --+-- 3 --+-- 5 -- 6
+	//          |       |
+	//          +-- 4 --+
+	//
+	// With the following LSIF dumps:
+	//
+	// | UploadID | Commit | Root    | Indexer |
+	// | -------- + ------ + ------- + ------- |
+	// | 1        | 1      | root3/  | lsif-go |
+	// | 2        | 1      | root4/  | scip-python |
+	// | 3        | 2      | root1/  | lsif-go |
+	// | 4        | 2      | root2/  | lsif-go |
+	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
+	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
+	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
+	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
+		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
+		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
+		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
+		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(6): {{IsDefaultBranch: true}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1): {1, 2},
+		makeCommit(2): {1, 2, 3, 4, 5},
+		makeCommit(3): {1, 2, 4, 5, 6},
+		makeCommit(4): {1, 2, 3, 4, 7},
+		makeCommit(5): {1, 2, 6, 7, 8},
+		makeCommit(6): {1, 2, 7, 8, 9},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	// [1] -- [2] -- [3] -- [4] -- 5
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
+		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
+		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
+		{ID: 4, Commit: makeCommit(4), Root: "root4/", Indexer: "idx1"},
+		{ID: 5, Commit: makeCommit(1), Root: "root1/", Indexer: "idx2"},
+		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
+		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
+		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(5): {{IsDefaultBranch: true}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1): {1, 5},
+		makeCommit(2): {1, 2, 5, 6},
+		makeCommit(3): {1, 2, 3, 5, 6, 7},
+		makeCommit(4): {1, 2, 3, 4, 5, 6, 7, 8},
+		makeCommit(5): {1, 2, 3, 4, 5, 6, 7, 8},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(2)},
+		{ID: 3, Commit: makeCommit(3)},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
+	}
+
+	for i := 0; i < 3; i++ {
+		// Set dirty token to 3
+		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
+			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+		}
+	}
+
+	now := time.Unix(1587396557, 0).UTC()
+
+	// Non-latest dirty token - should not clear flag
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+	if len(repositoryIDs) == 0 {
+		t.Errorf("did not expect repository to be unmarked")
+	}
+
+	// Latest dirty token - should clear flag
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+	repositoryIDs, err = store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+	if len(repositoryIDs) != 0 {
+		t.Errorf("expected repository to be unmarked")
+	}
+
+	stale, updatedAt, err := store.GetCommitGraphMetadata(context.Background(), 50)
+	if err != nil {
+		t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+	}
+	if stale {
+		t.Errorf("unexpected value for stale. want=%v have=%v", false, stale)
+	}
+	if diff := cmp.Diff(&now, updatedAt); diff != "" {
+		t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+	}
+}
+
+func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(2)},
+		{ID: 3, Commit: makeCommit(3)},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
+	}
+
+	for i := 0; i < 3; i++ {
+		// Set dirty token to 3
+		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
+			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+		}
+	}
+
+	// This test is mainly a syntax check against `transaction_timestamp()`
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+}
+
+func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	//                +-- [08] ----- {09} --+
+	//                |                     |
+	// [01] -- {02} --+-- [03] --+-- {04} --+-- {05} -- [06] -- {07}
+	//                           |
+	//                           +--- 10 ------ [11] -- {12}
+	//
+	// 02: tag v1
+	// 04: tag v2
+	// 05: tag v3
+	// 07: tip of main branch
+	// 09: tip of branch feat1
+	// 12: tip of branch feat2
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(3)},
+		{ID: 3, Commit: makeCommit(6)},
+		{ID: 4, Commit: makeCommit(8)},
+		{ID: 5, Commit: makeCommit(11)},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
+		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
+		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
+		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
+		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
+	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		// stale
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+
+		// fresh
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1):  {1},
+		makeCommit(2):  {1},
+		makeCommit(3):  {2},
+		makeCommit(4):  {2},
+		makeCommit(5):  {2},
+		makeCommit(6):  {3},
+		makeCommit(7):  {3},
+		makeCommit(8):  {4},
+		makeCommit(9):  {4},
+		makeCommit(10): {2},
+		makeCommit(11): {5},
+		makeCommit(12): {5},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
+		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	}
+}
+
+func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// This database has the following commit graph:
+	//
+	//                +-- [08] ----- {09} --+
+	//                |                     |
+	// [01] -- {02} --+-- [03] --+-- {04} --+-- {05} -- [06] -- {07}
+	//                           |
+	//                           +--- 10 ------ [11] -- {12}
+	//
+	// 02: tag v1
+	// 04: tag v2
+	// 05: tag v3
+	// 07: tip of main branch
+	// 09: tip of branch feat1
+	// 12: tip of branch feat2
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(3)},
+		{ID: 3, Commit: makeCommit(6)},
+		{ID: 4, Commit: makeCommit(8)},
+		{ID: 5, Commit: makeCommit(11)},
+	}
+	insertUploads(t, db, uploads...)
+
+	retentionConfigurationQuery := `
+		INSERT INTO lsif_retention_configuration (
+			id,
+			repository_id,
+			max_age_for_non_stale_branches_seconds,
+			max_age_for_non_stale_tags_seconds
+		) VALUES (
+			1,
+			50,
+			3600,
+			3600
+		)
+	`
+	if _, err := db.ExecContext(context.Background(), retentionConfigurationQuery); err != nil {
+		t.Fatalf("unexpected error inserting retention configuration: %s", err)
+	}
+
+	graph := gitdomain.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
+		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
+		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
+		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
+		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
+	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		// stale
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+
+		// fresh
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+	}
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1):  {1},
+		makeCommit(2):  {1},
+		makeCommit(3):  {2},
+		makeCommit(4):  {2},
+		makeCommit(5):  {2},
+		makeCommit(6):  {3},
+		makeCommit(7):  {3},
+		makeCommit(8):  {4},
+		makeCommit(9):  {4},
+		makeCommit(10): {2},
+		makeCommit(11): {5},
+		makeCommit(12): {5},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
+	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
+		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
 	}
 }
 
@@ -785,6 +1323,49 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	})
 }
 
+func TestCommitGraphMetadata(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
+		t.Errorf("unexpected error marking repository as dirty: %s", err)
+	}
+
+	updatedAt := time.Unix(1587396557, 0).UTC()
+	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updatedAt)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting commit graph metadata: %s", err)
+	}
+
+	testCases := []struct {
+		RepositoryID int
+		Stale        bool
+		UpdatedAt    *time.Time
+	}{
+		{50, true, nil},
+		{51, false, &updatedAt},
+		{52, false, nil},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("repositoryID=%d", testCase.RepositoryID), func(t *testing.T) {
+			stale, updatedAt, err := store.GetCommitGraphMetadata(context.Background(), testCase.RepositoryID)
+			if err != nil {
+				t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+			}
+
+			if stale != testCase.Stale {
+				t.Errorf("unexpected value for stale. want=%v have=%v", testCase.Stale, stale)
+			}
+
+			if diff := cmp.Diff(testCase.UpdatedAt, updatedAt); diff != "" {
+				t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 // consumeScanner reads all values from the scanner into memory.
 func consumeScanner(scanner shared.PackageReferenceScanner) (references []shared.PackageReference, _ error) {
 	for {
@@ -813,6 +1394,20 @@ func intsToQueries(values []int) []*sqlf.Query {
 	}
 
 	return queries
+}
+
+func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
+	query := sqlf.Sprintf(
+		`SELECT DISTINCT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		repositoryID,
+	)
+
+	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	if err != nil {
+		t.Fatalf("unexpected error getting protected uploads: %s", err)
+	}
+
+	return ids
 }
 
 func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCountsByID map[int]int) {
@@ -939,4 +1534,102 @@ func keysOf(m map[string][]int) (keys []string) {
 	}
 
 	return keys
+}
+
+//
+// Benchmarks
+//
+
+func BenchmarkCalculateVisibleUploads(b *testing.B) {
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, dbtest.NewDB(logger, b))
+	store := New(db, &observation.TestContext)
+
+	graph, err := readBenchmarkCommitGraph()
+	if err != nil {
+		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
+	}
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
+	}
+
+	uploads, err := readBenchmarkCommitGraphView()
+	if err != nil {
+		b.Fatalf("unexpected error reading benchmark uploads: %s", err)
+	}
+	insertUploads(b, db, uploads...)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+}
+
+func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
+	contents, err := readBenchmarkFile("../../../commitgraph/testdata/customer1/commits.txt.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+}
+
+func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
+	// contents, err := readBenchmarkFile("../../../commitgraph/testdata/uploads.txt.gz")
+	contents, err := readBenchmarkFile("../../../../codeintel/commitgraph/testdata/customer1/uploads.csv.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	reader := csv.NewReader(bytes.NewReader(contents))
+
+	var uploads []shared.Upload
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		id, err := strconv.Atoi(record[0])
+		if err != nil {
+			return nil, err
+		}
+
+		uploads = append(uploads, shared.Upload{
+			ID:           id,
+			RepositoryID: 50,
+			Commit:       record[1],
+			Root:         record[2],
+		})
+	}
+
+	return uploads, nil
+}
+
+func readBenchmarkFile(path string) ([]byte, error) {
+	uploadsFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadsFile.Close()
+
+	r, err := gzip.NewReader(uploadsFile)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	contents, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }

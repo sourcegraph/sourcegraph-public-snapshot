@@ -105,7 +105,7 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 			interrupts: []MigrationInterrupt{
 				{Version: Version{3, 34}, MigrationIDs: []int{2}},
 				{Version: Version{3, 37}, MigrationIDs: []int{4}},
-				{Version: Version{3, 39}, MigrationIDs: []int{5}},
+				{Version: Version{3, 39}, MigrationIDs: []int{3, 5}},
 			},
 		},
 	} {
