@@ -13,7 +13,6 @@ import {
 import * as sourcegraph from 'sourcegraph'
 
 import {
-    fromHoverMerged,
     TextDocumentIdentifier,
     ContributableViewContainer,
     TextDocumentPositionParameters,
@@ -56,8 +55,17 @@ import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { updateContext } from './extensionHost'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
+import { newCodeIntelAPI } from '../../codeintel/api'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
+    const codeIntelAPI = newCodeIntelAPI()
+    function thenMaybeLoadingResult<T>(promise: Promise<T>): Promise<MaybeLoadingResult<T>> {
+        return promise.then<MaybeLoadingResult<T>>(result => {
+            const maybeLoadingResult: MaybeLoadingResult<T> = { isLoading: false, result }
+            return maybeLoadingResult
+        })
+    }
+
     const getTextDocument = (uri: string): ExtensionDocument => {
         const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
@@ -146,68 +154,24 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
-            const document = getTextDocument(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
-
-            return proxySubscribable(
-                callProviders(
-                    state.hoverProviders,
-                    providers => providersForDocument(document, providers, ({ selector }) => selector),
-                    ({ provider }) => provider.provideHover(document, position),
-                    results => fromHoverMerged(mergeProviderResults(results))
-                )
-            )
+            return proxySubscribable(from(thenMaybeLoadingResult(codeIntelAPI.getHover(textParameters))))
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) => {
-            const document = getTextDocument(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
-
-            return proxySubscribable(
-                callProviders(
-                    state.documentHighlightProviders,
-                    providers => providersForDocument(document, providers, ({ selector }) => selector),
-                    ({ provider }) => provider.provideDocumentHighlights(document, position),
-                    mergeProviderResults
-                ).pipe(map(result => (result.isLoading ? [] : result.result)))
-            )
+            return proxySubscribable(from(codeIntelAPI.getDocumentHighlights(textParameters)))
         },
         getDefinition: (textParameters: TextDocumentPositionParameters) => {
-            const document = getTextDocument(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
-
-            return proxySubscribable(
-                callProviders(
-                    state.definitionProviders,
-                    providers => providersForDocument(document, providers, ({ selector }) => selector),
-                    ({ provider }) => provider.provideDefinition(document, position),
-                    results => mergeProviderResults(results).map(fromLocation)
-                )
-            )
+            return proxySubscribable(from(thenMaybeLoadingResult(codeIntelAPI.getDefinition(textParameters))))
         },
         getReferences: (textParameters: TextDocumentPositionParameters, context: sourcegraph.ReferenceContext) => {
-            const document = getTextDocument(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
-
-            return proxySubscribable(
-                callProviders(
-                    state.referenceProviders,
-                    providers => providersForDocument(document, providers, ({ selector }) => selector),
-                    ({ provider }) => provider.provideReferences(document, position, context),
-                    results => mergeProviderResults(results).map(fromLocation)
-                )
-            )
+            return proxySubscribable(from(thenMaybeLoadingResult(codeIntelAPI.getReferences(textParameters, context))))
         },
         hasReferenceProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
-            const document = getTextDocument(textParameters.textDocument.uri)
-
-            return proxySubscribable(
-                state.referenceProviders.pipe(
-                    map(providers => providersForDocument(document, providers, ({ selector }) => selector).length !== 0)
-                )
-            )
+            return proxySubscribable(from(codeIntelAPI.hasReferenceProvidersForDocument(textParameters)))
         },
 
         getLocations: (id: string, textParameters: TextDocumentPositionParameters) => {
+            // TODO: delete `getLocations` when we remove the old reference panel
+            // because this endpoint is not anywhere else.
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
