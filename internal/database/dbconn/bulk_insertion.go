@@ -8,7 +8,8 @@ type key struct{}
 
 var bulkInsertionKey = key{}
 
-// isBulkInsertion returns true if the bulkInsertionKey context value is true.
+// isBulkInsertion indicates if a bulk insertion is occurring within this context,
+// as set by WithBulkInsertion
 func isBulkInsertion(ctx context.Context) bool {
 	v, ok := ctx.Value(bulkInsertionKey).(bool)
 	if !ok {
