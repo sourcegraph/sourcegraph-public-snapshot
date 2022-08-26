@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import {
     mdiLogoutVariant,
@@ -13,107 +13,124 @@ import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { H2, LoadingSpinner, Text, Button, Alert, useDebounce, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { CopyableText } from '../../../../components/CopyableText'
 import {
     SiteUserOrderBy,
     UsersManagementUsersListResult,
     UsersManagementUsersListVariables,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
-import { randomizeUserPassword, setUserIsSiteAdmin } from '../../../backend'
-import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, USERS_MANAGEMENT_USERS_LIST } from '../queries'
+import { USERS_MANAGEMENT_USERS_LIST } from '../queries'
 
 import { Table } from './Table'
+import { useUserListActions } from './useUserListActions'
 
 import styles from '../index.module.scss'
 
-type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
+export type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
 
 const LIMIT = 25
 interface UsersListProps {
     onActionEnd?: () => void
 }
 
-function parseDateRangeQueryParameter(rawValue: string): [Date, Date] | null | undefined {
+interface DateRangeQueryParameter {
+    range?: [Date, Date]
+    isNegated?: boolean
+}
+
+function parseDateRangeQueryParameter(rawValue: string): DateRangeQueryParameter {
     if (!rawValue) {
-        return
+        return {}
     }
-    const value = JSON.parse(rawValue)
+    const { range, isNegated } = JSON.parse(rawValue) as DateRangeQueryParameter
 
-    if (value === null) {
-        return null
+    if (Array.isArray(range) && range.length === 2) {
+        const [start, end] = range
+        return {
+            isNegated,
+            range: [new Date(start), new Date(end)],
+        }
     }
+    return {
+        isNegated,
+    }
+}
 
-    if (Array.isArray(value) && value.length === 2) {
-        return [new Date(value[0]), new Date(value[1])]
-    }
-    return null
+function stringifyDateRangeQueryParameter(dateRange: DateRangeQueryParameter): string {
+    return JSON.stringify(dateRange)
 }
 
 const DEFAULT_FILTERS = {
     searchText: '',
+    offset: '0',
     limit: LIMIT.toString(),
     orderBy: SiteUserOrderBy.EVENTS_COUNT,
     descending: 'false',
     isAdmin: '',
-    eventsCount: '',
+    maxEventsCount: '',
     lastActiveAt: '',
     createdAt: '',
     deletedAt: '',
 }
 
+const dateRangeQueryParameterToVariable = (
+    dateRange?: DateRangeQueryParameter
+): { empty?: boolean | null; gte?: string | null; lte?: string | null; not?: boolean | null } | null => {
+    if (!dateRange) {
+        return null
+    }
+    if (dateRange.range) {
+        const {
+            range: [start, end],
+            isNegated,
+        } = dateRange
+        return {
+            not: isNegated === undefined ? null : isNegated,
+            gte: startOfDay(start).toISOString(),
+            lte: endOfDay(end).toISOString(),
+        }
+    }
+
+    return {
+        empty: typeof dateRange.isNegated === 'boolean' ? dateRange.isNegated : null,
+    }
+}
+
 export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd }) => {
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedSearchText = useDebounce(filters.searchText, 300)
-    const showMore = useCallback(() => setFilters({ limit: (Number(filters.limit) + LIMIT).toString() }), [
-        filters.limit,
-        setFilters,
-    ])
 
-    const lastActiveAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.lastActiveAt), [filters.lastActiveAt])
-    const deletedAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.deletedAt), [filters.deletedAt])
-    const createdAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.createdAt), [filters.createdAt])
+    const lastActiveAt = useMemo(() => parseDateRangeQueryParameter(filters.lastActiveAt), [filters.lastActiveAt])
+    const deletedAt = useMemo(() => parseDateRangeQueryParameter(filters.deletedAt), [filters.deletedAt])
+    const createdAt = useMemo(() => parseDateRangeQueryParameter(filters.createdAt), [filters.createdAt])
+
+    const offset = Number(filters.offset)
+    const limit = Number(filters.limit)
+    const descending = filters.descending ? (JSON.parse(filters.descending) as boolean) : null
+    const siteAdmin = filters.isAdmin ? (JSON.parse(filters.isAdmin) as boolean) : null
 
     const { data, previousData, refetch, variables, error, loading } = useQuery<
         UsersManagementUsersListResult,
         UsersManagementUsersListVariables
     >(USERS_MANAGEMENT_USERS_LIST, {
         variables: {
-            first: Number(filters.limit),
+            limit,
+            offset,
             query: debouncedSearchText || null,
-            lastActiveAt:
-                lastActiveAtFilter === undefined
-                    ? null
-                    : {
-                          isNull: lastActiveAtFilter === null,
-                          after: lastActiveAtFilter === null ? null : startOfDay(lastActiveAtFilter[0]),
-                          before: lastActiveAtFilter === null ? null : endOfDay(lastActiveAtFilter[1]),
-                      },
-            deletedAt:
-                deletedAtFilter === undefined
-                    ? null
-                    : {
-                          isNull: deletedAtFilter === null,
-                          after: deletedAtFilter === null ? null : startOfDay(deletedAtFilter[0]),
-                          before: deletedAtFilter === null ? null : endOfDay(deletedAtFilter[1]),
-                      },
-            createdAt: !createdAtFilter
+            lastActiveAt: dateRangeQueryParameterToVariable(lastActiveAt),
+            deletedAt: dateRangeQueryParameterToVariable(deletedAt),
+            createdAt: dateRangeQueryParameterToVariable(createdAt),
+            eventsCount: !filters.maxEventsCount
                 ? null
                 : {
-                      after: startOfDay(createdAtFilter[0]),
-                      before: endOfDay(createdAtFilter[1]),
-                  },
-            eventsCount: !filters.eventsCount
-                ? null
-                : {
-                      max: Number(filters.eventsCount),
+                      lte: Number(filters.maxEventsCount),
                   },
             orderBy: filters.orderBy,
-            descending: filters.descending ? (JSON.parse(filters.descending) as boolean) : null,
-            siteAdmin: filters.isAdmin ? (JSON.parse(filters.isAdmin) as boolean) : null,
+            descending,
+            siteAdmin,
         },
     })
 
@@ -139,17 +156,30 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleDismissNotification,
     } = useUserListActions(handleActionEnd)
 
+    const setFiltersWithOffset = useCallback(
+        (newFilters: Partial<typeof filters>) => {
+            setFilters({ ...newFilters, ...newFilters, offset: DEFAULT_FILTERS.offset })
+        },
+        [setFilters]
+    )
+    const onLimitChange = useCallback((newLimit: number) => setFilters({ limit: newLimit.toString() }), [setFilters])
+
     const users = (data || previousData)?.site.users
+    const onPreviousPage = useCallback(() => setFilters({ offset: Math.max(0, offset - limit).toString() }), [
+        limit,
+        offset,
+        setFilters,
+    ])
+    const onNextPage = useCallback(() => {
+        const newOffset = offset + limit
+        if (users?.totalCount && users?.totalCount >= newOffset) {
+            setFilters({ offset: newOffset.toString() })
+        }
+    }, [limit, offset, setFilters, users?.totalCount])
+
     return (
         <div className="position-relative">
-            <div className="mb-4 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
-                <H2>Users</H2>
-                <Button size="sm" onClick={() => setFilters(DEFAULT_FILTERS)} outline={true} variant="secondary">
-                    Clear all filters
-                    <Icon aria-hidden={true} className="ml-1" svgPath={mdiClose} />
-                </Button>
-            </div>
-
+            <H2 className="my-4 ml-2">Users</H2>
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
@@ -176,14 +206,39 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                 <>
                     <Table
                         selectable={true}
-                        sortBy={{ key: filters.orderBy, descending: JSON.parse(filters.descending) as boolean }}
+                        sortBy={{ key: filters.orderBy, descending: !!descending }}
                         data={users.nodes}
+                        pagination={{
+                            onPrevious: onPreviousPage,
+                            onNext: onNextPage,
+                            onLimitChange,
+                            formatLabel: (start: number, end: number, total: number) =>
+                                `Showing ${start}-${end} of ${total} users`,
+                            limitOptions: [
+                                {
+                                    label: 'Show 25 per page',
+                                    value: LIMIT,
+                                },
+                                {
+                                    label: 'Show 50 per page',
+                                    value: LIMIT * 2,
+                                },
+                                {
+                                    label: 'Show 100 per page',
+                                    value: LIMIT * 4,
+                                },
+                            ],
+                            total: users.totalCount,
+                            offset,
+                            limit,
+                        }}
                         onSortByChange={value => {
-                            setFilters({
+                            setFiltersWithOffset({
                                 orderBy: value.key as SiteUserOrderBy,
                                 descending: value.descending.toString(),
                             })
                         }}
+                        onClearAllFiltersClick={() => setFiltersWithOffset(DEFAULT_FILTERS)}
                         getRowId={({ id }) => id}
                         actions={[
                             {
@@ -245,7 +300,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                     type: 'text',
                                     placeholder: 'Username, email, display name',
                                     onChange: value => {
-                                        setFilters({ searchText: value })
+                                        setFiltersWithOffset({ searchText: value })
                                     },
                                     value: filters.searchText,
                                 },
@@ -264,7 +319,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                         { value: 'false', label: 'No' },
                                     ],
                                     onChange: value => {
-                                        setFilters({ isAdmin: value })
+                                        setFiltersWithOffset({ isAdmin: value })
                                     },
                                     value: filters.isAdmin,
                                 },
@@ -290,9 +345,9 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                         { value: '1000', label: '< 1000' },
                                     ],
                                     onChange: value => {
-                                        setFilters({ eventsCount: value })
+                                        setFiltersWithOffset({ maxEventsCount: value })
                                     },
-                                    value: filters.eventsCount,
+                                    value: filters.maxEventsCount,
                                 },
                             },
                             {
@@ -312,11 +367,18 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 filter: {
                                     type: 'date-range',
                                     placeholder: 'Select',
-                                    nullLabel: 'Never',
-                                    onChange: value => {
-                                        setFilters({ lastActiveAt: JSON.stringify(value) })
+                                    onChange: (range, isNegated) => {
+                                        setFiltersWithOffset({
+                                            lastActiveAt: stringifyDateRangeQueryParameter({ range, isNegated }),
+                                        })
                                     },
-                                    value: lastActiveAtFilter,
+                                    value: lastActiveAt.range,
+                                    negation: {
+                                        label: 'Find inactive users',
+                                        value: lastActiveAt.isNegated,
+                                        message:
+                                            'When checked will show users who have NOT been active in the selected range/all time.',
+                                    },
                                 },
                             },
                             {
@@ -329,10 +391,17 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 filter: {
                                     type: 'date-range',
                                     placeholder: 'Select',
-                                    onChange: value => {
-                                        setFilters({ createdAt: JSON.stringify(value) })
+                                    onChange: (range, isNegated) => {
+                                        setFiltersWithOffset({ createdAt: stringifyDateRangeQueryParameter({ range, isNegated }) })
                                     },
-                                    value: parseDateRangeQueryParameter(filters.createdAt),
+                                    value: createdAt.range,
+                                    isRequired: true,
+                                    negation: {
+                                        label: 'Find created NOT in range',
+                                        value: createdAt.isNegated,
+                                        message:
+                                            'When checked will show users who have NOT been created in the selected range.',
+                                    },
                                 },
                             },
                             {
@@ -347,11 +416,16 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 filter: {
                                     type: 'date-range',
                                     placeholder: 'Select',
-                                    nullLabel: 'Not Deleted',
-                                    onChange: value => {
-                                        setFilters({ deletedAt: JSON.stringify(value) })
+                                    onChange: (range, isNegated) => {
+                                        setFiltersWithOffset({ deletedAt: stringifyDateRangeQueryParameter({ range, isNegated }) })
                                     },
-                                    value: deletedAtFilter,
+                                    value: deletedAt.range,
+                                    negation: {
+                                        label: 'Find deleted NOT in range/all time',
+                                        value: deletedAt.isNegated,
+                                        message:
+                                            'When checked will show users who have NOT been deleted in the selected range/all time.',
+                                    },
                                 },
                             },
                         ]}
@@ -363,16 +437,6 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                             </Text>
                         }
                     />
-                    <div className="d-flex justify-content-between text-muted mb-4">
-                        <Text>
-                            Showing {users.nodes.length} of {users.totalCount} users
-                        </Text>
-                        {users.nodes.length !== users.totalCount ? (
-                            <Button variant="link" onClick={showMore}>
-                                Show More
-                            </Button>
-                        ) : null}
-                    </div>
                 </>
             )}
         </div>
@@ -399,7 +463,7 @@ function RenderUsernameAndEmail({ username, email, displayName, deletedAt }: Sit
 
 type ActionHandler = (users: SiteUser[]) => void
 
-interface UseUserListActionReturnType {
+export interface UseUserListActionReturnType {
     handleForceSignOutUsers: ActionHandler
     handleDeleteUsers: ActionHandler
     handleDeleteUsersForever: ActionHandler
@@ -410,178 +474,4 @@ interface UseUserListActionReturnType {
     handleResetUserPassword: ActionHandler
 }
 
-const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')
-
-function useUserListActions(onEnd: (error?: any) => void): UseUserListActionReturnType {
-    const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)
-    const [deleteUsers] = useMutation(DELETE_USERS)
-    const [deleteUsersForever] = useMutation(DELETE_USERS_FOREVER)
-
-    const [notification, setNotification] = useState<UseUserListActionReturnType['notification']>()
-
-    const handleDismissNotification = useCallback(() => setNotification(undefined), [])
-
-    const onError = useCallback(
-        (error: any) => {
-            setNotification({
-                text: (
-                    <Text as="span">
-                        Something went wrong :(!
-                        <Text as="pre" className="m-1" size="small">
-                            {error?.message}
-                        </Text>
-                    </Text>
-                ),
-                isError: true,
-            })
-            console.error(error)
-            onEnd(error)
-        },
-        [onEnd]
-    )
-
-    const createOnSuccess = useCallback(
-        (text: React.ReactNode, shouldReload = false) => () => {
-            setNotification({ text })
-            if (shouldReload) {
-                onEnd()
-            }
-        },
-        [onEnd]
-    )
-
-    const handleForceSignOutUsers = useCallback(
-        (users: SiteUser[]) => {
-            if (confirm('Are you sure you want to force sign out the selected user(s)?')) {
-                forceSignOutUsers({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully force signed out following {users.length} user(s):{' '}
-                                <strong>{getUsernames(users)}</strong>
-                            </Text>
-                        )
-                    )
-                    .catch(onError)
-            }
-        },
-        [forceSignOutUsers, onError, createOnSuccess]
-    )
-
-    const handleDeleteUsers = useCallback(
-        (users: SiteUser[]) => {
-            if (confirm('Are you sure you want to delete the selected user(s)?')) {
-                deleteUsers({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully deleted following {users.length} user(s):{' '}
-                                <strong>{getUsernames(users)}</strong>
-                            </Text>,
-                            true
-                        )
-                    )
-                    .catch(onError)
-            }
-        },
-        [deleteUsers, onError, createOnSuccess]
-    )
-    const handleDeleteUsersForever = useCallback(
-        (users: SiteUser[]) => {
-            if (confirm('Are you sure you want to delete the selected user(s)?')) {
-                deleteUsersForever({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully deleted forever following {users.length} user(s):{' '}
-                                <strong>{getUsernames(users)}</strong>
-                            </Text>,
-                            true
-                        )
-                    )
-                    .catch(onError)
-            }
-        },
-        [deleteUsersForever, onError, createOnSuccess]
-    )
-
-    const handlePromoteToSiteAdmin = useCallback(
-        ([user]: SiteUser[]) => {
-            if (confirm('Are you sure you want to promote the selected user to site admin?')) {
-                setUserIsSiteAdmin(user.id, true)
-                    .toPromise()
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully promoted user <strong>{user.username}</strong> to site admin.
-                            </Text>,
-                            true
-                        )
-                    )
-                    .catch(onError)
-            }
-        },
-        [onError, createOnSuccess]
-    )
-
-    const handleRevokeSiteAdmin = useCallback(
-        ([user]: SiteUser[]) => {
-            if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
-                setUserIsSiteAdmin(user.id, false)
-                    .toPromise()
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully revoked site admin from <strong>{user.username}</strong> user.
-                            </Text>,
-                            true
-                        )
-                    )
-                    .catch(onError)
-            }
-        },
-        [onError, createOnSuccess]
-    )
-
-    const handleResetUserPassword = useCallback(
-        ([user]: SiteUser[]) => {
-            if (confirm('Are you sure you want to reset the selected user password?')) {
-                randomizeUserPassword(user.id)
-                    .toPromise()
-                    .then(({ resetPasswordURL }) => {
-                        if (resetPasswordURL === null) {
-                            createOnSuccess(
-                                <Text as="span">
-                                    Password was reset. The reset link was sent to the primary email of the user:{' '}
-                                    <strong>{user.username}</strong>
-                                </Text>
-                            )()
-                        } else {
-                            createOnSuccess(
-                                <>
-                                    <Text>
-                                        Password was reset. You must manually send <strong>{user.username}</strong> this
-                                        reset link:
-                                    </Text>
-                                    <CopyableText text={resetPasswordURL} size={40} />
-                                </>
-                            )()
-                        }
-                    })
-                    .catch(onError)
-            }
-        },
-        [onError, createOnSuccess]
-    )
-
-    return {
-        notification,
-        handleForceSignOutUsers,
-        handleDeleteUsers,
-        handleDeleteUsersForever,
-        handlePromoteToSiteAdmin,
-        handleRevokeSiteAdmin,
-        handleResetUserPassword,
-        handleDismissNotification,
-    }
-}
+export const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')

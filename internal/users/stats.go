@@ -11,36 +11,56 @@ import (
 )
 
 type UsersStatsDateTimeRange struct {
-	Before *string
-	After  *string
+	Lte   *string
+	Gte   *string
+	Empty *bool
+	Not   *bool
+}
+
+func (d *UsersStatsDateTimeRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+	conds := []*sqlf.Query{}
+
+	if d.Empty != nil && *d.Empty {
+		conds = append(conds, sqlf.Sprintf(column + " IS NULL"))
+	} else {
+		if d.Lte != nil {
+			lte, err := time.Parse(time.RFC3339, *d.Lte)
+			if err != nil {
+				return nil, err
+			}
+			conds = append(conds, sqlf.Sprintf(column + " <= %s", lte))
+		}
+		if d.Gte != nil {
+			gte, err := time.Parse(time.RFC3339, *d.Gte)
+			if err != nil {
+				return nil, err
+			}
+			conds = append(conds, sqlf.Sprintf(column + " >= %s", gte))
+		}
+	}
+
+	if d.Not != nil && *d.Not {
+		return []*sqlf.Query{sqlf.Sprintf("NOT (%s)", sqlf.Join(conds, "AND"))}, nil
+	}
+	return conds, nil
 }
 
 type UsersStatsNumberRange struct {
-	Min  *float64
-	Max  *float64
+	Gte *float64
+	Lte *float64
 }
 
-func (d *UsersStatsDateTimeRange) Parse() (before *time.Time, after *time.Time, err error) {
-	if d.Before != nil {
-		beforeTime, err := time.Parse(time.RFC3339, *d.Before)
-		if err != nil {
-			return nil, nil, err
-		}
-		before = &beforeTime
-	}
-	if d.After != nil {
-		afterTime, err := time.Parse(time.RFC3339, *d.After)
-		if err != nil {
-			return nil, nil, err
-		}
-		after = &afterTime
-	}
-	return before, after, nil
-}
+func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+	var conds []*sqlf.Query
 
-type UsersStatsNullableDateRange struct {
-	UsersStatsDateTimeRange
-	IsNull *bool
+	if d.Lte != nil {
+		conds = append(conds, sqlf.Sprintf(column + " <= %s", d.Lte))
+	}
+	if d.Gte != nil {
+		conds = append(conds, sqlf.Sprintf(column + " >= %s", d.Gte))
+	}
+
+	return conds, nil
 }
 
 type UsersStatsFilters struct {
@@ -48,8 +68,8 @@ type UsersStatsFilters struct {
 	SiteAdmin    *bool
 	Username     *string
 	Email        *string
-	LastActiveAt *UsersStatsNullableDateRange
-	DeletedAt    *UsersStatsNullableDateRange
+	LastActiveAt *UsersStatsDateTimeRange
+	DeletedAt    *UsersStatsDateTimeRange
 	CreatedAt    *UsersStatsDateTimeRange
 	EventsCount  *UsersStatsNumberRange
 }
@@ -75,57 +95,39 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
 	}
 	if s.Filters.DeletedAt != nil {
-		if s.Filters.DeletedAt.IsNull != nil && *s.Filters.DeletedAt.IsNull {
-			conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-		} else {
-			before, after, err := s.Filters.DeletedAt.Parse()
-			if err != nil {
-				return nil, err
-			}
-			if before != nil {
-				conds = append(conds, sqlf.Sprintf("deleted_at <= %s", before))
-			}
-			if after != nil {
-				conds = append(conds, sqlf.Sprintf("deleted_at >= %s", after))
-			}
-		}
-	}
-
-	if s.Filters.LastActiveAt != nil {
-		if s.Filters.LastActiveAt.IsNull != nil && *s.Filters.LastActiveAt.IsNull {
-			conds = append(conds, sqlf.Sprintf("last_active_at IS NULL"))
-		} else {
-			before, after, err := s.Filters.LastActiveAt.Parse()
-			if err != nil {
-				return nil, err
-			}
-			if before != nil {
-				conds = append(conds, sqlf.Sprintf("last_active_at <= %s", before))
-			}
-			if after != nil {
-				conds = append(conds, sqlf.Sprintf("last_active_at >= %s", after))
-			}
-		}
-	}
-	if s.Filters.CreatedAt != nil {
-		before, after, err := s.Filters.CreatedAt.Parse()
+		deletedAtConds, err := s.Filters.DeletedAt.toSQLConds("deleted_at")
 		if err != nil {
 			return nil, err
 		}
-		if before != nil {
-			conds = append(conds, sqlf.Sprintf("created_at <= %s", before))
+		conds = append(conds, deletedAtConds...)
+	}
+
+	if s.Filters.LastActiveAt != nil {
+		lastActiveAtConds, err := s.Filters.LastActiveAt.toSQLConds("last_active_at")
+		if err != nil {
+			return nil, err
 		}
-		if after != nil {
-			conds = append(conds, sqlf.Sprintf("created_at >= %s", after))
+		conds = append(conds, lastActiveAtConds...)
+	}
+	if s.Filters.CreatedAt != nil {
+		createdAtConds, err := s.Filters.CreatedAt.toSQLConds("created_at")
+		if err != nil {
+			return nil, err
 		}
+		conds = append(conds, createdAtConds...)
 	}
 
 	if s.Filters.EventsCount != nil {
-		if s.Filters.EventsCount.Max != nil {
-			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Max))
+		eventsCountConds, err := s.Filters.EventsCount.toSQLConds("events_count")
+		if err != nil {
+			return nil, err
 		}
-		if s.Filters.EventsCount.Min != nil {
-			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Min))
+		conds = append(conds, eventsCountConds...)
+		if s.Filters.EventsCount.Lte != nil {
+			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
+		}
+		if s.Filters.EventsCount.Gte != nil {
+			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
 		}
 	}
 	return conds, nil
@@ -171,7 +173,8 @@ func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 type UsersStatsListUsersFilters struct {
 	OrderBy    *string
 	Descending *bool
-	First      *int32
+	Limit      *int32
+	Offset     *int32
 }
 
 func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsersFilters) ([]*UserStatItem, error) {
@@ -194,8 +197,14 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 
 	// LIMIT
 	limit := int32(100)
-	if filters.First != nil {
-		limit = *filters.First
+	if filters.Limit != nil {
+		limit = *filters.Limit
+	}
+
+	// OFFSET
+	offset := int32(0)
+	if filters.Offset != nil {
+		offset = *filters.Offset
 	}
 
 	conds, err := s.makeQueryParameters()
@@ -204,7 +213,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	}
 
 	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
-	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s`, sqlf.Join(conds, "AND"), orderBy, limit))
+	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 

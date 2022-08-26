@@ -8,10 +8,10 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
                     userCount
                 }
             }
-            adminUsers: users(siteAdmin: true, deletedAt: { isNull: true }) {
+            adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
                 totalCount
             }
-            registeredUsers: users(deletedAt: { isNull: true }) {
+            registeredUsers: users(deletedAt: { empty: true }) {
                 totalCount
             }
         }
@@ -20,9 +20,10 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
 
 export const USERS_MANAGEMENT_USERS_LIST = gql`
     query UsersManagementUsersList(
-        $first: Int!
-        $lastActiveAt: SiteUsersNullableDateRangeInput
-        $deletedAt: SiteUsersNullableDateRangeInput
+        $limit: Int!
+        $offset: Int!
+        $lastActiveAt: SiteUsersDateRangeInput
+        $deletedAt: SiteUsersDateRangeInput
         $createdAt: SiteUsersDateRangeInput
         $eventsCount: SiteUsersNumberRangeInput
         $query: String
@@ -40,7 +41,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                 eventsCount: $eventsCount
             ) {
                 totalCount
-                nodes(first: $first, orderBy: $orderBy, descending: $descending) {
+                nodes(limit: $limit, offset: $offset, orderBy: $orderBy, descending: $descending) {
                     id
                     username
                     displayName

@@ -44,7 +44,7 @@
         height: 1.25rem;
 
         input {
-            margin-left: -1rem !important;
+            margin-left: -0.75rem !important;
         }
     }
 }
@@ -91,4 +91,8 @@
 
 .link-color {
     color: var(--link-color);
+}
+
+.pagination {
+    width: 20rem;
 }

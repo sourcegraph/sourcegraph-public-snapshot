@@ -5777,11 +5777,11 @@ type Site implements SettingsSubject {
         Returns users for the given lastActive enum period.
         When omitted does NOT apply and returns for all period available.
         """
-        lastActiveAt: SiteUsersNullableDateRangeInput
+        lastActiveAt: SiteUsersDateRangeInput
         """
         Returns either deleted or not deleted users. Returns all users when omitted.
         """
-        deletedAt: SiteUsersNullableDateRangeInput
+        deletedAt: SiteUsersDateRangeInput
         """
         Returns users who where created within a given date time range.
         """
@@ -6481,27 +6481,37 @@ enum SiteUserOrderBy {
 }
 
 """
-SiteUsersNullableDateRangeInput argument to filter based on date range or date equals to null
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
 """
-input SiteUsersNullableDateRangeInput {
-    after: DateTime
-    before: DateTime
-    isNull: Boolean
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
 }
 
 input SiteUsersNumberRangeInput {
-    min: Float
-    max: Float
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
 }
-
-"""
-SiteUsersNullableDateRangeInput argument to filter based on date range or date equals to null
-"""
-input SiteUsersDateRangeInput {
-    after: DateTime
-    before: DateTime
-}
-
 
 """
 Site users.
@@ -6516,9 +6526,13 @@ type SiteUsers {
     """
     nodes(
         """
-        Returns the first n users from the list.
+        Returns the "limit" number users from the list.
         """
-        first: Int
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
         """
         Returns users ordered by a given column.
         """

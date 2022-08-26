@@ -30,7 +30,7 @@ export const EXTENSIONS_STATISTICS = gql`
                     }
                 }
             }
-            users(deletedAt: { isNull: true }) {
+            users(deletedAt: { empty: true }) {
                 totalCount
             }
         }

@@ -11,14 +11,14 @@ import (
 )
 
 func (s *siteResolver) Users(ctx context.Context, args *struct {
-	Query            *string
-	SiteAdmin        *bool
-	Username         *string
-	Email            *string
-	CreatedAt        *users.UsersStatsDateTimeRange
-	LastActiveAt     *users.UsersStatsNullableDateRange
-	DeletedAt        *users.UsersStatsNullableDateRange
-	EventsCount      *users.UsersStatsNumberRange
+	Query        *string
+	SiteAdmin    *bool
+	Username     *string
+	Email        *string
+	CreatedAt    *users.UsersStatsDateTimeRange
+	LastActiveAt *users.UsersStatsDateTimeRange
+	DeletedAt    *users.UsersStatsDateTimeRange
+	EventsCount  *users.UsersStatsNumberRange
 }) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
@@ -27,14 +27,14 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 
 	return &siteUsersResolver{
 		&users.UsersStats{DB: s.db, Filters: users.UsersStatsFilters{
-			Query:            args.Query,
-			SiteAdmin:        args.SiteAdmin,
-			Username:         args.Username,
-			Email:            args.Email,
-			LastActiveAt:     args.LastActiveAt,
-			DeletedAt:        args.DeletedAt,
-			CreatedAt:        args.CreatedAt,
-			EventsCount:      args.EventsCount,
+			Query:        args.Query,
+			SiteAdmin:    args.SiteAdmin,
+			Username:     args.Username,
+			Email:        args.Email,
+			LastActiveAt: args.LastActiveAt,
+			DeletedAt:    args.DeletedAt,
+			CreatedAt:    args.CreatedAt,
+			EventsCount:  args.EventsCount,
 		}}}, nil
 }
 
@@ -49,9 +49,10 @@ func (s *siteUsersResolver) TotalCount(ctx context.Context) (float64, error) {
 func (s *siteUsersResolver) Nodes(ctx context.Context, args *struct {
 	OrderBy    *string
 	Descending *bool
-	First      *int32
+	Limit      *int32
+	Offset     *int32
 }) ([]*siteUserResolver, error) {
-	users, err := s.userStats.ListUsers(ctx, &users.UsersStatsListUsersFilters{OrderBy: args.OrderBy, Descending: args.Descending, First: args.First})
+	users, err := s.userStats.ListUsers(ctx, &users.UsersStatsListUsersFilters{OrderBy: args.OrderBy, Descending: args.Descending, Limit: args.Limit, Offset: args.Offset})
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,17 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 
-import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown, mdiPencil } from '@mdi/js'
+import {
+    mdiMenuUp,
+    mdiMenuDown,
+    mdiArrowRightTop,
+    mdiArrowRightBottom,
+    mdiChevronDown,
+    mdiClose,
+    mdiChevronRight,
+    mdiChevronLeft,
+} from '@mdi/js'
 import classNames from 'classnames'
+import { isEqual } from 'lodash'
 
 import {
     Icon,
@@ -18,33 +28,28 @@ import {
     Select,
 } from '@sourcegraph/wildcard'
 
-import { DateRangeSelect } from './DateRangeSelect'
+import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'
 
 import styles from './Table.module.scss'
 
-type ColumnFilterProps =
-    | {
-          type: 'text'
-          placeholder: string
-          value?: string
-          onChange?: (value: string) => void
-      }
-    | {
-          type: 'select'
-          options: { label: string; value: string }[]
-          value?: string
-          onChange?: (value: string) => void
-      }
-    | {
-          type: 'date-range'
-          placeholder: string
-          value?: [Date, Date] | null
-          /**
-           * If provided, will allow "null" value selection
-           */
-          nullLabel?: string
-          onChange?: (value?: [Date, Date] | null) => void
-      }
+interface TextFilterProps {
+    type: 'text'
+    placeholder: string
+    value?: string
+    onChange?: (value: string) => void
+}
+
+interface SelectFilterProps {
+    type: 'select'
+    options: {
+        label: string
+        value: string
+    }[]
+    value?: string
+    onChange?: (value: string) => void
+}
+
+type ColumnFilterProps = TextFilterProps | SelectFilterProps | (DateRangeSelectProps & { type: 'date-range' })
 
 const ColumnFilter: React.FunctionComponent<ColumnFilterProps> = props => {
     const { type, value, onChange } = props
@@ -75,14 +80,7 @@ const ColumnFilter: React.FunctionComponent<ColumnFilterProps> = props => {
         )
     }
     if (type === 'date-range') {
-        return (
-            <DateRangeSelect
-                placeholder={props.placeholder}
-                nullLabel={props.nullLabel}
-                value={value}
-                onChange={onChange}
-            />
-        )
+        return <DateRangeSelect {...props} value={value} onChange={onChange} />
     }
     return null
 }
@@ -121,7 +119,13 @@ interface TableProps<T> {
     selectable?: boolean
     note?: string | JSX.Element
     getRowId: (data: T) => string
+    sortBy?: {
+        key: string
+        descending: boolean
+    }
+    onClearAllFiltersClick?: () => void
     onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
+    pagination?: PaginationProps
 }
 
 export function Table<T>({
@@ -133,15 +137,20 @@ export function Table<T>({
     getRowId,
     onSortByChange,
     selectable = false,
+    onClearAllFiltersClick,
+    pagination,
 }: TableProps<T>): JSX.Element {
-    const [allSelected, setAllSelected] = useState(false)
     const [selection, setSelection] = useState<T[]>([])
 
     useEffect(() => {
-        if (allSelected) {
-            setSelection(data)
-        }
-    }, [allSelected, data])
+        setSelection([])
+    }, [data])
+
+    const isAllSelected = useMemo(() => {
+        const selectedIDs = selection.map(getRowId)
+        const allIDs = data.map(getRowId)
+        return isEqual(selectedIDs.sort(), allIDs.sort()) && selectedIDs.length > 0
+    }, [data, getRowId, selection])
 
     const onRowSelectionChange = useCallback(
         (row: T, selected: boolean): void => {
@@ -149,10 +158,6 @@ export function Table<T>({
                 ...selection.filter(selectedRow => getRowId(selectedRow) !== getRowId(row)),
                 ...(selected ? [row] : []),
             ])
-
-            if (!selected) {
-                setAllSelected(false)
-            }
         },
         [getRowId]
     )
@@ -169,9 +174,8 @@ export function Table<T>({
                 render: function RenderActions(user: T) {
                     return (
                         <div className="d-flex justify-content-end">
-                            <Actions actions={actions} selection={[user]}>
-                                <Icon aria-label="Pencil icon" svgPath={mdiPencil} className="ml-1" />
-                                <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
+                            <Actions actions={actions} selection={[user]} className="border-0">
+                                ...
                             </Actions>
                         </div>
                     )
@@ -181,13 +185,49 @@ export function Table<T>({
         [actions, columns]
     )
 
+    const onPreviousPage = useCallback(() => {
+        if (pagination) {
+            pagination.onPrevious()
+            setSelection([])
+        }
+    }, [pagination])
+
+    const onNextPage = useCallback(() => {
+        if (pagination) {
+            pagination.onNext()
+            setSelection([])
+        }
+    }, [pagination])
+
+    const onLimitChange = useCallback(
+        (newLimit: number) => {
+            if (pagination?.onLimitChange) {
+                pagination.onLimitChange(newLimit)
+                setSelection([])
+            }
+        },
+        [pagination]
+    )
+
     return (
         <>
-            {selectable && (
-                <div className="mb-4">
-                    <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />
-                </div>
-            )}
+            <div className="mb-4 d-flex justify-content-between">
+                {selectable && <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />}
+                {pagination && (
+                    <Pagination
+                        {...pagination}
+                        onPrevious={onPreviousPage}
+                        onLimitChange={onLimitChange}
+                        onNext={onNextPage}
+                    />
+                )}
+                {onClearAllFiltersClick && (
+                    <Button onClick={onClearAllFiltersClick} outline={true} variant="secondary">
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiClose} />
+                        Clear filters
+                    </Button>
+                )}
+            </div>
             <table className={styles.table}>
                 <thead>
                     <tr>
@@ -197,13 +237,11 @@ export function Table<T>({
                                     <Checkbox
                                         aria-labelledby="Select all checkbox"
                                         className="m-0"
-                                        checked={allSelected}
+                                        checked={isAllSelected}
                                         onChange={event => {
                                             if (event.target.checked) {
-                                                setAllSelected(true)
                                                 setSelection(data)
                                             } else {
-                                                setAllSelected(false)
                                                 setSelection([] as T[])
                                             }
                                         }}
@@ -268,7 +306,7 @@ export function Table<T>({
                 </thead>
                 <tbody>
                     {data.map(item => (
-                        <Row<T>
+                        <Row
                             key={getRowId(item)}
                             data={item}
                             columns={memoizedColumns}
@@ -351,13 +389,10 @@ function SelectionActions<T>({ actions, position, selection }: SelectionActionsP
                 svgPath={position === 'top' ? mdiArrowRightTop : mdiArrowRightBottom}
                 size="md"
                 aria-label={position === 'top' ? 'Sort descending' : 'Sort ascending'}
-                className={styles.actionsArrowIcon}
+                className={classNames(styles.actionsArrowIcon, 'ml-2 mr-1')}
             />
-            <Text className="mx-2 my-0">
-                {selection.length ? `With ${selection.length} selected` : 'With selected'}
-            </Text>
             <Actions actions={actions} selection={selection} disabled={!selection.length}>
-                Actions
+                {selection.length ? `With ${selection.length} selected` : 'Actions'}
                 <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
             </Actions>
         </div>
@@ -369,9 +404,10 @@ interface ActionsProps<T> {
     actions: IAction<T>[]
     disabled?: boolean
     children?: React.ReactNode
+    className?: string
 }
 
-function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>): JSX.Element {
+function Actions<T>({ children, actions, disabled, selection, className }: ActionsProps<T>): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
@@ -379,10 +415,10 @@ function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>)
 
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
-            <PopoverTrigger as={Button} disabled={disabled} variant="secondary" outline={true}>
+            <PopoverTrigger as={Button} className={className} disabled={disabled} variant="secondary" outline={true}>
                 {children}
             </PopoverTrigger>
-            <PopoverContent position={Position.bottom}>
+            <PopoverContent position={Position.bottom} focusLocked={false}>
                 <ul className="list-unstyled mb-0">
                     {actions
                         .filter(({ condition }) => !condition || condition(selection))
@@ -414,3 +450,57 @@ function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>)
         </Popover>
     )
 }
+
+interface PaginationProps {
+    total: number
+    offset: number
+    limit: number
+    limitOptions?: { value: number; label: string }[]
+    onPrevious: () => void
+    onNext: () => void
+    onLimitChange: (limit: number) => void
+    formatLabel?: (start: number, end: number, total: number) => string
+}
+
+const Pagination: React.FunctionComponent<PaginationProps> = ({
+    onPrevious,
+    limit,
+    offset,
+    total,
+    limitOptions,
+    onLimitChange,
+    onNext,
+    formatLabel = (start: number, end: number, total: number) => `${start}-${end} of ${total}`,
+}) => (
+    <div className={classNames('d-flex justify-content-between align-items-center text-muted', styles.pagination)}>
+        <Button className="mr-2" onClick={onPrevious}>
+            <Icon aria-label="Show previous icon" svgPath={mdiChevronLeft} />
+        </Button>
+        <Popover>
+            <PopoverTrigger as={Text} className="m-0 p-0 cursor-pointer">
+                <Text as="span">{formatLabel(Math.min(offset + 1), Math.min(offset + limit, total), total)}</Text>
+            </PopoverTrigger>
+            <PopoverContent focusLocked={false}>
+                <ul className="list-unstyled mb-0">
+                    {limitOptions?.map(item => (
+                        <Button
+                            className="d-flex cursor-pointer"
+                            key={item.value}
+                            variant="link"
+                            as="li"
+                            outline={true}
+                            onClick={() => onLimitChange(item.value)}
+                        >
+                            <span className={classNames('ml-2', item.value === limit && 'font-weight-bold')}>
+                                {item.label}
+                            </span>
+                        </Button>
+                    ))}
+                </ul>
+            </PopoverContent>
+        </Popover>
+        <Button onClick={onNext}>
+            <Icon aria-label="Show next icon" svgPath={mdiChevronRight} />
+        </Button>
+    </div>
+)
