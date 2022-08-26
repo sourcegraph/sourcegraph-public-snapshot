@@ -2466,7 +2466,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()
-		workerStore := webhookworker.CreateWorkerStore(s.Handle())
+		workerStore := webhookworker.CreateWorkerStore(logger, s.Handle())
 
 		repo := &types.Repo{
 			ID:   1,

@@ -38,8 +38,9 @@ func (j *indexingJob) Config() []env.Config {
 }
 
 func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+	logger = logger.Scoped("routines", "indexing job routines")
 	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "indexing job routines"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

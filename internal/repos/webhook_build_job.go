@@ -56,7 +56,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	db := database.NewDB(logger, mainAppDB)
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(store.Handle())
+	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
 
 	cf := httpcli.ExternalClientFactory
 	opts := []httpcli.Opt{}
@@ -67,7 +67,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	return []goroutine.BackgroundRoutine{
 		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewResetter(ctx, logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
 		webhookworker.NewCleaner(ctx, baseStore, observationContext),
 	}, nil
 }
