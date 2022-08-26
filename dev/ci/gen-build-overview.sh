@@ -13,7 +13,21 @@ mkdir -p annotations
 
 file="./annotations/Build metadata.md"
 
-echo ${BUILD_METADATA} | jq -r '. | "Run type: `\(.RunType)`<br/>"' >> "$file"
-echo ${BUILD_METADATA} | jq -r '. | "Version: `\(.Version)`<br/>"' >> "$file"
-echo ${BUILD_METADATA} | jq -r '. | "Detected Diff changes: `\(.Diff)`<br/>"' >> "$file"
-echo ${BUILD_METADATA} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`<br/>"' >> "$file"
+# extract all the data we want
+runType=$(echo ${BUILD_METADATA} | jq -r '. | "Run type: `\(.RunType)`<br/>"')
+version=$(echo ${BUILD_METADATA} | jq -r '. | "Version: `\(.Version)`<br/>"')
+diff=$(echo ${BUILD_METADATA} | jq -r '. | "Detected Diff changes: `\(.Diff)`<br/>"')
+messageFlags=$(echo ${BUILD_METADATA} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`<br/>"')
+
+# Now we write it selectively out to a file
+
+# version might be empty so we selectively output it
+if [[ -z $version ]]; then
+    echo "$version" >> "$file"
+fi
+
+cat <<EOF >> $"file"
+${runType}
+${diff}
+${messageFlags}
+EOF
