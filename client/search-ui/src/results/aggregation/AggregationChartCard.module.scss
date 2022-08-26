@@ -1,5 +1,18 @@
 .container {
     position: relative;
+    overflow: auto;
+}
+
+.error-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.error {
+    overflow: auto;
+    margin: 0;
+    margin-bottom: 0.5rem;
 }
 
 .chart-overlay {
@@ -13,6 +26,7 @@
     justify-content: center;
     color: var(--text-muted);
     padding: 1rem;
+    overflow: auto;
 }
 
 .missing-label-count {
