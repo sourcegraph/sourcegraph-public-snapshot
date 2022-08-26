@@ -297,8 +297,11 @@ describe('Search aggregation', () => {
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
 
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
-            await driver.page.waitForSelector('[aria-label="chart content group"] g:nth-child(2) a')
+            await driver.page.waitForSelector(
+                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
+            )
             await driver.page.click(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
             )
