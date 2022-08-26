@@ -46,7 +46,7 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureExplicitPermissionsAPI, license(plan(oldEnterprise)), true)
 		check(t, FeatureExplicitPermissionsAPI, license(), true)
 
-		check(t, FeatureExplicitPermissionsAPI, license(plan(team)), false)
+		check(t, FeatureExplicitPermissionsAPI, license(plan(team)), true)
 		check(t, FeatureExplicitPermissionsAPI, license(plan(enterprise0)), true)
 
 		check(t, FeatureExplicitPermissionsAPI, license(plan(business0)), false)
