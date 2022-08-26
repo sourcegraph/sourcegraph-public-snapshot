@@ -17,7 +17,7 @@ file="./annotations/Build\ metadata.md"
 # extract all the data we want
 runType=$(echo ${BUILD_METADATA} | jq -r '. | "Run type: `\(.RunType)`<br/>"')
 version=$(echo ${BUILD_METADATA} | jq -r '. | "Version: `\(.Version)`<br/>"')
-diff=$(echo ${BUILD_METADATA} | jq -r '. | "Detected Diff changes: `\(.Diff)`<br/>"')
+diff=$(echo ${BUILD_METADATA} | jq -r '. | "Detected changes: `\(.Diff)`<br/>"')
 messageFlags=$(echo ${BUILD_METADATA} | jq -r -c '.MessageFlags | to_entries | map(.key + " = " + (.value|tostring)) | join(" ") | "MessageFlags: `\(.)`<br/>"')
 
 # Now we write it selectively out to a file
@@ -31,4 +31,6 @@ cat <<EOF >>"$file"
 ${runType}
 ${diff}
 ${messageFlags}
+<br/>
+If you see this emoji ⚠️A next to your job, the job **Soft Failed**.
 EOF

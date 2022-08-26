@@ -85,31 +85,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(op)
 	}
 
-	// Construct pipeline
-	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
-		AfterEveryStepOpts: []bk.StepOpt{
-			withDefaultTimeout,
-			withAgentQueueDefaults,
-			withAgentLostRetries,
-		},
-	}
-	// // Toggle profiling of each step
-	// if c.MessageFlags.ProfilingEnabled {
-	// 	pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
-	// }
-
-	// Apply operations on pipeline
-	ops.Apply(pipeline)
-
-	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
-		return nil, err
-	}
-
-	return pipeline, nil
-
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
