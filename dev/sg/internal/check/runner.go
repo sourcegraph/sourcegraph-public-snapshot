@@ -18,6 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const (
+	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
+	manualFixChoice    = "Manual fix: Let me fix this manually"
+	goBackChoice       = "Go back"
+)
+
 type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
 
 type Runner[Args any] struct {
@@ -455,12 +461,12 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 
 	choices := map[int]string{}
 	if fixableCategory {
-		choices[1] = "You try fixing all of it for me."
-		choices[2] = "I want to fix these manually"
-		choices[3] = "Go back"
+		choices[1] = automaticFixChoice
+		choices[2] = manualFixChoice
+		choices[3] = goBackChoice
 	} else {
-		choices[1] = "I want to fix these manually"
-		choices[2] = "Go back"
+		choices[1] = manualFixChoice
+		choices[2] = goBackChoice
 	}
 
 	choice, err := getChoice(r.Input, r.Output, choices)

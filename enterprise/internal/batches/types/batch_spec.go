@@ -12,12 +12,7 @@ import (
 func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
-	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
-		// Backend always supports all latest features.
-		AllowArrayEnvironments: true,
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-	})
+	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec))
 
 	return c, err
 }

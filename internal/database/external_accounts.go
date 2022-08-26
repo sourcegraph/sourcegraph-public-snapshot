@@ -299,6 +299,10 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	idStrings := make([]string, len(ids))
 	for i, id := range ids {
 		idStrings[i] = strconv.Itoa(int(id))

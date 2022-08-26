@@ -38,7 +38,7 @@ func (inputs Inputs) MaxResults() int {
 
 // DefaultLimit is the default limit to use if not specified in query.
 func (inputs Inputs) DefaultLimit() int {
-	if inputs.Protocol == Batch || inputs.PatternType == query.SearchTypeStructural {
+	if inputs.Protocol == Batch {
 		return limits.DefaultMaxSearchResults
 	}
 	return limits.DefaultMaxSearchResultsStreaming

@@ -3,32 +3,32 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   #include <stdbool.h>
-//^^^^^^^^ IdentifierKeyword
-//        ^ IdentifierNamespace
-//         ^^^^^^^^^^^ StringLiteral
+//^^^^^^^^ IdentifierKeyword  keyword.control.import.include.c
+//        ^ IdentifierNamespace  string.quoted.other.lt-gt.include.c
+//         ^^^^^^^^^^^ StringLiteral  string.quoted.other.lt-gt.include.c
   
   int main() {
-//^^^ IdentifierType
-//    ^^^^ IdentifierFunction
-//        ^ PunctuationBracket
-//         ^ PunctuationBracket
-//           ^ PunctuationBracket
+//^^^ IdentifierType  storage.type.c
+//    ^^^^ IdentifierFunction  entity.name.function.c
+//        ^ PunctuationBracket  punctuation.section.group.begin.c
+//         ^ PunctuationBracket  punctuation.section.group.end.c
+//           ^ PunctuationBracket  punctuation.section.block.begin.c
     // Single line comment
-//  ^^^^^^^^^^^^^^^^^^^^^^ Comment
+//  ^^^^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.c
     int x = 1;
-//  ^^^ IdentifierType
-//        ^ IdentifierOperator
-//          ^ NumericLiteral
-//           ^ PunctuationDelimiter
+//  ^^^ IdentifierType  storage.type.c
+//        ^ IdentifierOperator  keyword.operator.assignment.c
+//          ^ NumericLiteral  storage.type.numeric.c
+//           ^ PunctuationDelimiter  punctuation.terminator.c
   
     /*
-//  ^^ Comment 6:2..8:5
+//  ^^ Comment 6:2..8:5  comment.block.c
      *Multi Line
      */
   
     return x;
-//  ^^^^^^ IdentifierKeyword
-//          ^ PunctuationDelimiter
+//  ^^^^^^ IdentifierKeyword  keyword.control.flow.return.c
+//          ^ PunctuationDelimiter  punctuation.terminator.c
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.c
 

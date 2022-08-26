@@ -62,7 +62,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(changesetSpecs))
 	for _, c := range changesetSpecs {
-		repo := reposByID[c.RepoID]
+		repo := reposByID[c.BaseRepoID]
 		// If it's not in reposByID the repository was filtered out by the
 		// authz-filter.
 		// In that case we'll set it anyway to nil and changesetSpecResolver

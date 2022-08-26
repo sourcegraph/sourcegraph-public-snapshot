@@ -14,6 +14,8 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
+	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,15 +69,17 @@ func TestDeleteLSIFIndex(t *testing.T) {
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()
+	mockAutoIndexingResolver := transportmocks.NewMockResolver()
+	mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
 
 	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.DeleteIndexByIDFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DeleteIndexByIDFunc.History()))
+	if len(mockAutoIndexingResolver.DeleteIndexByIDFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockAutoIndexingResolver.DeleteIndexByIDFunc.History()))
 	}
-	if val := mockResolver.DeleteIndexByIDFunc.History()[0].Arg1; val != 42 {
+	if val := mockAutoIndexingResolver.DeleteIndexByIDFunc.History()[0].Arg1; val != 42 {
 		t.Fatalf("unexpected index id. want=%d have=%d", 42, val)
 	}
 }
@@ -161,7 +165,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := store.GetIndexesOptions{
+	expected := autoindexingShared.GetIndexesOptions{
 		RepositoryID: 50,
 		State:        "s",
 		Term:         "q",
@@ -181,7 +185,7 @@ func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := store.GetIndexesOptions{
+	expected := autoindexingShared.GetIndexesOptions{
 		RepositoryID: 0,
 		State:        "",
 		Term:         "",

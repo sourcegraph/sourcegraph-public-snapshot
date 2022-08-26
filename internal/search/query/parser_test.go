@@ -207,10 +207,15 @@ func TestScanPredicate(t *testing.T) {
 		}
 	}
 
-	autogold.Want("Repo contains predicate", value{
-		Result:       `{"field":"repo","value":"contains(file:test)","negated":false}`,
+	autogold.Want("Repo contains file predicate", value{
+		Result:       `{"field":"repo","value":"contains.file(path:test)","negated":false}`,
 		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains(file:test)`))
+	}).Equal(t, test(`repo:contains.file(path:test)`))
+
+	autogold.Want("Repo contains path predicate", value{
+		Result:       `{"field":"repo","value":"contains.path(test)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`repo:contains.path(test)`))
 
 	autogold.Want("Repo contains commit after predicate", value{
 		Result:       `{"field":"repo","value":"contains.commit.after(last thursday)","negated":false}`,
@@ -223,14 +228,14 @@ func TestScanPredicate(t *testing.T) {
 	}).Equal(t, test(`repo:contains.commit.before(yesterday)`))
 
 	autogold.Want("Predicate contains escaped paranthesis", value{
-		Result:       `{"field":"repo","value":"contains(\\()","negated":false}`,
+		Result:       `{"field":"repo","value":"contains.file(content:\\()","negated":false}`,
 		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains(\()`))
+	}).Equal(t, test(`repo:contains.file(content:\()`))
 
-	autogold.Want("Repo contains not predicate", value{
-		Result:       `{"field":"repo","value":"contains","negated":false}`,
+	autogold.Want("Repo contains file not predicate", value{
+		Result:       `{"field":"repo","value":"contains.file","negated":false}`,
 		ResultLabels: "None",
-	}).Equal(t, test(`repo:contains`))
+	}).Equal(t, test(`repo:contains.file`))
 
 	autogold.Want("Repo with something that looks kinda like predicate", value{
 		Result:       `{"Kind":1,"Operands":[{"field":"repo","value":"nopredicate","negated":false},{"value":"(file:foo","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,

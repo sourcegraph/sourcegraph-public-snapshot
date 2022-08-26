@@ -3,120 +3,140 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   interface MyInterface
-//^^^^^^^^^ IdentifierType
+//^^^^^^^^^ IdentifierType  storage.type.java
+//          ^^^^^^^^^^^ Identifier  entity.name.class.java
   {
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.begin.java
        void abstract_func(int x,int y);
-//     ^^^^ IdentifierType
-//          ^^^^^^^^^^^^^ IdentifierFunction
-//                       ^ PunctuationBracket
-//                        ^^^ IdentifierType
-//                            ^ Identifier
-//                             ^ PunctuationBracket
-//                              ^^^ IdentifierType
-//                                  ^ Identifier
-//                                   ^ PunctuationBracket
-//                                    ^ PunctuationDelimiter
+//     ^^^^ IdentifierType  storage.type.void.java
+//          ^^^^^^^^^^^^^ IdentifierFunction  entity.name.function.java
+//                       ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                        ^^^ IdentifierType  storage.type.primitive.java
+//                            ^ Identifier  variable.parameter.java
+//                             ^ PunctuationBracket  punctuation.separator.comma.java
+//                              ^^^ IdentifierType  storage.type.primitive.java
+//                                  ^ Identifier  variable.parameter.java
+//                                   ^ PunctuationBracket  punctuation.section.parens.end.java
+//                                    ^ PunctuationDelimiter  punctuation.terminator.java
   
        default void default_Fun()
-//     ^^^^^^^ IdentifierKeyword
-//             ^^^^ IdentifierType
-//                  ^^^^^^^^^^^ IdentifierFunction
-//                             ^ PunctuationBracket
-//                              ^ PunctuationBracket
+//     ^^^^^^^ IdentifierKeyword  storage.modifier.java
+//             ^^^^ IdentifierType  storage.type.void.java
+//                  ^^^^^^^^^^^ IdentifierFunction  entity.name.function.java
+//                             ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                              ^ PunctuationBracket  punctuation.section.parens.end.java
       {
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.begin.java
            System.out.println("This is default method");
-//         ^^^^^^ IdentifierType
-//               ^ PunctuationBracket
-//                   ^ PunctuationBracket
-//                    ^^^^^^^ IdentifierFunction
-//                           ^ PunctuationBracket
-//                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                    ^ PunctuationBracket
-//                                                     ^ PunctuationDelimiter
+//         ^^^^^^ IdentifierType  support.class.java
+//               ^ PunctuationBracket  punctuation.accessor.dot.java
+//                   ^ PunctuationBracket  punctuation.accessor.dot.java
+//                    ^^^^^^^ IdentifierFunction  variable.function.java
+//                           ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.java
+//                                                    ^ PunctuationBracket  punctuation.section.parens.end.java
+//                                                     ^ PunctuationDelimiter  punctuation.terminator.java
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.end.java
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.java
   
   class Main
-//^^^^^ IdentifierType
+//^^^^^ IdentifierType  storage.type.java
+//      ^^^^ Identifier  entity.name.class.java
   {
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.begin.java
+      public static final String staticField = "42";
+//    ^^^^^^ IdentifierKeyword  storage.modifier.java
+//           ^^^^^^ IdentifierKeyword  storage.modifier.java
+//                  ^^^^^ IdentifierKeyword  storage.modifier.java
+//                        ^^^^^^ IdentifierType  support.class.java
+//                                           ^ IdentifierOperator  keyword.operator.assignment.java
+//                                             ^^^^ StringLiteral  string.quoted.double.java
+//                                                 ^ PunctuationDelimiter  punctuation.terminator.java
+      public final int field = 42;
+//    ^^^^^^ IdentifierKeyword  storage.modifier.java
+//           ^^^^^ IdentifierKeyword  storage.modifier.java
+//                 ^^^ IdentifierType  storage.type.primitive.java
+//                           ^ IdentifierOperator  keyword.operator.assignment.java
+//                             ^^ NumericLiteral  constant.numeric.integer.decimal.java
+//                               ^ PunctuationDelimiter  punctuation.terminator.java
        public static void main(String args[])
-//     ^^^^^^ IdentifierKeyword
-//            ^^^^^^ IdentifierKeyword
-//                   ^^^^ IdentifierType
-//                        ^^^^ IdentifierFunction
-//                            ^ PunctuationBracket
-//                             ^^^^^^ IdentifierType
-//                                    ^^^^ Identifier
-//                                        ^^ PunctuationBracket
-//                                          ^ PunctuationBracket
+//     ^^^^^^ IdentifierKeyword  storage.modifier.java
+//            ^^^^^^ IdentifierKeyword  storage.modifier.java
+//                   ^^^^ IdentifierType  storage.type.void.java
+//                        ^^^^ IdentifierFunction  entity.name.function.java
+//                            ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                             ^^^^^^ IdentifierType  support.class.java
+//                                    ^^^^ Identifier  variable.parameter.java
+//                                        ^^ PunctuationBracket  storage.modifier.array.java
+//                                          ^ PunctuationBracket  punctuation.section.parens.end.java
       {
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.begin.java
           //lambda expression
-//        ^^^^^^^^^^^^^^^^^^^ Comment
+//        ^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-slash.java
           MyInterface fobj = (int x, int y)->System.out.println(x+y);
-//        ^^^^^^^^^^^ IdentifierType
-//                         ^ IdentifierOperator
-//                           ^ PunctuationBracket
-//                            ^^^ IdentifierType
-//                                ^ Identifier
-//                                 ^ PunctuationBracket
-//                                   ^^^ IdentifierType
-//                                       ^ Identifier
-//                                        ^ PunctuationBracket
-//                                         ^^ IdentifierType
-//                                           ^^^^^^ IdentifierType
-//                                                 ^ PunctuationBracket
-//                                                     ^ PunctuationBracket
-//                                                      ^^^^^^^ IdentifierFunction
-//                                                             ^ PunctuationBracket
-//                                                               ^ IdentifierOperator
-//                                                                 ^ PunctuationBracket
-//                                                                  ^ PunctuationDelimiter
+//        ^^^^^^^^^^^ IdentifierType  support.class.java
+//                         ^ IdentifierOperator  keyword.operator.assignment.java
+//                           ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                            ^^^ IdentifierType  storage.type.primitive.java
+//                                ^ Identifier  variable.parameter.java
+//                                 ^ PunctuationBracket  punctuation.separator.comma.java
+//                                   ^^^ IdentifierType  storage.type.primitive.java
+//                                       ^ Identifier  variable.parameter.java
+//                                        ^ PunctuationBracket  punctuation.section.parens.end.java
+//                                         ^^ IdentifierType  storage.type.function.anonymous.java
+//                                           ^^^^^^ IdentifierType  support.class.java
+//                                                 ^ PunctuationBracket  punctuation.accessor.dot.java
+//                                                     ^ PunctuationBracket  punctuation.accessor.dot.java
+//                                                      ^^^^^^^ IdentifierFunction  variable.function.java
+//                                                             ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                                                               ^ IdentifierOperator  keyword.operator.arithmetic.java
+//                                                                 ^ PunctuationBracket  punctuation.section.parens.end.java
+//                                                                  ^ PunctuationDelimiter  punctuation.terminator.java
   
           System.out.print("The result = ");
-//        ^^^^^^ IdentifierType
-//              ^ PunctuationBracket
-//                  ^ PunctuationBracket
-//                   ^^^^^ IdentifierFunction
-//                        ^ PunctuationBracket
-//                         ^^^^^^^^^^^^^^^ StringLiteral
-//                                        ^ PunctuationBracket
-//                                         ^ PunctuationDelimiter
+//        ^^^^^^ IdentifierType  support.class.java
+//              ^ PunctuationBracket  punctuation.accessor.dot.java
+//                  ^ PunctuationBracket  punctuation.accessor.dot.java
+//                   ^^^^^ IdentifierFunction  variable.function.java
+//                        ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                         ^^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.java
+//                                        ^ PunctuationBracket  punctuation.section.parens.end.java
+//                                         ^ PunctuationDelimiter  punctuation.terminator.java
           fobj.abstract_func(5,5);
-//            ^ PunctuationBracket
-//             ^^^^^^^^^^^^^ IdentifierFunction
-//                          ^ PunctuationBracket
-//                           ^ NumericLiteral
-//                            ^ PunctuationBracket
-//                             ^ NumericLiteral
-//                              ^ PunctuationBracket
-//                               ^ PunctuationDelimiter
+//            ^ PunctuationBracket  punctuation.accessor.dot.java
+//             ^^^^^^^^^^^^^ IdentifierFunction  variable.function.java
+//                          ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                           ^ NumericLiteral  constant.numeric.integer.decimal.java
+//                            ^ PunctuationBracket  punctuation.separator.comma.java
+//                             ^ NumericLiteral  constant.numeric.integer.decimal.java
+//                              ^ PunctuationBracket  punctuation.section.parens.end.java
+//                               ^ PunctuationDelimiter  punctuation.terminator.java
           fobj.default_Fun();
-//            ^ PunctuationBracket
-//             ^^^^^^^^^^^ IdentifierFunction
-//                        ^ PunctuationBracket
-//                         ^ PunctuationBracket
-//                          ^ PunctuationDelimiter
+//            ^ PunctuationBracket  punctuation.accessor.dot.java
+//             ^^^^^^^^^^^ IdentifierFunction  variable.function.java
+//                        ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                         ^ PunctuationBracket  punctuation.section.parens.end.java
+//                          ^ PunctuationDelimiter  punctuation.terminator.java
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.end.java
       String format(String x) {
-//    ^^^^^^ IdentifierType
-//           ^^^^^^ IdentifierFunction
-//                 ^ PunctuationBracket
-//                  ^^^^^^ IdentifierType
-//                         ^ Identifier
-//                          ^ PunctuationBracket
-//                            ^ PunctuationBracket
-          return x;
-//        ^^^^^^ IdentifierKeyword
-//                ^ PunctuationDelimiter
+//    ^^^^^^ IdentifierType  support.class.java
+//           ^^^^^^ IdentifierFunction  entity.name.function.java
+//                 ^ PunctuationBracket  punctuation.section.parens.begin.java
+//                  ^^^^^^ IdentifierType  support.class.java
+//                         ^ Identifier  variable.parameter.java
+//                          ^ PunctuationBracket  punctuation.section.parens.end.java
+//                            ^ PunctuationBracket  punctuation.section.block.begin.java
+          return x + this.field;
+//        ^^^^^^ IdentifierKeyword  keyword.control.flow.return.java
+//                 ^ IdentifierOperator  keyword.operator.arithmetic.java
+//                   ^^^^ Identifier  variable.language.java
+//                       ^ PunctuationBracket  punctuation.accessor.dot.java
+//                             ^ PunctuationDelimiter  punctuation.terminator.java
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.end.java
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.java
 

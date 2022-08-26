@@ -3,43 +3,44 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   using System;
-//^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierNamespace
-//            ^ PunctuationDelimiter
+//^^^^^ IdentifierKeyword  keyword.control.import.cs
+//      ^^^^^^ IdentifierNamespace  meta.path.cs
+//            ^ PunctuationDelimiter  punctuation.terminator.cs
   
   namespace Example
-//^^^^^^^^^ IdentifierNamespace
+//^^^^^^^^^ IdentifierNamespace  storage.type.namespace.cs
+//          ^^^^^^^ Identifier  entity.name.namespace.cs
   {
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.begin.cs
       public void Something()
-//    ^^^^^^ IdentifierKeyword
-//           ^^^^ IdentifierType
-//                ^^^^^^^^^ IdentifierFunction
-//                         ^ PunctuationBracket
-//                          ^ PunctuationBracket
+//    ^^^^^^ IdentifierKeyword  storage.modifier.access.cs
+//           ^^^^ IdentifierType  storage.type.cs
+//                ^^^^^^^^^ IdentifierFunction  entity.name.function.cs
+//                         ^ PunctuationBracket  punctuation.section.parameters.begin.cs
+//                          ^ PunctuationBracket  punctuation.section.parameters.end.cs
       {
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.begin.cs
           var x = "世界";
-//        ^^^ IdentifierType
-//            ^ Identifier
-//              ^ IdentifierOperator
-//                ^^^^ StringLiteral
-//                    ^ PunctuationDelimiter
+//        ^^^ IdentifierType  storage.type.variable.cs
+//            ^ Identifier  variable.other.cs
+//              ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                ^^^^ StringLiteral  string.quoted.double.cs
+//                    ^ PunctuationDelimiter  punctuation.terminator.statement.cs
           var y = "世界 Hello, 世界";
-//        ^^^ IdentifierType
-//            ^ Identifier
-//              ^ IdentifierOperator
-//                ^^^^^^^^^^^^^^ StringLiteral
-//                              ^ PunctuationDelimiter
+//        ^^^ IdentifierType  storage.type.variable.cs
+//            ^ Identifier  variable.other.cs
+//              ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                ^^^^^^^^^^^^^^ StringLiteral  string.quoted.double.cs
+//                              ^ PunctuationDelimiter  punctuation.terminator.statement.cs
   
           var emoji = "🥳";
-//        ^^^ IdentifierType
-//            ^^^^^ Identifier
-//                  ^ IdentifierOperator
-//                    ^^^ StringLiteral
-//                       ^ PunctuationDelimiter
+//        ^^^ IdentifierType  storage.type.variable.cs
+//            ^^^^^ Identifier  variable.other.cs
+//                  ^ IdentifierOperator  keyword.operator.assignment.variable.cs
+//                    ^^^ StringLiteral  string.quoted.double.cs
+//                       ^ PunctuationDelimiter  punctuation.terminator.statement.cs
       }
-//    ^ PunctuationBracket
+//    ^ PunctuationBracket  punctuation.section.block.end.cs
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.cs
 
