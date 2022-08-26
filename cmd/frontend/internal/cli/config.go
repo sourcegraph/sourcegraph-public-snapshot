@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -108,7 +107,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 	if path == "" {
 		return nil
 	}
-	cs := &configurationSource{db: db}
+	cs := newConfigurationSource(logger, db)
 	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
@@ -182,7 +181,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 		return nil
 	}
 	extsvcs := db.ExternalServices()
-	cs := &configurationSource{db: db}
+	cs := newConfigurationSource(logger, db)
 
 	update := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
@@ -428,11 +427,19 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 	return out, nil
 }
 
-type configurationSource struct {
-	db database.DB
+func newConfigurationSource(logger log.Logger, db database.DB) *configurationSource {
+	return &configurationSource{
+		logger: logger.Scoped("configurationSource", ""),
+		db:     db,
+	}
 }
 
-func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
+type configurationSource struct {
+	logger log.Logger
+	db     database.DB
+}
+
+func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
@@ -440,11 +447,11 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 
 	return conftypes.RawUnified{
 		Site:               site.Contents,
-		ServiceConnections: serviceConnections(),
+		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// TODO(slimsag): future: pass lastID through for race prevention
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
@@ -475,7 +482,7 @@ var (
 	}())
 )
 
-func serviceConnections() conftypes.ServiceConnections {
+func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
 		dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 		if err != nil {
@@ -491,7 +498,7 @@ func serviceConnections() conftypes.ServiceConnections {
 
 	addrs, err := gitservers.Endpoints()
 	if err != nil {
-		log15.Error("serviceConnections", "error", err)
+		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
 
 	return conftypes.ServiceConnections{
