@@ -70,6 +70,7 @@ func mapNodes(b query.Basic, searchType query.SearchType, f func(nodes []query.N
 		return nil
 	}
 
+	newParseTree = query.NewOperator(newParseTree, query.And) // Reduce with NewOperator to obtain valid partitioning.
 	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
 	if err != nil {
 		return nil
@@ -404,7 +405,7 @@ func typePatterns(b query.Basic) *query.Basic {
 
 	changed := false
 	var typ string // store the first pattern that matches a recognized `type:`.
-	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+	newParseTree := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
 		if changed {
 			return query.Pattern{
 				Value:      value,
@@ -440,9 +441,9 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 
 	var pattern query.Node
-	if len(newPattern) > 0 {
+	if len(newParseTree) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
 		if err != nil {
 			return nil
 		}
@@ -601,8 +602,7 @@ func patternsToCodeHostFilters(b query.Basic) *query.Basic {
 			return nil, false
 		}
 
-		newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
-		return newParseTree, changed
+		return append(newParseTree, filterParams...), true
 	}
 
 	return mapNodes(b, query.SearchTypeStandard, f)
