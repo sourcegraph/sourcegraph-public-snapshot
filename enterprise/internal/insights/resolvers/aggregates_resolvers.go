@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -16,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const searchTimeLimitSeconds = 2
-
-// TODO: move to a setting
-const aggregationBufferSize = 500
+const (
+	defaultAggregationBufferSize = 500
+	searchTimeLimitSeconds       = 2
+)
 
 type searchAggregateResolver struct {
 	baseInsightResolver
@@ -88,6 +90,10 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}, nil
 	}
 
+	aggregationBufferSize := conf.Get().InsightsAggregationsBufferSize
+	if aggregationBufferSize <= 0 {
+		aggregationBufferSize = defaultAggregationBufferSize
+	}
 	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
 	tabulationErrors := []error{}
 	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
@@ -106,7 +112,8 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*searchTimeLimitSeconds)
 	defer cancelReqContext()
 	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc)
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithProgress(ctx, tabulationFunc, countingFunc, r.baseInsightResolver.postgresDB)
+
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
@@ -134,14 +141,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 }
 
 func getDefaultAggregationMode(searchQuery, patternType string) (types.SearchAggregationMode, error) {
-	//TODO(insights): uncomment when capture group aggregation is supported.
-	//captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
-	//if err != nil {
-	//	return "", err
-	//}
-	//if captureGroup {
-	//	return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
-	//}
+	captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
+	if err != nil {
+		return "", err
+	}
+	if captureGroup {
+		return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
+	}
 	author, err := canAggregateByAuthor(searchQuery, patternType)
 	if err != nil {
 		return "", err
@@ -268,11 +274,10 @@ func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, erro
 
 func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
-		types.REPO_AGGREGATION_MODE:   canAggregateByRepo,
-		types.PATH_AGGREGATION_MODE:   canAggregateByPath,
-		types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
-		// TODO(insights): these paths should be uncommented as they are implemented. Logic for allowing the aggregation should be double-checked.
-		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
+		types.REPO_AGGREGATION_MODE:          canAggregateByRepo,
+		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
+		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
+		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
 	if !ok {
@@ -340,6 +345,11 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
 	// Only the first capture group will be used for aggregation.
 	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
+	// If this error is returned, it means there are no capture groups or this query contains multiple steps.
+	if err == querybuilder.UnsupportedPatternTypeErr || err == querybuilder.MultiplePatternErr {
+		return false, nil
+	}
+	// Otherwise, it's some other error and we should return it.
 	if err != nil {
 		return false, errors.Wrap(err, "pattern parsing")
 	}

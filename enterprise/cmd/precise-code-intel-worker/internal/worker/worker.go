@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -34,7 +34,7 @@ func NewWorker(
 ) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 	observationContext := observation.Context{
-		Tracer: &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		HoneyDataset: &honey.Dataset{
 			Name: "codeintel-worker",
 		},

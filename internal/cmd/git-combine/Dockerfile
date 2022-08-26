@@ -4,12 +4,18 @@ WORKDIR /go/src/app
 
 ENV CGO_ENABLE=0
 
-# We only have one dependency. When building we just use the latest version of
-# it rather than maintaining our own go.mod just in this directory.
+# We only have two dependencies. When building we just use the latest version of
+# them rather than maintaining our own go.mod just in this directory.
 RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine \
-    && go get github.com/go-git/go-git/v5
+    && go get github.com/go-git/go-git/v5 \
+    && go get github.com/sourcegraph/sourcegraph/lib/errors
+
 
 COPY git-combine.go .
+
+RUN go mod download \
+    && go mod tidy
+
 RUN go build .
 
 # Does not need to use sourcegraph-alpine since this is only deployed for

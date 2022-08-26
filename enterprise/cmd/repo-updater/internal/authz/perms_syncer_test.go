@@ -1020,6 +1020,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	})
 
 	t.Run("max concurrency", func(t *testing.T) {
+		t.Skip("flaky https://github.com/sourcegraph/sourcegraph/issues/40917")
 		// Enough buffer to make two goroutines to send data without being blocked, to
 		// avoid the case that the second goroutine is blocked by trying to send data to
 		// channel rather than being throttled by the max concurrency (1) we imposed.

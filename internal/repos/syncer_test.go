@@ -15,8 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -2512,7 +2512,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		jobChan := make(chan *webhookworker.Job)
 		metrics := workerutil.NewMetrics(&observation.Context{
 			Logger:     logger,
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
 

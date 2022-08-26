@@ -5618,9 +5618,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@sourcegraph/eslint-config@npm:0.31.0":
-  version: 0.31.0
-  resolution: "@sourcegraph/eslint-config@npm:0.31.0"
+"@sourcegraph/eslint-config@npm:0.32.0":
+  version: 0.32.0
+  resolution: "@sourcegraph/eslint-config@npm:0.32.0"
   dependencies:
     "@sourcegraph/prettierrc": ^3.0.3
     "@typescript-eslint/eslint-plugin": ^5.20.0
@@ -5637,7 +5637,7 @@ __metadata:
     eslint-plugin-rxjs: ^5.0.2
     eslint-plugin-unicorn: ^42.0.0
     eslint-plugin-unused-imports: ^1.1.5
-  checksum: f4f55571a610ab602087dc462a4677a6bb275763d906cbd201ee253a213f13847b79f8b13169f517c62b747aade1c8090c1f01119a1ee2b857d14303f8e08794
+  checksum: 09e99c766831c3ac0a0fc6f476bc67741ced162395fd9d9f84e9f3c6627b7b1566121c0d85569ff49806cc4a676416e91ee5b57115d617efffdd0524c9788111
   languageName: node
   linkType: hard
 
@@ -28846,7 +28846,7 @@ pvutils@latest:
     "@sentry/webpack-plugin": ^1.18.9
     "@slack/web-api": ^5.15.0
     "@slimsag/react-shortcuts": ^1.2.1
-    "@sourcegraph/eslint-config": 0.31.0
+    "@sourcegraph/eslint-config": 0.32.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/eslint-plugin-wildcard": 1.0.0
     "@sourcegraph/extension-api-classes": ^1.1.0
@@ -32410,20 +32410,29 @@ pvutils@latest:
   linkType: hard
 
 "unique-filename@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "unique-filename@npm:2.0.0"
+  version: 2.0.1
+  resolution: "unique-filename@npm:2.0.1"
   dependencies:
-    unique-slug: ^2.0.2
-  checksum: 801d5255b21e8be0b25c6c063df7c8d5e2d2dd295a466701ff6ffd31d86db4ece6cf4f0a3271374e48d8e26009163907fbed975195d4106bf5ca43b0923d74a0
+    unique-slug: ^3.0.0
+  checksum: 807acf3381aff319086b64dc7125a9a37c09c44af7620bd4f7f3247fcd5565660ac12d8b80534dcbfd067e6fe88a67e621386dd796a8af828d1337a8420a255f
   languageName: node
   linkType: hard
 
-"unique-slug@npm:^2.0.0, unique-slug@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "unique-slug@npm:2.0.2"
+"unique-slug@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "unique-slug@npm:2.0.1"
   dependencies:
     imurmurhash: ^0.1.4
-  checksum: 5b6876a645da08d505dedb970d1571f6cebdf87044cb6b740c8dbb24f0d6e1dc8bdbf46825fd09f994d7cf50760e6f6e063cfa197d51c5902c00a861702eb75a
+  checksum: 2b012b01c8ebfcfe5e39c212f49c8ffdcf30df9c7e8a2dfc2f462a829e339e1da3c79f5ecd27996c943ce1f179ed00afaedc1cb03187f6bd7aea2738896eb5db
+  languageName: node
+  linkType: hard
+
+"unique-slug@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "unique-slug@npm:3.0.0"
+  dependencies:
+    imurmurhash: ^0.1.4
+  checksum: 49f8d915ba7f0101801b922062ee46b7953256c93ceca74303bd8e6413ae10aa7e8216556b54dc5382895e8221d04f1efaf75f945c2e4a515b4139f77aa6640c
   languageName: node
   linkType: hard
 

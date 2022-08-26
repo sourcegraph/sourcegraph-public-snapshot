@@ -28,16 +28,6 @@ function createHighlightTable(info: BlobInfo): HighlightIndex {
 
     try {
         const occurrences = Occurrence.fromInfo(info)
-        for (const occ of occurrences) {
-            if (occ.range.start.line === 336 && occ.kind) {
-                // regexp = new RegExp(`^${regexp.source}`, regexp.flags)
-                console.log({
-                    kind: SyntaxKind[occ.kind],
-                    start: occ.range.start.character,
-                    end: occ.range.end.character,
-                })
-            }
-        }
         let previousEndline: number | undefined
 
         for (let index = 0; index < occurrences.length; index++) {
