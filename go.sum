@@ -2064,6 +2064,8 @@ github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021 h1:IngqLdQQ/n42Abc
 github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021/go.mod h1:UxiwB6C3xk3xOySJpW1R0MDUyfGuJRFS5Z8C+SA5p2I=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
+github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5 h1:gv92/ctwOCyj13tV94TX/FYXrHNdZMmGYc46AdLnmzM=
+github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5/go.mod h1:AfMs/2M3s2GnTKqPBnX5pwNPDxmXCt0poaM8efznH7Q=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
 github.com/sourcegraph/run v0.9.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
 github.com/sourcegraph/scip v0.1.0 h1:kTs0CJaLQvcRZjg+HpGrcJPNX2Tx31+d6szWio3ZOkQ=
