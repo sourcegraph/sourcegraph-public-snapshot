@@ -38,6 +38,10 @@ This job will eventually replace `codeintel-auto-indexing`.
 
 This job periodically updates an index of policy repository patterns to matching repository names.
 
+#### `codeintel-crates-syncer`
+
+This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
+
 #### `codeintel-commitgraph`
 
 This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
@@ -50,7 +54,7 @@ This job periodically removes expired and unreachable code navigation data and r
 
 #### `codeintel-auto-indexing`
 
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
 #### `insights-job`
 

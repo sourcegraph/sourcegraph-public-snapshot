@@ -216,6 +216,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec.ID,
 				ExternalID: "1234",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			spec2 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
@@ -223,6 +224,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec.ID,
 				HeadRef:   "refs/heads/my-branch",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec.RandID, 2)
@@ -231,9 +233,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				t.Fatalf("wrong batch change name. want=%s, have=%s", want, have)
 			}
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
 			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
-				Repo:             spec1.RepoID,
+				Repo:             spec1.BaseRepoID,
 				ExternalID:       "1234",
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
@@ -242,7 +244,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(spec2.ID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:               spec2.RepoID,
+				Repo:               spec2.BaseRepoID,
 				CurrentSpec:        spec2.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -264,6 +266,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "1234",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
@@ -271,6 +274,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "5678",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			oldSpec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
@@ -278,6 +282,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-1-branch-1",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			oldSpec4 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
@@ -285,6 +290,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[2].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-2-branch-1",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			// Apply and expect 4 changesets
@@ -300,6 +306,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec2.ID,
 				ExternalID: "1234",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			// DIFFERENT: Track #9999 in repo[0]
@@ -308,6 +315,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec2.ID,
 				ExternalID: "5678",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			// Same
@@ -316,6 +324,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec2.ID,
 				HeadRef:   "refs/heads/repo-1-branch-1",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			// DIFFERENT: branch changed in repo[2]
@@ -324,6 +333,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[2].ID,
 				BatchSpec: batchSpec2.ID,
 				HeadRef:   "refs/heads/repo-2-branch-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			// NEW: repo[3]
@@ -332,16 +342,17 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[3].ID,
 				BatchSpec: batchSpec2.ID,
 				HeadRef:   "refs/heads/repo-3-branch-1",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			// Before we apply the new batch spec, we make the changeset we
 			// expect to be closed to look "published", otherwise it won't be
 			// closed.
 			wantClosed := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec4.ID))
-			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.HeadRef)
 
 			changeset3 := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec3.ID))
-			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.HeadRef)
 
 			// Apply and expect 6 changesets
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 6)
@@ -368,7 +379,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Closing:            true,
 			})
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
 			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
@@ -379,7 +390,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				AttachedTo:       []int64{batchChange.ID},
 			})
 
-			c2 := cs.Find(btypes.WithExternalID(spec2.Spec.ExternalID))
+			c2 := cs.Find(btypes.WithExternalID(spec2.ExternalID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
@@ -438,6 +449,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-0-branch-0",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			ownerBatchChange, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
@@ -454,6 +466,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       c.RepoID,
 				BatchSpec:  batchSpec2.ID,
 				ExternalID: c.ExternalID,
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			trackingBatchChange, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
@@ -481,6 +494,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec3.ID,
 				HeadRef:   "refs/heads/repo-0-branch-0",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 			// Apply again. This should have flagged the association as detach
 			// and it should not be closed, since the batch change is not the
@@ -495,7 +509,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
 			bt.ReloadAndAssertChangeset(t, ctx, store, cs[1], bt.ChangesetAssertions{
-				Repo:               spec3.RepoID,
+				Repo:               spec3.BaseRepoID,
 				CurrentSpec:        spec3.ID,
 				OwnedByBatchChange: trackingBatchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -514,6 +528,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[3].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/never-published",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			// We apply the spec and expect 1 changeset
@@ -538,6 +553,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				BatchSpec: batchSpec1.ID,
 				Title:     "Spec1",
 				HeadRef:   "refs/heads/queued",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 			}
 			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
@@ -697,6 +713,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec.ID,
 				ExternalID: "1234",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 			})
 
 			bt.CreateChangesetSpec(t, userCtx, store, bt.TestSpecOpts{
@@ -704,6 +721,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[1].ID, // Not authorized to access this repository
 				BatchSpec: batchSpec.ID,
 				HeadRef:   "refs/heads/my-branch",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			_, err := svc.ApplyBatchChange(userCtx, ApplyBatchChangeOpts{
@@ -730,6 +748,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "1234",
+				Typ:        btypes.ChangesetSpecTypeExisting,
 				Published:  true,
 			}
 			bt.CreateChangesetSpec(t, ctx, store, spec1Opts)
@@ -739,6 +758,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-1-branch-1",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 			}
 			bt.CreateChangesetSpec(t, ctx, store, spec2Opts)
@@ -760,7 +780,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 2)
 
-			c1 := cs.Find(btypes.WithExternalID(newSpec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(newSpec1.ExternalID))
 			bt.ReloadAndAssertChangeset(t, ctx, store, c1, bt.ChangesetAssertions{
 				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
@@ -774,7 +794,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(newSpec2.ID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:        newSpec2.RepoID,
+				Repo:        newSpec2.BaseRepoID,
 				CurrentSpec: newSpec2.ID,
 				// An errored changeset doesn't get the specs rotated, to prevent https://github.com/sourcegraph/sourcegraph/issues/16041.
 				PreviousSpec:       0,
@@ -813,6 +833,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec1.ID,
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				HeadRef:   "refs/heads/archived-closed",
 			}
 			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
@@ -883,6 +904,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/archived-reattached",
+					Typ:       btypes.ChangesetSpecTypeBranch,
 				}
 				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
@@ -965,6 +987,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/detached-reattach-failed",
+					Typ:       btypes.ChangesetSpecTypeBranch,
 				}
 				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
@@ -1060,6 +1083,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/detached-reattached-2",
+					Typ:       btypes.ChangesetSpecTypeBranch,
 				}
 				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
@@ -1134,6 +1158,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec.ID,
 				HeadRef:   "refs/heads/my-branch",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
@@ -1141,6 +1166,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec.ID,
 				HeadRef:   "refs/heads/my-branch",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{

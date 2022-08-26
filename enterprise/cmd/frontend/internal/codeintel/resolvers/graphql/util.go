@@ -2,11 +2,15 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	policiesShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -313,4 +317,53 @@ func sharedDiagnosticAtUploadToAdjustedDiagnostic(shared []shared.DiagnosticAtUp
 		adjustedDiagnostics = append(adjustedDiagnostics, adjusted)
 	}
 	return adjustedDiagnostics
+}
+
+func convertSharedIndexToDBStoreIndex(index autoindexingShared.Index) store.Index {
+	dockerSteps := make([]store.DockerStep, 0, len(index.DockerSteps))
+	for _, step := range index.DockerSteps {
+		dockerSteps = append(dockerSteps, store.DockerStep(step))
+	}
+
+	executionLogs := make([]workerutil.ExecutionLogEntry, 0, len(index.ExecutionLogs))
+	for _, log := range index.ExecutionLogs {
+		executionLogs = append(executionLogs, workerutil.ExecutionLogEntry(log))
+	}
+
+	return store.Index{
+		ID:                 index.ID,
+		Commit:             index.Commit,
+		QueuedAt:           index.QueuedAt,
+		State:              index.State,
+		FailureMessage:     index.FailureMessage,
+		StartedAt:          index.StartedAt,
+		FinishedAt:         index.FinishedAt,
+		ProcessAfter:       index.ProcessAfter,
+		NumResets:          index.NumResets,
+		NumFailures:        index.NumFailures,
+		RepositoryID:       index.RepositoryID,
+		LocalSteps:         index.LocalSteps,
+		RepositoryName:     index.RepositoryName,
+		DockerSteps:        dockerSteps,
+		Root:               index.Root,
+		Indexer:            index.Indexer,
+		IndexerArgs:        index.IndexerArgs,
+		Outfile:            index.Outfile,
+		ExecutionLogs:      executionLogs,
+		Rank:               index.Rank,
+		AssociatedUploadID: index.AssociatedUploadID,
+	}
+}
+
+func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(shared autoindexingShared.IndexesWithRepositoryNamespace) dbstore.IndexesWithRepositoryNamespace {
+	indexes := make([]dbstore.Index, 0, len(shared.Indexes))
+	for _, index := range shared.Indexes {
+		indexes = append(indexes, convertSharedIndexToDBStoreIndex(index))
+	}
+
+	return dbstore.IndexesWithRepositoryNamespace{
+		Root:    shared.Root,
+		Indexer: shared.Indexer,
+		Indexes: indexes,
+	}
 }

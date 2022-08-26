@@ -75,6 +75,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			User:      userID,
 			Repo:      r.ID,
 			HeadRef:   fmt.Sprintf("d34db33f-%d", i),
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		changesetSpecs = append(changesetSpecs, s)
@@ -86,6 +87,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		Repo:      rs[2].ID,
 		BatchSpec: oldBatchSpec.ID,
 		HeadRef:   "d34db33f-2",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	closingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             rs[2].ID,
@@ -98,8 +100,9 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		BatchSpec: oldBatchSpec.ID,
 		User:      userID,
-		Repo:      changesetSpecs[1].RepoID,
-		HeadRef:   changesetSpecs[1].Spec.HeadRef,
+		Repo:      changesetSpecs[1].BaseRepoID,
+		HeadRef:   changesetSpecs[1].HeadRef,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	updatedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
@@ -378,12 +381,12 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
 
 		// We need to modify the changeset spec to not have a published field.
-		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
-		spec, err := json.Marshal(newFx.specPublished.Spec)
+		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
+		published, err := json.Marshal(newFx.specPublished.Published)
 		if err != nil {
 			t.Fatal(err)
 		}
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, published, newFx.specPublished.ID)
 		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
@@ -528,6 +531,7 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 			Published: true,
 		}),
 		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
@@ -535,24 +539,28 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be draft " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be unpublished " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be omitted " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 	}
 }

@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { useWebviewPageContext } from '../../platform/context'
 
 import styles from './ModalVideo.module.scss'
@@ -56,9 +58,9 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
             <figure>
                 {thumbnailElement}
                 <figcaption>
-                    <button type="button" className="btn btn-link" onClick={onClick}>
+                    <Button variant="link" onClick={onClick}>
                         {title}
-                    </button>
+                    </Button>
                 </figcaption>
             </figure>
         )

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -85,6 +86,10 @@ func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
 
 func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
 	return r.resolver.PoliciesResolver()
+}
+
+func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
+	return r.resolver.AutoIndexingResolver()
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
@@ -225,7 +230,11 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	// Create a new indexConnectionResolver here as we only want to index records in
+	// the same graphQL request, not across different request.
+	indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
+
+	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, indexConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
@@ -247,7 +256,8 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
 		return nil, err
 	}
 
@@ -298,7 +308,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 		configuration = *args.Configuration
 	}
 
-	indexes, err := r.resolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
+	autoindexingResolver := r.resolver.AutoIndexingResolver()
+	indexes, err := autoindexingResolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +320,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
+		index := convertSharedIndexToDBStoreIndex(indexes[i])
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs))
 	}
 	return resolvers, nil
 }
@@ -624,8 +636,8 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-
-	if err := r.resolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
 		return nil, err
 	}
 
@@ -761,18 +773,18 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (autoindexingShared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
-	return store.GetIndexesOptions{
+	return autoindexingShared.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),

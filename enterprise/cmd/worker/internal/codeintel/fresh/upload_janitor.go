@@ -45,6 +45,13 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	}
 	metrics := cleanup.NewMetrics(observationContext)
 
+	// Initialize stores
+	db, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+	databaseDB := database.NewDB(logger, db)
+
 	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
@@ -54,23 +61,20 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	if err != nil {
 		return nil, err
 	}
+	codeIntelLsifStore := database.NewDBWith(logger, lsifStore)
 
-	db, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-
+	// Initialize clients
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
-
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 
-	indexSvc := autoindexing.GetService(database.NewDB(logger, db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
-	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore), gitserverClient)
+	// Initialize services
+	uploadSvc := uploads.GetService(databaseDB, codeIntelLsifStore, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	return []goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, indexSvc, observationContext.Logger, metrics),
+		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, autoindexingSvc, observationContext.Logger, metrics),
 	}, nil
 }

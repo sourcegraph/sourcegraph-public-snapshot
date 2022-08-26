@@ -10,12 +10,13 @@ import { NavLink } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
+import { PrefetchableFile } from '../repo/blob/PrefetchableFile'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -49,13 +50,15 @@ interface FileProps extends ThemeProps {
     isActive: boolean
     isSelected: boolean
     customIconPath?: string
+    enableMergedFileSymbolSidebar: boolean
 
     // For core workflow inline symbols redesign
     location: H.Location
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const { commitID, repoName } = useTreeRootContext()
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSidebarFilePrefetch ?? false)
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -111,7 +114,12 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             </TreeLayerRowContents>
                         )
                     ) : (
-                        <TreeLayerRowContentsLink
+                        <PrefetchableFile
+                            prefetch={prefetchFileEnabled}
+                            revision={commitID}
+                            repoName={repoName}
+                            filePath={props.entryInfo.path}
+                            as={TreeLayerRowContentsLink}
                             className="test-tree-file-link"
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
@@ -121,6 +129,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             // needed because of dynamic styling
                             style={offsetStyle}
                             tabIndex={-1}
+                            isSelected={props.isSelected}
                         >
                             <TreeLayerRowContentsText className="d-flex">
                                 <TreeRowIcon onClick={props.noopRowClick}>
@@ -133,7 +142,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 <TreeRowLabel className="test-file-decorable-name">{props.entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
-                        </TreeLayerRowContentsLink>
+                        </PrefetchableFile>
                     )}
                     {props.index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
@@ -144,7 +153,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {coreWorkflowImprovementsEnabled && props.isActive && (
+            {props.enableMergedFileSymbolSidebar && props.isActive && (
                 <Symbols activePath={props.entryInfo.path} location={props.location} style={offsetStyle} />
             )}
         </>

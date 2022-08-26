@@ -80,7 +80,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 
 			modified, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
-				return nil, errors.Wrap(err, "SingleRepoQuery")
+				return nil, errors.Wrap(err, "query validation")
 			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
