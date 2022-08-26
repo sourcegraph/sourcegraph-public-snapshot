@@ -8,9 +8,9 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md) or Bitbucket Data Center
-- [Phabricator](phabricator.md)
-- [Gitolite](gitolite.md)
-- [AWS CodeCommit](aws_codecommit.md)
+<!-- [Phabricator](phabricator.md) -->
+<!-- [Gitolite](gitolite.md) -->
+<!-- [AWS CodeCommit](aws_codecommit.md) -->
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)
