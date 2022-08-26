@@ -46,10 +46,9 @@ func ProvidersFromConfig(
 	warnings []string,
 ) {
 	// Don't return any authz provider if the license doesn't include the ACLs feature.
+	// The list of serious problems will be returned so we can surface the errors in the frontend.
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		seriousProblems = append(seriousProblems, err.Error())
-		warnings := append(warnings, "Check license for ACLS")
-
 		return false, providers, seriousProblems, warnings
 	}
 

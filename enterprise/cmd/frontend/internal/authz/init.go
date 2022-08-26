@@ -67,34 +67,9 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			return nil
 		}
 
-		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
-		if len(providers) == 0 {
-			return nil
-		}
-
-		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
-		authzTypes := make(map[string]struct{}, 3)
-		for _, p := range providers {
-			authzTypes[p.ServiceType()] = struct{}{}
-		}
-
-		authzNames := make([]string, 0, len(authzTypes))
-		for t := range authzTypes {
-			switch t {
-			case extsvc.TypeGitHub:
-				authzNames = append(authzNames, "GitHub")
-			case extsvc.TypeGitLab:
-				authzNames = append(authzNames, "GitLab")
-			case extsvc.TypeBitbucketServer:
-				authzNames = append(authzNames, "Bitbucket Server")
-			default:
-				authzNames = append(authzNames, t)
-			}
-		}
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzNames, ", ")),
+			MessageValue: "A Sourcegraph license is required to enable repository permissions.",
 		}}
 	})
 
@@ -139,9 +114,38 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
 				if err == nil {
 					// User is site admin, let them proceed.
+
+					_, providers, seriousProblems, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+					// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
+					authzTypes := make(map[string]struct{}, 3)
+					for _, p := range providers {
+						authzTypes[p.ServiceType()] = struct{}{}
+					}
+
+					authzNames := make([]string, 0, len(authzTypes))
+					for t := range authzTypes {
+						switch t {
+						case extsvc.TypeGitHub:
+							authzNames = append(authzNames, "GitHub")
+						case extsvc.TypeGitLab:
+							authzNames = append(authzNames, "GitLab")
+						case extsvc.TypeBitbucketServer:
+							authzNames = append(authzNames, "Bitbucket Server")
+						default:
+							authzNames = append(authzNames, t)
+						}
+					}
+
+					if len(seriousProblems) > 0 && len(authzNames) > 0 {
+						log15.Error("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzNames, ","), err)
+						http.Error(w, "A Sourcegraph license is required to enable repository permissions.", http.StatusInternalServerError)
+						return
+					}
+
 					next.ServeHTTP(w, r)
 					return
 				}
+
 				if err != backend.ErrMustBeSiteAdmin {
 					log15.Error("Error checking current user is site admin", "err", err)
 					http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
