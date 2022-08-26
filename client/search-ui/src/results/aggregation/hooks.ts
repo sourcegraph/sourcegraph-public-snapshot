@@ -202,6 +202,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
             skip: aggregationMode !== null && calculatedAggregationModeRef.current === aggregationMode,
             onError: () => {
                 calculatedAggregationModeRef.current = null
+                setData(undefined)
             },
             onCompleted: data => {
                 const calculatedAggregationMode = getCalculatedAggregationMode(data)
