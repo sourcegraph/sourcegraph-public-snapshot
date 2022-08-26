@@ -112,6 +112,16 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         onBarLinkClick?.(getLink(datum))
     }
 
+    if (!data) {
+        return null
+    }
+
+    const missingCount = getOtherGroupCount(data)
+    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
+        event.preventDefault()
+        onBarLinkClick?.(getLink(datum))
+    }
+
     return (
         <ParentSize className={classNames(className, styles.container)}>
             {parent => (
