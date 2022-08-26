@@ -40,6 +40,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 
 	// flaky test
+	// https://github.com/sourcegraph/sourcegraph/issues/40882
 	t.Skip("cannot read hack.sh", func(t *testing.T) {
 		// Should not be able to read hack.sh
 		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
@@ -57,6 +58,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 
 	// flaky test
+	// https://github.com/sourcegraph/sourcegraph/issues/40883
 	t.Skip("file list excludes excluded files", func(t *testing.T) {
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
