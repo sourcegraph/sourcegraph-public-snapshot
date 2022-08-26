@@ -26,7 +26,7 @@ var lintFix = &cli.BoolFlag{
 var lintFailFast = &cli.BoolFlag{
 	Name:    "fail-fast",
 	Aliases: []string{"ff"},
-	Usage:   "Exit immediately if an issue is encountered",
+	Usage:   "Exit immediately if an issue is encountered (not available with '-fix')",
 	Value:   true,
 }
 
@@ -97,11 +97,11 @@ sg lint --help
 		}
 
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
-		runner.FailFast = lintFailFast.Get(cmd)
 		if cmd.Bool("fix") {
 			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
 			return runner.Fix(cmd.Context, repoState)
 		}
+		runner.FailFast = lintFailFast.Get(cmd)
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
@@ -133,6 +133,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
 					return runner.Fix(cmd.Context, repoState)
 				}
+				runner.FailFast = lintFailFast.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
 				return runner.Check(cmd.Context, repoState)
 			},
