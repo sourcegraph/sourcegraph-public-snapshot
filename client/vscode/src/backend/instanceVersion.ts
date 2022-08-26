@@ -48,6 +48,9 @@ export function initializeInstanceVersionNumber(
                 await localStorageService.setValue(INSTANCE_VERSION_NUMBER_KEY, flattenVersion)
             }
         })
+        .catch(error => {
+            console.error('Failed to get instance version from host:', error)
+        })
         const versionNumber = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
         // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
         return versionNumber >= '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
