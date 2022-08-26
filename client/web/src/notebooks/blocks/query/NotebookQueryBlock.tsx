@@ -29,6 +29,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
+import { AuthenticatedUser } from '../../../auth'
 import { useExperimentalFeatures } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -49,6 +50,7 @@ interface NotebookQueryBlockProps
     globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    authenticatedUser: AuthenticatedUser | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 

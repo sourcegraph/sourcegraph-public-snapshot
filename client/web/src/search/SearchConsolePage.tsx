@@ -132,7 +132,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 results={results}
                                 showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 executedQuery={props.location.search}
                             />
                         ))}
