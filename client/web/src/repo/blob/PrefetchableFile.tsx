@@ -7,13 +7,14 @@ import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 import { HighlightResponseFormat } from '../../graphql-operations'
 
 import { fetchBlob } from './backend'
+import { useExperimentalFeatures } from '../../stores'
 
 interface PrefetchableFileProps {
     revision: string
     filePath: string
     repoName: string
-    prefetch?: boolean
-    isSelected: boolean
+    isPrefetchEnabled: boolean
+    isSelected?: boolean
 }
 
 /**
@@ -22,9 +23,10 @@ interface PrefetchableFileProps {
  * the `enableSidebarFilePrefetch ` feature flag.
  */
 export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props, reference) {
-    const { revision, filePath, repoName, prefetch, as: Component = 'div', isSelected, ...rest } = props
+    const { revision, filePath, repoName, isPrefetchEnabled, isSelected, as: Component = 'div', ...rest } = props
 
     const observable = useRef<Subscription | null>(null)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
 
     const startPrefetch = useCallback(() => {
         if (observable.current) {
@@ -39,7 +41,7 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
             commitID: revision,
             filePath,
             repoName,
-            format: HighlightResponseFormat.HTML_PLAINTEXT,
+            format: enableCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT,
         }).subscribe()
     }, [filePath, repoName, revision])
 
@@ -53,15 +55,15 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
 
     // Start file prefetch if it's selected via keyboard navigation.
     useEffect(() => {
-        if (isSelected) {
+        if (isPrefetchEnabled && isSelected) {
             startPrefetch()
         }
-    }, [isSelected, startPrefetch])
+    }, [isSelected, isPrefetchEnabled, startPrefetch])
 
     return (
         <Component
-            onMouseOver={prefetch ? startPrefetch : undefined}
-            onMouseLeave={prefetch ? stopPrefetch : undefined}
+            onMouseOver={isPrefetchEnabled ? startPrefetch : undefined}
+            onMouseLeave={isPrefetchEnabled ? stopPrefetch : undefined}
             ref={reference}
             {...rest}
         />
