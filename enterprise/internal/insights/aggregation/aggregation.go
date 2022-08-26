@@ -208,14 +208,6 @@ func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator Aggre
 	}
 }
 
-// TODO: make this a test-only function?
-func NewSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
-	return &searchAggregationResults{
-		tabulator: tabulator,
-		countFunc: countFunc,
-	}
-}
-
 type searchAggregationResults struct {
 	tabulator AggregationTabulator
 	countFunc AggregationCountFunc
