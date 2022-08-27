@@ -68,6 +68,12 @@
     margin: auto;
 }
 
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .zero-state-background {
     width: 100%;
     flex-grow: 1;
