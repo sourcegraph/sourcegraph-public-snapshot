@@ -62,18 +62,18 @@ func runUpgrade(
 			len(plan.steps),
 		))
 
-		operations := make([]runner.MigrationOperation, 0, len(step.schemaMigrationLeafIDsBySchemaName))
-		for schemaName, leafMigrationIDs := range step.schemaMigrationLeafIDsBySchemaName {
-			operations = append(operations, runner.MigrationOperation{
-				SchemaName:     schemaName,
-				Type:           runner.MigrationOperationTypeTargetedUp,
-				TargetVersions: leafMigrationIDs,
-			})
-		}
-
 		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
 
 		if !dryRun {
+			operations := make([]runner.MigrationOperation, 0, len(step.schemaMigrationLeafIDsBySchemaName))
+			for schemaName, leafMigrationIDs := range step.schemaMigrationLeafIDsBySchemaName {
+				operations = append(operations, runner.MigrationOperation{
+					SchemaName:     schemaName,
+					Type:           runner.MigrationOperationTypeTargetedUp,
+					TargetVersions: leafMigrationIDs,
+				})
+			}
+
 			if err := r.Run(ctx, runner.Options{
 				Operations:           operations,
 				PrivilegedMode:       runner.ApplyPrivilegedMigrations,
