@@ -465,6 +465,9 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	-- Note that we use true here as a default as we only expect to require this fallback
+	-- query when using a newer migrator version against an old instance, and multi-version
+	-- upgrades are an enterprise feature.
 	true AS is_enterprise,
 	m.apply_reverse,
 	m.metadata,
