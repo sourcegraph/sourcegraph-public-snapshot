@@ -92,7 +92,6 @@ type ChangesetSpec struct {
 	Type ChangesetSpecType
 
 	DiffStatAdded   int32
-	DiffStatChanged int32
 	DiffStatDeleted int32
 
 	BatchSpecID int64
@@ -150,7 +149,6 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 
 	cs.DiffStatAdded = stats.Added
 	cs.DiffStatDeleted = stats.Deleted
-	cs.DiffStatChanged = stats.Changed
 
 	return nil
 }
@@ -170,7 +168,6 @@ func (cs *ChangesetSpec) DiffStat() diff.Stat {
 	return diff.Stat{
 		Added:   cs.DiffStatAdded,
 		Deleted: cs.DiffStatDeleted,
-		Changed: cs.DiffStatChanged,
 	}
 }
 

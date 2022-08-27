@@ -509,7 +509,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+		return sc.Scan(&diffStat.Added, &diffStat.Deleted)
 	})
 	if err != nil {
 		return nil, err
