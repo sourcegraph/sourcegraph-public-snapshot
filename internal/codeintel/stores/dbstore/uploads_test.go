@@ -1051,65 +1051,6 @@ func TestUpdateReferenceCounts(t *testing.T) {
 	})
 }
 
-func TestGetOldestCommitDate(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testStore(db)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t1.Add(time.Minute * 4)
-	t4 := t1.Add(time.Minute * 6)
-
-	insertUploads(t, db,
-		Upload{ID: 1, State: "completed"},
-		Upload{ID: 2, State: "completed"},
-		Upload{ID: 3, State: "completed"},
-		Upload{ID: 4, State: "errored"},
-		Upload{ID: 5, State: "completed"},
-		Upload{ID: 6, State: "completed", RepositoryID: 51},
-		Upload{ID: 7, State: "completed", RepositoryID: 51},
-		Upload{ID: 8, State: "completed", RepositoryID: 51},
-	)
-
-	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
-		t.Fatalf("unexpected error updating commit date %s", err)
-	}
-
-	for uploadID, commitDate := range map[int]time.Time{
-		1: t3,
-		2: t4,
-		4: t1,
-		6: t2,
-	} {
-		if err := store.UpdateCommitedAt(context.Background(), uploadID, commitDate); err != nil {
-			t.Fatalf("unexpected error updating commit date %s", err)
-		}
-	}
-
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if !ok {
-		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t3) {
-		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
-	}
-
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if !ok {
-		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t2) {
-		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
-	}
-
-	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if ok {
-		t.Fatalf("unexpected commit date for repository")
-	}
-}
-
 func TestUpdateCommitedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
