@@ -101,7 +101,14 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		// version incorrectly.
 
 		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return shared.MigrationBounds{}, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
+			return shared.MigrationBounds{}, errors.Newf(
+				"expected %s migration %d@%s to have a name prefixed with %q, have %q",
+				schemaName,
+				newDefinition.ID,
+				rev,
+				squashedMigrationPrefix,
+				newDefinition.Name,
+			)
 		}
 
 		existingDefinition, ok := definitionMap[newDefinition.ID]
@@ -121,7 +128,19 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			continue
 		}
 
-		return shared.MigrationBounds{}, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
+		return shared.MigrationBounds{}, errors.Newf(
+			"migration %d unexpectedly edited in release %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
+			newDefinition.ID,
+			rev,
+			cmp.Diff(
+				existingDefinition.UpQuery.Query(sqlf.PostgresBindVar),
+				newDefinition.UpQuery.Query(sqlf.PostgresBindVar),
+			),
+			cmp.Diff(
+				existingDefinition.DownQuery.Query(sqlf.PostgresBindVar),
+				newDefinition.DownQuery.Query(sqlf.PostgresBindVar),
+			),
+		)
 	}
 
 	leafIDs := []int{}
