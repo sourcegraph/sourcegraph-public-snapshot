@@ -90,6 +90,77 @@ func TestSynchronizeMetadata(t *testing.T) {
 	compareMigrations()
 }
 
+func TestSynchronizeMetadataFallback(t *testing.T) {
+	// Note: package globals block test parallelism
+	testEnterprise(t)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStoreWithDB(db)
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		ALTER TABLE out_of_band_migrations
+			DROP COLUMN is_enterprise,
+			DROP COLUMN introduced_version_major,
+			DROP COLUMN introduced_version_minor,
+			DROP COLUMN deprecated_version_major,
+			DROP COLUMN deprecated_version_minor,
+			ADD COLUMN introduced text NOT NULL,
+			ADD COLUMN deprecated text
+	`)); err != nil {
+		t.Fatalf("failed to alter table: %s", err)
+	}
+
+	compareMigrations := func() {
+		migrations, err := store.List(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting migrations: %s", err)
+		}
+
+		var yamlizedMigrations []yamlMigration
+		for _, migration := range migrations {
+			yamlMigration := yamlMigration{
+				ID:                     migration.ID,
+				Team:                   migration.Team,
+				Component:              migration.Component,
+				Description:            migration.Description,
+				NonDestructive:         migration.NonDestructive,
+				IsEnterprise:           migration.IsEnterprise,
+				IntroducedVersionMajor: migration.Introduced.Major,
+				IntroducedVersionMinor: migration.Introduced.Minor,
+			}
+
+			if migration.Deprecated != nil {
+				yamlMigration.DeprecatedVersionMajor = &migration.Deprecated.Major
+				yamlMigration.DeprecatedVersionMinor = &migration.Deprecated.Minor
+			}
+
+			yamlizedMigrations = append(yamlizedMigrations, yamlMigration)
+		}
+
+		sort.Slice(yamlizedMigrations, func(i, j int) bool {
+			return yamlizedMigrations[i].ID < yamlizedMigrations[j].ID
+		})
+
+		expectedMigrations := make([]yamlMigration, len(yamlMigrations))
+		copy(expectedMigrations, yamlMigrations)
+		for i := range expectedMigrations {
+			expectedMigrations[i].IsEnterprise = true
+		}
+
+		if diff := cmp.Diff(expectedMigrations, yamlizedMigrations); diff != "" {
+			t.Errorf("unexpected migrations (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+}
+
 func TestList(t *testing.T) {
 	// Note: package globals block test parallelism
 	withMigrationIDs(t, []int{1, 2, 3})
