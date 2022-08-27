@@ -6,6 +6,8 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -16,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -179,6 +180,10 @@ var yamlMigrations = func() []yamlMigration {
 		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
 	}
 
+	sort.Slice(parsedMigrations, func(i, j int) bool {
+		return parsedMigrations[i].ID < parsedMigrations[j].ID
+	})
+
 	return parsedMigrations
 }()
 
@@ -287,6 +292,13 @@ func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	for _, migration := range yamlMigrations {
+		introduced := fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor)
+		var deprecated *string
+		if migration.DeprecatedVersionMajor != nil {
+			s := fmt.Sprintf("%d.%d.0", *migration.DeprecatedVersionMajor, *migration.DeprecatedVersionMinor)
+			deprecated = &s
+		}
+
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			synchronizeMetadataFallbackUpsertQuery,
 			migration.ID,
@@ -294,14 +306,14 @@ func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 			migration.Component,
 			migration.Description,
 			migration.NonDestructive,
-			fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor),
-			fmt.Sprintf("%d.%d.0", migration.DeprecatedVersionMajor, migration.DeprecatedVersionMinor),
+			introduced,
+			deprecated,
 			migration.Team,
 			migration.Component,
 			migration.Description,
 			migration.NonDestructive,
-			fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor),
-			fmt.Sprintf("%d.%d.0", migration.DeprecatedVersionMajor, migration.DeprecatedVersionMinor),
+			introduced,
+			deprecated,
 		)); err != nil {
 			return err
 		}
@@ -391,7 +403,16 @@ func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
 	// be necessary on the other access methods, as they use ids returned by this method.
 	conds = append(conds, sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)))
 
-	return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
+	if err != nil {
+		if shouldFallback(err) {
+			return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listFallbackQuery, sqlf.Join(conds, "AND"))))
+		}
+
+		return nil, err
+	}
+
+	return migrations, nil
 }
 
 const listQuery = `
@@ -417,7 +438,40 @@ SELECT
 FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
 WHERE %s
-ORDER BY m.id desc, e.created desc
+ORDER BY m.id desc, e.created DESC
+`
+
+const listFallbackQuery = `
+-- source: internal/oobmigration/store.go:List
+WITH split_migrations AS (
+	SELECT
+		m.*,
+		regexp_matches(m.introduced, E'^(\\d+)\.(\\d+)') AS introduced_parts,
+		regexp_matches(m.deprecated, E'^(\\d+)\.(\\d+)') AS deprecated_parts
+	FROM out_of_band_migrations m
+)
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	introduced_parts[1] AS introduced_version_major,
+	introduced_parts[2] AS introduced_version_minor,
+	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[1] END AS deprecated_version_major,
+	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[2] END AS deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	true AS is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM split_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE %s
+ORDER BY m.id desc, e.created DESC
 `
 
 // UpdateDirection updates the direction for the given migration.
@@ -508,28 +562,23 @@ DELETE FROM out_of_band_migrations_errors WHERE id IN (
 )
 `
 
-var columnsSupporingFallback = map[string]struct{}{
-	"is_enterprise":            {},
-	"introduced_version_major": {},
-	"introduced_version_minor": {},
-	"deprecated_version_major": {},
-	"deprecated_version_minor": {},
+var columnsSupporingFallback = []string{
+	"is_enterprise",
+	"introduced_version_major",
+	"introduced_version_minor",
+	"deprecated_version_major",
+	"deprecated_version_minor",
 }
 
 func shouldFallback(err error) bool {
-	_, ok := columnsSupporingFallback[getMissingColumn(err)]
-	return ok
-}
-
-var pattern = lazyregexp.New(`^column "([^)]+)" of relation "out_of_band_migrations" does not exist$`)
-
-func getMissingColumn(err error) string {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "42703" {
-		if match := pattern.FindStringSubmatch(pgErr.Message); len(match) > 1 {
-			return match[1]
+		for _, column := range columnsSupporingFallback {
+			if strings.Contains(pgErr.Message, column) {
+				return true
+			}
 		}
 	}
 
-	return ""
+	return false
 }
