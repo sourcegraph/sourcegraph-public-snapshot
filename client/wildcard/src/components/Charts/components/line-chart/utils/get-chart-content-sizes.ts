@@ -2,7 +2,7 @@ import { Optional } from 'utility-types'
 
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle, Rectangle } from '../../../Popover'
+import { createRectangle, Rectangle } from '../../../../Popover'
 
 interface GetChartContentSizesInput {
     width: number
