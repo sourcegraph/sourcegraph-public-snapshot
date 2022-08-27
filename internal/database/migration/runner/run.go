@@ -343,8 +343,11 @@ func (r *Runner) applyMigration(
 		}
 
 		if privilegedMode == NoopPrivilegedMigrations {
-			if err := schemaContext.store.WithMigrationLog(ctx, definition, up, func() error { return nil }); err != nil {
-				return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
+			noop := func() error {
+				return nil
+			}
+			if err := schemaContext.store.WithMigrationLog(ctx, definition, up, noop); err != nil {
+				return errors.Wrapf(err, "failed to create migration log %d", definition.ID)
 			}
 
 			r.logger.Warn(
