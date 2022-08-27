@@ -379,18 +379,19 @@ func (r *Runner) applyMigration(
 			defer func() { err = tx.Done(err) }()
 		}
 
-		direction := tx.Up
-		if !up {
-			direction = tx.Down
+		if up {
+			if err := tx.Up(ctx, definition); err != nil {
+				return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.UpQuery.Query(sqlf.PostgresBindVar))
+			}
+		} else {
+			if err := tx.Down(ctx, definition); err != nil {
+				return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.DownQuery.Query(sqlf.PostgresBindVar))
+			}
 		}
 
-		return direction(ctx, definition)
+		return nil
 	}
-	if err := schemaContext.store.WithMigrationLog(ctx, definition, up, applyMigration); err != nil {
-		return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
-	}
-
-	return nil
+	return schemaContext.store.WithMigrationLog(ctx, definition, up, applyMigration)
 }
 
 const indexPollInterval = time.Second * 5
