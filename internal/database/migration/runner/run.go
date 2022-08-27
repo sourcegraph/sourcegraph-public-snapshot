@@ -56,6 +56,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 			options.PrivilegedMode,
 			options.PrivilegedHash,
 			options.IgnoreSingleDirtyLog,
+			options.IgnoreSinglePendingLog,
 		); err != nil {
 			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
 		}
@@ -75,6 +76,7 @@ func (r *Runner) runSchema(
 	privilegedMode PrivilegedMode,
 	privilegedHash string,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 ) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
 	// upgrade and revert operations into targeted up and down operations.
@@ -145,6 +147,7 @@ func (r *Runner) runSchema(
 			privilegedMode,
 			privilegedHash,
 			ignoreSingleDirtyLog,
+			ignoreSinglePendingLog,
 		); err != nil {
 			return err
 		} else if !retry {
@@ -168,6 +171,7 @@ func (r *Runner) applyMigrations(
 	privilegedMode PrivilegedMode,
 	privilegedHash string,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 ) (retry bool, _ error) {
 	var droppedLock bool
 	up := operation.Type == MigrationOperationTypeTargetedUp
@@ -218,7 +222,14 @@ func (r *Runner) applyMigrations(
 		return nil
 	}
 
-	if retry, err := r.withLockedSchemaState(ctx, schemaContext, definitions, ignoreSingleDirtyLog, callback); err != nil {
+	if retry, err := r.withLockedSchemaState(
+		ctx,
+		schemaContext,
+		definitions,
+		ignoreSingleDirtyLog,
+		ignoreSinglePendingLog,
+		callback,
+	); err != nil {
 		return false, err
 	} else if retry {
 		// There are active index creation operations ongoing; wait a short time before requerying

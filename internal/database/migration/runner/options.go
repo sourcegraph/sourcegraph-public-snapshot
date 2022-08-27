@@ -30,6 +30,11 @@ type Options struct {
 	// a short development loop where the user can re-apply the `up` command without having to
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
+
+	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log. This
+	// is used during the upgrade process, which takes advisory locks at a higher level to
+	// ensure it has mutual access to the database (with respect to concurrent migrators).
+	IgnoreSinglePendingLog bool
 }
 
 type PrivilegedMode uint
