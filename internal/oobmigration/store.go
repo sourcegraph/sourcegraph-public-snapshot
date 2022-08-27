@@ -197,9 +197,13 @@ var yamlMigrationIDs = func() []int {
 }()
 
 // SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
-// Existing out-of-band migration metadata that does not match one of the identifiers in
-// the referenced file are not removed, as they have likely been registered by a later
-// version of the instance prior to a downgrade.
+// Existing out-of-band migration metadata that does not match one of the identifiers in the
+// referenced file are not removed, as they have likely been registered by a later version of
+// the instance prior to a downgrade.
+//
+// This method will use a fallback query to support an older version of the table (prior to 3.29)
+// so that upgrades of historic instances work with the migrator. This is true of select methods
+// in this store, but not all methods.
 func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
 	var fallback bool
 
@@ -236,13 +240,13 @@ func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
 			migration.DeprecatedVersionMajor,
 			migration.DeprecatedVersionMinor,
 		)); err != nil {
-			if shouldFallback(err) {
-				fallback = true
-				_ = tx.Done(err)
-				return s.synchronizeMetadataFallback(ctx)
+			if !shouldFallback(err) {
+				return err
 			}
 
-			return err
+			fallback = true
+			_ = tx.Done(err)
+			return s.synchronizeMetadataFallback(ctx)
 		}
 	}
 
@@ -278,12 +282,6 @@ ON CONFLICT (id) DO UPDATE SET
 	deprecated_version_minor = %s
 `
 
-// synchronizeMetadataFallback upserts the metadata defined in the sibling file oobmigrations.yaml
-// into an older version of the out_of_band_migrations table (prior to 3.29). The remaining semantics
-// are the sme as SynchronizeMetadata.
-//
-// A handful of methods in this store fallback to support older versions of the table so that we can
-// support multi-version upgrades on older versions.
 func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -292,10 +290,10 @@ func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	for _, migration := range yamlMigrations {
-		introduced := fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor)
+		introduced := versionString(migration.IntroducedVersionMajor, migration.IntroducedVersionMinor)
 		var deprecated *string
 		if migration.DeprecatedVersionMajor != nil {
-			s := fmt.Sprintf("%d.%d.0", *migration.DeprecatedVersionMajor, *migration.DeprecatedVersionMinor)
+			s := versionString(*migration.DeprecatedVersionMajor, *migration.DeprecatedVersionMinor)
 			deprecated = &s
 		}
 
@@ -391,6 +389,10 @@ ORDER BY e.created desc
 var ReturnEnterpriseMigrations = false
 
 // List returns the complete list of out-of-band migrations.
+//
+// This method will use a fallback query to support an older version of the table (prior to 3.29)
+// so that upgrades of historic instances work with the migrator. This is true of select methods
+// in this store, but not all methods.
 func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
 	conds := make([]*sqlf.Query, 0, 2)
 	if !ReturnEnterpriseMigrations {
@@ -405,11 +407,11 @@ func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
 
 	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {
-		if shouldFallback(err) {
-			return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listFallbackQuery, sqlf.Join(conds, "AND"))))
+		if !shouldFallback(err) {
+			return nil, err
 		}
 
-		return nil, err
+		return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listFallbackQuery, sqlf.Join(conds, "AND"))))
 	}
 
 	return migrations, nil
@@ -581,4 +583,8 @@ func shouldFallback(err error) bool {
 	}
 
 	return false
+}
+
+func versionString(major, minor int) string {
+	return fmt.Sprintf("%d.%d.0", major, minor)
 }
