@@ -75,10 +75,11 @@ func runUpgrade(
 			}
 
 			if err := r.Run(ctx, runner.Options{
-				Operations:           operations,
-				PrivilegedMode:       runner.ApplyPrivilegedMigrations,
-				PrivilegedHash:       "",
-				IgnoreSingleDirtyLog: false,
+				Operations:             operations,
+				PrivilegedMode:         runner.ApplyPrivilegedMigrations,
+				PrivilegedHash:         "",
+				IgnoreSingleDirtyLog:   true,
+				IgnoreSinglePendingLog: true,
 			}); err != nil {
 				return err
 			}
