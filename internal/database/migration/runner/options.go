@@ -31,9 +31,9 @@ type Options struct {
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
 
-	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log. This
-	// is used during the upgrade process, which takes advisory locks at a higher level to
-	// ensure it has mutual access to the database (with respect to concurrent migrators).
+	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log in the
+	// specific case when the _next_ migration application is the only pending migration. This
+	// is meant to enable interruptable upgrades.
 	IgnoreSinglePendingLog bool
 }
 

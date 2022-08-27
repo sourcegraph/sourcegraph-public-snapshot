@@ -225,8 +225,7 @@ type unlockFunc func(err error) error
 // If the ignoreSinglePendingLog flag is set to true, then the callback will be invoked if there is
 // a single pending migration log, and it's the next migration that would be applied with respect to
 // the given schema context. This is meant to be used in the upgrade process, where an interrupted
-// migrator command will appear as a concurrent upgrade attempt. To ensure that we have mutual
-// exclusion during upgrades, we hold an advisory lock prior to the upgrade sequence.
+// migrator command will appear as a concurrent upgrade attempt.
 //
 // This method returns a true-valued flag if it should be re-invoked by the caller.
 func (r *Runner) withLockedSchemaState(
