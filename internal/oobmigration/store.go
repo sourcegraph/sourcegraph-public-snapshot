@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"gopkg.in/yaml.v3"
@@ -15,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Migration stores metadata and tracks progress of an out-of-band migration routine.
@@ -193,11 +196,17 @@ var yamlMigrationIDs = func() []int {
 // the referenced file are not removed, as they have likely been registered by a later
 // version of the instance prior to a downgrade.
 func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
+	var fallback bool
+
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		if !fallback {
+			err = tx.Done(err)
+		}
+	}()
 
 	for _, migration := range yamlMigrations {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
@@ -222,6 +231,12 @@ func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
 			migration.DeprecatedVersionMajor,
 			migration.DeprecatedVersionMinor,
 		)); err != nil {
+			if shouldFallback(err) {
+				fallback = true
+				_ = tx.Done(err)
+				return s.synchronizeMetadataFallback(ctx)
+			}
+
 			return err
 		}
 	}
@@ -256,6 +271,66 @@ ON CONFLICT (id) DO UPDATE SET
 	introduced_version_minor = %s,
 	deprecated_version_major = %s,
 	deprecated_version_minor = %s
+`
+
+// synchronizeMetadataFallback upserts the metadata defined in the sibling file oobmigrations.yaml
+// into an older version of the out_of_band_migrations table (prior to 3.29). The remaining semantics
+// are the sme as SynchronizeMetadata.
+//
+// A handful of methods in this store fallback to support older versions of the table so that we can
+// support multi-version upgrades on older versions.
+func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, migration := range yamlMigrations {
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			synchronizeMetadataFallbackUpsertQuery,
+			migration.ID,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor),
+			fmt.Sprintf("%d.%d.0", migration.DeprecatedVersionMajor, migration.DeprecatedVersionMinor),
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			fmt.Sprintf("%d.%d.0", migration.IntroducedVersionMajor, migration.IntroducedVersionMinor),
+			fmt.Sprintf("%d.%d.0", migration.DeprecatedVersionMajor, migration.DeprecatedVersionMinor),
+		)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const synchronizeMetadataFallbackUpsertQuery = `
+-- source: internal/oobmigration/store.go:SynchronizeMetadataFallback
+INSERT INTO out_of_band_migrations
+(
+	id,
+	team,
+	component,
+	description,
+	created,
+	non_destructive,
+	introduced,
+	deprecated
+)
+VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)
+ON CONFLICT (id) DO UPDATE SET
+	team = %s,
+	component = %s,
+	description = %s,
+	non_destructive = %s,
+	introduced = %s,
+	deprecated = %s
 `
 
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
@@ -432,3 +507,29 @@ DELETE FROM out_of_band_migrations_errors WHERE id IN (
 	SELECT id FROM out_of_band_migrations_errors WHERE migration_id = %s ORDER BY created DESC OFFSET %s
 )
 `
+
+var columnsSupporingFallback = map[string]struct{}{
+	"is_enterprise":            {},
+	"introduced_version_major": {},
+	"introduced_version_minor": {},
+	"deprecated_version_major": {},
+	"deprecated_version_minor": {},
+}
+
+func shouldFallback(err error) bool {
+	_, ok := columnsSupporingFallback[getMissingColumn(err)]
+	return ok
+}
+
+var pattern = lazyregexp.New(`^column "([^)]+)" of relation "out_of_band_migrations" does not exist$`)
+
+func getMissingColumn(err error) string {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "42703" {
+		if match := pattern.FindStringSubmatch(pgErr.Message); len(match) > 1 {
+			return match[1]
+		}
+	}
+
+	return ""
+}
