@@ -5,12 +5,14 @@ import { mdiArrowExpand } from '@mdi/js'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
+import { GetSearchAggregationResult } from '../../graphql-operations'
 import {
     AggregationModeControls,
     AggregationUIMode,
     useAggregationSearchMode,
     useAggregationUIMode,
     AggregationChartCard,
+    getAggregationData,
     useSearchAggregationData,
 } from '../aggregation'
 
@@ -69,6 +71,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     outline={true}
                     className={styles.detailsAction}
                     data-testid="expand-aggregation-ui"
+                    disabled={!hasAggregationData(data)}
                     onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
                 >
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
@@ -76,4 +79,12 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             </footer>
         </article>
     )
+}
+
+function hasAggregationData(response?: GetSearchAggregationResult): boolean {
+    if (!response) {
+        return false
+    }
+
+    return getAggregationData(response.searchQueryAggregate.aggregations).length > 0
 }

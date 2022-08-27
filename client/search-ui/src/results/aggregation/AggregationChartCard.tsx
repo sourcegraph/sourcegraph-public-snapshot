@@ -1,11 +1,11 @@
-import { HTMLAttributes, ReactElement, MouseEvent } from 'react'
+import { HTMLAttributes, ReactElement, MouseEvent, FC, SVGProps, forwardRef } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
-import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Text, Link, Tooltip, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { GetSearchAggregationResult, SearchAggregationDatum } from '../../graphql-operations'
 
@@ -66,39 +66,36 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
     const { data, error, loading, mode, className, size = 'sm', 'aria-label': ariaLabel, onBarLinkClick } = props
 
+    if (loading) {
+        return (
+            <DataLayoutContainer size={size} className={className}>
+                Loading...
+            </DataLayoutContainer>
+        )
+    }
+
     // Internal error
     if (error) {
         return (
-            <div
-                className={classNames(className, styles.errorContainer, {
-                    [styles.errorContainerSmall]: size === 'sm',
-                })}
-            >
+            <DataLayoutContainer size={size} className={className}>
                 <ErrorAlert error={error} className={styles.errorAlert} />
-            </div>
+            </DataLayoutContainer>
         )
     }
 
     const aggregationError = getAggregationError(data)
 
-    if (loading || aggregationError) {
+    if (aggregationError) {
         return (
-            <div
-                className={classNames(styles.errorContainer, className, {
-                    [styles.errorContainerSmall]: size === 'sm',
-                })}
-            >
-                <div className={styles.errorMessage}>
-                    {loading ? (
-                        'Loading...'
-                    ) : aggregationError ? (
-                        <>
-                            We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />
-                            . <Link to="">Learn more</Link>
-                        </>
-                    ) : null}
+            <DataLayoutContainer size={size} className={className}>
+                <ZeroStateBarsBackground />
+                <div data-error-layout={true} className={styles.errorMessageLayout}>
+                    <div className={styles.errorMessage}>
+                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />.{' '}
+                        <Link to="">Learn more</Link>
+                    </div>
                 </div>
-            </div>
+            </DataLayoutContainer>
         )
     }
 
@@ -151,3 +148,45 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         </ParentSize>
     )
 }
+
+interface DataLayoutContainerProps {
+    size?: 'sm' | 'md'
+}
+
+const DataLayoutContainer = forwardRef((props, ref) => {
+    const { as: Component = 'div', size = 'md', className, ...attributes } = props
+
+    return (
+        <Component
+            {...attributes}
+            ref={ref}
+            className={classNames(className, styles.errorContainer, {
+                [styles.errorContainerSmall]: size === 'sm',
+            })}
+        />
+    )
+}) as ForwardReferenceComponent<'div', DataLayoutContainerProps>
+
+const ZeroStateBarsBackground: FC<SVGProps<SVGSVGElement>> = ({ className, ...attributes }) => (
+    <svg
+        {...attributes}
+        className={classNames(className, styles.zeroStateBackground)}
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <rect x="0%" y="5%" height="95%" width="5%" />
+        <rect x="7%" y="20%" height="80%" width="5%" />
+        <rect x="14%" y="25%" height="75%" width="5%" />
+        <rect x="21%" y="30%" height="70%" width="5%" />
+        <rect x="28%" y="32%" height="68%" width="5%" />
+        <rect x="35%" y="32%" height="68%" width="5%" />
+        <rect x="42%" y="38%" height="62%" width="5%" />
+        <rect x="49%" y="45%" height="55%" width="5%" />
+        <rect x="56%" y="60%" height="40%" width="5%" />
+        <rect x="63%" y="62%" height="38%" width="5%" />
+        <rect x="70%" y="67%" height="33%" width="5%" />
+        <rect x="77%" y="70%" height="30%" width="5%" />
+        <rect x="84%" y="75%" height="25%" width="5%" />
+        <rect x="91%" y="85%" height="15%" width="5%" />
+        <rect x="98%" y="93%" height="7%" width="5%" />
+    </svg>
+)

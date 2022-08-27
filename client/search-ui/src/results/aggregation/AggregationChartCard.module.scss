@@ -1,12 +1,22 @@
+// Chart (parent-size) container
 .container {
     position: relative;
-    overflow: auto;
+}
+
+.missing-label-count {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    padding: 0.25rem;
+    background: var(--body-bg);
+    color: var(--text-muted);
 }
 
 // Container for both errors (business-like and internal error alerts messages)
 .error-container {
     display: flex;
     flex-direction: column;
+    position: relative;
     overflow: auto;
     margin: 0;
 
@@ -22,17 +32,53 @@
     overflow: auto;
 }
 
+// Wrapper-container for custom search availability error message UI
+.error-message-layout {
+    padding: 0 0.5rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    :global(.theme-dark) & {
+        background-color: rgb(20 23 31 / 90%);
+    }
+
+    :global(.theme-light) & {
+        background-color: rgb(249 250 251 / 90%);
+    }
+
+    // Simple UI mode theme
+    :global(.core-workflow-improvements-enabled) & {
+        :global(.theme-dark) & {
+            background-color: rgba(14, 16, 22, 0.9);
+        }
+
+        :global(.theme-light) & {
+            background-color: rgb(255 255 255 / 92%);
+        }
+    }
+}
+
 // Custom search availability error message UI
 .error-message {
     margin: auto;
-    padding: 0 0.5rem;
 }
 
-.missing-label-count {
-    position: absolute;
-    top: 10px;
-    right: 0;
-    padding: 0.25rem;
-    background: var(--body-bg);
-    color: var(--text-muted);
+.zero-state-background {
+    width: 100%;
+    flex-grow: 1;
+    margin: auto;
+
+    // Visually compensate bottom spacing between error chart mock
+    // UI and aggregation controls UI which are placed below this
+    // zero state block
+    padding-bottom: 0.5rem;
+
+    rect {
+        fill: #a6b6d9;
+    }
 }

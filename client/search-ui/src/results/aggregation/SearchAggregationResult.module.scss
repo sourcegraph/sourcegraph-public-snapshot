@@ -15,6 +15,30 @@
     min-height: 26rem;
     max-height: 26rem;
     max-width: 60rem;
+
+    // The full UI aggregation mode has different from sidebar background colors
+    // in different themes and UI search modes (standard, simple) we have to
+    // override default sidebar chart styles in order to fit it in the full UI colors.
+    [data-error-layout] {
+        :global(.theme-dark) & {
+            background-color: rgb(20 23 31 / 90%);
+        }
+
+        :global(.theme-light) & {
+            background-color: rgb(249 250 251 / 90%);
+        }
+
+        // Simple UI mode theme
+        :global(.core-workflow-improvements-enabled) & {
+            :global(.theme-dark) & {
+                background-color: rgb(20 23 31 / 90%);
+            }
+
+            :global(.theme-light) & {
+                background-color: rgb(249 250 251 / 90%);
+            }
+        }
+    }
 }
 
 .list-result {
