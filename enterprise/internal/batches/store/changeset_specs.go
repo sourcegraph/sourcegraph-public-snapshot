@@ -422,7 +422,7 @@ ORDER BY repo_id ASC, head_ref ASC
 `
 
 func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
-	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listChangesetSpecsWithConflictingHeadRef.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
