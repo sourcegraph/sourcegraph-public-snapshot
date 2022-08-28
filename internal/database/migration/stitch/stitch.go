@@ -101,7 +101,14 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		// version incorrectly.
 
 		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return shared.MigrationBounds{}, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
+			return shared.MigrationBounds{}, errors.Newf(
+				"expected %s migration %d@%s to have a name prefixed with %q, have %q",
+				schemaName,
+				newDefinition.ID,
+				rev,
+				squashedMigrationPrefix,
+				newDefinition.Name,
+			)
 		}
 
 		existingDefinition, ok := definitionMap[newDefinition.ID]
@@ -121,7 +128,19 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			continue
 		}
 
-		return shared.MigrationBounds{}, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
+		return shared.MigrationBounds{}, errors.Newf(
+			"migration %d unexpectedly edited in release %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
+			newDefinition.ID,
+			rev,
+			cmp.Diff(
+				existingDefinition.UpQuery.Query(sqlf.PostgresBindVar),
+				newDefinition.UpQuery.Query(sqlf.PostgresBindVar),
+			),
+			cmp.Diff(
+				existingDefinition.DownQuery.Query(sqlf.PostgresBindVar),
+				newDefinition.DownQuery.Query(sqlf.PostgresBindVar),
+			),
+		)
 	}
 
 	leafIDs := []int{}
@@ -162,6 +181,7 @@ var allowedOverrideMap = map[int]struct{}{
 	1644515056: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
 	1645554732: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
 	1655481894: {}, // https://github.com/sourcegraph/sourcegraph/pull/40204 - fixed down mgiration reference
+	1528395786: {}, // https://github.com/sourcegraph/sourcegraph/pull/18667 - drive-by edit of empty migration
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
