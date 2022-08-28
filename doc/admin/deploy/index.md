@@ -14,9 +14,11 @@ Each of the deployment types listed below provides a different level of capabili
 
 ### [Docker Compose](docker-compose/index.md)
 
-We recommend Docker Compose for most production deployments. 
+We recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format. 
 
-It does not provide multi-machine capability such as high availability, but will require less setup time overall.
+Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability. 
+
+Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you. 
 
 ### Kubernetes [with Helm](kubernetes/helm.md) or  [ without Helm](kubernetes/index.md)
 
