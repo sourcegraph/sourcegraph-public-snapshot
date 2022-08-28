@@ -120,10 +120,8 @@ batchedEvents
             }
             return EMPTY
         }),
-        catchError(error => {
-            console.error('Error logging events:', error)
-            return []
-        })
+        // TODO: log errors to Sentry
+        catchError(() => [])
     )
     // eslint-disable-next-line rxjs/no-ignored-subscription
     .subscribe()
