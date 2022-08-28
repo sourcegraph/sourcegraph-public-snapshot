@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -132,6 +133,11 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NewNullString(c.CommitAuthorEmail),
 				c.Type,
 			); err != nil {
+				// We check if the resulting error is because the changeset is too large
+				if strings.Contains(err.Error(), "string too long to represent as jsonb string") {
+					link := "https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges"
+					return errors.Errorf("The changeset generated is over the size limit. You can make use of [transformChanges](%s) to break down the changesets into smaller pieces.", link)
+				}
 				return err
 			}
 		}
