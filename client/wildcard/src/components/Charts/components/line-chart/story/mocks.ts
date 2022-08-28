@@ -1,4 +1,4 @@
-import { Series } from '../../../types';
+import { Series } from '../../../types'
 
 export interface StandardDatum {
     value: number
@@ -6,7 +6,7 @@ export interface StandardDatum {
     link?: string
 }
 
-const getXValue = (datum: StandardDatum): Date  => new Date(datum.x)
+const getXValue = (datum: StandardDatum): Date => new Date(datum.x)
 const getYValue = (datum: StandardDatum): number => datum.value
 const getLinkURL = (datum: StandardDatum): string | undefined => datum.link
 
@@ -35,10 +35,10 @@ export const STANDARD_SERIES: Series<StandardDatum>[] = [
     {
         id: 'series_002',
         data: [
-            { x: new Date(2020, 12, 25), value: 9, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 2, 25), value: 10, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 4, 25), value: 12, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 6, 25), value: 16, link: 'https://twitter.com/search'},
+            { x: new Date(2020, 12, 25), value: 9, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 2, 25), value: 10, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 4, 25), value: 12, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 6, 25), value: 16, link: 'https://twitter.com/search' },
             { x: new Date(2021, 8, 25), value: 19 },
             { x: new Date(2021, 10, 25), value: 22 },
             { x: new Date(2021, 12, 25), value: 25 },
@@ -104,10 +104,10 @@ export const FLAT_SERIES: Series<StandardDatum>[] = [
     {
         id: 'series_002',
         data: [
-            { x: new Date(2020, 12, 25), value: 9, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 2, 25), value: 10, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 4, 25), value: 15, link: 'https://twitter.com/search'},
-            { x: new Date(2021, 6, 25), value: 15, link: 'https://twitter.com/search'},
+            { x: new Date(2020, 12, 25), value: 9, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 2, 25), value: 10, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 4, 25), value: 15, link: 'https://twitter.com/search' },
+            { x: new Date(2021, 6, 25), value: 15, link: 'https://twitter.com/search' },
             { x: new Date(2021, 8, 25), value: 15 },
             { x: new Date(2021, 10, 25), value: 15 },
             { x: new Date(2021, 12, 25), value: 25 },
@@ -187,7 +187,7 @@ export const SERIES_WITH_HUGE_DATA: Series<StandardDatum>[] = [
     },
 ]
 
-export const UNALIGNED_SERIES : Series<StandardDatum>[] = [
+export const UNALIGNED_SERIES: Series<StandardDatum>[] = [
     {
         id: 'series_001',
         data: [

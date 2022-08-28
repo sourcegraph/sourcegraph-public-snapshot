@@ -3,6 +3,9 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Badge } from '../../../Badge'
+import { H2, Text } from '../../../Typography'
+
 import { BarChart } from './BarChart'
 
 const StoryConfig: Meta = {
@@ -105,7 +108,6 @@ const LANGUAGE_USAGE_GROUPED_BY_REPO_DATA: LanguageUsageDatum[] = [
         linkURL: 'https://en.wikipedia.org/wiki/HTML',
     },
     {
-        // group: 'About',
         name: 'Markdown',
         value: 300,
         fill: '#083fa1',
@@ -119,8 +121,31 @@ const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
 const getGroup = (datum: LanguageUsageDatum) => datum.group
 
-export const BarChartVitrina: Story = () => (
-    <div className="d-flex flex-wrap" style={{ gap: 20 }}>
+export const BarChartDemo: Story = () => (
+    <main
+        style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            rowGap: 40,
+            columnGap: 20,
+            paddingBottom: 40,
+        }}
+    >
+        <PlainBarChartExample />
+        <GroupedBarExample />
+        <StackedBarExample />
+    </main>
+)
+
+const PlainBarChartExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Plain bar chart</H2>
+
+        <Text>
+            By default bar chart uses a bar name as a group name, so in this example, each bar has its own group (each
+            bar is independent). See grouped bar example for bars grouping.
+        </Text>
+
         <BarChart
             width={400}
             height={400}
@@ -131,6 +156,15 @@ export const BarChartVitrina: Story = () => (
             getDatumLink={getLink}
             getDatumHover={datum => `custom text for ${datum.name}`}
         />
+    </section>
+)
+
+const GroupedBarExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Grouped bar chart</H2>
+
+        <Text>It's possible to group (categories) bars by group name. You can do it with the `getCategory` prop.</Text>
+
         <BarChart
             width={400}
             height={400}
@@ -141,16 +175,26 @@ export const BarChartVitrina: Story = () => (
             getDatumColor={getColor}
             getDatumLink={getLink}
         />
+    </section>
+)
+
+const StackedBarExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Stacked bar chart</H2>
+
+        <Text>
+            <Badge variant="merged">Experimental</Badge> You can stack bars which are placed in one category (group).
+        </Text>
+
         <BarChart
-            stacked={true}
             width={400}
             height={400}
-            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
-            getCategory={getGroup}
+            data={LANGUAGE_USAGE_DATA}
             getDatumName={getName}
             getDatumValue={getValue}
             getDatumColor={getColor}
             getDatumLink={getLink}
+            getDatumHover={datum => `custom text for ${datum.name}`}
         />
-    </div>
+    </section>
 )

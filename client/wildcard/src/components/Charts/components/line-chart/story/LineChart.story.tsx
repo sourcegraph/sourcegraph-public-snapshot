@@ -13,7 +13,7 @@ import { H2, Text, Code } from '../../../../Typography'
 import { Series } from '../../../types'
 import { LineChart, LegendList, LegendItem, getLineColor } from '../index'
 
-import { FLAT_SERIES, STANDARD_SERIES, SERIES_WITH_HUGE_DATA, UNALIGNED_SERIES, StandardDatum } from './mocks';
+import { FLAT_SERIES, STANDARD_SERIES, SERIES_WITH_HUGE_DATA, UNALIGNED_SERIES, StandardDatum } from './mocks'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
@@ -29,17 +29,19 @@ const StoryConfig: Meta = {
 
 export default StoryConfig
 
-export const LineChartsVitrina: Story = () => (
-    <main style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 40,
-        columnGap: 20,
-        paddingBottom: 40
-    }}>
+export const LineChartsDemo: Story = () => (
+    <main
+        style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            rowGap: 40,
+            columnGap: 20,
+            paddingBottom: 40,
+        }}
+    >
         <PlainChartExample />
         <PlainStackedChartExample />
-        <ResponsiveChartExample/>
+        <ResponsiveChartExample />
         <WithLegendExample />
         <WithHugeDataExample />
         <WithZeroOneDataExample />
@@ -93,22 +95,17 @@ const ResponsiveChartExample = () => (
     <section style={{ flexBasis: 0 }}>
         <H2>Responsive chart</H2>
 
-        <Text style={{ maxWidth: 400,  minWidth: 400 }}>
-            SVG charts always require width and height values. In order to track parent size you can use ParentSize helper.
-            Try to resize the following chart (drag any corner of the chart block).
+        <Text style={{ maxWidth: 400, minWidth: 400 }}>
+            SVG charts always require width and height values. In order to track parent size you can use ParentSize
+            helper. Try to resize the following chart (drag any corner of the chart block).
             <br />
             <br />
             Note: Resize logic comes from react-resize package and not from this chart package.
         </Text>
 
-        <ResizableBox width={400} height={400} axis='both' minConstraints={[200, 200]} className='p-3'>
+        <ResizableBox width={400} height={400} axis="both" minConstraints={[200, 200]} className="p-3">
             <ParentSize debounceTime={0}>
-                { parent =>
-                    <LineChart
-                        width={parent.width}
-                        height={parent.height}
-                        series={STANDARD_SERIES} />
-                }
+                {parent => <LineChart width={parent.width} height={parent.height} series={STANDARD_SERIES} />}
             </ParentSize>
         </ResizableBox>
     </section>
@@ -125,9 +122,7 @@ const WithLegendExample = () => (
 
         <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
             <ParentSize className="flex-1">
-                {({ width, height }) => (
-                    <LineChart width={width} height={height} series={STANDARD_SERIES} />
-                )}
+                {({ width, height }) => <LineChart width={width} height={height} series={STANDARD_SERIES} />}
             </ParentSize>
             <LegendList className="mt-2">
                 {STANDARD_SERIES.map(line => (
@@ -139,17 +134,17 @@ const WithLegendExample = () => (
 )
 
 const WithHugeDataExample = () => (
-        <section style={{ flexBasis: 0 }}>
-            <H2>With unaligned by (x and y axes) data series</H2>
+    <section style={{ flexBasis: 0 }}>
+        <H2>With unaligned by (x and y axes) data series</H2>
 
-            <Text>
-                It's a possible situation when some series has fewer points than others on the chart. In this case, we
-                just show only existing points in the tooltip.
-            </Text>
+        <Text>
+            It's a possible situation when some series has fewer points than others on the chart. In this case, we just
+            show only existing points in the tooltip.
+        </Text>
 
-            <LineChart width={400} height={400} series={SERIES_WITH_HUGE_DATA} />
-        </section>
-    )
+        <LineChart width={400} height={400} series={SERIES_WITH_HUGE_DATA} />
+    </section>
+)
 
 const WithZeroOneDataExample = () => {
     const SERIES: Series<StandardDatum>[] = [
