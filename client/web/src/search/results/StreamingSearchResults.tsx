@@ -306,6 +306,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     patternType={patternType}
                     aria-label="Aggregation results panel"
                     className={styles.contents}
+                    disableProactiveSearchAggregations={disableProactiveSearchAggregations}
                     onQuerySubmit={handleSearchAggregationBarClick}
                 />
             )}

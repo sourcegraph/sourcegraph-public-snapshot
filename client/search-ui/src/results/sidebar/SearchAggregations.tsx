@@ -12,6 +12,7 @@ import {
     useAggregationUIMode,
     AggregationChartCard,
     useSearchAggregationData,
+    SearchAggregationModeUi,
 } from '../aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -38,11 +39,21 @@ interface SearchAggregationsProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { query, patternType, onQuerySubmit } = props
+    const { query, patternType, disableProactiveSearchAggregations, onQuerySubmit } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
-    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
-    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 10 })
+    const [aggregationMode, setAggregationMode] = useAggregationSearchMode(disableProactiveSearchAggregations)
+    const { data, error, loading } = useSearchAggregationData({
+        query,
+        patternType,
+        aggregationMode,
+        limit: 10,
+        disableProactiveSearchAggregations,
+    })
+
+    /**
+     * If disableProactiveSearchAggregations do not run queries or show chart until user selects a mode.
+     */
 
     return (
         <article className="pt-2">
@@ -54,15 +65,19 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 onModeChange={setAggregationMode}
             />
 
-            <AggregationChartCard
-                aria-label="Sidebar search aggregation chart"
-                data={data?.searchQueryAggregate?.aggregations}
-                loading={loading}
-                error={error}
-                mode={aggregationMode}
-                className={styles.chartContainer}
-                onBarLinkClick={onQuerySubmit}
-            />
+            {aggregationMode !== SearchAggregationModeUi.NONE ? (
+                <AggregationChartCard
+                    aria-label="Sidebar search aggregation chart"
+                    data={data?.searchQueryAggregate?.aggregations}
+                    loading={loading}
+                    error={error}
+                    mode={aggregationMode}
+                    className={styles.chartContainer}
+                    onBarLinkClick={onQuerySubmit}
+                />
+            ) : (
+                <div>Select a grouping to aggregate this search</div>
+            )}
 
             <footer className={styles.actions}>
                 <Button

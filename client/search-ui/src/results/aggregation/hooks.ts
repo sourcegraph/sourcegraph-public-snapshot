@@ -11,6 +11,15 @@ import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../..
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
 
+/**
+ * Since we can't extend enums we need to create a new one to use for when
+ * the user has not selected an aggregation mode. This is only used for
+ * disableProactiveSearchAggregations feature flag.
+ */
+export enum SearchAggregationModeUi {
+    NONE = 'NONE',
+}
+
 interface URLStateOptions<State, SerializedState> {
     urlKey: string
     deserializer: (value: SerializedState | null) => State
@@ -48,13 +57,16 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = SearchAggregationMode | ''
+type SerializedAggregationMode = SearchAggregationMode | SearchAggregationModeUi | ''
 
-const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => mode ?? ''
+const aggregationModeSerializer = (
+    mode: SearchAggregationMode | SearchAggregationModeUi | null
+): SerializedAggregationMode => mode ?? ''
 
 const aggregationModeDeserializer = (
-    serializedValue: SerializedAggregationMode | null
-): SearchAggregationMode | null => {
+    serializedValue: SerializedAggregationMode | null,
+    disableProactiveSearchAggregations?: boolean
+): SearchAggregationMode | SearchAggregationModeUi | null => {
     switch (serializedValue) {
         case 'REPO':
             return SearchAggregationMode.REPO
@@ -64,9 +76,8 @@ const aggregationModeDeserializer = (
             return SearchAggregationMode.AUTHOR
         case 'CAPTURE_GROUP':
             return SearchAggregationMode.CAPTURE_GROUP
-
         default:
-            return null
+            return disableProactiveSearchAggregations ? SearchAggregationModeUi.NONE : null
     }
 }
 
@@ -74,14 +85,16 @@ const aggregationModeDeserializer = (
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> => {
+export const useAggregationSearchMode = (
+    disableProactiveSearchAggregations?: boolean
+): SetStateResult<SearchAggregationMode | SearchAggregationModeUi | null> => {
     const [aggregationMode, setAggregationMode] = useSyncedWithURLState<
-        SearchAggregationMode | null,
+        SearchAggregationMode | SearchAggregationModeUi | null,
         SerializedAggregationMode
     >({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
-        deserializer: aggregationModeDeserializer,
+        deserializer: mode => aggregationModeDeserializer(mode, disableProactiveSearchAggregations),
     })
 
     return [aggregationMode, setAggregationMode]
@@ -166,11 +179,29 @@ export const AGGREGATION_SEARCH_QUERY = gql`
     }
 `
 
+export const AGGREGATION_SEARCH_AVAILABILITY = gql`
+    fragment SearchAggregationModeAvailability on AggregationModeAvailability {
+        __typename
+        mode
+        available
+        reasonUnavailable
+    }
+
+    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!) {
+        searchQueryAggregate(query: $query, patternType: $patternType) {
+            modeAvailability {
+                ...SearchAggregationModeAvailability
+            }
+        }
+    }
+`
+
 interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
-    aggregationMode: SearchAggregationMode | null
+    aggregationMode: SearchAggregationMode | SearchAggregationModeUi | null
     limit: number
+    disableProactiveSearchAggregations?: boolean
 }
 
 type SearchAggregationResults =
@@ -179,17 +210,20 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit } = input
+    const { query, patternType, aggregationMode, limit, disableProactiveSearchAggregations } = input
 
     const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
 
     const [data, setData] = useState<GetSearchAggregationResult | undefined>()
+    const modeVariable = aggregationMode === SearchAggregationModeUi.NONE ? null : aggregationMode
     const { error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
-        AGGREGATION_SEARCH_QUERY,
+        disableProactiveSearchAggregations && aggregationMode === SearchAggregationModeUi.NONE
+            ? AGGREGATION_SEARCH_AVAILABILITY
+            : AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
-            variables: { query, patternType, mode: aggregationMode, limit },
+            variables: { query, patternType, mode: modeVariable, limit },
 
             // Skip extra API request when we had no aggregation mode, and then
             // we got calculated aggregation mode from the BE. We should update
@@ -215,7 +249,9 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // Catch initial page mount when aggregation mode isn't set on the FE and BE
                 // calculated aggregation mode automatically on the backend based on given query
                 if (calculatedAggregationMode !== aggregationMode) {
-                    setAggregationMode(calculatedAggregationMode)
+                    setAggregationMode(
+                        disableProactiveSearchAggregations ? SearchAggregationModeUi.NONE : calculatedAggregationMode
+                    )
                 }
 
                 // Preserve calculated aggregation mode in order to use it for skipping
