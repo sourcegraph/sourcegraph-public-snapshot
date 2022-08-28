@@ -6,6 +6,9 @@ import { ParentSize } from '@visx/responsive'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Badge } from '../../../Badge'
+import { Button } from '../../../Button'
+import { H2, Text, Code } from '../../../Typography'
 import { Series } from '../../types'
 
 import { LineChart, LegendList, LegendItem, getLineColor } from './index'
@@ -25,16 +28,14 @@ const StoryConfig: Meta = {
 export default StoryConfig
 
 export const LineChartsVitrina: Story = () => (
-    <div className="d-flex flex-wrap" style={{ gap: 20 }}>
-        <PlainChart />
-        <PlainStackedChart />
+    <main className="d-flex flex-wrap" style={{ rowGap: 40, columnGap: 20 }}>
+        <PlainChartExample />
+        <PlainStackedChartExample />
         <WithLegendExample />
-        <WithHugeData />
-        <WithZeroOneData />
-        <WithDataSteps />
-        <WithDataMissingValues />
+        <WithHugeDataExample />
+        <WithZeroOneDataExample />
         <StackedWithDataMissingValues />
-    </div>
+    </main>
 )
 
 interface StandardDatum {
@@ -154,57 +155,89 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-const PlainChart = () => (
-    <div style={{ width: 400, height: 400 }}>
-        <ParentSize className="flex-1">
-            {({ width, height }) => <LineChart width={width} height={height} series={STANDARD_SERIES} />}
-        </ParentSize>
-    </div>
-)
-
-const PlainStackedChart = () => {
+const PlainChartExample = () => {
     const [active, setActive] = useState(false)
 
     return (
-        <section>
-            <button className="d-block" onClick={() => setActive(!active)}>
-                Toggle zero Y axis state
-            </button>
-            <LineChart width={400} height={400} series={STANDARD_SERIES} stacked={true} zeroYAxisMin={active} />
+        <section style={{ flexBasis: 0 }}>
+            <H2>Plain chart</H2>
+
+            <Text>
+                A standard example of the line chart. The static dataset has a fixed size (400 x 400). The
+                active/focused line is pulled in front of other non-active lines. (synthetic z-index for SVG elements).
+            </Text>
+
+            <Button variant="primary" size="sm" className="mb-2" onClick={() => setActive(!active)}>
+                Start Y axis with zero
+            </Button>
+
+            <LineChart width={400} height={400} zeroYAxisMin={active} series={STANDARD_SERIES} />
+        </section>
+    )
+}
+
+const PlainStackedChartExample = () => {
+    const [active, setActive] = useState(false)
+
+    return (
+        <section style={{ flexBasis: 0 }}>
+            <H2>Plain stacked chart</H2>
+
+            <Text>
+                <Badge variant="merged">Experimental</Badge> Stacked line chart. Each series value is calculated based
+                on the previous series in the series array.
+            </Text>
+
+            <Button variant="primary" size="sm" className="mb-2" onClick={() => setActive(!active)}>
+                Start Y axis with zero
+            </Button>
+
+            <LineChart stacked={true} width={400} height={400} series={STANDARD_SERIES} zeroYAxisMin={active} />
         </section>
     )
 }
 
 const WithLegendExample = () => (
-    <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
-        <ParentSize className="flex-1">
-            {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={STANDARD_SERIES} />}
-        </ParentSize>
-        <LegendList>
-            {STANDARD_SERIES.map(line => (
-                <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
-            ))}
-        </LegendList>
-    </div>
+    <section style={{ flexBasis: 0 }}>
+        <H2>Line chart with legend</H2>
+
+        <Text>
+            The following chart layout (chart and legend blocks) has a fixed size of 400x400. Chart size is calculated
+            (Chart = ParentSize - LegendSize).
+        </Text>
+
+        <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
+            <ParentSize className="flex-1">
+                {({ width, height }) => (
+                    <LineChart<StandardDatum> width={width} height={height} series={STANDARD_SERIES} />
+                )}
+            </ParentSize>
+            <LegendList className="mt-2">
+                {STANDARD_SERIES.map(line => (
+                    <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
+                ))}
+            </LegendList>
+        </div>
+    </section>
 )
 
-const WithHugeData = () => {
+const WithHugeDataExample = () => {
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
             data: [
-                { x: 1606780800000, value: 8394074 },
-                { x: 1609459200000, value: 839476900 },
-                { x: 1612137600000, value: 8395504 },
-                { x: 1614556800000, value: 839684900 },
-                { x: 1617235200000, value: 8397911 },
-                { x: 1619827200000, value: 839922700 },
-                { x: 1622505600000, value: 8400349 },
-                { x: 1625097600000, value: 840148500 },
-                { x: 1627776000000, value: 8402574 },
-                { x: 1630454400000, value: 840362900 },
-                { x: 1633046400000, value: 8374023 },
-                { x: 1635724800000, value: 837455000 },
+                { x: new Date(2022, 1), value: 95_000 },
+                { x: new Date(2022, 2), value: 125_000 },
+                { x: new Date(2022, 3), value: 195_000 },
+                { x: new Date(2022, 4), value: 235_000 },
+                { x: new Date(2022, 5), value: 325_000 },
+                { x: new Date(2022, 6), value: 400_000 },
+                { x: new Date(2022, 7), value: 520_000 },
+                { x: new Date(2022, 8), value: 720_000 },
+                { x: new Date(2022, 9), value: 780_000 },
+                { x: new Date(2022, 10), value: 800_000 },
+                { x: new Date(2022, 11), value: 815_000 },
+                { x: new Date(2022, 12), value: 840_000 },
             ],
             name: 'Fix',
             color: 'var(--oc-indigo-7)',
@@ -214,16 +247,12 @@ const WithHugeData = () => {
         {
             id: 'series_002',
             data: [
-                { x: 1606780800000, value: 1001777 },
-                { x: 1609459200000, value: 100180700 },
-                { x: 1612137600000, value: 1001844 },
-                { x: 1614556800000, value: 1001966 },
-                { x: 1617235200000, value: 1002005 },
-                { x: 1619827200000, value: 100202500 },
-                { x: 1622505600000, value: 1002137 },
-                { x: 1625097600000, value: 100218000 },
-                { x: 1627776000000, value: 1002280 },
-                { x: 1630454400000, value: 100237600 },
+                { x: new Date(2022, 1), value: 92_000 },
+                { x: new Date(2022, 2), value: 100_000 },
+                { x: new Date(2022, 3), value: 106_000 },
+                { x: new Date(2022, 4), value: 120_000 },
+                { x: new Date(2022, 5), value: 130_000 },
+                { x: new Date(2022, 6), value: 136_000 },
             ],
             color: 'var(--oc-orange-7)',
             name: 'Revert',
@@ -233,15 +262,20 @@ const WithHugeData = () => {
     ]
 
     return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
-            </ParentSize>
-        </div>
+        <section style={{ flexBasis: 0 }}>
+            <H2>With unaligned by (x and y axes) data series</H2>
+
+            <Text>
+                It's a possible situation when some series has fewer points than others on the chart. In this case, we
+                just show only existing points in the tooltip.
+            </Text>
+
+            <LineChart<StandardDatum> width={400} height={400} series={SERIES} />
+        </section>
     )
 }
 
-const WithZeroOneData = () => {
+const WithZeroOneDataExample = () => {
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -257,142 +291,79 @@ const WithZeroOneData = () => {
     ]
 
     return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
-            </ParentSize>
-        </div>
+        <section style={{ flexBasis: 0 }}>
+            <H2>Short datasets</H2>
+
+            <Text>
+                <Badge variant="warning">Should be improved</Badge> Currently, line charts and axis components may not
+                handle short datasets properly. This is something that we want to improve in the future.
+            </Text>
+
+            <LineChart<StandardDatum> width={400} height={400} series={SERIES} />
+        </section>
     )
 }
 
-const WithDataSteps = () => {
-    const SERIES: Series<StandardDatum>[] = [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1604188800000, value: 3725 },
-                { x: 1606780800000, value: 3725 },
-                { x: 1609459200000, value: 3725 },
-                { x: 1612137600000, value: 3725 },
-                { x: 1614556800000, value: 3725 },
-                { x: 1617235200000, value: 3725 },
-                { x: 1619827200000, value: 3728 },
-                { x: 1622505600000, value: 3827 },
-                { x: 1625097600000, value: 3827 },
-                { x: 1627776000000, value: 3827 },
-                { x: 1630458631000, value: 3053 },
-                { x: 1633452311000, value: 3053 },
-                { x: 1634952495000, value: 3053 },
-            ],
-            name: 'A metric',
-            color: 'var(--blue)',
-            getXValue,
-            getYValue,
-        },
-    ]
+const SERIES: Series<StandardDatum>[] = [
+    {
+        id: 'series_001',
+        data: [
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 94 },
+            { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 134 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 134 },
+            { x: 1588965700286, value: 123 },
+        ],
+        name: 'A metric',
+        color: 'var(--blue)',
+        getXValue,
+        getYValue,
+    },
+    {
+        id: 'series_002',
+        data: [
+            { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, value: 150 },
+            { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
+            { x: 1588965700286, value: 170 },
+            { x: 1588965700286 + 24 * 60 * 60 * 1000, value: 200 },
+            { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, value: 180 },
+        ],
+        name: 'C metric',
+        color: 'var(--purple)',
+        getXValue,
+        getYValue,
+    },
+    {
+        id: 'series_003',
+        data: [
+            { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 200 },
+            { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
+            { x: 1588965700286, value: 170 },
+        ],
+        name: 'B metric',
+        color: 'var(--warning)',
+        getXValue,
+        getYValue,
+    },
+]
 
-    return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
-            </ParentSize>
-        </div>
-    )
-}
+const StackedWithDataMissingValues = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Unaligned stacked datasets</H2>
 
-const WithDataMissingValues = () => {
-    const SERIES: Series<StandardDatum>[] = [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 94 },
-                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286, value: 123 },
-            ],
-            name: 'A metric',
-            color: 'var(--blue)',
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_002',
-            data: [
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 200 },
-                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
-                { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
-                { x: 1588965700286, value: 170 },
-            ],
-            name: 'B metric',
-            color: 'var(--warning)',
-            getXValue,
-            getYValue,
-        },
-    ]
+        <Text>
+            <Badge variant="merged">Experimental</Badge> In case some datasets are unaligned, the stacked value will
+            take the closest points of previous data series, interpolate values and apply a synthetically calculated
+            value as a basis for the current series point.
+            <br />
+            <Code>
+                ---- X ---- <br />
+                -----|----- <br />
+                --S--D--E-- <br />X = D (interpolation between S and E) + X (value)
+            </Code>
+        </Text>
 
-    return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} zeroYAxisMin={true} />
-                )}
-            </ParentSize>
-        </div>
-    )
-}
-
-const StackedWithDataMissingValues = () => {
-    const SERIES: Series<StandardDatum>[] = [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 94 },
-                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286, value: 123 },
-            ],
-            name: 'A metric',
-            color: 'var(--blue)',
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_002',
-            data: [
-                { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, value: 150 },
-                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
-                { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
-                { x: 1588965700286, value: 170 },
-                { x: 1588965700286 + 24 * 60 * 60 * 1000, value: 200 },
-                { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, value: 180 },
-            ],
-            name: 'C metric',
-            color: 'var(--purple)',
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_003',
-            data: [
-                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 200 },
-                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
-                { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
-                { x: 1588965700286, value: 170 },
-            ],
-            name: 'B metric',
-            color: 'var(--warning)',
-            getXValue,
-            getYValue,
-        },
-    ]
-
-    return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} stacked={true} />
-                )}
-            </ParentSize>
-        </div>
-    )
-}
+        <LineChart<StandardDatum> stacked={true} width={400} height={400} series={SERIES} />
+    </section>
+)
