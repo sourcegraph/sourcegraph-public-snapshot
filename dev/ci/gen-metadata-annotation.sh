@@ -32,5 +32,5 @@ ${runType}
 ${diff}
 ${messageFlags}
 <br/>
-_Note that a Job has **Soft Failed** when you see this icon ⚠️._
+Note that a Job has **Soft Failed** when you see this icon ⚠️.
 EOF
