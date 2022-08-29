@@ -5,6 +5,7 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/mxk/go-flowrate/flowrate"
@@ -19,21 +20,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
-var gitServiceMaxEgressBytesPerSecond = func() int64 {
-	logger := log.Scoped("gitServiceMaxEgressBytesPerSecond", "git service max egress bytes per second")
-	bps, err := strconv.ParseInt(env.Get(
-		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
-		"1000000000",
-		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
-		10,
-		64,
-	)
-	if err != nil {
-		logger.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", log.Int64("bps", bps), log.Error(err))
-		bps = 1000 * 1000 * 1000 // 1Gbps
-	}
-	return bps
-}()
+var (
+	gitServiceMaxEgressBytesPerSecond         int64
+	loadGitServiceMaxEgressBytesPerSecondOnce sync.Once
+)
+
+func getGitServiceMaxEgressBytesPerSecond(logger log.Logger) int64 {
+	loadGitServiceMaxEgressBytesPerSecondOnce.Do(func() {
+		var err error
+		gitServiceMaxEgressBytesPerSecond, err = strconv.ParseInt(env.Get(
+			"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
+			"1000000000",
+			"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
+			10,
+			64,
+		)
+		if err != nil {
+			gitServiceMaxEgressBytesPerSecond = 1000 * 1000 * 1000 // 1Gbps
+			logger.Error("failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND, defaulting to 1Gbps",
+				log.Int64("bps", gitServiceMaxEgressBytesPerSecond),
+				log.Error(err))
+		}
+	})
+
+	return gitServiceMaxEgressBytesPerSecond
+}
 
 // flowrateWriter limits the write rate of w to 1 Gbps.
 //
@@ -48,16 +59,18 @@ var gitServiceMaxEgressBytesPerSecond = func() int64 {
 // between nodes, and AWS varies widely depending on instance type.
 // We play it safe and default to 1 Gbps here (~119 MiB/s), which
 // means we can fetch a 1 GiB archive in ~8.5 seconds.
-func flowrateWriter(w io.Writer) io.Writer {
-	if gitServiceMaxEgressBytesPerSecond > 0 {
-		return flowrate.NewWriter(w, gitServiceMaxEgressBytesPerSecond)
+func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
+	if limit := getGitServiceMaxEgressBytesPerSecond(logger); limit > 0 {
+		return flowrate.NewWriter(w, limit)
 	}
 	return w
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
+	logger := s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol")
+
 	return &gitservice.Handler{
-		Logger: s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol"),
+		Logger: logger,
 
 		Dir: func(d string) string {
 			return string(s.dir(api.RepoName(d)))
@@ -65,7 +78,7 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 
 		// Limit rate of stdout from git.
 		CommandHook: func(cmd *exec.Cmd) {
-			cmd.Stdout = flowrateWriter(cmd.Stdout)
+			cmd.Stdout = flowrateWriter(logger, cmd.Stdout)
 		},
 
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
@@ -83,17 +96,17 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 				metricServiceRunning.WithLabelValues(svc).Dec()
 				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
-				logger := s.Logger.With(
+				fields := []log.Field{
 					log.String("svc", svc),
 					log.String("repo", repo),
 					log.String("protocol", protocol),
 					log.Duration("duration", time.Since(start)),
-				)
+				}
 
 				if err != nil {
-					logger.Error("gitservice.ServeHTTP", log.Error(err))
+					logger.Error("gitservice.ServeHTTP", append(fields, log.Error(err))...)
 				} else if traceLogs {
-					logger.Debug("TRACE gitserver git service")
+					logger.Debug("gitservice.ServeHTTP", fields...)
 				}
 			}
 		},
