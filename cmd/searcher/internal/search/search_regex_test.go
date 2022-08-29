@@ -7,13 +7,13 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
 
 	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
