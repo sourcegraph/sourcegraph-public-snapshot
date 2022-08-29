@@ -58,9 +58,10 @@ func Upgrade(
 		if err != nil {
 			return err
 		}
-		// Determine the set of versions that need to have out of band migrations completed prior
-		// to a subsequent instance upgrade. We'll "pause" the migration at these points and run
-		// the out of band migration routines to completion.
+
+		// Determine the set of versions that need to have out of band migrations completed
+		// prior to a subsequent instance upgrade. We'll "pause" the migration at these points
+		// and run the out of band migration routines to completion.
 		interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
 		if err != nil {
 			return err
