@@ -292,10 +292,6 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-type PackageJSON struct {
-	PackageManager string `json:"packageManager"`
-}
-
 func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
@@ -313,7 +309,10 @@ func getPackageManagerConstraint(ctx context.Context, tool string) (string, erro
 		return "", errors.Wrap(err, "Read package.json")
 	}
 
-	data := PackageJSON{}
+	data := struct {
+		PackageManager string `json:"packageManager"`
+	}{}
+
 	if err := json.Unmarshal(jsonData, &data); err != nil {
 		return "", errors.Wrap(err, "Unmarshal package.json")
 	}
