@@ -103,13 +103,19 @@ var (
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-func NewExternalClientFactory() *Factory {
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -144,12 +150,18 @@ var (
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-func NewInternalClientFactory(subsystem string) *Factory {
+// and middleware pre-set for communicating with internal services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
@@ -275,10 +287,12 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 }
 
 // NewLoggingMiddleware logs basic diagnostics about requests made through this client at
-// debug level. The provided logger should be appropriately scoped by the caller.
+// debug level. The provided logger is given the 'httpcli' subscope.
 //
 // It also logs metadata set by request context by other middleware, such as WithRetry.
 func NewLoggingMiddleware(logger log.Logger) Middleware {
+	logger = logger.Scoped("httpcli", "http client")
+
 	return func(d Doer) Doer {
 		return DoerFunc(func(r *http.Request) (*http.Response, error) {
 			start := time.Now()

@@ -462,11 +462,19 @@ func TestErrorResilience(t *testing.T) {
 		assert.Greater(t, len(logEntries), 0)
 		var attemptsLogged int
 		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for retry log fields
 			retry := entry.Fields["retry"]
 			if retry != nil {
 				// Non-zero number of attempts only
 				retryFields := retry.(map[string]any)
 				assert.NotZero(t, retryFields["attempts"])
+
+				// We must find at least some desired log entries
 				attemptsLogged += 1
 			}
 		}

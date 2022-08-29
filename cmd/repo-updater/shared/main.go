@@ -132,7 +132,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.SetMetrics(m)
 	}
 
-	cf := httpcli.ExternalClientFactory
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
 
 	var src repos.Sourcer
 	{
@@ -140,8 +143,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db)
-		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
