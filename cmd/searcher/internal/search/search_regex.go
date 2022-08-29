@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/zoekt/query"
 )
 
 // readerGrep is responsible for finding LineMatches. It is not concurrency
@@ -81,15 +82,25 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 			// regex engine to consider newlines for anchors (^$).
 			expr = "(?m:" + expr + ")"
 		}
-		if !p.IsCaseSensitive {
-			// We don't just use (?i) because regexp library doesn't seem
-			// to contain good optimizations for case insensitive
-			// search. Instead we lowercase the input and pattern.
+
+		// Transforms on the parsed regex
+		{
 			re, err := syntax.Parse(expr, syntax.Perl)
 			if err != nil {
 				return nil, err
 			}
-			casetransform.LowerRegexpASCII(re)
+
+			if !p.IsCaseSensitive {
+				// We don't just use (?i) because regexp library doesn't seem
+				// to contain good optimizations for case insensitive
+				// search. Instead we lowercase the input and pattern.
+				casetransform.LowerRegexpASCII(re)
+			}
+
+			// OptimizeRegexp currently only converts capture groups into
+			// non-capture groups (faster for stdlib regexp to execute).
+			re = query.OptimizeRegexp(re, syntax.Perl)
+
 			expr = re.String()
 		}
 
