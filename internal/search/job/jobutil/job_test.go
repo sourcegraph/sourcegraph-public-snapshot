@@ -641,8 +641,6 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           )
         (STRUCTURALSEARCH
-          (query . regex:"(:_)")
-          (type . text)
           (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
           )))))`),
 		},
