@@ -16,7 +16,7 @@ func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.St
 		Metrics:  metrics.reconcilerWorkerResetterMetrics,
 	}
 
-	resetter := dbworker.NewResetter(logger.Scoped("dbworker.Resetter", ""), workerStore, options)
+	resetter := dbworker.NewResetter(logger, workerStore, options)
 	return resetter
 }
 
