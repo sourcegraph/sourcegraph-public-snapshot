@@ -16,13 +16,13 @@
 ## Requirements
 
 Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](executors.md#how-it-works) to isolate jobs from each other and the host.
-This requires executors to be run on machines capable of running Linux KVM extensions. For cloud providers, this means executors require bare-metal machines or machines capable of nested virtualization, which is made available by most popular Cloud providers.
+This requires executors to be run on machines capable of running Linux KVM extensions. On the most popular cloud providers, this either means running executors on bare-metal machines or machines capable of nested virtualization.
 
-Not using KVM-based isolation can be done using executors, but is not the default and is less secure by default.
+Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.
 
 ## Installation
 
-That means, in order to deploy executors that can talk to the Sourcegraph instance, you need to do the following:
+In order to deploy executors that can talk to the Sourcegraph instance, you need to do the following:
 
 1. [Configure a shared secret in the Sourcegraph instance](#configure-sourcegraph)
 1. [Run executors](#run-executors)
@@ -33,7 +33,7 @@ That means, in order to deploy executors that can talk to the Sourcegraph instan
 
 ### Configure Sourcegraph
 
-Executors operate outside of your Sourcegraph instance and must be run separately from your Sourcegraph server deployment method.
+Executors must be run separately from your Sourcegraph instance.
 
 Since they must still be able to reach the Sourcegraph instance in order to dequeue and perform work, requests between the Sourcegraph instance and the executors are authenticated via a shared secret.
 
@@ -100,17 +100,19 @@ Once dependencies are met, you can download and run executor binaries:
 KVM (virtualization) support is required for [our sandboxing model](executors.md#how-it-works) with Firecracker. The following command checks whether virtualization is enabled on the machine (it should print something):
 
 ```bash
-lscpu | grep Virtualization
+$ lscpu | grep Virtualization
 
 Virtualization:      VT-x
 ```
 
-On Ubuntu-like systems, you can also use the tool `kvm-ok` available in the `cpu-checker` package to reliably validate KVM support of your host.
+On Ubuntu-based distributions, you can also use the tool `kvm-ok` available in the `cpu-checker` package to reliably validate KVM support on your host:
 
 ```bash
-apt-get update && apt-get install -y cpu-checker
+# Install cpu-checker
+$ apt-get update && apt-get install -y cpu-checker
 
-kvm-ok
+# Check for KVM support
+$ kvm-ok
 INFO: /dev/kvm exists
 KVM acceleration can be used
 ```
@@ -133,9 +135,10 @@ mv executor /usr/local/bin
 
 **Step 3:** Configure your machine
 
-The executor makes a lot assumptions about it's environment today. It has to have a working installation of ignite, that is configured
-and expects the sourcegraph/ignite-ubuntu base image for the VMs ready. In addition, we also do some hardening of regular ignite in
-our pre-built environments to restrict networking further and use up-to-date kernels.
+The executor makes a lot assumptions about it's environment today:
+- It has to have a working installation of ignite that is configured
+- and expects the `sourcegraph/ignite-ubuntu` base image for the VMs ready.
+- In addition, we also do some hardening of regular ignite in our pre-built environments to restrict networking further and use up-to-date kernels.
 Until we automate more of this outside of our pre-built images, refer to [the script that our pre-built images use](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh)
 for how we do it. Usually, 95% of this file should be portable to any environment.
 
