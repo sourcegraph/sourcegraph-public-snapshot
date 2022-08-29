@@ -29,7 +29,7 @@ func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore
 		Metrics:  metrics.bulkProcessorWorkerResetterMetrics,
 	}
 
-	resetter := dbworker.NewResetter(logger.Scoped("dbworker.Resetter", ""), workerStore, options)
+	resetter := dbworker.NewResetter(logger, workerStore, options)
 	return resetter
 }
 
