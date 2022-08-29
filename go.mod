@@ -133,7 +133,6 @@ require (
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/snabb/sitemap v1.0.0
-	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20211011105148-2e30f7bacbe1
@@ -195,6 +194,14 @@ require (
 	layeh.com/gopher-luar v1.0.10
 	sigs.k8s.io/kustomize/kyaml v0.13.3
 	sigs.k8s.io/yaml v1.3.0
+)
+
+require github.com/XSAM/otelsql v0.15.0
+
+require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/onsi/ginkgo v1.16.4 // indirect
+	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 )
 
 require github.com/hmarr/codeowners v0.4.0
@@ -281,7 +288,6 @@ require (
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-openapi/validate v0.20.3 // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
@@ -359,7 +365,6 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
@@ -406,7 +411,6 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.9.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.9.0
-	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.18.0
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
@@ -447,6 +451,8 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
+	// Forked until PR is merged upstream TODO @jhchabran
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).

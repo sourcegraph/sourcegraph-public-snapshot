@@ -318,21 +318,19 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderMessage(noActivityOrStatus: Message, isSiteAdmin: boolean): JSX.Element | JSX.Element[] {
         const userSettings = `/users/${this.props.user.username}/settings`
-        const makeGetCodeHostLink = (isSiteAdmin: boolean) => (id: string): string =>
-            isSiteAdmin ? `/site-admin/external-services/${id}` : `${userSettings}/code-hosts`
 
         const roleLinks = {
             admin: {
                 viewRepositories: '/site-admin/repositories',
                 manageRepositories: '/site-admin/external-services',
                 manageCodeHosts: '/site-admin/external-services',
-                getCodeHostLink: makeGetCodeHostLink(true),
+                getCodeHostLink: (id: string) => `/site-admin/external-services/${id}`,
             },
             nonAdmin: {
                 viewRepositories: `${userSettings}/repositories`,
                 manageRepositories: `${userSettings}/repositories/manage`,
                 manageCodeHosts: `${userSettings}/code-hosts`,
-                getCodeHostLink: makeGetCodeHostLink(false),
+                getCodeHostLink: () => `${userSettings}/code-hosts`,
             },
         }
 
@@ -349,7 +347,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     key="up-to-date"
                     message="Repositories available for search"
                     linkTo={links.viewRepositories}
-                    linkText="Manage repositories"
+                    linkText="View repositories"
                     linkOnClick={this.toggleIsOpen}
                     entryType="success"
                 />

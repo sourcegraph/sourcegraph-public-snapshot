@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
@@ -17,7 +18,7 @@ func TestServiceConnections(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 
 	// We only test that we get something non-empty back.
-	sc := serviceConnections()
+	sc := serviceConnections(logtest.Scoped(t))
 	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
 		t.Fatal("expected non-empty service connections")
 	}

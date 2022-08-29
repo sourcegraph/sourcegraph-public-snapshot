@@ -3,35 +3,47 @@ package trace
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	nettrace "golang.org/x/net/trace"
-
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// A Tracer for trace creation, parameterised over an
-// opentracing.Tracer. Use this if you don't want to use
-// the global tracer.
+// A Tracer for trace creation, parameterised over an opentelemetry.TracerProvider. Set
+// TracerProvider if you don't want to use the global tracer provider, otherwise the
+// global TracerProvider is used.
 type Tracer struct {
-	Tracer opentracing.Tracer
+	TracerProvider oteltrace.TracerProvider
 }
 
 // New returns a new Trace with the specified family and title.
 func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
-	span, ctx := ot.StartSpanFromContextWithTracer(
-		ctx,
-		t.Tracer,
-		family,
-		tagsOpt{title: title, tags: tags},
-	)
-	tr := nettrace.New(family, title)
-	trace := &Trace{span: span, trace: tr, family: family}
+	if t.TracerProvider == nil {
+		t.TracerProvider = otel.GetTracerProvider()
+	}
+
+	var otelSpan oteltrace.Span
+	ctx, otelSpan = t.TracerProvider.
+		Tracer("internal/trace").
+		Start(ctx, family,
+			oteltrace.WithAttributes(attribute.String("title", title)),
+			oteltrace.WithAttributes(tagSet(tags).toAttributes()...))
+
+	// Create the nettrace trace to tee to.
+	ntTrace := nettrace.New(family, title)
+
+	// Set up the split trace.
+	trace := &Trace{
+		family:        family,
+		oteltraceSpan: otelSpan,
+		nettraceTrace: ntTrace,
+	}
 	if parent := TraceFromContext(ctx); parent != nil {
-		tr.LazyPrintf("parent: %s", parent.family)
+		ntTrace.LazyPrintf("parent: %s", parent.family)
 		trace.family = parent.family + " > " + family
 	}
 	for _, t := range tags {
-		tr.LazyPrintf("%s: %s", t.Key, t.Value)
+		ntTrace.LazyPrintf("%s: %s", t.Key, t.Value)
 	}
 	return trace, contextWithTrace(ctx, trace)
 }
@@ -44,24 +56,12 @@ type Tag struct {
 	Value string
 }
 
-// tagsOpt is an opentracing.StartSpanOption which applies all the tags
-type tagsOpt struct {
-	tags  []Tag
-	title string
-}
+type tagSet []Tag
 
-// Apply satisfies the StartSpanOption interface.
-func (t tagsOpt) Apply(o *opentracing.StartSpanOptions) {
-	if len(t.tags) == 0 && t.title == "" {
-		return
+func (t tagSet) toAttributes() []attribute.KeyValue {
+	attributes := make([]attribute.KeyValue, len(t))
+	for i, tag := range t {
+		attributes[i] = attribute.String(tag.Key, tag.Value)
 	}
-	if o.Tags == nil {
-		o.Tags = make(map[string]any, len(t.tags)+1)
-	}
-	if t.title != "" {
-		o.Tags["title"] = t.title
-	}
-	for _, t := range t.tags {
-		o.Tags[t.Key] = t.Value
-	}
+	return attributes
 }
