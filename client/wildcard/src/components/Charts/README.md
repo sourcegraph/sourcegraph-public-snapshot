@@ -3,13 +3,25 @@
 This package provides different visual components primarily for rendering charts and data visualization.
 At the moment, this package contains the following list of high-level charts:
 
-- **Series-like line chart**
+- **Series-like line chart** ([storybook](https://storybook.sgdev.org/?path=/story/wildcard-charts--line-charts-vitrina))
   - Grouped
   - Stacked (experimental)
-- **Pie chart**
-- **Categorical-like Bar chart** (experimental)
+- **Pie chart** ([storybook](https://storybook.sgdev.org/?path=/story/wildcard-charts--pie-chart-vitrina))
+- **Categorical-like Bar chart** (experimental) ([storybook](https://storybook.sgdev.org/?path=/story/wildcard-charts--bar-chart-vitrina))
   - Grouped
   - Stacked
+
+## How to use this package
+
+1. Try to use a high-level chart (at the moment, it's either line, bar, or pie chart)
+2. If you see that you need minor chart customization (extending existing chart API), feel free to contribute to these charts.
+3. If you see that you need an extensive or even mid-size UI customization, you need to use it for a low-level block and build your chart
+   in the consumer
+4. _As a last resort, you can find similar to your custom chart example in [visx gallery](https://airbnb.io/visx/gallery) and
+   bring it to your consumer codebase. Since visx charts use visx primitives, this will not spoil the consistency much.
+   If we have more than two consumers needing this new chart, we consider implementing it in the wildcard chart package._
+
+## Basic example
 
 As you can see in the storybook stories of this package, you can use these charts
 directly from this package as the following example
@@ -90,16 +102,6 @@ Our low-level API consists of two major parts
      and tooltip chart UI (experiment)
    - Smart tooltip component (experiment, it's used in high-level chart but not properly prepared for explicit reusing in
      other consumers)
-
-## Life of chart
-
-1. Try to use a high-level chart (at the moment, it's either line, bar, or pie chart)
-2. If you see that you need minor chart customization (extending existing chart API), feel free to contribute to these charts.
-3. If you see that you need an extensive or even mid-size UI customization, you need to use it for a low-level block and build your chart
-   in the consumer
-4. _As a last resort, you can find similar to your custom chart example in [visx gallery](https://airbnb.io/visx/gallery) and
-   bring it to your consumer codebase. Since visx charts use visx primitives, this will not spoil the consistency much.
-   If we have more than two consumers needing this new chart, we consider implementing it in the wildcard chart package._
 
 ## Ownership
 
