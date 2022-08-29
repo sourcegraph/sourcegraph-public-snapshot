@@ -10,7 +10,7 @@ import { useTemporarySetting, UseTemporarySettingsReturnType } from './temporary
 // temporary setting was "loading".
 export const CoreWorkflowImprovementsEnabledContext = createContext<
     UseTemporarySettingsReturnType<'coreWorkflowImprovements.enabled'>
->([false, noop, 'initial'])
+>([true, noop, 'initial'])
 CoreWorkflowImprovementsEnabledContext.displayName = 'CoreWorkflowImprovementsContext'
 
 export const CoreWorkflowImprovementsEnabledProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -36,16 +36,17 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 }
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func HandleResetPasswordInit(db database.DB) http.HandlerFunc {
+func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleResetPasswordInit", "password reset initialization flow handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(w) {
+		if handleEnabledCheck(logger, w) {
 			return
 		}
 		if handleNotAuthenticatedCheck(w, r) {
 			return
 		}
 		if !conf.CanSendEmail() {
-			httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
+			httpLogAndError(logger, w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
 			return
 		}
 
@@ -54,12 +55,12 @@ func HandleResetPasswordInit(db database.DB) http.HandlerFunc {
 			Email string `json:"email"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-			httpLogAndError(w, "Could not decode password reset request body", http.StatusBadRequest, "err", err)
+			httpLogAndError(logger, w, "Could not decode password reset request body", http.StatusBadRequest, log.Error(err))
 			return
 		}
 
 		if formData.Email == "" {
-			httpLogAndError(w, "No email specified in password reset request", http.StatusBadRequest)
+			httpLogAndError(logger, w, "No email specified in password reset request", http.StatusBadRequest)
 			return
 		}
 
@@ -68,22 +69,22 @@ func HandleResetPasswordInit(db database.DB) http.HandlerFunc {
 			// 🚨 SECURITY: We don't show an error message when the user is not found
 			// as to not leak the existence of a given e-mail address in the database.
 			if !errcode.IsNotFound(err) {
-				httpLogAndError(w, "Failed to lookup user", http.StatusInternalServerError)
+				httpLogAndError(logger, w, "Failed to lookup user", http.StatusInternalServerError)
 			}
 			return
 		}
 
 		resetURL, err := backend.MakePasswordResetURL(ctx, db, usr.ID)
 		if err == database.ErrPasswordResetRateLimit {
-			httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
+			httpLogAndError(logger, w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, log.Error(err))
 			return
 		} else if err != nil {
-			httpLogAndError(w, "Could not reset password", http.StatusBadRequest, "err", err)
+			httpLogAndError(logger, w, "Could not reset password", http.StatusBadRequest, log.Error(err))
 			return
 		}
 
 		if err := SendResetPasswordURLEmail(r.Context(), formData.Email, usr.Username, resetURL); err != nil {
-			httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
+			httpLogAndError(logger, w, "Could not send reset password email", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
@@ -167,9 +168,10 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
-func HandleResetPasswordCode(db database.DB) http.HandlerFunc {
+func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleResetPasswordCode", "verifies password reset code requests handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(w) {
+		if handleEnabledCheck(logger, w) {
 			return
 		}
 		if handleNotAuthenticatedCheck(w, r) {
@@ -183,7 +185,7 @@ func HandleResetPasswordCode(db database.DB) http.HandlerFunc {
 			Password string `json:"password"` // new password
 		}
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)
+			httpLogAndError(logger, w, "Password reset with code: could not decode request body", http.StatusBadGateway, log.Error(err))
 			return
 		}
 
@@ -194,7 +196,7 @@ func HandleResetPasswordCode(db database.DB) http.HandlerFunc {
 
 		success, err := db.Users().SetPassword(ctx, params.UserID, params.Code, params.Password)
 		if err != nil {
-			httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
+			httpLogAndError(logger, w, "Unexpected error", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -207,7 +209,7 @@ func HandleResetPasswordCode(db database.DB) http.HandlerFunc {
 
 		if conf.CanSendEmail() {
 			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, db, params.UserID, "reset the password"); err != nil {
-				log15.Warn("Failed to send email to inform user of password reset", "error", err)
+				logger.Warn("Failed to send email to inform user of password reset", log.Error(err))
 			}
 		}
 	}
