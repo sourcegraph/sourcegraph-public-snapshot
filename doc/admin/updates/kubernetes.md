@@ -19,7 +19,7 @@
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
 
-## 3.42 -> 3.43
+## 3.42 -> 3.43.1
 
 ## 3.41 -> 3.42.2
 
