@@ -10,27 +10,13 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
     --zindex-sticky: 1020;
 }
 
-// Align
-
-.align-baseline {
-    vertical-align: baseline !important; // Browser default
-}
-
-.align-top {
-    vertical-align: top !important;
-}
-
-.align-middle {
-    vertical-align: middle !important;
-}
-
-.align-bottom {
-    vertical-align: bottom !important;
-}
-
-.align-text-bottom {
-    vertical-align: text-bottom !important;
-}
+@import './utilities/align';
+@import './utilities/border-radius';
+@import './utilities/border';
+@import './utilities/flex';
+@import './utilities/spacing';
+@import './utilities/screenreaders';
+@import './utilities/text';
 
 // Background
 
@@ -55,73 +41,6 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
     background-color: transparent !important;
 }
 
-// Borders
-
-.border {
-    border: var(--border-width) solid var(--border-color) !important;
-}
-
-.border-top {
-    border-top: var(--border-width) solid var(--border-color) !important;
-}
-
-.border-right {
-    border-right: var(--border-width) solid var(--border-color) !important;
-}
-
-.border-bottom {
-    border-bottom: var(--border-width) solid var(--border-color) !important;
-}
-
-.border-left {
-    border-left: var(--border-width) solid var(--border-color) !important;
-}
-
-.border-0 {
-    border: 0 !important;
-}
-
-.border-top-0 {
-    border-top: 0 !important;
-}
-
-.border-right-0 {
-    border-right: 0 !important;
-}
-
-.border-bottom-0 {
-    border-bottom: 0 !important;
-}
-
-.border-left-0 {
-    border-left: 0 !important;
-}
-
-@each $color, $value in $theme-colors {
-    .border-#{$color} {
-        border-color: $value !important;
-    }
-}
-
-//
-// Border-radius
-//
-.rounded-sm {
-    border-radius: var(--border-radius) !important;
-}
-
-.rounded {
-    border-radius: var(--border-radius) !important;
-}
-
-.rounded-circle {
-    border-radius: 50% !important;
-}
-
-.rounded-0 {
-    border-radius: 0 !important;
-}
-
 // Displays
 
 @each $breakpoint in map-keys($grid-breakpoints) {
@@ -143,117 +62,6 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
     @each $value in $displays {
         .d-print-#{$value} {
             display: $value !important;
-        }
-    }
-}
-
-// Flex
-
-@each $breakpoint in map-keys($grid-breakpoints) {
-    @include media-breakpoint-up($breakpoint) {
-        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
-
-        .flex#{$infix}-row {
-            flex-direction: row !important;
-        }
-        .flex#{$infix}-column {
-            flex-direction: column !important;
-        }
-        .flex#{$infix}-row-reverse {
-            flex-direction: row-reverse !important;
-        }
-        .flex#{$infix}-column-reverse {
-            flex-direction: column-reverse !important;
-        }
-        .flex#{$infix}-wrap {
-            flex-wrap: wrap !important;
-        }
-        .flex#{$infix}-nowrap {
-            flex-wrap: nowrap !important;
-        }
-        .flex#{$infix}-wrap-reverse {
-            flex-wrap: wrap-reverse !important;
-        }
-        .flex#{$infix}-fill {
-            flex: 1 1 auto !important;
-        }
-        .flex#{$infix}-grow-0 {
-            flex-grow: 0 !important;
-        }
-        .flex#{$infix}-grow-1 {
-            flex-grow: 1 !important;
-        }
-        .flex#{$infix}-shrink-0 {
-            flex-shrink: 0 !important;
-        }
-        .flex#{$infix}-shrink-1 {
-            flex-shrink: 1 !important;
-        }
-        .justify-content#{$infix}-start {
-            justify-content: flex-start !important;
-        }
-        .justify-content#{$infix}-end {
-            justify-content: flex-end !important;
-        }
-        .justify-content#{$infix}-center {
-            justify-content: center !important;
-        }
-        .justify-content#{$infix}-between {
-            justify-content: space-between !important;
-        }
-        .justify-content#{$infix}-around {
-            justify-content: space-around !important;
-        }
-        .align-items#{$infix}-start {
-            align-items: flex-start !important;
-        }
-        .align-items#{$infix}-end {
-            align-items: flex-end !important;
-        }
-        .align-items#{$infix}-center {
-            align-items: center !important;
-        }
-        .align-items#{$infix}-baseline {
-            align-items: baseline !important;
-        }
-        .align-items#{$infix}-stretch {
-            align-items: stretch !important;
-        }
-        .align-content#{$infix}-start {
-            align-content: flex-start !important;
-        }
-        .align-content#{$infix}-end {
-            align-content: flex-end !important;
-        }
-        .align-content#{$infix}-center {
-            align-content: center !important;
-        }
-        .align-content#{$infix}-between {
-            align-content: space-between !important;
-        }
-        .align-content#{$infix}-around {
-            align-content: space-around !important;
-        }
-        .align-content#{$infix}-stretch {
-            align-content: stretch !important;
-        }
-        .align-self#{$infix}-auto {
-            align-self: auto !important;
-        }
-        .align-self#{$infix}-start {
-            align-self: flex-start !important;
-        }
-        .align-self#{$infix}-end {
-            align-self: flex-end !important;
-        }
-        .align-self#{$infix}-center {
-            align-self: center !important;
-        }
-        .align-self#{$infix}-baseline {
-            align-self: baseline !important;
-        }
-        .align-self#{$infix}-stretch {
-            align-self: stretch !important;
         }
     }
 }
@@ -344,84 +152,6 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
 
 .vh-100 {
     height: 100vh !important;
-}
-
-// Spacing
-
-@each $breakpoint in map-keys($grid-breakpoints) {
-    @include media-breakpoint-up($breakpoint) {
-        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
-
-        @each $prop, $abbrev in (margin: m, padding: p) {
-            @each $size, $length in $spacers {
-                .#{$abbrev}#{$infix}-#{$size} {
-                    #{$prop}: $length !important;
-                }
-                .#{$abbrev}t#{$infix}-#{$size},
-                .#{$abbrev}y#{$infix}-#{$size} {
-                    #{$prop}-top: $length !important;
-                }
-                .#{$abbrev}r#{$infix}-#{$size},
-                .#{$abbrev}x#{$infix}-#{$size} {
-                    #{$prop}-right: $length !important;
-                }
-                .#{$abbrev}b#{$infix}-#{$size},
-                .#{$abbrev}y#{$infix}-#{$size} {
-                    #{$prop}-bottom: $length !important;
-                }
-                .#{$abbrev}l#{$infix}-#{$size},
-                .#{$abbrev}x#{$infix}-#{$size} {
-                    #{$prop}-left: $length !important;
-                }
-            }
-        }
-
-        // Negative margins (e.g., where `.mb-n1` is negative version of `.mb-1`)
-        @each $size, $length in $spacers {
-            @if $size != 0 {
-                .m#{$infix}-n#{$size} {
-                    margin: -$length !important;
-                }
-                .mt#{$infix}-n#{$size},
-                .my#{$infix}-n#{$size} {
-                    margin-top: -$length !important;
-                }
-                .mr#{$infix}-n#{$size},
-                .mx#{$infix}-n#{$size} {
-                    margin-right: -$length !important;
-                }
-                .mb#{$infix}-n#{$size},
-                .my#{$infix}-n#{$size} {
-                    margin-bottom: -$length !important;
-                }
-                .ml#{$infix}-n#{$size},
-                .mx#{$infix}-n#{$size} {
-                    margin-left: -$length !important;
-                }
-            }
-        }
-
-        // Some special margin utils
-        .m#{$infix}-auto {
-            margin: auto !important;
-        }
-        .mt#{$infix}-auto,
-        .my#{$infix}-auto {
-            margin-top: auto !important;
-        }
-        .mr#{$infix}-auto,
-        .mx#{$infix}-auto {
-            margin-right: auto !important;
-        }
-        .mb#{$infix}-auto,
-        .my#{$infix}-auto {
-            margin-bottom: auto !important;
-        }
-        .ml#{$infix}-auto,
-        .mx#{$infix}-auto {
-            margin-left: auto !important;
-        }
-    }
 }
 
 // Stretched link

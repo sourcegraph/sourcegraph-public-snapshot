@@ -11,6 +11,9 @@ $line-height-base: (20/14);
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
     --mark-bg: var(--mark-bg-light);
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
 }
 
 .sg-icon .icon {
@@ -38,8 +41,8 @@ $line-height-base: (20/14);
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 /* stylelint-enable @sourcegraph/no-restricted-imports */
-@import '../../branded/src/global-styles/text';
-@import '../../branded/src/global-styles/screenreaders';
+@import '../../branded/src/global-styles/utilities/text';
+@import '../../branded/src/global-styles/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
 @import './shared';
