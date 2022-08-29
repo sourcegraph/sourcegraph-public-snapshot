@@ -23,6 +23,7 @@ jobs:
               exit 0
             else 
               echo "❌ Label 'i-acknowledge-this-goes-into-4.0' is absent"
+              echo "👉 If you are 100% sure your changes should go in 4.0, label your PR with 'i-acknowledge-this-goes-into-4.0''"
               exit 1
             fi
           else
