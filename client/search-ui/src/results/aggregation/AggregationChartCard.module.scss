@@ -44,11 +44,11 @@
     flex-direction: column;
 
     :global(.theme-dark) & {
-        background-color: rgb(20 23 31 / 90%);
+        background-color: rgba(20, 23, 31, 0.9);
     }
 
     :global(.theme-light) & {
-        background-color: rgb(249 250 251 / 90%);
+        background-color: rgba(249, 250, 251, 0.9);
     }
 
     // Simple UI mode theme
@@ -58,7 +58,7 @@
         }
 
         :global(.theme-light) & {
-            background-color: rgb(255 255 255 / 92%);
+            background-color: rgba(255, 255, 255, 0.92);
         }
     }
 }
