@@ -10,7 +10,7 @@ import (
 
 func Test_shouldTracePolicySampler(t *testing.T) {
 	t.Run("with shouldTrace", func(t *testing.T) {
-		s := shouldTracePolicySampler{ratio: 0.0}
+		s := shouldTracePolicySampler{}
 		ctx := policy.WithShouldTrace(context.Background(), true)
 
 		res := s.ShouldSample(trace.SamplingParameters{ParentContext: ctx})
@@ -20,21 +20,11 @@ func Test_shouldTracePolicySampler(t *testing.T) {
 		}
 	})
 	t.Run("without shouldTrace", func(t *testing.T) {
-		t.Run("ratio: 1.0", func(t *testing.T) {
-			s := shouldTracePolicySampler{ratio: 1.0}
-			res := s.ShouldSample(trace.SamplingParameters{ParentContext: context.Background()})
-			want := trace.RecordAndSample
-			if got := res.Decision; got != want {
-				t.Errorf("got %q, want %q", got, want)
-			}
-		})
-		t.Run("ratio: 0.0", func(t *testing.T) {
-			s := shouldTracePolicySampler{ratio: 0.0}
-			res := s.ShouldSample(trace.SamplingParameters{ParentContext: context.Background()})
-			want := trace.Drop
-			if got := res.Decision; got != want {
-				t.Errorf("got %q, want %q", got, want)
-			}
-		})
+		s := shouldTracePolicySampler{}
+		res := s.ShouldSample(trace.SamplingParameters{ParentContext: context.Background()})
+		want := trace.Drop
+		if got := res.Decision; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
 	})
 }

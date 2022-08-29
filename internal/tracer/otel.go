@@ -49,7 +49,7 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 	// Create trace provider
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(resource)),
-		oteltracesdk.WithSampler(&shouldTracePolicySampler{ratio: 0.1}),
+		oteltracesdk.WithSampler(&shouldTracePolicySampler{}),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
 
@@ -91,9 +91,7 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceVersionKey.String(r.Version))
 }
 
-type shouldTracePolicySampler struct {
-	ratio float64
-}
+type shouldTracePolicySampler struct{}
 
 // ShouldSample enables sampling only when the parent context doesn't carry a policy.ShouldTrace policy.
 // See policy.ShouldTrace.
@@ -102,8 +100,8 @@ func (s *shouldTracePolicySampler) ShouldSample(parameters oteltracesdk.Sampling
 		return oteltracesdk.AlwaysSample().ShouldSample(parameters)
 	}
 	// Many components still emit traces even if the policy is not set to ShouldTrace.
-	// Therefore, unless we're explicitly asked to trace, we enable sampling.
-	return oteltracesdk.TraceIDRatioBased(s.ratio).ShouldSample(parameters)
+	// Therefore, unless we're explicitly asked to trace, we discard everything.
+	return oteltracesdk.NeverSample().ShouldSample(parameters)
 }
 
 func (s *shouldTracePolicySampler) Description() string {
