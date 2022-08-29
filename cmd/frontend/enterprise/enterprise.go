@@ -32,7 +32,6 @@ type Services struct {
 	LicenseResolver           graphqlbackend.LicenseResolver
 	DotcomResolver            graphqlbackend.DotcomRootResolver
 	SearchContextsResolver    graphqlbackend.SearchContextsResolver
-	OrgRepositoryResolver     graphqlbackend.OrgRepositoryResolver
 	NotebooksResolver         graphqlbackend.NotebooksResolver
 	ComputeResolver           graphqlbackend.ComputeResolver
 }

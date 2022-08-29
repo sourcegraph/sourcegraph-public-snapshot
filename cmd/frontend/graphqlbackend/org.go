@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -431,49 +430,4 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
-	Stats JSONCString
-}) (*graphql.ID, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-	if args == nil || !json.Valid([]byte(args.Stats)) {
-		return nil, errors.New("must supply valid json")
-	}
-
-	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
-	if err != nil {
-		return nil, err
-	}
-
-	graphqlID := graphql.ID(id)
-	return &graphqlID, nil
-}
-
-type ListOrgRepositoriesArgs struct {
-	First              *int32
-	Query              *string
-	After              *string
-	CloneStatus        *string
-	Cloned             bool
-	NotCloned          bool
-	Indexed            bool
-	NotIndexed         bool
-	ExternalServiceIDs *[]*graphql.ID
-	OrderBy            *string
-	Descending         bool
-}
-
-func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.orgRepositoryResolver == nil {
-		return nil, errors.New("listing organization repositories is not supported")
-	}
-	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
-}
-
-type OrgRepositoryResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }
