@@ -81,8 +81,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
-	if op, err := exposeBuildMetadata(c); err == nil {
-		ops.Append(op)
+	pipelineSetupOps := operations.NewNamedSet(operations.PipelineSetupSetName)
+	if metaDataStep, err := exposeBuildMetadata(c); err == nil {
+		pipelineSetupOps.Append(metaDataStep)
 	}
 
 	// This statement outlines the pipeline steps for each CI case.
@@ -103,8 +104,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
-			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-				triggerAsync(buildOptions)))
+			pipelineSetupOps.Append(triggerAsync(buildOptions))
 
 			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
 			// preview behavior, because only Client code is used to deploy application preview.
@@ -230,8 +230,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	default:
 		// Slow async pipeline
-		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-			triggerAsync(buildOptions)))
+		pipelineSetupOps.Append(triggerAsync(buildOptions))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -297,6 +296,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(publishOps)
 	}
+
+	// Ensure any steps about the pipeline always get added
+	ops.Merge(pipelineSetupOps)
 
 	ops.Append(
 		wait,                    // wait for all steps to pass
