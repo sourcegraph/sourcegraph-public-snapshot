@@ -57,6 +57,8 @@ export interface SearchBoxProps
 
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
+
+    triggerBlobSearchIfAvailable?: () => boolean
 }
 
 export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
@@ -131,6 +133,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         suggestionSources={props.suggestionSources}
                         defaultSuggestionsShowWhenEmpty={props.defaultSuggestionsShowWhenEmpty}
                         showSuggestionsOnFocus={props.showSuggestionsOnFocus}
+                        triggerBlobSearchIfAvailable={props.triggerBlobSearchIfAvailable}
                     />
                     <Toggles
                         patternType={props.patternType}

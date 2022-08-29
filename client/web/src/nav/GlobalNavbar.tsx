@@ -59,7 +59,7 @@ import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
-interface Props
+interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -97,6 +97,7 @@ interface Props
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
+    triggerBlobSearchIfAvailable?: () => boolean
 }
 
 /**
@@ -106,8 +107,8 @@ interface Props
  */
 function useCalculatedNavLinkVariant(
     containerReference: React.MutableRefObject<HTMLDivElement | null>,
-    activation: Props['activation'],
-    authenticatedUser: Props['authenticatedUser']
+    activation: GlobalNavbarProps['activation'],
+    authenticatedUser: GlobalNavbarProps['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
     const { width } = useWindowSize()
@@ -147,7 +148,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
     )
 }
 
-export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     authRequired,
     showSearchBox,
     variant,
@@ -160,6 +161,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    triggerBlobSearchIfAvailable,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -248,6 +250,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}
+            triggerBlobSearchIfAvailable={triggerBlobSearchIfAvailable}
         />
     )
 

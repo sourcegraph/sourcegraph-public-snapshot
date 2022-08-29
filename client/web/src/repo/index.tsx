@@ -9,5 +9,3 @@ export function redirectToExternalHost(externalRedirectURL: string): void {
     redirectURL.protocol = externalHostURL.protocol
     window.location.replace(redirectURL.href)
 }
-
-export { useCodeMirrorContext } from './blob/CodeMirrorContext'

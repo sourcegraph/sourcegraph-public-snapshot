@@ -77,6 +77,7 @@ export interface MonacoQueryInputProps
     onTriggerSearch?: () => boolean
     autoFocus?: boolean
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
+    triggerBlobSearchIfAvailable?: () => boolean
     // Whether globbing is enabled for filters.
     globbing: boolean
 

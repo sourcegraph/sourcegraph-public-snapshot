@@ -4,7 +4,6 @@ import classNames from 'classnames'
 
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { useCodeMirrorContext } from '@sourcegraph/web/src/repo'
 import { Input } from '@sourcegraph/wildcard'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
@@ -65,11 +64,9 @@ export const LazyMonacoQueryInput: React.FunctionComponent<React.PropsWithChildr
 }) => {
     const isCodeMirror = editorComponent === 'codemirror6'
     const QueryInput = isCodeMirror ? CodemirrorQueryInput : MonacoQueryInput
-    const { triggerSearchIfAvailable } = useCodeMirrorContext()
-
     return (
         <Suspense fallback={<PlainQueryInput {...props} placeholder={isCodeMirror ? props.placeholder : undefined} />}>
-            <QueryInput {...props} onTriggerSearch={triggerSearchIfAvailable} />
+            <QueryInput {...props} onTriggerSearch={props.triggerBlobSearchIfAvailable} />
         </Suspense>
     )
 }

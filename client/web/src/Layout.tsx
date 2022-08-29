@@ -261,6 +261,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     <GlobalNavbar
                         {...props}
                         {...themeProps}
+                        // Now we need to pass it as a prop because search-ui with the MonacoQueryInput
+                        // is used not only as part of the web app:
+                        // https://github.com/sourcegraph/sourcegraph/pull/40792#discussion_r955639691
+                        triggerBlobSearchIfAvailable={triggerSearchIfAvailable}
                         authRequired={!!authRequired}
                         showSearchBox={
                             isSearchRelatedPage &&

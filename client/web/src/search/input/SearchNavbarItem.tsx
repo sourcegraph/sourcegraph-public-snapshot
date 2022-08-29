@@ -33,6 +33,7 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
+    triggerBlobSearchIfAvailable?: () => boolean
 }
 
 const selectQueryState = ({
