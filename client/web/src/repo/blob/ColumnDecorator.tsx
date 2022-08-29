@@ -19,7 +19,7 @@ import { BlameHunk } from '../blame/useBlameDecorations'
 import styles from './ColumnDecorator.module.scss'
 
 export interface LineDecoratorProps extends ThemeProps {
-    blameHunks?: BlameHunk[]
+    blameHunks: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -94,7 +94,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, c
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cells
                     addedCells.push([cell, currentLineDecorations])
@@ -186,8 +186,6 @@ const usePopover = ({
 
     return { isOpen, open, close, closeWithTimeout, resetCloseTimeout: resetTimeout }
 }
-
-const now = Date.now()
 
 export const ColumnDecoratorContents: React.FunctionComponent<{
     line: number

@@ -834,11 +834,13 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                <ColumnDecorator
-                    isLightTheme={isLightTheme}
-                    blameHunks={props.blameHunks}
-                    codeViewElements={codeViewElements}
-                />
+                {props.blameHunks && (
+                    <ColumnDecorator
+                        isLightTheme={isLightTheme}
+                        blameHunks={props.blameHunks}
+                        codeViewElements={codeViewElements}
+                    />
+                )}
 
                 {iterate(decorations)
                     .map(([line, items]) => {
