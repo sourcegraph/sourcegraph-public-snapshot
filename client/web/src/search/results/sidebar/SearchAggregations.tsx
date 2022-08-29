@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -76,6 +76,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
         telemetryService.log('GroupResultsExpandViewOpen', { aggregationMode }, { aggregationMode })
     }
 
+    const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
+        setAggregationMode(mode)
+        telemetryService.log(`GroupResults${aggregationMode}`, { uiMode: 'sidebar' }, { uiMode: 'sidebar' })
+    }
+
     return (
         <article className="pt-2">
             <AggregationModeControls
@@ -84,7 +89,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 size="sm"
                 telemetryService={telemetryService}
-                onModeChange={setAggregationMode}
+                onModeChange={handleAggregationModeChange}
             />
 
             {(proactive || aggregationMode !== null) && (
