@@ -3,6 +3,9 @@ package perforce
 import (
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,8 +24,10 @@ import (
 // to connection issues.
 func NewAuthzProviders(conns []*types.PerforceConnection, db database.DB) (ps []authz.Provider, problems []string, warnings []string) {
 	for _, c := range conns {
-		p := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
-		if p != nil {
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
+		if err != nil {
+			problems = append(problems, err.Error())
+		} else if p != nil {
 			ps = append(ps, p)
 		}
 	}
@@ -36,10 +41,15 @@ func newAuthzProvider(
 	host, user, password string,
 	depots []string,
 	db database.DB,
-) authz.Provider {
+) (authz.Provider, error) {
 	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
-		return nil
+		return nil, nil
+	}
+
+	if err := licensing.Check(licensing.FeatureACLs); err != nil {
+		log15.Error("Check ACLS license", err)
+		return nil, err
 	}
 
 	var depotIDs []extsvc.RepoID
@@ -55,7 +65,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(urn, host, user, password, depotIDs, db)
+	return NewProvider(urn, host, user, password, depotIDs, db), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

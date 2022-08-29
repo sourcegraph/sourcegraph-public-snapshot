@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -45,14 +44,6 @@ func ProvidersFromConfig(
 	seriousProblems []string,
 	warnings []string,
 ) {
-	// Don't return any authz provider if the license doesn't include the ACLs feature.
-	if err := licensing.Check(licensing.FeatureACLs); err != nil {
-		seriousProblems = append(seriousProblems, err.Error())
-		warnings := append(warnings, "Check license for ACLS")
-
-		return false, providers, seriousProblems, warnings
-	}
-
 	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {

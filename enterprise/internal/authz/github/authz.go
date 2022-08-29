@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -107,6 +110,11 @@ func newAuthzProvider(
 ) (*Provider, error) {
 	if c.Authorization == nil {
 		return nil, nil
+	}
+
+	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+		log15.Error("Check ACLS license", errLicense)
+		return nil, errLicense
 	}
 
 	baseURL, err := url.Parse(c.Url)

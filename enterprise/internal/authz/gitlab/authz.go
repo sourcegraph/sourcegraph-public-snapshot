@@ -3,7 +3,10 @@ package gitlab
 import (
 	"net/url"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -42,6 +45,11 @@ func NewAuthzProviders(
 func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
+	}
+
+	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+		log15.Error("Check ACLS license", errLicense)
+		return nil, errLicense
 	}
 
 	glURL, err := url.Parse(instanceURL)
