@@ -74,7 +74,7 @@ func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.
 	rootContext := actor.WithInternalActor(context.Background())
 
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(rootContext, logger.Scoped("BitbucketProjectPermissionsResetter", ""), db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(rootContext, logger.Scoped("BitbucketProjectPermissionsWorker", ""), db, ConfigInst, bbProjectMetrics),
 		newBitbucketProjectPermissionsResetter(logger.Scoped("BitbucketProjectPermissionsResetter", ""), db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
@@ -382,13 +382,13 @@ func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.Enterprise
 			RecordResets:        metrics.resets,
 		},
 	}
-	return dbworker.NewResetter(logger.Scoped("dbworker.Resetter", ""), workerStore, options)
+	return dbworker.NewResetter(logger, workerStore, options)
 }
 
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
 func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.ShareableStore, cfg *config) dbworkerstore.Store {
-	return dbworkerstore.New(logger.Scoped("dbworkerstore.Store", ""), s.Handle(), dbworkerstore.Options{
+	return dbworkerstore.New(logger.Scoped("BitbucketProjectPermission.Store", ""), s.Handle(), dbworkerstore.Options{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName:         "explicit_permissions_bitbucket_projects_jobs",
 		ColumnExpressions: database.BitbucketProjectPermissionsColumnExpressions,
