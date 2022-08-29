@@ -3,8 +3,8 @@ package codenav
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -27,7 +27,7 @@ func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver 
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
 				Logger:     log.Scoped("symbols."+name, "codeintel symbols "+name),
-				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 				Registerer: prometheus.DefaultRegisterer,
 			}
 		}

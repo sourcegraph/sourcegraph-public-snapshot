@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -13,6 +14,103 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
+
+// GetRepositoriesForIndexScan returns a set of repository identifiers that should be considered
+// for indexing jobs. Repositories that were returned previously from this call within the given
+// process delay are not returned.
+//
+// If allowGlobalPolicies is false, then configuration policies that define neither a repository id
+// nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
+// repositories known to the instance.
+func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	limitExpression := sqlf.Sprintf("")
+	if repositoryMatchLimit != nil {
+		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+	}
+
+	replacer := strings.NewReplacer("{column_name}", column)
+	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
+		replacer.Replace(getRepositoriesForIndexScanQuery),
+		allowGlobalPolicies,
+		limitExpression,
+		quote(table),
+		now,
+		int(processDelay/time.Second),
+		limit,
+		quote(table),
+		now,
+		now,
+	)))
+}
+
+func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
+
+const getRepositoriesForIndexScanQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_repositories.go:getRepositoriesForIndexScanQuery
+WITH
+repositories_matching_policy AS (
+	(
+		SELECT r.id FROM repo r WHERE EXISTS (
+			SELECT 1
+			FROM lsif_configuration_policies p
+			WHERE
+				p.indexing_enabled AND
+				p.repository_id IS NULL AND
+				p.repository_patterns IS NULL AND
+				%s -- completely enable or disable this query
+		)
+		ORDER BY stars DESC NULLS LAST, id
+		%s
+	)
+
+	UNION ALL
+
+	SELECT p.repository_id AS id
+	FROM lsif_configuration_policies p
+	WHERE
+		p.indexing_enabled AND
+		p.repository_id IS NOT NULL
+
+	UNION ALL
+
+	SELECT rpl.repo_id AS id
+	FROM lsif_configuration_policies p
+	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
+	WHERE p.indexing_enabled
+),
+candidate_repositories AS (
+	SELECT r.id AS id
+	FROM repo r
+	WHERE
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		r.id IN (SELECT id FROM repositories_matching_policy)
+),
+repositories AS (
+	SELECT cr.id
+	FROM candidate_repositories cr
+	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
+
+	-- Ignore records that have been checked recently. Note this condition is
+	-- true for a null {column_name} (which has never been checked).
+	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	ORDER BY
+		lrs.{column_name} NULLS FIRST,
+		cr.id -- tie breaker
+	LIMIT %s
+)
+INSERT INTO %s (repository_id, {column_name})
+SELECT r.id, %s::timestamp FROM repositories r
+ON CONFLICT (repository_id) DO UPDATE
+SET {column_name} = %s
+RETURNING repository_id
+`
 
 // SetRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
 // data and a fresh associated commit graph. Repositories that were returned previously from this call
@@ -215,6 +313,6 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 }
 
 const hasRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:HasRepository
+-- source: internal/codeintel/uploads/internal/store/store_repositories.go:HasRepository
 SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `

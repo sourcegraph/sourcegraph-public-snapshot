@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -102,8 +101,6 @@ func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 	}
 
 	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM aggregated_stats WHERE %s`, sqlf.Join(conds, "AND")))
-	fmt.Println(query.Query(sqlf.PostgresBindVar))
-	fmt.Println(query.Args())
 	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
 		return 0, err
 	}

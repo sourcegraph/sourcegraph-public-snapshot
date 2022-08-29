@@ -53,10 +53,6 @@ type MockDBStore struct {
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
-	// SelectRepositoriesForIndexScanFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// SelectRepositoriesForIndexScan.
-	SelectRepositoriesForIndexScanFunc *DBStoreSelectRepositoriesForIndexScanFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *DBStoreWithFunc
@@ -93,11 +89,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
-				return
-			},
-		},
-		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
-			defaultHook: func(context.Context, string, string, time.Duration, bool, *int, int) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -143,11 +134,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.ReferencesForUpload")
 			},
 		},
-		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
-			defaultHook: func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error) {
-				panic("unexpected invocation of MockDBStore.SelectRepositoriesForIndexScan")
-			},
-		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) DBStore {
 				panic("unexpected invocation of MockDBStore.With")
@@ -177,9 +163,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
-		},
-		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
-			defaultHook: i.SelectRepositoriesForIndexScan,
 		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: i.With,
@@ -856,133 +839,6 @@ func (c DBStoreReferencesForUploadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreReferencesForUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreSelectRepositoriesForIndexScanFunc describes the behavior when the
-// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
-// is invoked.
-type DBStoreSelectRepositoriesForIndexScanFunc struct {
-	defaultHook func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error)
-	hooks       []func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error)
-	history     []DBStoreSelectRepositoriesForIndexScanFuncCall
-	mutex       sync.Mutex
-}
-
-// SelectRepositoriesForIndexScan delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) SelectRepositoriesForIndexScan(v0 context.Context, v1 string, v2 string, v3 time.Duration, v4 bool, v5 *int, v6 int) ([]int, error) {
-	r0, r1 := m.SelectRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.SelectRepositoriesForIndexScanFunc.appendCall(DBStoreSelectRepositoriesForIndexScanFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
-// is invoked and the hook queue is empty.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) nextHook() func(context.Context, string, string, time.Duration, bool, *int, int) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) appendCall(r0 DBStoreSelectRepositoriesForIndexScanFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// DBStoreSelectRepositoriesForIndexScanFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) History() []DBStoreSelectRepositoriesForIndexScanFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreSelectRepositoriesForIndexScanFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreSelectRepositoriesForIndexScanFuncCall is an object that describes
-// an invocation of method SelectRepositoriesForIndexScan on an instance of
-// MockDBStore.
-type DBStoreSelectRepositoriesForIndexScanFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 time.Duration
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 *int
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreSelectRepositoriesForIndexScanFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreSelectRepositoriesForIndexScanFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

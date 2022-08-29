@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -109,4 +111,77 @@ func scanIndexWithCount(s dbutil.Scanner) (index shared.Index, count int, err er
 	}
 
 	return index, count, nil
+}
+
+// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
+func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return visibilities, nil
+}
+
+// scanSourcedCommits scans triples of repository ids/repository names/commits from the
+// return value of `*Store.query`. The output of this function is ordered by repository
+// identifier, then by commit.
+func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	sourcedCommitsMap := map[int]shared.SourcedCommits{}
+	for rows.Next() {
+		var repositoryID int
+		var repositoryName string
+		var commit string
+		if err := rows.Scan(&repositoryID, &repositoryName, &commit); err != nil {
+			return nil, err
+		}
+
+		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
+			RepositoryID:   repositoryID,
+			RepositoryName: repositoryName,
+			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
+		}
+	}
+
+	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
+	for _, sourcedCommits := range sourcedCommitsMap {
+		sort.Strings(sourcedCommits.Commits)
+		flattened = append(flattened, sourcedCommits)
+	}
+
+	sort.Slice(flattened, func(i, j int) bool {
+		return flattened[i].RepositoryID < flattened[j].RepositoryID
+	})
+	return flattened, nil
+}
+
+func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
+	if queryErr != nil {
+		return 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return 0, err
+		}
+	}
+
+	return value, nil
 }

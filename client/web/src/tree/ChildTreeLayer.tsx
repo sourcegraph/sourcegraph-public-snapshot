@@ -85,6 +85,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                 linkRowClick={() => props.telemetryService.log('FileTreeClick')}
                                                 isActive={false}
                                                 isSelected={false}
+                                                isGoUpTreeLink={true}
                                                 customIconPath={mdiFolderOutline}
                                                 enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                             />

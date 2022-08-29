@@ -45,25 +45,31 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 		processor = oteltracesdk.NewSimpleSpanProcessor(exporter)
 	}
 
-	// Create trace provider
+	// Create the underlying trace provider
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(resource)),
 		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
 
-	// Set up bridge for converting opentracing API calls to OpenTelemetry.
-	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
-	bridge.SetTextMapPropagator(compositePropagator)
+	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
+	// otelTracerProvider for the inverse.
+	//
+	// TODO: Unfortunately, this wrapped tracer provider discards the name provided to
+	// the Tracer() constructor on it, since it uses a fixed tracer that we provide it.
+	// We could submit a PR upstream to have the wrapped provider create new tracers with
+	// the appropriate names.
+	otBridgeTracer, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("internal/tracer/otel"))
+	otBridgeTracer.SetTextMapPropagator(compositePropagator)
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(2) // no additional scope needed, this is already otel scope
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { otelLogger.Warn("error encountered", log.Error(err)) }))
 	bridgeLogger := logger.AddCallerSkip(2).Scoped("bridge", "OpenTracing to OpenTelemetry compatibility layer")
-	bridge.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
+	otBridgeTracer.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
 
 	// Done
-	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
+	return otBridgeTracer, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
 // otelBridgeCloser shuts down the wrapped TracerProvider, and unsets the global OTel

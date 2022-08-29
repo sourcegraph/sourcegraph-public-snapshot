@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -42,35 +44,45 @@ func New(svc *autoindexing.Service, observationContext *observation.Context) Res
 }
 
 func (r *resolver) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
-	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("id", id)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetIndexByID(ctx, id)
 }
 
 func (r *resolver) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
-	ctx, _, endObservation := r.operations.getIndexesByIDs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.getIndexesByIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("totalIds", len(ids))},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetIndexesByIDs(ctx, ids...)
 }
 
 func (r *resolver) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error) {
-	ctx, _, endObservation := r.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
 func (r *resolver) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := r.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
 func (r *resolver) DeleteIndexByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := r.operations.deleteIndexByID.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.deleteIndexByID.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("id", id)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	_, err = r.svc.DeleteIndexByID(ctx, id)
@@ -78,14 +90,18 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) (err error) {
 }
 
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) (_ []shared.Index, err error) {
-	ctx, _, endObservation := r.operations.queueAutoIndexJobsForRepo.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.queueAutoIndexJobsForRepo.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("rev", rev), log.String("configuration", configuration)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.QueueIndexes(ctx, repositoryID, rev, configuration, true, true)
 }
 
 func (r *resolver) GetIndexConfiguration(ctx context.Context, repositoryID int) (_ []byte, _ bool, err error) {
-	ctx, _, endObservation := r.operations.getIndexConfiguration.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.getIndexConfiguration.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	configuration, exists, err := r.svc.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
@@ -100,7 +116,9 @@ func (r *resolver) GetIndexConfiguration(ctx context.Context, repositoryID int) 
 }
 
 func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfiguration.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.inferedIndexConfiguration.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	maybeConfig, _, err := r.svc.InferIndexConfiguration(ctx, repositoryID, commit, true)
@@ -112,7 +130,9 @@ func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID i
 }
 
 func (r *resolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfigurationHints.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.inferedIndexConfigurationHints.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	_, hints, err := r.svc.InferIndexConfiguration(ctx, repositoryID, commit, true)
@@ -124,7 +144,9 @@ func (r *resolver) InferedIndexConfigurationHints(ctx context.Context, repositor
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) (err error) {
-	ctx, _, endObservation := r.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("configuration", configuration)},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if _, err := config.UnmarshalJSON([]byte(configuration)); err != nil {
