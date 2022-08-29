@@ -42,7 +42,7 @@ func NewBatchSpecWorkspaceExecutionWorkerResetter(logger log.Logger, workerStore
 		Metrics:  metrics.batchSpecWorkspaceExecutionWorkerResetterMetrics,
 	}
 
-	resetter := dbworker.NewResetter(logger.Scoped("dbworker.Resetter", ""), workerStore, options)
+	resetter := dbworker.NewResetter(logger, workerStore, options)
 	return resetter
 }
 
