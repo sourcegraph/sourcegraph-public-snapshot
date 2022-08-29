@@ -90,7 +90,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	logger = logger.Scoped("BitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
 	defer func() {
 		if err != nil {
-			logger.Error("BitbucketProjectPermissionsHandler.Handle", log.Error(err))
+			logger.Error("Handle", log.Error(err))
 		}
 	}()
 
