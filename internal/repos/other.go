@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"encoding/json"
+	"github.com/inconshreveable/log15"
 	"io"
 	"net/http"
 	"net/url"
@@ -192,13 +193,24 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 
 	urn := s.svc.URN()
 	repos := make([]*types.Repo, 0, len(data.Items))
+	loggedDeprecationError := false
 	for _, r := range data.Items {
 		repo := &types.Repo{
 			URI: r.URI,
 		}
 		// The only required fields are URI and ClonePath
-		if r.URI == "" || r.ClonePath == "" {
+		if r.URI == "" {
 			return nil, errors.Errorf("repo without URI and/or ClonePath returned from src-expose: %+v", r)
+		}
+
+		// ClonePath is always set in the new versions of src-cli.
+		// TODO: @varsanojidan Remove this by version 3.45.0 and add it to the check above.
+		if r.ClonePath == "" {
+			if !loggedDeprecationError {
+				log15.Warn("The version of src-cli serving git repositories is deprecated, please upgrade to the latest version.")
+				loggedDeprecationError = true
+			}
+			r.ClonePath = r.URI + "/.git"
 		}
 
 		// Fields that src-expose isn't allowed to control
