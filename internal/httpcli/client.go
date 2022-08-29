@@ -17,11 +17,11 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -273,6 +274,37 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 	})
 }
 
+// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// debug level. The provided logger should be appropriately scoped by the caller.
+//
+// It also logs metadata set by request context by other middleware, such as WithRetry.
+func NewLoggingMiddleware(logger log.Logger) Middleware {
+	return func(d Doer) Doer {
+		return DoerFunc(func(r *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := d.Do(r)
+
+			// Gather fields about this request
+			fields := []log.Field{
+				log.String("host", r.URL.Host),
+				log.String("path", r.URL.Path),
+				log.Int("code", resp.StatusCode),
+				log.Duration("duration", time.Since(start)),
+			}
+			if attempt, ok := resp.Request.Context().Value(retryAttemptKey).(rehttp.Attempt); ok {
+				fields = append(fields, log.Object("retry",
+					log.Int("attempts", attempt.Index),
+					log.Error(attempt.Error)))
+			}
+
+			// Log results with link to trace if present
+			trace.Logger(r.Context(), logger).Debug("request", fields...)
+
+			return resp, err
+		})
+	}
+}
+
 //
 // Common Opts
 //
@@ -403,6 +435,12 @@ func MaxRetries(n int) int {
 	return n
 }
 
+type retryAttempt int
+
+// retryAttemptKey is the key to the rehttp.Attempt attached to a request, if a request
+// undergoes retries.
+const retryAttemptKey retryAttempt = iota
+
 // NewRetryPolicy returns a retry policy used in any Doer or Client returned
 // by NewExternalClientFactory.
 func NewRetryPolicy(max int) rehttp.RetryFn {
@@ -427,6 +465,12 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				span.LogFields(fields...)
 			}
 
+			// Update request context with latest retry for logging middleware
+			if shouldTraceLog {
+				*a.Request = *a.Request.WithContext(
+					context.WithValue(a.Request.Context(), retryAttemptKey, a))
+			}
+
 			if retry {
 				metricRetry.Inc()
 			}
@@ -435,14 +479,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				return
 			}
 
-			log15.Error(
-				"retrying HTTP request failed",
-				"attempt", a.Index,
-				"method", a.Request.Method,
-				"url", a.Request.URL,
-				"status", status,
-				"err", a.Error,
-			)
 		}()
 
 		if a.Response != nil {

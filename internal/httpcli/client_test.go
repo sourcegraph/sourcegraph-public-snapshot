@@ -25,6 +25,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -430,6 +432,45 @@ func TestErrorResilience(t *testing.T) {
 		if want := 3; retries != want {
 			t.Fatalf("expected %d retries, got %d", want, retries)
 		}
+	})
+
+	t.Run("logged", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var attemptsLogged int
+		for _, entry := range logEntries {
+			retry := entry.Fields["retry"]
+			if retry != nil {
+				// Non-zero number of attempts only
+				retryFields := retry.(map[string]any)
+				assert.NotZero(t, retryFields["attempts"])
+				attemptsLogged += 1
+			}
+		}
+		assert.NotZero(t, attemptsLogged)
 	})
 }
 
