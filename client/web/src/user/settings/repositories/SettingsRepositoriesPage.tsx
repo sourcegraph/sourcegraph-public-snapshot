@@ -20,11 +20,8 @@ import {
     Icon,
     H3,
     H4,
-    Code,
-    Text,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
@@ -42,15 +39,9 @@ import {
     RepositoriesResult,
     OrgAreaOrganizationFields,
 } from '../../../graphql-operations'
-import {
-    listUserRepositories,
-    listOrgRepositories,
-    fetchUserRepositoriesCount,
-    fetchOrgRepositoriesCount,
-} from '../../../site-admin/backend'
+import { listUserRepositories, fetchUserRepositoriesCount } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { Owner } from '../cloud-ga'
-import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
@@ -60,7 +51,6 @@ import styles from './SettingsRepositoriesPage.module.scss'
 interface Props extends TelemetryProps {
     owner: Owner
     routingPrefix: string
-    authenticatedUser: AuthenticatedUser
     onOrgGetStartedRefresh?: () => void
     org?: OrgAreaOrganizationFields
 }
@@ -74,20 +64,15 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
     owner,
     routingPrefix,
     telemetryService,
-    authenticatedUser,
     onOrgGetStartedRefresh,
-    org,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
-    const [shouldDisplayContextBanner /* setShouldDisplayContextBanner */] = useState(false)
 
     const isUserOwner = owner.type === 'user'
-    const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
-    const fetchRepositoriesCount = isUserOwner ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -95,10 +80,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
             {externalServices?.length !== 0 ? (
                 <span className="text-muted">
-                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching{' '}
-                    {isUserOwner ? 'code with Sourcegraph.' : 'with your team!'}
+                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching code
+                    with Sourcegraph.
                 </span>
-            ) : isUserOwner ? (
+            ) : (
                 <span className="text-muted">
                     <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
                     <span>
@@ -106,10 +91,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                         <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link> from
                         GitHub.com or GitLab.com.
                     </span>
-                </span>
-            ) : (
-                <span className="text-muted">
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to get started with Sourcegraph.{' '}
                 </span>
             )}
         </Container>
@@ -147,7 +128,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         setExternalServices(services)
 
         // check if user has any manually added or affiliated repositories
-        const result = await fetchRepositoriesCount({
+        const result = await fetchUserRepositoriesCount({
             id: owner.id,
         })
         const repoCount = result.node.repositories.totalCount || 0
@@ -173,13 +154,13 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchRepositoriesCount, owner.id])
+    }, [fetchExternalServices, owner.id])
 
     const TWO_SECONDS = 2
 
     const queryRepos = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
-            fetchRepositories({ ...args, id: owner.id }).pipe(
+            listUserRepositories({ ...args, id: owner.id }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {
                         setUpdateReposList(!updateReposList)
@@ -196,7 +177,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     // }
                 })
             ),
-        [owner.id, status, updateReposList, fetchRepositories]
+        [owner.id, status, updateReposList]
     )
 
     useObservable(
@@ -298,22 +279,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         return 'Syncing.'
     }
 
-    const getSearchContextBanner = (orgName: string): JSX.Element => (
-        <Alert className="my-3" role="alert" key="add-repos" variant="success">
-            <H4 className="align-middle mb-1">Added repositories</H4>
-            <Text className="align-middle mb-0">
-                Search across all repositories added by {orgName} with{' '}
-                <Code className="user-code-hosts-page__code--inline">
-                    <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
-                        context:
-                    </Link>
-                    @{orgName}
-                </Code>
-                .
-            </Text>
-        </Alert>
-    )
-
     return (
         <UserSettingReposContainer>
             <SelfHostedCtaLink
@@ -327,15 +292,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     up-to-date and will refresh once sync is finished.
                 </Alert>
             )}
-            {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
-            {!isUserOwner && externalServices && authenticatedUser && owner.name && (
-                <OrgUserNeedsCodeHost
-                    user={authenticatedUser}
-                    orgExternalServices={externalServices}
-                    orgDisplayName={owner.name}
-                />
-            )}
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
@@ -343,7 +300,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     {
                         text: (
                             <div className="d-flex">
-                                {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
+                                Your repositories{' '}
                                 <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
                             </div>
                         ),

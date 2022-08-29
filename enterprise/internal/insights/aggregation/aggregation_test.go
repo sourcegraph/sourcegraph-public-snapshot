@@ -14,6 +14,13 @@ import (
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func newTestSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
+	return &searchAggregationResults{
+		tabulator: tabulator,
+		countFunc: countFunc,
+	}
+}
+
 type testAggregator struct {
 	results map[string]int
 }
@@ -169,7 +176,7 @@ func TestRepoAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -221,7 +228,7 @@ func TestAuthorAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -318,7 +325,7 @@ func TestPathAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -395,7 +402,7 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				t.Errorf("expected test not to error, got %v", err)
 				t.FailNow()
 			}
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})

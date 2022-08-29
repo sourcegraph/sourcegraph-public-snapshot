@@ -348,6 +348,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to ./annotations directory
+* `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -691,7 +692,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the sourcegraph repository.
+* `--file="<value>"`: The target schema description file.
+* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log
 

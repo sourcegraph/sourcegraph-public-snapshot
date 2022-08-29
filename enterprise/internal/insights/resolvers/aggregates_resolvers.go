@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -16,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const searchTimeLimitSeconds = 2
-
-// TODO: move to a setting
-const aggregationBufferSize = 500
+const (
+	defaultAggregationBufferSize = 500
+	searchTimeLimitSeconds       = 2
+)
 
 type searchAggregateResolver struct {
 	baseInsightResolver
@@ -88,6 +90,10 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}, nil
 	}
 
+	aggregationBufferSize := conf.Get().InsightsAggregationsBufferSize
+	if aggregationBufferSize <= 0 {
+		aggregationBufferSize = defaultAggregationBufferSize
+	}
 	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
 	tabulationErrors := []error{}
 	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
@@ -339,6 +345,11 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
 	// Only the first capture group will be used for aggregation.
 	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
+	// If this error is returned, it means there are no capture groups or this query contains multiple steps.
+	if err == querybuilder.UnsupportedPatternTypeErr || err == querybuilder.MultiplePatternErr {
+		return false, nil
+	}
+	// Otherwise, it's some other error and we should return it.
 	if err != nil {
 		return false, errors.Wrap(err, "pattern parsing")
 	}

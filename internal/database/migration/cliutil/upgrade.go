@@ -21,12 +21,12 @@ func Upgrade(
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
-		Usage:    "The source (current) instance version. Must be of the form `v{Major}.{Minor}`.",
+		Usage:    "The source (current) instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
 		Required: true,
 	}
 	toFlag := &cli.StringFlag{
 		Name:     "to",
-		Usage:    "The target instance version. Must be of the form `v{Major}.{Minor}`.",
+		Usage:    "The target instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
 		Required: true,
 	}
 	skipVersionCheckFlag := &cli.BoolFlag{

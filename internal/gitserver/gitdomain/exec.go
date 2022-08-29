@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling execSafe.
+	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
+	// checked by IsAllowedGitCmd
 	gitCmdAllowlist = map[string][]string{
 		"log":    append([]string{}, gitCommonAllowlist...),
 		"show":   append([]string{}, gitCommonAllowlist...),

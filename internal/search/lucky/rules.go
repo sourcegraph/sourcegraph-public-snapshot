@@ -17,42 +17,42 @@ import (
 // `unquotePatterns` rule for an example.
 type rule struct {
 	description string
-	transform   transform
+	transform   []transform
 }
 
-type transform []func(query.Basic) *query.Basic
+type transform func(query.Basic) *query.Basic
 
 var rulesNarrow = []rule{
 	{
 		description: "unquote patterns",
-		transform:   transform{unquotePatterns},
+		transform:   []transform{unquotePatterns},
 	},
 	{
 		description: "apply search type for pattern",
-		transform:   transform{typePatterns},
+		transform:   []transform{typePatterns},
 	},
 	{
 		description: "apply language filter for pattern",
-		transform:   transform{langPatterns},
+		transform:   []transform{langPatterns},
 	},
 	{
 		description: "apply symbol select for pattern",
-		transform:   transform{symbolPatterns},
+		transform:   []transform{symbolPatterns},
 	},
 	{
 		description: "expand URL to filters",
-		transform:   transform{patternsToCodeHostFilters},
+		transform:   []transform{patternsToCodeHostFilters},
 	},
 }
 
 var rulesWiden = []rule{
 	{
 		description: "patterns as regular expressions",
-		transform:   transform{regexpPatterns},
+		transform:   []transform{regexpPatterns},
 	},
 	{
 		description: "AND patterns together",
-		transform:   transform{unorderedPatterns},
+		transform:   []transform{unorderedPatterns},
 	},
 }
 

@@ -677,44 +677,55 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	t.Run("non-empty list", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		ctx := context.Background()
 
-	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
-		ServiceID:   "xb",
-		ClientID:    "xc",
-		AccountID:   "xd",
-	}
+		spec := extsvc.AccountSpec{
+			ServiceType: "xa",
+			ServiceID:   "xb",
+			ClientID:    "xc",
+			AccountID:   "xd",
+		}
 
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
-	spec.ServiceID = "xb2"
-	require.NoError(t, err)
-	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
-	require.NoError(t, err)
-	spec.ServiceID = "xb3"
-	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
-	require.NoError(t, err)
+		userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		spec.ServiceID = "xb2"
+		require.NoError(t, err)
+		err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+		require.NoError(t, err)
+		spec.ServiceID = "xb3"
+		err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+		require.NoError(t, err)
 
-	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
-	require.NoError(t, err)
-	require.Equal(t, 3, len(accts))
+		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+		require.NoError(t, err)
+		require.Equal(t, 3, len(accts))
 
-	acctIds := []int32{}
-	for _, acct := range accts {
-		acctIds = append(acctIds, acct.ID)
-	}
+		acctIds := []int32{}
+		for _, acct := range accts {
+			acctIds = append(acctIds, acct.ID)
+		}
 
-	err = db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
-	require.NoError(t, err)
+		err = db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+		require.NoError(t, err)
 
-	// Confirm all accounts are expired
-	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, OnlyExpired: true})
-	require.NoError(t, err)
-	require.Equal(t, 3, len(accts))
+		// Confirm all accounts are expired
+		accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, OnlyExpired: true})
+		require.NoError(t, err)
+		require.Equal(t, 3, len(accts))
 
-	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, ExcludeExpired: true})
-	require.NoError(t, err)
-	require.Equal(t, 0, len(accts))
+		accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, ExcludeExpired: true})
+		require.NoError(t, err)
+		require.Equal(t, 0, len(accts))
+	})
+	t.Run("empty list", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		ctx := context.Background()
+
+		acctIds := []int32{}
+		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+		require.NoError(t, err)
+	})
 }
