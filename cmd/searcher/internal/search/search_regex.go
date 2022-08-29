@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"regexp/syntax"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
