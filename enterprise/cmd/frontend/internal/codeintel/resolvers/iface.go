@@ -10,6 +10,8 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -17,9 +19,6 @@ import (
 type DBStore interface {
 	gitserver.DBStore
 
-	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
-	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
@@ -56,4 +55,9 @@ type AutoIndexingResolver interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error                 // simple dbstore
 
 	IndexConnectionResolverFromFactory(opts autoindexingShared.GetIndexesOptions) *autoindexinggraphql.IndexesResolver
+}
+
+type UploadsResolver interface {
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []uploadsShared.Upload, err error)
+	UploadsConnectionResolverFromFactory(opts uploadsShared.GetUploadsOptions) *uploadsgraphql.UploadsResolver
 }

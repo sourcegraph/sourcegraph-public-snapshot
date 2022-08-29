@@ -8,8 +8,10 @@ import (
 
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
+	uploadtransportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -24,11 +26,19 @@ func TestPrefetcherUploads(t *testing.T) {
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-
-	mockResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]dbstore.Upload, error) {
-		matching := make([]dbstore.Upload, 0, len(ids))
+	sharedUpload := map[int]uploadshared.Upload{
+		1: {ID: 1},
+		2: {ID: 2},
+		3: {ID: 3},
+		4: {ID: 4},
+		5: {ID: 5},
+	}
+	mockUploadResolver := uploadtransportmocks.NewMockResolver()
+	mockResolver.UploadsResolverFunc.SetDefaultReturn(mockUploadResolver)
+	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]uploadshared.Upload, error) {
+		matching := make([]uploadshared.Upload, 0, len(ids))
 		for _, id := range ids {
-			matching = append(matching, uploads[id])
+			matching = append(matching, sharedUpload[id])
 		}
 
 		return matching, nil
@@ -41,7 +51,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[1], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -52,7 +62,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[1], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -68,7 +78,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[2], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 
@@ -79,7 +89,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[4], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 }

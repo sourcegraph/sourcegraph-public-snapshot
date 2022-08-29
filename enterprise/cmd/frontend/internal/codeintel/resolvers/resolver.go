@@ -19,14 +19,11 @@ import (
 // by the API.
 type Resolver interface {
 	// TODO: Move to uploads resolver.
-	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver
 	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
-	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
 	// TODO: Move to codenav service.
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
@@ -37,6 +34,7 @@ type Resolver interface {
 	CodeNavResolver() CodeNavResolver
 	PoliciesResolver() PoliciesResolver
 	AutoIndexingResolver() AutoIndexingResolver
+	UploadsResolver() UploadsResolver
 }
 
 type RepositorySummary struct {
@@ -55,6 +53,7 @@ type resolver struct {
 	codenavResolver      CodeNavResolver
 	policiesResolver     PoliciesResolver
 	autoIndexingResolver AutoIndexingResolver
+	uploadsResolver      UploadsResolver
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -66,6 +65,7 @@ func NewResolver(
 	executorResolver executor.Resolver,
 	policiesResolver PoliciesResolver,
 	autoIndexingResolver AutoIndexingResolver,
+	uploadsResolver UploadsResolver,
 ) Resolver {
 	return &resolver{
 		dbStore:       dbStore,
@@ -76,6 +76,7 @@ func NewResolver(
 		codenavResolver:      codenavResolver,
 		policiesResolver:     policiesResolver,
 		autoIndexingResolver: autoIndexingResolver,
+		uploadsResolver:      uploadsResolver,
 	}
 }
 
@@ -91,20 +92,12 @@ func (r *resolver) AutoIndexingResolver() AutoIndexingResolver {
 	return r.autoIndexingResolver
 }
 
+func (r *resolver) UploadsResolver() UploadsResolver {
+	return r.uploadsResolver
+}
+
 func (r *resolver) ExecutorResolver() executor.Resolver {
 	return r.executorResolver
-}
-
-func (r *resolver) GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error) {
-	return r.dbStore.GetUploadByID(ctx, id)
-}
-
-func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error) {
-	return r.dbStore.GetUploadsByIDs(ctx, ids...)
-}
-
-func (r *resolver) UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver {
-	return NewUploadsResolver(r.dbStore, opts)
 }
 
 func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {

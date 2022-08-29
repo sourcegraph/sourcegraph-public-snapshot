@@ -32,6 +32,8 @@ type operations struct {
 
 	// Uploads
 	getUploads                        *observation.Operation
+	getUploadByID                     *observation.Operation
+	getUploadsByIDs                   *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	writeVisibleUploads               *observation.Operation
 	persistNearestUploads             *observation.Operation
@@ -105,6 +107,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
+		getUploadByID:                     op("GetUploadByID"),
+		getUploadsByIDs:                   op("GetUploadsByIDs"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
 		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),

@@ -21,7 +21,6 @@ import (
 
 type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
-	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)

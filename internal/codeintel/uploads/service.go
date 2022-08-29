@@ -53,6 +53,8 @@ type service interface {
 
 	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
+	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
@@ -377,6 +379,21 @@ func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions)
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetUploads(ctx, opts)
+}
+
+// TODO: Not being used in the resolver layer
+func (s *Service) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetUploadByID(ctx, id)
+}
+
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetUploadsByIDs(ctx, ids...)
 }
 
 func (s *Service) GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error) {

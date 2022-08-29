@@ -2,68 +2,43 @@ package graphql
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/opentracing/opentracing-go/log"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Resolver struct {
+type Resolver interface {
+	// Uploads
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+
+	// Uploads Connection Factory
+	UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver
+}
+type resolver struct {
 	svc        *uploads.Service
 	operations *operations
 }
 
-func newResolver(svc *uploads.Service, observationContext *observation.Context) *Resolver {
-	return &Resolver{
+func New(svc *uploads.Service, observationContext *observation.Context) Resolver {
+	return &resolver{
 		svc:        svc,
 		operations: newOperations(observationContext),
 	}
 }
 
-func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
-	ctx, _, endObservation := r.operations.lsifUploadByID.With(ctx, &err, observation.Args{})
+func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))},
+	})
 	defer endObservation(1, observation.Args{})
 
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_, _ = ctx, id
-	return nil, errors.New("unimplemented: LSIFUploadByID")
+	return r.svc.GetUploadsByIDs(ctx, ids...)
 }
 
-func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.lsifUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_, _ = ctx, args
-	return nil, errors.New("unimplemented: LSIFUploads")
-}
-
-func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.lsifUploadsByRepo.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_, _ = ctx, args
-	return nil, errors.New("unimplemented: LSIFUploadsByRepo")
-}
-
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteLSIFUpload.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_, _ = ctx, args
-	return nil, errors.New("unimplemented: DeleteLSIFUpload")
-}
-
-func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, _, endObservation := r.operations.commitGraph.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_, _ = ctx, id
-	return nil, errors.New("unimplemented: CommitGraph")
+func (r *resolver) UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver {
+	return NewUploadsResolver(r.svc, opts)
 }

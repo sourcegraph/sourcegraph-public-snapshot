@@ -20,6 +20,9 @@ func scanUpload(s dbutil.Scanner) (upload shared.Upload, err error) {
 
 var scanUploads = basestore.NewSliceScanner(scanUpload)
 
+// scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
+var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
+
 var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
 
 func scanUploadWithCount(s dbutil.Scanner) (upload shared.Upload, count int, err error) {

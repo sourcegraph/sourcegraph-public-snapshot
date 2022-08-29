@@ -8,15 +8,11 @@ import (
 )
 
 type operations struct {
-	commitGraph       *observation.Operation
-	deleteLSIFUpload  *observation.Operation
-	lsifUploadByID    *observation.Operation
-	lsifUploads       *observation.Operation
-	lsifUploadsByRepo *observation.Operation
+	getIndexByID *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_uploads_transport_graphql",
 		metrics.WithLabels("op"),
@@ -27,15 +23,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		commitGraph:       op("CommitGraph"),
-		deleteLSIFUpload:  op("DeleteLSIFUpload"),
-		lsifUploadByID:    op("LSIFUploadByID"),
-		lsifUploads:       op("LSIFUploads"),
-		lsifUploadsByRepo: op("LSIFUploadsByRepo"),
+		getIndexByID: op("GetIndexByID"),
 	}
 }

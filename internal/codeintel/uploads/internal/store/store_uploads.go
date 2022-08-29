@@ -193,6 +193,108 @@ WHERE
 	%s
 `
 
+// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
+func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return shared.Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.db.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
+}
+
+const getUploadByIDQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadByID
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	repo.name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
+`
+
+// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, err
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%d", id))
+	}
+
+	return scanUploads(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+}
+
+const getUploadsByIDsQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadsByIDs
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	repo.name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
+`
+
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
 // and the upload and index records for that repository being deleted.
 const DeletedRepositoryGracePeriod = time.Minute * 30

@@ -35,6 +35,8 @@ type operations struct {
 
 	// Uploads
 	getUploads                        *observation.Operation
+	getUploadByID                     *observation.Operation
+	getUploadsByIDs                   *observation.Operation
 	getVisibleUploadsMatchingMonikers *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	updateUploadRetention             *observation.Operation
@@ -106,6 +108,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
+		getUploadByID:                     op("GetUploadByID"),
+		getUploadsByIDs:                   op("GetUploadsByIDs"),
 		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),

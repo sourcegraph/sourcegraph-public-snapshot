@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -366,4 +367,39 @@ func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNa
 		Indexer: shared.Indexer,
 		Indexes: indexes,
 	}
+}
+
+func convertSharedUploadsToDBStoreUploads(u uploadsShared.Upload) store.Upload {
+	return store.Upload{
+		ID:                u.ID,
+		Commit:            u.Commit,
+		Root:              u.Root,
+		VisibleAtTip:      u.VisibleAtTip,
+		UploadedAt:        u.UploadedAt,
+		State:             u.State,
+		FailureMessage:    u.FailureMessage,
+		StartedAt:         u.StartedAt,
+		FinishedAt:        u.FinishedAt,
+		ProcessAfter:      u.ProcessAfter,
+		NumResets:         u.NumResets,
+		NumFailures:       u.NumFailures,
+		RepositoryID:      u.RepositoryID,
+		RepositoryName:    u.RepositoryName,
+		Indexer:           u.Indexer,
+		IndexerVersion:    u.IndexerVersion,
+		NumParts:          u.NumParts,
+		UploadedParts:     u.UploadedParts,
+		UploadSize:        u.UploadSize,
+		UncompressedSize:  u.UncompressedSize,
+		Rank:              u.Rank,
+		AssociatedIndexID: u.AssociatedIndexID,
+	}
+}
+
+func convertSharedUploadsListToDBStoreUploadsList(u []uploadsShared.Upload) []store.Upload {
+	uploads := make([]store.Upload, 0, len(u))
+	for _, upload := range u {
+		uploads = append(uploads, convertSharedUploadsToDBStoreUploads(upload))
+	}
+	return uploads
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -140,8 +140,10 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
+	uploadResolver := r.resolver.UploadsResolver()
+	uploadConnectionResolver := uploadResolver.UploadsConnectionResolverFromFactory(opts)
 
-	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, uploadConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -730,17 +732,17 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
+func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (uploadsShared.GetUploadsOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return store.GetUploadsOptions{}, err
+		return uploadsShared.GetUploadsOptions{}, err
 	}
 
 	var dependencyOf int64
 	if args.DependencyOf != nil {
 		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
 		if err != nil {
-			return store.GetUploadsOptions{}, err
+			return uploadsShared.GetUploadsOptions{}, err
 		}
 	}
 
@@ -748,16 +750,16 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 	if args.DependentOf != nil {
 		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
 		if err != nil {
-			return store.GetUploadsOptions{}, err
+			return uploadsShared.GetUploadsOptions{}, err
 		}
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return store.GetUploadsOptions{}, err
+		return uploadsShared.GetUploadsOptions{}, err
 	}
 
-	return store.GetUploadsOptions{
+	return uploadsShared.GetUploadsOptions{
 		RepositoryID:       repositoryID,
 		State:              strings.ToLower(derefString(args.State, "")),
 		Term:               derefString(args.Query, ""),

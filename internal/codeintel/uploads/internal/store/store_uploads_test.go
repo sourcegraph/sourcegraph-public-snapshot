@@ -250,6 +250,215 @@ func TestGetUploads(t *testing.T) {
 	})
 }
 
+func TestGetUploadByID(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// Upload does not exist initially
+	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
+	expected := shared.Upload{
+		ID:             1,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   true,
+		UploadedAt:     uploadedAt,
+		State:          "processing",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     nil,
+		RepositoryID:   123,
+		RepositoryName: "n-123",
+		Indexer:        "lsif-go",
+		IndexerVersion: "1.2.3",
+		NumParts:       1,
+		UploadedParts:  []int{},
+		Rank:           nil,
+	}
+
+	insertUploads(t, db, expected)
+	insertVisibleAtTip(t, db, 123, 1)
+
+	if upload, exists, err := store.GetUploadByID(ctx, 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if diff := cmp.Diff(expected, upload); diff != "" {
+		t.Errorf("unexpected upload (-want +got):\n%s", diff)
+	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, exists, err := store.GetUploadByID(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatalf("exists: want false but got %v", exists)
+		}
+	})
+}
+
+func TestGetUploadByIDDeleted(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// Upload does not exist initially
+	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
+	expected := shared.Upload{
+		ID:             1,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   true,
+		UploadedAt:     uploadedAt,
+		State:          "deleted",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     nil,
+		RepositoryID:   123,
+		RepositoryName: "n-123",
+		Indexer:        "lsif-go",
+		NumParts:       1,
+		UploadedParts:  []int{},
+		Rank:           nil,
+	}
+
+	insertUploads(t, db, expected)
+
+	// Should still not be queryable
+	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
+func TestGetQueuedUploadRank(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(+time.Minute * 6)
+	t3 := t1.Add(+time.Minute * 3)
+	t4 := t1.Add(+time.Minute * 1)
+	t5 := t1.Add(+time.Minute * 4)
+	t6 := t1.Add(+time.Minute * 2)
+	t7 := t1.Add(+time.Minute * 5)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, UploadedAt: t1, State: "queued"},
+		shared.Upload{ID: 2, UploadedAt: t2, State: "queued"},
+		shared.Upload{ID: 3, UploadedAt: t3, State: "queued"},
+		shared.Upload{ID: 4, UploadedAt: t4, State: "queued"},
+		shared.Upload{ID: 5, UploadedAt: t5, State: "queued"},
+		shared.Upload{ID: 6, UploadedAt: t6, State: "processing"},
+		shared.Upload{ID: 7, UploadedAt: t1, State: "queued", ProcessAfter: &t7},
+	)
+
+	if upload, _, _ := store.GetUploadByID(context.Background(), 1); upload.Rank == nil || *upload.Rank != 1 {
+		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{upload.Rank})
+	}
+	if upload, _, _ := store.GetUploadByID(context.Background(), 2); upload.Rank == nil || *upload.Rank != 6 {
+		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{upload.Rank})
+	}
+	if upload, _, _ := store.GetUploadByID(context.Background(), 3); upload.Rank == nil || *upload.Rank != 3 {
+		t.Errorf("unexpected rank. want=%d have=%s", 3, printableRank{upload.Rank})
+	}
+	if upload, _, _ := store.GetUploadByID(context.Background(), 4); upload.Rank == nil || *upload.Rank != 2 {
+		t.Errorf("unexpected rank. want=%d have=%s", 2, printableRank{upload.Rank})
+	}
+	if upload, _, _ := store.GetUploadByID(context.Background(), 5); upload.Rank == nil || *upload.Rank != 4 {
+		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
+	}
+
+	// Only considers queued uploads to determine rank
+	if upload, _, _ := store.GetUploadByID(context.Background(), 6); upload.Rank != nil {
+		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{upload.Rank})
+	}
+
+	// Process after takes priority over upload time
+	if upload, _, _ := store.GetUploadByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
+		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
+	}
+}
+
+func TestGetUploadsByIDs(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1},
+		shared.Upload{ID: 2},
+		shared.Upload{ID: 3},
+		shared.Upload{ID: 4},
+		shared.Upload{ID: 5},
+		shared.Upload{ID: 6},
+		shared.Upload{ID: 7},
+		shared.Upload{ID: 8},
+		shared.Upload{ID: 9},
+		shared.Upload{ID: 10},
+	)
+
+	t.Run("fetch", func(t *testing.T) {
+		indexes, err := store.GetUploadsByIDs(ctx, 2, 4, 6, 8, 12)
+		if err != nil {
+			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+		}
+
+		var ids []int
+		for _, index := range indexes {
+			ids = append(ids, index.ID)
+		}
+		sort.Ints(ids)
+
+		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
+			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		indexes, err := store.GetUploadsByIDs(ctx, 1, 2, 3, 4)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(indexes) > 0 {
+			t.Fatalf("Want no index but got %d indexes", len(indexes))
+		}
+	})
+}
+
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -1632,4 +1841,13 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+type printableRank struct{ value *int }
+
+func (r printableRank) String() string {
+	if r.value == nil {
+		return "nil"
+	}
+	return strconv.Itoa(*r.value)
 }
