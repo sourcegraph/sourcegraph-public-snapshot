@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
+	uploadmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,16 +35,18 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
+	mockUploadResolver := uploadmocks.NewMockResolver()
 	mockResolver := resolvermocks.NewMockResolver()
+	mockResolver.UploadsResolverFunc.SetDefaultReturn(mockUploadResolver)
 
 	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.DeleteUploadByIDFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DeleteUploadByIDFunc.History()))
+	if len(mockUploadResolver.DeleteUploadByIDFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockUploadResolver.DeleteUploadByIDFunc.History()))
 	}
-	if val := mockResolver.DeleteUploadByIDFunc.History()[0].Arg1; val != 42 {
+	if val := mockUploadResolver.DeleteUploadByIDFunc.History()[0].Arg1; val != 42 {
 		t.Fatalf("unexpected upload id. want=%d have=%d", 42, val)
 	}
 }

@@ -14,6 +14,7 @@ import (
 type Resolver interface {
 	// Uploads
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
 	// Uploads Connection Factory
 	UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver
@@ -37,6 +38,15 @@ func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetUploadsByIDs(ctx, ids...)
+}
+
+func (r *resolver) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("id", id)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.DeleteUploadByID(ctx, id)
 }
 
 func (r *resolver) UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver {

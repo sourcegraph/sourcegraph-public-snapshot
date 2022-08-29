@@ -507,44 +507,6 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uncompressed_size"),
 }
 
-// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
-// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
-// the background.
-func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
-	defer unset(ctx)
-
-	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
-	if err != nil {
-		return false, err
-	}
-	if !deleted {
-		return false, nil
-	}
-
-	if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-const deleteUploadByIDQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
-UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
-`
-
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{

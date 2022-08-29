@@ -19,11 +19,11 @@ import (
 // by the API.
 type Resolver interface {
 	// TODO: Move to uploads resolver.
-	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
-	DeleteUploadByID(ctx context.Context, uploadID int) error
 	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
+
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
 	// TODO: Move to codenav service.
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
@@ -98,11 +98,6 @@ func (r *resolver) UploadsResolver() UploadsResolver {
 
 func (r *resolver) ExecutorResolver() executor.Resolver {
 	return r.executorResolver
-}
-
-func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {
-	_, err := r.dbStore.DeleteUploadByID(ctx, uploadID)
-	return err
 }
 
 func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error) {

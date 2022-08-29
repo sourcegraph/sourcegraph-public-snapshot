@@ -19,7 +19,6 @@ import (
 type DBStore interface {
 	gitserver.DBStore
 
-	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
 	RecentUploadsSummary(ctx context.Context, repositoryID int) ([]dbstore.UploadsWithRepositoryNamespace, error)
@@ -59,5 +58,6 @@ type AutoIndexingResolver interface {
 
 type UploadsResolver interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []uploadsShared.Upload, err error)
+	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	UploadsConnectionResolverFromFactory(opts uploadsShared.GetUploadsOptions) *uploadsgraphql.UploadsResolver
 }

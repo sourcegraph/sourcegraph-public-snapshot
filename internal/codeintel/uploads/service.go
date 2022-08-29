@@ -3,7 +3,6 @@ package uploads
 import (
 	"context"
 	"fmt"
-	"io"
 	"sort"
 	"time"
 
@@ -26,13 +25,6 @@ import (
 var _ service = (*Service)(nil)
 
 type service interface {
-	// Not in use yet.
-	Get(ctx context.Context, id int) (upload Upload, ok bool, err error)
-	GetBatch(ctx context.Context, ids ...int) (uploads []Upload, err error)
-	Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error)
-	Delete(ctx context.Context, id int) (err error)
-	UploadsVisibleToCommit(ctx context.Context, commit string) (uploads []Upload, err error)
-
 	// Commits
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
@@ -61,6 +53,7 @@ type service interface {
 	HardDeleteExpiredUploads(ctx context.Context) (count int, err error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]shared.Dump, error)
 
 	// Dumps
@@ -99,60 +92,11 @@ func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.Git
 	}
 }
 
-type Upload = shared.Upload
-
-func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
-	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_ = ctx
-	return Upload{}, false, errors.Newf("unimplemented: uploads.Get")
-}
-
-func (s *Service) GetBatch(ctx context.Context, ids ...int) (uploads []Upload, err error) {
-	ctx, _, endObservation := s.operations.getBatch.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_ = ctx
-	return nil, errors.Newf("unimplemented: uploads.GetBatch")
-}
-
-type UploadState struct{}
-
-func (s *Service) Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error) {
-	ctx, _, endObservation := s.operations.enqueue.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_ = ctx
-	return errors.Newf("unimplemented: uploads.Enqueue")
-}
-
-func (s *Service) Delete(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.delete.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_ = ctx
-	return errors.Newf("unimplemented: uploads.Delete")
-}
-
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
 	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetCommitsVisibleToUpload(ctx, uploadID, limit, token)
-}
-
-func (s *Service) UploadsVisibleToCommit(ctx context.Context, commit string) (uploads []Upload, err error) {
-	ctx, _, endObservation := s.operations.uploadsVisibleTo.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
-	_ = ctx
-	return nil, errors.Newf("unimplemented: uploads.UploadsVisibleToCommit")
 }
 
 func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
@@ -365,7 +309,7 @@ func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err 
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error) {
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
 	})
@@ -472,6 +416,13 @@ func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.T
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploadsWithoutRepository(ctx, now)
+}
+
+func (s *Service) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploadByID(ctx, id)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest

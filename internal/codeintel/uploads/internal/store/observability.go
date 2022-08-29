@@ -34,6 +34,7 @@ type operations struct {
 	getUploads                        *observation.Operation
 	getUploadByID                     *observation.Operation
 	getUploadsByIDs                   *observation.Operation
+	getVisibleUploadsMatchingMonikers *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	writeVisibleUploads               *observation.Operation
 	persistNearestUploads             *observation.Operation
@@ -48,7 +49,7 @@ type operations struct {
 	deleteUploadsStuckUploading       *observation.Operation
 	softDeleteExpiredUploads          *observation.Operation
 	hardDeleteUploadsByIDs            *observation.Operation
-	getVisibleUploadsMatchingMonikers *observation.Operation
+	deleteUploadByID                  *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -109,6 +110,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploads:                        op("GetUploads"),
 		getUploadByID:                     op("GetUploadByID"),
 		getUploadsByIDs:                   op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
 		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
@@ -119,7 +121,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
+		deleteUploadByID:                  op("DeleteUploadByID"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),

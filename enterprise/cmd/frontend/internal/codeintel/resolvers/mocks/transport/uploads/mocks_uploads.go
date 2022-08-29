@@ -19,6 +19,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql)
 // used for unit testing.
 type MockResolver struct {
+	// DeleteUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteUploadByID.
+	DeleteUploadByIDFunc *ResolverDeleteUploadByIDFunc
 	// GetUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByIDs.
 	GetUploadsByIDsFunc *ResolverGetUploadsByIDsFunc
@@ -32,6 +35,11 @@ type MockResolver struct {
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
+		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: func(context.Context, ...int) (r0 []shared.Upload, r1 error) {
 				return
@@ -49,6 +57,11 @@ func NewMockResolver() *MockResolver {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockResolver() *MockResolver {
 	return &MockResolver{
+		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockResolver.DeleteUploadByID")
+			},
+		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: func(context.Context, ...int) ([]shared.Upload, error) {
 				panic("unexpected invocation of MockResolver.GetUploadsByIDs")
@@ -66,6 +79,9 @@ func NewStrictMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 	return &MockResolver{
+		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
+			defaultHook: i.DeleteUploadByID,
+		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: i.GetUploadsByIDs,
 		},
@@ -73,6 +89,114 @@ func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 			defaultHook: i.UploadsConnectionResolverFromFactory,
 		},
 	}
+}
+
+// ResolverDeleteUploadByIDFunc describes the behavior when the
+// DeleteUploadByID method of the parent MockResolver instance is invoked.
+type ResolverDeleteUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []ResolverDeleteUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) DeleteUploadByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.DeleteUploadByIDFunc.nextHook()(v0, v1)
+	m.DeleteUploadByIDFunc.appendCall(ResolverDeleteUploadByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteUploadByID
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploadByID method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverDeleteUploadByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverDeleteUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverDeleteUploadByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverDeleteUploadByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverDeleteUploadByIDFunc) appendCall(r0 ResolverDeleteUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverDeleteUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverDeleteUploadByIDFunc) History() []ResolverDeleteUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverDeleteUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverDeleteUploadByIDFuncCall is an object that describes an
+// invocation of method DeleteUploadByID on an instance of MockResolver.
+type ResolverDeleteUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverDeleteUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverDeleteUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverGetUploadsByIDsFunc describes the behavior when the

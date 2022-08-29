@@ -161,8 +161,8 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 	if err != nil {
 		return nil, err
 	}
-
-	if err := r.resolver.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+	uploadResolver := r.resolver.UploadsResolver()
+	if _, err := uploadResolver.DeleteUploadByID(ctx, int(uploadID)); err != nil {
 		return nil, err
 	}
 

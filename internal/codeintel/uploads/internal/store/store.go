@@ -56,6 +56,7 @@ type Store interface {
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
 	// Dumps
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
