@@ -2,12 +2,8 @@ package resolvers
 
 import (
 	"context"
-	"time"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
 )
@@ -18,12 +14,6 @@ import (
 // by a symmetrics resolver in this package's graphql subpackage, which is exposed directly
 // by the API.
 type Resolver interface {
-	// TODO: Move to uploads resolver.
-	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
-
-	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
-
 	// TODO: Move to codenav service.
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
@@ -34,13 +24,6 @@ type Resolver interface {
 	PoliciesResolver() PoliciesResolver
 	AutoIndexingResolver() AutoIndexingResolver
 	UploadsResolver() UploadsResolver
-}
-
-type RepositorySummary struct {
-	RecentUploads           []dbstore.UploadsWithRepositoryNamespace
-	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
-	LastUploadRetentionScan *time.Time
-	LastIndexScan           *time.Time
 }
 
 type resolver struct {
@@ -96,15 +79,6 @@ func (r *resolver) ExecutorResolver() executor.Resolver {
 	return r.executorResolver
 }
 
-func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error) {
-	stale, updatedAt, err := r.dbStore.CommitGraphMetadata(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewCommitGraphResolver(stale, updatedAt), nil
-}
-
 func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
 	mappings, err := r.symbolsClient.ListLanguageMappings(ctx, repoName)
 	if err != nil {
@@ -120,34 +94,4 @@ func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoNa
 	}
 
 	return false, "", nil
-}
-
-func (r *resolver) RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error) {
-	recentUploads, err := r.dbStore.RecentUploadsSummary(ctx, repositoryID)
-	if err != nil {
-		return RepositorySummary{}, err
-	}
-
-	autoindexingResolver := r.AutoIndexingResolver()
-	recentIndexes, err := autoindexingResolver.GetRecentIndexesSummary(ctx, repositoryID)
-	if err != nil {
-		return RepositorySummary{}, err
-	}
-
-	lastIndexScan, err := autoindexingResolver.GetLastIndexScanForRepository(ctx, repositoryID)
-	if err != nil {
-		return RepositorySummary{}, err
-	}
-
-	lastUploadRetentionScan, err := r.dbStore.LastUploadRetentionScanForRepository(ctx, repositoryID)
-	if err != nil {
-		return RepositorySummary{}, err
-	}
-
-	return RepositorySummary{
-		RecentUploads:           recentUploads,
-		RecentIndexes:           recentIndexes,
-		LastUploadRetentionScan: lastUploadRetentionScan,
-		LastIndexScan:           lastIndexScan,
-	}, nil
 }

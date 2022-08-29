@@ -21,14 +21,16 @@ type operations struct {
 	hasCommit                 *observation.Operation
 
 	// Repositories
-	getRepositoriesForIndexScan     *observation.Operation
-	getRepositoriesMaxStaleAge      *observation.Operation
-	setRepositoryAsDirty            *observation.Operation
-	setRepositoryAsDirtyWithTx      *observation.Operation
-	getDirtyRepositories            *observation.Operation
-	repoName                        *observation.Operation
-	setRepositoriesForRetentionScan *observation.Operation
-	hasRepository                   *observation.Operation
+	getRepositoriesForIndexScan             *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoryAsDirty                    *observation.Operation
+	setRepositoryAsDirtyWithTx              *observation.Operation
+	getDirtyRepositories                    *observation.Operation
+	repoName                                *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	hasRepository                           *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
@@ -97,14 +99,16 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasCommit:                 op("HasCommit"),
 
 		// Repositories
-		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
-		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:            op("GetDirtyRepositories"),
-		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
-		setRepositoryAsDirtyWithTx:      op("SetRepositoryAsDirtyWithTx"),
-		repoName:                        op("RepoName"),
-		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
-		hasRepository:                   op("HasRepository"),
+		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		getDirtyRepositories:                    op("GetDirtyRepositories"),
+		setRepositoryAsDirty:                    op("SetRepositoryAsDirty"),
+		setRepositoryAsDirtyWithTx:              op("SetRepositoryAsDirtyWithTx"),
+		repoName:                                op("RepoName"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		hasRepository:                           op("HasRepository"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),

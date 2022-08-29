@@ -278,7 +278,10 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIn
 		return nil, err
 	}
 
-	return r.resolver.CommitGraph(ctx, int(repositoryID))
+	uploadResolver := r.resolver.UploadsResolver()
+	commitGraphResolver := uploadResolver.CommitGraphResolverFromFactory(ctx, int(repositoryID))
+
+	return commitGraphResolver, nil
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
@@ -580,15 +583,40 @@ func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ gql.
 	if err != nil {
 		return nil, err
 	}
+	repoID := int(repositoryID)
+
+	uploadResolver := r.resolver.UploadsResolver()
+	recentUploads, err := uploadResolver.GetRecentUploadsSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastUploadRetentionScan, err := uploadResolver.GetLastUploadRetentionScanForRepository(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	autoindexingResolver := r.resolver.AutoIndexingResolver()
+	recentIndexes, err := autoindexingResolver.GetRecentIndexesSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastIndexScan, err := autoindexingResolver.GetLastIndexScanForRepository(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	summary := RepositorySummary{
+		RecentUploads:           recentUploads,
+		RecentIndexes:           recentIndexes,
+		LastUploadRetentionScan: lastUploadRetentionScan,
+		LastIndexScan:           lastIndexScan,
+	}
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
-
-	summary, err := r.resolver.RepositorySummary(ctx, int(repositoryID))
-	if err != nil {
-		return nil, err
-	}
 
 	return NewRepositorySummaryResolver(
 		r.db,

@@ -530,6 +530,65 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	}
 }
 
+func TestRecentUploadsSummary(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	t0 := time.Unix(1587396557, 0).UTC()
+	t1 := t0.Add(-time.Minute * 1)
+	t2 := t0.Add(-time.Minute * 2)
+	t3 := t0.Add(-time.Minute * 3)
+	t4 := t0.Add(-time.Minute * 4)
+	t5 := t0.Add(-time.Minute * 5)
+	t6 := t0.Add(-time.Minute * 6)
+	t7 := t0.Add(-time.Minute * 7)
+	t8 := t0.Add(-time.Minute * 8)
+	t9 := t0.Add(-time.Minute * 9)
+
+	r1 := 1
+	r2 := 2
+
+	addDefaults := func(upload shared.Upload) shared.Upload {
+		upload.Commit = makeCommit(upload.ID)
+		upload.RepositoryID = 50
+		upload.RepositoryName = "n-50"
+		upload.IndexerVersion = "latest"
+		upload.UploadedParts = []int{}
+		return upload
+	}
+
+	uploads := []shared.Upload{
+		addDefaults(shared.Upload{ID: 150, UploadedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(shared.Upload{ID: 151, UploadedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(shared.Upload{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),          // visible (group 1)
+		addDefaults(shared.Upload{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),        // visible (group 2)
+		addDefaults(shared.Upload{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),        // visible (group 3)
+		addDefaults(shared.Upload{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),        // visible (group 4)
+		addDefaults(shared.Upload{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+	}
+	insertUploads(t, db, uploads...)
+
+	summary, err := store.GetRecentUploadsSummary(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying recent upload summary: %s", err)
+	}
+
+	expected := []shared.UploadsWithRepositoryNamespace{
+		{Root: "r1", Indexer: "i1", Uploads: []shared.Upload{uploads[0], uploads[1], uploads[2]}},
+		{Root: "r1", Indexer: "i2", Uploads: []shared.Upload{uploads[3]}},
+		{Root: "r2", Indexer: "i1", Uploads: []shared.Upload{uploads[4]}},
+		{Root: "r2", Indexer: "i2", Uploads: []shared.Upload{uploads[6]}},
+	}
+	if diff := cmp.Diff(expected, summary); diff != "" {
+		t.Errorf("unexpected upload summary (-want +got):\n%s", diff)
+	}
+}
+
 func TestDeleteUploadsStuckUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

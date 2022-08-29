@@ -8,10 +8,13 @@ import (
 )
 
 type operations struct {
-	getIndexByID              *observation.Operation
-	getUploadDocumentsForPath *observation.Operation
-	getCommitsVisibleToUpload *observation.Operation
-	getCommitGraphMetadata    *observation.Operation
+	getIndexByID                            *observation.Operation
+	getUploadDocumentsForPath               *observation.Operation
+	getCommitsVisibleToUpload               *observation.Operation
+	getCommitGraphMetadata                  *observation.Operation
+	getAuditLogsForUpload                   *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -31,9 +34,12 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getIndexByID:              op("GetIndexByID"),
-		getUploadDocumentsForPath: op("GetUploadDocumentsForPath"),
-		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
-		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
+		getIndexByID:                            op("GetIndexByID"),
+		getUploadDocumentsForPath:               op("GetUploadDocumentsForPath"),
+		getCommitsVisibleToUpload:               op("GetCommitsVisibleToUpload"),
+		getCommitGraphMetadata:                  op("GetCommitGraphMetadata"),
+		getAuditLogsForUpload:                   op("GetAuditLogsForUpload"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
 	}
 }

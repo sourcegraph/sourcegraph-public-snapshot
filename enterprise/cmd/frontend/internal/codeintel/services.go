@@ -76,7 +76,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
-	uploadsSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
 
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
@@ -114,7 +113,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		UploadsSvc:      uploadSvc,
 		CodeNavSvc:      codenavSvc,
 		PoliciesSvc:     policySvc,
-		UploadSvc:       uploadsSvc,
+		UploadSvc:       uploadSvc,
 	}, nil
 }
 

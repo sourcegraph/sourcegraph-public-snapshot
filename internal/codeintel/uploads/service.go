@@ -48,6 +48,8 @@ type service interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
@@ -71,6 +73,7 @@ type service interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
 
 	// Audit Logs
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 
@@ -609,6 +612,15 @@ func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, refer
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
 }
 
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error) {
+	ctx, _, endObservation := s.operations.getAuditLogsForUpload.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("uploadID", uploadID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetAuditLogsForUpload(ctx, uploadID)
+}
+
 func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
 	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("maxAge", maxAge.String()), log.String("now", now.String())},
@@ -666,6 +678,24 @@ func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, p
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
+}
+
+func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error) {
+	ctx, _, endObservation := s.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
+}
+
+func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
 }
 
 func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {

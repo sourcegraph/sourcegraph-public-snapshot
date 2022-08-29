@@ -8,8 +8,6 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,15 +15,8 @@ import (
 )
 
 type DBStore interface {
-	gitserver.DBStore
-
-	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
-	CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
-	RecentUploadsSummary(ctx context.Context, repositoryID int) ([]dbstore.UploadsWithRepositoryNamespace, error)
-	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
 	LanguagesRequestedBy(ctx context.Context, userID int) ([]string, error)
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]dbstore.UploadLog, error)
 }
 
 type CodeNavResolver interface {
@@ -55,6 +46,10 @@ type AutoIndexingResolver interface {
 type UploadsResolver interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []uploadsShared.Upload, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadsShared.UploadsWithRepositoryNamespace, err error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []uploadsShared.UploadLog, err error)
 	UploadsConnectionResolverFromFactory(opts uploadsShared.GetUploadsOptions) *uploadsgraphql.UploadsResolver
+	CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *uploadsgraphql.CommitGraphResolver
 }

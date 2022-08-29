@@ -162,7 +162,8 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 }
 
 func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAuditLogsResolver, error) {
-	logs, err := r.resolver.AuditLogsForUpload(ctx, r.upload.ID)
+	uploadResolver := r.resolver.UploadsResolver()
+	logs, err := uploadResolver.GetAuditLogsForUpload(ctx, r.upload.ID)
 	if err != nil {
 		return nil, err
 	}

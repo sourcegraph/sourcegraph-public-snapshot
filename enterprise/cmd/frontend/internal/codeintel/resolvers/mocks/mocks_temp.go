@@ -10,10 +10,8 @@ import (
 	"context"
 	"sync"
 
-	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -22,27 +20,18 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockResolver struct {
-	// AuditLogsForUploadFunc is an instance of a mock function object
-	// controlling the behavior of the method AuditLogsForUpload.
-	AuditLogsForUploadFunc *ResolverAuditLogsForUploadFunc
 	// AutoIndexingResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method AutoIndexingResolver.
 	AutoIndexingResolverFunc *ResolverAutoIndexingResolverFunc
 	// CodeNavResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method CodeNavResolver.
 	CodeNavResolverFunc *ResolverCodeNavResolverFunc
-	// CommitGraphFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitGraph.
-	CommitGraphFunc *ResolverCommitGraphFunc
 	// ExecutorResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method ExecutorResolver.
 	ExecutorResolverFunc *ResolverExecutorResolverFunc
 	// PoliciesResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method PoliciesResolver.
 	PoliciesResolverFunc *ResolverPoliciesResolverFunc
-	// RepositorySummaryFunc is an instance of a mock function object
-	// controlling the behavior of the method RepositorySummary.
-	RepositorySummaryFunc *ResolverRepositorySummaryFunc
 	// RequestLanguageSupportFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestLanguageSupport.
 	RequestLanguageSupportFunc *ResolverRequestLanguageSupportFunc
@@ -61,11 +50,6 @@ type MockResolver struct {
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
-		AuditLogsForUploadFunc: &ResolverAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 []dbstore.UploadLog, r1 error) {
-				return
-			},
-		},
 		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
 			defaultHook: func() (r0 resolvers.AutoIndexingResolver) {
 				return
@@ -76,11 +60,6 @@ func NewMockResolver() *MockResolver {
 				return
 			},
 		},
-		CommitGraphFunc: &ResolverCommitGraphFunc{
-			defaultHook: func(context.Context, int) (r0 graphqlbackend.CodeIntelligenceCommitGraphResolver, r1 error) {
-				return
-			},
-		},
 		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
 			defaultHook: func() (r0 graphql.Resolver) {
 				return
@@ -88,11 +67,6 @@ func NewMockResolver() *MockResolver {
 		},
 		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
 			defaultHook: func() (r0 resolvers.PoliciesResolver) {
-				return
-			},
-		},
-		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
-			defaultHook: func(context.Context, int) (r0 resolvers.RepositorySummary, r1 error) {
 				return
 			},
 		},
@@ -123,11 +97,6 @@ func NewMockResolver() *MockResolver {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockResolver() *MockResolver {
 	return &MockResolver{
-		AuditLogsForUploadFunc: &ResolverAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) ([]dbstore.UploadLog, error) {
-				panic("unexpected invocation of MockResolver.AuditLogsForUpload")
-			},
-		},
 		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
 			defaultHook: func() resolvers.AutoIndexingResolver {
 				panic("unexpected invocation of MockResolver.AutoIndexingResolver")
@@ -138,11 +107,6 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.CodeNavResolver")
 			},
 		},
-		CommitGraphFunc: &ResolverCommitGraphFunc{
-			defaultHook: func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
-				panic("unexpected invocation of MockResolver.CommitGraph")
-			},
-		},
 		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
 			defaultHook: func() graphql.Resolver {
 				panic("unexpected invocation of MockResolver.ExecutorResolver")
@@ -151,11 +115,6 @@ func NewStrictMockResolver() *MockResolver {
 		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
 			defaultHook: func() resolvers.PoliciesResolver {
 				panic("unexpected invocation of MockResolver.PoliciesResolver")
-			},
-		},
-		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
-			defaultHook: func(context.Context, int) (resolvers.RepositorySummary, error) {
-				panic("unexpected invocation of MockResolver.RepositorySummary")
 			},
 		},
 		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
@@ -185,26 +144,17 @@ func NewStrictMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 	return &MockResolver{
-		AuditLogsForUploadFunc: &ResolverAuditLogsForUploadFunc{
-			defaultHook: i.AuditLogsForUpload,
-		},
 		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
 			defaultHook: i.AutoIndexingResolver,
 		},
 		CodeNavResolverFunc: &ResolverCodeNavResolverFunc{
 			defaultHook: i.CodeNavResolver,
 		},
-		CommitGraphFunc: &ResolverCommitGraphFunc{
-			defaultHook: i.CommitGraph,
-		},
 		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
 			defaultHook: i.ExecutorResolver,
 		},
 		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
 			defaultHook: i.PoliciesResolver,
-		},
-		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
-			defaultHook: i.RepositorySummary,
 		},
 		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
 			defaultHook: i.RequestLanguageSupport,
@@ -219,114 +169,6 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 			defaultHook: i.UploadsResolver,
 		},
 	}
-}
-
-// ResolverAuditLogsForUploadFunc describes the behavior when the
-// AuditLogsForUpload method of the parent MockResolver instance is invoked.
-type ResolverAuditLogsForUploadFunc struct {
-	defaultHook func(context.Context, int) ([]dbstore.UploadLog, error)
-	hooks       []func(context.Context, int) ([]dbstore.UploadLog, error)
-	history     []ResolverAuditLogsForUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// AuditLogsForUpload delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) AuditLogsForUpload(v0 context.Context, v1 int) ([]dbstore.UploadLog, error) {
-	r0, r1 := m.AuditLogsForUploadFunc.nextHook()(v0, v1)
-	m.AuditLogsForUploadFunc.appendCall(ResolverAuditLogsForUploadFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the AuditLogsForUpload
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]dbstore.UploadLog, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AuditLogsForUpload method of the parent MockResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]dbstore.UploadLog, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverAuditLogsForUploadFunc) SetDefaultReturn(r0 []dbstore.UploadLog, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]dbstore.UploadLog, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverAuditLogsForUploadFunc) PushReturn(r0 []dbstore.UploadLog, r1 error) {
-	f.PushHook(func(context.Context, int) ([]dbstore.UploadLog, error) {
-		return r0, r1
-	})
-}
-
-func (f *ResolverAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]dbstore.UploadLog, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverAuditLogsForUploadFunc) appendCall(r0 ResolverAuditLogsForUploadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverAuditLogsForUploadFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverAuditLogsForUploadFunc) History() []ResolverAuditLogsForUploadFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverAuditLogsForUploadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverAuditLogsForUploadFuncCall is an object that describes an
-// invocation of method AuditLogsForUpload on an instance of MockResolver.
-type ResolverAuditLogsForUploadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.UploadLog
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverAuditLogsForUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverAuditLogsForUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverAutoIndexingResolverFunc describes the behavior when the
@@ -528,114 +370,6 @@ func (c ResolverCodeNavResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ResolverCommitGraphFunc describes the behavior when the CommitGraph
-// method of the parent MockResolver instance is invoked.
-type ResolverCommitGraphFunc struct {
-	defaultHook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)
-	hooks       []func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)
-	history     []ResolverCommitGraphFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitGraph delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockResolver) CommitGraph(v0 context.Context, v1 int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
-	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1)
-	m.CommitGraphFunc.appendCall(ResolverCommitGraphFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitGraph method
-// of the parent MockResolver instance is invoked and the hook queue is
-// empty.
-func (f *ResolverCommitGraphFunc) SetDefaultHook(hook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitGraph method of the parent MockResolver instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ResolverCommitGraphFunc) PushHook(hook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverCommitGraphFunc) SetDefaultReturn(r0 graphqlbackend.CodeIntelligenceCommitGraphResolver, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverCommitGraphFunc) PushReturn(r0 graphqlbackend.CodeIntelligenceCommitGraphResolver, r1 error) {
-	f.PushHook(func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
-		return r0, r1
-	})
-}
-
-func (f *ResolverCommitGraphFunc) nextHook() func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverCommitGraphFunc) appendCall(r0 ResolverCommitGraphFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverCommitGraphFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverCommitGraphFunc) History() []ResolverCommitGraphFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverCommitGraphFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverCommitGraphFuncCall is an object that describes an invocation of
-// method CommitGraph on an instance of MockResolver.
-type ResolverCommitGraphFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 graphqlbackend.CodeIntelligenceCommitGraphResolver
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverCommitGraphFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverCommitGraphFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ResolverExecutorResolverFunc describes the behavior when the
 // ExecutorResolver method of the parent MockResolver instance is invoked.
 type ResolverExecutorResolverFunc struct {
@@ -832,114 +566,6 @@ func (c ResolverPoliciesResolverFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverPoliciesResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// ResolverRepositorySummaryFunc describes the behavior when the
-// RepositorySummary method of the parent MockResolver instance is invoked.
-type ResolverRepositorySummaryFunc struct {
-	defaultHook func(context.Context, int) (resolvers.RepositorySummary, error)
-	hooks       []func(context.Context, int) (resolvers.RepositorySummary, error)
-	history     []ResolverRepositorySummaryFuncCall
-	mutex       sync.Mutex
-}
-
-// RepositorySummary delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) RepositorySummary(v0 context.Context, v1 int) (resolvers.RepositorySummary, error) {
-	r0, r1 := m.RepositorySummaryFunc.nextHook()(v0, v1)
-	m.RepositorySummaryFunc.appendCall(ResolverRepositorySummaryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepositorySummary
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverRepositorySummaryFunc) SetDefaultHook(hook func(context.Context, int) (resolvers.RepositorySummary, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepositorySummary method of the parent MockResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverRepositorySummaryFunc) PushHook(hook func(context.Context, int) (resolvers.RepositorySummary, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverRepositorySummaryFunc) SetDefaultReturn(r0 resolvers.RepositorySummary, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (resolvers.RepositorySummary, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverRepositorySummaryFunc) PushReturn(r0 resolvers.RepositorySummary, r1 error) {
-	f.PushHook(func(context.Context, int) (resolvers.RepositorySummary, error) {
-		return r0, r1
-	})
-}
-
-func (f *ResolverRepositorySummaryFunc) nextHook() func(context.Context, int) (resolvers.RepositorySummary, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverRepositorySummaryFunc) appendCall(r0 ResolverRepositorySummaryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverRepositorySummaryFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverRepositorySummaryFunc) History() []ResolverRepositorySummaryFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverRepositorySummaryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverRepositorySummaryFuncCall is an object that describes an
-// invocation of method RepositorySummary on an instance of MockResolver.
-type ResolverRepositorySummaryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 resolvers.RepositorySummary
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverRepositorySummaryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverRepositorySummaryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverRequestLanguageSupportFunc describes the behavior when the

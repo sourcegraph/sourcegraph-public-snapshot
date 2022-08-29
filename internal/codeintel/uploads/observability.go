@@ -26,13 +26,15 @@ type operations struct {
 	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
-	getRepoName                     *observation.Operation
-	getRepositoriesForIndexScan     *observation.Operation
-	getRepositoriesMaxStaleAge      *observation.Operation
-	getDirtyRepositories            *observation.Operation
-	setRepositoryAsDirty            *observation.Operation
-	updateDirtyRepositories         *observation.Operation
-	setRepositoriesForRetentionScan *observation.Operation
+	getRepoName                             *observation.Operation
+	getRepositoriesForIndexScan             *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
+	getDirtyRepositories                    *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoryAsDirty                    *observation.Operation
+	updateDirtyRepositories                 *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
@@ -65,7 +67,8 @@ type operations struct {
 	updatePackageReferences *observation.Operation
 
 	// Audit Logs
-	deleteOldAuditLogs *observation.Operation
+	getAuditLogsForUpload *observation.Operation
+	deleteOldAuditLogs    *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -102,13 +105,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
-		getRepoName:                     op("GetRepoName"),
-		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
-		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:            op("GetDirtyRepositories"),
-		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
-		updateDirtyRepositories:         op("UpdateDirtyRepositories"),
-		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
+		getRepoName:                             op("GetRepoName"),
+		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:                    op("GetDirtyRepositories"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		setRepositoryAsDirty:                    op("SetRepositoryAsDirty"),
+		updateDirtyRepositories:                 op("UpdateDirtyRepositories"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
@@ -141,6 +146,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		updatePackageReferences: op("UpdatePackageReferences"),
 
 		// Audit Logs
-		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
+		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
 	}
 }

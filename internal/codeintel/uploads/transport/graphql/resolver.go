@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -16,10 +17,18 @@ type Resolver interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
+
+	// Audit Logs
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 
 	// Uploads Connection Factory
 	UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver
+
+	// Commit Graph Resolver Factory
+	CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *CommitGraphResolver
 }
 type resolver struct {
 	svc        *uploads.Service
@@ -60,6 +69,24 @@ func (r *resolver) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limi
 	return r.svc.GetCommitsVisibleToUpload(ctx, uploadID, limit, token)
 }
 
+func (r *resolver) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error) {
+	ctx, _, endObservation := r.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetRecentUploadsSummary(ctx, repositoryID)
+}
+
+func (r *resolver) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservation := r.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
+}
+
 func (r *resolver) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
 	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("id", id)},
@@ -69,14 +96,14 @@ func (r *resolver) DeleteUploadByID(ctx context.Context, id int) (_ bool, err er
 	return r.svc.DeleteUploadByID(ctx, id)
 }
 
-// func (r *resolver) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-// 	ctx, _, endObservation := r.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{
-// 		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
-// 	})
-// 	defer endObservation(1, observation.Args{})
+func (r *resolver) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error) {
+	ctx, _, endObservation := r.operations.getAuditLogsForUpload.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("uploadID", uploadID)},
+	})
+	defer endObservation(1, observation.Args{})
 
-// 	return r.svc.GetCommitGraphMetadata(ctx, repositoryID)
-// }
+	return r.svc.GetAuditLogsForUpload(ctx, uploadID)
+}
 
 func (r *resolver) UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver {
 	return NewUploadsResolver(r.svc, opts)

@@ -3,7 +3,6 @@ package graphql
 import (
 	"github.com/sourcegraph/go-lsp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	policiesShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
@@ -234,10 +233,10 @@ func sharedPoliciesUploadsToStoreUpload(dump store.Upload) policiesShared.Upload
 	}
 }
 
-func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.RetentionPolicyMatchCandidate) []resolvers.RetentionPolicyMatchCandidate {
-	retentionPolicy := make([]resolvers.RetentionPolicyMatchCandidate, 0, len(policy))
+func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.RetentionPolicyMatchCandidate) []RetentionPolicyMatchCandidate {
+	retentionPolicy := make([]RetentionPolicyMatchCandidate, 0, len(policy))
 	for _, p := range policy {
-		retentionPolicy = append(retentionPolicy, resolvers.RetentionPolicyMatchCandidate{
+		retentionPolicy = append(retentionPolicy, RetentionPolicyMatchCandidate{
 			ConfigurationPolicy: &store.ConfigurationPolicy{
 				ID:                        p.ID,
 				RepositoryID:              p.RepositoryID,

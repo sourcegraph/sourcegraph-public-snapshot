@@ -9,6 +9,7 @@ package uploads
 import (
 	"context"
 	"sync"
+	"time"
 
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	graphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
@@ -19,9 +20,27 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql)
 // used for unit testing.
 type MockResolver struct {
+	// CommitGraphResolverFromFactoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CommitGraphResolverFromFactory.
+	CommitGraphResolverFromFactoryFunc *ResolverCommitGraphResolverFromFactoryFunc
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *ResolverDeleteUploadByIDFunc
+	// GetAuditLogsForUploadFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuditLogsForUpload.
+	GetAuditLogsForUploadFunc *ResolverGetAuditLogsForUploadFunc
+	// GetCommitsVisibleToUploadFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetCommitsVisibleToUpload.
+	GetCommitsVisibleToUploadFunc *ResolverGetCommitsVisibleToUploadFunc
+	// GetLastUploadRetentionScanForRepositoryFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetLastUploadRetentionScanForRepository.
+	GetLastUploadRetentionScanForRepositoryFunc *ResolverGetLastUploadRetentionScanForRepositoryFunc
+	// GetRecentUploadsSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRecentUploadsSummary.
+	GetRecentUploadsSummaryFunc *ResolverGetRecentUploadsSummaryFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -39,8 +58,33 @@ type MockResolver struct {
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
+		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
+			defaultHook: func(context.Context, int) (r0 *graphql.CommitGraphResolver) {
+				return
+			},
+		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		GetAuditLogsForUploadFunc: &ResolverGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.UploadLog, r1 error) {
+				return
+			},
+		},
+		GetCommitsVisibleToUploadFunc: &ResolverGetCommitsVisibleToUploadFunc{
+			defaultHook: func(context.Context, int, int, *string) (r0 []string, r1 *string, r2 error) {
+				return
+			},
+		},
+		GetLastUploadRetentionScanForRepositoryFunc: &ResolverGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (r0 *time.Time, r1 error) {
+				return
+			},
+		},
+		GetRecentUploadsSummaryFunc: &ResolverGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
 				return
 			},
 		},
@@ -66,9 +110,34 @@ func NewMockResolver() *MockResolver {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockResolver() *MockResolver {
 	return &MockResolver{
+		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
+			defaultHook: func(context.Context, int) *graphql.CommitGraphResolver {
+				panic("unexpected invocation of MockResolver.CommitGraphResolverFromFactory")
+			},
+		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (bool, error) {
 				panic("unexpected invocation of MockResolver.DeleteUploadByID")
+			},
+		},
+		GetAuditLogsForUploadFunc: &ResolverGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) ([]shared.UploadLog, error) {
+				panic("unexpected invocation of MockResolver.GetAuditLogsForUpload")
+			},
+		},
+		GetCommitsVisibleToUploadFunc: &ResolverGetCommitsVisibleToUploadFunc{
+			defaultHook: func(context.Context, int, int, *string) ([]string, *string, error) {
+				panic("unexpected invocation of MockResolver.GetCommitsVisibleToUpload")
+			},
+		},
+		GetLastUploadRetentionScanForRepositoryFunc: &ResolverGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				panic("unexpected invocation of MockResolver.GetLastUploadRetentionScanForRepository")
+			},
+		},
+		GetRecentUploadsSummaryFunc: &ResolverGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockResolver.GetRecentUploadsSummary")
 			},
 		},
 		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
@@ -93,8 +162,23 @@ func NewStrictMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 	return &MockResolver{
+		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
+			defaultHook: i.CommitGraphResolverFromFactory,
+		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
+		},
+		GetAuditLogsForUploadFunc: &ResolverGetAuditLogsForUploadFunc{
+			defaultHook: i.GetAuditLogsForUpload,
+		},
+		GetCommitsVisibleToUploadFunc: &ResolverGetCommitsVisibleToUploadFunc{
+			defaultHook: i.GetCommitsVisibleToUpload,
+		},
+		GetLastUploadRetentionScanForRepositoryFunc: &ResolverGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: i.GetLastUploadRetentionScanForRepository,
+		},
+		GetRecentUploadsSummaryFunc: &ResolverGetRecentUploadsSummaryFunc{
+			defaultHook: i.GetRecentUploadsSummary,
 		},
 		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -106,6 +190,115 @@ func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 			defaultHook: i.UploadsConnectionResolverFromFactory,
 		},
 	}
+}
+
+// ResolverCommitGraphResolverFromFactoryFunc describes the behavior when
+// the CommitGraphResolverFromFactory method of the parent MockResolver
+// instance is invoked.
+type ResolverCommitGraphResolverFromFactoryFunc struct {
+	defaultHook func(context.Context, int) *graphql.CommitGraphResolver
+	hooks       []func(context.Context, int) *graphql.CommitGraphResolver
+	history     []ResolverCommitGraphResolverFromFactoryFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitGraphResolverFromFactory delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) CommitGraphResolverFromFactory(v0 context.Context, v1 int) *graphql.CommitGraphResolver {
+	r0 := m.CommitGraphResolverFromFactoryFunc.nextHook()(v0, v1)
+	m.CommitGraphResolverFromFactoryFunc.appendCall(ResolverCommitGraphResolverFromFactoryFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CommitGraphResolverFromFactory method of the parent MockResolver instance
+// is invoked and the hook queue is empty.
+func (f *ResolverCommitGraphResolverFromFactoryFunc) SetDefaultHook(hook func(context.Context, int) *graphql.CommitGraphResolver) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitGraphResolverFromFactory method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverCommitGraphResolverFromFactoryFunc) PushHook(hook func(context.Context, int) *graphql.CommitGraphResolver) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverCommitGraphResolverFromFactoryFunc) SetDefaultReturn(r0 *graphql.CommitGraphResolver) {
+	f.SetDefaultHook(func(context.Context, int) *graphql.CommitGraphResolver {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverCommitGraphResolverFromFactoryFunc) PushReturn(r0 *graphql.CommitGraphResolver) {
+	f.PushHook(func(context.Context, int) *graphql.CommitGraphResolver {
+		return r0
+	})
+}
+
+func (f *ResolverCommitGraphResolverFromFactoryFunc) nextHook() func(context.Context, int) *graphql.CommitGraphResolver {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverCommitGraphResolverFromFactoryFunc) appendCall(r0 ResolverCommitGraphResolverFromFactoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ResolverCommitGraphResolverFromFactoryFuncCall objects describing the
+// invocations of this function.
+func (f *ResolverCommitGraphResolverFromFactoryFunc) History() []ResolverCommitGraphResolverFromFactoryFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverCommitGraphResolverFromFactoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverCommitGraphResolverFromFactoryFuncCall is an object that
+// describes an invocation of method CommitGraphResolverFromFactory on an
+// instance of MockResolver.
+type ResolverCommitGraphResolverFromFactoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *graphql.CommitGraphResolver
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverCommitGraphResolverFromFactoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverCommitGraphResolverFromFactoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ResolverDeleteUploadByIDFunc describes the behavior when the
@@ -213,6 +406,460 @@ func (c ResolverDeleteUploadByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverDeleteUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverGetAuditLogsForUploadFunc describes the behavior when the
+// GetAuditLogsForUpload method of the parent MockResolver instance is
+// invoked.
+type ResolverGetAuditLogsForUploadFunc struct {
+	defaultHook func(context.Context, int) ([]shared.UploadLog, error)
+	hooks       []func(context.Context, int) ([]shared.UploadLog, error)
+	history     []ResolverGetAuditLogsForUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuditLogsForUpload delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]shared.UploadLog, error) {
+	r0, r1 := m.GetAuditLogsForUploadFunc.nextHook()(v0, v1)
+	m.GetAuditLogsForUploadFunc.appendCall(ResolverGetAuditLogsForUploadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAuditLogsForUpload method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuditLogsForUpload method of the parent MockResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ResolverGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []shared.UploadLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverGetAuditLogsForUploadFunc) PushReturn(r0 []shared.UploadLog, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]shared.UploadLog, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetAuditLogsForUploadFunc) appendCall(r0 ResolverGetAuditLogsForUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetAuditLogsForUploadFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetAuditLogsForUploadFunc) History() []ResolverGetAuditLogsForUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetAuditLogsForUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetAuditLogsForUploadFuncCall is an object that describes an
+// invocation of method GetAuditLogsForUpload on an instance of
+// MockResolver.
+type ResolverGetAuditLogsForUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLog
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetAuditLogsForUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetAuditLogsForUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverGetCommitsVisibleToUploadFunc describes the behavior when the
+// GetCommitsVisibleToUpload method of the parent MockResolver instance is
+// invoked.
+type ResolverGetCommitsVisibleToUploadFunc struct {
+	defaultHook func(context.Context, int, int, *string) ([]string, *string, error)
+	hooks       []func(context.Context, int, int, *string) ([]string, *string, error)
+	history     []ResolverGetCommitsVisibleToUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCommitsVisibleToUpload delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetCommitsVisibleToUpload(v0 context.Context, v1 int, v2 int, v3 *string) ([]string, *string, error) {
+	r0, r1, r2 := m.GetCommitsVisibleToUploadFunc.nextHook()(v0, v1, v2, v3)
+	m.GetCommitsVisibleToUploadFunc.appendCall(ResolverGetCommitsVisibleToUploadFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCommitsVisibleToUpload method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetCommitsVisibleToUploadFunc) SetDefaultHook(hook func(context.Context, int, int, *string) ([]string, *string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCommitsVisibleToUpload method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverGetCommitsVisibleToUploadFunc) PushHook(hook func(context.Context, int, int, *string) ([]string, *string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverGetCommitsVisibleToUploadFunc) SetDefaultReturn(r0 []string, r1 *string, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int, *string) ([]string, *string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverGetCommitsVisibleToUploadFunc) PushReturn(r0 []string, r1 *string, r2 error) {
+	f.PushHook(func(context.Context, int, int, *string) ([]string, *string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ResolverGetCommitsVisibleToUploadFunc) nextHook() func(context.Context, int, int, *string) ([]string, *string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetCommitsVisibleToUploadFunc) appendCall(r0 ResolverGetCommitsVisibleToUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetCommitsVisibleToUploadFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetCommitsVisibleToUploadFunc) History() []ResolverGetCommitsVisibleToUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetCommitsVisibleToUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetCommitsVisibleToUploadFuncCall is an object that describes an
+// invocation of method GetCommitsVisibleToUpload on an instance of
+// MockResolver.
+type ResolverGetCommitsVisibleToUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetCommitsVisibleToUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetCommitsVisibleToUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ResolverGetLastUploadRetentionScanForRepositoryFunc describes the
+// behavior when the GetLastUploadRetentionScanForRepository method of the
+// parent MockResolver instance is invoked.
+type ResolverGetLastUploadRetentionScanForRepositoryFunc struct {
+	defaultHook func(context.Context, int) (*time.Time, error)
+	hooks       []func(context.Context, int) (*time.Time, error)
+	history     []ResolverGetLastUploadRetentionScanForRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastUploadRetentionScanForRepository delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockResolver) GetLastUploadRetentionScanForRepository(v0 context.Context, v1 int) (*time.Time, error) {
+	r0, r1 := m.GetLastUploadRetentionScanForRepositoryFunc.nextHook()(v0, v1)
+	m.GetLastUploadRetentionScanForRepositoryFunc.appendCall(ResolverGetLastUploadRetentionScanForRepositoryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLastUploadRetentionScanForRepository method of the parent MockResolver
+// instance is invoked and the hook queue is empty.
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastUploadRetentionScanForRepository method of the parent MockResolver
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) PushHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) SetDefaultReturn(r0 *time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) PushReturn(r0 *time.Time, r1 error) {
+	f.PushHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) nextHook() func(context.Context, int) (*time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) appendCall(r0 ResolverGetLastUploadRetentionScanForRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ResolverGetLastUploadRetentionScanForRepositoryFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverGetLastUploadRetentionScanForRepositoryFunc) History() []ResolverGetLastUploadRetentionScanForRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetLastUploadRetentionScanForRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetLastUploadRetentionScanForRepositoryFuncCall is an object that
+// describes an invocation of method GetLastUploadRetentionScanForRepository
+// on an instance of MockResolver.
+type ResolverGetLastUploadRetentionScanForRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetLastUploadRetentionScanForRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetLastUploadRetentionScanForRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverGetRecentUploadsSummaryFunc describes the behavior when the
+// GetRecentUploadsSummary method of the parent MockResolver instance is
+// invoked.
+type ResolverGetRecentUploadsSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)
+	history     []ResolverGetRecentUploadsSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRecentUploadsSummary delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetRecentUploadsSummary(v0 context.Context, v1 int) ([]shared.UploadsWithRepositoryNamespace, error) {
+	r0, r1 := m.GetRecentUploadsSummaryFunc.nextHook()(v0, v1)
+	m.GetRecentUploadsSummaryFunc.appendCall(ResolverGetRecentUploadsSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRecentUploadsSummary method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetRecentUploadsSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRecentUploadsSummary method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverGetRecentUploadsSummaryFunc) PushHook(hook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverGetRecentUploadsSummaryFunc) SetDefaultReturn(r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverGetRecentUploadsSummaryFunc) PushReturn(r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetRecentUploadsSummaryFunc) nextHook() func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetRecentUploadsSummaryFunc) appendCall(r0 ResolverGetRecentUploadsSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetRecentUploadsSummaryFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetRecentUploadsSummaryFunc) History() []ResolverGetRecentUploadsSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetRecentUploadsSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetRecentUploadsSummaryFuncCall is an object that describes an
+// invocation of method GetRecentUploadsSummary on an instance of
+// MockResolver.
+type ResolverGetRecentUploadsSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadsWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetRecentUploadsSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetRecentUploadsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
