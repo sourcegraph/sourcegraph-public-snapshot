@@ -6107,6 +6107,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-resizable@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/@types/react-resizable/-/react-resizable-3.0.2.tgz#3c914be6b02c8d6864b82ffb6461b2e8a771fb75"
+  integrity sha512-4rHjZDQmSpFqRlNzlcnF5tpOG5fBcMuDlvD+qT3XHAJLKGx/FC3iDQ9li9tHW53ecWwZzHTPCGvz5vNWQN+v/Q==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-router-dom@^5.3.3":
   version "5.3.3"
   resolved "https://registry.npmjs.org/@types/react-router-dom/-/react-router-dom-5.3.3.tgz#e9d6b4a66fcdbd651a5f106c2656a30088cc1e83"
