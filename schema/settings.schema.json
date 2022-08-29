@@ -342,7 +342,7 @@
           }
         },
         "enableGoImportsSearchQueryTransform": {
-          "description": "Enables `go.imports:` search expansion (formally known as go imports search extension).",
+          "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
           "type": "boolean",
           "default": false,
           "!go": {
