@@ -35,11 +35,6 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
         return isAvailable ?? true
     }
 
-    const handleModeChange = (aggregationMode: SearchAggregationMode): void => {
-        telemetryService.log(`GroupResults${aggregationMode}`)
-        onModeChange(aggregationMode)
-    }
-
     const handleModeHover = (aggregationMode: SearchAggregationMode): void => {
         if (!isModeAvailable(aggregationMode)) {
             telemetryService.log(`GroupResults${aggregationMode}DisabledHover`)
@@ -64,7 +59,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                         outline={mode !== SearchAggregationMode.REPO}
                         data-testid="repo-aggregation-mode"
                         disabled={!isModeAvailable(SearchAggregationMode.REPO)}
-                        onClick={() => handleModeChange(SearchAggregationMode.REPO)}
+                        onClick={() => onModeChange(SearchAggregationMode.REPO)}
                     >
                         Repository
                     </Button>
@@ -79,7 +74,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                         outline={mode !== SearchAggregationMode.PATH}
                         disabled={!isModeAvailable(SearchAggregationMode.PATH)}
                         data-testid="file-aggregation-mode"
-                        onClick={() => handleModeChange(SearchAggregationMode.PATH)}
+                        onClick={() => onModeChange(SearchAggregationMode.PATH)}
                     >
                         File
                     </Button>
@@ -94,7 +89,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                         outline={mode !== SearchAggregationMode.AUTHOR}
                         disabled={!isModeAvailable(SearchAggregationMode.AUTHOR)}
                         data-testid="author-aggregation-mode"
-                        onClick={() => handleModeChange(SearchAggregationMode.AUTHOR)}
+                        onClick={() => onModeChange(SearchAggregationMode.AUTHOR)}
                     >
                         Author
                     </Button>
@@ -109,7 +104,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                         outline={mode !== SearchAggregationMode.CAPTURE_GROUP}
                         disabled={!isModeAvailable(SearchAggregationMode.CAPTURE_GROUP)}
                         data-testid="captureGroup-aggregation-mode"
-                        onClick={() => handleModeChange(SearchAggregationMode.CAPTURE_GROUP)}
+                        onClick={() => onModeChange(SearchAggregationMode.CAPTURE_GROUP)}
                     >
                         Capture group
                     </Button>

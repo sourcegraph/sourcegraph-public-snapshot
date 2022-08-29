@@ -2,7 +2,7 @@ import { FC, HTMLAttributes } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
@@ -61,6 +61,11 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         )
     }
 
+    const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
+        setAggregationMode(mode)
+        telemetryService.log(`GroupResults${aggregationMode}`, { uiMode: 'resultsScreen' }, { uiMode: 'resultsScreen' })
+    }
+
     return (
         <section {...attributes}>
             <header className={styles.header}>
@@ -83,7 +88,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     mode={aggregationMode}
                     availability={data?.searchQueryAggregate?.modeAvailability}
                     telemetryService={telemetryService}
-                    onModeChange={setAggregationMode}
+                    onModeChange={handleAggregationModeChange}
                 />
             </div>
 
