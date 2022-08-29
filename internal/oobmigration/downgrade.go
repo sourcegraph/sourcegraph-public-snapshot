@@ -11,26 +11,27 @@ func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]Migratio
 
 	intervals := make([]migrationInterval, 0, len(migrations))
 	for _, m := range migrations {
-		introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
-		if CompareVersions(to, introduced) == VersionOrderAfter || CompareVersions(introduced, from) != VersionOrderBefore {
-			// Skip migrations not introduced within the the instance downgrade interval
-			continue
+
+		if m.DeprecatedVersionMajor == nil {
+			// Just assume it's deprecated after the current version prior to a downgrade.
+			// This exact value doesn't matter if it exceeds the current migration range,
+			// and not having a pointer type here makes the following code more uniform.
+
+			n := to.Next()
+			m.DeprecatedVersionMajor = &n.Major
+			m.DeprecatedVersionMinor = &n.Minor
 		}
 
 		interval := migrationInterval{
 			id:         m.ID,
-			introduced: introduced,
-
-			// Just assume it's deprecated after the current version prior to a downgrade.
-			// This value doesn't matter, but not having a pointer type here makes the
-			// following code a bit more uniform.
-			deprecated: to.Next(),
-		}
-		if m.DeprecatedVersionMajor != nil {
-			interval.deprecated = Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
+			introduced: Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
+			deprecated: Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
 		}
 
-		intervals = append(intervals, interval)
+		// Only add intervals that are introduced within the migration range: `to <= introduced < from`
+		if CompareVersions(to, interval.introduced) != VersionOrderAfter && CompareVersions(interval.introduced, from) == VersionOrderBefore {
+			intervals = append(intervals, interval)
+		}
 	}
 
 	// Choose a minimal set of versions that intersect all migration intervals. These will be the

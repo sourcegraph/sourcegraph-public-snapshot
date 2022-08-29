@@ -13,13 +13,19 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 
 	intervals := make([]migrationInterval, 0, len(migrations))
 	for _, m := range migrations {
-		if m.DeprecatedVersionMajor != nil {
-			introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
-			deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
+		if m.DeprecatedVersionMajor == nil {
+			continue
+		}
 
-			if CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) != VersionOrderAfter {
-				intervals = append(intervals, migrationInterval{m.ID, introduced, deprecated})
-			}
+		interval := migrationInterval{
+			id:         m.ID,
+			introduced: Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
+			deprecated: Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
+		}
+
+		// Only add intervals that are deprecated within the migration range: `from < deprecated <= to`
+		if CompareVersions(from, interval.deprecated) == VersionOrderBefore && CompareVersions(interval.deprecated, to) != VersionOrderAfter {
+			intervals = append(intervals, interval)
 		}
 	}
 
