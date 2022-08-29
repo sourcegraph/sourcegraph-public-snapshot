@@ -149,6 +149,8 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             <a
               class="anchorLink btn btnSecondary btnBlock"
               href=""
+              role="button"
+              tabindex="0"
             >
               <svg
                 aria-hidden="true"
@@ -325,6 +327,8 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             <a
               class="anchorLink btn btnSecondary btnBlock"
               href=""
+              role="button"
+              tabindex="0"
             >
               <svg
                 aria-hidden="true"

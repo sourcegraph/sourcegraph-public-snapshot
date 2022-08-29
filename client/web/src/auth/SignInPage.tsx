@@ -6,7 +6,7 @@ import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert, Icon, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, Alert, Icon, Text, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -73,11 +73,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <Button
+                            <ButtonLink
                                 to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                 display="block"
                                 variant="secondary"
-                                as={Link}
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
@@ -90,7 +89,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                     </>
                                 )}
                                 Continue with {provider.displayName}
-                            </Button>
+                            </ButtonLink>
                         </div>
                     ))}
                 </div>

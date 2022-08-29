@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Badge, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Badge, Link, H2, Text, ButtonLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -41,9 +41,9 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                     {authExp && (
                         <div className="text-nowrap">
                             {this.props.node.authenticationURL && (
-                                <Button to={this.props.node.authenticationURL} variant="secondary" as={Link}>
+                                <ButtonLink to={this.props.node.authenticationURL} variant="secondary">
                                     Authenticate
-                                </Button>
+                                </ButtonLink>
                             )}
                         </div>
                     )}

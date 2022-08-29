@@ -15,9 +15,9 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
                 <Tooltip content="Download usage stats archive">
-                    <Button to="/site-admin/usage-statistics/archive" download="true" variant="secondary" as={Link}>
+                    <ButtonLink to="/site-admin/usage-statistics/archive" download="true" variant="secondary">
                         <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download usage stats archive
-                    </Button>
+                    </ButtonLink>
                 </Tooltip>
 
                 {this.state.stats && (
