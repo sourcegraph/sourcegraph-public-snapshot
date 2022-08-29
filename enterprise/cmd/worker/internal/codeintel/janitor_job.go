@@ -62,9 +62,9 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 
 	routines := []goroutine.BackgroundRoutine{
 		// Resetters
-		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewDependencyIndexResetter(dependencyIndexingStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewUploadResetter(logger.Scoped("janitor.UploadResetter", ""), uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewIndexResetter(logger.Scoped("janitor.IndexResetter", ""), indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewDependencyIndexResetter(logger.Scoped("janitor.DependencyIndexResetter", ""), dependencyIndexingStore, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		executorMetricsReporter,
 	}

@@ -1,7 +1,8 @@
-import { ApolloClient, createHttpLink, from, NormalizedCacheObject } from '@apollo/client'
+import { ApolloClient, createHttpLink, from, HttpOptions, NormalizedCacheObject } from '@apollo/client'
 import { LocalStorageWrapper, CachePersistor } from 'apollo3-cache-persist'
 import { once } from 'lodash'
 
+import { checkOk } from '../../http-status-error'
 import { buildGraphQLUrl } from '../graphql'
 import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
@@ -74,6 +75,7 @@ export const getGraphQLClient = once(
                     uri: ({ operationName }) => `${uri}?${operationName}`,
                     headers,
                     credentials,
+                    fetch: customFetch,
                 }),
             ]),
         })
@@ -81,3 +83,5 @@ export const getGraphQLClient = once(
         return Promise.resolve(apolloClient)
     }
 )
+
+const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).then(checkOk)

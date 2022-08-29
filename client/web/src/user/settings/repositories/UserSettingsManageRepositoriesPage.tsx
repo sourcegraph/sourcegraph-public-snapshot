@@ -43,7 +43,6 @@ import {
 } from '../../../graphql-operations'
 import {
     listUserRepositories,
-    listOrgRepositories,
     queryUserPublicRepositories,
     setUserPublicRepositories,
 } from '../../../site-admin/backend'
@@ -171,9 +170,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     }, [telemetryService])
 
     const history = useHistory()
-    const isOrgOwner = owner.type === 'org'
-
-    const listRepositories = isOrgOwner ? listOrgRepositories : listUserRepositories
+    const isOrgOwner = false
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags() === 'all'
@@ -236,10 +233,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
 
     const fetchSelectedRepositories = useCallback(
         async (): Promise<NonNullable<RepositoriesResult>['repositories']['nodes']> =>
-            listRepositories({ id: owner.id, first: 2000 })
+            listUserRepositories({ id: owner.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
-        [owner.id, listRepositories]
+        [owner.id]
     )
 
     const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
@@ -386,7 +383,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
         const radioSelectOption =
             externalServices.length === codeHostsHaveSyncAllQuery.length && codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
-                : selectedAffiliatedRepos.size > 0 || isOrgOwner
+                : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
 
@@ -404,7 +401,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, isOrgOwner])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {

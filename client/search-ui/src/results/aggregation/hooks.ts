@@ -76,6 +76,7 @@ const aggregationModeDeserializer = (
             return SearchAggregationMode.AUTHOR
         case 'CAPTURE_GROUP':
             return SearchAggregationMode.CAPTURE_GROUP
+
         default:
             return disableProactiveSearchAggregations ? SearchAggregationModeUi.NONE : null
     }
