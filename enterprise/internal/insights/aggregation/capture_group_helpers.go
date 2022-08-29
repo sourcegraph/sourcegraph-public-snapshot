@@ -82,6 +82,12 @@ func fromRegexpMatches(submatches []int, namedGroups []string, content string, r
 	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
 	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
 	for j := 0; j < len(submatches); j += 2 {
+
+		// we only want the first capture group match that would be starting at indexe 2
+		if j > 2 {
+			break
+		}
+
 		start := submatches[j]
 		end := submatches[j+1]
 		if start == -1 || end == -1 {
@@ -93,7 +99,7 @@ func fromRegexpMatches(submatches []int, namedGroups []string, content string, r
 
 		if j == 0 {
 			// The first submatch is the overall match
-			// value. Don't add this to the Environment
+			// value. Don't add this
 			continue
 		}
 
