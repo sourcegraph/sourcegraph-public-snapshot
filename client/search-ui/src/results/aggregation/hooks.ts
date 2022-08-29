@@ -1,16 +1,12 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ApolloError, gql, useQuery } from '@apollo/client'
+import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
-import {
-    GetSearchAggregationResult,
-    GetSearchAggregationVariables,
-    SearchAggregationDatum,
-} from '../../graphql-operations'
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -185,12 +181,25 @@ type SearchAggregationResults =
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
     const { query, patternType, aggregationMode, limit } = input
 
+    const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
-    const { data, error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
+
+    const [data, setData] = useState<GetSearchAggregationResult | undefined>()
+    const { error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
         AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
             variables: { query, patternType, mode: aggregationMode, limit },
+
+            // Skip extra API request when we had no aggregation mode, and then
+            // we got calculated aggregation mode from the BE. We should update
+            // FE aggregationMode but this shouldn't trigger AGGREGATION_SEARCH_QUERY
+            // fetching.
+            skip: aggregationMode !== null && calculatedAggregationModeRef.current === aggregationMode,
+            onError: () => {
+                calculatedAggregationModeRef.current = null
+                setData(undefined)
+            },
             onCompleted: data => {
                 const calculatedAggregationMode = getCalculatedAggregationMode(data)
 
@@ -205,54 +214,39 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
 
                 // Catch initial page mount when aggregation mode isn't set on the FE and BE
                 // calculated aggregation mode automatically on the backend based on given query
-                if (calculatedAggregationMode && aggregationMode === null) {
+                if (calculatedAggregationMode !== aggregationMode) {
                     setAggregationMode(calculatedAggregationMode)
                 }
+
+                // Preserve calculated aggregation mode in order to use it for skipping
+                // extra API calls in useQuery "skip" field.
+                calculatedAggregationModeRef.current = calculatedAggregationMode
+
+                // skip: true resets data field in the useQuery hook, in order to use previously
+                // saved data we use useState to store data outside useQuery hook
+                setData(data)
             },
         }
     )
+
+    useEffect(() => {
+        // If query or pattern type have been changed we should "reset" our assumptions
+        // about calculated aggregation mode and make another api call to determine it
+        calculatedAggregationModeRef.current = null
+    }, [query, patternType])
 
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
     }
 
-    const calculatedError = getAggregationError(error, data)
-
-    if (calculatedError) {
-        return { data, error: calculatedError, loading: false }
+    if (error) {
+        return { data, error, loading: false }
     }
 
     return {
         data: data as GetSearchAggregationResult,
         error: undefined,
         loading: false,
-    }
-}
-
-function getAggregationError(apolloError?: ApolloError, response?: GetSearchAggregationResult): Error | undefined {
-    if (apolloError) {
-        return apolloError
-    }
-
-    const aggregationData = response?.searchQueryAggregate?.aggregations
-
-    if (aggregationData?.__typename === 'SearchAggregationNotAvailable') {
-        return new Error(aggregationData.reason)
-    }
-
-    return
-}
-
-export function getAggregationData(response: GetSearchAggregationResult): SearchAggregationDatum[] {
-    const aggregationResult = response.searchQueryAggregate?.aggregations
-
-    switch (aggregationResult?.__typename) {
-        case 'ExhaustiveSearchAggregationResult':
-        case 'NonExhaustiveSearchAggregationResult':
-            return aggregationResult.groups
-
-        default:
-            return []
     }
 }
 
@@ -264,18 +258,4 @@ function getCalculatedAggregationMode(response?: GetSearchAggregationResult): Se
     const aggregationResult = response.searchQueryAggregate?.aggregations
 
     return aggregationResult?.mode ?? null
-}
-
-export function getOtherGroupCount(response: GetSearchAggregationResult): number {
-    const aggregationResult = response.searchQueryAggregate?.aggregations
-
-    switch (aggregationResult?.__typename) {
-        case 'ExhaustiveSearchAggregationResult':
-            return aggregationResult.otherGroupCount ?? 0
-        case 'NonExhaustiveSearchAggregationResult':
-            return aggregationResult.approximateOtherGroupCount ?? 0
-
-        default:
-            return 0
-    }
 }

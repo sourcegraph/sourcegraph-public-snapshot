@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -71,7 +71,7 @@ func Main(setup SetupFunc) {
 	logger := log.Scoped("service", "the symbols service")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-symbols",

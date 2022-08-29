@@ -3,10 +3,11 @@ import { HTMLAttributes, ReactElement, MouseEvent } from 'react'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
+import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { SearchAggregationDatum } from '../../graphql-operations'
+import { GetSearchAggregationResult, SearchAggregationDatum } from '../../graphql-operations'
 
 import { AggregationChart } from './AggregationChart'
 
@@ -17,48 +18,98 @@ const getValue = (datum: SearchAggregationDatum): number => datum.count
 const getColor = (datum: SearchAggregationDatum): string => (datum.label ? 'var(--primary)' : 'var(--text-muted)')
 const getLink = (datum: SearchAggregationDatum): string => datum.query ?? ''
 
-export enum AggregationCardMode {
-    Data,
-    Loading,
-    Error,
+/**
+ * Nested aggregation results types from {@link AGGREGATION_SEARCH_QUERY} GQL query
+ */
+type SearchAggregationResult = GetSearchAggregationResult['searchQueryAggregate']['aggregations']
+
+function getAggregationError(aggregation?: SearchAggregationResult): Error | undefined {
+    if (aggregation?.__typename === 'SearchAggregationNotAvailable') {
+        return new Error(aggregation.reason)
+    }
+
+    return
 }
 
-type AggregationChartCardStateProps =
-    | { type: AggregationCardMode.Data; data: SearchAggregationDatum[] }
-    | { type: AggregationCardMode.Loading }
-    | { type: AggregationCardMode.Error; errorMessage: string }
+export function getAggregationData(aggregations: SearchAggregationResult): SearchAggregationDatum[] {
+    switch (aggregations?.__typename) {
+        case 'ExhaustiveSearchAggregationResult':
+        case 'NonExhaustiveSearchAggregationResult':
+            return aggregations.groups
 
-interface AggregationChartCardSharedProps extends HTMLAttributes<HTMLDivElement> {
+        default:
+            return []
+    }
+}
+
+export function getOtherGroupCount(aggregations: SearchAggregationResult): number {
+    switch (aggregations?.__typename) {
+        case 'ExhaustiveSearchAggregationResult':
+            return aggregations.otherGroupCount ?? 0
+        case 'NonExhaustiveSearchAggregationResult':
+            return aggregations.approximateOtherGroupCount ?? 0
+
+        default:
+            return 0
+    }
+}
+
+interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
+    data?: SearchAggregationResult
+    error?: Error
+    loading: boolean
     mode?: SearchAggregationMode | null
-    missingCount?: number
+    size?: 'sm' | 'md'
     onBarLinkClick?: (query: string) => void
 }
 
-type AggregationChartCardProps = AggregationChartCardSharedProps & AggregationChartCardStateProps
+export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
+    const { data, error, loading, mode, className, size = 'sm', 'aria-label': ariaLabel, onBarLinkClick } = props
 
-export function AggregationChartCard(props: AggregationChartCardProps): ReactElement {
-    const { type, mode, className, missingCount, onBarLinkClick, 'aria-label': ariaLabel } = props
-
-    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
-        event.preventDefault()
-        onBarLinkClick?.(getLink(datum))
+    // Internal error
+    if (error) {
+        return (
+            <div
+                className={classNames(className, styles.errorContainer, {
+                    [styles.errorContainerSmall]: size === 'sm',
+                })}
+            >
+                <ErrorAlert error={error} className={styles.errorAlert} />
+            </div>
+        )
     }
 
-    if (type === AggregationCardMode.Loading || type === AggregationCardMode.Error) {
+    const aggregationError = getAggregationError(data)
+
+    if (loading || aggregationError) {
         return (
-            <div className={classNames(styles.container, className)}>
-                <div className={styles.chartOverlay}>
-                    {type === AggregationCardMode.Loading ? (
+            <div
+                className={classNames(styles.errorContainer, className, {
+                    [styles.errorContainerSmall]: size === 'sm',
+                })}
+            >
+                <div className={styles.errorMessage}>
+                    {loading ? (
                         'Loading...'
-                    ) : (
-                        <div>
-                            We couldn’t provide aggregation for this query. {props.errorMessage}.{' '}
-                            <Link to="">Learn more</Link>
-                        </div>
-                    )}
+                    ) : aggregationError ? (
+                        <>
+                            We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />
+                            . <Link to="">Learn more</Link>
+                        </>
+                    ) : null}
                 </div>
             </div>
         )
+    }
+
+    if (!data) {
+        return null
+    }
+
+    const missingCount = getOtherGroupCount(data)
+    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
+        event.preventDefault()
+        onBarLinkClick?.(getLink(datum))
     }
 
     return (
@@ -69,7 +120,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                         aria-label={ariaLabel}
                         width={parent.width}
                         height={parent.height}
-                        data={props.data}
+                        data={getAggregationData(data)}
                         mode={mode}
                         getDatumValue={getValue}
                         getDatumColor={getColor}
