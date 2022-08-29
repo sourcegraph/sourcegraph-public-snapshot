@@ -24,6 +24,19 @@ const (
 	searchTimeLimitSeconds       = 2
 )
 
+// Possible reasons that grouping is disabled
+var invalidQueryMsg = "Grouping is disabled because the search query is not vaild."
+var fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
+var authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
+var cgInvalidQueryMsg = "Grouping by capture group is only available for regex searches that contain a capturing group."
+var cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
+var cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
+
+// Possible reasons that grouping would fail
+// These should be very rare
+var unableToModifyQueryMsg = "The search query was unable to be updated to support grouping."
+var unableToCountGroupsMsg = "The search results were unable to be grouped successfully."
+
 type searchAggregateResolver struct {
 	baseInsightResolver
 	searchQuery string
@@ -55,12 +68,12 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
 	reasonUnavailable, err := aggregationModeAvailabilityResolver.ReasonUnavailable()
-	if err != nil {
-		reason := fmt.Sprintf("could not fetch mode availability: %v", err)
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode)}, nil
-	}
 	if reasonUnavailable != nil {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(*reasonUnavailable, aggregationMode)}, nil
+	}
+	// It should not be possible for the ReasonUnavailable to err without giving a reason but leaving a fallback here incase.
+	if err != nil {
+		return nil, err
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
@@ -68,7 +81,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimeLimitSeconds+1)
 	if err != nil {
 		return &searchAggregationResultResolver{
-			resolver: newSearchAggregationNotAvailableResolver("search query could not be expanded for aggregation", aggregationMode),
+			resolver: newSearchAggregationNotAvailableResolver(unableToModifyQueryMsg, aggregationMode),
 		}, nil
 	}
 
@@ -144,7 +157,7 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 
 func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccurred bool) (bool, string) {
 	if len(tabulationErrors) > 0 {
-		return false, "query returned with errors"
+		return false, unableToCountGroupsMsg
 	}
 	if shardTimeoutOccurred {
 		return false, "query unable to complete in allocated time"
@@ -260,13 +273,6 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 }
 
 type canAggregateBy func(searchQuery, patternType string) (bool, *string, error)
-
-var invalidQueryMsg = "Grouping is disabled because the search query is not vaild."
-var fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
-var authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
-var cgInvalidQueryMsg = "Grouping by capture group is only available for regex searches that contain a capturing group."
-var cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
-var cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
 
 func canAggregateByRepo(searchQuery, patternType string) (bool, *string, error) {
 	_, err := querybuilder.ParseQuery(searchQuery, patternType)
