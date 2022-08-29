@@ -99,7 +99,7 @@ func newActionJobResetter(_ context.Context, logger log.Logger, s edb.CodeMonito
 			RecordResets:        metrics.resets,
 		},
 	}
-	return dbworker.NewResetter(logger.Scoped("dbworker.Resetter", ""), workerStore, options)
+	return dbworker.NewResetter(logger, workerStore, options)
 }
 
 func createDBWorkerStoreForTriggerJobs(logger log.Logger, s basestore.ShareableStore) dbworkerstore.Store {
