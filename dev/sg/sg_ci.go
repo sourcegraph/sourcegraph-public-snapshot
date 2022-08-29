@@ -680,7 +680,38 @@ From there, you can start exploring logs with the Grafana explore panel.
 			}
 			return open.URL(buildkiteURL)
 		},
+	}, {
+		Name:      "search-failures",
+		ArgsUsage: "[text to search for]",
+		Usage:     "Open Sourcegraph's CI failures Grafana logs page in browser",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "step",
+				Usage: "Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')",
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			text := "TODO"
+			stepName := ctx.String("step")
+
+			if ctx.Args().Len() > 0 {
+				text = ctx.Args().Slice()[0]
+			}
+			grafanaURL := buildGrafanaURL(text, stepName)
+			return open.URL(grafanaURL)
+		},
 	}},
+}
+
+func buildGrafanaURL(text string, stepName string) string {
+	var base string
+	if stepName == "" {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	} else {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	}
+	url := strings.ReplaceAll(base, "_TEXT_", text)
+	return strings.ReplaceAll(url, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
 }
 
 func getAllowedBuildTypeArgs() []string {

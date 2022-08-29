@@ -25,6 +25,15 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
         return store
     }, {} as Partial<Record<SearchAggregationMode, SearchAggregationModeAvailability>>)
 
+    const isModeAvailable = (mode: SearchAggregationMode): boolean => {
+        const isAvailable = availabilityGroups[mode]?.available
+
+        // Returns true by default because we don't want to disable all modes
+        // in case if we don't have availability information from the backend
+        // (for example in case of network request failure)
+        return isAvailable ?? true
+    }
+
     return (
         <div
             {...attributes}
@@ -37,7 +46,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     size={size}
                     outline={mode !== SearchAggregationMode.REPO}
                     data-testid="repo-aggregation-mode"
-                    disabled={!availabilityGroups[SearchAggregationMode.REPO]?.available}
+                    disabled={!isModeAvailable(SearchAggregationMode.REPO)}
                     onClick={() => onModeChange(SearchAggregationMode.REPO)}
                 >
                     Repository
@@ -49,7 +58,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     variant="secondary"
                     size={size}
                     outline={mode !== SearchAggregationMode.PATH}
-                    disabled={!availabilityGroups[SearchAggregationMode.PATH]?.available}
+                    disabled={!isModeAvailable(SearchAggregationMode.PATH)}
                     data-testid="file-aggregation-mode"
                     onClick={() => onModeChange(SearchAggregationMode.PATH)}
                 >
@@ -62,7 +71,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     variant="secondary"
                     size={size}
                     outline={mode !== SearchAggregationMode.AUTHOR}
-                    disabled={!availabilityGroups[SearchAggregationMode.AUTHOR]?.available}
+                    disabled={!isModeAvailable(SearchAggregationMode.AUTHOR)}
                     data-testid="author-aggregation-mode"
                     onClick={() => onModeChange(SearchAggregationMode.AUTHOR)}
                 >
@@ -75,7 +84,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     variant="secondary"
                     size={size}
                     outline={mode !== SearchAggregationMode.CAPTURE_GROUP}
-                    disabled={!availabilityGroups[SearchAggregationMode.CAPTURE_GROUP]?.available}
+                    disabled={!isModeAvailable(SearchAggregationMode.CAPTURE_GROUP)}
                     data-testid="captureGroup-aggregation-mode"
                     onClick={() => onModeChange(SearchAggregationMode.CAPTURE_GROUP)}
                 >

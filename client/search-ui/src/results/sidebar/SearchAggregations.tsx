@@ -10,11 +10,8 @@ import {
     AggregationUIMode,
     useAggregationSearchMode,
     useAggregationUIMode,
-    AggregationCardMode,
     AggregationChartCard,
     useSearchAggregationData,
-    getAggregationData,
-    getOtherGroupCount,
 } from '../aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -55,30 +52,15 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 onModeChange={setAggregationMode}
             />
 
-            {loading ? (
-                <AggregationChartCard
-                    aria-label="Sidebar search aggregation chart"
-                    type={AggregationCardMode.Loading}
-                    className={styles.chartContainer}
-                />
-            ) : error ? (
-                <AggregationChartCard
-                    aria-label="Sidebar search aggregation chart"
-                    type={AggregationCardMode.Error}
-                    errorMessage={error.message}
-                    className={styles.chartContainer}
-                />
-            ) : (
-                <AggregationChartCard
-                    aria-label="Sidebar search aggregation chart"
-                    mode={aggregationMode}
-                    type={AggregationCardMode.Data}
-                    data={getAggregationData(data)}
-                    missingCount={getOtherGroupCount(data)}
-                    className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
-                />
-            )}
+            <AggregationChartCard
+                aria-label="Sidebar search aggregation chart"
+                data={data?.searchQueryAggregate?.aggregations}
+                loading={loading}
+                error={error}
+                mode={aggregationMode}
+                className={styles.chartContainer}
+                onBarLinkClick={onQuerySubmit}
+            />
 
             <footer className={styles.actions}>
                 <Button

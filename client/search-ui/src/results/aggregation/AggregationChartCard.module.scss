@@ -1,18 +1,31 @@
 .container {
     position: relative;
+    overflow: auto;
 }
 
-.chart-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+// Container for both errors (business-like and internal error alerts messages)
+.error-container {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    padding: 1rem;
+    flex-direction: column;
+    overflow: auto;
+    margin: 0;
+
+    // Small mode is used for side panel (the standard size is used for the full UI)
+    &--small {
+        font-size: 0.75rem;
+    }
+}
+
+// Internal error-alert UI
+.error-alert {
+    margin: 0 0 0.5rem 0;
+    overflow: auto;
+}
+
+// Custom search availability error message UI
+.error-message {
+    margin: auto;
+    padding: 0 0.5rem;
 }
 
 .missing-label-count {

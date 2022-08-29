@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -45,26 +45,28 @@ type unlockAccountInfo struct {
 }
 
 // HandleSignUp handles submission of the user signup form.
-func HandleSignUp(db database.DB) http.HandlerFunc {
+func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignUp", "sign up request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(w) {
+		if handleEnabledCheck(logger, w) {
 			return
 		}
 		if pc, _ := getProviderConfig(); !pc.AllowSignup {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
-		handleSignUp(db, w, r, false)
+		handleSignUp(logger, db, w, r, false)
 	}
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(db database.DB) http.HandlerFunc {
+func HandleSiteInit(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
 		// provider's allowSignup in site config.
-		handleSignUp(db, w, r, true)
+		handleSignUp(logger, db, w, r, true)
 	}
 }
 
@@ -95,7 +97,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -136,7 +138,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	} else {
 		code, err := backend.MakeEmailVerificationCode()
 		if err != nil {
-			log15.Error("Error generating email verification code for new user.", "email", creds.Email, "username", creds.Username, "error", err)
+			logger.Error("Error generating email verification code for new user.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
 			return
 		}
@@ -148,11 +150,11 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		abused, reason, err := checkEmailAbuse(r.Context(), db, creds.Email)
 		if err != nil {
-			log15.Error("Error checking email abuse", "email", creds.Email, "error", err)
+			logger.Error("Error checking email abuse", log.String("email", creds.Email), log.Error(err))
 			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
 			return
 		} else if abused {
-			log15.Error("Possible email address abuse prevented", "email", creds.Email, "reason", reason)
+			logger.Error("Possible email address abuse prevented", log.String("email", creds.Email), log.String("reason", reason))
 			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusTooManyRequests)
 			return
 		}
@@ -180,11 +182,11 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
-		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
+		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		http.Error(w, message, statusCode)
 
 		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-			log15.Warn("Failed to log event SignUpFailed", "error", err)
+			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
 
 		return
@@ -195,21 +197,21 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
 	}); err != nil {
-		log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
+		logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
-			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
+			logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", creds.Email), log.Error(err))
 		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
-			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
+			logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", creds.Email), log.Error(err))
 		}
 	}
 
 	// Write the session cookie
 	a := &actor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
+		httpLogAndError(logger, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -218,7 +220,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	}
 
 	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
+		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
 }
 
@@ -245,9 +247,10 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 //
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
-func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
+func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignin", "sign in request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(w) {
+		if handleEnabledCheck(logger, w) {
 			return
 		}
 
@@ -280,7 +283,7 @@ func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
 		// Validate user. Allow login by both email and username (for convenience).
 		u, err := getByEmailOrUsername(ctx, db, creds.Email)
 		if err != nil {
-			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
+			httpLogAndError(logger, w, "Authentication failed", http.StatusUnauthorized, log.Error(err))
 			return
 		}
 		user = *u
@@ -293,29 +296,29 @@ func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
 
 				recipient, _, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
 				if err != nil {
-					log15.Error("Error getting primary email address", "userID", user.ID, "error", err)
+					logger.Error("Error getting primary email address", log.Int32("userID", user.ID), log.Error(err))
 					return
 				}
 
 				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
 				if err != nil {
-					log15.Error("Error sending unlock account email", "userID", user.ID, "error", err)
+					logger.Error("Error sending unlock account email", log.Int32("userID", user.ID), log.Error(err))
 					return
 				}
 			}()
 
-			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
+			httpLogAndError(logger, w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
 			return
 		}
 
 		// 🚨 SECURITY: check password
 		correct, err := db.Users().IsPassword(ctx, user.ID, creds.Password)
 		if err != nil {
-			httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
+			httpLogAndError(logger, w, "Error checking password", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 		if !correct {
-			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
+			httpLogAndError(logger, w, "Authentication failed", http.StatusUnauthorized)
 			return
 		}
 
@@ -324,7 +327,7 @@ func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
 			UID: user.ID,
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
+			httpLogAndError(logger, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -332,10 +335,10 @@ func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
 	}
 }
 
-func HandleUnlockAccount(_ database.DB, store LockoutStore) http.HandlerFunc {
+func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) http.HandlerFunc {
+	logger = logger.Scoped("HandleUnlockAccount", "unlock account request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(w) {
-
+		if handleEnabledCheck(logger, w) {
 			return
 		}
 
@@ -362,7 +365,7 @@ func HandleUnlockAccount(_ database.DB, store LockoutStore) http.HandlerFunc {
 			if error != nil {
 				err = error.Error()
 			}
-			httpLogAndError(w, err, http.StatusUnauthorized)
+			httpLogAndError(logger, w, err, http.StatusUnauthorized)
 			return
 		}
 	}
@@ -398,7 +401,8 @@ func checkAccountLockout(store LockoutStore, user *types.User, event *database.S
 }
 
 // HandleCheckUsernameTaken checks availability of username for signup form
-func HandleCheckUsernameTaken(db database.DB) http.HandlerFunc {
+func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])
@@ -414,7 +418,7 @@ func HandleCheckUsernameTaken(db database.DB) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			httpLogAndError(w, "Error checking username uniqueness", http.StatusInternalServerError, "err", err)
+			httpLogAndError(logger, w, "Error checking username uniqueness", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -422,7 +426,7 @@ func HandleCheckUsernameTaken(db database.DB) http.HandlerFunc {
 	}
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
-	log15.Error(msg, errArgs...)
+func httpLogAndError(logger log.Logger, w http.ResponseWriter, msg string, code int, errArgs ...log.Field) {
+	logger.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }
