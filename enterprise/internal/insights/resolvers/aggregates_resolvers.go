@@ -122,6 +122,8 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	}}, nil
 }
 
+// getDefaultAggregationMode returns a default aggregation mode for a potential query
+// this function should not fail because any search can be aggregated by repo
 func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggregationMode {
 	captureGroup, _, _ := canAggregateByCaptureGroup(searchQuery, patternType)
 	if captureGroup {

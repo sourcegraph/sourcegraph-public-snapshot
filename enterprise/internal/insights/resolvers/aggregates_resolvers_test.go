@@ -99,6 +99,12 @@ func Test_canAggregateByPath(t *testing.T) {
 			canAggregate: false,
 		},
 		{
+			name:         "ensure type check is case insensitive ",
+			query:        "insights TYPE:commit",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
+			canAggregate: false,
+		},
+		{
 			name:         "cannot aggregate for invalid query",
 			query:        "insights type:commit fork:test",
 			canAggregate: false,
@@ -147,6 +153,11 @@ func Test_canAggregateByAuthor(t *testing.T) {
 		{
 			name:         "can aggregate for query with type:diff parameter",
 			query:        "repo:contains.path(README) type:diff fix",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with cased Type",
+			query:        "repo:contains.path(README) TyPe:diff fix",
 			canAggregate: true,
 		},
 		{
@@ -235,6 +246,13 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 		{
 			name:         "cannot aggregate for type:path query",
 			query:        "repo:contains.path(README) func(\\w+) type:path",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
+			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "ensure type check is not case sensitive",
+			query:        "repo:contains.path(README) func(\\w+) TyPe:path",
 			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
 			patternType:  "regexp",
 			canAggregate: false,
