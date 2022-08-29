@@ -50,7 +50,6 @@ func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]Migratio
 
 	points := make([]Version, 0, len(intervals))
 	for _, interval := range intervals {
-		// TODO
 		if len(points) == 0 || CompareVersions(interval.deprecated, points[len(points)-1]) != VersionOrderAfter {
 			points = append(points, interval.introduced)
 		}
