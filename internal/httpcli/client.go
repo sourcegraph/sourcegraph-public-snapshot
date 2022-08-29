@@ -286,10 +286,20 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 	})
 }
 
+// requestContextKey is used to denote keys to fields that should be logged by the logging
+// middleware. They should be set to the request context associated with a response.
+type requestContextKey int
+
+const (
+	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// a request undergoes retries via NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iota
+)
+
 // NewLoggingMiddleware logs basic diagnostics about requests made through this client at
 // debug level. The provided logger is given the 'httpcli' subscope.
 //
-// It also logs metadata set by request context by other middleware, such as WithRetry.
+// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
 func NewLoggingMiddleware(logger log.Logger) Middleware {
 	logger = logger.Scoped("httpcli", "http client")
 
@@ -298,21 +308,25 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			start := time.Now()
 			resp, err := d.Do(r)
 
-			// Gather fields about this request
+			// Gather fields about this request. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
 			fields := []log.Field{
 				log.String("host", r.URL.Host),
 				log.String("path", r.URL.Path),
 				log.Int("code", resp.StatusCode),
 				log.Duration("duration", time.Since(start)),
 			}
-			if attempt, ok := resp.Request.Context().Value(retryAttemptKey).(rehttp.Attempt); ok {
+			// From NewRetryPolicy
+			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
 					log.Error(attempt.Error)))
 			}
 
 			// Log results with link to trace if present
-			trace.Logger(r.Context(), logger).Debug("request", fields...)
+			trace.Logger(resp.Request.Context(), logger).
+				Debug("request", fields...)
 
 			return resp, err
 		})
@@ -449,12 +463,6 @@ func MaxRetries(n int) int {
 	return n
 }
 
-type retryAttempt int
-
-// retryAttemptKey is the key to the rehttp.Attempt attached to a request, if a request
-// undergoes retries.
-const retryAttemptKey retryAttempt = iota
-
 // NewRetryPolicy returns a retry policy used in any Doer or Client returned
 // by NewExternalClientFactory.
 func NewRetryPolicy(max int) rehttp.RetryFn {
@@ -482,7 +490,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			// Update request context with latest retry for logging middleware
 			if shouldTraceLog {
 				*a.Request = *a.Request.WithContext(
-					context.WithValue(a.Request.Context(), retryAttemptKey, a))
+					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
 			}
 
 			if retry {
