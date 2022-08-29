@@ -37,7 +37,7 @@ type Context struct {
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Logger: log.Scoped("TestContext", ""), Registerer: metrics.TestRegisterer}
+var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
 
 type ErrorFilterBehaviour uint8
 
