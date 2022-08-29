@@ -88,7 +88,7 @@ algorithm to root-cause issues with Jaeger:
 
 <span class="badge badge-experimental">Experimental</span>
 
-> NOTE: Documentation coming soon!
+To learn about configuring Sourcegraph to make use of OpenTelemetry tracing, review our [OpenTelemetry documentation](./opentelemetry.md).  
 
 ### net/trace
 

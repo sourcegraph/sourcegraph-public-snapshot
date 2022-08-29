@@ -537,6 +537,7 @@ spec:
         - name: otel-collector
           command:
             - "/bin/otelcol-sourcegraph"
+            # Point to mounted custom configuration
             - "--config=/etc/otel-collector/config.yaml"
           volumeMounts:
             - name: config
