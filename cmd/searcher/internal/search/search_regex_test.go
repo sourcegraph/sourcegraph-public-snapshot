@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 )
 
@@ -425,8 +426,9 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	FetchTar: fetchTarFromGithub,
-	Path:     "/tmp/search_test/store",
+	FetchTar:           fetchTarFromGithub,
+	Path:               "/tmp/search_test/store",
+	ObservationContext: &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
