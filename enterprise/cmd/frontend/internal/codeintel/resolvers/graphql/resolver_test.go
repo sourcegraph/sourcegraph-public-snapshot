@@ -17,7 +17,7 @@ import (
 	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
 	uploadmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -116,7 +116,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := store.GetUploadsOptions{
+	expected := uploadsShared.GetUploadsOptions{
 		RepositoryID: 50,
 		State:        "s",
 		Term:         "q",
@@ -138,7 +138,7 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := store.GetUploadsOptions{
+	expected := uploadsShared.GetUploadsOptions{
 		RepositoryID: 0,
 		State:        "",
 		Term:         "",

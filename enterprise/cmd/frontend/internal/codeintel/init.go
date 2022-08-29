@@ -40,7 +40,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
-		services.lsifStore,
 		symbols.DefaultClient,
 		codenavResolver,
 		executorResolver,

@@ -149,7 +149,8 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 	if args.Pattern != "" {
 		pattern = args.Pattern
 	}
-	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
+	uploadsResolver := r.resolver.UploadsResolver()
+	documents, totalCount, err := uploadsResolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
 	if err != nil {
 		return nil, err
 	}

@@ -29,6 +29,7 @@ type service interface {
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 
@@ -46,6 +47,7 @@ type service interface {
 	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
+	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
@@ -110,6 +112,13 @@ func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLa
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
 func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
@@ -648,6 +657,15 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 	}
 
 	return nil
+}
+
+func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) (_ []string, _ int, err error) {
+	ctx, _, endObservation := s.operations.getUploadDocumentsForPath.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("bundleID", bundleID), log.String("pathPattern", pathPattern)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
 }
 
 func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {

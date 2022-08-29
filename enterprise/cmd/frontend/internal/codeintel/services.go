@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
@@ -30,8 +29,7 @@ import (
 )
 
 type Services struct {
-	dbStore   *store.Store
-	lsifStore *lsifstore.Store
+	dbStore *store.Store
 
 	// shared with executor queue
 	InternalUploadHandler http.Handler
@@ -63,7 +61,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
 
 	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
-	lsifStore := lsifstore.NewStore(codeIntelDBConnection, siteConfig, observationContext)
 	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
@@ -106,8 +103,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	externalUploadHandler := newUploadHandler(false)
 
 	return &Services{
-		dbStore:   dbStore,
-		lsifStore: lsifStore,
+		dbStore: dbStore,
 
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,

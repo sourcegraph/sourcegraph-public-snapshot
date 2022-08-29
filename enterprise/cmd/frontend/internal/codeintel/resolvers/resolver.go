@@ -19,7 +19,6 @@ import (
 // by the API.
 type Resolver interface {
 	// TODO: Move to uploads resolver.
-	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
 
@@ -46,7 +45,6 @@ type RepositorySummary struct {
 
 type resolver struct {
 	dbStore       DBStore
-	lsifStore     LSIFStore
 	symbolsClient *symbolsClient.Client
 
 	executorResolver     executor.Resolver
@@ -59,7 +57,6 @@ type resolver struct {
 // NewResolver creates a new resolver with the given services.
 func NewResolver(
 	dbStore DBStore,
-	lsifStore LSIFStore,
 	symbolsClient *symbolsClient.Client,
 	codenavResolver CodeNavResolver,
 	executorResolver executor.Resolver,
@@ -69,7 +66,6 @@ func NewResolver(
 ) Resolver {
 	return &resolver{
 		dbStore:       dbStore,
-		lsifStore:     lsifStore,
 		symbolsClient: symbolsClient,
 
 		executorResolver:     executorResolver,
@@ -107,10 +103,6 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	}
 
 	return NewCommitGraphResolver(stale, updatedAt), nil
-}
-
-func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPattern string) ([]string, int, error) {
-	return r.lsifStore.DocumentPaths(ctx, uploadID, pathPattern)
 }
 
 func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {

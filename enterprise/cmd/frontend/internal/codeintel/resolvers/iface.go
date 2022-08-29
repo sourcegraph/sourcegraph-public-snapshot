@@ -28,10 +28,6 @@ type DBStore interface {
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]dbstore.UploadLog, error)
 }
 
-type LSIFStore interface {
-	DocumentPaths(ctx context.Context, bundleID int, path string) ([]string, int, error)
-}
-
 type CodeNavResolver interface {
 	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ codenavgraphql.GitBlobLSIFDataResolver, err error)
 }
@@ -58,6 +54,7 @@ type AutoIndexingResolver interface {
 
 type UploadsResolver interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []uploadsShared.Upload, err error)
+	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	UploadsConnectionResolverFromFactory(opts uploadsShared.GetUploadsOptions) *uploadsgraphql.UploadsResolver
 }

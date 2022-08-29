@@ -21,6 +21,7 @@ type operations struct {
 	getOldestCommitDate       *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
 	getStaleSourcedCommits    *observation.Operation
+	getCommitGraphMetadata    *observation.Operation
 	updateSourcedCommits      *observation.Operation
 	deleteSourcedCommits      *observation.Operation
 
@@ -38,6 +39,7 @@ type operations struct {
 	getUploadByID                     *observation.Operation
 	getUploadsByIDs                   *observation.Operation
 	getVisibleUploadsMatchingMonikers *observation.Operation
+	getUploadDocumentsForPath         *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	updateUploadRetention             *observation.Operation
 	backfillReferenceCountBatch       *observation.Operation
@@ -95,6 +97,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
 		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
@@ -112,6 +115,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploadByID:                     op("GetUploadByID"),
 		getUploadsByIDs:                   op("GetUploadsByIDs"),
 		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
+		getUploadDocumentsForPath:         op("GetUploadDocumentsForPath"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
 		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
