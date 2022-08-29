@@ -19,6 +19,7 @@ func scheduleMigrationInterrupts(from, to Version, yamlMigrations []yamlMigratio
 	case VersionOrderBefore:
 		return scheduleUpgrade(from, to, yamlMigrations)
 	case VersionOrderAfter:
+		return scheduleDowngrade(from, to, yamlMigrations)
 	case VersionOrderEqual:
 	}
 
