@@ -107,7 +107,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	// get repos from the Bitbucket project
-	client, err := h.getBitbucketClient(ctx, svc)
+	client, err := h.getBitbucketClient(ctx, logger, svc)
 	if err != nil {
 		return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
 	}
@@ -139,7 +139,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 }
 
 // getBitbucketClient creates a Bitbucket client for the given external service.
-func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Context, svc *types.ExternalService) (*bitbucketserver.Client, error) {
+func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Context, logger log.Logger, svc *types.ExternalService) (*bitbucketserver.Client, error) {
 	// for testing purpose
 	if h.client != nil {
 		return h.client, nil
@@ -159,7 +159,7 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Cont
 		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	cli, err := httpcli.ExternalClientFactory.Doer(opts...)
+	cli, err := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger)).Doer(opts...)
 	if err != nil {
 		return nil, err
 	}
