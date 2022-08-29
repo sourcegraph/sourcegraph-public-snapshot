@@ -520,7 +520,7 @@ spec:
 ## Configure a tracing backend
 Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
-By default, trace data is exported through logging. Follow these steps to add a config for a different backend:
+By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
 
 1. Add a `ConfigMap` for the OpenTelemetry Collector. A template file can be found in [configure/otel-collector/otel-collector.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/blob/configure/otel-collector/otel-collector.ConfigMap.yaml). Make the necessary changes to the `exporters` and `service` blocks to connect to your backend as described in the documentation linked above.
 1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml) to include the `ConfigMap` as a `volume` and `volumeMount`. Update the `command` of the `otel-collector` container to point to the mounted config. See the snippet below for a shortened example:
