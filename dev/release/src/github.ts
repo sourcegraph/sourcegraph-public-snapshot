@@ -45,7 +45,7 @@ export enum IssueLabel {
     RELEASE = 'release',
     PATCH = 'patch',
     MANAGED = 'managed-instances',
-    DEVOPS_TEAM = 'team/devops',
+    CLOUD_TEAM = 'team/cloud',
     SECURITY_TEAM = 'team/security',
     RELEASE_BLOCKER = 'release-blocker',
 }
@@ -127,7 +127,7 @@ const getTemplates = () => {
         repo: 'handbook',
         path: 'content/departments/engineering/dev/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.CLOUD_TEAM],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
