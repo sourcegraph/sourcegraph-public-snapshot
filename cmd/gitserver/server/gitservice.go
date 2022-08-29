@@ -21,20 +21,24 @@ import (
 )
 
 var (
-	gitServiceMaxEgressBytesPerSecond         int64
-	loadGitServiceMaxEgressBytesPerSecondOnce sync.Once
+	envGitServiceMaxEgressBytesPerSecond = env.Get(
+		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
+		"1000000000",
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)")
+
+	// gitServiceMaxEgressBytesPerSecond must be retrieved by getGitServiceMaxEgressBytesPerSecond,
+	// which parses envGitServiceMaxEgressBytesPerSecond once and logs any error encountered
+	// when parsing.
+	gitServiceMaxEgressBytesPerSecond        int64
+	getGitServiceMaxEgressBytesPerSecondOnce sync.Once
 )
 
+// getGitServiceMaxEgressBytesPerSecond parses envGitServiceMaxEgressBytesPerSecond once
+// and returns the same value on subsequent calls.
 func getGitServiceMaxEgressBytesPerSecond(logger log.Logger) int64 {
-	loadGitServiceMaxEgressBytesPerSecondOnce.Do(func() {
+	getGitServiceMaxEgressBytesPerSecondOnce.Do(func() {
 		var err error
-		gitServiceMaxEgressBytesPerSecond, err = strconv.ParseInt(env.Get(
-			"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
-			"1000000000",
-			"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
-			10,
-			64,
-		)
+		gitServiceMaxEgressBytesPerSecond, err = strconv.ParseInt(envGitServiceMaxEgressBytesPerSecond, 10, 64)
 		if err != nil {
 			gitServiceMaxEgressBytesPerSecond = 1000 * 1000 * 1000 // 1Gbps
 			logger.Error("failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND, defaulting to 1Gbps",
