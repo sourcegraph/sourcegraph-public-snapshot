@@ -1362,6 +1362,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 // isDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
 //   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
