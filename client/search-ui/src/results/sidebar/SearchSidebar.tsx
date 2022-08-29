@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiInformationOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
@@ -21,7 +21,7 @@ import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/Te
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Code, Icon } from '@sourcegraph/wildcard'
+import { Button, Code, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
 
@@ -188,6 +188,16 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     let body
 
+    // TODO: Remove this special group by section handler when we have a generic
+    //  tracking over all filter section panels
+    const handleGroupedByToggle = useCallback(
+        (id: string, open: boolean): void => {
+            persistToggleState(id, open)
+            props.telemetryService.log(open ? 'GroupResultsOpenSection' : 'GroupResultsCollapseSection')
+        },
+        [persistToggleState, props.telemetryService]
+    )
+
     // collapsedSections is undefined on first render. To prevent the sections
     // being rendered open and immediately closing them, we render them only after
     // we got the settings.
@@ -198,13 +208,26 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     <SearchSidebarSection
                         sectionId={SectionID.GROUPED_BY}
                         className={styles.item}
-                        header="Group results by"
+                        header={
+                            <>
+                                Group results by
+                                <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
+                                    <Icon
+                                        aria-label="Info icon about aggregation run"
+                                        size="md"
+                                        svgPath={mdiInformationOutline}
+                                        onMouseEnter={() => props.telemetryService.log('GroupResultsInfoIconHover')}
+                                    />
+                                </Tooltip>
+                            </>
+                        }
                         startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
-                        onToggle={persistToggleState}
+                        onToggle={handleGroupedByToggle}
                     >
                         <SearchAggregations
                             query={searchQueryFromURL}
                             patternType={searchPatternType}
+                            telemetryService={props.telemetryService}
                             onQuerySubmit={handleAggregationBarLinkClick}
                         />
                     </SearchSidebarSection>

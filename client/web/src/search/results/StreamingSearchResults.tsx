@@ -304,6 +304,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     aria-label="Aggregation results panel"
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
+                    telemetryService={props.telemetryService}
                 />
             )}
 

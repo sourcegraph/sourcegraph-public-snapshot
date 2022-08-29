@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -13,7 +13,7 @@ import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{
     sectionId: string
-    header: string
+    header: ReactNode
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
@@ -117,7 +117,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         outline={true}
                         variant="secondary"
                     >
-                        <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
+                        <H5
+                            as={H2}
+                            className={styles.sidebarSectionHeader}
+                            id={`search-sidebar-section-header-${sectionId}`}
+                        >
                             {header}
                         </H5>
                         <Icon

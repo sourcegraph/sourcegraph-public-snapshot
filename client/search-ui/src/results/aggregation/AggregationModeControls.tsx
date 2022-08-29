@@ -3,13 +3,14 @@ import { FC, HTMLAttributes } from 'react'
 import classNames from 'classnames'
 
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchAggregationModeAvailability } from '../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 
-interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
+interface AggregationModeControlsProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {
     mode: SearchAggregationMode | null
     availability?: SearchAggregationModeAvailability[]
     size?: 'sm' | 'lg'
@@ -17,7 +18,7 @@ interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const AggregationModeControls: FC<AggregationModeControlsProps> = props => {
-    const { mode, availability = [], onModeChange, size, className, ...attributes } = props
+    const { mode, availability = [], onModeChange, size, className, telemetryService, ...attributes } = props
 
     const availabilityGroups = availability.reduce((store, availability) => {
         store[availability.mode] = availability
@@ -34,63 +35,86 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
         return isAvailable ?? true
     }
 
+    const handleModeChange = (aggregationMode: SearchAggregationMode): void => {
+        telemetryService.log(`GroupResults${aggregationMode}`)
+        onModeChange(aggregationMode)
+    }
+
+    const handleModeHover = (aggregationMode: SearchAggregationMode): void => {
+        if (!isModeAvailable(aggregationMode)) {
+            telemetryService.log(`GroupResults${aggregationMode}DisabledHover`)
+        }
+    }
+
     return (
         <div
             {...attributes}
             aria-label="Aggregation mode picker"
             className={classNames(className, styles.aggregationGroup)}
         >
-            <Tooltip content={availabilityGroups[SearchAggregationMode.REPO]?.reasonUnavailable}>
-                <Button
-                    variant="secondary"
-                    size={size}
-                    outline={mode !== SearchAggregationMode.REPO}
-                    data-testid="repo-aggregation-mode"
-                    disabled={!isModeAvailable(SearchAggregationMode.REPO)}
-                    onClick={() => onModeChange(SearchAggregationMode.REPO)}
-                >
-                    Repository
-                </Button>
-            </Tooltip>
+            <div
+                // Div onMounterEnter is needed here because button with disabled true doesn't
+                // emit any mouse or pointer events.
+                onMouseEnter={() => handleModeHover(SearchAggregationMode.REPO)}
+            >
+                <Tooltip content={availabilityGroups[SearchAggregationMode.REPO]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.REPO}
+                        data-testid="repo-aggregation-mode"
+                        disabled={!isModeAvailable(SearchAggregationMode.REPO)}
+                        onClick={() => handleModeChange(SearchAggregationMode.REPO)}
+                    >
+                        Repository
+                    </Button>
+                </Tooltip>
+            </div>
 
-            <Tooltip content={availabilityGroups[SearchAggregationMode.PATH]?.reasonUnavailable}>
-                <Button
-                    variant="secondary"
-                    size={size}
-                    outline={mode !== SearchAggregationMode.PATH}
-                    disabled={!isModeAvailable(SearchAggregationMode.PATH)}
-                    data-testid="file-aggregation-mode"
-                    onClick={() => onModeChange(SearchAggregationMode.PATH)}
-                >
-                    File
-                </Button>
-            </Tooltip>
+            <div onMouseEnter={() => handleModeHover(SearchAggregationMode.PATH)}>
+                <Tooltip content={availabilityGroups[SearchAggregationMode.PATH]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.PATH}
+                        disabled={!isModeAvailable(SearchAggregationMode.PATH)}
+                        data-testid="file-aggregation-mode"
+                        onClick={() => handleModeChange(SearchAggregationMode.PATH)}
+                    >
+                        File
+                    </Button>
+                </Tooltip>
+            </div>
 
-            <Tooltip content={availabilityGroups[SearchAggregationMode.AUTHOR]?.reasonUnavailable}>
-                <Button
-                    variant="secondary"
-                    size={size}
-                    outline={mode !== SearchAggregationMode.AUTHOR}
-                    disabled={!isModeAvailable(SearchAggregationMode.AUTHOR)}
-                    data-testid="author-aggregation-mode"
-                    onClick={() => onModeChange(SearchAggregationMode.AUTHOR)}
-                >
-                    Author
-                </Button>
-            </Tooltip>
+            <div onMouseEnter={() => handleModeHover(SearchAggregationMode.AUTHOR)}>
+                <Tooltip content={availabilityGroups[SearchAggregationMode.AUTHOR]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.AUTHOR}
+                        disabled={!isModeAvailable(SearchAggregationMode.AUTHOR)}
+                        data-testid="author-aggregation-mode"
+                        onClick={() => handleModeChange(SearchAggregationMode.AUTHOR)}
+                    >
+                        Author
+                    </Button>
+                </Tooltip>
+            </div>
 
-            <Tooltip content={availabilityGroups[SearchAggregationMode.CAPTURE_GROUP]?.reasonUnavailable}>
-                <Button
-                    variant="secondary"
-                    size={size}
-                    outline={mode !== SearchAggregationMode.CAPTURE_GROUP}
-                    disabled={!isModeAvailable(SearchAggregationMode.CAPTURE_GROUP)}
-                    data-testid="captureGroup-aggregation-mode"
-                    onClick={() => onModeChange(SearchAggregationMode.CAPTURE_GROUP)}
-                >
-                    Capture group
-                </Button>
-            </Tooltip>
+            <div onMouseEnter={() => handleModeHover(SearchAggregationMode.CAPTURE_GROUP)}>
+                <Tooltip content={availabilityGroups[SearchAggregationMode.CAPTURE_GROUP]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.CAPTURE_GROUP}
+                        disabled={!isModeAvailable(SearchAggregationMode.CAPTURE_GROUP)}
+                        data-testid="captureGroup-aggregation-mode"
+                        onClick={() => handleModeChange(SearchAggregationMode.CAPTURE_GROUP)}
+                    >
+                        Capture group
+                    </Button>
+                </Tooltip>
+            </div>
         </div>
     )
 }
