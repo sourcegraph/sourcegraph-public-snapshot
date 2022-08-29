@@ -103,7 +103,7 @@ func newActionJobResetter(_ context.Context, logger log.Logger, s edb.CodeMonito
 }
 
 func createDBWorkerStoreForTriggerJobs(logger log.Logger, s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(logger.Scoped("dbworkerstore.Store", ""), s.Handle(), dbworkerstore.Options{
+	return dbworkerstore.New(logger.Scoped("triggerJobs.dbworker.Store", ""), s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: edb.TriggerJobsColumns,
