@@ -1,3 +1,4 @@
+import delay from 'delay'
 import expect from 'expect'
 import { test } from 'mocha'
 
@@ -5,21 +6,21 @@ import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/sea
 import { GetSearchAggregationResult } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI } from './utils'
 
-const aggregationDefaultMock: GetSearchAggregationResult = {
+const aggregationDefaultMock = (mode: SearchAggregationMode): GetSearchAggregationResult => ({
     searchQueryAggregate: {
         __typename: 'SearchQueryAggregate',
         aggregations: {
             __typename: 'ExhaustiveSearchAggregationResult',
-            mode: SearchAggregationMode.REPO,
+            mode,
             otherGroupCount: 100,
             groups: [
                 {
@@ -75,7 +76,8 @@ const aggregationDefaultMock: GetSearchAggregationResult = {
             },
         ],
     },
-}
+})
+
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'matches',
@@ -143,7 +145,7 @@ describe('Search aggregation', () => {
         })
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
-            GetSearchAggregation: () => aggregationDefaultMock,
+            GetSearchAggregation: ({ mode }) => aggregationDefaultMock(mode ?? SearchAggregationMode.REPO),
         })
         testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
     })
@@ -186,7 +188,9 @@ describe('Search aggregation', () => {
 
             await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
 
-            // 'REPO', 'PATH', 'AUTHOR', 'CAPTURE_GROUP'
+            // Wait for FE sets correct aggregation mode based on BE response
+            await delay(100)
+
             const aggregationCases = [
                 { mode: 'REPO', id: 'repo-aggregation-mode' },
                 { mode: 'PATH', id: 'file-aggregation-mode' },
@@ -228,6 +232,10 @@ describe('Search aggregation', () => {
             )
 
             await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+
+            // Wait for FE sets correct aggregation mode based on BE response
+            await delay(100)
+
             await driver.page.click('[data-testid="file-aggregation-mode"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
 
@@ -290,8 +298,11 @@ describe('Search aggregation', () => {
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
 
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
-            await driver.page.waitForSelector('[aria-label="chart content group"] g:nth-child(2) a')
+            await driver.page.waitForSelector(
+                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
+            )
             await driver.page.click(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
             )

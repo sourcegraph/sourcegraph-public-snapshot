@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	logger "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -26,7 +26,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	oc := func(name string) *observation.Context {
 		return &observation.Context{
 			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 	}
