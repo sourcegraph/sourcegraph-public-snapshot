@@ -18,7 +18,11 @@ This document describes the exact changes needed to update a single-node Sourceg
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
 
-## 3.42 -> 3.43
+## 3.42 -> 3.43.1
+
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
 
 ## 3.41 -> 3.42.2
 
