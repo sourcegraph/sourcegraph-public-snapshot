@@ -1436,6 +1436,26 @@ type CodeInsightsUsageStatistics struct {
 	TotalOrgsWithDashboard                       *int32
 	TotalDashboardCount                          *int32
 	InsightsPerDashboard                         InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                *int32
+	WeeklyGroupResultsCloseSection               *int32
+	WeeklyGroupResultsInfoIconHover              *int32
+	WeeklyGroupResultsExpandViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse       []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover              []GroupResultPing
+	WeeklyGroupResultsChartBarClick              []GroupResultPing
+	WeeklyGroupResultsClick                      []GroupResultPing
+	WeeklyGroupResultsDisabledHover              []GroupResultPing
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {
