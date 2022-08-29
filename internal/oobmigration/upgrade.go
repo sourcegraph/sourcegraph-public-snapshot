@@ -7,12 +7,6 @@ import (
 )
 
 func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationInterrupt, error) {
-	type migrationInterval struct {
-		id         int
-		introduced Version
-		deprecated Version
-	}
-
 	// First, extract the intervals on which the given out of band migrations are defined. If
 	// the interval hasn't been deprecated, it's still "open" and does not need to complete for
 	// the instance upgrade operation to be successful.
@@ -65,12 +59,35 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 	}
 
 	// Finally, we reconstruct the return value, which pairs each of our chosen versions with the
-	// set of migrations that need to finish prior to continuing the upgrade process. When an interval
-	// contains multiple chosen versions, we add it only to the largest version so that we delay
-	// completion as long as possible (hence the reversal of the points slice).
+	// set of migrations that need to finish prior to continuing the upgrade process.
 
+	interrupts, err := makeCoveringSet(intervals, points)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort ascending
+	sort.Slice(interrupts, func(i, j int) bool {
+		return CompareVersions(interrupts[i].Version, interrupts[j].Version) == VersionOrderBefore
+	})
+	return interrupts, nil
+}
+
+type migrationInterval struct {
+	id         int
+	introduced Version
+	deprecated Version
+}
+
+// makeCoveringSet returns a slice of migration interrupts each represeting a target instance version
+// and the set of out of band migrations that must complete before migrating away from that version.
+// We assume that the given points are ordered in the direction of migration (e.g., asc for upgrades).
+func makeCoveringSet(intervals []migrationInterval, points []Version) ([]MigrationInterrupt, error) {
 	coveringSet := make(map[Version][]int, len(intervals))
 
+	// Flip the order of points to delay the oob migration runs as late as possible. This allows
+	// us to make maximal upgrade/downgrade process when we encounter a data error that needs a
+	// manual fix.
 	for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
 		points[i], points[j] = points[j], points[i]
 	}
@@ -88,14 +105,11 @@ outer:
 		panic("unreachable: input interval not covered in output")
 	}
 
-	interupts := make([]MigrationInterrupt, 0, len(coveringSet))
+	interrupts := make([]MigrationInterrupt, 0, len(coveringSet))
 	for version, ids := range coveringSet {
 		sort.Ints(ids)
-		interupts = append(interupts, MigrationInterrupt{version, ids})
+		interrupts = append(interrupts, MigrationInterrupt{version, ids})
 	}
-	sort.Slice(interupts, func(i, j int) bool {
-		return CompareVersions(interupts[i].Version, interupts[j].Version) == VersionOrderBefore
-	})
 
-	return interupts, nil
+	return interrupts, nil
 }
