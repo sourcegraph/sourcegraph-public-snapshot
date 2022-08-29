@@ -44,11 +44,6 @@ var computeSchema string
 //go:embed search_contexts.graphql
 var searchContextsSchema string
 
-// orgSchema is the schema containing enterprise-only functionality of
-// organization repositories.
-//go:embed org.graphql
-var orgSchema string
-
 // notebooksSchema is the Notebooks raw graqhql schema.
 //go:embed notebooks.graphql
 var notebooksSchema string
