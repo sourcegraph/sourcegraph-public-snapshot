@@ -44,12 +44,11 @@ type migrationStep struct {
 // version range is empty, then a no-op migration plan is returned. In all other cases, the last step
 // of the resulting migration targets the highest version in the given range, and all previous steps
 // require a set of out-of-band migrations to run (or have been previously completed).
-func planMigration(versionRange []oobmigration.Version) (migrationPlan, error) {
-	if len(versionRange) == 0 {
-		return migrationPlan{}, nil
-	}
-	from, to := versionRange[0], versionRange[len(versionRange)-1]
-
+func planMigration(
+	from, to oobmigration.Version,
+	versionRange []oobmigration.Version,
+	interrupts []oobmigration.MigrationInterrupt,
+) (migrationPlan, error) {
 	versionTags := make([]string, 0, len(versionRange))
 	for _, version := range versionRange {
 		versionTags = append(versionTags, version.GitTag())
@@ -61,7 +60,7 @@ func planMigration(versionRange []oobmigration.Version) (migrationPlan, error) {
 		return migrationPlan{}, err
 	}
 
-	// Extract/rotate stitched migration definitions so we can query them by schem naame
+	// Extract/rotate stitched migration definitions so we can query them by schem name
 	stitchedDefinitionsBySchemaName := make(map[string]*definition.Definitions, len(stitchedMigrationBySchemaName))
 	for schemaName, stitchedMigration := range stitchedMigrationBySchemaName {
 		stitchedDefinitionsBySchemaName[schemaName] = stitchedMigration.Definitions
@@ -77,15 +76,6 @@ func planMigration(versionRange []oobmigration.Version) (migrationPlan, error) {
 
 			leafIDsBySchemaNameByTag[tag][schemaName] = bounds.LeafIDs
 		}
-	}
-
-	// TODO - extract
-	// Determine the set of versions that need to have out of band migrations completed prior
-	// to a subsequent instance upgrade. We'll "pause" the migratino at these points and run
-	// the out of band migration routines to completion.
-	interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
-	if err != nil {
-		return migrationPlan{}, err
 	}
 
 	//
