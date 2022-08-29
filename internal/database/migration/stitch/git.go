@@ -19,7 +19,7 @@ var gitTreePattern = lazyregexp.New("^tree .+:.+\n")
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
 func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, error) {
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, migrationPath(schemaName)))
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", doMagicHacking(rev), migrationPath(schemaName)))
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
@@ -84,7 +84,7 @@ func cachedArchiveContents(dir, rev string) (map[string]string, error) {
 // archiveContents calls git archive with the given git revision and returns a map from
 // file paths to file contents.
 func archiveContents(dir, rev string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
+	cmd := exec.Command("git", "archive", "--format=tar", doMagicHacking(rev), "migrations")
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
@@ -118,4 +118,15 @@ func archiveContents(dir, rev string) (map[string]string, error) {
 
 func migrationPath(schemaName string) string {
 	return filepath.Join("migrations", schemaName)
+}
+
+func doMagicHacking(rev string) string {
+	if rev == "v4.0.0" {
+		// NOTE: prior to the 4.0 branch cut, this can be updated to be the head of
+		// the main branch to assist in testing upgrades end-to-end. Prior to the 4.0
+		// branch cut, we must remove this condition.
+		rev = "695b52c5151010f275eb7232eb2d6cea27a07026"
+	}
+
+	return rev
 }

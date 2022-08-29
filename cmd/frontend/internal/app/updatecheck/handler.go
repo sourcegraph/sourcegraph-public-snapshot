@@ -2,6 +2,7 @@ package updatecheck
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,9 +12,9 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
@@ -57,25 +58,34 @@ func getLatestRelease(deployType string) build {
 	}
 }
 
-// Handler is an HTTP handler that responds with information about software updates
+// HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
+// logger is created and the handler that is returned uses the logger internally.
+func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(scopedLog, w, r)
+	}
+}
+
+// handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
-func Handler(w http.ResponseWriter, r *http.Request) {
+func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
 	if err != nil {
-		log15.Error("updatecheck: malformed request", "error", err)
+		logger.Error("malformed request", log.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if pr.ClientSiteID == "" {
-		log15.Error("updatecheck: no site ID specified")
+		logger.Error("no site ID specified")
 		http.Error(w, "no site ID specified", http.StatusBadRequest)
 		return
 	}
 	if pr.ClientVersionString == "" {
-		log15.Error("updatecheck: no version specified")
+		logger.Error("no version specified")
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
@@ -89,7 +99,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
 
 	// Always log, even on malformed version strings
-	logPing(r, pr, hasUpdate)
+	logPing(logger, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -105,7 +115,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json; charset=utf-8")
 	body, err := json.Marshal(latestReleaseBuild)
 	if err != nil {
-		log15.Error("updatecheck: error preparing update check response", "error", err)
+		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -322,10 +332,11 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 }
 
-func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
+	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
 		if r := recover(); r != nil {
-			log15.Warn("logPing: panic", "recover", r)
+			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", r)))
 			errorCounter.Inc()
 		}
 	}()
@@ -340,12 +351,13 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
 		errorCounter.Inc()
-		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
+		logger.Warn("failed to Marshal payload", log.Error(err))
 	} else if pubsub.Enabled() {
 		err := pubsub.Publish(pubSubPingsTopicID, string(message))
 		if err != nil {
 			errorCounter.Inc()
-			log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
+			logger.Scoped("pubsub.Publish", "").
+				Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
 		}
 	}
 

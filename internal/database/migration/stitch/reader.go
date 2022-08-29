@@ -16,6 +16,15 @@ type rawMigration struct {
 	metadata string
 }
 
+// ignoreMap are valid filenames that can exist within a migration directory.
+var ignoreMap = map[string]struct{}{
+	"bindata.go":         {},
+	"gen.go":             {},
+	"migrations_test.go": {},
+	"README.md":          {},
+	"squashed.sql":       {},
+}
+
 // readRawMigrations reads migrations from a locally available git revision for the given schema.
 // This function understands the common ways we historically laid out our migration definitions
 // in-tree, and will return results going back to v3.29.0 (with empty metadata where missing).
@@ -53,7 +62,7 @@ func readRawMigrations(schemaName, dir, rev string) (migrations []rawMigration, 
 			continue
 		}
 
-		if filename != "squashed.sql" {
+		if _, ok := ignoreMap[filename]; !ok {
 			// Throw an error if there's new file types we don't know to ignore
 			return nil, errors.Newf("unrecognized entry %q", filename)
 		}

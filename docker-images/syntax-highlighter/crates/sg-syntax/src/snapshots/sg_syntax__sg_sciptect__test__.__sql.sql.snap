@@ -3,39 +3,39 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   WITH event_log_stats AS (
-//^^^^ IdentifierKeyword
-//                     ^^ IdentifierKeyword
+//^^^^ IdentifierKeyword  keyword.other.DML.sql
+//                     ^^ IdentifierKeyword  keyword.operator.assignment.alias.sql
       SELECT
-//    ^^^^^^ IdentifierKeyword
+//    ^^^^^^ IdentifierKeyword  keyword.other.DML.sql
           NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCodeMonitoringPage', 'CodeMonitoringPageViewed')), 0) :: INT AS code_monitoring_page_views,
-//               ^^^^^ IdentifierFunction
-//                     ^ Identifier
-//                                ^^^^^ IdentifierKeyword
-//                                           ^^ IdentifierKeyword
-//                                               ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                                                                       ^ NumericLiteral
-//                                                                                                             ^^^ IdentifierType
-//                                                                                                                 ^^ IdentifierKeyword
+//               ^^^^^ IdentifierFunction  support.function.aggregate.sql
+//                     ^ Identifier  variable.language.star.sql
+//                                ^^^^^ IdentifierKeyword  keyword.other.DML.sql
+//                                           ^^ IdentifierKeyword  keyword.operator.logical.sql
+//                                               ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.single.sql
+//                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.single.sql
+//                                                                                                       ^ NumericLiteral  constant.numeric.sql
+//                                                                                                             ^^^ IdentifierType  storage.type.sql
+//                                                                                                                 ^^ IdentifierKeyword  keyword.operator.assignment.alias.sql
       FROM event_logs
-//    ^^^^ IdentifierKeyword
+//    ^^^^ IdentifierKeyword  keyword.other.DML.sql
       WHERE
-//    ^^^^^ IdentifierKeyword
+//    ^^^^^ IdentifierKeyword  keyword.other.DML.sql
           name IN (
-//             ^^ IdentifierKeyword
+//             ^^ IdentifierKeyword  keyword.operator.logical.sql
               -- The events that share a line are events that changed names and are aliases of each other
-//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment  comment.line.double-dash.sql
               'CodeMonitoringLogsPageViewed'
-//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral  string.quoted.single.sql
           )
   )
   SELECT
-//^^^^^^ IdentifierKeyword
+//^^^^^^ IdentifierKeyword  keyword.other.DML.sql
       event_log_stats.code_monitoring_page_views,
       event_log_stats.create_code_monitor_page_views,
       trigger_jobs.p90_trigger_run_time
   FROM
-//^^^^ IdentifierKeyword
+//^^^^ IdentifierKeyword  keyword.other.DML.sql
       event_log_stats,
       email_actions,
       slack_actions,

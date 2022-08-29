@@ -3,28 +3,28 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   {
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.mapping.begin.json
       "hello": "world",
-//    ^^^^^^^ StringLiteralKey
-//           ^ PunctuationBracket
-//             ^^^^^^^ StringLiteral
-//                    ^ PunctuationBracket
+//    ^^^^^^^ StringLiteralKey  meta.mapping.key.json
+//           ^ PunctuationBracket  punctuation.separator.mapping.key-value.json
+//             ^^^^^^^ StringLiteral  string.quoted.double.json
+//                    ^ PunctuationBracket  punctuation.separator.mapping.pair.json
       "list": [null, 1, 2.0, true, false]
-//    ^^^^^^ StringLiteralKey
-//          ^ PunctuationBracket
-//            ^ PunctuationBracket
-//             ^^^^ IdentifierBuiltin
-//                 ^ PunctuationBracket
-//                   ^ NumericLiteral
-//                    ^ PunctuationBracket
-//                      ^ NumericLiteral
-//                       ^ PunctuationBracket
-//                        ^ NumericLiteral
-//                         ^ PunctuationBracket
-//                           ^^^^ IdentifierBuiltin
-//                               ^ PunctuationBracket
-//                                 ^^^^^ IdentifierBuiltin
-//                                      ^ PunctuationBracket
+//    ^^^^^^ StringLiteralKey  meta.mapping.key.json
+//          ^ PunctuationBracket  punctuation.separator.mapping.key-value.json
+//            ^ PunctuationBracket  punctuation.section.sequence.begin.json
+//             ^^^^ IdentifierBuiltin  constant.language.json
+//                 ^ PunctuationBracket  punctuation.separator.sequence.json
+//                   ^ NumericLiteral  constant.numeric.integer.decimal.json
+//                    ^ PunctuationBracket  punctuation.separator.sequence.json
+//                      ^ NumericLiteral  punctuation.separator.decimal.json
+//                       ^ PunctuationBracket  punctuation.separator.decimal.json
+//                        ^ NumericLiteral  constant.numeric.float.decimal.json
+//                         ^ PunctuationBracket  punctuation.separator.sequence.json
+//                           ^^^^ IdentifierBuiltin  constant.language.json
+//                               ^ PunctuationBracket  punctuation.separator.sequence.json
+//                                 ^^^^^ IdentifierBuiltin  constant.language.json
+//                                      ^ PunctuationBracket  punctuation.section.sequence.end.json
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.mapping.end.json
 

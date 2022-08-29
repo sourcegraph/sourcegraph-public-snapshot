@@ -42,7 +42,6 @@ import {
     useNotepad,
 } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
-import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
 import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
@@ -260,6 +259,16 @@ export const StreamingSearchResults: React.FunctionComponent<
         [query, telemetryService, patternType, caseSensitive, props]
     )
 
+    const handleSearchAggregationBarClick = (query: string): void => {
+        submitSearch({
+            ...props,
+            caseSensitive,
+            patternType,
+            query,
+            source: 'nav',
+        })
+    }
+
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
@@ -289,7 +298,13 @@ export const StreamingSearchResults: React.FunctionComponent<
             />
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
-                <SearchAggregationResult aria-label="Aggregation results panel" className={styles.contents} />
+                <SearchAggregationResult
+                    query={query}
+                    patternType={patternType}
+                    aria-label="Aggregation results panel"
+                    className={styles.contents}
+                    onQuerySubmit={handleSearchAggregationBarClick}
+                />
             )}
 
             {aggregationUIMode !== AggregationUIMode.SearchPage && (
@@ -358,12 +373,6 @@ export const StreamingSearchResults: React.FunctionComponent<
                             allExpanded={allExpanded}
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
-                            renderSearchUserNeedsCodeHost={user => (
-                                <SearchUserNeedsCodeHost
-                                    user={user}
-                                    orgSearchContext={props.selectedSearchContextSpec}
-                                />
-                            )}
                             executedQuery={location.search}
                             luckySearchEnabled={luckySearchEnabled}
                         />

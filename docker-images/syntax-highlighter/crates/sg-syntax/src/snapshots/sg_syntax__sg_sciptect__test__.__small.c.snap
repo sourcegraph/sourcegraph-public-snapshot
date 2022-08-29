@@ -3,15 +3,15 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   int main() {
-//^^^ IdentifierType
-//    ^^^^ IdentifierFunction
-//        ^ PunctuationBracket
-//         ^ PunctuationBracket
-//           ^ PunctuationBracket
+//^^^ IdentifierType  storage.type.c
+//    ^^^^ IdentifierFunction  entity.name.function.c
+//        ^ PunctuationBracket  punctuation.section.group.begin.c
+//         ^ PunctuationBracket  punctuation.section.group.end.c
+//           ^ PunctuationBracket  punctuation.section.block.begin.c
     return 0;
-//  ^^^^^^ IdentifierKeyword
-//         ^ NumericLiteral
-//          ^ PunctuationDelimiter
+//  ^^^^^^ IdentifierKeyword  keyword.control.flow.return.c
+//         ^ NumericLiteral  storage.type.numeric.c
+//          ^ PunctuationDelimiter  punctuation.terminator.c
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.block.end.c
 

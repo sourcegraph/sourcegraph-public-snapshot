@@ -47,7 +47,7 @@ try {
         }
         We cut everything before the json object so that we can parse it as json.
     */
-    const trimmedResponse = response.substring(response.indexOf('{'))
+    const trimmedResponse = response.slice(Math.max(0, response.indexOf('{')))
     const latestVersion: string = JSON.parse(trimmedResponse).versions[0].version
     if (hasTokens && (version === latestVersion || !semver.valid(latestVersion) || !semver.valid(version))) {
         throw new Error(

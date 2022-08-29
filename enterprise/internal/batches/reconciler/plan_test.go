@@ -438,10 +438,12 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var previousSpec, currentSpec *btypes.ChangesetSpec
 			if tc.previousSpec != nil {
+				tc.previousSpec.Typ = btypes.ChangesetSpecTypeBranch
 				previousSpec = bt.BuildChangesetSpec(t, *tc.previousSpec)
 			}
 
 			if tc.currentSpec != nil {
+				tc.currentSpec.Typ = btypes.ChangesetSpecTypeBranch
 				currentSpec = bt.BuildChangesetSpec(t, *tc.currentSpec)
 			}
 
