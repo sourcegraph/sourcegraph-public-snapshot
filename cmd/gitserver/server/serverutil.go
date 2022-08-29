@@ -102,6 +102,8 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
+// getTlsExternal exists as a function instead of being passed directly to conf.Cached below so just
+// so that we can test it.
 func getTlsExternal() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
@@ -134,10 +136,14 @@ func getTlsExternal() *tlsConfig {
 	}
 }
 
+// tlsExternal will create a new cache for this gitserer process and store the certificates set in
+// the site config.
+// This creates a long lived
+var tlsExternal = conf.Cached(getTlsExternal)()
+
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
-	tls := conf.Cached(getTlsExternal)()
 
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
@@ -145,7 +151,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tls)
+		configureRemoteGitCommand(cmd, tlsExternal)
 	}
 
 	var b interface {
