@@ -297,8 +297,12 @@ type PackageJSON struct {
 }
 
 func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
-	filename := "package.json"
-	jsonFile, err := os.Open(filename)
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to determine repository root location")
+	}
+
+	jsonFile, err := os.Open(filepath.Join(repoRoot, "package.json"))
 	if err != nil {
 		return "", errors.Wrap(err, "Open package.json")
 	}
