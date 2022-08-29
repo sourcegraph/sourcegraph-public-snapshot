@@ -5,15 +5,9 @@ import { mdiArrowCollapse } from '@mdi/js'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
-import { AggregationCardMode, AggregationChartCard } from './AggregationChartCard'
+import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
-import {
-    getAggregationData,
-    getOtherGroupCount,
-    useAggregationSearchMode,
-    useAggregationUIMode,
-    useSearchAggregationData,
-} from './hooks'
+import { useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -73,34 +67,20 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 />
             </div>
 
-            {loading ? (
-                <AggregationChartCard
-                    aria-label="Expanded search aggregation chart"
-                    type={AggregationCardMode.Loading}
-                    className={styles.chartContainer}
-                />
-            ) : error ? (
-                <AggregationChartCard
-                    aria-label="Expanded search aggregation chart"
-                    type={AggregationCardMode.Error}
-                    errorMessage={error.message}
-                    className={styles.chartContainer}
-                />
-            ) : (
-                <AggregationChartCard
-                    aria-label="Expanded search aggregation chart"
-                    mode={aggregationMode}
-                    type={AggregationCardMode.Data}
-                    data={getAggregationData(data)}
-                    missingCount={getOtherGroupCount(data)}
-                    className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
-                />
-            )}
+            <AggregationChartCard
+                aria-label="Expanded search aggregation chart"
+                mode={aggregationMode}
+                data={data?.searchQueryAggregate?.aggregations}
+                loading={loading}
+                error={error}
+                size="md"
+                className={styles.chartContainer}
+                onBarLinkClick={onQuerySubmit}
+            />
 
             {data && (
                 <ul className={styles.listResult}>
-                    {getAggregationData(data).map(datum => (
+                    {getAggregationData(data.searchQueryAggregate.aggregations).map(datum => (
                         <li key={datum.label} className={styles.listResultItem}>
                             <span>{datum.label}</span>
                             <span>{datum.count}</span>

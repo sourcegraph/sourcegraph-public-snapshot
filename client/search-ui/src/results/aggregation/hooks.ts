@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ApolloError, gql, useQuery } from '@apollo/client'
+import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
-import {
-    GetSearchAggregationResult,
-    GetSearchAggregationVariables,
-    SearchAggregationDatum,
-} from '../../graphql-operations'
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -243,43 +239,14 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         return { data: undefined, error: undefined, loading: true }
     }
 
-    const calculatedError = getAggregationError(error, data)
-
-    if (calculatedError) {
-        return { data, error: calculatedError, loading: false }
+    if (error) {
+        return { data, error, loading: false }
     }
 
     return {
         data: data as GetSearchAggregationResult,
         error: undefined,
         loading: false,
-    }
-}
-
-function getAggregationError(apolloError?: ApolloError, response?: GetSearchAggregationResult): Error | undefined {
-    if (apolloError) {
-        return apolloError
-    }
-
-    const aggregationData = response?.searchQueryAggregate?.aggregations
-
-    if (aggregationData?.__typename === 'SearchAggregationNotAvailable') {
-        return new Error(aggregationData.reason)
-    }
-
-    return
-}
-
-export function getAggregationData(response: GetSearchAggregationResult): SearchAggregationDatum[] {
-    const aggregationResult = response.searchQueryAggregate?.aggregations
-
-    switch (aggregationResult?.__typename) {
-        case 'ExhaustiveSearchAggregationResult':
-        case 'NonExhaustiveSearchAggregationResult':
-            return aggregationResult.groups
-
-        default:
-            return []
     }
 }
 
@@ -291,18 +258,4 @@ function getCalculatedAggregationMode(response?: GetSearchAggregationResult): Se
     const aggregationResult = response.searchQueryAggregate?.aggregations
 
     return aggregationResult?.mode ?? null
-}
-
-export function getOtherGroupCount(response: GetSearchAggregationResult): number {
-    const aggregationResult = response.searchQueryAggregate?.aggregations
-
-    switch (aggregationResult?.__typename) {
-        case 'ExhaustiveSearchAggregationResult':
-            return aggregationResult.otherGroupCount ?? 0
-        case 'NonExhaustiveSearchAggregationResult':
-            return aggregationResult.approximateOtherGroupCount ?? 0
-
-        default:
-            return 0
-    }
 }
