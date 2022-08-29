@@ -356,7 +356,8 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 		err := pubsub.Publish(pubSubPingsTopicID, string(message))
 		if err != nil {
 			errorCounter.Inc()
-			logger.Scoped("pubsub.Publish", "").Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
+			logger.Scoped("pubsub.Publish", "").
+				Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
 		}
 	}
 
