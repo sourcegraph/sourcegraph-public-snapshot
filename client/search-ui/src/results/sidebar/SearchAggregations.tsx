@@ -65,7 +65,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 onModeChange={setAggregationMode}
             />
 
-            {aggregationMode !== SearchAggregationModeUi.NONE ? (
+            {aggregationMode !== SearchAggregationModeUi.NONE && (
                 <AggregationChartCard
                     aria-label="Sidebar search aggregation chart"
                     data={data?.searchQueryAggregate?.aggregations}
@@ -75,8 +75,6 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     className={styles.chartContainer}
                     onBarLinkClick={onQuerySubmit}
                 />
-            ) : (
-                <div>Select a grouping to aggregate this search</div>
             )}
 
             <footer className={styles.actions}>
