@@ -46,6 +46,7 @@ type unlockAccountInfo struct {
 
 // HandleSignUp handles submission of the user signup form.
 func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignUp", "sign up request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -60,6 +61,7 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
 func HandleSiteInit(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
@@ -246,6 +248,7 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
 func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignin", "sign in request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -333,6 +336,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 }
 
 func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) http.HandlerFunc {
+	logger = logger.Scoped("HandleUnlockAccount", "unlock account request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -398,6 +402,7 @@ func checkAccountLockout(store LockoutStore, user *types.User, event *database.S
 
 // HandleCheckUsernameTaken checks availability of username for signup form
 func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])
