@@ -3,6 +3,7 @@ import { FC, HTMLAttributes } from 'react'
 import { mdiArrowCollapse } from '@mdi/js'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
@@ -18,7 +19,7 @@ import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
+interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -38,7 +39,7 @@ interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, onQuerySubmit, ...attributes } = props
+    const { query, patternType, onQuerySubmit, telemetryService, ...attributes } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -52,6 +53,24 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
+        telemetryService.log('GroupResultsExpandedViewCollapse', { aggregationMode }, { aggregationMode })
+    }
+
+    const handleBarLinkClick = (query: string): void => {
+        onQuerySubmit(query)
+        telemetryService.log(
+            'GroupResultsChartBarClick',
+            { aggregationMode, uiMode: 'resultsScreen' },
+            { aggregationMode, uiMode: 'resultsScreen' }
+        )
+    }
+
+    const handleBarHover = (): void => {
+        telemetryService.log(
+            'GroupResultsChartBarHover',
+            { aggregationMode, uiMode: 'resultsScreen' },
+            { aggregationMode, uiMode: 'resultsScreen' }
+        )
     }
 
     return (
@@ -79,22 +98,22 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                         loading={loading}
                         mode={aggregationMode}
                         availability={data?.searchQueryAggregate?.modeAvailability}
-                        onModeChange={setAggregationMode}
-                    />
-
-                    {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
+                        telemetryService={telemetryService}
+                    onModeChange={setAggregationMode}
+                />{isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
                 </div>
 
-                <AggregationChartCard
-                    aria-label="Expanded search aggregation chart"
-                    mode={aggregationMode}
-                    data={data?.searchQueryAggregate?.aggregations}
-                    loading={loading}
-                    error={error}
-                    size="md"
-                    className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
-                />
+            <AggregationChartCard
+                aria-label="Expanded search aggregation chart"
+                mode={aggregationMode}
+                data={data?.searchQueryAggregate?.aggregations}
+                loading={loading}
+                error={error}
+                size="md"
+                className={styles.chartContainer}
+                onBarLinkClick={handleBarLinkClick}
+                onBarHover={handleBarHover}
+            />
 
                 {data && (
                     <ul className={styles.listResult}>

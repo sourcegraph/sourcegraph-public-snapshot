@@ -9,7 +9,7 @@ import {
     useMemo,
 } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiInformationOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import StickyBox from 'react-sticky-box'

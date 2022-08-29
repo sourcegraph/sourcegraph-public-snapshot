@@ -66,10 +66,21 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
     onBarLinkClick?: (query: string) => void
+    onBarHover?: () => void
 }
 
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
-    const { data, error, loading, mode, className, size = 'sm', 'aria-label': ariaLabel, onBarLinkClick } = props
+    const {
+        data,
+        error,
+        loading,
+        mode,
+        className,
+        size = 'sm',
+        'aria-label': ariaLabel,
+        onBarLinkClick,
+        onBarHover,
+    } = props
 
     if (loading) {
         return (
@@ -131,6 +142,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     getDatumName={getName}
                     getDatumLink={getLink}
                     onDatumLinkClick={handleDatumLinkClick}
+                    onDatumHover={onBarHover}
                     className={styles.chart}
                 />
 
