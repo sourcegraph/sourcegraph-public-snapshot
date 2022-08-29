@@ -116,7 +116,7 @@ func createDBWorkerStoreForTriggerJobs(logger log.Logger, s basestore.ShareableS
 }
 
 func createDBWorkerStoreForActionJobs(logger log.Logger, s edb.CodeMonitorStore) dbworkerstore.Store {
-	return dbworkerstore.New(logger.Scoped("dbworkerstore.Store", ""), s.Handle(), dbworkerstore.Options{
+	return dbworkerstore.New(logger.Scoped("actionJobs.dbworker.Store", ""), s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
 		ColumnExpressions: edb.ActionJobColumns,
