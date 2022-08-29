@@ -6,21 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type MigrationInterrupt struct {
-	Version      Version
-	MigrationIDs []int
-}
-
-// ScheduleMigrationInterrupts returns the set of versions during an instance upgrade that
-// have out-of-band migration completion requirements. Any out of band migrations that do
-// not become deprecated within the given version bounds do not need to be completed, as
-// the target instance version will still be able to read partially migrated data from
-// non (or not-yet-)-deprecated out of band migrations.
-func ScheduleMigrationInterrupts(from, to Version) ([]MigrationInterrupt, error) {
-	return scheduleMigrationInterrupts(from, to, yamlMigrations)
-}
-
-func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) ([]MigrationInterrupt, error) {
+func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationInterrupt, error) {
 	type migrationInterval struct {
 		id         int
 		introduced Version
