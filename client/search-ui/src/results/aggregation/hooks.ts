@@ -219,9 +219,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
     const [data, setData] = useState<GetSearchAggregationResult | undefined>()
     const modeVariable = aggregationMode === SearchAggregationModeUi.NONE ? null : aggregationMode
     const { error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
-        disableProactiveSearchAggregations && aggregationMode === SearchAggregationModeUi.NONE
-            ? AGGREGATION_SEARCH_AVAILABILITY
-            : AGGREGATION_SEARCH_QUERY,
+        aggregationMode === SearchAggregationModeUi.NONE ? AGGREGATION_SEARCH_AVAILABILITY : AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
             variables: { query, patternType, mode: modeVariable, limit },
