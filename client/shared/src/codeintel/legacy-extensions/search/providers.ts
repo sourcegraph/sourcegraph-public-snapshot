@@ -1,7 +1,7 @@
 import { flatten, sortBy } from 'lodash'
 import { from, isObservable, Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
-import * as sourcegraph from '@sourcegraph/extension-api-types'
+import * as sourcegraph from 'sourcegraph'
 
 import { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
 import { Providers } from '../providers'

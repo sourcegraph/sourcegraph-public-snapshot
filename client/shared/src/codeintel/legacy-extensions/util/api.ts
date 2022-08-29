@@ -1,5 +1,6 @@
 import { once } from 'lodash'
-import * as sourcegraph from '@sourcegraph/extension-api-types'
+import * as sourcegraph from 'sourcegraph'
+import * as scip from '../../scip'
 import gql from 'tagged-template-noop'
 
 import { cache } from '../util'
@@ -35,7 +36,7 @@ export interface SearchSymbol {
     kind: string
     location: {
         resource: { path: string }
-        range?: sourcegraph.Range
+        range?: scip.Range
     }
 }
 
@@ -254,7 +255,7 @@ export class API {
 
     public findLocalSymbol = async (
         document: sourcegraph.TextDocument,
-        position: sourcegraph.Position
+        position: scip.Position
     ): Promise<LocalSymbol | undefined> => {
         if (!(await this.hasLocalCodeIntelField())) {
             return
@@ -675,7 +676,7 @@ export interface Range {
     length: number
 }
 
-const isInRange = (position: sourcegraph.Position, range: Range): boolean => {
+const isInRange = (position: scip.Position, range: Range): boolean => {
     if (position.line !== range.row) {
         return false
     }
