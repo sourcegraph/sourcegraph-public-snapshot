@@ -33,6 +33,7 @@ export interface Settings {
         }
         enableExtensionsDecorationsColumnView?: boolean
         extensionsAsCoreFeatures?: boolean
+        enableGoImportsSearchQueryTransform?: boolean
         enableLegacyExtensions?: boolean
         enableLazyFileResultSyntaxHighlighting?: boolean
         enableMergedFileSymbolSidebar?: boolean

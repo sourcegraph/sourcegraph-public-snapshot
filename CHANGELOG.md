@@ -33,6 +33,13 @@ All notable changes to Sourcegraph are documented in this file.
 - `CACHE_DIR` has been removed from the `sourcegraph-frontend` deployment. This required ephemeral storage which will no longer be needed. This variable (and corresponding filesystem mount) has been unused for many releases. [#38934](https://github.com/sourcegraph/sourcegraph/issues/38934)
 - Quick links will no longer be shown on the homepage or search sidebar if the "Simple UI" toggle is enabled and will be removed entirely in a future release. The `quicklink` setting is now marked as deprecated. [#40750](https://github.com/sourcegraph/sourcegraph/pull/40750)
 
+## 3.43.1
+
+### Fixed
+
+- Fixed an infinite render loop on the batch changes detail page, causing the page to become unusable. [#40857](https://github.com/sourcegraph/sourcegraph/pull/40857)
+- Unable to pick the correct GitLab OAuth for user authentication and repository permissions syncing when the instance configures more than one GitLab OAuth authentication providers. [#40897](https://github.com/sourcegraph/sourcegraph/pull/40897)
+
 ## 3.43.0
 
 ### Added

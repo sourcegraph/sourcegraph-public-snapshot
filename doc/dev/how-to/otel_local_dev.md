@@ -6,7 +6,8 @@ General OpenTelemetry export configuration is done via environment variables acc
 
 ## Collector
 
-`sg start otel` -> runs `otel-collector` and `jaeger`. Additional configuration can be provided to export to different destinations - for example, to configure a simple Honeycomb exporter, add the following to your `sg.config.overwrite.yaml`:
+`sg start otel` runs `otel-collector` and `jaeger`, and configures `otel-collector` to forward traces to Jaeger.
+Additional configuration can be provided to export to different destinations - for example, to configure a simple Honeycomb exporter, add the following to your `sg.config.overwrite.yaml`:
 
 ```yaml
 commands:
@@ -20,18 +21,7 @@ To learn more, see [`docker-images/opentelemetry-collector`](https://github.com/
 
 ## Configuration
 
-Set `dev-private` site config to use `"observability.tracing": { "type": "opentelemetry" }` to enable OpenTelemetry export for most services.
-
-To enable Zoekt OpenTelemetry, add the following to your `sg.config.overwrite.yaml`:
-
-```yaml
-commands:
-  zoekt-web-0: &zoekt_otel
-    JAEGER_DISABLED: true
-    OPENTELEMETRY_DISABLED: false
-  zoekt-web-1:
-    <<: *zoekt_otel
-```
+Set `dev-private` site config to use `"observability.tracing": { "type": "opentelemetry" }` to enable OpenTelemetry export for most services - this should be set by default in the latest versions of `dev-private`.
 
 ## Testing
 
