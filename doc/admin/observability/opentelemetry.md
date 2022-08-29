@@ -1,6 +1,6 @@
 # OpenTelemetry <span class="badge badge-experimental">Experimental</span>
 
-Sourcegraph is currently working on implementing [OpenTelemetry](https://opentelemetry.io/). The first [signal](https://opentelemetry.io/docs/concepts/signals/) to be integrated is [tracing](./tracing).
+Sourcegraph is currently working on implementing [OpenTelemetry](https://opentelemetry.io/). The first [signal](https://opentelemetry.io/docs/concepts/signals/) to be integrated is [tracing](./tracing.md).
 
 ## OpenTelemetry Collector
 
