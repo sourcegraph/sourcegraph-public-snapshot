@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import type { ViewComponent } from 'sourcegraph'
 
-import { EditorSettings, Replacements } from './editor-settings'
+import { EditorSettings, EditorReplacements } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
 export function buildEditorUrl(
@@ -162,7 +162,7 @@ function getLineAndColumn(activeViewComponent: ViewComponent | undefined): { lin
     return { line, column }
 }
 
-function doReplacements(urlWithoutReplacements: string, replacements: Replacements | undefined): string {
+function doReplacements(urlWithoutReplacements: string, replacements: EditorReplacements | undefined): string {
     let url = urlWithoutReplacements
     if (replacements) {
         for (const [search, replacement] of Object.keys(replacements)) {

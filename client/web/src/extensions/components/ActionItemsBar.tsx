@@ -20,6 +20,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
+import {OpenInEditorActionItem} from '../../../../shared/src/open-in-editor/OpenInEditorActionItem';
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 
@@ -224,6 +225,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {extensionsController !== null ? (
+                    <OpenInEditorActionItem settingsSubscribable={props.platformContext.settings} />
+                ) : null}
+                {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}
                         returnInactiveMenuItems={true}
@@ -343,9 +347,9 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
                         {/**
-                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
-                         * break its onClick handler and it will no longer prevent the default page reload (with no href).
-                         */}
+                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                          * break its onClick handler and it will no longer prevent the default page reload (with no href).
+                          */}
                         <span>
                             <ButtonLink
                                 aria-label={

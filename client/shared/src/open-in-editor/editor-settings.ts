@@ -1,8 +1,8 @@
 import { EditorId } from './editors'
 
-export const jetBrainsApis = ['protocolHandler', 'builtInServer']
+const jetBrainsApis = ['protocolHandler', 'builtInServer']
 
-export type Replacements = Record<string, string>
+export type EditorReplacements = Record<string, string>
 
 export interface EditorSettings {
     editorId?: EditorId
@@ -12,7 +12,7 @@ export interface EditorSettings {
         mac?: string
         windows?: string
     }
-    replacements?: Replacements
+    replacements?: EditorReplacements
     jetbrains?: {
         forceApi?: typeof jetBrainsApis[number]
     }
