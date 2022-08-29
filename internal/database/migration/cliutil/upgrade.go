@@ -60,12 +60,12 @@ func Upgrade(
 
 		// Find the relevant schema and data migrations to perform (and in what order)
 		// for the given version range. Perform the upgrade on the configured databases.
-		plan, err := planUpgrade(versionRange)
+		plan, err := planMigration(versionRange)
 		if err != nil {
 			return err
 		}
 
-		if err := runUpgrade(
+		if err := runMigration(
 			ctx,
 			runnerFactory,
 			plan,

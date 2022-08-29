@@ -13,18 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// runUpgrade initializes a schema and out-of-band migration runner and performs the given upgrade plan.
-func runUpgrade(
+// runMigration initializes a schema and out-of-band migration runner and performs the given migration plan.
+func runMigration(
 	ctx context.Context,
 	runnerFactory RunnerFactoryWithSchemas,
-	plan upgradePlan,
+	plan migrationPlan,
 	skipVersionCheck bool,
 	dryRun bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 ) error {
 	if len(plan.steps) == 0 {
-		return errors.New("upgrade plan contains no steps")
+		return errors.New("migration plan contains no steps")
 	}
 
 	var runnerSchemas []*schemas.Schema
@@ -47,7 +47,7 @@ func runUpgrade(
 	registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
 	if !skipVersionCheck {
-		if err := checkUpgradeVersion(ctx, r, plan); err != nil {
+		if err := checkServiceVersion(ctx, r, plan); err != nil {
 			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 		}
 	}
@@ -102,16 +102,16 @@ func runUpgrade(
 	}
 
 	if !dryRun {
-		// After successful upgrade, set the new instance version. The frontend still checks on
+		// After successful migration, set the new instance version. The frontend still checks on
 		// startup that the previously running instance version was only one minor version away.
 		// If we run the upload without updating that value, the new instance will refuse to
 		// start without manual modification of the database.
 		//
 		// Note that we don't want to get rid of that check entirely from the frontend, as we do
 		// still want to catch the cases where site-admins "jump forward" several versions while
-		// using the zero-downtime upgrade path (not this upgrade utility).
+		// using the zero-downtime upgrade path (not the migrator upgrade utility).
 
-		if err := updateVersion(ctx, r, plan.to); err != nil {
+		if err := setServiceVersion(ctx, r, plan.to); err != nil {
 			return err
 		}
 	}
@@ -119,7 +119,7 @@ func runUpgrade(
 	return nil
 }
 
-func checkUpgradeVersion(ctx context.Context, r Runner, plan upgradePlan) error {
+func checkServiceVersion(ctx context.Context, r Runner, plan migrationPlan) error {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func checkUpgradeVersion(ctx context.Context, r Runner, plan upgradePlan) error 
 	return errors.Newf("version assertion failed: unknown version != %q", plan.from)
 }
 
-func updateVersion(ctx context.Context, r Runner, version oobmigration.Version) error {
+func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Version) error {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
 		return err
