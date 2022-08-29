@@ -59,10 +59,18 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     )
 
     const handleGroupMouseMove = (event: MouseEvent): void => {
-        const [category, datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
+        const [datum, category] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (category && datum) {
-            onBarHover(category, datum)
+            if (!activeSegment?.datum) {
+                onBarHover(datum, category)
+                return
+            }
+
+            // Do not call onBarHover every time we mouse move over the same datum
+            if (getDatumName(activeSegment.datum) !== getDatumName(datum)) {
+                onBarHover(datum, category)
+            }
         } else {
             onBarLeave()
         }
