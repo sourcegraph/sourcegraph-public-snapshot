@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- A new look for Sourcegraph, previously in beta as "Simple UI", is now permanently enabled. []()
 
 ### Changed
 

@@ -16,7 +16,7 @@ CoreWorkflowImprovementsEnabledContext.displayName = 'CoreWorkflowImprovementsCo
 export const CoreWorkflowImprovementsEnabledProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({
     children,
 }) => {
-    const coreWorkflowImprovementsEnabled = useTemporarySetting('coreWorkflowImprovements.enabled')
+    const coreWorkflowImprovementsEnabled = useTemporarySetting('coreWorkflowImprovements.enabled', true)
 
     return (
         <CoreWorkflowImprovementsEnabledContext.Provider value={coreWorkflowImprovementsEnabled}>
