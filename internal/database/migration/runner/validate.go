@@ -87,7 +87,7 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 // validateDefinitions attempts to take an advisory lock, then re-checks the version of the database.
 // If there are still migrations to apply from the given definitions, an error is returned.
 func (r *Runner) validateDefinitions(ctx context.Context, schemaContext schemaContext, definitions []definition.Definition) (retry bool, _ error) {
-	return r.withLockedSchemaState(ctx, schemaContext, definitions, false, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
+	return r.withLockedSchemaState(ctx, schemaContext, definitions, false, false, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
 		if len(byState.applied) != len(definitions) {
 			// Return an error if all expected schemas have not been applied
 			return newOutOfDateError(schemaContext, schemaVersion)

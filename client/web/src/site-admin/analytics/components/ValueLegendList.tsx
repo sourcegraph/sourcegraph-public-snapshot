@@ -14,13 +14,20 @@ interface ValueLegendItemProps {
     description: string
     value: number
     tooltip?: string
+    className?: string
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description, tooltip }) => {
+export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
+    value,
+    color,
+    description,
+    tooltip,
+    className,
+}) => {
     const formattedNumber = useMemo(() => formatNumber(value), [value])
     const unformattedNumber = `${value}`
     return (
-        <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
+        <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
             <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
                 <span style={{ color }} className={styles.count}>
                     {formattedNumber}

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,6 +34,13 @@ type Options struct {
 	// memory usage of Combine is based on the number of unseen commits per
 	// remote. LimitRemote is useful to specify when importing a large new upstream.
 	LimitRemote int
+
+	// GCRatio defines a 1/n chance that we run 'git gc --aggressive' before a
+	// a git-combine pass while in daemon mode. If GCRatio is 0, we'll never run 'git gc --aggressive'.
+	//
+	// 'git combine --aggressive' should be used to maintain repository health with large repos, as the
+	// normal 'git gc' was found to be insufficient.
+	GCRatio uint
 }
 
 func (o *Options) SetDefaults() {
@@ -378,6 +387,13 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			continue
 		}
 
+		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
+			opt.Logger.Printf("running garbage collection to maintain optimum repository health")
+			if err := runGit(dir, "gc", "--aggressive"); err != nil {
+				return err
+			}
+		}
+
 		if err := runGit(dir, "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}
@@ -413,11 +429,13 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
 	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	gcRatio := flag.Uint("gc-ratio", 24*60*3, "(only in daemon mode) 1/n chance of running an aggressive garbage collection job before a git-combine job. If 0, aggressive garbage collection is disabled. Defaults to running aggressive garbage collection once every 3 days.")
 
 	flag.Parse()
 
 	opt := Options{
 		LimitRemote: *limitRemote,
+		GCRatio:     *gcRatio,
 	}
 
 	gitDir, err := getGitDir()

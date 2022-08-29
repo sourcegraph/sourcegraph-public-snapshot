@@ -30,6 +30,7 @@ type Store interface {
 	HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 
 	// Repositories
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
