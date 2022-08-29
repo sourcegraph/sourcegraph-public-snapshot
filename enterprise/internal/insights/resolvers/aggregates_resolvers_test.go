@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -32,6 +33,9 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
+			}
+			if err != nil && tc.err != nil && !strings.Contains(err.Error(), tc.err.Error()) {
+				t.Errorf("expected error %v to contain %v", err, tc.err)
 			}
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
@@ -183,7 +187,7 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "type:diff fork:leo func(.*)",
 			patternType:  "regexp",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("pattern parsing"),
 		},
 		{
 			name:         "cannot aggregate for select:repo query",
@@ -213,6 +217,12 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			name:         "cannot aggregate for query with unsupported pattern type",
 			query:        "func(t *testing.T)",
 			patternType:  "literal",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with multiple steps",
+			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
+			patternType:  "regexp",
 			canAggregate: false,
 		},
 	}
@@ -249,11 +259,11 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 			query: "func [0-9] case:yes",
 			want:  types.REPO_AGGREGATION_MODE,
 		},
-		//{
-		//	name:  "query with capture group returns capture group",
-		//	query: "repo:contains.path(README) todo(\\w+)",
-		//	want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
-		//},
+		{
+			name:  "query with capture group returns capture group",
+			query: "repo:contains.path(README) todo(\\w+)",
+			want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
+		},
 		{
 			name:  "type:commit query returns author",
 			query: "type:commit fix",
@@ -277,6 +287,24 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 		{
 			name:  "query with repo predicate returns repo",
 			query: "repo:contains.path(README) insights",
+			want:  types.REPO_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp type:commit query returns author",
+			// this query contains two non-capture group regexps so wouldn't support capture group aggregation.
+			query: "type:commit TODO \\w+ [0-9]",
+			want:  types.AUTHOR_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp single repo query returns path",
+			// this query contains an or so wouldn't support capture group aggregation.
+			query: "repo:^github\\.com/sourcegraph/sourcegraph$ TODO \\w+ or  var[0-9]",
+			want:  types.PATH_AGGREGATION_MODE,
+		},
+		{
+			name: "unsupported regexp query returns repo",
+			// this query contains an or so wouldn't support capture group aggregation.
+			query: "TODO \\w+ or  var[0-9]",
 			want:  types.REPO_AGGREGATION_MODE,
 		},
 		{

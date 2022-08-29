@@ -123,7 +123,7 @@
     "@pollyjs/persister-fs": "^5.0.0",
     "@sentry/webpack-plugin": "^1.18.9",
     "@slack/web-api": "^5.15.0",
-    "@sourcegraph/eslint-config": "0.31.0",
+    "@sourcegraph/eslint-config": "0.32.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "^1.0.5",
     "@sourcegraph/eslint-plugin-wildcard": "1.0.0",
     "@sourcegraph/prettierrc": "^3.0.3",

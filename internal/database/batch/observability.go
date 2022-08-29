@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -49,7 +49,7 @@ func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     logger,
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 			HoneyDataset: &honey.Dataset{
 				Name:       "database-batch",
