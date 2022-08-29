@@ -82,7 +82,7 @@ git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
 ```bash
-  export SOURCEGRAPH_VERSION="v3.42.2"
+  export SOURCEGRAPH_VERSION="v3.43.0"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
 

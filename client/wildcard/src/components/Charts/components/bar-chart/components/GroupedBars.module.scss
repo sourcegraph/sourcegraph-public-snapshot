@@ -1,0 +1,15 @@
+.bar {
+    &--active {
+        filter: brightness(110%);
+    }
+
+    &--fade {
+        :global(.theme-dark) & {
+            filter: brightness(0.5);
+        }
+
+        :global(.theme-light) & {
+            filter: brightness(1.5) saturate(0.15);
+        }
+    }
+}

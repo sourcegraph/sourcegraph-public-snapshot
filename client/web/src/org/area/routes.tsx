@@ -3,12 +3,12 @@ import { Redirect } from 'react-router'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
-import { OpenBetaGetStartedPage } from '../openBeta/GettingStarted'
 
 import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 const OrgMembersArea = lazyComponent(() => import('../members/OrgMembersArea'), 'OrgMembersArea')
+const OpenBetaGetStartedPage = lazyComponent(() => import('../openBeta/GettingStarted'), 'OpenBetaGetStartedPage')
 
 const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
     <Redirect to={`${props.match.url}/settings/profile`} />

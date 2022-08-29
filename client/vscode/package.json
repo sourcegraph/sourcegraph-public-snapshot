@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.8",
+  "version": "2.2.9",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": true,
@@ -116,7 +116,7 @@
             "string"
           ],
           "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
         },
         "sourcegraph.remoteUrlReplacements": {
           "type": [
@@ -217,7 +217,7 @@
     }
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "prebuild": "yarn build-inline-extensions",

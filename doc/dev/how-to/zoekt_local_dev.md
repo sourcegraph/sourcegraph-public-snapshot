@@ -5,21 +5,24 @@ $ git clone https://github.com/sourcegraph/sourcegraph
 $ git clone https://github.com/sourcegraph/zoekt
 ```
 
-To see your Zoekt changes reflected live on your local Sourcegraph instance, you'll have to modify your
-Sourcegraph `go.mod` file so that the Zoekt dependency is pointed to your local folder.
-
-Change at the bottom:
+To see your Zoekt changes reflected live on your local Sourcegraph instance you can use [go workspaces](https://go.dev/ref/mod#workspaces):
 
 ```
-replace (
-    ...
-    github.com/sourcegraph/zoekt => <your zoekt repository directory>
-    ...
+$ cd sourcegraph
+$ go work init . ../zoekt
+$ cat go.work
+go 1.19
+
+use (
+        .
+        ../zoekt
 )
 ```
 
 This isn't hot reloaded so you might have to restart Sourcegraph on every Zoekt change. It may make sense to ensure your
 changes in Zoekt are working first before trying them out in Sourcegraph.
+
+When you are done do not forget to remove your `go.work` file.
 
 ## Install Ctags
 

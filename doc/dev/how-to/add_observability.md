@@ -25,7 +25,7 @@ The high-level ideas behind the [`internal/observation` package](https://sourceg
 ```go
 observationContext := observation.Context{
     Logger:     log.Scoped("my-scope", "a simple description"),
-    Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+    Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
     Registerer: prometheus.DefaultRegisterer,
 }
 

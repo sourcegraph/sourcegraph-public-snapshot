@@ -3,19 +3,24 @@ import { ReactElement, useMemo } from 'react'
 import { getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 
+import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { BarChart, BarChartProps } from '@sourcegraph/wildcard'
-
-import { AggregationMode } from './types'
 
 /**
  * AggregationChart sets these props internally, and we don't expose them
  * as public api of aggregation chart
  */
-type PredefinedBarProps = 'pixelsPerXTick' | 'pixelsPerYTick' | 'maxAngleXTick' | 'getScaleXTicks' | 'getTruncatedXTick'
+type PredefinedBarProps =
+    | 'mode'
+    | 'pixelsPerXTick'
+    | 'pixelsPerYTick'
+    | 'maxAngleXTick'
+    | 'getScaleXTicks'
+    | 'getTruncatedXTick'
 type SharedBarProps<Datum> = Omit<BarChartProps<Datum>, PredefinedBarProps>
 
-interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
-    mode: AggregationMode
+export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
+    mode?: SearchAggregationMode | null
 }
 
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
@@ -86,12 +91,12 @@ const getTruncatedTickFromTheEnd = (tick: string): string =>
  * github.com/sourcegraph/sourcegraph -> ...urcegraph/sourcegraph
  * ```
  */
-const getTruncationFormatter = (aggregationMode: AggregationMode): ((tick: string) => string) => {
+const getTruncationFormatter = (aggregationMode?: SearchAggregationMode | null): ((tick: string) => string) => {
     switch (aggregationMode) {
         // These types possible have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
-        case AggregationMode.Repository:
-        case AggregationMode.FilePath:
+        case SearchAggregationMode.REPO:
+        case SearchAggregationMode.PATH:
             return getTruncatedTickFromTheEnd
 
         default:

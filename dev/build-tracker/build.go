@@ -25,6 +25,12 @@ type Build struct {
 	ConsecutiveFailure int `json:"consecutiveFailures"`
 }
 
+// updateFromEvent updates the current build with the build and pipeline from the event.
+func (b *Build) updateFromEvent(e *Event) {
+	b.Build = e.Build
+	b.Pipeline = e.pipeline()
+}
+
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
 }
@@ -74,8 +80,23 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
+func (b *Build) failedJobs() []*Job {
+	result := make([]*Job, 0)
+	for _, j := range b.Jobs {
+		if j.failed() {
+			result = append(result, &j)
+		}
+	}
+
+	return result
+}
+
 type Job struct {
 	buildkite.Job
+}
+
+func (j *Job) id() string {
+	return strp(j.ID)
 }
 
 func (j *Job) name() string {
@@ -184,25 +205,38 @@ func (s *BuildStore) Add(event *Event) {
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data
 	if event.isBuildFinished() {
-		build.Build = event.Build
-		build.Pipeline = event.pipeline()
+		build.updateFromEvent(event)
 
 		// Track consecutive failures by pipeline + branch
+		// We update the global count of consecutiveFailures then we set the count on the individual build
+		// if we get a pass, we reset the global count of consecutiveFailures
 		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
 		if build.hasFailed() {
 			s.consecutiveFailures[failuresKey] += 1
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
-			s.consecutiveFailures[failuresKey] = 1
+			// We got a pass, reset the global count
+			s.consecutiveFailures[failuresKey] = 0
 		}
 	}
 
+	// Keep track of the job, if there is one
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
+		s.logger.Debug("job added",
+			log.Int("buildNumber", event.buildNumber()),
+			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Int("totalJobs", len(build.Jobs)),
+		)
 		build.Jobs[wrappedJob.name()] = *wrappedJob
+	} else {
+		s.logger.Warn("job has no name - not added",
+			log.Int("buildNumber", event.buildNumber()),
+			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Int("totalJobs", len(build.Jobs)),
+		)
 	}
 
-	s.logger.Debug("job added", log.Int("buildNumber", event.buildNumber()), log.Int("totalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {

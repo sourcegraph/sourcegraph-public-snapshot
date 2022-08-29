@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 import * as Comlink from 'comlink'
 import { print } from 'graphql'
-import { BehaviorSubject, from, Observable, Subscribable } from 'rxjs'
+import { BehaviorSubject, from, Observable } from 'rxjs'
 
 import { checkOk, GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -93,7 +93,7 @@ export function useWebviewPageContext(): WebviewPageProps {
     return context
 }
 
-function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
+function getInlineExtensions(): Observable<ExecutableExtension[]> {
     const promises: Promise<ExecutableExtension>[] = []
 
     for (const extensionID of extensions) {

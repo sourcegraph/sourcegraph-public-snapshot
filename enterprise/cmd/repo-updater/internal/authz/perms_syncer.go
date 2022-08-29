@@ -268,6 +268,11 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 		return nil, nil
 	}
 
+	// Not a GitHub App access token
+	if !github.IsGitHubAppAccessToken(tok.AccessToken) {
+		return nil, nil
+	}
+
 	apiURL, err := url.Parse(acct.ServiceID)
 	if err != nil {
 		return nil, err
@@ -438,18 +443,15 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					return nil, nil, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
 				}
 
-				linkedAcctIDs := make([]int32, len(linkedAccts))
-				for i, linkedAcct := range linkedAccts {
-					linkedAcctIDs[i] = linkedAcct.ID
+				acctIDs := make([]int32, 0, len(linkedAccts)+1)
+				acctIDs = append(acctIDs, acct.ID)
+				for _, linkedAcct := range linkedAccts {
+					acctIDs = append(acctIDs, linkedAcct.ID)
 				}
-				if err = accounts.TouchExpired(ctx, linkedAcctIDs...); err != nil {
-					return nil, nil, errors.Wrapf(err, "set expired for external accounts %v", linkedAcctIDs)
+				if err = accounts.TouchExpired(ctx, acctIDs...); err != nil {
+					return nil, nil, errors.Wrapf(err, "set expired for external account IDs %v", acctIDs)
 				}
 
-				err = accounts.TouchExpired(ctx, acct.ID)
-				if err != nil {
-					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
-				}
 				if unauthorized {
 					acctLogger.Warn("setExternalAccountExpired, token is revoked",
 						log.Bool("unauthorized", unauthorized),
@@ -802,20 +804,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
 	}
 
-	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
-	s.permsUpdateLock.Lock()
-	defer s.permsUpdateLock.Unlock()
-
-	err = s.permsStore.SetUserPermissions(ctx, p)
-	if err != nil {
-		return errors.Wrap(err, "set user permissions")
-	}
-
-	logger.Debug("synced",
-		log.Int("count", len(p.IDs)),
-		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
-	)
-
 	// Set sub-repository permissions
 	srp := s.db.SubRepoPerms()
 	for spec, perm := range subRepoPerms {
@@ -829,6 +817,20 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			log.Int("count", len(subRepoPerms)),
 		)
 	}
+
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
+	s.permsUpdateLock.Lock()
+	defer s.permsUpdateLock.Unlock()
+
+	err = s.permsStore.SetUserPermissions(ctx, p)
+	if err != nil {
+		return errors.Wrap(err, "set user permissions")
+	}
+
+	logger.Debug("synced",
+		log.Int("count", len(p.IDs)),
+		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
+	)
 
 	return nil
 }

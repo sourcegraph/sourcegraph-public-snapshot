@@ -1,20 +1,49 @@
-import { Subscribable, from } from 'rxjs'
+import { Observable, from } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { isFirefox } from '@sourcegraph/common'
-import { checkOk } from '@sourcegraph/http-client'
+import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import extensions from '../../../code-intel-extensions.json'
 import { isExtension } from '../context'
 
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
+
 /**
- * Determine if inline extensions should be loaded.
- *
- * This requires the browser extension to be built with inline extensions enabled.
- * At build time this is determined by `shouldBuildWithInlineExtensions`.
+ * Determine which extensions should be loaded:
+ * - inline (bundled with the browser extension)
+ * - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
  */
-export const shouldUseInlineExtensions = (): boolean => isExtension && isFirefox()
+export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query EnableLegacyExtensions {
+                site {
+                    enableLegacyExtensions
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                // EnableLegacyExtensions query resolver may not be implemented on older versions.
+                // Return `true` by default.
+                return true
+            }
+
+            try {
+                return result.data.site.enableLegacyExtensions
+            } catch {
+                return DEFAULT_ENABLE_LEGACY_EXTENSIONS
+            }
+        }),
+        map(enableLegacyExtensions => !enableLegacyExtensions && isExtension)
+    )
 
 /**
  * Get the manifest URL and script URL for a Sourcegraph extension which is inline (bundled with the browser add-on).
@@ -28,7 +57,7 @@ function getURLsForInlineExtension(extensionID: string): { manifestURL: string; 
     }
 }
 
-export function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
+export function getInlineExtensions(): Observable<ExecutableExtension[]> {
     const promises: Promise<ExecutableExtension>[] = []
 
     for (const extensionID of extensions) {

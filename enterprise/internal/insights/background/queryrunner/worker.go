@@ -89,7 +89,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		seriesCache:     sharedCache,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 			decoder, streamResults := streaming.TabulationDecoder()
-			err := streaming.Search(ctx, query, decoder)
+			err := streaming.Search(ctx, query, nil, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
@@ -131,13 +131,13 @@ func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_query_runner_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics:  metrics,
 	}
-	return dbworker.NewResetter(workerStore, options)
+	return dbworker.NewResetter(logger, workerStore, options)
 }
 
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.

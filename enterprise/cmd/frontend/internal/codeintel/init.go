@@ -4,13 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	logger "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,23 +26,24 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	oc := func(name string) *observation.Context {
 		return &observation.Context{
 			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 	}
 
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	executorResolver := executorgraphql.New(db)
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
+	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
 		services.lsifStore,
-		services.indexEnqueuer,
 		symbols.DefaultClient,
 		codenavResolver,
 		executorResolver,
 		policyResolver,
+		autoindexingResolver,
 	)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}

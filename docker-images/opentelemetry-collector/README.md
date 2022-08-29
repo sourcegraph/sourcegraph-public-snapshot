@@ -26,6 +26,7 @@ Bundled configurations are in `/etc/otel-collector/configs` and can be used with
 
 - [`configs/jaeger.yaml`](configs/jaeger.yaml) - useful for sending traces to Sourcegraph's bundled Jaeger instance.
 - [`configs/honeycomb.yaml`](configs/honeycomb.yaml)
+- [`configs/logging.yaml`](configs/logging.yaml)
 
 You can also mount your own configuration to provide to the `--config` flag.
 

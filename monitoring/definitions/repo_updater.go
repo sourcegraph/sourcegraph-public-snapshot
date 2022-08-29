@@ -112,7 +112,7 @@ func RepoUpdater() *monitoring.Dashboard {
 						{
 							Name:        "syncer_synced_repos",
 							Description: "repositories synced",
-							Query:       `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
+							Query:       `max(rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							Warning: monitoring.Alert().LessOrEqual(0).
 								AggregateBy(monitoring.AggregatorMax).
 								For(syncDurationThreshold),

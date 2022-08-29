@@ -4,6 +4,7 @@ import path from 'path'
 import html from 'tagged-template-noop'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
+import { SearchUIGraphQlOperations } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -22,13 +23,13 @@ import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
-        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations,
+        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations & SearchUIGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     > {
     /**
      * Overrides `window.context` from the default created by `createJsContext()`.
      */
-    overrideJsContext: (jsContext: SourcegraphContext) => void
+    overrideJsContext: (jsContext: Partial<SourcegraphContext>) => void
 
     /**
      * Configures fake responses for streaming search
@@ -121,7 +122,7 @@ export const createWebIntegrationTestContext = async ({
     return {
         ...sharedTestContext,
         overrideJsContext: overrides => {
-            jsContext = overrides
+            jsContext = { ...jsContext, ...overrides }
         },
         overrideSearchStreamEvents: overrides => {
             searchStreamEventOverrides = overrides

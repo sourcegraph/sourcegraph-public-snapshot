@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
-	sentrylib "github.com/getsentry/sentry-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -135,7 +135,7 @@ func run(logger log.Logger) error {
 	storeObservationContext := &observation.Context{
 		// Explicitly don't scope Store logger under the parent logger
 		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -238,7 +238,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	conf.Init()

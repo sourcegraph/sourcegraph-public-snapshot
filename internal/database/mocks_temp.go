@@ -3682,6 +3682,9 @@ type MockDB struct {
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *DBRepoKVPsFunc
+	// RepoStatisticsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoStatistics.
+	RepoStatisticsFunc *DBRepoStatisticsFunc
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
@@ -3837,6 +3840,11 @@ func NewMockDB() *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: func() (r0 RepoKVPStore) {
+				return
+			},
+		},
+		RepoStatisticsFunc: &DBRepoStatisticsFunc{
+			defaultHook: func() (r0 RepoStatisticsStore) {
 				return
 			},
 		},
@@ -4027,6 +4035,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.RepoKVPs")
 			},
 		},
+		RepoStatisticsFunc: &DBRepoStatisticsFunc{
+			defaultHook: func() RepoStatisticsStore {
+				panic("unexpected invocation of MockDB.RepoStatistics")
+			},
+		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: func() RepoStore {
 				panic("unexpected invocation of MockDB.Repos")
@@ -4169,6 +4182,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
+		},
+		RepoStatisticsFunc: &DBRepoStatisticsFunc{
+			defaultHook: i.RepoStatistics,
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
@@ -6436,6 +6452,105 @@ func (c DBRepoKVPsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBRepoStatisticsFunc describes the behavior when the RepoStatistics
+// method of the parent MockDB instance is invoked.
+type DBRepoStatisticsFunc struct {
+	defaultHook func() RepoStatisticsStore
+	hooks       []func() RepoStatisticsStore
+	history     []DBRepoStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoStatistics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RepoStatistics() RepoStatisticsStore {
+	r0 := m.RepoStatisticsFunc.nextHook()()
+	m.RepoStatisticsFunc.appendCall(DBRepoStatisticsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoStatistics
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRepoStatisticsFunc) SetDefaultHook(hook func() RepoStatisticsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoStatistics method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRepoStatisticsFunc) PushHook(hook func() RepoStatisticsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoStatisticsFunc) SetDefaultReturn(r0 RepoStatisticsStore) {
+	f.SetDefaultHook(func() RepoStatisticsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoStatisticsFunc) PushReturn(r0 RepoStatisticsStore) {
+	f.PushHook(func() RepoStatisticsStore {
+		return r0
+	})
+}
+
+func (f *DBRepoStatisticsFunc) nextHook() func() RepoStatisticsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoStatisticsFunc) appendCall(r0 DBRepoStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoStatisticsFuncCall objects describing
+// the invocations of this function.
+func (f *DBRepoStatisticsFunc) History() []DBRepoStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoStatisticsFuncCall is an object that describes an invocation of
+// method RepoStatistics on an instance of MockDB.
+type DBRepoStatisticsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoStatisticsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBReposFunc describes the behavior when the Repos method of the parent
 // MockDB instance is invoked.
 type DBReposFunc struct {
@@ -7909,10 +8024,6 @@ type MockEventLogStore struct {
 	// object controlling the behavior of the method
 	// CountUniqueUsersByEventNames.
 	CountUniqueUsersByEventNamesFunc *EventLogStoreCountUniqueUsersByEventNamesFunc
-	// CountUniqueUsersPerPeriodFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// CountUniqueUsersPerPeriod.
-	CountUniqueUsersPerPeriodFunc *EventLogStoreCountUniqueUsersPerPeriodFunc
 	// CountUsersWithSettingFunc is an instance of a mock function object
 	// controlling the behavior of the method CountUsersWithSetting.
 	CountUsersWithSettingFunc *EventLogStoreCountUsersWithSettingFunc
@@ -7947,9 +8058,12 @@ type MockEventLogStore struct {
 	// RequestsByLanguageFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestsByLanguage.
 	RequestsByLanguageFunc *EventLogStoreRequestsByLanguageFunc
-	// SiteUsageFunc is an instance of a mock function object controlling
-	// the behavior of the method SiteUsage.
-	SiteUsageFunc *EventLogStoreSiteUsageFunc
+	// SiteUsageCurrentPeriodsFunc is an instance of a mock function object
+	// controlling the behavior of the method SiteUsageCurrentPeriods.
+	SiteUsageCurrentPeriodsFunc *EventLogStoreSiteUsageCurrentPeriodsFunc
+	// SiteUsageMultiplePeriodsFunc is an instance of a mock function object
+	// controlling the behavior of the method SiteUsageMultiplePeriods.
+	SiteUsageMultiplePeriodsFunc *EventLogStoreSiteUsageMultiplePeriodsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *EventLogStoreTransactFunc
@@ -8051,7 +8165,7 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -8067,11 +8181,6 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		CountUniqueUsersByEventNamesFunc: &EventLogStoreCountUniqueUsersByEventNamesFunc{
 			defaultHook: func(context.Context, time.Time, time.Time, []string) (r0 int, r1 error) {
-				return
-			},
-		},
-		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
-			defaultHook: func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) (r0 []UsageValue, r1 error) {
 				return
 			},
 		},
@@ -8130,8 +8239,13 @@ func NewMockEventLogStore() *MockEventLogStore {
 				return
 			},
 		},
-		SiteUsageFunc: &EventLogStoreSiteUsageFunc{
+		SiteUsageCurrentPeriodsFunc: &EventLogStoreSiteUsageCurrentPeriodsFunc{
 			defaultHook: func(context.Context) (r0 types.SiteUsageSummary, r1 error) {
+				return
+			},
+		},
+		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
+			defaultHook: func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (r0 *types.SiteUsageStatistics, r1 error) {
 				return
 			},
 		},
@@ -8243,7 +8357,7 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (int, error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersAll")
 			},
 		},
@@ -8260,11 +8374,6 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 		CountUniqueUsersByEventNamesFunc: &EventLogStoreCountUniqueUsersByEventNamesFunc{
 			defaultHook: func(context.Context, time.Time, time.Time, []string) (int, error) {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersByEventNames")
-			},
-		},
-		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
-			defaultHook: func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error) {
-				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersPerPeriod")
 			},
 		},
 		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
@@ -8322,9 +8431,14 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.RequestsByLanguage")
 			},
 		},
-		SiteUsageFunc: &EventLogStoreSiteUsageFunc{
+		SiteUsageCurrentPeriodsFunc: &EventLogStoreSiteUsageCurrentPeriodsFunc{
 			defaultHook: func(context.Context) (types.SiteUsageSummary, error) {
-				panic("unexpected invocation of MockEventLogStore.SiteUsage")
+				panic("unexpected invocation of MockEventLogStore.SiteUsageCurrentPeriods")
+			},
+		},
+		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
+			defaultHook: func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+				panic("unexpected invocation of MockEventLogStore.SiteUsageMultiplePeriods")
 			},
 		},
 		TransactFunc: &EventLogStoreTransactFunc{
@@ -8413,9 +8527,6 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		CountUniqueUsersByEventNamesFunc: &EventLogStoreCountUniqueUsersByEventNamesFunc{
 			defaultHook: i.CountUniqueUsersByEventNames,
 		},
-		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
-			defaultHook: i.CountUniqueUsersPerPeriod,
-		},
 		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
 			defaultHook: i.CountUsersWithSetting,
 		},
@@ -8449,8 +8560,11 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		RequestsByLanguageFunc: &EventLogStoreRequestsByLanguageFunc{
 			defaultHook: i.RequestsByLanguage,
 		},
-		SiteUsageFunc: &EventLogStoreSiteUsageFunc{
-			defaultHook: i.SiteUsage,
+		SiteUsageCurrentPeriodsFunc: &EventLogStoreSiteUsageCurrentPeriodsFunc{
+			defaultHook: i.SiteUsageCurrentPeriods,
+		},
+		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
+			defaultHook: i.SiteUsageMultiplePeriods,
 		},
 		TransactFunc: &EventLogStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -10346,24 +10460,24 @@ func (c EventLogStoreCountByUserIDAndEventNamesFuncCall) Results() []interface{}
 // CountUniqueUsersAll method of the parent MockEventLogStore instance is
 // invoked.
 type EventLogStoreCountUniqueUsersAllFunc struct {
-	defaultHook func(context.Context, time.Time, time.Time) (int, error)
-	hooks       []func(context.Context, time.Time, time.Time) (int, error)
+	defaultHook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
+	hooks       []func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
 	history     []EventLogStoreCountUniqueUsersAllFuncCall
 	mutex       sync.Mutex
 }
 
 // CountUniqueUsersAll delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time) (int, error) {
-	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2)
-	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, r0, r1})
+func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time, v3 *CountUniqueUsersOptions) (int, error) {
+	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2, v3)
+	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CountUniqueUsersAll
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -10372,7 +10486,7 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10381,19 +10495,19 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.SetDefaultHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.PushHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time) (int, error) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10436,6 +10550,9 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *CountUniqueUsersOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -10447,7 +10564,7 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersAllFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -10807,127 +10924,6 @@ func (c EventLogStoreCountUniqueUsersByEventNamesFuncCall) Args() []interface{} 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersByEventNamesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EventLogStoreCountUniqueUsersPerPeriodFunc describes the behavior when
-// the CountUniqueUsersPerPeriod method of the parent MockEventLogStore
-// instance is invoked.
-type EventLogStoreCountUniqueUsersPerPeriodFunc struct {
-	defaultHook func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error)
-	hooks       []func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error)
-	history     []EventLogStoreCountUniqueUsersPerPeriodFuncCall
-	mutex       sync.Mutex
-}
-
-// CountUniqueUsersPerPeriod delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) CountUniqueUsersPerPeriod(v0 context.Context, v1 PeriodType, v2 time.Time, v3 int, v4 *CountUniqueUsersOptions) ([]UsageValue, error) {
-	r0, r1 := m.CountUniqueUsersPerPeriodFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.CountUniqueUsersPerPeriodFunc.appendCall(EventLogStoreCountUniqueUsersPerPeriodFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// CountUniqueUsersPerPeriod method of the parent MockEventLogStore instance
-// is invoked and the hook queue is empty.
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) SetDefaultHook(hook func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CountUniqueUsersPerPeriod method of the parent MockEventLogStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) PushHook(hook func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) SetDefaultReturn(r0 []UsageValue, r1 error) {
-	f.SetDefaultHook(func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) PushReturn(r0 []UsageValue, r1 error) {
-	f.PushHook(func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error) {
-		return r0, r1
-	})
-}
-
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) nextHook() func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) ([]UsageValue, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) appendCall(r0 EventLogStoreCountUniqueUsersPerPeriodFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EventLogStoreCountUniqueUsersPerPeriodFuncCall objects describing the
-// invocations of this function.
-func (f *EventLogStoreCountUniqueUsersPerPeriodFunc) History() []EventLogStoreCountUniqueUsersPerPeriodFuncCall {
-	f.mutex.Lock()
-	history := make([]EventLogStoreCountUniqueUsersPerPeriodFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EventLogStoreCountUniqueUsersPerPeriodFuncCall is an object that
-// describes an invocation of method CountUniqueUsersPerPeriod on an
-// instance of MockEventLogStore.
-type EventLogStoreCountUniqueUsersPerPeriodFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 PeriodType
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Time
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *CountUniqueUsersOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []UsageValue
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -12123,35 +12119,37 @@ func (c EventLogStoreRequestsByLanguageFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EventLogStoreSiteUsageFunc describes the behavior when the SiteUsage
-// method of the parent MockEventLogStore instance is invoked.
-type EventLogStoreSiteUsageFunc struct {
+// EventLogStoreSiteUsageCurrentPeriodsFunc describes the behavior when the
+// SiteUsageCurrentPeriods method of the parent MockEventLogStore instance
+// is invoked.
+type EventLogStoreSiteUsageCurrentPeriodsFunc struct {
 	defaultHook func(context.Context) (types.SiteUsageSummary, error)
 	hooks       []func(context.Context) (types.SiteUsageSummary, error)
-	history     []EventLogStoreSiteUsageFuncCall
+	history     []EventLogStoreSiteUsageCurrentPeriodsFuncCall
 	mutex       sync.Mutex
 }
 
-// SiteUsage delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEventLogStore) SiteUsage(v0 context.Context) (types.SiteUsageSummary, error) {
-	r0, r1 := m.SiteUsageFunc.nextHook()(v0)
-	m.SiteUsageFunc.appendCall(EventLogStoreSiteUsageFuncCall{v0, r0, r1})
+// SiteUsageCurrentPeriods delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) SiteUsageCurrentPeriods(v0 context.Context) (types.SiteUsageSummary, error) {
+	r0, r1 := m.SiteUsageCurrentPeriodsFunc.nextHook()(v0)
+	m.SiteUsageCurrentPeriodsFunc.appendCall(EventLogStoreSiteUsageCurrentPeriodsFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the SiteUsage method of
-// the parent MockEventLogStore instance is invoked and the hook queue is
-// empty.
-func (f *EventLogStoreSiteUsageFunc) SetDefaultHook(hook func(context.Context) (types.SiteUsageSummary, error)) {
+// SetDefaultHook sets function that is called when the
+// SiteUsageCurrentPeriods method of the parent MockEventLogStore instance
+// is invoked and the hook queue is empty.
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) SetDefaultHook(hook func(context.Context) (types.SiteUsageSummary, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SiteUsage method of the parent MockEventLogStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *EventLogStoreSiteUsageFunc) PushHook(hook func(context.Context) (types.SiteUsageSummary, error)) {
+// SiteUsageCurrentPeriods method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) PushHook(hook func(context.Context) (types.SiteUsageSummary, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12159,20 +12157,20 @@ func (f *EventLogStoreSiteUsageFunc) PushHook(hook func(context.Context) (types.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreSiteUsageFunc) SetDefaultReturn(r0 types.SiteUsageSummary, r1 error) {
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) SetDefaultReturn(r0 types.SiteUsageSummary, r1 error) {
 	f.SetDefaultHook(func(context.Context) (types.SiteUsageSummary, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreSiteUsageFunc) PushReturn(r0 types.SiteUsageSummary, r1 error) {
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) PushReturn(r0 types.SiteUsageSummary, r1 error) {
 	f.PushHook(func(context.Context) (types.SiteUsageSummary, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreSiteUsageFunc) nextHook() func(context.Context) (types.SiteUsageSummary, error) {
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) nextHook() func(context.Context) (types.SiteUsageSummary, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12185,26 +12183,28 @@ func (f *EventLogStoreSiteUsageFunc) nextHook() func(context.Context) (types.Sit
 	return hook
 }
 
-func (f *EventLogStoreSiteUsageFunc) appendCall(r0 EventLogStoreSiteUsageFuncCall) {
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) appendCall(r0 EventLogStoreSiteUsageCurrentPeriodsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of EventLogStoreSiteUsageFuncCall objects
-// describing the invocations of this function.
-func (f *EventLogStoreSiteUsageFunc) History() []EventLogStoreSiteUsageFuncCall {
+// History returns a sequence of
+// EventLogStoreSiteUsageCurrentPeriodsFuncCall objects describing the
+// invocations of this function.
+func (f *EventLogStoreSiteUsageCurrentPeriodsFunc) History() []EventLogStoreSiteUsageCurrentPeriodsFuncCall {
 	f.mutex.Lock()
-	history := make([]EventLogStoreSiteUsageFuncCall, len(f.history))
+	history := make([]EventLogStoreSiteUsageCurrentPeriodsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// EventLogStoreSiteUsageFuncCall is an object that describes an invocation
-// of method SiteUsage on an instance of MockEventLogStore.
-type EventLogStoreSiteUsageFuncCall struct {
+// EventLogStoreSiteUsageCurrentPeriodsFuncCall is an object that describes
+// an invocation of method SiteUsageCurrentPeriods on an instance of
+// MockEventLogStore.
+type EventLogStoreSiteUsageCurrentPeriodsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -12218,13 +12218,137 @@ type EventLogStoreSiteUsageFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c EventLogStoreSiteUsageFuncCall) Args() []interface{} {
+func (c EventLogStoreSiteUsageCurrentPeriodsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c EventLogStoreSiteUsageFuncCall) Results() []interface{} {
+func (c EventLogStoreSiteUsageCurrentPeriodsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreSiteUsageMultiplePeriodsFunc describes the behavior when the
+// SiteUsageMultiplePeriods method of the parent MockEventLogStore instance
+// is invoked.
+type EventLogStoreSiteUsageMultiplePeriodsFunc struct {
+	defaultHook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	hooks       []func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	history     []EventLogStoreSiteUsageMultiplePeriodsFuncCall
+	mutex       sync.Mutex
+}
+
+// SiteUsageMultiplePeriods delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) SiteUsageMultiplePeriods(v0 context.Context, v1 time.Time, v2 int, v3 int, v4 int, v5 *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	r0, r1 := m.SiteUsageMultiplePeriodsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.SiteUsageMultiplePeriodsFunc.appendCall(EventLogStoreSiteUsageMultiplePeriodsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SiteUsageMultiplePeriods method of the parent MockEventLogStore instance
+// is invoked and the hook queue is empty.
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultHook(hook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SiteUsageMultiplePeriods method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushHook(hook func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) SetDefaultReturn(r0 *types.SiteUsageStatistics, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) PushReturn(r0 *types.SiteUsageStatistics, r1 error) {
+	f.PushHook(func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) nextHook() func(context.Context, time.Time, int, int, int, *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) appendCall(r0 EventLogStoreSiteUsageMultiplePeriodsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EventLogStoreSiteUsageMultiplePeriodsFuncCall objects describing the
+// invocations of this function.
+func (f *EventLogStoreSiteUsageMultiplePeriodsFunc) History() []EventLogStoreSiteUsageMultiplePeriodsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreSiteUsageMultiplePeriodsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreSiteUsageMultiplePeriodsFuncCall is an object that describes
+// an invocation of method SiteUsageMultiplePeriods on an instance of
+// MockEventLogStore.
+type EventLogStoreSiteUsageMultiplePeriodsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 *CountUniqueUsersOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.SiteUsageStatistics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreSiteUsageMultiplePeriodsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreSiteUsageMultiplePeriodsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -27460,9 +27584,6 @@ type MockRepoStore struct {
 	// QueryFunc is an instance of a mock function object controlling the
 	// behavior of the method Query.
 	QueryFunc *RepoStoreQueryFunc
-	// StatisticsCountsFunc is an instance of a mock function object
-	// controlling the behavior of the method StatisticsCounts.
-	StatisticsCountsFunc *RepoStoreStatisticsCountsFunc
 	// StreamMinimalReposFunc is an instance of a mock function object
 	// controlling the behavior of the method StreamMinimalRepos.
 	StreamMinimalReposFunc *RepoStoreStreamMinimalReposFunc
@@ -27560,11 +27681,6 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: func(context.Context, *sqlf.Query) (r0 *sql.Rows, r1 error) {
-				return
-			},
-		},
-		StatisticsCountsFunc: &RepoStoreStatisticsCountsFunc{
-			defaultHook: func(context.Context) (r0 StatisticsCounts, r1 error) {
 				return
 			},
 		},
@@ -27675,11 +27791,6 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Query")
 			},
 		},
-		StatisticsCountsFunc: &RepoStoreStatisticsCountsFunc{
-			defaultHook: func(context.Context) (StatisticsCounts, error) {
-				panic("unexpected invocation of MockRepoStore.StatisticsCounts")
-			},
-		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: func(context.Context, ReposListOptions, func(*types.MinimalRepo)) error {
 				panic("unexpected invocation of MockRepoStore.StreamMinimalRepos")
@@ -27752,9 +27863,6 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: i.Query,
-		},
-		StatisticsCountsFunc: &RepoStoreStatisticsCountsFunc{
-			defaultHook: i.StatisticsCounts,
 		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: i.StreamMinimalRepos,
@@ -29618,111 +29726,6 @@ func (c RepoStoreQueryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreQueryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// RepoStoreStatisticsCountsFunc describes the behavior when the
-// StatisticsCounts method of the parent MockRepoStore instance is invoked.
-type RepoStoreStatisticsCountsFunc struct {
-	defaultHook func(context.Context) (StatisticsCounts, error)
-	hooks       []func(context.Context) (StatisticsCounts, error)
-	history     []RepoStoreStatisticsCountsFuncCall
-	mutex       sync.Mutex
-}
-
-// StatisticsCounts delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockRepoStore) StatisticsCounts(v0 context.Context) (StatisticsCounts, error) {
-	r0, r1 := m.StatisticsCountsFunc.nextHook()(v0)
-	m.StatisticsCountsFunc.appendCall(RepoStoreStatisticsCountsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the StatisticsCounts
-// method of the parent MockRepoStore instance is invoked and the hook queue
-// is empty.
-func (f *RepoStoreStatisticsCountsFunc) SetDefaultHook(hook func(context.Context) (StatisticsCounts, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// StatisticsCounts method of the parent MockRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *RepoStoreStatisticsCountsFunc) PushHook(hook func(context.Context) (StatisticsCounts, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *RepoStoreStatisticsCountsFunc) SetDefaultReturn(r0 StatisticsCounts, r1 error) {
-	f.SetDefaultHook(func(context.Context) (StatisticsCounts, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreStatisticsCountsFunc) PushReturn(r0 StatisticsCounts, r1 error) {
-	f.PushHook(func(context.Context) (StatisticsCounts, error) {
-		return r0, r1
-	})
-}
-
-func (f *RepoStoreStatisticsCountsFunc) nextHook() func(context.Context) (StatisticsCounts, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoStoreStatisticsCountsFunc) appendCall(r0 RepoStoreStatisticsCountsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of RepoStoreStatisticsCountsFuncCall objects
-// describing the invocations of this function.
-func (f *RepoStoreStatisticsCountsFunc) History() []RepoStoreStatisticsCountsFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoStoreStatisticsCountsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoStoreStatisticsCountsFuncCall is an object that describes an
-// invocation of method StatisticsCounts on an instance of MockRepoStore.
-type RepoStoreStatisticsCountsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 StatisticsCounts
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RepoStoreStatisticsCountsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoStoreStatisticsCountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

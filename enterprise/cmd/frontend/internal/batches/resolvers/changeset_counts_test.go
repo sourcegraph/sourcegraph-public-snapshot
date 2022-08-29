@@ -182,7 +182,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(bstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(bstore), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

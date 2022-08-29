@@ -5,6 +5,11 @@ export interface JsonDocument {
     occurrences?: JsonOccurrence[]
 }
 
+export interface DocumentInfo {
+    content: string
+    lsif?: string
+}
+
 export interface JsonOccurrence {
     range: [number, number, number] | [number, number, number, number]
     syntaxKind?: SyntaxKind
@@ -13,6 +18,18 @@ export interface JsonOccurrence {
 export class Position {
     constructor(public readonly line: number, public readonly character: number) {}
 
+    public isSmaller(other: Position): boolean {
+        return this.compare(other) < 0
+    }
+    public isSmallerOrEqual(other: Position): boolean {
+        return this.compare(other) <= 0
+    }
+    public isGreater(other: Position): boolean {
+        return this.compare(other) > 0
+    }
+    public isGreaterOrEqual(other: Position): boolean {
+        return this.compare(other) >= 0
+    }
     public compare(other: Position): number {
         if (this.line !== other.line) {
             return this.line - other.line
@@ -23,6 +40,18 @@ export class Position {
 
 export class Range {
     constructor(public readonly start: Position, public readonly end: Position) {}
+    public withStart(newStart: Position): Range {
+        return new Range(newStart, this.end)
+    }
+    public withEnd(newEnd: Position): Range {
+        return new Range(this.start, newEnd)
+    }
+    public isZeroWidth(): boolean {
+        return this.start.compare(this.end) === 0
+    }
+    public isOverlapping(other: Range): boolean {
+        return this.start.isSmallerOrEqual(other.start) && this.end.isGreater(other.start)
+    }
     public isSingleLine(): boolean {
         return this.start.line === this.end.line
     }
@@ -31,16 +60,29 @@ export class Range {
         if (byStart !== 0) {
             return byStart
         }
-        return this.end.compare(other.end)
+        // Both ranges have the same start position, sort by inverse end
+        // position so that the longer range appears first. The motivation for
+        // using inverse order is so that we handle the larger range first when
+        // dealing with overlapping ranges.
+        return -this.end.compare(other.end)
     }
 }
 
 export class Occurrence {
-    public range: Range
-    public kind?: SyntaxKind
+    constructor(public readonly range: Range, public readonly kind?: SyntaxKind) {}
 
-    constructor(occ: JsonOccurrence) {
-        this.range = new Range(
+    public withStartPosition(newStartPosition: Position): Occurrence {
+        return this.withRange(this.range.withStart(newStartPosition))
+    }
+    public withEndPosition(newEndPosition: Position): Occurrence {
+        return this.withRange(this.range.withEnd(newEndPosition))
+    }
+    public withRange(newRange: Range): Occurrence {
+        return new Occurrence(newRange, this.kind)
+    }
+
+    public static fromJson(occ: JsonOccurrence): Occurrence {
+        const range = new Range(
             new Position(occ.range[0], occ.range[1]),
             // Handle 3 vs 4 length meaning different things
             occ.range.length === 3
@@ -50,13 +92,78 @@ export class Occurrence {
                   new Position(occ.range[2], occ.range[3])
         )
 
-        this.kind = occ.syntaxKind
+        return new Occurrence(range, occ.syntaxKind)
     }
-    public static fromJson(json: string): Occurrence[] {
-        const jsonOccurrences = (JSON.parse(json) as JsonDocument).occurrences ?? []
-        const occurrences = jsonOccurrences.map(occ => new Occurrence(occ))
-        return occurrences.sort((a, b) => a.range.compare(b.range))
+    public static fromInfo(info: DocumentInfo): Occurrence[] {
+        const sortedSingleLineOccurrences = parseJsonOccurrencesIntoSingleLineOccurrences(info)
+        return nonOverlappingOccurrences(sortedSingleLineOccurrences)
     }
+}
+
+// Converts an array of potentially overlapping occurrences into an array of
+// non-overlapping occurrences.  The most narrow occurrence "wins", meaning that
+// when two ranges overlap, we pick the syntax kind of the occurrence with the
+// shortest distance between start/end.
+function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
+    // NOTE: we can't guarantee that the occurrences are sorted from the server
+    // or after splitting multiline occurrences into single-line occurrences.
+    const stack: Occurrence[] = occurrences.sort((a, b) => a.range.compare(b.range)).reverse()
+    const result: Occurrence[] = []
+    const pushResult = (occ: Occurrence): void => {
+        if (!occ.range.isZeroWidth()) {
+            result.push(occ)
+        }
+    }
+    while (true) {
+        const current = stack.pop()
+        if (!current) {
+            break
+        }
+        const next = stack.pop()
+        if (next) {
+            if (current.range.isOverlapping(next.range)) {
+                pushResult(current.withEndPosition(next.range.start))
+                stack.push(current.withStartPosition(next.range.end))
+            } else {
+                pushResult(current)
+            }
+            stack.push(next)
+        } else {
+            pushResult(current)
+        }
+    }
+    return result.sort((a, b) => a.range.compare(b.range))
+}
+
+// Returns a list of occurrences that are guaranteed to only consiste of
+// single-line ranges.  A multiline occurrence gets split into multiple
+// occurrences where each range encloses a single line.
+function parseJsonOccurrencesIntoSingleLineOccurrences(info: DocumentInfo): Occurrence[] {
+    if (!info.lsif) {
+        return []
+    }
+
+    const jsonOccurrences = (JSON.parse(info.lsif) as JsonDocument).occurrences ?? []
+    const lines = info.content.split(/\r?\n/g)
+    const result: Occurrence[] = []
+    for (const jsonOccurrence of jsonOccurrences) {
+        const occurrence = Occurrence.fromJson(jsonOccurrence)
+        if (occurrence.range.isSingleLine()) {
+            result.push(occurrence)
+            continue
+        }
+        for (let line = occurrence.range.start.line; line <= occurrence.range.end.line; line++) {
+            const startCharacter = line === occurrence.range.start.line ? occurrence.range.start.character : 0
+            const endCharacter =
+                line === occurrence.range.end.line ? occurrence.range.end.character : lines[line].length
+            const singleLineOccurrence = new Occurrence(
+                new Range(new Position(line, startCharacter), new Position(line, endCharacter)),
+                occurrence.kind
+            )
+            result.push(singleLineOccurrence)
+        }
+    }
+    return result
 }
 
 // This is copy & pasted from the enum defined in lsif.proto.

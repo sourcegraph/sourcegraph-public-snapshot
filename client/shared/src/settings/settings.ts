@@ -20,7 +20,6 @@ export interface IClient {
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
-        enableFastResultLoading?: boolean
         batchChangesExecution?: boolean
         showSearchContext?: boolean
         showSearchContextManagement?: boolean
@@ -37,6 +36,7 @@ export interface Settings {
         enableGoImportsSearchQueryTransform?: boolean
         enableLegacyExtensions?: boolean
         enableLazyFileResultSyntaxHighlighting?: boolean
+        enableMergedFileSymbolSidebar?: boolean
     }
     [key: string]: any
 
