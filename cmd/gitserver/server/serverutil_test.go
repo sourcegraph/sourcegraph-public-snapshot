@@ -30,7 +30,7 @@ func TestGetTlsExternal(t *testing.T) {
 			},
 		})
 
-		tls := getTlsExternal()
+		tls := getTlsExternalDoNotInvoke()
 
 		if tls.SSLNoVerify {
 			t.Error("expected SSLNoVerify to be false, but got true")
