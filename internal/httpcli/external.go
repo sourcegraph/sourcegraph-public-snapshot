@@ -56,7 +56,8 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func (t *externalTransport) update(ctx context.Context, config *schema.TlsExternal) *http.Transport {
-	tr, ctx := trace.New(ctx, "externalTransport", "update")
+	var tr *trace.Trace
+	tr, ctx = trace.New(ctx, "externalTransport", "update")
 	defer tr.Finish()
 
 	t.mu.Lock()
