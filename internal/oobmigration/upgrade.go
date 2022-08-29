@@ -13,23 +13,14 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 
 	intervals := make([]migrationInterval, 0, len(migrations))
 	for _, m := range migrations {
-		if m.DeprecatedVersionMajor == nil {
-			continue
-		}
+		if m.DeprecatedVersionMajor != nil {
+			introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
+			deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
 
-		introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
-		if CompareVersions(introduced, to) == VersionOrderAfter {
-			// Skip migrations introduced after the target instance version
-			continue
+			if CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) != VersionOrderAfter {
+				intervals = append(intervals, migrationInterval{m.ID, introduced, deprecated})
+			}
 		}
-
-		deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
-		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) != VersionOrderAfter) {
-			// Skip migrations not deprecated within the the instance upgrade interval
-			continue
-		}
-
-		intervals = append(intervals, migrationInterval{m.ID, introduced, deprecated})
 	}
 
 	// Choose a minimal set of versions that intersect all migration intervals. These will be the
