@@ -265,7 +265,7 @@ var invalidQueryMsg = "Grouping is disabled because the search query is not vail
 var fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
 var authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
 var cgInvalidQueryMsg = "Grouping by capture group is only available for regex searches that contain a capturing group."
-var cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or negation."
+var cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
 var cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
 
 func canAggregateByRepo(searchQuery, patternType string) (bool, *string, error) {
