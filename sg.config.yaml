@@ -420,7 +420,8 @@ commands:
       env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
-      JAEGER_DISABLED: false
+      JAEGER_DISABLED: true
+      OPENTELEMETRY_DISABLED: false
       GOGC: 25
 
   zoekt-web-0:
@@ -804,6 +805,7 @@ commandsets:
       - minio
       - codeintel-worker
       - codeintel-executor
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -903,6 +905,7 @@ commandsets:
       - docker
     commands:
       - jaeger
+      - otel-collector
       - prometheus
       - grafana
       - postgres_exporter

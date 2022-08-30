@@ -7,10 +7,12 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log/logtest"
 	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
 func TestResetter(t *testing.T) {
+	logger := logtest.Scoped(t)
 	store := storemocks.NewMockStore()
 	clock := glock.NewMockClock()
 	options := ResetterOptions{
@@ -23,7 +25,7 @@ func TestResetter(t *testing.T) {
 		},
 	}
 
-	resetter := newResetter(store, options, clock)
+	resetter := newResetter(logger, store, options, clock)
 	go func() { resetter.Start() }()
 	clock.BlockingAdvance(time.Second)
 	resetter.Stop()

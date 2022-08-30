@@ -393,6 +393,28 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
 			autogold.Want("capture match respects case:yes", map[string]int{}),
 		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python2.7"),
+					contentMatch("myRepo", "file2.go", 1, "python2.8 python2.9"),
+				},
+			},
+			`python([0-9])\.([0-9])`,
+			autogold.Want("only get values from first capture group", map[string]int{"2": 4}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "2.7"),
+					contentMatch("myRepo", "file2.go", 1, "2.9"),
+				},
+			},
+			`([0-9]\.[0-9])`,
+			autogold.Want("whole match only", map[string]int{"2.7": 1, "2.9": 1}),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
