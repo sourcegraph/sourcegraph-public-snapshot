@@ -199,7 +199,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     if (collapsedSections) {
         body = (
             <>
-                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && (
+                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && props.disableProactiveSearchAggregations !== undefined && (
                     <SearchSidebarSection
                         sectionId={SectionID.GROUPED_BY}
                         className={styles.item}
