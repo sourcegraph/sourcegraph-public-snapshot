@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -44,7 +44,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	h := ObservedHandler(
 		logger,
 		NewHandlerMetrics(),
-		opentracing.NoopTracer{},
+		trace.NewNoopTracerProvider(),
 	)(s.Handler())
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
