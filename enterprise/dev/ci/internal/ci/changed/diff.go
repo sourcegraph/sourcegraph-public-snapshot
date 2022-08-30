@@ -86,6 +86,11 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, "dev/ci/yarn-test.sh") {
 			diff |= Client
 		}
+		// dev/release contains a nodejs script that doesn't have tests but needs to be
+		// linted with Client linters
+		if strings.HasPrefix(p, "dev/release/") {
+			diff |= Client
+		}
 
 		// Affects GraphQL
 		if strings.HasSuffix(p, ".graphql") {
@@ -101,11 +106,7 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 
 		// Affects docs
-		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
-			diff |= Docs
-		}
-		// dev/release contains a nodejs script that doesn't have tests but needs to be linted
-		if strings.HasPrefix(p, "dev/release/") {
+		if strings.HasPrefix(p, "doc/") || strings.HasSuffix(p, ".md") {
 			diff |= Docs
 		}
 
@@ -143,7 +144,7 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, ".sh") {
 			diff |= Shell
 		}
-
+		// Read the file to check if it is secretly a shell script
 		f, err := os.Open(p)
 		if err == nil {
 			defer f.Close()
