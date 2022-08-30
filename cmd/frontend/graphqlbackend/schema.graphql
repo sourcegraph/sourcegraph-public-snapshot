@@ -5777,11 +5777,19 @@ type Site implements SettingsSubject {
         Returns users for the given lastActive enum period.
         When omitted does NOT apply and returns for all period available.
         """
-        lastActivePeriod: SiteUsersLastActivePeriod
+        lastActiveAt: SiteUsersDateRangeInput
         """
         Returns either deleted or not deleted users. Returns all users when omitted.
         """
-        deleted: Boolean
+        deletedAt: SiteUsersDateRangeInput
+        """
+        Returns users who where created within a given date time range.
+        """
+        createdAt: SiteUsersDateRangeInput
+        """
+        Returns users whose events count within a given range.
+        """
+        eventsCount: SiteUsersNumberRangeInput
     ): SiteUsers!
 
     """
@@ -6473,13 +6481,39 @@ enum SiteUserOrderBy {
 }
 
 """
-SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
 """
-enum SiteUsersLastActivePeriod {
-    ALL
-    TODAY
-    THIS_WEEK
-    THIS_MONTH
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
+}
+
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
+input SiteUsersNumberRangeInput {
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
 }
 
 """
@@ -6495,9 +6529,13 @@ type SiteUsers {
     """
     nodes(
         """
-        Returns the first n users from the list.
+        Returns the "limit" number users from the list.
         """
-        first: Int
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
         """
         Returns users ordered by a given column.
         """
