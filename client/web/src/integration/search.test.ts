@@ -336,7 +336,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-search-button', { visible: true })
             // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
-            await driver.page.keyboard.type(' hello', { delay: 50 })
+            await driver.page.keyboard.type(' hello', { delay: 500 })
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
