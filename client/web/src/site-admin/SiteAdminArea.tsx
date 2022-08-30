@@ -1,7 +1,8 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
+import { isEqual } from 'lodash'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 
@@ -22,6 +23,7 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { RouteDescriptor } from '../util/contributions'
 
+import { overviewGroup } from './sidebaritems'
 import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
@@ -73,12 +75,12 @@ interface SiteAdminAreaProps
 export const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Analytics',
-        icon: ChartLineIcon,
+        icon: ChartLineVariantIcon,
     },
     items: [
         {
             label: 'Overview',
-            to: '/site-admin/analytics',
+            to: '/site-admin/',
             exact: true,
         },
         {
@@ -104,6 +106,10 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Extensions',
             to: '/site-admin/analytics/extensions',
+        },
+        {
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
         },
         {
             label: 'Code insights (soon)',
@@ -154,7 +160,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/analytics',
+        path: '/',
         render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
         exact: true,
     },
@@ -173,10 +179,13 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
 
     const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
-    const adminSideBarGroups = useMemo(
-        () => (!isAdminAnalyticsDisabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
-        [isAdminAnalyticsDisabled, props.sideBarGroups]
-    )
+    const adminSideBarGroups = useMemo(() => {
+        if (isAdminAnalyticsDisabled) {
+            return props.sideBarGroups
+        }
+        return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
+    }, [isAdminAnalyticsDisabled, props.sideBarGroups])
+
     const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
         isAdminAnalyticsDisabled,
         props.routes,
