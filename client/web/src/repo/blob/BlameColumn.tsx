@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
@@ -32,7 +32,13 @@ export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements,
     */
     const [cells, setCells] = React.useState<[HTMLTableCellElement, BlameHunk | undefined][]>([])
 
-    useEffect(() => {
+    /*
+        `BlameColumn` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
+        after mount/decoration updates, but before the browser has painted DOM updates.
+        This prevents users from seeing inconsistent states where changes handled by React have been
+        painted, but DOM manipulation handled by these effects are painted on the next tick.
+     */
+    useLayoutEffect(() => {
         const addedCells: [HTMLTableCellElement, BlameHunk | undefined][] = []
 
         const cleanup = (): void => {
