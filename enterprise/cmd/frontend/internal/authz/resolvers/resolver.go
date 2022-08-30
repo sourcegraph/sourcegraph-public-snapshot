@@ -276,7 +276,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	}
 
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		log.Debug("checking license for explicit permissins api...")
+		log.Error("checking license for explicit permissins api...")
 		return nil, err
 	}
 
