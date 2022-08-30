@@ -3,23 +3,23 @@ import { FC, HTMLAttributes } from 'react'
 import classNames from 'classnames'
 
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchAggregationModeAvailability } from '../../../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 
-interface AggregationModeControlsProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {
+interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
     mode: SearchAggregationMode | null
     loading: boolean
     availability?: SearchAggregationModeAvailability[]
     size?: 'sm' | 'lg'
     onModeChange: (nextMode: SearchAggregationMode) => void
+    onModeHover: (aggregationMode: SearchAggregationMode, available: boolean) => void
 }
 
 export const AggregationModeControls: FC<AggregationModeControlsProps> = props => {
-    const { mode, loading, availability = [], onModeChange, size, className, telemetryService, ...attributes } = props
+    const { mode, loading, availability = [], size, className, onModeChange, onModeHover, ...attributes } = props
 
     const availabilityGroups = availability.reduce((store, availability) => {
         store[availability.mode] = availability
@@ -43,9 +43,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
     }
 
     const handleModeHover = (aggregationMode: SearchAggregationMode): void => {
-        if (!isModeAvailable(aggregationMode)) {
-            telemetryService.log(`GroupResults${aggregationMode}DisabledHover`)
-        }
+        onModeHover(aggregationMode, isModeAvailable(aggregationMode))
     }
 
     return (

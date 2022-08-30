@@ -65,7 +65,7 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     loading: boolean
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
-    onBarLinkClick?: (query: string) => void
+    onBarLinkClick?: (query: string, barIndex: number) => void
     onBarHover?: () => void
 }
 
@@ -124,9 +124,9 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     }
 
     const missingCount = getOtherGroupCount(data)
-    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
+    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum, index: number): void => {
         event.preventDefault()
-        onBarLinkClick?.(getLink(datum))
+        onBarLinkClick?.(getLink(datum), index)
     }
 
     return (
