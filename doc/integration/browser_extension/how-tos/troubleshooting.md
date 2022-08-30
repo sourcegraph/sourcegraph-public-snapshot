@@ -17,7 +17,7 @@ Try the following:
 
 In rare cases, Chrome can get into the state where the option to **Enable Sourcegraph on this domain** is not available when right-clicking on the extension icon. One fix we've observed is to toggle the site access from on, to off, then on again (see below).
 
-![Toggle site access for browser extension ](https://sourcegraphstatic.com/ToggleSiteAccess.gif)
+![Toggle site access for browser extension](https://sourcegraphstatic.com/ToggleSiteAccess.gif)
 
 If that still doesn't work, viewing the console and network activity of the extension is the next step.
 
