@@ -25,11 +25,11 @@ type canAggregateBySuite struct {
 	canAggregateByFunc canAggregateBy
 }
 
-func safeString(s *string) string {
-	if s == nil {
+func safeReason(r *notAvailableReason) string {
+	if r == nil {
 		return ""
 	}
-	return *s
+	return r.reason
 }
 
 func (suite *canAggregateBySuite) Test_canAggregateBy() {
@@ -38,7 +38,7 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			if tc.patternType == "" {
 				tc.patternType = "literal"
 			}
-			canAggregate, reason, err := suite.canAggregateByFunc(tc.query, tc.patternType)
+			canAggregate, reasonNA, err := suite.canAggregateByFunc(tc.query, tc.patternType)
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
@@ -49,8 +49,8 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
 			}
-			if !strings.EqualFold(safeString(reason), tc.reason) {
-				t.Errorf("expected reason to be %v, got %v", tc.reason, safeString(reason))
+			if !strings.EqualFold(safeReason(reasonNA), tc.reason) {
+				t.Errorf("expected reason to be %v, got %v", tc.reason, safeReason(reasonNA))
 			}
 		})
 	}
