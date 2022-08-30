@@ -314,11 +314,12 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			fields := append(make([]log.Field, 0, 5), // preallocate some space
 				log.String("host", r.URL.Host),
 				log.String("path", r.URL.Path),
-				log.Duration("duration", time.Since(start)),
-				log.Error(err))
-			// Response may be nil sometimes it seems
+				log.Duration("duration", time.Since(start)))
 			if resp != nil {
 				fields = append(fields, log.Int("code", resp.StatusCode))
+			}
+			if err != nil {
+				fields = append(fields, log.Error(err))
 			}
 			// Get fields from NewRetryPolicy
 			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
