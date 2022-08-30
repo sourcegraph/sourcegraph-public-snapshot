@@ -458,6 +458,32 @@ func TestLoggingMiddleware(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("log on error", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			func(c *http.Client) error {
+				c.Transport = &notFoundTransport{} // returns an error
+				return nil
+			},
+		).Doer()
+
+		resp, err := cli.Do(req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
+		entry := logEntries[1]
+		assert.Contains(t, entry.Scope, "httpcli")
+		assert.NotEmpty(t, entry.Fields["error"])
+	})
+
 	t.Run("log NewRetryPolicy", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 
