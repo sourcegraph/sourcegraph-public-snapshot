@@ -32,6 +32,26 @@
     overflow: auto;
 }
 
+.aggregation-error-container {
+    :global(.theme-dark) & rect {
+        fill: var(--gray-09);
+    }
+
+    :global(.theme-light) & rect {
+        fill: var(--gray-03);
+    }
+
+    // Simple UI mode theme
+    :global(.core-workflow-improvements-enabled) & {
+        :global(.theme-dark) & rect {
+            fill: var(--gray-11);
+        }
+
+        :global(.theme-light) & rect {
+            fill: var(--gray-02);
+        }
+    }
+}
 // Wrapper-container for custom search availability error message UI
 .error-message-layout {
     padding: 0 0.5rem;
@@ -43,29 +63,30 @@
     display: flex;
     flex-direction: column;
 
-    :global(.theme-dark) & {
-        background-color: rgba(20, 23, 31, 0.9);
-    }
-
-    :global(.theme-light) & {
-        background-color: rgba(249, 250, 251, 0.9);
-    }
-
-    // Simple UI mode theme
-    :global(.core-workflow-improvements-enabled) & {
-        :global(.theme-dark) & {
-            background-color: rgba(14, 16, 22, 0.9);
-        }
-
-        :global(.theme-light) & {
-            background-color: rgba(255, 255, 255, 0.92);
-        }
-    }
+    //:global(.theme-dark) & {
+    //    background-color: rgba(20, 23, 31, 0.9);
+    //}
+    //
+    //:global(.theme-light) & {
+    //    background-color: rgba(249, 250, 251, 0.9);
+    //}
+    //
+    //// Simple UI mode theme
+    //:global(.core-workflow-improvements-enabled) & {
+    //    :global(.theme-dark) & {
+    //        background-color: rgba(14, 16, 22, 0.9);
+    //    }
+    //
+    //    :global(.theme-light) & {
+    //        background-color: rgba(255, 255, 255, 0.92);
+    //    }
+    //}
 }
 
 // Custom search availability error message UI
 .error-message {
     margin: auto;
+    max-width: 500px;
 }
 
 .loading {
@@ -84,7 +105,7 @@
     // zero state block
     padding-bottom: 0.5rem;
 
-    rect {
-        fill: #a6b6d9;
-    }
+    //rect {
+    //    fill: #a6b6d9;
+    //}
 }

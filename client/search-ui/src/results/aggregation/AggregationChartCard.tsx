@@ -87,9 +87,13 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (aggregationError) {
         return (
-            <DataLayoutContainer size={size} className={className}>
+            <DataLayoutContainer
+                data-error-layout={true}
+                size={size}
+                className={classNames(styles.aggregationErrorContainer, className)}
+            >
                 <ZeroStateBarsBackground />
-                <div data-error-layout={true} className={styles.errorMessageLayout}>
+                <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
                         We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />.{' '}
                         <Link to="">Learn more</Link>
