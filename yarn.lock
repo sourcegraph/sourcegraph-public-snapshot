@@ -8433,6 +8433,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-resizable@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "@types/react-resizable@npm:3.0.2"
+  dependencies:
+    "@types/react": "*"
+  checksum: 55d5a90f376cdacb00cb98e95f5ff8ebd8f05e8a033adfba059b2b6a22f29d52d2adc7a22dface005e267e41ad901eaa682e63c7efb8544f5ffc4a2b9e9ed9bb
+  languageName: node
+  linkType: hard
+
 "@types/react-router-dom@npm:^5.3.3":
   version: 5.3.3
   resolution: "@types/react-router-dom@npm:5.3.3"
@@ -28934,6 +28943,7 @@ pvutils@latest:
     "@types/react-circular-progressbar": 1.0.2
     "@types/react-dom": 18.0.2
     "@types/react-grid-layout": 1.3.0
+    "@types/react-resizable": ^3.0.2
     "@types/react-router": ^5.1.18
     "@types/react-router-dom": ^5.3.3
     "@types/reactstrap": 8.4.2
@@ -29113,6 +29123,7 @@ pvutils@latest:
     react-focus-lock: ^2.7.1
     react-grid-layout: 1.3.0
     react-refresh: ^0.10.0
+    react-resizable: ^3.0.4
     react-router: ^5.2.0
     react-router-dom: ^5.2.0
     react-router-dom-v5-compat: ^6.3.0
