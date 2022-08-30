@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -194,6 +195,73 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
 		t.Errorf("unexpected repository identifiers for policies (-want +got):\n%s", diff)
+	}
+}
+
+func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStoreWithoutConfigurationPolicies(t, db)
+	ctx := context.Background()
+
+	query := `
+		INSERT INTO lsif_configuration_policies (
+			id,
+			repository_id,
+			name,
+			type,
+			pattern,
+			repository_patterns,
+			retention_enabled,
+			retention_duration_hours,
+			retain_intermediate_commits,
+			indexing_enabled,
+			index_commit_max_age_hours,
+			index_intermediate_commits
+		) VALUES
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true,  1, true,  true,  1, true),
+			(102, NULL, 'policy 2', 'GIT_TREE', 'cd/', null, false, 2, true,  true,  2, true),
+			(103, NULL, 'policy 3', 'GIT_TREE', 'ef/', null, true,  3, false, false, 3, false),
+			(104, NULL, 'policy 4', 'GIT_TREE', 'gh/', null, false, 4, false, false, 4, false)
+	`
+	if _, err := db.ExecContext(ctx, query); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
+
+	ids := func(policies []shared.ConfigurationPolicy) (ids []int) {
+		for _, policy := range policies {
+			ids = append(ids, policy.ID)
+		}
+
+		return ids
+	}
+
+	// Can return nulls
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{101, 102}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
+	}
+
+	// Returns new batch
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{103, 104}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
+	}
+
+	// Recycles policies by age
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{101, 102, 103}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
+	}
+
+	// Recycles policies by age
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{104, 101, 102}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 }
 
