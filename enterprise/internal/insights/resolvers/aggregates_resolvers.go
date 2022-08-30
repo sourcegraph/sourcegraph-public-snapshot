@@ -34,11 +34,11 @@ const cgMultipleQueryPatternMsg = "Grouping by capture group does not support se
 const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
 
 // Possible reasons that grouping would fail
-const shardTimeoutMsg = "The search was unable to complete in the allowed time."
-const generalTimeoutMsg = "The search was unable to complete in the allowed time."
+const shardTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
+const generalTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
 
 // These should be very rare
-const unknowAggregationModeMsg = "The requested grouping in not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
+const unknowAggregationModeMsg = "The requested grouping is not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
 const unableToModifyQueryMsg = "The search query was unable to be updated to support grouping." // if the query was valid but we were unable to add timeout: & count:all
 const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
 
@@ -436,7 +436,7 @@ func (r *searchAggregationResultResolver) ToSearchAggregationNotAvailable() (gra
 func newSearchAggregationNotAvailableResolver(reason notAvailableReason, mode types.SearchAggregationMode) graphqlbackend.SearchAggregationNotAvailable {
 	return &searchAggregationNotAvailableResolver{
 		reason:     reason.reason,
-		reasonType: string(reason.reasonType),
+		reasonType: reason.reasonType,
 		mode:       mode,
 	}
 }
@@ -444,14 +444,14 @@ func newSearchAggregationNotAvailableResolver(reason notAvailableReason, mode ty
 type searchAggregationNotAvailableResolver struct {
 	reason     string
 	mode       types.SearchAggregationMode
-	reasonType string
+	reasonType types.AggregationNotAvailableReasonType
 }
 
 func (r *searchAggregationNotAvailableResolver) Reason() string {
 	return r.reason
 }
 func (r *searchAggregationNotAvailableResolver) ReasonType() string {
-	return string(r.mode)
+	return string(r.reasonType)
 }
 func (r *searchAggregationNotAvailableResolver) Mode() string {
 	return string(r.mode)
