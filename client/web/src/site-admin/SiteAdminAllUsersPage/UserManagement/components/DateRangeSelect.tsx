@@ -120,7 +120,18 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
             </PopoverTrigger>
             <PopoverContent focusLocked={false}>
                 <Container className="d-flex flex-column">
-                    <div className="d-flex justify-content-start mt-2 mb-2">
+                    {negation && (
+                        <Checkbox
+                            name={negation.label}
+                            id={negation.label}
+                            wrapperClassName={classNames('mb-3', styles.negationCheckbox)}
+                            checked={isNegated}
+                            onChange={event => setIsNegated(event.target.checked)}
+                            label={negation.label}
+                            message={negation.message}
+                        />
+                    )}
+                    <div className="d-flex justify-content-start mb-2">
                         {predefinedDates.map(([start, end, label]) => (
                             <Button
                                 key={label}
@@ -141,17 +152,6 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
                         value={range}
                         onChange={setRange}
                     />
-                    {negation && (
-                        <Checkbox
-                            name={negation.label}
-                            id={negation.label}
-                            wrapperClassName={classNames('mt-1', styles.negationCheckbox)}
-                            checked={isNegated}
-                            onChange={event => setIsNegated(event.target.checked)}
-                            label={negation.label}
-                            message={negation.message}
-                        />
-                    )}
                     <div className="d-flex justify-content-between align-items-start mt-3">
                         <div>
                             <Button

@@ -6,9 +6,9 @@ import {
     mdiArrowRightTop,
     mdiArrowRightBottom,
     mdiChevronDown,
-    mdiClose,
     mdiChevronRight,
     mdiChevronLeft,
+    mdiFilterRemoveOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
@@ -69,6 +69,7 @@ const ColumnFilter: React.FunctionComponent<ColumnFilterProps> = props => {
                 aria-labelledby="Select filter"
                 className="m-0 p-0"
                 value={value}
+                isCustomStyle={true}
                 onChange={value => onChange?.(value.target.value)}
             >
                 {props.options.map(({ label, value }) => (
@@ -221,12 +222,6 @@ export function Table<T>({
                         onNext={onNextPage}
                     />
                 )}
-                {onClearAllFiltersClick && (
-                    <Button onClick={onClearAllFiltersClick} outline={true} variant="secondary">
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiClose} />
-                        Clear filters
-                    </Button>
-                )}
             </div>
             <table className={styles.table}>
                 <thead>
@@ -299,9 +294,20 @@ export function Table<T>({
                     </tr>
                     <tr>
                         {selectable && <th />}
-                        {memoizedColumns.map(({ key, filter }) => (
-                            <th key={key}>{filter && <ColumnFilter {...filter} />}</th>
+                        {columns.map(({ key, filter }) => (
+                            <th key={key} className="pr-2">
+                                {filter && <ColumnFilter {...filter} />}
+                            </th>
                         ))}
+                        <th>
+                            {onClearAllFiltersClick && (
+                                <Tooltip content="Clear filters">
+                                    <Button onClick={onClearAllFiltersClick} className="text-right" display="block">
+                                        <Icon aria-label="Clear filters" svgPath={mdiFilterRemoveOutline} />
+                                    </Button>
+                                </Tooltip>
+                            )}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -471,36 +477,49 @@ const Pagination: React.FunctionComponent<PaginationProps> = ({
     onLimitChange,
     onNext,
     formatLabel = (start: number, end: number, total: number) => `${start}-${end} of ${total}`,
-}) => (
-    <div className={classNames('d-flex justify-content-between align-items-center text-muted', styles.pagination)}>
-        <Button className="mr-2" onClick={onPrevious}>
-            <Icon aria-label="Show previous icon" svgPath={mdiChevronLeft} />
-        </Button>
-        <Popover>
-            <PopoverTrigger as={Text} className="m-0 p-0 cursor-pointer">
-                <Text as="span">{formatLabel(Math.min(offset + 1), Math.min(offset + limit, total), total)}</Text>
-            </PopoverTrigger>
-            <PopoverContent focusLocked={false}>
-                <ul className="list-unstyled mb-0">
-                    {limitOptions?.map(item => (
-                        <Button
-                            className="d-flex cursor-pointer"
-                            key={item.value}
-                            variant="link"
-                            as="li"
-                            outline={true}
-                            onClick={() => onLimitChange(item.value)}
-                        >
-                            <span className={classNames('ml-2', item.value === limit && 'font-weight-bold')}>
-                                {item.label}
-                            </span>
-                        </Button>
-                    ))}
-                </ul>
-            </PopoverContent>
-        </Popover>
-        <Button onClick={onNext}>
-            <Icon aria-label="Show next icon" svgPath={mdiChevronRight} />
-        </Button>
-    </div>
-)
+}) => {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+    return (
+        <div className={classNames('d-flex justify-content-between align-items-center', styles.pagination)}>
+            <Button className="mr-2" onClick={onPrevious}>
+                <Icon aria-label="Show previous icon" svgPath={mdiChevronLeft} />
+            </Button>
+            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                <PopoverTrigger as={Text} className="m-0 p-0 cursor-pointer">
+                    <Text as="span">{formatLabel(Math.min(offset + 1), Math.min(offset + limit, total), total)}</Text>
+                </PopoverTrigger>
+                <PopoverContent focusLocked={false}>
+                    <ul className="list-unstyled mb-0">
+                        {limitOptions?.map(item => (
+                            <Button
+                                className="d-flex cursor-pointer"
+                                key={item.value}
+                                variant="link"
+                                as="li"
+                                outline={true}
+                                onClick={() => {
+                                    onLimitChange(item.value)
+                                    setIsOpen(false)
+                                }}
+                            >
+                                <span
+                                    className={classNames(
+                                        item.value === limit ? 'font-weight-medium' : 'font-weight-normal ml-3'
+                                    )}
+                                >
+                                    {item.value === limit && '✓'} {item.label}
+                                </span>
+                            </Button>
+                        ))}
+                    </ul>
+                </PopoverContent>
+            </Popover>
+            <Button onClick={onNext}>
+                <Icon aria-label="Show next icon" svgPath={mdiChevronRight} />
+            </Button>
+        </div>
+    )
+}
