@@ -15,7 +15,7 @@ import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import { showGitBlameDecorations } from './codemirror/decorations'
+import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
@@ -95,7 +95,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ariaLabel,
         role,
         extensionsController,
-        settingsCascade,
         location,
         history,
         blameHunks,
