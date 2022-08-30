@@ -327,7 +327,7 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			// Gather fields from request context. When adding fields set into context,
 			// make sure to test that the fields get propagated and picked up correctly
 			// in TestLoggingMiddleware.
-			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
 				// Get fields from NewRetryPolicy
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
