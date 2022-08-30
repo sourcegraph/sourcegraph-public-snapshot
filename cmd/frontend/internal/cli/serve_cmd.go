@@ -8,23 +8,21 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
+	"go.opentelemetry.io/otel"
 
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 
 	sglog "github.com/sourcegraph/log"
-
-	sentrylib "github.com/getsentry/sentry-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -36,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/check"
@@ -87,12 +84,6 @@ var (
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
-func init() {
-	// If CACHE_DIR is specified, use that
-	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
-}
-
 // defaultExternalURL returns the default external URL of the application.
 func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	addr := nginxAddr
@@ -139,7 +130,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, sglog.NewSentrySinkWith(
+		sglog.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	hc := &check.HealthChecker{Checks: []check.Check{
@@ -167,7 +162,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	} else {
 		observationContext := &observation.Context{
 			Logger:     logger,
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
@@ -182,10 +177,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}
 
 	// override site config first
-	if err := overrideSiteConfig(ctx, db); err != nil {
+	if err := overrideSiteConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
+	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
 	conf.Init()
 	conf.MustValidateDefaults()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
@@ -195,13 +190,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return errors.Wrap(err, "failed to initialize encryption keyring")
 	}
 
-	if err := overrideGlobalSettings(ctx, db); err != nil {
+	if err := overrideGlobalSettings(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override global settings")
 	}
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
-	if err := overrideExtSvcConfig(ctx, db); err != nil {
+	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override external service config")
 	}
 
@@ -257,7 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		}
 	}
 
-	printConfigValidation()
+	printConfigValidation(logger)
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
@@ -277,7 +272,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
-	goroutine.Go(func() { updatecheck.Start(db) })
+	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
@@ -290,7 +285,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.LicenseResolver,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
-		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 	)

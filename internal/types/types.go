@@ -680,29 +680,6 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
-	rawConfig, err := e.Config.Decrypt(ctx)
-	if err != nil {
-		return api.ExternalService{}, err
-	}
-
-	return api.ExternalService{
-		ID:              e.ID,
-		Kind:            e.Kind,
-		DisplayName:     e.DisplayName,
-		Config:          rawConfig,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		DeletedAt:       e.DeletedAt,
-		LastSyncAt:      e.LastSyncAt,
-		NextSyncAt:      e.NextSyncAt,
-		NamespaceUserID: e.NamespaceUserID,
-		NamespaceOrgID:  e.NamespaceOrgID,
-		Unrestricted:    e.Unrestricted,
-		CloudDefault:    e.CloudDefault,
-	}, nil
-}
-
 // ExternalServices is a utility type with convenience methods for operating on
 // lists of ExternalServices.
 type ExternalServices []*ExternalService
@@ -1210,14 +1187,6 @@ type SiteUsageSummary struct {
 	IntegrationUniquesMonth int32
 	IntegrationUniquesWeek  int32
 	IntegrationUniquesDay   int32
-	ManageUniquesMonth      int32
-	CodeUniquesMonth        int32
-	VerifyUniquesMonth      int32
-	MonitorUniquesMonth     int32
-	ManageUniquesWeek       int32
-	CodeUniquesWeek         int32
-	VerifyUniquesWeek       int32
-	MonitorUniquesWeek      int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and

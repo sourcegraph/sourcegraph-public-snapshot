@@ -640,6 +640,27 @@ test('returns repo:contains.path hovers', () => {
     `)
 })
 
+test('returns repo:has.path hovers', () => {
+    const input = 'repo:has.path(foo)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that contain a **file path** matching the regular expression \`foo\`."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 19
+          }
+        }
+    `)
+})
+
 test('returns repo:contains.file hovers', () => {
     const input = 'repo:contains.file(path:foo)'
     const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
@@ -656,6 +677,69 @@ test('returns repo:contains.file hovers', () => {
             "endLineNumber": 1,
             "startColumn": 6,
             "endColumn": 29
+          }
+        }
+    `)
+})
+
+test('returns repo:has.file hovers', () => {
+    const input = 'repo:has.file(path:foo)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that satisfy the specified \`path:\` and \`content:\` filters. \`path:\` and \`content:\` filters should be regular expressions."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 24
+          }
+        }
+    `)
+})
+
+test('returns repo:has.content hovers', () => {
+    const input = 'repo:has.content(foo)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`foo\`."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 22
+          }
+        }
+    `)
+})
+
+test('returns repo:has.commit.after hovers', () => {
+    const input = 'repo:has.commit.after(yesterday)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that have been committed to since \`yesterday\`."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 33
           }
         }
     `)

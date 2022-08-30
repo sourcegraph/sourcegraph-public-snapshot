@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,7 +27,6 @@ type DBStore interface {
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
 }
 
 type DBStoreShim struct {
@@ -72,7 +72,7 @@ type GitserverClient interface {
 }
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]dbstore.Index, error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]autoindexingShared.Index, error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }
 

@@ -1,9 +1,12 @@
 package querybuilder
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"sort"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 func TestParseQuery(t *testing.T) {
@@ -21,6 +24,16 @@ func TestParseQuery(t *testing.T) {
 			"valid query",
 			"select:file test",
 			false,
+		},
+		{
+			"valid literal query",
+			"select:file i++",
+			false,
+		},
+		{
+			"invalid regexp query submitted as literal",
+			"patterntype:regexp i++",
+			true,
 		},
 	}
 	for _, tc := range testCases {
@@ -72,6 +85,45 @@ func TestParametersFromQueryPlan(t *testing.T) {
 			sort.Strings(parameterStrings)
 			if diff := cmp.Diff(parameterStrings, tc.parameters); diff != "" {
 				t.Errorf("expected %v, got %v", tc.parameters, parameterStrings)
+			}
+		})
+	}
+}
+
+func TestDetectSearchType(t *testing.T) {
+	testCases := []struct {
+		name          string
+		query         string
+		submittedType string
+		searchType    query.SearchType
+	}{
+		{
+			"subitted and query match types",
+			"select:repo test fork:only",
+			"literal",
+			query.SearchTypeLiteral,
+		},
+		{
+			"submit literal with patterntype",
+			"test patterntype:regexp",
+			"literal",
+			query.SearchTypeRegex,
+		},
+		{
+			"submit literal with patterntype",
+			"test patterntype:regexp",
+			"lucky",
+			query.SearchTypeRegex,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			searchType, err := DetectSearchType(tc.query, tc.submittedType)
+			if err != nil {
+				t.Errorf("expected %d, errored: %s", tc.searchType, err.Error())
+			}
+			if tc.searchType != searchType {
+				t.Errorf("expected %d result, got %d", tc.searchType, searchType)
 			}
 		})
 	}

@@ -5,7 +5,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -65,7 +68,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(urn, host, user, password, depotIDs, db), nil
+	return NewProvider(log.Scoped("authzProvider", ""), urn, host, user, password, depotIDs, db), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

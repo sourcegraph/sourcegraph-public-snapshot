@@ -69,6 +69,11 @@ func (w *warning) IsWarning() bool {
 	return true
 }
 
+// Unwrap returns the underlying error of the warning.
+func (w *warning) Unwrap() error {
+	return w.error
+}
+
 // As will return true if the target is of type warning.
 //
 // However, this method is not invoked when `errors.As` is invoked. See note in the docstring of the

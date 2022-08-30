@@ -25,6 +25,8 @@ type operations struct {
 	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
+	getRepoName                     *observation.Operation
+	getRepositoriesForIndexScan     *observation.Operation
 	getRepositoriesMaxStaleAge      *observation.Operation
 	getDirtyRepositories            *observation.Operation
 	setRepositoryAsDirty            *observation.Operation
@@ -62,7 +64,7 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_uploads",
 		metrics.WithLabels("op"),
@@ -73,7 +75,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
@@ -94,6 +96,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
+		getRepoName:                     op("GetRepoName"),
+		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
 		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
 		getDirtyRepositories:            op("GetDirtyRepositories"),
 		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),

@@ -20,7 +20,7 @@ You can quickly try Sourcegraph locally using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.43.0<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.43.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 For more information, see [single-container Docker deployment documentation](admin/deploy/docker-single-container/index.md).

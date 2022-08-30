@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -191,7 +192,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	logger := s.Logger.With(log.Object("ExternalService",
-		log.Int64("id", req.ExternalService.ID), log.String("kind", req.ExternalService.Kind)),
+		log.Int64("id", req.ExternalServiceID)),
 	)
 
 	var sourcer repos.Sourcer
@@ -202,9 +203,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	externalServiceID := req.ExternalServiceID
-	if externalServiceID == 0 {
-		externalServiceID = req.ExternalService.ID
-	}
 
 	// We want to get soft-deleted external services as well, since we do a final
 	// sync when an external service gets deleted.
@@ -229,7 +227,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = externalServiceValidate(ctx, req, src)
+	err = externalServiceValidate(ctx, es[0], src)
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))
 		syncResult := &protocol.ExternalServiceSyncResult{
@@ -255,13 +253,13 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
 		if err != nil {
 			logger.Warn("Handling rate limiter sync", log.Error(err))
 		}
 	}
 
-	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
+	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {
 		logger.Warn("Enqueueing external service sync job", log.Error(err))
 	}
 
@@ -269,8 +267,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
 }
 
-func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSyncRequest, src repos.Source) error {
-	if !req.ExternalService.DeletedAt.IsZero() {
+func externalServiceValidate(ctx context.Context, es *types.ExternalService, src repos.Source) error {
+	if !es.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}

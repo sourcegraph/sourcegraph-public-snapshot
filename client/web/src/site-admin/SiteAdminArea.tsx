@@ -74,6 +74,11 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
+            label: 'Overview',
+            to: '/site-admin/analytics',
+            exact: true,
+        },
+        {
             label: 'Search',
             to: '/site-admin/analytics/search',
         },
@@ -100,11 +105,6 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code insights (soon)',
             to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Overview (soon)',
-            to: '/site-admin/analytics',
-            exact: true,
         },
     ],
 }
@@ -152,7 +152,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
         exact: true,
     },
 ]

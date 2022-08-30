@@ -15,15 +15,14 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
-	sentrylib "github.com/getsentry/sentry-go"
-
+	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -89,7 +88,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	))
 	defer liblog.Sync()
 
 	conf.Init()
@@ -151,7 +154,7 @@ func main() {
 
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	gitserver.RegisterMetrics(db, observationContext)
