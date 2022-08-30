@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -26,6 +26,7 @@ type (
 		svc    *types.ExternalService
 		conn   *schema.OtherExternalServiceConnection
 		client httpcli.Doer
+		logger log.Logger
 	}
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
@@ -37,7 +38,7 @@ type (
 )
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*OtherSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -56,7 +57,7 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	return &OtherSource{svc: svc, conn: &c, client: cli}, nil
+	return &OtherSource{svc: svc, conn: &c, client: cli, logger: logger}, nil
 }
 
 // ListRepos returns all Other repositories accessible to all connections configured
@@ -200,17 +201,19 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 		}
 		// The only required fields are URI and ClonePath
 		if r.URI == "" {
-			return nil, errors.Errorf("repo without URI and/or ClonePath returned from src-expose: %+v", r)
+			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
 		}
 
 		// ClonePath is always set in the new versions of src-cli.
 		// TODO: @varsanojidan Remove this by version 3.45.0 and add it to the check above.
 		if r.ClonePath == "" {
 			if !loggedDeprecationError {
-				log15.Warn("The version of src-cli serving git repositories is deprecated, please upgrade to the latest version.")
+				s.logger.Debug("The version of src-cli serving git repositories is deprecated, please upgrade to the latest version.")
 				loggedDeprecationError = true
 			}
-			r.ClonePath = r.URI + "/.git"
+			if !strings.HasSuffix(r.URI, "/.git") {
+				r.ClonePath = r.URI + "/.git"
+			}
 		}
 
 		// Fields that src-expose isn't allowed to control

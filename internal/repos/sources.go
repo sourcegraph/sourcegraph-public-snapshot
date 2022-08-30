@@ -77,7 +77,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindRustPackages:
 		return NewRustPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
-		return NewOtherSource(ctx, svc, cf)
+		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
