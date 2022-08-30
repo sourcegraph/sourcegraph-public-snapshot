@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
+import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -17,6 +17,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
+import { LuckySearchToggle } from './LuckySearchToggle'
 import { QueryInputToggle } from './QueryInputToggle'
 
 import styles from './Toggles.module.scss'
@@ -120,13 +121,15 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
 
-    const toggleLuckySearch = useCallback((): void => {
-        const newPatternType: SearchPatternType =
-            patternType !== SearchPatternType.lucky ? SearchPatternType.lucky : SearchPatternType.standard
+    const onSelectLuckySearch = useCallback(
+        (enabled: boolean): void => {
+            const newPatternType: SearchPatternType = enabled ? SearchPatternType.lucky : SearchPatternType.standard
 
-        setPatternType(newPatternType)
-        submitOnToggle({ newPatternType })
-    }, [patternType, setPatternType, submitOnToggle])
+            setPatternType(newPatternType)
+            submitOnToggle({ newPatternType })
+        },
+        [setPatternType, submitOnToggle]
+    )
 
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
@@ -151,7 +154,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                             iconSvgPath={mdiFormatLetterCase}
                             interactive={props.interactive}
                             className="test-case-sensitivity-toggle"
-                            activeClassName="test-case-sensitivity-toggle--active"
                             disableOn={[
                                 {
                                     condition:
@@ -178,7 +180,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                             iconSvgPath={mdiRegex}
                             interactive={props.interactive}
                             className="test-regexp-toggle"
-                            activeClassName="test-regexp-toggle--active"
                             disableOn={[
                                 {
                                     condition:
@@ -192,7 +193,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                             <QueryInputToggle
                                 title="Structural search"
                                 className="test-structural-search-toggle"
-                                activeClassName="test-structural-search-toggle--active"
                                 isActive={patternType === SearchPatternType.structural}
                                 onToggle={toggleStructuralSearch}
                                 iconSvgPath={mdiCodeBrackets}
@@ -211,13 +211,10 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     </>
                 )}
                 {showLuckySearch && (
-                    <QueryInputToggle
-                        title="Smart search"
+                    <LuckySearchToggle
                         className="test-smart-search-toggle"
-                        activeClassName="test-smart-search-toggle--active"
                         isActive={patternType === SearchPatternType.lucky}
-                        onToggle={toggleLuckySearch}
-                        iconSvgPath={mdiLightningBolt}
+                        onSelect={onSelectLuckySearch}
                         interactive={props.interactive}
                         disableOn={[
                             {
