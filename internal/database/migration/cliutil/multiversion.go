@@ -151,11 +151,16 @@ func runMigration(
 		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
 
 		if !dryRun {
+			operationType := runner.MigrationOperationTypeTargetedUp
+			if !up {
+				operationType = runner.MigrationOperationTypeTargetedDown
+			}
+
 			operations := make([]runner.MigrationOperation, 0, len(step.schemaMigrationLeafIDsBySchemaName))
 			for schemaName, leafMigrationIDs := range step.schemaMigrationLeafIDsBySchemaName {
 				operations = append(operations, runner.MigrationOperation{
 					SchemaName:     schemaName,
-					Type:           runner.MigrationOperationTypeTargetedUp,
+					Type:           operationType,
 					TargetVersions: leafMigrationIDs,
 				})
 			}
