@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -51,7 +51,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	logger := log.Scoped("codeintel", "codeintel services")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

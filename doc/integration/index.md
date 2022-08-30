@@ -9,9 +9,9 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
   - [GitLab](gitlab.md)
   - [Bitbucket Cloud](bitbucket_cloud.md)
   - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
-  - [Phabricator](phabricator.md)
-  - [AWS CodeCommit](aws_codecommit.md)
-  - [Gitolite](gitolite.md)
+<!--  - [Phabricator](phabricator.md) -->
+<!--  - [AWS CodeCommit](aws_codecommit.md) -->
+<!--  - [Gitolite](gitolite.md) -->
   - [JVM dependencies](jvm.md)
   - [npm dependencies](npm.md)
   - [Python dependencies](python.md)

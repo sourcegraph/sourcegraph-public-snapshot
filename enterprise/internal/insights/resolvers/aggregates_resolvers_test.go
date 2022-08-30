@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -15,6 +16,7 @@ type canAggregateTestCase struct {
 	patternType  string
 	canAggregate bool
 	err          error
+	reason       string
 }
 
 type canAggregateBySuite struct {
@@ -23,13 +25,20 @@ type canAggregateBySuite struct {
 	canAggregateByFunc canAggregateBy
 }
 
+func safeString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func (suite *canAggregateBySuite) Test_canAggregateBy() {
 	for _, tc := range suite.testCases {
 		suite.t.Run(tc.name, func(t *testing.T) {
 			if tc.patternType == "" {
 				tc.patternType = "literal"
 			}
-			canAggregate, err := suite.canAggregateByFunc(tc.query, tc.patternType)
+			canAggregate, reason, err := suite.canAggregateByFunc(tc.query, tc.patternType)
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
@@ -39,6 +48,9 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			}
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
+			}
+			if !strings.EqualFold(safeString(reason), tc.reason) {
+				t.Errorf("expected reason to be %v, got %v", tc.reason, safeString(reason))
 			}
 		})
 	}
@@ -50,6 +62,7 @@ func Test_canAggregateByRepo(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "fork:woo",
 			canAggregate: false,
+			reason:       invalidQueryMsg,
 			err:          errors.Newf("ParseQuery"),
 		},
 	}
@@ -76,17 +89,26 @@ func Test_canAggregateByPath(t *testing.T) {
 		{
 			name:         "cannot aggregate for query with select:repo parameter",
 			query:        "repo:contains.path(README) select:repo",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "select", "repo"),
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for query with type:commit parameter",
 			query:        "insights type:commit",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
+			canAggregate: false,
+		},
+		{
+			name:         "ensure type check is case insensitive ",
+			query:        "insights TYPE:commit",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for invalid query",
 			query:        "insights type:commit fork:test",
 			canAggregate: false,
+			reason:       invalidQueryMsg,
 			err:          errors.Newf("ParseQuery"),
 		},
 	}
@@ -103,16 +125,19 @@ func Test_canAggregateByAuthor(t *testing.T) {
 		{
 			name:         "cannot aggregate for query without parameters",
 			query:        "func(t *testing.T)",
+			reason:       authNotCommitDiffMsg,
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for query with case parameter",
 			query:        "func(t *testing.T) case:yes",
+			reason:       authNotCommitDiffMsg,
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for query with select:repo parameter",
 			query:        "repo:contains.path(README) select:repo",
+			reason:       authNotCommitDiffMsg,
 			canAggregate: false,
 		},
 		{
@@ -131,6 +156,11 @@ func Test_canAggregateByAuthor(t *testing.T) {
 			canAggregate: true,
 		},
 		{
+			name:         "can aggregate for query with cased Type",
+			query:        "repo:contains.path(README) TyPe:diff fix",
+			canAggregate: true,
+		},
+		{
 			name:         "can aggregate for weird query with type:diff select:commit",
 			query:        "type:diff select:commit insights",
 			canAggregate: true,
@@ -138,6 +168,7 @@ func Test_canAggregateByAuthor(t *testing.T) {
 		{
 			name:         "cannot aggregate for invalid query",
 			query:        "type:diff fork:leo",
+			reason:       invalidQueryMsg,
 			canAggregate: false,
 			err:          errors.Newf("ParseQuery"),
 		},
@@ -180,18 +211,21 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			name:         "cannot aggregate for query with non-captured regexp pattern",
 			query:        "\\w+",
 			patternType:  "regexp",
+			reason:       cgInvalidQueryMsg,
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for invalid query",
 			query:        "type:diff fork:leo func(.*)",
 			patternType:  "regexp",
+			reason:       invalidQueryMsg,
 			canAggregate: false,
-			err:          errors.Newf("pattern parsing"),
+			err:          errors.Newf("ParseQuery"),
 		},
 		{
 			name:         "cannot aggregate for select:repo query",
 			query:        "repo:contains.path(README) func(\\w+) select:repo",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "repo"),
 			patternType:  "regexp",
 			canAggregate: false,
 		},
@@ -199,29 +233,41 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			name:         "cannot aggregate for select:file query",
 			query:        "repo:contains.path(README) func(\\w+) select:file",
 			patternType:  "regexp",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "file"),
 			canAggregate: false,
 		},
 		{
 			name:         "cannot for type:repo query",
 			query:        "repo:contains.path(README) func(\\w+) type:repo",
 			patternType:  "regexp",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "repo"),
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for type:path query",
 			query:        "repo:contains.path(README) func(\\w+) type:path",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
+			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "ensure type check is not case sensitive",
+			query:        "repo:contains.path(README) func(\\w+) TyPe:path",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
 			patternType:  "regexp",
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for query with unsupported pattern type",
 			query:        "func(t *testing.T)",
+			reason:       cgInvalidQueryMsg,
 			patternType:  "literal",
 			canAggregate: false,
 		},
 		{
 			name:         "cannot aggregate for query with multiple steps",
 			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
+			reason:       cgMultipleQueryPatternMsg,
 			patternType:  "regexp",
 			canAggregate: false,
 		},
@@ -240,13 +286,12 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 		query       string
 		patternType string
 		want        types.SearchAggregationMode
-		err         error
+		reason      *string
 	}{
 		{
-			name:  "invalid query returns error",
+			name:  "invalid query returns REPO",
 			query: "func fork:leo",
-			want:  "",
-			err:   errors.New("ParseQuery"),
+			want:  types.REPO_AGGREGATION_MODE,
 		},
 		{
 			name:        "literal type query does not return capture group mode",
@@ -319,10 +364,8 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 			if tc.patternType != "" {
 				pt = tc.patternType
 			}
-			mode, err := getDefaultAggregationMode(tc.query, pt)
-			if (err != nil && tc.err == nil) || (err == nil && tc.err != nil) {
-				t.Errorf("expected different error behavior: got %v, want %v", err, tc.err)
-			}
+			mode := getDefaultAggregationMode(tc.query, pt)
+
 			if mode != tc.want {
 				t.Errorf("expected mode %v, got %v", tc.want, mode)
 			}

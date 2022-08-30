@@ -100,6 +100,7 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 // Additional files/migrations may be added to the contents map will not be reflected in this slice for
 // subsequent rewriters.
 var rewriters = []func(schemaName string, version oobmigration.Version, migrationIDs []int, contents map[string]string){
+	rewriteInitialCodeIntelMigration,
 	rewriteInitialCodeinsightsMigration,
 	rewriteCodeinsightsTimescaleDBMigrations,
 	ensureParentMetadataExists,
@@ -108,7 +109,20 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	rewriteUnmarkedPrivilegedMigrations,
 	rewriteUnmarkedConcurrentIndexCreationMigrations,
 	rewriteConcurrentIndexCreationDownMigrations,
+	rewriteRepoStarsProcedure,
 	reorderMigrations,
+}
+
+// rewriteInitialCodeintelMigration renames the initial codeintel migration file to include the expected
+// title of "squashed migration".
+func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeintel" {
+		return
+	}
+
+	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
+		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
+	})
 }
 
 // rewriteInitialCodeinsightsMigration renames the initial codeinsights migration file to include the expected
@@ -183,8 +197,8 @@ func extractPrivilegedQueriesFromSquashedMigrations(_ string, version oobmigrati
 }
 
 var unmarkedPrivilegedMigrationsMap = map[string][]int{
-	"frontend":     {1528395953},
-	"codeintel":    {1000000020},
+	"frontend":     {1528395764, 1528395953},
+	"codeintel":    {1000000003, 1000000020},
 	"codeinsights": {1000000001, 1000000027},
 }
 
@@ -199,7 +213,7 @@ func rewriteUnmarkedPrivilegedMigrations(schemaName string, _ oobmigration.Versi
 }
 
 var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
-	"frontend":     {1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
+	"frontend":     {1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
 	"codeintel":    {1000000009, 1000000010, 1000000011},
 	"codeinsights": {},
 }
@@ -227,6 +241,34 @@ func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _ oobmigrat
 			return strings.ReplaceAll(oldQuery, " CONCURRENTLY", "")
 		})
 	}
+}
+
+// rewriteRepoStarsProcedure rewrites a migration that calls the procedure `set_repo_stars_null_to_zero`,
+// defined in migration 1528395950. This procedure is written in a way that was meant to minimize the
+// affect on the dotcom instance, but does so by breaking out of the parent commit periodically to flush
+// its work in case the migration gets interrupted.
+//
+// Instead of calling this procedure, we are going to issue an equivalent update. Within the migrator
+// we do not care to flush work like this, as we're meant to be a long-running process with exclusive
+// access to the databases.
+//
+// See https://github.com/sourcegraph/sourcegraph/pull/28624.
+func rewriteRepoStarsProcedure(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "frontend" {
+		return
+	}
+
+	mapContents(contents, migrationFilename(1528395950, "up.sql"), func(_ string) string {
+		return `
+			WITH locked AS (
+				SELECT id FROM repo
+				WHERE stars IS NULL
+				FOR UPDATE
+			)
+			UPDATE repo SET stars = 0
+			FROM locked s WHERE repo.id = s.id
+		`
+	})
 }
 
 // reorderMigrations reproduces an explicit (historic) reodering of several migration files. For versions where

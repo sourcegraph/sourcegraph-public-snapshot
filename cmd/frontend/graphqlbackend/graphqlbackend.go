@@ -359,7 +359,6 @@ func NewSchema(
 	license LicenseResolver,
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
-	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
@@ -436,12 +435,6 @@ func NewSchema(
 		}
 	}
 
-	if orgRepositoryResolver != nil {
-		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
-		resolver.OrgRepositoryResolver = orgRepositoryResolver
-		schemas = append(schemas, orgSchema)
-	}
-
 	if notebooks != nil {
 		EnterpriseResolvers.notebooksResolver = notebooks
 		resolver.NotebooksResolver = notebooks
@@ -496,7 +489,6 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
-	OrgRepositoryResolver
 	NotebooksResolver
 	InsightsAggregationResolver
 }
@@ -575,7 +567,6 @@ var EnterpriseResolvers = struct {
 	licenseResolver             LicenseResolver
 	dotcomResolver              DotcomRootResolver
 	searchContextsResolver      SearchContextsResolver
-	orgRepositoryResolver       OrgRepositoryResolver
 	notebooksResolver           NotebooksResolver
 	InsightsAggregationResolver InsightsAggregationResolver
 }{}

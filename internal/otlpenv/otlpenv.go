@@ -18,12 +18,9 @@ func getWithDefault(def string, keys ...string) string {
 	return def
 }
 
-const (
-	// This is a custom default that's also not quite compliant but hopefully close enough (we
-	// use 127.0.0.1 instead of localhost, since there's a linter rule banning localhost).
-	defaultGRPCCollectorEndpoint     = "http://127.0.0.1:4317"
-	defaultHTTPJSONCollectorEndpoint = "http://127.0.0.1:4318"
-)
+// This is a custom default that's also not quite compliant but hopefully close enough (we
+// use 127.0.0.1 instead of localhost, since there's a linter rule banning localhost).
+const defaultGRPCCollectorEndpoint = "http://127.0.0.1:4317"
 
 // GetEndpoint returns the root collector endpoint, NOT per-signal endpoints. We do not
 // yet support per-signal endpoints.

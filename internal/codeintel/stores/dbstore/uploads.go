@@ -1151,25 +1151,6 @@ SET reference_count = lu.reference_count
 FROM locked_uploads lu WHERE lu.id = u.id
 `
 
-// GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
-// non-nil values, a false-valued flag is returned.
-func (s *Store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
-}
-
-// Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
-// that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
-// having pristine database.
-const getOldestCommitDateQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:GetOldestCommitDate
-SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
-`
-
 // UpdateCommitedAt updates the commit date for the given repository.
 func (s *Store) UpdateCommitedAt(ctx context.Context, uploadID int, committedAt time.Time) (err error) {
 	ctx, _, endObservation := s.operations.updateCommitedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{

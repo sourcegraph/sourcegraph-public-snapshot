@@ -12,7 +12,6 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -48,14 +47,11 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
-    /** Render prop for `<SearchUserNeedsCodeHost>`  */
-    renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -86,10 +82,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    authenticatedUser,
     showSearchContext,
     assetsRoot,
-    renderSearchUserNeedsCodeHost,
     platformContext,
     extensionsController,
     hoverifier,
@@ -199,17 +193,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
     return (
         <>
-            <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
-                <div className="align-self-stretch">
-                    {renderSearchUserNeedsCodeHost &&
-                        isSourcegraphDotCom &&
-                        searchContextsEnabled &&
-                        authenticatedUser &&
-                        results?.state === 'complete' &&
-                        results?.results.length === 0 &&
-                        renderSearchUserNeedsCodeHost(authenticatedUser)}
-                </div>
-            </div>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"

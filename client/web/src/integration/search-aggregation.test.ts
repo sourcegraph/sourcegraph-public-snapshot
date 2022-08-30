@@ -6,21 +6,21 @@ import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/sea
 import { GetSearchAggregationResult } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI } from './utils'
 
-const aggregationDefaultMock: GetSearchAggregationResult = {
+const aggregationDefaultMock = (mode: SearchAggregationMode): GetSearchAggregationResult => ({
     searchQueryAggregate: {
         __typename: 'SearchQueryAggregate',
         aggregations: {
             __typename: 'ExhaustiveSearchAggregationResult',
-            mode: SearchAggregationMode.REPO,
+            mode,
             otherGroupCount: 100,
             groups: [
                 {
@@ -76,7 +76,8 @@ const aggregationDefaultMock: GetSearchAggregationResult = {
             },
         ],
     },
-}
+})
+
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'matches',
@@ -144,7 +145,7 @@ describe('Search aggregation', () => {
         })
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
-            GetSearchAggregation: () => aggregationDefaultMock,
+            GetSearchAggregation: ({ mode }) => aggregationDefaultMock(mode ?? SearchAggregationMode.REPO),
         })
         testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
     })
@@ -297,8 +298,11 @@ describe('Search aggregation', () => {
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
 
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
-            await driver.page.waitForSelector('[aria-label="chart content group"] g:nth-child(2) a')
+            await driver.page.waitForSelector(
+                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
+            )
             await driver.page.click(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
             )
