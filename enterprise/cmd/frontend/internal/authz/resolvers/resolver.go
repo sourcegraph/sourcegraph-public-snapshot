@@ -2,12 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -45,6 +45,7 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 			return err
 		}
 
+		fmt.Println("check license - resolver")
 		log15.Error("authz.Resolver.checkLicense", "err", err)
 		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
@@ -63,9 +64,8 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	logger := log.Scoped("SetRepositoryPermissionsForUsers", "")
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		logger.Error("...checking license")
+		fmt.Println("e2e DEBUG - checking license for explicit permissins api... l 68")
 		return nil, err
 	}
 
@@ -137,11 +137,13 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		return nil, err
-	}
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		fmt.Println("1 - debug = FeatureExplicitPermissionsAPI / SetRepositoryPermissionsUnrestricted")
 		return nil, err
 	}
 
@@ -214,15 +216,18 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		return nil, err
-	}
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		fmt.Println("e2e DEBUG - checking license for explicit permissins api... l 229")
+
 		return nil, err
 	}
 
@@ -276,22 +281,16 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	logger := log.Scoped("e2e DEBUG SetRepositoryPermissionsForUsers", "")
-
-	if gqltestutil.MockCheckFeature != nil {
-		logger.Error("... e2e DEBUG - license mock")
-
-		return nil, gqltestutil.MockCheckFeature("explicit-permissions-api")
-	}
-
-	logger.Error("... e2e DEBUG - no mock")
-
-	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		logger.Error("e2e DEBUG - checking license for explicit permissins api...")
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if gqltestutil.MockCheckFeature != nil {
+		fmt.Println("SetRepositoryPermissionsForBitbucketProject - mock - l289")
+		return nil, gqltestutil.MockCheckFeature("explicit-permissions-api")
+	}
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 

@@ -1,6 +1,8 @@
 package gqltestutil
 
 import (
+	"fmt"
+
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -108,6 +110,7 @@ mutation SetRepositoryPermissionsForBitbucketProject($projectKey: String!, $code
 	}
 }
 `
+	fmt.Println("SetRepositoryPermissionsForBitbucketProject")
 	variables := map[string]any{
 		"projectKey":      args.ProjectKey,
 		"codeHost":        graphql.ID(args.CodeHost),
@@ -116,6 +119,7 @@ mutation SetRepositoryPermissionsForBitbucketProject($projectKey: String!, $code
 	}
 	err := c.GraphQL("", query, variables, nil)
 	if err != nil {
+		fmt.Println("SetRepositoryPermissionsForBitbucketProject - err")
 		return errors.Wrap(err, "request GraphQL")
 	}
 	return nil

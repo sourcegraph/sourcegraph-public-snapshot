@@ -30,7 +30,7 @@ func Check(feature Feature) error {
 	}
 
 	if gqltestutil.MockCheckFeature != nil {
-		fmt.Println("...checking if there's a mock for feature 2", feature)
+		fmt.Println("...checking if there's a gqltestutil mock for feature", feature)
 
 		return MockCheckFeature(feature)
 	}
