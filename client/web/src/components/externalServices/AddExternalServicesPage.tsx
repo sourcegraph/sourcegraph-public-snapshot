@@ -4,7 +4,8 @@ import * as H from 'history'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, Button, Link, Alert, H2, H3, Text } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text } from '@sourcegraph/wildcard'
+import { mdiInformation } from '@mdi/js'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -78,6 +79,9 @@ export const AddExternalServicesPage: React.FunctionComponent<
         }
     }
 
+    const tier = "business"
+    const numCodeHosts = 0
+
     return (
         <div className="add-external-services-page mt-3">
             <PageTitle title="Add repositories" />
@@ -132,9 +136,16 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     </div>
                 </Alert>
             )}
-            {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
+            {Object.entries(codeHostExternalServices).filter(([_, externalService]) => externalService.tiers.includes(tier)).map(([id, externalService]) => (
                 <div className={styles.addExternalServicesPageCard} key={id}>
                     <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                </div>
+            ))}
+            <br/>
+            <p><Icon aria-label="Information icon" svgPath={mdiInformation}></Icon> Upgrade to Sourcegraph Enterprise to add repositories from other code hosts.</p>
+            {Object.entries(codeHostExternalServices).filter(([_, externalService]) => !externalService.tiers.includes(tier)).map(([id, externalService]) => (
+                <div className={styles.addExternalServicesPageCard} key={id}>
+                    <ExternalServiceCard to={getAddURL(id)} {...externalService} enabled={false} requiredTier={'enterprise'}/>
                 </div>
             ))}
             {Object.entries(nonCodeHostExternalServices).length > 0 && (
