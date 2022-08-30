@@ -1,4 +1,4 @@
-package dbstore
+package store
 
 import (
 	"context"
@@ -10,12 +10,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestRequestLanguageSupport(t *testing.T) {
+func TestSetRequestLanguageSupport(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	store := testStore(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
 
 	requests := []struct {
 		userID    int
@@ -27,7 +30,7 @@ func TestRequestLanguageSupport(t *testing.T) {
 	}
 	for _, r := range requests {
 		for _, language := range r.languages {
-			if err := store.RequestLanguageSupport(ctx, r.userID, language); err != nil {
+			if err := store.SetRequestLanguageSupport(ctx, r.userID, language); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 		}
@@ -35,7 +38,7 @@ func TestRequestLanguageSupport(t *testing.T) {
 
 	languages := map[int][]string{}
 	for _, r := range requests {
-		userLanguages, err := store.LanguagesRequestedBy(ctx, r.userID)
+		userLanguages, err := store.GetLanguagesRequestedBy(ctx, r.userID)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

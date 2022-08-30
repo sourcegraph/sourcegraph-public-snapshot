@@ -7,11 +7,9 @@
 package mocks
 
 import (
-	"context"
 	"sync"
 
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
 	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -32,15 +30,6 @@ type MockResolver struct {
 	// PoliciesResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method PoliciesResolver.
 	PoliciesResolverFunc *ResolverPoliciesResolverFunc
-	// RequestLanguageSupportFunc is an instance of a mock function object
-	// controlling the behavior of the method RequestLanguageSupport.
-	RequestLanguageSupportFunc *ResolverRequestLanguageSupportFunc
-	// RequestedLanguageSupportFunc is an instance of a mock function object
-	// controlling the behavior of the method RequestedLanguageSupport.
-	RequestedLanguageSupportFunc *ResolverRequestedLanguageSupportFunc
-	// SupportedByCtagsFunc is an instance of a mock function object
-	// controlling the behavior of the method SupportedByCtags.
-	SupportedByCtagsFunc *ResolverSupportedByCtagsFunc
 	// UploadsResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method UploadsResolver.
 	UploadsResolverFunc *ResolverUploadsResolverFunc
@@ -67,21 +56,6 @@ func NewMockResolver() *MockResolver {
 		},
 		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
 			defaultHook: func() (r0 resolvers.PoliciesResolver) {
-				return
-			},
-		},
-		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
-			defaultHook: func(context.Context, int, string) (r0 error) {
-				return
-			},
-		},
-		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
-			defaultHook: func(context.Context, int) (r0 []string, r1 error) {
-				return
-			},
-		},
-		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
-			defaultHook: func(context.Context, string, api.RepoName) (r0 bool, r1 string, r2 error) {
 				return
 			},
 		},
@@ -117,21 +91,6 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.PoliciesResolver")
 			},
 		},
-		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
-			defaultHook: func(context.Context, int, string) error {
-				panic("unexpected invocation of MockResolver.RequestLanguageSupport")
-			},
-		},
-		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
-			defaultHook: func(context.Context, int) ([]string, error) {
-				panic("unexpected invocation of MockResolver.RequestedLanguageSupport")
-			},
-		},
-		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
-			defaultHook: func(context.Context, string, api.RepoName) (bool, string, error) {
-				panic("unexpected invocation of MockResolver.SupportedByCtags")
-			},
-		},
 		UploadsResolverFunc: &ResolverUploadsResolverFunc{
 			defaultHook: func() resolvers.UploadsResolver {
 				panic("unexpected invocation of MockResolver.UploadsResolver")
@@ -155,15 +114,6 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
 			defaultHook: i.PoliciesResolver,
-		},
-		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
-			defaultHook: i.RequestLanguageSupport,
-		},
-		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
-			defaultHook: i.RequestedLanguageSupport,
-		},
-		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
-			defaultHook: i.SupportedByCtags,
 		},
 		UploadsResolverFunc: &ResolverUploadsResolverFunc{
 			defaultHook: i.UploadsResolver,
@@ -566,341 +516,6 @@ func (c ResolverPoliciesResolverFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverPoliciesResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// ResolverRequestLanguageSupportFunc describes the behavior when the
-// RequestLanguageSupport method of the parent MockResolver instance is
-// invoked.
-type ResolverRequestLanguageSupportFunc struct {
-	defaultHook func(context.Context, int, string) error
-	hooks       []func(context.Context, int, string) error
-	history     []ResolverRequestLanguageSupportFuncCall
-	mutex       sync.Mutex
-}
-
-// RequestLanguageSupport delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockResolver) RequestLanguageSupport(v0 context.Context, v1 int, v2 string) error {
-	r0 := m.RequestLanguageSupportFunc.nextHook()(v0, v1, v2)
-	m.RequestLanguageSupportFunc.appendCall(ResolverRequestLanguageSupportFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// RequestLanguageSupport method of the parent MockResolver instance is
-// invoked and the hook queue is empty.
-func (f *ResolverRequestLanguageSupportFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RequestLanguageSupport method of the parent MockResolver instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ResolverRequestLanguageSupportFunc) PushHook(hook func(context.Context, int, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverRequestLanguageSupportFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverRequestLanguageSupportFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-func (f *ResolverRequestLanguageSupportFunc) nextHook() func(context.Context, int, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverRequestLanguageSupportFunc) appendCall(r0 ResolverRequestLanguageSupportFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverRequestLanguageSupportFuncCall
-// objects describing the invocations of this function.
-func (f *ResolverRequestLanguageSupportFunc) History() []ResolverRequestLanguageSupportFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverRequestLanguageSupportFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverRequestLanguageSupportFuncCall is an object that describes an
-// invocation of method RequestLanguageSupport on an instance of
-// MockResolver.
-type ResolverRequestLanguageSupportFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverRequestLanguageSupportFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverRequestLanguageSupportFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// ResolverRequestedLanguageSupportFunc describes the behavior when the
-// RequestedLanguageSupport method of the parent MockResolver instance is
-// invoked.
-type ResolverRequestedLanguageSupportFunc struct {
-	defaultHook func(context.Context, int) ([]string, error)
-	hooks       []func(context.Context, int) ([]string, error)
-	history     []ResolverRequestedLanguageSupportFuncCall
-	mutex       sync.Mutex
-}
-
-// RequestedLanguageSupport delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockResolver) RequestedLanguageSupport(v0 context.Context, v1 int) ([]string, error) {
-	r0, r1 := m.RequestedLanguageSupportFunc.nextHook()(v0, v1)
-	m.RequestedLanguageSupportFunc.appendCall(ResolverRequestedLanguageSupportFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// RequestedLanguageSupport method of the parent MockResolver instance is
-// invoked and the hook queue is empty.
-func (f *ResolverRequestedLanguageSupportFunc) SetDefaultHook(hook func(context.Context, int) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RequestedLanguageSupport method of the parent MockResolver instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ResolverRequestedLanguageSupportFunc) PushHook(hook func(context.Context, int) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverRequestedLanguageSupportFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverRequestedLanguageSupportFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, int) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ResolverRequestedLanguageSupportFunc) nextHook() func(context.Context, int) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverRequestedLanguageSupportFunc) appendCall(r0 ResolverRequestedLanguageSupportFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverRequestedLanguageSupportFuncCall
-// objects describing the invocations of this function.
-func (f *ResolverRequestedLanguageSupportFunc) History() []ResolverRequestedLanguageSupportFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverRequestedLanguageSupportFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverRequestedLanguageSupportFuncCall is an object that describes an
-// invocation of method RequestedLanguageSupport on an instance of
-// MockResolver.
-type ResolverRequestedLanguageSupportFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverRequestedLanguageSupportFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverRequestedLanguageSupportFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ResolverSupportedByCtagsFunc describes the behavior when the
-// SupportedByCtags method of the parent MockResolver instance is invoked.
-type ResolverSupportedByCtagsFunc struct {
-	defaultHook func(context.Context, string, api.RepoName) (bool, string, error)
-	hooks       []func(context.Context, string, api.RepoName) (bool, string, error)
-	history     []ResolverSupportedByCtagsFuncCall
-	mutex       sync.Mutex
-}
-
-// SupportedByCtags delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) SupportedByCtags(v0 context.Context, v1 string, v2 api.RepoName) (bool, string, error) {
-	r0, r1, r2 := m.SupportedByCtagsFunc.nextHook()(v0, v1, v2)
-	m.SupportedByCtagsFunc.appendCall(ResolverSupportedByCtagsFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the SupportedByCtags
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverSupportedByCtagsFunc) SetDefaultHook(hook func(context.Context, string, api.RepoName) (bool, string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SupportedByCtags method of the parent MockResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverSupportedByCtagsFunc) PushHook(hook func(context.Context, string, api.RepoName) (bool, string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverSupportedByCtagsFunc) SetDefaultReturn(r0 bool, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, api.RepoName) (bool, string, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverSupportedByCtagsFunc) PushReturn(r0 bool, r1 string, r2 error) {
-	f.PushHook(func(context.Context, string, api.RepoName) (bool, string, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *ResolverSupportedByCtagsFunc) nextHook() func(context.Context, string, api.RepoName) (bool, string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverSupportedByCtagsFunc) appendCall(r0 ResolverSupportedByCtagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverSupportedByCtagsFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverSupportedByCtagsFunc) History() []ResolverSupportedByCtagsFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverSupportedByCtagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverSupportedByCtagsFuncCall is an object that describes an
-// invocation of method SupportedByCtags on an instance of MockResolver.
-type ResolverSupportedByCtagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 string
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverSupportedByCtagsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverSupportedByCtagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ResolverUploadsResolverFunc describes the behavior when the

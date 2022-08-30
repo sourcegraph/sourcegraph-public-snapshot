@@ -6,6 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -13,6 +14,14 @@ import (
 )
 
 type Resolver interface {
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+
+	// Factory for GitBlobLSIFDataResolver
 	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolver, err error)
 }
 
@@ -34,6 +43,33 @@ func New(svc Service, gitserver GitserverClient, maxIndexSearch, hunkCacheSize i
 		hunkCacheSize:                  hunkCacheSize,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
 	}
+}
+
+func (r *resolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {
+	ctx, _, endObservation := r.operations.getSupportedByCtags.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("repoName", string(repoName))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetSupportedByCtags(ctx, filepath, repoName)
+}
+
+func (r *resolver) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := r.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("userID", userID), log.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (r *resolver) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := r.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetLanguagesRequestedBy(ctx, userID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second
