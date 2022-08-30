@@ -316,6 +316,7 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 				log.String("path", r.URL.Path),
 				log.Int("code", resp.StatusCode),
 				log.Duration("duration", time.Since(start)),
+				log.Error(err),
 			}
 			// From NewRetryPolicy
 			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
