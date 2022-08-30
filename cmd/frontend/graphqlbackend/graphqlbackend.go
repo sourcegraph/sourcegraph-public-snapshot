@@ -454,9 +454,7 @@ func NewSchema(
 	if insightsAggregation != nil {
 		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
 		resolver.InsightsAggregationResolver = insightsAggregation
-		if insights == nil {
-			schemas = append(schemas, insightsSchema)
-		}
+		schemas = append(schemas, insightsAggregationsSchema)
 	}
 
 	return graphql.ParseSchema(
