@@ -53,7 +53,7 @@ func Upgrade(
 			return errors.Newf("invalid range (from=%s >= to=%s)", from, to)
 		}
 
-		// Construct inclusive upgrade range (with knowledge of major upgrades)
+		// Construct inclusive upgrade range (with knowledge of major version changes)
 		versionRange, err := oobmigration.UpgradeRange(from, to)
 		if err != nil {
 			return err
@@ -66,13 +66,15 @@ func Upgrade(
 		if err != nil {
 			return err
 		}
+
 		// Find the relevant schema and data migrations to perform (and in what order)
-		// for the given version range. Perform the upgrade on the configured databases.
+		// for the given version range.
 		plan, err := planMigration(from, to, versionRange, interrupts)
 		if err != nil {
 			return err
 		}
 
+		// Perform the upgrade on the configured databases.
 		return runMigration(
 			ctx,
 			runnerFactory,
