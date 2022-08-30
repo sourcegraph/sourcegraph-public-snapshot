@@ -87,11 +87,9 @@ var planFeatures = map[Plan][]Feature{
 		FeatureCodeInsights,
 	},
 	team: {
-		FeatureBatchChanges,
 		FeatureSSO,
 	},
 	enterprise0: {
-		FeatureBatchChanges,
 		FeatureSSO,
 	},
 
