@@ -16,42 +16,54 @@
     max-height: 26rem;
     max-width: 60rem;
 
+    // Simple UI mode theme
     // The full UI aggregation mode has different from sidebar background colors
     // in different themes and UI search modes (standard, simple) we have to
     // override default sidebar chart styles in order to fit it in the full UI colors.
-    [data-error-layout] {
-        // Simple UI mode theme
-        // Overrides bar zero state colors according to design review
-        // see https://github.com/sourcegraph/sourcegraph/pull/40959#pullrequestreview-1089168869
-        :global(.core-workflow-improvements-enabled) & {
-            :global(.theme-dark) & rect {
-                fill: var(--gray-09);
-            }
-
-            :global(.theme-light) & rect {
-                fill: var(--gray-03);
-            }
+    :global(.core-workflow-improvements-enabled) & {
+        :global(.theme-dark) & rect {
+            fill: var(--gray-09);
         }
 
-        //:global(.theme-dark) & {
-        //    background-color: rgba(20, 23, 31, 0.9);
-        //}
-        //
-        //:global(.theme-light) & {
-        //    background-color: rgba(249, 250, 251, 0.9);
-        //}
-        //
-        //// Simple UI mode theme
-        //:global(.core-workflow-improvements-enabled) & {
-        //    :global(.theme-dark) & {
-        //        background-color: rgba(20, 23, 31, 0.9);
-        //    }
-        //
-        //    :global(.theme-light) & {
-        //        background-color: rgba(249, 250, 251, 0.9);
-        //    }
-        //}
+        :global(.theme-light) & rect {
+            fill: var(--gray-03);
+        }
     }
+
+    //:global(.core-workflow-improvements-enabled) & [data-error-layout] rect {
+    //
+    //    fill: red !important;
+    //
+    //    // Simple UI mode theme
+    //    // Overrides bar zero state colors according to design review
+    //    // see https://github.com/sourcegraph/sourcegraph/pull/40959#pullrequestreview-1089168869
+    //    //:global(.theme-dark) & rect {
+    //    //    fill: var(--gray-09) !important;
+    //    //}
+    //    //
+    //    //:global(.theme-light) & rect {
+    //    //    fill: var(--gray-03) !important;
+    //    //}
+    //
+    //    //:global(.theme-dark) & {
+    //    //    background-color: rgba(20, 23, 31, 0.9);
+    //    //}
+    //    //
+    //    //:global(.theme-light) & {
+    //    //    background-color: rgba(249, 250, 251, 0.9);
+    //    //}
+    //    //
+    //    //// Simple UI mode theme
+    //    //:global(.core-workflow-improvements-enabled) & {
+    //    //    :global(.theme-dark) & {
+    //    //        background-color: rgba(20, 23, 31, 0.9);
+    //    //    }
+    //    //
+    //    //    :global(.theme-light) & {
+    //    //        background-color: rgba(249, 250, 251, 0.9);
+    //    //    }
+    //    //}
+    //}
 }
 
 .list-result {
