@@ -23,7 +23,7 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
+import { AggregationUIMode, GroupResultsPing, useAggregationUIMode } from '../aggregation'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -193,7 +193,9 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const handleGroupedByToggle = useCallback(
         (id: string, open: boolean): void => {
             persistToggleState(id, open)
-            props.telemetryService.log(open ? 'GroupResultsOpenSection' : 'GroupResultsCollapseSection')
+            props.telemetryService.log(
+                open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection
+            )
         },
         [persistToggleState, props.telemetryService]
     )
@@ -216,7 +218,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                                         aria-label="Info icon about aggregation run"
                                         size="md"
                                         svgPath={mdiInformationOutline}
-                                        onMouseEnter={() => props.telemetryService.log('GroupResultsInfoIconHover')}
+                                        onMouseEnter={() => props.telemetryService.log(GroupResultsPing.InfoIconHover)}
                                     />
                                 </Tooltip>
                             </>
