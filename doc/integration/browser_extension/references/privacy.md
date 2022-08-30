@@ -9,7 +9,7 @@ If connected to the **public Sourcegraph.com instance**, Sourcegraph integration
 The browser extension also does not store sensitive data locally. The information stored is restricted to:
 
 - AnonymousUid
--  Feature flags
+- Feature flags
   - Hover alerts
 - Client settings
   - Enable/disable status
