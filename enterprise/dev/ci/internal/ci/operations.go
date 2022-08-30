@@ -221,6 +221,7 @@ func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/vscode -s build:test"),
 		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.Parallelism(20),
 		bk.AutomaticRetry(1),
 	)
 }
