@@ -1,31 +1,22 @@
-import React, { useLayoutEffect, useCallback, useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
-import { BehaviorSubject, ReplaySubject } from 'rxjs'
-
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Position,
-    createRectangle,
-    useObservable,
-    Link,
-} from '@sourcegraph/wildcard'
+import { ReplaySubject } from 'rxjs'
 
 import { BlameHunk } from '../blame/useBlameDecorations'
 
-import styles from './ColumnDecorator.module.scss'
+import { BlameDecoration } from './BlameDecoration'
 
-export interface LineDecoratorProps extends ThemeProps {
+import styles from './BlameColumn.module.scss'
+
+interface ColumnDecoratorProps {
     blameHunks: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
 const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
     [...document.querySelectorAll('table')]
-        .find(table => table.querySelector(`.${styles.decoration}`)) // TODO: use more stable way to the proper code view element
+        .find(table => table.querySelector(`.${styles.decoration}`))
         ?.querySelector(`tr:nth-of-type(${line})`)
 
 const selectRow = (line: number): void => getRowByLine(line)?.classList.add('highlighted')
@@ -34,7 +25,7 @@ const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove
 /**
  * Component that prepends lines of code with attachments set by extensions
  */
-export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, codeViewElements, blameHunks }) => {
+export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements, blameHunks }) => {
     const [cells, setCells] = React.useState<[HTMLTableCellElement, BlameHunk | undefined][]>([])
 
     // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
@@ -117,10 +108,9 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, c
         <>
             {cells.map(([portalRoot, blameHunk], index) =>
                 ReactDOM.createPortal(
-                    <ColumnDecoratorContents
+                    <BlameDecoration
                         line={index + 1}
                         blameHunk={blameHunk}
-                        isLightTheme={isLightTheme}
                         onSelect={selectRow}
                         onDeselect={deselectRow}
                     />,
@@ -131,128 +121,4 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(({ isLightTheme, c
     )
 })
 
-const currentPopoverId = new BehaviorSubject<string | null>(null)
-let timeoutId: NodeJS.Timeout | null = null
-const resetTimeout = (): void => {
-    if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
-    }
-}
-
-const usePopover = ({
-    id,
-    timeout,
-    onOpen,
-    onClose,
-}: {
-    id: string
-    timeout: number
-    onOpen?: () => void
-    onClose?: () => void
-}): {
-    isOpen: boolean
-    open: () => void
-    close: () => void
-    closeWithTimeout: () => void
-    resetCloseTimeout: () => void
-} => {
-    const popoverId = useObservable(currentPopoverId)
-
-    const isOpen = popoverId === id
-    useEffect(() => {
-        if (isOpen) {
-            onOpen?.()
-        }
-
-        return () => {
-            if (isOpen) {
-                onClose?.()
-            }
-        }
-    }, [isOpen, onOpen, onClose])
-
-    const open = useCallback(() => currentPopoverId.next(id), [id])
-
-    const close = useCallback(() => {
-        if (currentPopoverId.getValue() === id) {
-            currentPopoverId.next(null)
-        }
-    }, [id])
-
-    const closeWithTimeout = useCallback(() => {
-        timeoutId = setTimeout(close, timeout)
-    }, [close, timeout])
-
-    return { isOpen, open, close, closeWithTimeout, resetCloseTimeout: resetTimeout }
-}
-
-export const ColumnDecoratorContents: React.FunctionComponent<{
-    line: number
-    blameHunk?: BlameHunk
-    isLightTheme: boolean
-    onSelect?: (line: number) => void
-    onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, isLightTheme, onSelect, onDeselect }) => {
-    const id = line?.toString() || ''
-    const onOpen = useCallback(() => {
-        if (typeof line === 'number' && onSelect) {
-            onSelect(line)
-        }
-    }, [line, onSelect])
-    const onClose = useCallback(() => {
-        if (typeof line === 'number' && onDeselect) {
-            onDeselect(line)
-        }
-    }, [line, onDeselect])
-    const { isOpen, open, close, closeWithTimeout, resetCloseTimeout } = usePopover({
-        id,
-        timeout: 1000,
-        onOpen,
-        onClose,
-    })
-
-    const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen, close, open])
-
-    if (!blameHunk) {
-        return null
-    }
-
-    return (
-        <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
-            <PopoverTrigger
-                as={Link}
-                to={blameHunk.displayInfo.linkURL}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={styles.item}
-                onFocus={open}
-                onBlur={close}
-                onMouseEnter={open}
-                onMouseLeave={closeWithTimeout}
-            >
-                <span
-                    className={styles.contents}
-                    data-line-decoration-attachment-content={true}
-                    data-contents={blameHunk.displayInfo.message}
-                />
-            </PopoverTrigger>
-
-            <PopoverContent
-                targetPadding={createRectangle(0, 0, 8, 8)}
-                position={Position.topStart}
-                focusLocked={false}
-                onMouseEnter={resetCloseTimeout}
-                onMouseLeave={close}
-            >
-                <div>
-                    {blameHunk.displayInfo.displayName} {blameHunk.displayInfo.dateString}
-                    <hr />
-                    {blameHunk.message}
-                </div>
-            </PopoverContent>
-        </Popover>
-    )
-}
-
-ColumnDecorator.displayName = 'ColumnDecorator'
+BlameColumn.displayName = 'BlameColumn'

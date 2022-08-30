@@ -23,10 +23,11 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 
 import { BlameHunk } from '../../blame/useBlameDecorations'
-import { ColumnDecoratorContents } from '../ColumnDecorator'
+import { BlameDecoration } from '../BlameDecoration'
 import { LineDecoratorContents } from '../LineDecorator'
 
-import columnDecoratorStyles from '../ColumnDecorator.module.scss'
+import blameColumnStyles from '../BlameColumn.module.scss'
+import blameDecorationStyles from '../BlameDecoration.module.scss'
 import lineDecoratorStyles from '../LineDecorator.module.scss'
 
 export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
@@ -155,25 +156,18 @@ const getCodeCell = (line: number): HTMLElement | null =>
     document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
 
 /**
- * Widget class for rendering column Sourcegrpah text document decorations inside
- * CodeMirror.
+ * Widget class for rendering column git blame text document decorations inside CodeMirror.
  */
-class ColumnDecoratorMarker extends GutterMarker {
+class BlameDecoratorMarker extends GutterMarker {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
 
-    constructor(
-        public readonly item: BlameHunk | undefined,
-        public readonly isLightTheme: boolean,
-        public readonly line: number
-    ) {
+    constructor(public readonly item: BlameHunk | undefined, public readonly line: number) {
         super()
     }
 
     /* eslint-disable-next-line id-length*/
-    public eq(other: ColumnDecoratorMarker): boolean {
-        // TODO: Find out why gutter markers still flicker when gutter is
-        // redrawn
+    public eq(other: BlameDecoratorMarker): boolean {
         return isEqual(this.item, other.item)
     }
 
@@ -182,10 +176,9 @@ class ColumnDecoratorMarker extends GutterMarker {
             this.container = document.createElement('span')
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
-                <ColumnDecoratorContents
+                <BlameDecoration
                     line={this.line}
                     blameHunk={this.item}
-                    isLightTheme={this.isLightTheme}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
@@ -230,36 +223,7 @@ class ColumnDecoratorMarker extends GutterMarker {
     }
 }
 
-// Needed to make sure column and inline decorations are rendered correctly
-const columnTheme = EditorView.theme({
-    [`.${columnDecoratorStyles.decoration} a`]: {
-        width: '100%',
-    },
-    [`.${lineDecoratorStyles.contents}::before`]: {
-        content: 'attr(data-contents)',
-    },
-    [`.${columnDecoratorStyles.decoration}`]: {
-        padding: '0',
-    },
-    [`.${columnDecoratorStyles.item}`]: {
-        padding: '0 0.75rem',
-    },
-})
-
-/**
- * Facet to allow extensions to provide Sourcegraph text document decorations.
- */
-export const showTextDocumentDecorations = Facet.define<TextDocumentDecorationSpec[], TextDocumentDecorationSpec[]>({
-    combine: decorations => decorations.flat(),
-    compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
-    enables: [
-        ViewPlugin.fromClass(TextDocumentDecorationManager, {
-            decorations: manager => manager.inlineDecorations,
-        }),
-    ],
-})
-
-class GitBlameDecorationManager implements PluginValue {
+class BlameDecorationManager implements PluginValue {
     public inlineDecorations: DecorationSet = Decoration.none
     private gutters: Map<string, { gutter: Extension; items: BlameHunk[] }> = new Map()
     private reset: number | null = null
@@ -303,7 +267,7 @@ class GitBlameDecorationManager implements PluginValue {
         if (!this.gutters.has('blame')) {
             this.gutters.set('blame', {
                 gutter: gutter({
-                    class: columnDecoratorStyles.decoration,
+                    class: blameColumnStyles.decoration,
                     lineMarker: (view, lineBlock) => {
                         const items = this.gutters.get('blame')?.items
                         if (!items) {
@@ -315,14 +279,14 @@ class GitBlameDecorationManager implements PluginValue {
                         if (!lineItems) {
                             return null
                         }
-                        return new ColumnDecoratorMarker(lineItems, !view.state.facet(EditorView.darkTheme), lineNumber)
+                        return new BlameDecoratorMarker(lineItems, lineNumber)
                     },
                     // Without a spacer the whole gutter flickers when the
                     // decorations for the visible lines are re-rendered
                     // TODO: update spacer when decorations change
                     initialSpacer: () => {
                         const hunk = longestColumnDecorations(this.gutters.get('blame')?.items)
-                        return new ColumnDecoratorMarker(hunk, /* value doesn't matter for spacer */ true, 0)
+                        return new BlameDecoratorMarker(hunk, /* value doesn't matter for spacer */ true, 0)
                     },
                     // Markers need to be updated when theme changes
                     lineMarkerChange: update =>
@@ -334,7 +298,6 @@ class GitBlameDecorationManager implements PluginValue {
         } else {
             this.gutters.get('blame')!.items = specs
         }
-        // }
 
         for (const id of this.gutters.keys()) {
             if (!seen.has(id)) {
@@ -348,16 +311,44 @@ class GitBlameDecorationManager implements PluginValue {
 }
 
 /**
+ * Facet to allow extensions to provide Sourcegraph text document decorations.
+ */
+export const showTextDocumentDecorations = Facet.define<TextDocumentDecorationSpec[], TextDocumentDecorationSpec[]>({
+    combine: decorations => decorations.flat(),
+    compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
+    enables: [
+        ViewPlugin.fromClass(TextDocumentDecorationManager, {
+            decorations: manager => manager.inlineDecorations,
+        }),
+        EditorView.theme({
+            [`.${lineDecoratorStyles.contents}::before`]: {
+                content: 'attr(data-contents)',
+            },
+        }),
+    ],
+})
+
+/**
  * Facet to show git blame decorations.
  */
 export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: [
-        ViewPlugin.fromClass(GitBlameDecorationManager, {
+        ViewPlugin.fromClass(BlameDecorationManager, {
             decorations: manager => manager.inlineDecorations,
         }),
         decorationGutters.of([]),
-        columnTheme,
+        EditorView.theme({
+            [`.${blameColumnStyles.decoration} a`]: {
+                width: '100%',
+            },
+            [`.${blameColumnStyles.decoration}`]: {
+                padding: '0',
+            },
+            // [`.${blameDecorationStyles.popoverTrigger}`]: {
+            //     padding: '0 0.75rem',
+            // },
+        }),
     ],
 })

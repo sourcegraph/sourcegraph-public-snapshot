@@ -90,7 +90,7 @@ import { StatusBar } from '../../extensions/components/StatusBar'
 import { BlameHunk } from '../blame/useBlameDecorations'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import { ColumnDecorator } from './ColumnDecorator'
+import { BlameColumn } from './BlameColumn'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
@@ -834,13 +834,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {props.blameHunks && (
-                    <ColumnDecorator
-                        isLightTheme={isLightTheme}
-                        blameHunks={props.blameHunks}
-                        codeViewElements={codeViewElements}
-                    />
-                )}
+                {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
 
                 {iterate(decorations)
                     .map(([line, items]) => {

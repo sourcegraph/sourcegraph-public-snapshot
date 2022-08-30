@@ -1,6 +1,5 @@
 .decoration {
     max-width: 240px;
-    padding: 0 0.75rem;
     background: var(--body-bg);
 
     :global(.top-spacer),
@@ -22,24 +21,5 @@ tr:global(.highlighted) {
 
     > * {
         max-width: 100%;
-    }
-}
-
-.item {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-
-    &:hover {
-        text-decoration: none;
-    }
-}
-
-.contents {
-    white-space: pre;
-    color: var(--text-muted);
-
-    &::before {
-        content: attr(data-contents);
     }
 }
