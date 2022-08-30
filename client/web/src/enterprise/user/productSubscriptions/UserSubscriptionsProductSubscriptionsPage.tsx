@@ -6,10 +6,10 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'

@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
-import { requestGraphQL } from '../../backend/graphql'
 import {
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,

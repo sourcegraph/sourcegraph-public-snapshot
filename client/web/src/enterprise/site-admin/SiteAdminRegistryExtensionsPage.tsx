@@ -9,10 +9,10 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'

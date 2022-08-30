@@ -6,6 +6,7 @@ import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } fro
 import { Subtract } from 'utility-types'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import {
     ActivationCompletionStatus,
     ActivationProps,
@@ -14,7 +15,6 @@ import {
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { queryGraphQL } from '../backend/graphql'
 import { PageRoutes } from '../routes.constants'
 import { logEvent } from '../user/settings/backend'
 

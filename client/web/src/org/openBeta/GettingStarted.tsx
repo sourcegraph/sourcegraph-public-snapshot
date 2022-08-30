@@ -7,11 +7,11 @@ import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { Link, LoadingSpinner, PageHeader, Badge, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     GetStartedPageDataResult,
     GetStartedPageDataVariables,

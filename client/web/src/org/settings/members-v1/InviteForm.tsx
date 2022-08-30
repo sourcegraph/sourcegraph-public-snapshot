@@ -12,7 +12,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { requestGraphQL } from '../../../backend/graphql'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import {

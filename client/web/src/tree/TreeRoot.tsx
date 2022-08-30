@@ -17,6 +17,7 @@ import {
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -26,7 +27,6 @@ import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../backend/features'
-import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'

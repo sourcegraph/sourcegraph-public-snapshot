@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'

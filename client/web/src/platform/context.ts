@@ -3,6 +3,7 @@ import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError, asError, LocalStorageSubject, appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
+import { getWebGraphQLClient, requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -18,7 +19,6 @@ import {
     UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

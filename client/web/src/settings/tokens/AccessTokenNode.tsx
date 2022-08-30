@@ -6,9 +6,9 @@ import { map, mapTo } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { Button, Link } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
     AccessTokenFields,

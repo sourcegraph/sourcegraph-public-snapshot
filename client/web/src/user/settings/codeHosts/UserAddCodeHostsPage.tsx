@@ -3,6 +3,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { useFlagsOverrides } from '@sourcegraph/shared/src/featureFlags/featureFlags'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, H4, Text } from '@sourcegraph/wildcard'
 
@@ -10,7 +11,6 @@ import { queryExternalServices } from '../../../components/externalServices/back
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
 import { SelfHostedCta } from '../../../components/SelfHostedCta'
-import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 import {
     ExternalServiceKind,
     ListExternalServiceFields,

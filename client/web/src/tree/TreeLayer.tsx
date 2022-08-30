@@ -17,11 +17,11 @@ import { FileDecoration } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { getFileDecorations } from '../backend/features'
-import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'

@@ -6,9 +6,9 @@ import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { Badge, Button, Link } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
     DeleteExternalAccountResult,

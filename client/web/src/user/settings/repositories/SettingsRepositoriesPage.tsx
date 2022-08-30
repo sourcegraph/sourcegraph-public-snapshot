@@ -7,6 +7,7 @@ import { catchError, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -22,7 +23,6 @@ import {
     H4,
 } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
     FilteredConnectionFilter,

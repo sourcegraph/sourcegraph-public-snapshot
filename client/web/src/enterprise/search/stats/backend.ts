@@ -2,9 +2,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
-
-import { queryGraphQL } from '../../../backend/graphql'
 
 export const querySearchResultsStats = (query: string): Observable<GQL.ISearchResultsStats & { limitHit: boolean }> =>
     queryGraphQL(

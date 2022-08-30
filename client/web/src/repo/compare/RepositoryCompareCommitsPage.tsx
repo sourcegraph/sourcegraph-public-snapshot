@@ -6,10 +6,10 @@ import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { CardHeader, Card } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { GitCommitFields, Scalars } from '../../graphql-operations'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'

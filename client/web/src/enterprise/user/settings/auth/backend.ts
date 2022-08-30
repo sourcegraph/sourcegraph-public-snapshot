@@ -3,9 +3,9 @@ import { mapTo, map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { requestGraphQL } from '../../../../backend/graphql'
 import {
     ScheduleUserPermissionsSyncResult,
     ScheduleUserPermissionsSyncVariables,

@@ -5,6 +5,8 @@ import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegr
 import * as GQL from '@sourcegraph/shared/src/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     ...window?.context?.xhrHeaders,
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -68,6 +70,8 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
  */
 export const getWebGraphQLClient = memoize(() =>
     getGraphQLClient({
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         isAuthenticated: window.context.isAuthenticatedUser,
         headers: getHeaders(),
     })

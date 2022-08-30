@@ -8,10 +8,10 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 import { Link, Icon } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import {
     CommitAncestorsConnectionFields,

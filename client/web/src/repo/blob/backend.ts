@@ -3,9 +3,9 @@ import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
 
 /**

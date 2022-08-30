@@ -8,11 +8,11 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 
 import { asError, createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { mutateGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable, Link, H2 } from '@sourcegraph/wildcard'
 
-import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'

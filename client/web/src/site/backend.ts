@@ -3,9 +3,9 @@ import { filter, mergeMap, take, tap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { authRequired } from '../auth'
-import { requestGraphQL } from '../backend/graphql'
 import { SiteFlagsResult, SiteFlagsVariables } from '../graphql-operations'
 
 import { SiteFlags } from '.'

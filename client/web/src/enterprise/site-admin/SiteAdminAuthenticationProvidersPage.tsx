@@ -9,7 +9,7 @@ import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

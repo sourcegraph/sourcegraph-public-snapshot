@@ -8,10 +8,10 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { GitBlameResult, GitBlameVariables } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 

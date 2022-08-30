@@ -9,11 +9,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { mutateGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert, Button, useEventObservable, Link, Code, Label, Input } from '@sourcegraph/wildcard'
 
-import { mutateGraphQL } from '../../../../backend/graphql'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {

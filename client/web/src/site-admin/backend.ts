@@ -9,10 +9,10 @@ import {
     isErrorGraphQLResult,
     gql,
 } from '@sourcegraph/http-client'
+import { mutateGraphQL, queryGraphQL, requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     UserRepositoriesResult,
     UserRepositoriesVariables,

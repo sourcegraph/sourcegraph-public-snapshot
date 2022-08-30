@@ -6,10 +6,10 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, useEventObservable, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../../backend/graphql'
 import {
     Scalars,
     SetProductSubscriptionBillingResult,

@@ -5,10 +5,10 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../../../../featureFlags/useFeatureFlag'
 import {
     InsightViewFiltersInput,
     SeriesDisplayOptionsInput,

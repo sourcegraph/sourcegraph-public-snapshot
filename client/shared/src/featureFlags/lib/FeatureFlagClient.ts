@@ -2,8 +2,8 @@ import { iif, Observable, timer } from 'rxjs'
 import { distinctUntilChanged, map, retry, shareReplay, switchMap } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import type { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
-import type { requestGraphQL } from '../../backend/graphql'
 import { EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 

@@ -5,7 +5,7 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 
-import { requestGraphQL } from './backend/graphql'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 /**
  * Always represents the latest state of the currently authenticated user.

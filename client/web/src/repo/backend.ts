@@ -9,6 +9,7 @@ import {
     RepoSeeOtherError,
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
+import { queryGraphQL, requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import {
     makeRepoURI,
     RepoRevision,
@@ -17,7 +18,6 @@ import {
     ResolvedRevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
-import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     ExternalLinkFields,
     RepositoryRedirectResult,

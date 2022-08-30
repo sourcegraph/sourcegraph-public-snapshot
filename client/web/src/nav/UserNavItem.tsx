@@ -3,9 +3,9 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-// eslint-disable-next-line no-restricted-imports
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -27,7 +27,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 

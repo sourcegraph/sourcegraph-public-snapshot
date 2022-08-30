@@ -3,9 +3,9 @@ import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { refreshAuthenticatedUser } from '../auth'
-import { requestGraphQL } from '../backend/graphql'
 import {
     CreateOrganizationResult,
     CreateOrganizationVariables,

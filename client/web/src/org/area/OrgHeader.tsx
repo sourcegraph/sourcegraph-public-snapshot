@@ -8,7 +8,7 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'

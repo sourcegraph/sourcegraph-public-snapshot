@@ -2,9 +2,9 @@ import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
-import { requestGraphQL } from '../../../../backend/graphql'
 import {
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,

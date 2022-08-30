@@ -8,7 +8,7 @@ import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sour
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemDescriptor } from '../../util/contributions'

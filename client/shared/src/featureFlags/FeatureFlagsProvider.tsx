@@ -2,7 +2,7 @@ import React, { createContext, useEffect, useMemo } from 'react'
 
 import { Observable, of, throwError } from 'rxjs'
 
-import { requestGraphQL } from '../backend/graphql'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { FeatureFlagName } from './featureFlags'
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'

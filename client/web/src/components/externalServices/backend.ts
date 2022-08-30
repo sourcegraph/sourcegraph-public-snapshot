@@ -4,9 +4,9 @@ import { map, mapTo } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { requestGraphQL } from '../../backend/graphql'
 import {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,

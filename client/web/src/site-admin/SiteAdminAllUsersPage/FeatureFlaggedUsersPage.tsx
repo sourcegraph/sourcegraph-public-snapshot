@@ -1,4 +1,4 @@
-import { withFeatureFlag } from '../../featureFlags/withFeatureFlag'
+import { withFeatureFlag } from '@sourcegraph/shared/src/featureFlags/withFeatureFlag'
 
 import { UsersManagement } from './UserManagement'
 

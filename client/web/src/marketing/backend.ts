@@ -2,8 +2,8 @@ import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
-import { requestGraphQL } from '../backend/graphql'
 import {
     FetchAllUsersWithSurveyResponsesResult,
     FetchAllUsersWithSurveyResponsesVariables,

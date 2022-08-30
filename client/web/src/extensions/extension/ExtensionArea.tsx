@@ -9,6 +9,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import {
     ConfiguredRegistryExtension,
     splitExtensionID,
@@ -22,7 +23,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'

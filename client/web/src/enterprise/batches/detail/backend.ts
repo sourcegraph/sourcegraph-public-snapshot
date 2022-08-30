@@ -2,9 +2,9 @@ import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
-import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
@@ -455,7 +455,7 @@ export async function reenqueueChangeset(changeset: Scalars['ID']): Promise<Chan
 }
 
 // Because thats the name in the API:
-// eslint-disable-next-line unicorn/prevent-abbreviations
+
 export const gitRefSpecFields = gql`
     fragment GitRefSpecFields on GitRevSpec {
         __typename

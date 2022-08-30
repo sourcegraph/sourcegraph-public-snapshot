@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

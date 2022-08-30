@@ -5,10 +5,10 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { StandardSuggestionSource } from '@sourcegraph/search-ui'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { SearchHistoryQueryResult, SearchHistoryQueryVariables } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 

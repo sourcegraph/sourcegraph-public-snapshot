@@ -8,7 +8,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../../../../../featureFlags/useFeatureFlag'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import {
     GetInsightViewResult,
     GetInsightViewVariables,

@@ -3,9 +3,9 @@ import { map, mapTo, switchMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { mutateGraphQL, queryGraphQL, requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../../../backend/graphql'
 import { DeleteRegistryExtensionResult, DeleteRegistryExtensionVariables, Scalars } from '../../../graphql-operations'
 
 export function deleteRegistryExtensionWithConfirmation(extension: Scalars['ID']): Observable<boolean> {

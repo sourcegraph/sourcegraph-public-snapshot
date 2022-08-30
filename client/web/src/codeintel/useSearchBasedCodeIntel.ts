@@ -7,9 +7,9 @@ import LRU from 'lru-cache'
 import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { getWebGraphQLClient } from '@sourcegraph/shared/src/backend/graphql'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient } from '../backend/graphql'
 import { CodeIntelSearchVariables } from '../graphql-operations'
 
 import { LanguageSpec } from './language-specs/languagespec'

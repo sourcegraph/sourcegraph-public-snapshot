@@ -10,6 +10,7 @@ import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } f
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
@@ -28,7 +29,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'

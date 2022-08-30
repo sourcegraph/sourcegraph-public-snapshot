@@ -3,10 +3,10 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { queryGraphQL, requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
-import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     EventLogsDataResult,
     EventLogsDataVariables,

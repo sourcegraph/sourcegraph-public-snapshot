@@ -9,11 +9,11 @@ import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { LoadingSpinner, useObservable, Alert, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
 
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'

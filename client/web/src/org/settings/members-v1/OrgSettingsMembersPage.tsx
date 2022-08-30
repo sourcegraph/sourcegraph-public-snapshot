@@ -13,7 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { queryGraphQL } from '../../../backend/graphql'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { OrgAreaOrganizationFields } from '../../../graphql-operations'

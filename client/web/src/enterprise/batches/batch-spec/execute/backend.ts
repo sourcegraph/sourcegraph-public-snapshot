@@ -4,9 +4,9 @@ import { map } from 'rxjs/operators'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 
 import { fileDiffFields } from '../../../../backend/diff'
-import { requestGraphQL } from '../../../../backend/graphql'
 import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     BatchSpecWorkspaceByIDResult,

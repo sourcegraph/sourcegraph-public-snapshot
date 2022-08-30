@@ -1,4 +1,4 @@
-import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
+import { withFeatureFlag } from '@sourcegraph/shared/src/featureFlags/withFeatureFlag'
 
 import { Tour, TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'

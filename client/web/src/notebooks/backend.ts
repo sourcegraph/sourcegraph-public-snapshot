@@ -2,9 +2,9 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { requestGraphQL } from '../backend/graphql'
 import {
     CreateNotebookResult,
     CreateNotebookStarResult,

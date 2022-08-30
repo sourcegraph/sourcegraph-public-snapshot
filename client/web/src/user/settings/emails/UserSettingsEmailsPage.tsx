@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../backend/graphql'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, UserEmailsResult, UserEmailsVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { siteFlags } from '../../../site/backend'

@@ -7,10 +7,9 @@ import { catchError, map, startWith, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { RadioButton, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
-
-import { queryGraphQL } from '../../../backend/graphql'
 
 import { ProductPlanPrice } from './ProductPlanPrice'
 
