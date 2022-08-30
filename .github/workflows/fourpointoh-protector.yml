@@ -1,0 +1,32 @@
+name: Sourcegraph 4.0 code freeze
+on:
+  pull_request:
+    types: [ closed, edited, opened, synchronize, ready_for_review, labeled, unlabeled]
+    branches: 
+      # only run on branches targeting the `main` branch.
+      - main
+
+jobs:
+  protect-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check date and labels
+        id: check-date-and-labels
+        run: |
+          has_label="${{contains(github.event.pull_request.labels.*.name, 'i-acknowledge-this-goes-into-4.0')}}"
+          today=$(date +'%Y%m%d%H%M')
+          dday="202209090000"
+
+          if [ "$today" -gt "$dday" ]; then
+            if [ "$has_label" = "true" ]; then
+              echo "✅ Label 'i-acknowledge-this-goes-into-4.0' is present"
+              exit 0
+            else 
+              echo "❌ Label 'i-acknowledge-this-goes-into-4.0' is absent"
+              echo "👉 We're in the Sourcegraph 4.0 code freeze. If you are 100% sure your changes should go in 4.0 or provide no risk to the release 4.0, add the label your PR with 'i-acknowledge-this-goes-into-4.0''"
+              exit 1
+            fi
+          else
+            echo "📅 Not enabled, we're not yet on 2022-09-09 and 4.0 code freeze has not started yet." 
+            exit 0
+          fi

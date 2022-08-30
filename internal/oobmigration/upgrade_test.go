@@ -6,15 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestScheduleMigrationInterrupts(t *testing.T) {
-	migration := func(id, iMajor, iMinor, jMajor, jMinor int) yamlMigration {
-		return yamlMigration{
-			ID:                     id,
-			IntroducedVersionMajor: iMajor, IntroducedVersionMinor: iMinor,
-			DeprecatedVersionMajor: &jMajor, DeprecatedVersionMinor: &jMinor,
-		}
-	}
-
+func TestScheduleMigrationInterruptsUp(t *testing.T) {
 	for _, testCase := range []struct {
 		name       string
 		from, to   Version
@@ -40,10 +32,10 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 				//    32 33 34 35 36 37 38 39 40 41 42 43
 				//       **       **       **       **
 
-				migration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				migration(2 /* introduced = */, 3, 35 /* deprecated = */, 3, 37),
-				migration(3 /* introduced = */, 3, 38 /* deprecated = */, 3, 40),
-				migration(4 /* introduced = */, 3, 41 /* deprecated = */, 3, 43),
+				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
+				testMigration(2 /* introduced = */, 3, 35 /* deprecated = */, 3, 37),
+				testMigration(3 /* introduced = */, 3, 38 /* deprecated = */, 3, 40),
+				testMigration(4 /* introduced = */, 3, 41 /* deprecated = */, 3, 43),
 			},
 			interrupts: []MigrationInterrupt{
 				{Version: Version{3, 33}, MigrationIDs: []int{1}},
@@ -67,12 +59,12 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 				//    32 33 34 35 36 37 38 39 40 41 42 43
 				//       **          **    **       **
 
-				migration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				migration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
-				migration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
-				migration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
-				migration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
-				migration(6 /* introduced = */, 3, 42 /* deprecated = */, 3, 43),
+				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
+				testMigration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
+				testMigration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
+				testMigration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
+				testMigration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
+				testMigration(6 /* introduced = */, 3, 42 /* deprecated = */, 3, 43),
 			},
 			interrupts: []MigrationInterrupt{
 				{Version: Version{3, 33}, MigrationIDs: []int{1, 2}},
@@ -96,11 +88,11 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 				//          34 35 36 37 38 39 40 41
 				//          **       **    **
 
-				migration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				migration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
-				migration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
-				migration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
-				migration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
+				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
+				testMigration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
+				testMigration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
+				testMigration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
+				testMigration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
 			},
 			interrupts: []MigrationInterrupt{
 				{Version: Version{3, 34}, MigrationIDs: []int{2}},
@@ -118,5 +110,13 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 				t.Fatalf("unexpected interrupts (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func testMigration(id, iMajor, iMinor, jMajor, jMinor int) yamlMigration {
+	return yamlMigration{
+		ID:                     id,
+		IntroducedVersionMajor: iMajor, IntroducedVersionMinor: iMinor,
+		DeprecatedVersionMajor: &jMajor, DeprecatedVersionMinor: &jMinor,
 	}
 }

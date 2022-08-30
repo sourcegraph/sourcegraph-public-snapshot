@@ -561,7 +561,7 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                    <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                         <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>

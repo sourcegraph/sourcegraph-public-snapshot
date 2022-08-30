@@ -15,24 +15,27 @@
 
 ## Requirements
 
-[Our sandboxing model](executors.md#how-it-works) requires the executor binary to be run on machines capable of running Linux KVM extensions. This requires bare-metal machines or machines capable of nested virtualization, which is made available by most popular Cloud providers.
+Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](executors.md#how-it-works) to isolate jobs from each other and the host.
+This requires executors to be run on machines capable of running Linux KVM extensions. On the most popular cloud providers, this either means running executors on bare-metal machines or machines capable of nested virtualization.
+
+Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.
 
 ## Installation
 
-Executors operate outside of your Sourcegraph instance and must be run separately from your Sourcegraph server deployment method.
-
-Since they must still be able to reach the Sourcegraph instance in order to dequeue and perform work, requests between the Sourcegraph instance and the executors are authenticated via a shared secret.
-
-That means, in order to deploy executors that can talk to the Sourcegraph instance, you need to do the following:
+In order to deploy executors that can talk to the Sourcegraph instance, you need to do the following:
 
 1. [Configure a shared secret in the Sourcegraph instance](#configure-sourcegraph)
 1. [Run executors](#run-executors)
   - [Using Terraform](#terraform)
   - [Using binaries](#binaries)
-1. [Confirm executors can reach Sourcegraph instance](#confirm-executors-are-working)
-1. Optional: [Configuring auto scaling](#configuring-auto-scaling)
+1. [Confirm executors can reach the Sourcegraph instance](#confirm-executors-are-working)
+1. Optional: [Configure auto scaling](#configuring-auto-scaling)
 
 ### Configure Sourcegraph
+
+Executors must be run separately from your Sourcegraph instance.
+
+Since they must still be able to reach the Sourcegraph instance in order to dequeue and perform work, requests between the Sourcegraph instance and the executors are authenticated via a shared secret.
 
 Before starting any executors, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
 
@@ -40,9 +43,9 @@ Once the access token is set, executors can use that access token to talk to the
 
 ### Run executors
 
-There are two ways to install and run executors:
+There are currently two supported ways to install and run executors:
 
-1. [Using our Terraform modules to provision machines on Google Cloud or AWS that run executors](#terraform)
+1. [Using our Terraform modules to provision infrastructure on Google Cloud or AWS that runs executors](#terraform)
 2. [Downloading and running executor binaries yourself](#binaries)
 
 #### Terraform
@@ -82,28 +85,39 @@ See the [Examples](#examples) for more information on how to configure and deplo
 
 You can also download and run the executor binaries yourself, without using Terraform.
 
-The following dependencies need to be available on the machine on which you want to run the `executor` binary:
+<aside class="warning">
+<p>
+<strong>Caution: This process is currently very manual and might change between releases. We will mature this process as we move towards GA of executors, but for now expect to do manual work for upgrades and for the initial setup.</strong>
+</p>
+</aside>
 
-* Docker
-* git >= v2.26
-* [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
-* [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
-
-You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh) to see how we configure our executor VMs.
+The Sourcegraph-provided executor VM images for Cloud providers contain a lot of things that executors currently expect to be present and configured like outlined in there. For your currently running release of Sourcegraph, please refer to our [install script setting up the machine for executors use](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh) for your Sourcegraph version. This script also handles some security concerns, like configuring iptables, so make sure to follow this script when you derive your own machine setup.
 
 Once dependencies are met, you can download and run executor binaries:
 
 **Step 1:** Confirm that virtualization is enabled
 
-The following command checks whether virtualization is enabled on the machine, which is required for [our sandboxing model](executors.md#how-it-works).
-
-If it prints something other than 0, virtualization is enabled.
+KVM (virtualization) support is required for [our sandboxing model](executors.md#how-it-works) with Firecracker. The following command checks whether virtualization is enabled on the machine (it should print something):
 
 ```bash
-grep -cw vmx /proc/cpuinfo
+$ lscpu | grep Virtualization
+
+Virtualization:      VT-x
 ```
 
-**Step 2:** Download latest binary
+On Ubuntu-based distributions, you can also use the tool `kvm-ok` available in the `cpu-checker` package to reliably validate KVM support on your host:
+
+```bash
+# Install cpu-checker
+$ apt-get update && apt-get install -y cpu-checker
+
+# Check for KVM support
+$ kvm-ok
+INFO: /dev/kvm exists
+KVM acceleration can be used
+```
+
+**Step 2:** Download latest executor binary
 
 Below are the download links for the *insiders* release (`latest`) of executors:
 
@@ -119,42 +133,18 @@ chmod +x executor
 mv executor /usr/local/bin
 ```
 
-**Step 3:** Generate Ignite base image
+**Step 3:** Configure your machine
 
-This creates the base image that Ignite will use when creating new [Firecracker](https://firecracker-microvm.github.io/) microVMs for each job.
+The executor makes a lot assumptions about it's environment today:
+- It has to have a working installation of ignite that is configured
+- and expects the `sourcegraph/ignite-ubuntu` base image for the VMs ready.
+- In addition, we also do some hardening of regular ignite in our pre-built environments to restrict networking further and use up-to-date kernels.
+Until we automate more of this outside of our pre-built images, refer to [the script that our pre-built images use](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh)
+for how we do it. Usually, 95% of this file should be portable to any environment.
 
-```bash
-# Change this to use the version of src-cli that's compatible with your Sourcegraph instance.
-# See this for details: https://github.com/sourcegraph/src-cli#version-compatible-with-your-sourcegraph-instance
-export SRC_CLI_VERSION="3.41.0"
-export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
+**Step 4:** Setup required environment variables and start
 
-# Download Dockerfile and build Docker image
-mkdir -p /tmp/ignite-ubuntu
-curl -sfLo /tmp/ignite-ubuntu/Dockerfile https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/enterprise/cmd/executor/vm-image/ignite-ubuntu/Dockerfile
-docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
-
-# Import Docker image into Ignite
-ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
-
-# Clean up
-docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
-```
-
-**Step 4:** _Optional_: Pre-heat Ignite by importing kernel image
-
-This step imports the kernel image to avoid the executor having to import it when executing the first job.
-
-```bash
-# Change this to match the version of Ignite you're using.
-export IGNITE_VERSION=v0.10.0
-export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
-
-ignite kernel import --runtime docker "${KERNEL_IMAGE}"
-docker pull "weaveworks/ignite:${IGNITE_VERSION}"
-```
-
-**Step 5:** Setup required environment variables
+The executor binary is configured through environment variables. Those need to be passed to it when you start the executor.
 
 | Env var                       | Example value | Description |
 | ------------------------------| ------------- | ----------- |
@@ -169,11 +159,7 @@ export EXECUTOR_FRONTEND_URL=http://sourcegraph.example.com
 export EXECUTOR_FRONTEND_PASSWORD=hunter2hunter2hunter2
 ```
 
-**Step 6:** Start executor
-
-```bash
-/usr/local/bin/executor
-```
+Done! You can start your executor now.
 
 ### Confirm executors are working
 
@@ -193,11 +179,11 @@ The following are complete examples of provisioning _multiple_ executor types us
 - [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/multiple-executors)
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)
 
-#### Example installation
+#### Example step-by-step installation
 
-Let's walk through setting up a single executor VM on GCP and indexing a repository.
+Let's walk through setting up a single executor VM on GCP using the [Google Cloud Terraform Module for Sourcegraph executors](https://github.com/sourcegraph/terraform-google-executors) and indexing a repository.
 
-1. Install Terraform `>= 1.1.5` (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/.tool-versions)):
+1. Install Terraform (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/providers.tf)):
 
 ```
 brew install tfenv
@@ -205,18 +191,18 @@ tfenv install 1.1.5
 tfenv use 1.1.5
 ```
 
-2. Install [`gcloud`](https://cloud.google.com/sdk/docs/install)
+2. Install the [`gcloud CLI`](https://cloud.google.com/sdk/docs/install)
 3. Run `gcloud auth application-default login`
 4. Open your Sourcegraph instance in your browser, click your profile in the top right, click **Site admin**, expand **Configuration**, click **Site configuration**, and set:
   - `"externalURL": "<URL>"` to a URL that is accessible from the GCP VM that will be created later (e.g. a public URL such as `https://sourcegraph.example.com`)
   - `"executors.accessToken": "<new long secret>"` to a new long secret (e.g. `cat /dev/random | base64 | head -c 20`)
   - `"codeIntelAutoIndexing.enabled": true`
-5. Download the [example files](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor) and change these:
+5. Download the [example files directory](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor) and change these terraform variables:
   - `project`: your GCP project name and change `region` and `zone` if needed
   - `executor_sourcegraph_external_url`: this must match `externalURL` you set in your site config
   - `executor_sourcegraph_executor_proxy_password`: this must match `executors.accessToken` you set in your site config
 6. Run `terraform init` to download the Sourcegraph executor modules
-7. Run `terraform apply` and enter "yes" to create the executor VM
+7. Run `terraform apply` and enter "yes" after reviewing the proposed changes to create the executor VM
 8. Go back to the site admin page, expand **Maintenance**, click **Executors**, and check to see if your executor shows up in the list with a green dot 🟢. If it's not there:
   - Make sure `terraform apply` exited with code 0 and did not print any errors
   - Make sure a GCP VM was created:
@@ -224,8 +210,8 @@ tfenv use 1.1.5
 ```
 $ gcloud compute instances list
 NAME                                          ZONE           MACHINE_TYPE   PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP    STATUS
-sourcegraph-executor-h0rv                     us-central1-c  n1-standard-4               10.0.1.16    ...            RUNNING
-sourcegraph-executors-docker-registry-mirror  us-central1-c  n1-standard-2               10.0.1.2     ...            RUNNING
+sourcegraph-executor-h0rv                     us-central1-c  n1-standard-4               10.0.1.16                   RUNNING
+sourcegraph-executors-docker-registry-mirror  us-central1-c  n1-standard-2               10.0.1.2                    RUNNING
 ```
 
   - Make sure the `executor` service is running:
@@ -266,12 +252,11 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
   - Try setting a higher update frequency: `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL=10s`
   - Try setting a lower delay: `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY=10s`
 11. Once you have a completed indexing job, click **Uploads** and check to see that an index has been uploaded.
-12. Once the index has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉
-13. Optionally, add `.terraform`, `terraform.tfstate`, and `terraform.tfstate.backup` to your `.gitignore`.
+12. Once the index has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉 
 
 ## Configuring auto scaling
 
-> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries), and on managed instances since it requires deployment adjustments.
+> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries), and on managed instances when using self-hosted executors, since it requires deployment adjustments.
 
 Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
 
@@ -296,7 +281,7 @@ Here's an example of how one would use the `credentials` submodule:
 module "my-credentials" {
   source  = "sourcegraph/executors/<cloud>//modules/credentials"
 
-  # Find the latest version here:
+  # Find the latest version matching your Sourcegraph version here:
   # - https://github.com/sourcegraph/terraform-google-executors/tags
   # - https://github.com/sourcegraph/terraform-aws-executors/tags
   version = "<version>"
@@ -314,7 +299,6 @@ output "metric_writer_credentials_file" {
 output "metric_writer_access_key_id" {
   value = module.my-credentials.metric_writer_access_key_id
 }
-
 output "metric_writer_secret_key" {
   value = module.my-credentials.metric_writer_secret_key
 }
