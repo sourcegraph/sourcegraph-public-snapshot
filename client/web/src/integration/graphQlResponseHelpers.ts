@@ -87,15 +87,27 @@ export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => 
     },
 })
 
+// TODO: delete `createRepositoryRedirectResult`
 export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40)): ResolveRevResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
+        id: `RepositoryID:${treeUrl}`,
+        name: treeUrl,
+        url: `/${encodeURIPathComponent(treeUrl)}`,
+        externalURLs: [
+            {
+                url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
+                serviceKind: ExternalServiceKind.GITHUB,
+            },
+        ],
+        description: 'bla',
+        viewerCanAdminister: false,
+        defaultBranch: { displayName: 'master', abbrevName: 'master' },
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
             oid,
             tree: { url: '/' + treeUrl },
         },
-        defaultBranch: { abbrevName: 'master' },
     },
 })
 

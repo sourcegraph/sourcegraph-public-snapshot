@@ -1,15 +1,19 @@
 import React from 'react'
 
+import { RouteComponentProps } from 'react-router-dom'
+
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 import { ToggleBlameAction } from './actions/ToggleBlameAction'
+import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
 
@@ -45,7 +49,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/commit/:revspec+',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal
@@ -68,7 +72,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/branches',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryBranchesArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -76,7 +80,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/tags',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryReleasesArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -85,7 +89,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/compare/:spec*',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal
@@ -108,7 +112,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/stats',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryStatsArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -116,23 +120,21 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/settings',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepoSettingsArea {...context} />
             </RepositoryGitDataContainer>
         ),
     },
 ]
 
-export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    useBreadcrumb,
-    setBreadcrumb,
-    repo,
-    history,
-    location,
-    match,
-    globbing,
-}) => (
-    <>
+export const RepoContributors: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionContainerContext & RouteComponentProps>
+> = ({ useBreadcrumb, setBreadcrumb, repo, history, location, match, globbing }) => {
+    if (!repo) {
+        return <LoadingSpinner />
+    }
+
+    return (
         <RepositoryStatsArea
             useBreadcrumb={useBreadcrumb}
             setBreadcrumb={setBreadcrumb}
@@ -142,22 +144,18 @@ export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<a
             match={match}
             globbing={globbing}
         />
-    </>
-)
+    )
+}
 
-export const RepoCommits: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    resolvedRev: { commitID },
-    repoHeaderContributionsLifecycleProps,
-    ...context
-}) => (
-    <>
-        <RepositoryCommitsPage
-            {...context}
-            commitID={commitID}
-            repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
-        />
-    </>
-)
+export const RepoCommits: React.FunctionComponent<
+    Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
+> = ({ revision, repo, ...context }) => {
+    if (!repo) {
+        return <LoadingSpinner />
+    }
+
+    return <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
+}
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
@@ -195,13 +193,14 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
+        render: ({ repo, location, history }) =>
+            repo && <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
         path: '/-/compare/:spec*',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal

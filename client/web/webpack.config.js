@@ -140,7 +140,7 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : 'eval-cheap-module-source-map',
+  devtool: IS_PRODUCTION ? 'source-map' : 'eval',
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),

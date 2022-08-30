@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 
 import * as H from 'history'
 import { Observable } from 'rxjs'
@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { H1 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -17,7 +17,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { externalLinkFieldsFragment } from '../backend'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
@@ -111,19 +110,17 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props
-    extends RepoHeaderContributionsLifecycleProps,
-        Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters {
+export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
     repo: RepositoryFields
 
     history: H.History
     location: H.Location
 }
 
+const BREADCRUMB = { key: 'commits', element: <>Commits</> }
+
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
     useBreadcrumb,
     ...props
 }) => {
@@ -131,12 +128,12 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
 
-    useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
+    useBreadcrumb(BREADCRUMB)
 
     const queryCommits = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
-            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),
-        [props.repo.id, props.commitID]
+            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.revision }),
+        [props.repo.id, props.revision]
     )
 
     return (

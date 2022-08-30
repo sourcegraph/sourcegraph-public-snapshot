@@ -79,11 +79,11 @@ const getDisplayInfoFromHunk = ({
 const fetchBlame = memoizeObservable(
     ({
         repoName,
-        commitID,
+        revision,
         filePath,
     }: {
         repoName: string
-        commitID: string
+        revision: string
         filePath: string
     }): Observable<BlameHunk[] | undefined> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
@@ -116,7 +116,7 @@ const fetchBlame = memoizeObservable(
                     }
                 }
             `,
-            { repo: repoName, rev: commitID, path: filePath }
+            { repo: repoName, rev: revision, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => repository?.commit?.blob?.blame)
@@ -132,21 +132,21 @@ const getBlameDecorations = (hunks: BlameHunk[]): TextDocumentDecoration[] => {
 
 export const useBlameDecorations = (args?: {
     repoName: string
-    commitID: string
+    revision: string
     filePath: string
 }): TextDocumentDecoration[] | undefined => {
-    const { repoName, commitID, filePath } = args ?? {}
+    const { repoName, revision, filePath } = args ?? {}
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
         useMemo(
             () =>
-                extensionsAsCoreFeatures && commitID && repoName && filePath && isBlameVisible
-                    ? fetchBlame({ commitID, repoName, filePath }).pipe(
+                extensionsAsCoreFeatures && revision && repoName && filePath && isBlameVisible
+                    ? fetchBlame({ revision, repoName, filePath }).pipe(
                           map(hunks => (hunks ? getBlameDecorations(hunks) : undefined))
                       )
                     : of(undefined),
-            [extensionsAsCoreFeatures, isBlameVisible, commitID, repoName, filePath]
+            [extensionsAsCoreFeatures, isBlameVisible, revision, repoName, filePath]
         )
     )
 

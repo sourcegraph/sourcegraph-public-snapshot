@@ -90,7 +90,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
         extensionInfo?.base?.filePath
             ? {
                   repoName: extensionInfo.base.repoName,
-                  commitID: extensionInfo.base.commitID,
+                  revision: extensionInfo.base.commitID,
                   filePath: extensionInfo.base.filePath,
               }
             : undefined
@@ -99,7 +99,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
         extensionInfo?.head?.filePath
             ? {
                   repoName: extensionInfo.head.repoName,
-                  commitID: extensionInfo.head.commitID,
+                  revision: extensionInfo.head.commitID,
                   filePath: extensionInfo.head.filePath,
               }
             : undefined

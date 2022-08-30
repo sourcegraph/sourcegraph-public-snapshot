@@ -36,6 +36,7 @@ const config = {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'monorepo/no-relative-import': 'error',
+    'react/display-name': 'off',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
     'no-restricted-imports': [
       'error',

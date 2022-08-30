@@ -7,18 +7,14 @@ import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { NEVER, ObservableInput, of } from 'rxjs'
+import { of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import {
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-    isRepoSeeOtherErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isCloneInProgressErrorLike, isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -57,7 +53,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import { fetchFileExternalLinks, resolveRevision } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
 import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -67,8 +63,6 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-
-import { redirectToExternalHost } from '.'
 
 import styles from './RepoContainer.module.scss'
 
@@ -93,6 +87,8 @@ export interface RepoContainerContext
         BatchChangesProps,
         CodeInsightsProps {
     repo: RepositoryFields
+    repoName: string
+    resolvedRevisionError?: ErrorLike
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -156,6 +152,7 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
+    const { telemetryService } = props
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -163,24 +160,24 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Fetch repository upon mounting the component.
-    const repoOrError = useObservable(
-        useMemo(
-            () =>
-                fetchRepository({ repoName }).pipe(
-                    catchError(
-                        (error): ObservableInput<ErrorLike> => {
-                            const redirect = isRepoSeeOtherErrorLike(error)
-                            if (redirect) {
-                                redirectToExternalHost(redirect)
-                                return NEVER
-                            }
-                            return of(asError(error))
-                        }
-                    )
-                ),
-            [repoName]
-        )
-    )
+    // const repoOrError = useObservable(
+    //     useMemo(
+    //         () =>
+    //             fetchRepository({ repoName }).pipe(
+    //                 catchError(
+    //                     (error): ObservableInput<ErrorLike> => {
+    //                         const redirect = isRepoSeeOtherErrorLike(error)
+    //                         if (redirect) {
+    //                             redirectToExternalHost(redirect)
+    //                             return NEVER
+    //                         }
+    //                         return of(asError(error))
+    //                     }
+    //                 )
+    //             ),
+    //         [repoName]
+    //     )
+    // )
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -209,6 +206,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         )
     )
 
+    const repoOrError = isErrorLike(resolvedRevisionOrError) ? resolvedRevisionOrError : resolvedRevisionOrError?.repo
+
     // The external links to show in the repository header, if any.
     const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
 
@@ -220,24 +219,21 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
-            if (isErrorLike(repoOrError) || !repoOrError) {
+            if (isErrorLike(resolvedRevisionOrError)) {
                 return
             }
 
             const button = (
                 <Button
-                    to={
-                        resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                            ? resolvedRevisionOrError.rootTreeURL
-                            : repoOrError.url
-                    }
+                    to={resolvedRevisionOrError?.rootTreeURL || resolvedRevisionOrError?.repo?.url || ''}
+                    disabled={!resolvedRevisionOrError}
                     className="text-nowrap test-repo-header-repo-link"
                     variant="secondary"
                     outline={true}
                     size="sm"
                     as={Link}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoOrError.name)}
+                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoName)}
                 </Button>
             )
 
@@ -266,14 +262,14 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             aria-label="Change repository"
                         >
                             <RepositoriesPopover
-                                currentRepo={repoOrError.id}
-                                telemetryService={props.telemetryService}
+                                currentRepo={resolvedRevisionOrError?.repo?.id}
+                                telemetryService={telemetryService}
                             />
                         </PopoverContent>
                     </Popover>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, coreWorkflowImprovementsEnabled, props.telemetryService])
+        }, [resolvedRevisionOrError, coreWorkflowImprovementsEnabled, telemetryService, repoName])
     )
 
     const { extensionsController } = props
@@ -328,11 +324,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    if (!repoOrError) {
-        // Render nothing while loading
-        return null
-    }
-
     const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
     if (isErrorLike(repoOrError)) {
@@ -343,32 +334,26 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
     }
 
-    const isCodeIntelRepositoryBadgeEnabled =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
-
-    // Remove leading repository name and possible leading revision, then compare the remaining routes to
-    // see if we should display the code graph badge for this route. We want this to be visible on
-    // the repo root page, as well as directory and code views, but not administrative/non-code views.
-    const matchRevisionAndRest = props.match.params.repoRevAndRest.slice(repoName.length)
-    const matchOnlyRest =
-        revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
-            ? matchRevisionAndRest.slice(revision.length + 1)
-            : matchRevisionAndRest
-    const isCodeIntelRepositoryBadgeVisibleOnRoute =
-        matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
+    const isCodeIntelRepositoryBadgeVisible = getIsCodeIntelRepositoryBadgeVisible({
+        match: props.match,
+        settingsCascade: props.settingsCascade,
+        revision,
+        repoName,
+    })
 
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
-    const context: RepoContainerContext = {
+    const context: Omit<RepoContainerContext, 'repo'> = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
-        repo: repoOrError,
+        repoName,
+        resolvedRevisionError: isErrorLike(resolvedRevisionOrError) ? resolvedRevisionOrError : undefined,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
         useActionItemsBar,
     }
+
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             <BlameContextProvider>
@@ -376,17 +361,16 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     actionButtons={props.repoHeaderActionButtons}
                     useActionItemsToggle={useActionItemsToggle}
                     breadcrumbs={props.breadcrumbs}
+                    repoName={repoName}
                     revision={revision}
-                    repo={repoOrError}
-                    resolvedRev={resolvedRevisionOrError}
                     onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                     location={props.location}
                     history={props.history}
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={props.authenticatedUser}
                     platformContext={props.platformContext}
-                    extensionsController={extensionsController}
-                    telemetryService={props.telemetryService}
+                    extensionsController={props.extensionsController}
+                    telemetryService={telemetryService}
                 />
                 <RepoHeaderContributionPortal
                     position="right"
@@ -399,7 +383,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             key="go-to-code-host"
                             repo={repoOrError}
                             // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                            revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                            revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
                             filePath={filePath}
                             commitRange={commitRange}
                             position={position}
@@ -412,7 +396,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     )}
                 </RepoHeaderContributionPortal>
 
-                {isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute && (
+                {isCodeIntelRepositoryBadgeVisible && (
                     <RepoHeaderContributionPortal
                         position="right"
                         priority={110}
@@ -459,7 +443,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                         {...routeComponentProps}
                                         {...context}
                                         {...childBreadcrumbSetters}
+                                        repo={repoOrError}
                                         routes={props.repoRevisionContainerRoutes}
+                                        repoName={repoName}
                                         revision={revision || ''}
                                         resolvedRevisionOrError={resolvedRevisionOrError}
                                         // must exactly match how the revision was encoded in the URL
@@ -470,22 +456,55 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 )}
                             />
                         ))}
-                        {props.repoContainerRoutes.map(
-                            ({ path, render, exact, condition = () => true }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={context.routePrefix + path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={exact}
-                                        // RouteProps.render is an exception
-                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                    />
-                                )
-                        )}
+                        {repoOrError &&
+                            props.repoContainerRoutes.map(
+                                ({ path, render, exact, condition = () => true }) =>
+                                    condition({ ...context, repo: repoOrError }) && (
+                                        <Route
+                                            path={context.routePrefix + path}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            exact={exact}
+                                            // RouteProps.render is an exception
+                                            render={routeComponentProps =>
+                                                render({
+                                                    ...context,
+                                                    repo: repoOrError,
+                                                    ...routeComponentProps,
+                                                })
+                                            }
+                                        />
+                                    )
+                            )}
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
                     </Switch>
                 </ErrorBoundary>
             </BlameContextProvider>
         </div>
     )
+}
+
+function getIsCodeIntelRepositoryBadgeVisible(options: {
+    settingsCascade: RepoContainerProps['settingsCascade']
+    match: RepoContainerProps['match']
+    repoName: string
+    revision: string | undefined
+}): boolean {
+    const { settingsCascade, repoName, match, revision } = options
+
+    const isCodeIntelRepositoryBadgeEnabled =
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
+
+    // Remove leading repository name and possible leading revision, then compare the remaining routes to
+    // see if we should display the code graph badge for this route. We want this to be visible on
+    // the repo root page, as well as directory and code views, but not administrative/non-code views.
+    const matchRevisionAndRest = match.params.repoRevAndRest.slice(repoName.length)
+    const matchOnlyRest =
+        revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
+            ? matchRevisionAndRest.slice(revision.length + 1)
+            : matchRevisionAndRest
+    const isCodeIntelRepositoryBadgeVisibleOnRoute =
+        matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
+
+    return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
 }

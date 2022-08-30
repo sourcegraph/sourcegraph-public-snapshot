@@ -4,10 +4,7 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorLike } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
@@ -19,7 +16,6 @@ import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/compone
 import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
-import { ResolvedRevision } from './backend'
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
 
 import styles from './RepoHeader.module.scss'
@@ -129,23 +125,8 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
      */
     actionButtons: readonly RepoHeaderActionButton[]
 
-    /**
-     * The repository that this header is for.
-     */
-    repo:
-        | GQL.IRepository
-        | {
-              /** The repository's ID, if it has one.
-               */
-              id?: Scalars['ID']
-
-              name: string
-              url: string
-              viewerCanAdminister: boolean
-          }
-
-    /** Information about the revision of the repository. */
-    resolvedRev: ResolvedRevision | ErrorLike | undefined
+    /** The repoName from the URL */
+    repoName: string
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     revision?: string
@@ -169,12 +150,17 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    onLifecyclePropsChange,
-    resolvedRev,
-    repo,
-    ...props
-}) => {
+export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const {
+        onLifecyclePropsChange,
+        repoName,
+        revision,
+        breadcrumbs,
+        location,
+        useActionItemsToggle,
+        extensionsController,
+    } = props
+
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -188,10 +174,10 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
-            repoName: repo.name,
-            encodedRev: props.revision,
+            repoName,
+            encodedRev: revision,
         }),
-        [repo.name, props.revision]
+        [repoName, revision]
     )
 
     const leftActions = useMemo(
@@ -216,7 +202,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
+                <Breadcrumbs breadcrumbs={breadcrumbs} location={location} />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
@@ -227,7 +213,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             </ul>
             <div className={styles.spacer} />
             <ErrorBoundary
-                location={props.location}
+                location={location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
@@ -264,8 +250,8 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
                 <ul className="navbar-nav">
                     <ActionItemsToggle
-                        useActionItemsToggle={props.useActionItemsToggle}
-                        extensionsController={props.extensionsController}
+                        useActionItemsToggle={useActionItemsToggle}
+                        extensionsController={extensionsController}
                     />
                 </ul>
             </ErrorBoundary>
