@@ -22,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -134,14 +134,21 @@ interface RepoRevisionContainerProps
 }
 
 interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
+    repoName: string
     resolvedRevisionOrError?: ResolvedRevision
 }
 
 const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionBreadcrumbProps>
-> = ({ revision, resolvedRevisionOrError, repo }) => {
+> = ({ revision, resolvedRevisionOrError, repoName, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+
+    const revisionLabel = (revision && revision === resolvedRevisionOrError?.commitID
+        ? resolvedRevisionOrError?.commitID.slice(0, 7)
+        : revision.slice(0, 7)) ||
+        resolvedRevisionOrError?.defaultBranch || <LoadingSpinner />
+
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
@@ -154,11 +161,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 variant="secondary"
                 size="sm"
             >
-                {(revision && revision === resolvedRevisionOrError?.commitID
-                    ? resolvedRevisionOrError?.commitID.slice(0, 7)
-                    : revision) ||
-                    resolvedRevisionOrError?.defaultBranch ||
-                    'HEAD'}
+                {revisionLabel}
                 <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
@@ -168,11 +171,11 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
             >
                 {repo && resolvedRevisionOrError && (
                     <RevisionsPopover
-                        repo={repo.id}
-                        repoName={repo.name}
-                        defaultBranch={resolvedRevisionOrError.defaultBranch}
+                        repoId={repo?.id}
+                        repoName={repoName}
+                        defaultBranch={resolvedRevisionOrError?.defaultBranch}
                         currentRev={revision}
-                        currentCommitID={resolvedRevisionOrError.commitID}
+                        currentCommitID={resolvedRevisionOrError?.commitID}
                         togglePopover={togglePopover}
                         onSelect={togglePopover}
                     />
@@ -203,11 +206,12 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
                         revision={props.revision}
+                        repoName={props.repoName}
                         repo={props.repo}
                     />
                 ),
             }
-        }, [props.resolvedRevisionOrError, props.revision, props.repo])
+        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.repoName])
     )
 
     if (isErrorLike(props.resolvedRevisionOrError)) {
