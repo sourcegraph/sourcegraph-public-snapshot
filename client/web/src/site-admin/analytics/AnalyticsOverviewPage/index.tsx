@@ -140,7 +140,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
         <>
             <AnalyticsPageTitle>Overview</AnalyticsPageTitle>
 
-            <Card className="p-3">
+            <Card className="p-3" data-testid="product-certificate">
                 <div className="d-flex justify-content-between align-items-start mb-3 text-nowrap">
                     <div>
                         <H2 className="mb-3">{data.site.productSubscription.productNameWithBrand}</H2>
@@ -183,7 +183,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
                 {showGetStarted && activation && (
-                    <div className={classNames('my-3', styles.padded)}>
+                    <div className={classNames('my-3', styles.padded)} data-testid="site-admin-overview-menu">
                         <div className={styles.getStartedBox}>
                             <div className="d-flex justify-content-between align-items-center">
                                 <H3>Get started with Sourcegraph</H3>
