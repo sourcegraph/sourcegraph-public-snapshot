@@ -225,7 +225,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {extensionsController !== null ? (
-                    <OpenInEditorActionItem settingsSubscribable={props.platformContext.settings} />
+                    <OpenInEditorActionItem platformContext={props.platformContext} />
                 ) : null}
                 {extensionsController !== null ? (
                     <ActionsContainer

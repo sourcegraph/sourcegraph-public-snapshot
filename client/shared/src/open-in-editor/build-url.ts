@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import type { ViewComponent } from 'sourcegraph'
 
-import { EditorSettings, EditorReplacements } from './editor-settings'
+import type { EditorSettings, EditorReplacements } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
 export function buildEditorUrl(
