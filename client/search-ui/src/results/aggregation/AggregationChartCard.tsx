@@ -92,7 +92,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 size={size}
                 className={classNames(styles.aggregationErrorContainer, className)}
             >
-                <ZeroStateBarsBackground />
+                <BarsBackground size={size} />
                 <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
                         We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />.{' '}
@@ -161,26 +161,35 @@ const DataLayoutContainer = forwardRef((props, ref) => {
     )
 }) as ForwardReferenceComponent<'div', DataLayoutContainerProps>
 
-const ZeroStateBarsBackground: FC<SVGProps<SVGSVGElement>> = ({ className, ...attributes }) => (
-    <svg
-        {...attributes}
-        className={classNames(className, styles.zeroStateBackground)}
-        xmlns="http://www.w3.org/2000/svg"
-    >
-        <rect x="0%" y="5%" height="95%" width="5%" />
-        <rect x="7%" y="20%" height="80%" width="5%" />
-        <rect x="14%" y="25%" height="75%" width="5%" />
-        <rect x="21%" y="30%" height="70%" width="5%" />
-        <rect x="28%" y="32%" height="68%" width="5%" />
-        <rect x="35%" y="32%" height="68%" width="5%" />
-        <rect x="42%" y="38%" height="62%" width="5%" />
-        <rect x="49%" y="45%" height="55%" width="5%" />
-        <rect x="56%" y="60%" height="40%" width="5%" />
-        <rect x="63%" y="62%" height="38%" width="5%" />
-        <rect x="70%" y="67%" height="33%" width="5%" />
-        <rect x="77%" y="70%" height="30%" width="5%" />
-        <rect x="84%" y="75%" height="25%" width="5%" />
-        <rect x="91%" y="85%" height="15%" width="5%" />
-        <rect x="98%" y="93%" height="7%" width="5%" />
-    </svg>
-)
+const BAR_VALUES_FULL_UI = [95, 88, 83, 70, 65, 45, 35, 30, 30, 30, 30, 27, 27, 27, 27, 24, 10, 10, 10, 10, 10]
+const BAR_VALUES_SIDEBAR_UI = [95, 80, 75, 70, 68, 68, 55, 40, 38, 33, 30, 25, 15, 7]
+
+interface BarsBackgroundProps extends SVGProps<SVGSVGElement> {
+    size: 'sm' | 'md'
+}
+
+const BarsBackground: FC<BarsBackgroundProps> = props => {
+    const { size, className, ...attributes } = props
+
+    const padding = size === 'md' ? 1 : 2
+    const data = size === 'md' ? BAR_VALUES_FULL_UI : BAR_VALUES_SIDEBAR_UI
+    const barWidth = (100 - padding * (data.length - 1)) / data.length
+
+    return (
+        <svg
+            {...attributes}
+            className={classNames(className, styles.zeroStateBackground)}
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            {data.map((bar, index) => (
+                <rect
+                    key={index}
+                    x={`${index * (barWidth + padding)}%`}
+                    y={`${100 - bar}%`}
+                    height={`${bar}%`}
+                    width={`${barWidth}%`}
+                />
+            ))}
+        </svg>
+    )
+}
