@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
@@ -22,17 +22,10 @@ const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
 const selectRow = (line: number): void => getRowByLine(line)?.classList.add('highlighted')
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
-/**
- * Component that prepends lines of code with attachments set by extensions
- */
 export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements, blameHunks }) => {
     const [cells, setCells] = React.useState<[HTMLTableCellElement, BlameHunk | undefined][]>([])
 
-    // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
-    // after mount/decoration updates, but before the browser has painted DOM updates.
-    // This prevents users from seeing inconsistent states where changes handled by React have been
-    // painted, but DOM manipulation handled by these effects are painted on the next tick.
-    useLayoutEffect(() => {
+    useEffect(() => {
         const addedCells: [HTMLTableCellElement, BlameHunk | undefined][] = []
 
         const cleanup = (): void => {
