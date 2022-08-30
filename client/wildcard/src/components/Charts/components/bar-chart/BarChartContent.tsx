@@ -29,7 +29,7 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarClick: (event: MouseEvent, datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
     onBarHover?: (datum: Datum) => void
 }
 

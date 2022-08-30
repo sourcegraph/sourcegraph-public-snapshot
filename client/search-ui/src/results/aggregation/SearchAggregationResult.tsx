@@ -9,6 +9,7 @@ import { Button, H2, Icon } from '@sourcegraph/wildcard'
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
 import { useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
+import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -41,21 +42,21 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
-        telemetryService.log('GroupResultsExpandedViewCollapse', { aggregationMode }, { aggregationMode })
+        telemetryService.log(GroupResultsPing.CollapseFullViewPanel)
     }
 
-    const handleBarLinkClick = (query: string): void => {
+    const handleBarLinkClick = (query: string, index: number): void => {
         onQuerySubmit(query)
         telemetryService.log(
-            'GroupResultsChartBarClick',
-            { aggregationMode, uiMode: 'resultsScreen' },
-            { aggregationMode, uiMode: 'resultsScreen' }
+            GroupResultsPing.ChartBarClick,
+            { aggregationMode, index, uiMode: 'resultsScreen' },
+            { aggregationMode, index, uiMode: 'resultsScreen' }
         )
     }
 
     const handleBarHover = (): void => {
         telemetryService.log(
-            'GroupResultsChartBarHover',
+            GroupResultsPing.ChartBarHover,
             { aggregationMode, uiMode: 'resultsScreen' },
             { aggregationMode, uiMode: 'resultsScreen' }
         )
@@ -63,7 +64,21 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
         setAggregationMode(mode)
-        telemetryService.log(`GroupResults${aggregationMode}`, { uiMode: 'resultsScreen' }, { uiMode: 'resultsScreen' })
+        telemetryService.log(
+            GroupResultsPing.ModeClick,
+            { aggregationMode: mode, uiMode: 'resultsScreen' },
+            { aggregationMode: mode, uiMode: 'resultsScreen' }
+        )
+    }
+
+    const handleAggregationModeHover = (aggregationMode: SearchAggregationMode, available: boolean): void => {
+        if (!available) {
+            telemetryService.log(
+                GroupResultsPing.ModeDisabledHover,
+                { aggregationMode, uiMode: 'resultsScreen' },
+                { aggregationMode, uiMode: 'resultsScreen' }
+            )
+        }
     }
 
     return (
@@ -87,8 +102,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 <AggregationModeControls
                     mode={aggregationMode}
                     availability={data?.searchQueryAggregate?.modeAvailability}
-                    telemetryService={telemetryService}
                     onModeChange={handleAggregationModeChange}
+                    onModeHover={handleAggregationModeHover}
                 />
             </div>
 
