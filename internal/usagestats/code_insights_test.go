@@ -120,7 +120,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
 	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
 
-	want.WeeklyGroupResultsExpandViewOpen = []types.GroupResultExpandedViewPing{}
+	want.WeeklyGroupResultsExpandedViewOpen = []types.GroupResultExpandedViewPing{}
 	want.WeeklyGroupResultsExpandedViewCollapse = []types.GroupResultExpandedViewPing{}
 	want.WeeklyGroupResultsChartBarHover = []types.GroupResultPing{}
 	want.WeeklyGroupResultsChartBarClick = []types.GroupResultPing{}

@@ -215,17 +215,19 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklyGroupResultsChartBarHover = weeklyGroupResultsChartBarHover
 
-	weeklyGroupResultsExpandViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandViewOpen")
+	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewOpen")
 	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandViewOpen")
+		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
 	}
-	stats.WeeklyGroupResultsExpandViewOpen = weeklyGroupResultsExpandViewOpen
+	stats.WeeklyGroupResultsExpandedViewOpen = weeklyGroupResultsExpandedViewOpen
 
 	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewCollapse")
 	if err != nil {
 		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
 	}
 	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
+
+	fmt.Println("now")
 
 	return &stats, nil
 }

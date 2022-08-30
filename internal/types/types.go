@@ -1439,7 +1439,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsOpenSection                  *int32
 	WeeklyGroupResultsCollapseSection              *int32
 	WeeklyGroupResultsInfoIconHover                *int32
-	WeeklyGroupResultsExpandViewOpen               []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
 	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
 	WeeklyGroupResultsChartBarHover                []GroupResultPing
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
