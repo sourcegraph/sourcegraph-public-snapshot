@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 
 export interface CodeMirrorContext {
     setCodeMirrorBlobEditor: (editor: EditorView | undefined) => void

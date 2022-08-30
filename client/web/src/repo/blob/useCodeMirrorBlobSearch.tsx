@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
