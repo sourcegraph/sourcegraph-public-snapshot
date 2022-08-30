@@ -9,14 +9,14 @@ import { useTemporarySetting, UseTemporarySettingsReturnType } from './temporary
 // Otherwise, each component would evaluate `useTemporarySetting` on their own leading to UI jitter while the
 // temporary setting was "loading".
 export const CoreWorkflowImprovementsEnabledContext = createContext<
-    UseTemporarySettingsReturnType<'coreWorkflowImprovements.enabled'>
+    UseTemporarySettingsReturnType<'coreWorkflowImprovements.enabled_deprecated'>
 >([true, noop, 'initial'])
 CoreWorkflowImprovementsEnabledContext.displayName = 'CoreWorkflowImprovementsContext'
 
 export const CoreWorkflowImprovementsEnabledProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({
     children,
 }) => {
-    const coreWorkflowImprovementsEnabled = useTemporarySetting('coreWorkflowImprovements.enabled', true)
+    const coreWorkflowImprovementsEnabled = useTemporarySetting('coreWorkflowImprovements.enabled_deprecated', true)
 
     return (
         <CoreWorkflowImprovementsEnabledContext.Provider value={coreWorkflowImprovementsEnabled}>
