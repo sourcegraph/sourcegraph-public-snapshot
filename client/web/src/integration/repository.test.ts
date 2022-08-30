@@ -17,7 +17,6 @@ import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } 
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
     createResolveRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
@@ -34,7 +33,6 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRev: () => createResolveRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
@@ -791,7 +789,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                RepositoryRedirect: () => createRepositoryRedirectResult(repositoryName),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })

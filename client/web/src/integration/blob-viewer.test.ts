@@ -13,7 +13,6 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
     createResolveRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
@@ -46,7 +45,6 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
         ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),

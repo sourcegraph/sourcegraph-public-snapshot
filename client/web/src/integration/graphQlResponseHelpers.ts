@@ -4,7 +4,6 @@ import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 import {
     BlobResult,
     FileExternalLinksResult,
-    RepositoryRedirectResult,
     ResolveRevResult,
     ExternalServiceKind,
     RepoChangesetsStatsResult,
@@ -62,22 +61,6 @@ export const createFileExternalLinksResult = (
     },
 })
 
-export const createRepositoryRedirectResult = (
-    repoName: string,
-    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
-): RepositoryRedirectResult => ({
-    repositoryRedirect: {
-        __typename: 'Repository',
-        id: `RepositoryID:${repoName}`,
-        name: repoName,
-        url: `/${encodeURIPathComponent(repoName)}`,
-        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
-        description: 'bla',
-        viewerCanAdminister: false,
-        defaultBranch: { displayName: 'master', abbrevName: 'master' },
-    },
-})
-
 export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => ({
     repository: {
         changesetsStats: {
@@ -87,7 +70,6 @@ export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => 
     },
 })
 
-// TODO: delete `createRepositoryRedirectResult`
 export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40)): ResolveRevResult => ({
     repositoryRedirect: {
         __typename: 'Repository',

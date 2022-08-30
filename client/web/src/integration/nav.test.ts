@@ -12,7 +12,6 @@ import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
     createResolveRevisionResult,
     createFileExternalLinksResult,
     createBlobContentResult,
@@ -24,7 +23,6 @@ import { commonWebGraphQlResults } from './graphQlResults'
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
     FileNames: () => createFileNamesResult(),
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FileExternalLinks: ({ filePath, repoName, revision }) =>
         createFileExternalLinksResult(
