@@ -62,6 +62,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
+			addVsceIntegrationTests,
 		)
 
 		if opts.ClientLintOnlyChangedFiles {
