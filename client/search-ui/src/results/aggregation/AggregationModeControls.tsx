@@ -7,12 +7,10 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchAggregationModeAvailability } from '../../graphql-operations'
 
-import { SearchAggregationModeUi } from './hooks'
-
 import styles from './AggregationModeControls.module.scss'
 
 interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
-    mode: SearchAggregationMode | SearchAggregationModeUi | null
+    mode: SearchAggregationMode | null
     availability?: SearchAggregationModeAvailability[]
     size?: 'sm' | 'lg'
     onModeChange: (nextMode: SearchAggregationMode) => void

@@ -7,12 +7,7 @@ import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
-import {
-    SearchAggregationModeUi,
-    useAggregationSearchMode,
-    useAggregationUIMode,
-    useSearchAggregationData,
-} from './hooks'
+import { useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -28,7 +23,7 @@ interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
-    disableProactiveSearchAggregations?: boolean
+    disableProactiveSearchAggregations: boolean
 
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
@@ -42,7 +37,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
     const { query, patternType, disableProactiveSearchAggregations, onQuerySubmit, ...attributes } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
-    const [aggregationMode, setAggregationMode] = useAggregationSearchMode(disableProactiveSearchAggregations)
+    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
         patternType,
@@ -80,20 +75,16 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 />
             </div>
 
-            {aggregationMode !== SearchAggregationModeUi.NONE ? (
-                <AggregationChartCard
-                    aria-label="Expanded search aggregation chart"
-                    mode={aggregationMode}
-                    data={data?.searchQueryAggregate?.aggregations}
-                    loading={loading}
-                    error={error}
-                    size="md"
-                    className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
-                />
-            ) : (
-                <div>Select a grouping to aggregate this search</div>
-            )}
+            <AggregationChartCard
+                aria-label="Expanded search aggregation chart"
+                mode={aggregationMode}
+                data={data?.searchQueryAggregate?.aggregations}
+                loading={loading}
+                error={error}
+                size="md"
+                className={styles.chartContainer}
+                onBarLinkClick={onQuerySubmit}
+            />
 
             {data && (
                 <ul className={styles.listResult}>

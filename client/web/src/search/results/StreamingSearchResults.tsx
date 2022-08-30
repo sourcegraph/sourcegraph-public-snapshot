@@ -88,7 +88,10 @@ export const StreamingSearchResults: React.FunctionComponent<
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
     const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
-    const [disableProactiveSearchAggregations] = useFeatureFlag('disable-proactive-insight-aggregation', false)
+    const [disableProactiveSearchAggregations, disableProactiveSearchAggregationsStatus] = useFeatureFlag(
+        'disable-proactive-insight-aggregation',
+        false
+    )
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -299,16 +302,17 @@ export const StreamingSearchResults: React.FunctionComponent<
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
             />
 
-            {aggregationUIMode === AggregationUIMode.SearchPage && (
-                <SearchAggregationResult
-                    query={query}
-                    patternType={patternType}
-                    aria-label="Aggregation results panel"
-                    className={styles.contents}
-                    disableProactiveSearchAggregations={disableProactiveSearchAggregations}
-                    onQuerySubmit={handleSearchAggregationBarClick}
-                />
-            )}
+            {aggregationUIMode === AggregationUIMode.SearchPage &&
+                disableProactiveSearchAggregationsStatus === 'loaded' && (
+                    <SearchAggregationResult
+                        query={query}
+                        patternType={patternType}
+                        aria-label="Aggregation results panel"
+                        className={styles.contents}
+                        disableProactiveSearchAggregations={disableProactiveSearchAggregations}
+                        onQuerySubmit={handleSearchAggregationBarClick}
+                    />
+                )}
 
             {aggregationUIMode !== AggregationUIMode.SearchPage && (
                 <>

@@ -199,22 +199,24 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     if (collapsedSections) {
         body = (
             <>
-                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && (
-                    <SearchSidebarSection
-                        sectionId={SectionID.GROUPED_BY}
-                        className={styles.item}
-                        header="Group results by"
-                        startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
-                        onToggle={persistToggleState}
-                    >
-                        <SearchAggregations
-                            query={searchQueryFromURL}
-                            patternType={searchPatternType}
-                            disableProactiveSearchAggregations={props.disableProactiveSearchAggregations}
-                            onQuerySubmit={handleAggregationBarLinkClick}
-                        />
-                    </SearchSidebarSection>
-                )}
+                {props.enableSearchAggregation &&
+                    aggregationUIMode === AggregationUIMode.Sidebar &&
+                    props.disableProactiveSearchAggregations !== undefined && (
+                        <SearchSidebarSection
+                            sectionId={SectionID.GROUPED_BY}
+                            className={styles.item}
+                            header="Group results by"
+                            startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
+                            onToggle={persistToggleState}
+                        >
+                            <SearchAggregations
+                                query={searchQueryFromURL}
+                                patternType={searchPatternType}
+                                disableProactiveSearchAggregations={props.disableProactiveSearchAggregations}
+                                onQuerySubmit={handleAggregationBarLinkClick}
+                            />
+                        </SearchSidebarSection>
+                    )}
 
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}

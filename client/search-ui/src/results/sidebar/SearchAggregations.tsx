@@ -12,7 +12,6 @@ import {
     useAggregationUIMode,
     AggregationChartCard,
     useSearchAggregationData,
-    SearchAggregationModeUi,
 } from '../aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -28,7 +27,7 @@ interface SearchAggregationsProps {
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
-    disableProactiveSearchAggregations?: boolean
+    disableProactiveSearchAggregations: boolean
 
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
@@ -42,7 +41,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     const { query, patternType, disableProactiveSearchAggregations, onQuerySubmit } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
-    const [aggregationMode, setAggregationMode] = useAggregationSearchMode(disableProactiveSearchAggregations)
+    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
         patternType,
@@ -65,7 +64,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 onModeChange={setAggregationMode}
             />
 
-            {aggregationMode !== SearchAggregationModeUi.NONE && (
+            {!!disableProactiveSearchAggregations && aggregationMode !== null && (
                 <>
                     <AggregationChartCard
                         aria-label="Sidebar search aggregation chart"
