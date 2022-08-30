@@ -79,7 +79,7 @@ const usePopover = ({
 }
 
 export const BlameDecoration: React.FunctionComponent<{
-    line: number
+    line: number // 1-based line number
     blameHunk?: BlameHunk
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
