@@ -2,20 +2,20 @@ package graphqlbackend
 
 import "github.com/sourcegraph/sourcegraph/internal/search"
 
-// searchQueryDescription is a type for the SearchQueryDescription resolver used
+// searchQueryDescriptionResolver is a type for the SearchQueryDescription resolver used
 // by SearchAlert. This name is a bit of a misnomer but cannot be changed: It
 // must be this way to work with the GQL definition and compatibility. We use
 // our internal, resolver-agnostic alert type to do real work.
-type searchQueryDescription struct {
+type searchQueryDescriptionResolver struct {
 	query *search.ProposedQuery
 }
 
-func (q searchQueryDescription) Query() string {
+func (q searchQueryDescriptionResolver) Query() string {
 	// Do not add logic here that manipulates the query string. Do it in the QueryString() method.
 	return q.query.QueryString()
 }
 
-func (q searchQueryDescription) Description() *string {
+func (q searchQueryDescriptionResolver) Description() *string {
 	if q.query.Description == "" {
 		return nil
 	}
@@ -23,7 +23,7 @@ func (q searchQueryDescription) Description() *string {
 	return &q.query.Description
 }
 
-func (q searchQueryDescription) Annotations() *[]searchQueryAnnotationResolver {
+func (q searchQueryDescriptionResolver) Annotations() *[]searchQueryAnnotationResolver {
 	if len(q.query.Annotations) == 0 {
 		return nil
 	}
