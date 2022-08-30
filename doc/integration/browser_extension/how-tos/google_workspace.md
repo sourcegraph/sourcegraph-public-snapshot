@@ -33,9 +33,9 @@ Users will need to have valid accounts and be signed in to your Sourcegraph inst
 
 Users may also need to grant additional permissions to the Sourcegraph browser extension in order for it to provide code navigation on your code host. To check if Sourcegraph is properly configured, navigate to any page on your code host, and click the Sourcegraph icon in the browser toolbar. The popup will prompt you to grant additional permissions if needed:
 
-![](../../img/permissions.png)
+<img alt="grant_permissions" src="../../img/permissions.png" >
 
 
 Users can disable Sourcegraph at any time by using the toggle in the extension settings:
 
-<img src="../../img/disable_extension.png" width="400">
+<img alt="disable_extension" src="../../img/disable_extension.png" width="400">
