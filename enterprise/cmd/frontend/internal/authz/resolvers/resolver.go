@@ -275,8 +275,10 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
+	logger := log.Scoped("SetRepositoryPermissionsForUsers", "")
+
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		log.Error("checking license for explicit permissins api...")
+		logger.Error("checking license for explicit permissins api...")
 		return nil, err
 	}
 
