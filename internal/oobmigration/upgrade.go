@@ -38,7 +38,7 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 	//
 	//   (1) Order intervals by increasing upper bound
 	//   (2) For each interval, choose a new version equal to one version prior to the interval's
-	//       upper bound if (the last version prior to its deprecation) no previously chosen version
+	//       upper bound (the last version prior to its deprecation) if no previously chosen version
 	//       falls within the interval.
 
 	sort.Slice(intervals, func(i, j int) bool {
