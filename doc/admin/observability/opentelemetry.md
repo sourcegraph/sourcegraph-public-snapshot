@@ -48,7 +48,7 @@ service:
         - logging # The exporter name must be added here to enable it
 ```
 
-#### Connect to logging
+#### Configure exporting to logging
 
 Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
 
