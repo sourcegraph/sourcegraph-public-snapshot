@@ -33,7 +33,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click,
 		COUNT(*) FILTER (WHERE name = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_close_section,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_collapse_section,
 		COUNT(*) FILTER (WHERE name = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
 	FROM event_logs
 	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick',
@@ -57,7 +57,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		&stats.WeeklyInsightConfigureClick,
 		&stats.WeeklyInsightAddMoreClick,
 		&stats.WeeklyGroupResultsOpenSection,
-		&stats.WeeklyGroupResultsCloseSection,
+		&stats.WeeklyGroupResultsCollapseSection,
 		&stats.WeeklyGroupResultsInfoIconHover,
 	); err != nil {
 		return nil, err
@@ -190,6 +190,18 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		return nil, errors.Wrap(err, "GetInsightsPerDashboard")
 	}
 	stats.InsightsPerDashboard = insightsPerDashboard
+
+	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeClicked")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
+	}
+	stats.WeeklyGroupResultsAggregationModeClicked = weeklyGroupResultsAggregationModeClicked
+
+	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeDisabledHover")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
+	}
+	stats.WeeklyGroupResultsAggregationModeDisabledHover = weeklyGroupResultsAggregationModeDisabledHover
 
 	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarClick")
 	if err != nil {
