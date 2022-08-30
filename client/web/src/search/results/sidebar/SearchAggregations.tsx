@@ -74,7 +74,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
 
     const handleExpandClick = (): void => {
         setAggregationUIMode(AggregationUIMode.SearchPage)
-        telemetryService.log(GroupResultsPing.ExpandFullViewPanel)
+        telemetryService.log(GroupResultsPing.ExpandFullViewPanel, { aggregationMode: mode }, { aggregationMode: mode })
     }
 
     const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
