@@ -308,25 +308,34 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			start := time.Now()
 			resp, err := d.Do(r)
 
-			// Gather fields about this request. When adding fields set into context,
-			// make sure to test that the fields get propagated and picked up correctly
-			// in TestLoggingMiddleware.
-			fields := []log.Field{
+			// Gather fields about this request.
+			fields := append(make([]log.Field, 0, 5), // preallocate some space
 				log.String("host", r.URL.Host),
 				log.String("path", r.URL.Path),
-				log.Int("code", resp.StatusCode),
-				log.Duration("duration", time.Since(start)),
-				log.Error(err),
+				log.Duration("duration", time.Since(start)))
+			if err != nil {
+				fields = append(fields, log.Error(err))
 			}
-			// From NewRetryPolicy
-			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+			// Check incoming request context, unless a response is available, in which
+			// case we check the request associated with the response in case it is not
+			// the same as the original request (e.g. due to retries)
+			ctx := r.Context()
+			if resp != nil {
+				ctx = resp.Request.Context()
+				fields = append(fields, log.Int("code", resp.StatusCode))
+			}
+			// Gather fields from request context. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+				// Get fields from NewRetryPolicy
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
 					log.Error(attempt.Error)))
 			}
 
 			// Log results with link to trace if present
-			trace.Logger(resp.Request.Context(), logger).
+			trace.Logger(ctx, logger).
 				Debug("request", fields...)
 
 			return resp, err
