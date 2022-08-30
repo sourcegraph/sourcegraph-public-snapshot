@@ -25,6 +25,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -430,6 +432,77 @@ func TestErrorResilience(t *testing.T) {
 		if want := 3; retries != want {
 			t.Fatalf("expected %d retries, got %d", want, retries)
 		}
+	})
+}
+
+func TestLoggingMiddleware(t *testing.T) {
+	failures := int64(3)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := 0
+		switch n := atomic.AddInt64(&failures, -1); n {
+		case 2:
+			status = 500
+		case 1:
+			status = 302
+			w.Header().Set("Location", "/")
+		case 0:
+			status = 404 // last
+		}
+		w.WriteHeader(status)
+	}))
+
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest("GET", srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("log NewRetryPolicy", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var attemptsLogged int
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for retry log fields
+			retry := entry.Fields["retry"]
+			if retry != nil {
+				// Non-zero number of attempts only
+				retryFields := retry.(map[string]any)
+				assert.NotZero(t, retryFields["attempts"])
+
+				// We must find at least some desired log entries
+				attemptsLogged += 1
+			}
+		}
+		assert.NotZero(t, attemptsLogged)
 	})
 }
 

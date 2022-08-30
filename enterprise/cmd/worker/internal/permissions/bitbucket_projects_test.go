@@ -58,7 +58,7 @@ func TestGetBitbucketClient(t *testing.T) {
 
 	ctx := context.Background()
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(ctx, &svc)
+	client, err := handler.getBitbucketClient(ctx, logtest.Scoped(t), &svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }

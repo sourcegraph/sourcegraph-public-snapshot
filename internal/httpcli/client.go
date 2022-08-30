@@ -17,11 +17,11 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -102,13 +103,19 @@ var (
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-func NewExternalClientFactory() *Factory {
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -143,12 +150,18 @@ var (
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-func NewInternalClientFactory(subsystem string) *Factory {
+// and middleware pre-set for communicating with internal services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
@@ -271,6 +284,54 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 		req.Header.Del("Authorization")
 		return cli.Do(req)
 	})
+}
+
+// requestContextKey is used to denote keys to fields that should be logged by the logging
+// middleware. They should be set to the request context associated with a response.
+type requestContextKey int
+
+const (
+	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// a request undergoes retries via NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iota
+)
+
+// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// debug level. The provided logger is given the 'httpcli' subscope.
+//
+// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
+func NewLoggingMiddleware(logger log.Logger) Middleware {
+	logger = logger.Scoped("httpcli", "http client")
+
+	return func(d Doer) Doer {
+		return DoerFunc(func(r *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := d.Do(r)
+
+			// Gather fields about this request. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
+			fields := []log.Field{
+				log.String("host", r.URL.Host),
+				log.String("path", r.URL.Path),
+				log.Int("code", resp.StatusCode),
+				log.Duration("duration", time.Since(start)),
+				log.Error(err),
+			}
+			// From NewRetryPolicy
+			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+				fields = append(fields, log.Object("retry",
+					log.Int("attempts", attempt.Index),
+					log.Error(attempt.Error)))
+			}
+
+			// Log results with link to trace if present
+			trace.Logger(resp.Request.Context(), logger).
+				Debug("request", fields...)
+
+			return resp, err
+		})
+	}
 }
 
 //
@@ -427,6 +488,12 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				span.LogFields(fields...)
 			}
 
+			// Update request context with latest retry for logging middleware
+			if shouldTraceLog {
+				*a.Request = *a.Request.WithContext(
+					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
+			}
+
 			if retry {
 				metricRetry.Inc()
 			}
@@ -435,14 +502,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				return
 			}
 
-			log15.Error(
-				"retrying HTTP request failed",
-				"attempt", a.Index,
-				"method", a.Request.Method,
-				"url", a.Request.URL,
-				"status", status,
-				"err", a.Error,
-			)
 		}()
 
 		if a.Response != nil {
