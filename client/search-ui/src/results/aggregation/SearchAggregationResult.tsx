@@ -42,7 +42,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
-        telemetryService.log(GroupResultsPing.CollapseFullViewPanel)
+        telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
     }
 
     const handleBarLinkClick = (query: string, index: number): void => {
