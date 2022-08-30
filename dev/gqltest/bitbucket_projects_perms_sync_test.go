@@ -25,8 +25,8 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
-	fmt.Println("e2e - DEBUG...", *bbsUsername)
-	t.Error("e2e DEBUG...", *bbsUsername)
+	gqltestutil.MockLicenseCheckErr("")
+	fmt.Println("e2e - DEBUG...")
 
 	// External service setup
 	esID, err := setUpExternalService(t)
@@ -37,14 +37,16 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 	removeExternalServiceAfterTest(t, esID)
 	// Triggering the sync job
 	unrestricted := true
+
 	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey:      projectKey,
 		CodeHost:        esID,
 		UserPermissions: make([]types.UserPermission, 0),
 		Unrestricted:    &unrestricted,
 	})
+
 	if err != nil {
-		t.Error("e2e DEBUG.. FAIILING HERE", *bbsUsername)
+		fmt.Println("e2e DEBUG.. FAIILING HERE")
 		t.Fatal(err)
 	}
 
@@ -71,6 +73,10 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
+	gqltestutil.MockLicenseCheckErr("")
+
+	fmt.Println("e2e - DEBUG 2...")
+
 	// External service setup
 	esID, err := setUpExternalService(t)
 	if err != nil {
@@ -88,6 +94,7 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 		Unrestricted:    &unrestricted,
 	})
 	if err != nil {
+		fmt.Println("e2e DEBUG.. FAIILING HERE 2")
 		t.Fatal(err)
 	}
 

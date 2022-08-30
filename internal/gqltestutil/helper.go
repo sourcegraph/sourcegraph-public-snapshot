@@ -2,6 +2,7 @@ package gqltestutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,6 +39,9 @@ type Feature string
 var MockCheckFeature func(feature Feature) error
 
 func MockLicenseCheckErr(expectedError string) {
+	fmt.Println("mock check err for license")
+	// logger := log.Scoped("mock license", "")
+	// logger.Error("mocking license")
 	MockCheckFeature = func(feature Feature) error {
 		if expectedError == "" {
 			return nil
