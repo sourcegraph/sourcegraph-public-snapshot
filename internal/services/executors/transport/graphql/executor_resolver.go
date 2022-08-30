@@ -2,12 +2,16 @@ package graphql
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,6 +42,35 @@ func (e *ExecutorResolver) IgniteVersion() string   { return e.executor.IgniteVe
 func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
+
+func (e *ExecutorResolver) isOutdated() bool {
+	ev := e.executor.ExecutorVersion
+
+	if !e.Active() || version.IsDev(ev) {
+		return false
+	}
+
+	/**
+	 * Valid build date examples for sourcegraph
+	 * 169135_2022-08-25_a2b623dce148
+	 * 169120_2022-08-25_a94c7eb7beca
+	 *
+	 * Valid build date example for executor (patch)
+	 * executor-patch-notest-es-ignite-debug_168065_2022-08-18_e94e18c4ebcc_patch
+	 */
+	r, _ := regexp.Compile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
+	strings.Trim()
+
+	v := version.Version()
+
+	sv, err := semver.NewVersion(sv)
+
+	return true
+}
+
+func compareSemverVersion(sv, ev string) bool {}
+
+func compareBuildVersion(sv, ev string) bool {}
 
 // DateTime implements the DateTime GraphQL scalar type.
 type DateTime struct{ time.Time }
