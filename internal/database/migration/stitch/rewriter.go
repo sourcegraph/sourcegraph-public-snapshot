@@ -114,7 +114,7 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	reorderMigrations,
 }
 
-// rewriteInitialCodeintelMigration renames the initial codeintel migration file to include the expected
+// rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
 // title of "squashed migration".
 func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
 	if schemaName != "codeintel" {
