@@ -10,7 +10,7 @@ export enum GroupResultsPing {
     // Other UI
     CollapseSidebarSection = 'GroupResultsCollapseSection',
     ExpandSidebarSection = 'GroupResultsOpenSection',
-    ExpandFullViewPanel = 'GroupResultsExpandViewOpen',
+    ExpandFullViewPanel = 'GroupResultsExpandedViewOpen',
     CollapseFullViewPanel = 'GroupResultsExpandedViewCollapse',
     InfoIconHover = 'GroupResultsInfoIconHover',
 }
