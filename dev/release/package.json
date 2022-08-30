@@ -3,7 +3,7 @@
   "description": "Scripts for managing release captain duties",
   "private": true,
   "scripts": {
-    "release": "ts-node --transpile-only ./src/main.ts",
-    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'"
+    "release": "yarn run -T ts-node --transpile-only ./src/main.ts",
+    "lint:js": "yarn run -T eslint --cache 'src/**/*.[jt]s?(x)'"
   }
 }
