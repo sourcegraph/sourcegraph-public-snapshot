@@ -50,7 +50,7 @@ func newAuthzProvider(
 
 	logger := log.Scoped("authzProvider", "")
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
-		logger.Error("Check license for ACLS (Perforce)", log.Error(err))
+		logger.Error("Check license for ACLs (Perforce)", log.Error(err))
 		return nil, err
 	}
 

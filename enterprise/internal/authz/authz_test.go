@@ -396,6 +396,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				}
 			},
 		},
+
 		// For Sourcegraph authz provider
 		{
 			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
@@ -512,7 +513,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 	}
 }
 
-func TestAuthzProvidersEnabledACLSDisabled(t *testing.T) {
+func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
@@ -522,7 +523,7 @@ func TestAuthzProvidersEnabledACLSDisabled(t *testing.T) {
 		expSeriousProblems         []string
 	}{
 		{
-			description: "GitLab connection with authz enabled but missing license for ACLS",
+			description: "GitLab connection with authz enabled but missing license for ACLs",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
@@ -548,7 +549,7 @@ func TestAuthzProvidersEnabledACLSDisabled(t *testing.T) {
 			expSeriousProblems: []string{"failed"},
 		},
 		{
-			description: "Bitbucket connection with authz enabled but missing license for ACLS",
+			description: "Bitbucket connection with authz enabled but missing license for ACLs",
 			cfg:         conf.Unified{},
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{

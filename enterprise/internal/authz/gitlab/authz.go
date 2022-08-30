@@ -49,7 +49,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 
 	logger := log.Scoped("newAuthzProvider", "")
 	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
-		logger.Error("Check license for ACLS (GitLab)", log.Error(errLicense))
+		logger.Error("Check license for ACLs (GitLab)", log.Error(errLicense))
 		return nil, errLicense
 	}
 

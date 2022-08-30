@@ -48,7 +48,7 @@ func newAuthzProvider(
 
 	logger := log.Scoped("newAuthzProvider", "")
 	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
-		logger.Error("Check license for ACLS (BitBucket)", log.Error(errLicense))
+		logger.Error("Check license for ACLs(BitBucket)", log.Error(errLicense))
 		return nil, errLicense
 	}
 

@@ -104,7 +104,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			assert.Empty(t, warnings)
 		})
 
-		t.Run("license does not have ACLS feature", func(t *testing.T) {
+		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			licensing.MockLicenseCheckErr("failed")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
