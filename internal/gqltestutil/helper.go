@@ -32,3 +32,16 @@ func Retry(timeout time.Duration, fn func() error) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 }
+
+type Feature string
+
+var MockCheckFeature func(feature Feature) error
+
+func MockLicenseCheckErr(expectedError string) {
+	MockCheckFeature = func(feature Feature) error {
+		if expectedError == "" {
+			return nil
+		}
+		return errors.New(expectedError)
+	}
+}
