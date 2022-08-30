@@ -311,14 +311,16 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			// Gather fields about this request. When adding fields set into context,
 			// make sure to test that the fields get propagated and picked up correctly
 			// in TestLoggingMiddleware.
-			fields := []log.Field{
+			fields := append(make([]log.Field, 0, 5), // preallocate some space
 				log.String("host", r.URL.Host),
 				log.String("path", r.URL.Path),
-				log.Int("code", resp.StatusCode),
 				log.Duration("duration", time.Since(start)),
-				log.Error(err),
+				log.Error(err))
+			// Response may be nil sometimes it seems
+			if resp != nil {
+				fields = append(fields, log.Int("code", resp.StatusCode))
 			}
-			// From NewRetryPolicy
+			// Get fields from NewRetryPolicy
 			if attempt, ok := resp.Request.Context().Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
