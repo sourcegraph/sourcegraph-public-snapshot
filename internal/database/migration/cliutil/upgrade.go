@@ -79,6 +79,7 @@ func Upgrade(
 			plan,
 			skipVersionCheckFlag.Get(cmd),
 			dryRunFlag.Get(cmd),
+			true,
 			registerMigrators,
 			out,
 		)

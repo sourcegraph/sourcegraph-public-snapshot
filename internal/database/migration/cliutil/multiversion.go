@@ -109,6 +109,7 @@ func runMigration(
 	plan migrationPlan,
 	skipVersionCheck bool,
 	dryRun bool,
+	up bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 ) error {
@@ -177,6 +178,7 @@ func runMigration(
 				ctx,
 				db,
 				dryRun,
+				up,
 				registerMigrators,
 				out,
 				step.outOfBandMigrationIDs,
