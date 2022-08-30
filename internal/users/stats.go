@@ -21,21 +21,21 @@ func (d *UsersStatsDateTimeRange) toSQLConds(column string) ([]*sqlf.Query, erro
 	conds := []*sqlf.Query{}
 
 	if d.Empty != nil && *d.Empty {
-		conds = append(conds, sqlf.Sprintf(column + " IS NULL"))
+		conds = append(conds, sqlf.Sprintf(column+" IS NULL"))
 	} else {
 		if d.Lte != nil {
 			lte, err := time.Parse(time.RFC3339, *d.Lte)
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, sqlf.Sprintf(column + " <= %s", lte))
+			conds = append(conds, sqlf.Sprintf(column+" <= %s", lte))
 		}
 		if d.Gte != nil {
 			gte, err := time.Parse(time.RFC3339, *d.Gte)
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, sqlf.Sprintf(column + " >= %s", gte))
+			conds = append(conds, sqlf.Sprintf(column+" >= %s", gte))
 		}
 	}
 
@@ -54,10 +54,10 @@ func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error)
 	var conds []*sqlf.Query
 
 	if d.Lte != nil {
-		conds = append(conds, sqlf.Sprintf(column + " <= %s", d.Lte))
+		conds = append(conds, sqlf.Sprintf(column+" <= %s", d.Lte))
 	}
 	if d.Gte != nil {
-		conds = append(conds, sqlf.Sprintf(column + " >= %s", d.Gte))
+		conds = append(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
 	}
 
 	return conds, nil

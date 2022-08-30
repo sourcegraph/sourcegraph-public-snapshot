@@ -392,7 +392,9 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                     type: 'date-range',
                                     placeholder: 'Select',
                                     onChange: (range, isNegated) => {
-                                        setFiltersWithOffset({ createdAt: stringifyDateRangeQueryParameter({ range, isNegated }) })
+                                        setFiltersWithOffset({
+                                            createdAt: stringifyDateRangeQueryParameter({ range, isNegated }),
+                                        })
                                     },
                                     value: createdAt.range,
                                     isRequired: true,
@@ -417,7 +419,9 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                     type: 'date-range',
                                     placeholder: 'Select',
                                     onChange: (range, isNegated) => {
-                                        setFiltersWithOffset({ deletedAt: stringifyDateRangeQueryParameter({ range, isNegated }) })
+                                        setFiltersWithOffset({
+                                            deletedAt: stringifyDateRangeQueryParameter({ range, isNegated }),
+                                        })
                                     },
                                     value: deletedAt.range,
                                     negation: {

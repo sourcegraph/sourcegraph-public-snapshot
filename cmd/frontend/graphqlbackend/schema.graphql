@@ -6502,6 +6502,9 @@ input SiteUsersDateRangeInput {
     empty: Boolean
 }
 
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
 input SiteUsersNumberRangeInput {
     """
     Less than or equal to
