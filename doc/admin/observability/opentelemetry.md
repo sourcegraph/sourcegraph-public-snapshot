@@ -23,7 +23,8 @@ The Collector is configured with a configuration YAML file. Refer to the [docume
 
 ### Tracing
 
-Basic configuration for each backend type is described below. Just adding a backend to the `exporters` block does not enable it. It must also be added to the `service` block. See below for a basic but complete example:
+Basic configuration for each backend type is described below. Just adding a backend to the `exporters` block does not enable it. It must also be added to the `service` block.
+Refer to the next snippet for a basic but complete example, which is the default configuration out-of-the-box:
 
 ```yaml
 receivers:
