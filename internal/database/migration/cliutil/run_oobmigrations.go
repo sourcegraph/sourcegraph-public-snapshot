@@ -108,6 +108,10 @@ func runOutOfBandMigrations(
 		return nil
 	}
 
+	if err := runner.UpdateDirection(ctx, ids, !up); err != nil {
+		return err
+	}
+
 	go runner.StartPartial(ids)
 	defer runner.Stop()
 
