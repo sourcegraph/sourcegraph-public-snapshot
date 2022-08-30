@@ -7,14 +7,18 @@ import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { of } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { isCloneInProgressErrorLike, isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import {
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
+    isRepoSeeOtherErrorLike,
+} from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -53,7 +57,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, resolveRevision } from './backend'
+import { fetchFileExternalLinks, ResolvedRevision, resolveRevision } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
 import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -63,6 +67,8 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+
+import { redirectToExternalHost } from '.'
 
 import styles from './RepoContainer.module.scss'
 
@@ -88,7 +94,7 @@ export interface RepoContainerContext
         CodeInsightsProps {
     repo: RepositoryFields
     repoName: string
-    resolvedRevisionError?: ErrorLike
+    resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -152,32 +158,13 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
-    const { telemetryService } = props
+    const { extensionsController, telemetryService, globbing } = props
+
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
 
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
-    // Fetch repository upon mounting the component.
-    // const repoOrError = useObservable(
-    //     useMemo(
-    //         () =>
-    //             fetchRepository({ repoName }).pipe(
-    //                 catchError(
-    //                     (error): ObservableInput<ErrorLike> => {
-    //                         const redirect = isRepoSeeOtherErrorLike(error)
-    //                         if (redirect) {
-    //                             redirectToExternalHost(redirect)
-    //                             return NEVER
-    //                         }
-    //                         return of(asError(error))
-    //                     }
-    //                 )
-    //             ),
-    //         [repoName]
-    //     )
-    // )
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -190,9 +177,17 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         switchMap(() =>
                             resolveRevision({ repoName, revision }).pipe(
                                 catchError(error => {
+                                    const redirect = isRepoSeeOtherErrorLike(error)
+
+                                    if (redirect) {
+                                        redirectToExternalHost(redirect)
+                                        return NEVER
+                                    }
+
                                     if (isCloneInProgressErrorLike(error)) {
                                         return of<ErrorLike>(asError(error))
                                     }
+
                                     throw error
                                 })
                             )
@@ -219,13 +214,13 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
-            if (isErrorLike(resolvedRevisionOrError)) {
+            if (isErrorLike(resolvedRevisionOrError) || isErrorLike(repoOrError)) {
                 return
             }
 
             const button = (
                 <Button
-                    to={resolvedRevisionOrError?.rootTreeURL || resolvedRevisionOrError?.repo?.url || ''}
+                    to={resolvedRevisionOrError?.rootTreeURL || repoOrError?.url || ''}
                     disabled={!resolvedRevisionOrError}
                     className="text-nowrap test-repo-header-repo-link"
                     variant="secondary"
@@ -261,18 +256,13 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             className="pt-0 pb-0"
                             aria-label="Change repository"
                         >
-                            <RepositoriesPopover
-                                currentRepo={resolvedRevisionOrError?.repo?.id}
-                                telemetryService={telemetryService}
-                            />
+                            <RepositoriesPopover currentRepo={repoOrError?.id} telemetryService={telemetryService} />
                         </PopoverContent>
                     </Popover>
                 ),
             }
-        }, [resolvedRevisionOrError, coreWorkflowImprovementsEnabled, telemetryService, repoName])
+        }, [resolvedRevisionOrError, repoOrError, coreWorkflowImprovementsEnabled, telemetryService, repoName])
     )
-
-    const { extensionsController } = props
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
@@ -310,7 +300,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const { globbing } = props
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
@@ -324,13 +313,14 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
-
     if (isErrorLike(repoOrError)) {
+        const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
+
         // Display error page
         if (isRepoNotFoundErrorLike(repoOrError)) {
             return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
         }
+
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
     }
 
@@ -348,7 +338,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
         repoName,
-        resolvedRevisionError: isErrorLike(resolvedRevisionOrError) ? resolvedRevisionOrError : undefined,
+        resolvedRevisionOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
         useActionItemsBar,
@@ -369,7 +359,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={props.authenticatedUser}
                     platformContext={props.platformContext}
-                    extensionsController={props.extensionsController}
+                    extensionsController={extensionsController}
                     telemetryService={telemetryService}
                 />
                 <RepoHeaderContributionPortal
@@ -447,7 +437,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                         routes={props.repoRevisionContainerRoutes}
                                         repoName={repoName}
                                         revision={revision || ''}
-                                        resolvedRevisionOrError={resolvedRevisionOrError}
                                         // must exactly match how the revision was encoded in the URL
                                         routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                         useActionItemsBar={useActionItemsBar}

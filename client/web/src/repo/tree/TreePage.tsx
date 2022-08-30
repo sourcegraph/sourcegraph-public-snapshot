@@ -390,7 +390,11 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/compare/tab`}
                                             render={() => (
                                                 <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer {...props} repoName={repoName}>
+                                                    <RepositoryGitDataContainer
+                                                        resolvedRevisionOrError={undefined}
+                                                        {...props}
+                                                        repoName={repoName}
+                                                    >
                                                         <RepositoryCompareArea
                                                             repo={repo}
                                                             match={match}

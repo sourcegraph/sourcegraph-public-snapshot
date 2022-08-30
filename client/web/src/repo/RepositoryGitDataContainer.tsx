@@ -16,6 +16,7 @@ import { Code } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 
+import { ResolvedRevision } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
@@ -38,7 +39,7 @@ export const EmptyRepositoryPage: FunctionComponent<PropsWithChildren<unknown>> 
 
 interface RepositoryGitDataContainerProps {
     /** The repository. */
-    resolvedRevisionError?: ErrorLike
+    resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
 
     /** The repository name. */
     repoName: string
@@ -55,25 +56,29 @@ interface RepositoryGitDataContainerProps {
 export const RepositoryGitDataContainer: React.FunctionComponent<
     React.PropsWithChildren<RepositoryGitDataContainerProps>
 > = props => {
-    const { resolvedRevisionError, repoName, children } = props
+    const { resolvedRevisionOrError, repoName, children } = props
 
-    if (isErrorLike(resolvedRevisionError)) {
+    if (isErrorLike(resolvedRevisionOrError)) {
         // Show error page
-        if (isCloneInProgressErrorLike(resolvedRevisionError)) {
+        if (isCloneInProgressErrorLike(resolvedRevisionOrError)) {
             return (
                 <RepositoryCloningInProgressPage
                     repoName={repoName}
-                    progress={(resolvedRevisionError as CloneInProgressError).progress}
+                    progress={(resolvedRevisionOrError as CloneInProgressError).progress}
                 />
             )
         }
 
-        if (isRevisionNotFoundErrorLike(resolvedRevisionError)) {
+        if (isRevisionNotFoundErrorLike(resolvedRevisionOrError)) {
             return <EmptyRepositoryPage />
         }
 
         return (
-            <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={resolvedRevisionError} />} />
+            <HeroPage
+                icon={AlertCircleIcon}
+                title="Error"
+                subtitle={<ErrorMessage error={resolvedRevisionOrError} />}
+            />
         )
     }
 

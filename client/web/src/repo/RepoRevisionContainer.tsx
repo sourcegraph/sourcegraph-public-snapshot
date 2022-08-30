@@ -60,7 +60,7 @@ export interface RepoRevisionContainerContext
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
-        Omit<RepoContainerContext, 'onDidUpdateExternalLinks' | 'repo' | 'resolvedRevisionOrError'>,
+        Omit<RepoContainerContext, 'onDidUpdateExternalLinks' | 'repo'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         Pick<BlobProps, 'onHandleFuzzyFinder'>,
         RevisionSpec,
@@ -116,8 +116,7 @@ interface RepoRevisionContainerProps
     routePrefix: string
 
     /**
-     * The resolved revision or an error if it could not be resolved. This value lives in RepoContainer (this
-     * component's parent) but originates from this component.
+     * The resolved revision or an error if it could not be resolved.
      */
     resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
 
