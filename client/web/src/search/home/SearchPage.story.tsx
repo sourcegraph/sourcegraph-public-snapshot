@@ -3,6 +3,7 @@ import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedFeatureFlagsProvider } from '@sourcegraph/shared/src/featureFlags/FeatureFlagsProvider'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -14,7 +15,6 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
-import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../theme'
 import {
