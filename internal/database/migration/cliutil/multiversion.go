@@ -40,10 +40,9 @@ type migrationStep struct {
 	outOfBandMigrationIDs []int
 }
 
-// planMigration returns a path to migrate through the given instance version range. If the given
-// version range is empty, then a no-op migration plan is returned. In all other cases, the last step
-// of the resulting migration targets the highest version in the given range, and all previous steps
-// require a set of out-of-band migrations to run (or have been previously completed).
+// planMigration returns a path to migrate through the given version ranges. Each step corresponds to
+// a target instance version to migrate to, and a set of out-of-band migraitons that need to complete.
+// Done insequence, it forms a complete multi-version upgrade or migration plan.
 func planMigration(
 	from, to oobmigration.Version,
 	versionRange []oobmigration.Version,
@@ -113,10 +112,6 @@ func runMigration(
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 ) error {
-	if len(plan.steps) == 0 {
-		return errors.New("migration plan contains no steps")
-	}
-
 	var runnerSchemas []*schemas.Schema
 	for _, schemaName := range schemas.SchemaNames {
 		runnerSchemas = append(runnerSchemas, &schemas.Schema{
