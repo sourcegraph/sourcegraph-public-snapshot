@@ -66,29 +66,30 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             />
 
             {aggregationMode !== SearchAggregationModeUi.NONE && (
-                <AggregationChartCard
-                    aria-label="Sidebar search aggregation chart"
-                    data={data?.searchQueryAggregate?.aggregations}
-                    loading={loading}
-                    error={error}
-                    mode={aggregationMode}
-                    className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
-                />
+                <>
+                    <AggregationChartCard
+                        aria-label="Sidebar search aggregation chart"
+                        data={data?.searchQueryAggregate?.aggregations}
+                        loading={loading}
+                        error={error}
+                        mode={aggregationMode}
+                        className={styles.chartContainer}
+                        onBarLinkClick={onQuerySubmit}
+                    />
+                    <footer className={styles.actions}>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            outline={true}
+                            className={styles.detailsAction}
+                            data-testid="expand-aggregation-ui"
+                            onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
+                        </Button>
+                    </footer>
+                </>
             )}
-
-            <footer className={styles.actions}>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    outline={true}
-                    className={styles.detailsAction}
-                    data-testid="expand-aggregation-ui"
-                    onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
-                </Button>
-            </footer>
         </article>
     )
 }
