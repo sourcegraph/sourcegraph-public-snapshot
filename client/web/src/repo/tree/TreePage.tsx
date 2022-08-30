@@ -391,9 +391,9 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             render={() => (
                                                 <RepoRevisionWrapper>
                                                     <RepositoryGitDataContainer
-                                                        resolvedRevisionOrError={undefined}
                                                         {...props}
                                                         repoName={repoName}
+                                                        resolvedRevisionOrError={undefined}
                                                     >
                                                         <RepositoryCompareArea
                                                             repo={repo}

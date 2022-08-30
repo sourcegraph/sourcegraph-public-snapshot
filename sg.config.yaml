@@ -347,7 +347,7 @@ commands:
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
@@ -356,7 +356,7 @@ commands:
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
     description: Docsite instance serving the docs

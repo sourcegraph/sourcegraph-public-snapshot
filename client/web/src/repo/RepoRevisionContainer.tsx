@@ -70,8 +70,8 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         CodeInsightsProps {
-    repo?: RepositoryFields
-    resolvedRev?: ResolvedRevision
+    repo: RepositoryFields | undefined
+    resolvedRev: ResolvedRevision | undefined
 
     repoName: string
 
@@ -132,9 +132,8 @@ interface RepoRevisionContainerProps
     isSourcegraphDotCom: boolean
 }
 
-interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
-    repoName: string
-    resolvedRevisionOrError?: ResolvedRevision
+interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'repoName'> {
+    resolvedRevisionOrError: ResolvedRevision | undefined
 }
 
 const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
@@ -253,7 +252,7 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
         )
     }
 
-    const context: RepoRevisionContainerContext = {
+    const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
@@ -267,14 +266,14 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                 <Switch>
                     {props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
-                            condition(context) && (
+                            condition(repoRevisionContainerContext) && (
                                 <Route
                                     path={props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
                                     render={routeComponentProps =>
                                         render({
-                                            ...context,
+                                            ...repoRevisionContainerContext,
                                             ...routeComponentProps,
                                         })
                                     }

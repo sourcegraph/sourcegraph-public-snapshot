@@ -4,7 +4,6 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
@@ -129,33 +128,22 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
 
 export const RepoContributors: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionContainerContext & RouteComponentProps>
-> = ({ useBreadcrumb, setBreadcrumb, repo, history, location, match, globbing }) => {
-    if (!repo) {
-        return <LoadingSpinner />
-    }
-
-    return (
-        <RepositoryStatsArea
-            useBreadcrumb={useBreadcrumb}
-            setBreadcrumb={setBreadcrumb}
-            repo={repo}
-            history={history}
-            location={location}
-            match={match}
-            globbing={globbing}
-        />
-    )
-}
+> = ({ useBreadcrumb, setBreadcrumb, repo, history, location, match, globbing, repoName }) => (
+    <RepositoryStatsArea
+        useBreadcrumb={useBreadcrumb}
+        setBreadcrumb={setBreadcrumb}
+        repo={repo}
+        repoName={repoName}
+        history={history}
+        location={location}
+        match={match}
+        globbing={globbing}
+    />
+)
 
 export const RepoCommits: React.FunctionComponent<
     Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
-> = ({ revision, repo, ...context }) => {
-    if (!repo) {
-        return <LoadingSpinner />
-    }
-
-    return <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
-}
+> = ({ revision, repo, ...context }) => <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
@@ -193,8 +181,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history }) =>
-            repo && <RepositoryTagTab repo={repo} location={location} history={history} />,
+        render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
         path: '/-/compare/:spec*',

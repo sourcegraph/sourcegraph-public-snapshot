@@ -1,14 +1,14 @@
 import React, { useEffect, useCallback } from 'react'
 
 import * as H from 'history'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { H1 } from '@sourcegraph/wildcard'
+import { H1, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -111,7 +111,7 @@ const fetchGitCommits = (args: {
     )
 
 export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
 
     history: H.History
     location: H.Location
@@ -131,10 +131,19 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     useBreadcrumb(BREADCRUMB)
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
-            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.revision }),
-        [props.repo.id, props.revision]
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> => {
+            if (!props.repo?.id) {
+                return of()
+            }
+
+            return fetchGitCommits({ ...args, repo: props.repo?.id, revspec: props.revision })
+        },
+        [props.repo?.id, props.revision]
     )
+
+    if (!props.repo) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">

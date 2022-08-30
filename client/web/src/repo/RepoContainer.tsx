@@ -62,7 +62,11 @@ import { BlameContextProvider } from './blame/useBlameVisibility'
 import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import {
+    RepoRevisionContainer,
+    RepoRevisionContainerContext,
+    RepoRevisionContainerRoute,
+} from './RepoRevisionContainer'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
@@ -333,16 +337,26 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
-    const context: Omit<RepoContainerContext, 'repo'> = {
+    const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
+        repo: repoOrError,
         repoName,
+        revision: revision || '',
         resolvedRevisionOrError,
+        resolvedRev: undefined,
         routePrefix: repoMatchURL,
-        onDidUpdateExternalLinks: setExternalLinks,
         useActionItemsBar,
     }
+
+    const repoContainerContext: RepoContainerContext | undefined = repoOrError
+        ? {
+              ...repoRevisionContainerContext,
+              repo: repoOrError,
+              onDidUpdateExternalLinks: setExternalLinks,
+          }
+        : undefined
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
@@ -431,43 +445,35 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 render={routeComponentProps => (
                                     <RepoRevisionContainer
                                         {...routeComponentProps}
-                                        {...context}
+                                        {...repoRevisionContainerContext}
                                         {...childBreadcrumbSetters}
-                                        repo={repoOrError}
                                         routes={props.repoRevisionContainerRoutes}
-                                        repoName={repoName}
-                                        revision={revision || ''}
                                         // must exactly match how the revision was encoded in the URL
                                         routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                        useActionItemsBar={useActionItemsBar}
                                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                     />
                                 )}
                             />
                         ))}
-                        {props.repoContainerRoutes.map(
-                            ({ path, render, exact, condition = () => true }) =>
-                                condition({ ...context, repo: repoOrError as any }) && (
-                                    <Route
-                                        path={context.routePrefix + path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={exact}
-                                        // RouteProps.render is an exception
-                                        render={routeComponentProps => {
-                                            if (!repoOrError) {
-                                                return null
+                        {repoContainerContext &&
+                            props.repoContainerRoutes.map(
+                                ({ path, render, exact, condition = () => true }) =>
+                                    condition(repoContainerContext) && (
+                                        <Route
+                                            path={repoContainerContext.routePrefix + path}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            exact={exact}
+                                            // RouteProps.render is an exception
+                                            render={routeComponentProps =>
+                                                render({
+                                                    ...repoContainerContext,
+                                                    ...routeComponentProps,
+                                                })
                                             }
-
-                                            return render({
-                                                ...context,
-                                                repo: repoOrError,
-                                                ...routeComponentProps,
-                                            })
-                                        }}
-                                    />
-                                )
-                        )}
-                        <Route key="hardcoded-key" component={RepoPageNotFound} />
+                                        />
+                                    )
+                            )}
+                        {repoContainerContext && <Route key="hardcoded-key" component={RepoPageNotFound} />}
                     </Switch>
                 </ErrorBoundary>
             </BlameContextProvider>

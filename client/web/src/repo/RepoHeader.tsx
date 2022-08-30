@@ -150,17 +150,10 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const {
-        onLifecyclePropsChange,
-        repoName,
-        revision,
-        breadcrumbs,
-        location,
-        useActionItemsToggle,
-        extensionsController,
-    } = props
-
+export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    onLifecyclePropsChange,
+    ...props
+}) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -174,10 +167,10 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
-            repoName,
-            encodedRev: revision,
+            repoName: props.repoName,
+            encodedRev: props.revision,
         }),
-        [repoName, revision]
+        [props.repoName, props.revision]
     )
 
     const leftActions = useMemo(
@@ -202,7 +195,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={breadcrumbs} location={location} />
+                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
@@ -213,7 +206,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             </ul>
             <div className={styles.spacer} />
             <ErrorBoundary
-                location={location}
+                location={props.location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
@@ -250,8 +243,8 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
                 <ul className="navbar-nav">
                     <ActionItemsToggle
-                        useActionItemsToggle={useActionItemsToggle}
-                        extensionsController={extensionsController}
+                        useActionItemsToggle={props.useActionItemsToggle}
+                        extensionsController={props.extensionsController}
                     />
                 </ul>
             </ErrorBoundary>
