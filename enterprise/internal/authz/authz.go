@@ -9,6 +9,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
@@ -44,10 +46,12 @@ func ProvidersFromConfig(
 	seriousProblems []string,
 	warnings []string,
 ) {
+	logger := log.Scoped("ProvidersFromConfig", "")
+
 	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {
-			log15.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", "seriousProblems", seriousProblems)
+			logger.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", log.Strings("seriousProblems", seriousProblems))
 			allowAccessByDefault = false
 		}
 	}()

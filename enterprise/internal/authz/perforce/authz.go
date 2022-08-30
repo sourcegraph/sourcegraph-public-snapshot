@@ -3,8 +3,6 @@ package perforce
 import (
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -50,8 +48,9 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
+	logger := log.Scoped("authzProvider", "")
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
-		log15.Error("Check license for ACLS (Perforce)", "err", err)
+		logger.Error("Check license for ACLS (Perforce)", log.Error(err))
 		return nil, err
 	}
 
@@ -68,7 +67,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(log.Scoped("authzProvider", ""), urn, host, user, password, depotIDs, db), nil
+	return NewProvider(logger, urn, host, user, password, depotIDs, db), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
