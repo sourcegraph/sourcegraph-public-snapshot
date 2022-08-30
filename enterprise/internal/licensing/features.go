@@ -5,10 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,13 +24,18 @@ type Feature string
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
 func Check(feature Feature) error {
-	logger := log.Scoped("Check", "")
-	logger.Error("...checking if there's a mock")
+	fmt.Println("...checking if there's a mock for feature", feature)
 	if MockCheckFeature != nil {
 		return MockCheckFeature(feature)
 	}
 
-	logger.Error("...no mock")
+	if gqltestutil.MockCheckFeature != nil {
+		fmt.Println("...checking if there's a mock for feature 2", feature)
+
+		return MockCheckFeature(feature)
+	}
+
+	fmt.Println("...no mock")
 
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
