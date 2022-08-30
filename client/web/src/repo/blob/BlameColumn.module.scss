@@ -1,6 +1,7 @@
 .decoration {
     max-width: 240px;
     background: var(--body-bg);
+    padding: 0;
 
     :global(.top-spacer),
     :global(.bottom-spacer) {

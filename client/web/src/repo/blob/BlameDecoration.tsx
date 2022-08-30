@@ -60,7 +60,10 @@ const usePopover = ({
         }
     }, [isOpen, onOpen, onClose])
 
-    const open = useCallback(() => currentPopoverId.next(id), [id])
+    const open = useCallback(() => {
+        resetTimeout()
+        currentPopoverId.next(id)
+    }, [id])
 
     const close = useCallback(() => {
         if (currentPopoverId.getValue() === id) {
@@ -140,12 +143,12 @@ export const BlameDecoration: React.FunctionComponent<{
                     </div>
                     <hr className={styles.separator} />
                     <div className="py-2 px-3 d-flex align-items-center">
-                        <Icon aria-hidden={true} as={SourceCommitIcon} size="md" className="mr-2" />
+                        <Icon aria-hidden={true} as={SourceCommitIcon} className="mr-2 flex-shrink-0" />
                         <Link
                             to={blameHunk.displayInfo.linkURL}
                             target="_blank"
                             rel="noreferrer noopener"
-                            className="ml-1"
+                            className={styles.link}
                         >
                             {blameHunk.message}
                         </Link>

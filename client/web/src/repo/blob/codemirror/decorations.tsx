@@ -27,7 +27,6 @@ import { BlameDecoration } from '../BlameDecoration'
 import { LineDecoratorContents } from '../LineDecorator'
 
 import blameColumnStyles from '../BlameColumn.module.scss'
-import blameDecorationStyles from '../BlameDecoration.module.scss'
 import lineDecoratorStyles from '../LineDecorator.module.scss'
 
 export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
@@ -286,7 +285,7 @@ class BlameDecorationManager implements PluginValue {
                     // TODO: update spacer when decorations change
                     initialSpacer: () => {
                         const hunk = longestColumnDecorations(this.gutters.get('blame')?.items)
-                        return new BlameDecoratorMarker(hunk, /* value doesn't matter for spacer */ true, 0)
+                        return new BlameDecoratorMarker(hunk, 0)
                     },
                     // Markers need to be updated when theme changes
                     lineMarkerChange: update =>
@@ -339,16 +338,5 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
             decorations: manager => manager.inlineDecorations,
         }),
         decorationGutters.of([]),
-        EditorView.theme({
-            [`.${blameColumnStyles.decoration} a`]: {
-                width: '100%',
-            },
-            [`.${blameColumnStyles.decoration}`]: {
-                padding: '0',
-            },
-            // [`.${blameDecorationStyles.popoverTrigger}`]: {
-            //     padding: '0 0.75rem',
-            // },
-        }),
     ],
 })
