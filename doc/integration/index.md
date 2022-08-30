@@ -2,7 +2,7 @@
 
 Sourcegraph integrates with your other tools to help you search, navigate, and review your code.
 
-- [Browser extension](./browser_extension/index.md): go-to-definitions and hovers in your code host and code reviews
+- [Browser extension](browser_extension/index.md): go-to-definitions and hovers in your code host and code reviews
 - Code hosts
   - [GitHub](github.md)
   - [GitLab](gitlab.md)
