@@ -23,6 +23,7 @@ type Store interface {
 	// Repositories
 	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error)
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []shared.ConfigurationPolicy, err error)
 }
 
 // store manages the policies store.
