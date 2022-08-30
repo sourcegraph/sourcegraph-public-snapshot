@@ -54,9 +54,15 @@ func (e *eventWriter) Error(err error) error {
 func (e *eventWriter) Alert(alert *search.Alert) error {
 	var pqs []streamhttp.ProposedQuery
 	for _, pq := range alert.ProposedQueries {
+		annotations := make([]streamhttp.Annotation, 0, len(pq.Annotations))
+		for name, value := range pq.Annotations {
+			annotations = append(annotations, streamhttp.Annotation{Name: string(name), Value: value})
+		}
+
 		pqs = append(pqs, streamhttp.ProposedQuery{
 			Description: pq.Description,
 			Query:       pq.QueryString(),
+			Annotations: annotations,
 		})
 	}
 	return e.inner.Event("alert", streamhttp.EventAlert{
