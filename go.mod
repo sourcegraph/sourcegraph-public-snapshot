@@ -34,6 +34,7 @@ require (
 	github.com/crewjam/saml v0.4.6
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
+	github.com/dcadenas/pagerank v1.0.0
 	github.com/derision-test/glock v1.0.0
 	github.com/derision-test/go-mockgen v1.3.4
 	github.com/dghubble/gologin v2.2.0+incompatible

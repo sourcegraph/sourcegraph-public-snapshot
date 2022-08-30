@@ -57,6 +57,8 @@ github.com/dave/jennifer v1.4.1/go.mod h1:7jEdnm+qBcxl8PC0zyp7vxcpSRnzXSt9r39tpT
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8 h1:YG9TGUT3wOhOPxE99qpcd99TZE5zuxBaAvqjuuLMBBI=
+github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8/go.mod h1:s8JxxWxUtKGji2M1VIqcZEBQj3FPXSTt7aBsAjfYeh8=
 github.com/derision-test/go-mockgen v1.1.2 h1:bMNCerr4I3dz2/UlguwgMuMuJDQXqRnBw17ezXkGvyI=
 github.com/derision-test/go-mockgen v1.1.2/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=

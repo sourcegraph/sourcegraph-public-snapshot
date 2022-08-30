@@ -19,6 +19,20 @@ import (
 //
 // If getChildren == nil, no pruning of irrelevant data is performed.
 func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
+	state, err := CorrelateInMemory(ctx, r, root, getChildren)
+
+	// Convert data to the format we send to the writer
+	groupedBundleData, err := groupBundleData(ctx, state)
+	if err != nil {
+		return nil, err
+	}
+
+	return groupedBundleData, nil
+}
+
+// Reads, correlates and canonicalizes an lsif index from a stream,
+// and converts it into a State representation.
+func CorrelateInMemory(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*State, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
@@ -35,13 +49,7 @@ func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathex
 		}
 	}
 
-	// Convert data to the format we send to the writer
-	groupedBundleData, err := groupBundleData(ctx, state)
-	if err != nil {
-		return nil, err
-	}
-
-	return groupedBundleData, nil
+	return state, nil
 }
 
 func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot string) (*precise.GroupedBundleDataChans, error) {

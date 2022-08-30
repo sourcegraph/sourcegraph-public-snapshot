@@ -43,6 +43,7 @@ require (
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/dave/jennifer v1.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/getsentry/sentry-go v0.13.0 // indirect
