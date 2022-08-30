@@ -456,25 +456,28 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 )}
                             />
                         ))}
-                        {repoOrError &&
-                            props.repoContainerRoutes.map(
-                                ({ path, render, exact, condition = () => true }) =>
-                                    condition({ ...context, repo: repoOrError }) && (
-                                        <Route
-                                            path={context.routePrefix + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                            // RouteProps.render is an exception
-                                            render={routeComponentProps =>
-                                                render({
-                                                    ...context,
-                                                    repo: repoOrError,
-                                                    ...routeComponentProps,
-                                                })
+                        {props.repoContainerRoutes.map(
+                            ({ path, render, exact, condition = () => true }) =>
+                                condition({ ...context, repo: repoOrError as any }) && (
+                                    <Route
+                                        path={context.routePrefix + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        // RouteProps.render is an exception
+                                        render={routeComponentProps => {
+                                            if (!repoOrError) {
+                                                return null
                                             }
-                                        />
-                                    )
-                            )}
+
+                                            return render({
+                                                ...context,
+                                                repo: repoOrError,
+                                                ...routeComponentProps,
+                                            })
+                                        }}
+                                    />
+                                )
+                        )}
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
                     </Switch>
                 </ErrorBoundary>
