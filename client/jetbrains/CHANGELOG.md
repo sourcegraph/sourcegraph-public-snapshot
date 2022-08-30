@@ -1,11 +1,18 @@
 # Sourcegraph Changelog
 
+## [Unreleased]
+
+- Improve Fedora Linux compatibility: Using `BrowserUtil.browse()` rather than `Desktop.getDesktop().browse()` to open
+  links in the browser.
+
 ## [2.0.0]
 
-- Added a new UI to search with Sourcegraph from inside the IDE. Open it with <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac) by default.
+- Added a new UI to search with Sourcegraph from inside the IDE. Open it with <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac) by
+  default.
 - Added a settings UI to conveniently configure the plugin
 - General revamp on the existing features
-- Source code is now at [https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+- Source code is now
+  at [https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ## [1.2.4]
 
