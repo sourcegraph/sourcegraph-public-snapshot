@@ -51,7 +51,17 @@ type ProposedQuery struct {
 	Description string
 	Query       string
 	PatternType query.SearchType
+	Annotations map[AnnotationName]string
 }
+
+type AnnotationName string
+
+const (
+	// ResultCount communicates the number of results associated with a
+	// query. May be a number or string representing something approximate,
+	// like "500+".
+	ResultCount AnnotationName = "ResultCount"
+)
 
 func (q *ProposedQuery) QueryString() string {
 	if q.Description != "Remove quotes" {
