@@ -4,7 +4,9 @@
         text-overflow: ellipsis;
         display: inline-block;
         width: 100%;
+        max-width: 240px;
 
+        color: var(--body-color);
         &:hover {
             color: var(--body-color);
         }

@@ -1,5 +1,4 @@
 .decoration {
-    max-width: 240px;
     background: var(--body-bg);
     padding: 0;
 
@@ -7,6 +6,10 @@
     :global(.bottom-spacer) {
         background: var(--body-bg) !important;
         margin: 0 -0.75rem;
+    }
+
+    :global(.bottom-spacer) {
+        display: table-cell;
     }
 }
 
@@ -19,8 +22,4 @@ tr:global(.highlighted) {
 
 .wrapper {
     height: 1rem;
-
-    > * {
-        max-width: 100%;
-    }
 }
