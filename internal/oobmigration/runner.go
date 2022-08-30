@@ -392,7 +392,7 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
 func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
-	progress, err := migrator.Progress(ctx)
+	progress, err := migrator.Progress(ctx, migration.ApplyReverse)
 	if err != nil {
 		return err
 	}

@@ -36,7 +36,7 @@ func NewMockMigrator() *MockMigrator {
 			},
 		},
 		ProgressFunc: &MigratorProgressFunc{
-			defaultHook: func(context.Context) (r0 float64, r1 error) {
+			defaultHook: func(context.Context, bool) (r0 float64, r1 error) {
 				return
 			},
 		},
@@ -58,7 +58,7 @@ func NewStrictMockMigrator() *MockMigrator {
 			},
 		},
 		ProgressFunc: &MigratorProgressFunc{
-			defaultHook: func(context.Context) (float64, error) {
+			defaultHook: func(context.Context, bool) (float64, error) {
 				panic("unexpected invocation of MockMigrator.Progress")
 			},
 		},
@@ -190,23 +190,23 @@ func (c MigratorDownFuncCall) Results() []interface{} {
 // MigratorProgressFunc describes the behavior when the Progress method of
 // the parent MockMigrator instance is invoked.
 type MigratorProgressFunc struct {
-	defaultHook func(context.Context) (float64, error)
-	hooks       []func(context.Context) (float64, error)
+	defaultHook func(context.Context, bool) (float64, error)
+	hooks       []func(context.Context, bool) (float64, error)
 	history     []MigratorProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // Progress delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockMigrator) Progress(v0 context.Context) (float64, error) {
-	r0, r1 := m.ProgressFunc.nextHook()(v0)
-	m.ProgressFunc.appendCall(MigratorProgressFuncCall{v0, r0, r1})
+func (m *MockMigrator) Progress(v0 context.Context, v1 bool) (float64, error) {
+	r0, r1 := m.ProgressFunc.nextHook()(v0, v1)
+	m.ProgressFunc.appendCall(MigratorProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Progress method of
 // the parent MockMigrator instance is invoked and the hook queue is empty.
-func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context) (float64, error)) {
+func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context, bool) (float64, error)) {
 	f.defaultHook = hook
 }
 
@@ -214,7 +214,7 @@ func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context) (float6
 // Progress method of the parent MockMigrator instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *MigratorProgressFunc) PushHook(hook func(context.Context) (float64, error)) {
+func (f *MigratorProgressFunc) PushHook(hook func(context.Context, bool) (float64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -223,19 +223,19 @@ func (f *MigratorProgressFunc) PushHook(hook func(context.Context) (float64, err
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *MigratorProgressFunc) SetDefaultReturn(r0 float64, r1 error) {
-	f.SetDefaultHook(func(context.Context) (float64, error) {
+	f.SetDefaultHook(func(context.Context, bool) (float64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *MigratorProgressFunc) PushReturn(r0 float64, r1 error) {
-	f.PushHook(func(context.Context) (float64, error) {
+	f.PushHook(func(context.Context, bool) (float64, error) {
 		return r0, r1
 	})
 }
 
-func (f *MigratorProgressFunc) nextHook() func(context.Context) (float64, error) {
+func (f *MigratorProgressFunc) nextHook() func(context.Context, bool) (float64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -271,6 +271,9 @@ type MigratorProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 float64
@@ -282,7 +285,7 @@ type MigratorProgressFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c MigratorProgressFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
