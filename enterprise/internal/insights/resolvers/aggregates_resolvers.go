@@ -25,7 +25,7 @@ const (
 )
 
 // Possible reasons that grouping is disabled
-var invalidQueryMsg = "Grouping is disabled because the search query is not vaild."
+var invalidQueryMsg = "Grouping is disabled because the search query is not valid."
 var fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
 var authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
 var cgInvalidQueryMsg = "Grouping by capture group is only available for regex searches that contain a capturing group."
