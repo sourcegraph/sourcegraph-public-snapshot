@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -275,10 +276,18 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	logger := log.Scoped("SetRepositoryPermissionsForUsers", "")
+	logger := log.Scoped("e2e DEBUG SetRepositoryPermissionsForUsers", "")
+
+	if gqltestutil.MockCheckFeature != nil {
+		logger.Error("... e2e DEBUG - license mock")
+
+		return nil, gqltestutil.MockCheckFeature("explicit-permissions-api")
+	}
+
+	logger.Error("... e2e DEBUG - no mock")
 
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
-		logger.Error("checking license for explicit permissins api...")
+		logger.Error("e2e DEBUG - checking license for explicit permissins api...")
 		return nil, err
 	}
 
