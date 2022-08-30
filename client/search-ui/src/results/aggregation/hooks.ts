@@ -89,13 +89,19 @@ const aggregationModeDeserializer = (
 export const useAggregationSearchMode = (
     disableProactiveSearchAggregations?: boolean
 ): SetStateResult<SearchAggregationMode | SearchAggregationModeUi | null> => {
+    const deserializer = useCallback(
+        (mode: SerializedAggregationMode | null) =>
+            aggregationModeDeserializer(mode, disableProactiveSearchAggregations),
+        [disableProactiveSearchAggregations]
+    )
+
     const [aggregationMode, setAggregationMode] = useSyncedWithURLState<
         SearchAggregationMode | SearchAggregationModeUi | null,
         SerializedAggregationMode
     >({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
-        deserializer: mode => aggregationModeDeserializer(mode, disableProactiveSearchAggregations),
+        deserializer,
     })
 
     return [aggregationMode, setAggregationMode]
@@ -148,9 +154,10 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         $patternType: SearchPatternType!
         $mode: SearchAggregationMode
         $limit: Int!
+        $skipAggregation: Boolean!
     ) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
-            aggregations(mode: $mode, limit: $limit) {
+            aggregations(mode: $mode, limit: $limit) @skip(if: $skipAggregation) {
                 __typename
                 ... on ExhaustiveSearchAggregationResult {
                     mode
@@ -180,23 +187,6 @@ export const AGGREGATION_SEARCH_QUERY = gql`
     }
 `
 
-export const AGGREGATION_SEARCH_AVAILABILITY = gql`
-    fragment SearchAggregationModeAvailability on AggregationModeAvailability {
-        __typename
-        mode
-        available
-        reasonUnavailable
-    }
-
-    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!) {
-        searchQueryAggregate(query: $query, patternType: $patternType) {
-            modeAvailability {
-                ...SearchAggregationModeAvailability
-            }
-        }
-    }
-`
-
 interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
@@ -219,10 +209,16 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
     const [data, setData] = useState<GetSearchAggregationResult | undefined>()
     const modeVariable = aggregationMode === SearchAggregationModeUi.NONE ? null : aggregationMode
     const { error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
-        aggregationMode === SearchAggregationModeUi.NONE ? AGGREGATION_SEARCH_AVAILABILITY : AGGREGATION_SEARCH_QUERY,
+        AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
-            variables: { query, patternType, mode: modeVariable, limit },
+            variables: {
+                query,
+                patternType,
+                mode: modeVariable,
+                limit,
+                skipAggregation: aggregationMode === SearchAggregationModeUi.NONE,
+            },
 
             // Skip extra API request when we had no aggregation mode, and then
             // we got calculated aggregation mode from the BE. We should update
