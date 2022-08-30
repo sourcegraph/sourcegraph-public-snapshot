@@ -17,7 +17,7 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown' }> = 
 
     const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
-    const toggleBlameState = useCallback(() => setIsBlameVisible(isVisible => !isVisible), [setIsBlameVisible])
+    const toggleBlameState = useCallback(() => setIsBlameVisible(!isBlameVisible), [isBlameVisible, setIsBlameVisible])
 
     if (!extensionsAsCoreFeatures) {
         return null
