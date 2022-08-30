@@ -34,12 +34,14 @@ export interface DateRangeSelectProps {
     value?: [Date, Date]
     isRequired?: boolean
     onChange?: (value?: [Date, Date], isNegated?: boolean) => void
+    defaultIsOpen?: boolean
     // If provided will render additional checkbox and pass value to onChange prop
     negation?: {
         label: string
         value?: boolean
         message?: React.ReactNode
     }
+    className?: string
 }
 export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
     placeholder = 'Select a date range',
@@ -47,6 +49,8 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
     onChange,
     isRequired,
     negation,
+    className,
+    defaultIsOpen = false,
 }) => {
     const predefinedDates: [Date, Date, string][] = useMemo(() => {
         const now = new Date()
@@ -60,7 +64,7 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
     }, [])
 
     const [range, setRange] = useState<[Date, Date] | undefined>(value)
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(defaultIsOpen)
     const [isNegated, setIsNegated] = useState<boolean | undefined>(negation?.value ?? false)
 
     const handleCancel = useCallback((): void => {
@@ -110,7 +114,7 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
 
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
-            <PopoverTrigger as={Button} display="block" variant="secondary" outline={true}>
+            <PopoverTrigger as={Button} className={className} display="block" variant="secondary" outline={true}>
                 <div className="d-flex align-items-center justify-content-between">
                     <Tooltip content={tooltip}>
                         <span>{label}</span>
