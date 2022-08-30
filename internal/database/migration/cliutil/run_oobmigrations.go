@@ -26,9 +26,14 @@ func RunOutOfBandMigrations(
 	outFactory OutputFactory,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
-	idFlag := &cli.IntFlag{
+	idsFlag := &cli.IntSliceFlag{
 		Name:     "id",
 		Usage:    "The target migration to run. If not supplied, all migrations are run.",
+		Required: false,
+	}
+	applyReverseFlag := &cli.BoolFlag{
+		Name:     "apply-reverse",
+		Usage:    "If set, run the out of band migration in reverse.",
 		Required: false,
 	}
 
@@ -43,18 +48,14 @@ func RunOutOfBandMigrations(
 		}
 		registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
-		var ids []int
-		if id := idFlag.Get(cmd); id != 0 {
-			ids = append(ids, id)
-		}
 		if err := runOutOfBandMigrations(
 			ctx,
 			db,
-			false,
-			true,
+			false, // dry-run
+			!applyReverseFlag.Get(cmd),
 			registerMigrators,
 			out,
-			ids,
+			idsFlag.Get(cmd),
 		); err != nil {
 			return err
 		}
@@ -68,7 +69,8 @@ func RunOutOfBandMigrations(
 		Description: "",
 		Action:      action,
 		Flags: []cli.Flag{
-			idFlag,
+			idsFlag,
+			applyReverseFlag,
 		},
 	}
 }
@@ -148,6 +150,10 @@ func runOutOfBandMigrations(
 		complete := true
 		for _, m := range migrations {
 			if !m.Complete() {
+				if m.ApplyReverse && m.NonDestructive {
+					continue
+				}
+
 				complete = false
 			}
 		}
