@@ -215,7 +215,7 @@ type AggregationNotAvailableReasonType string
 const (
 	INVALID_QUERY                      AggregationNotAvailableReasonType = "INVALID_QUERY"
 	INVALID_AGGREGATION_MODE_FOR_QUERY AggregationNotAvailableReasonType = "INVALID_AGGREGATION_MODE_FOR_QUERY"
-	TIMEOUT_EXTENSION_POSSIBLE         AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_POSSIBLE"
-	TIMEOUT_NO_EXTENSION_POSSIBLE      AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_POSSIBLE"
+	TIMEOUT_EXTENSION_AVAILABLE        AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_AVAILABLE"
+	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
 	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
 )

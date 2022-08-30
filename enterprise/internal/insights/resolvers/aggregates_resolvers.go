@@ -125,9 +125,9 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
-			reasonType := types.TIMEOUT_EXTENSION_POSSIBLE
+			reasonType := types.TIMEOUT_EXTENSION_AVAILABLE
 			if args.ExtendedTimeout {
-				reasonType = types.TIMEOUT_NO_EXTENSION_POSSIBLE
+				reasonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
 			}
 			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: generalTimeoutMsg, reasonType: reasonType}, aggregationMode)}, nil
 		} else {
@@ -177,9 +177,9 @@ func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeou
 		return false, notAvailableReason{reason: unableToCountGroupsMsg, reasonType: types.ERROR_OCCURRED}
 	}
 	if shardTimeoutOccurred {
-		reasonType := types.TIMEOUT_EXTENSION_POSSIBLE
+		reasonType := types.TIMEOUT_EXTENSION_AVAILABLE
 		if runningWithExtendedTimeout {
-			reasonType = types.TIMEOUT_NO_EXTENSION_POSSIBLE
+			reasonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
 		}
 		return false, notAvailableReason{reason: shardTimeoutMsg, reasonType: reasonType}
 	}

@@ -1339,7 +1339,7 @@ An enum to describe the reasons why a search aggregations are not available
 enum NotAvailableReasonType {
     INVALID_QUERY
     INVALID_AGGREGATION_MODE_FOR_QUERY
-    TIMEOUT_EXTENSION_POSSIBLE
-    TIMEOUT_NO_EXTENSION_POSSIBLE
+    TIMEOUT_EXTENSION_AVAILABLE
+    TIMEOUT_NO_EXTENSION_AVAILABLE
     OTHER_ERROR
 }
