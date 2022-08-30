@@ -1,13 +1,16 @@
 package httpcli
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
 	"reflect"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,13 +49,17 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if current := TLSExternalConfig(); current == nil {
 		return t.base.RoundTrip(r)
 	} else if !reflect.DeepEqual(config, current) {
-		effective = t.update(current)
+		effective = t.update(r.Context(), current)
 	}
 
 	return effective.RoundTrip(r)
 }
 
-func (t *externalTransport) update(config *schema.TlsExternal) *http.Transport {
+func (t *externalTransport) update(ctx context.Context, config *schema.TlsExternal) *http.Transport {
+	// No function calls here use the context further
+	tr, _ := trace.New(ctx, "externalTransport", "update")
+	defer tr.Finish()
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -72,11 +79,10 @@ func (t *externalTransport) update(config *schema.TlsExternal) *http.Transport {
 		if effective.TLSClientConfig.RootCAs == nil {
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
-				log15.Warn(
-					"httpcli external transport failed to load SystemCertPool. Communication with external HTTPS APIs may fail",
-					"error",
-					err,
-				)
+				tr.AddEvent("failed to load SystemCertPool",
+					attribute.String("error", err.Error()),
+					attribute.String("warning", "communication with external HTTPS APIs may fail"))
+
 				pool = x509.NewCertPool()
 			}
 			effective.TLSClientConfig.RootCAs = pool
