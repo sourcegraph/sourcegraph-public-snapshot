@@ -13,7 +13,7 @@ export interface ToggleProps {
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */
-    icon: React.ComponentType<{ className?: string }>
+    iconSvgPath: string
     /** Condition for when the toggle should have an active state.  */
     isActive: boolean
     /** Callback on toggle.  */
@@ -100,7 +100,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                 aria-checked={isActive}
                 {...interactiveProps}
             >
-                <Icon aria-hidden={true} as={props.icon} />
+                <Icon aria-hidden={true} svgPath={props.iconSvgPath} />
             </Button>
         </Tooltip>
     )
