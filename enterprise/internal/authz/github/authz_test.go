@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -42,6 +43,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
+		licensing.MockLicenseCheckErr("")
 		providers, problems, warnings := NewAuthzProviders(
 			database.NewMockExternalServiceStore(),
 			[]*ExternalConnection{
@@ -74,6 +76,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
+			licensing.MockLicenseCheckErr("")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
@@ -101,7 +104,36 @@ func TestNewAuthzProviders(t *testing.T) {
 			assert.Empty(t, warnings)
 		})
 
+		t.Run("license does not have ACLS feature", func(t *testing.T) {
+			licensing.MockLicenseCheckErr("failed")
+			providers, problems, warnings := NewAuthzProviders(
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url:           schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{},
+							},
+						},
+					},
+				},
+				[]schema.AuthProviders{{
+					Github: &schema.GitHubAuthProvider{},
+				}},
+				false,
+			)
+
+			expectedError := []string{"failed"}
+			assert.Equal(t, expectedError, problems)
+			assert.Empty(t, providers)
+			assert.Empty(t, warnings)
+
+		})
+
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
+			licensing.MockLicenseCheckErr("")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{

@@ -47,7 +47,7 @@ func newAuthzProvider(
 	}
 
 	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
-		log15.Error("Check ACLS license", errLicense)
+		log15.Error("Check license for ACLS (BitBucket)", "err", errLicense)
 		return nil, errLicense
 	}
 
