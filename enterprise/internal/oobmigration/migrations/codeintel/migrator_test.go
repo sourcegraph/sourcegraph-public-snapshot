@@ -87,37 +87,37 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		}
 	}
 
-	assertProgress(0, true)
+	assertProgress(0, false)
 
 	// process dump 43 (updates bounds)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1.0/3.0, true)
+	assertProgress(1.0/3.0, false)
 
 	// process dump 44 (updates bounds)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(2.0/3.0, true)
+	assertProgress(2.0/3.0, false)
 
 	// process dump 45 (deletes schema version record with no data)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1.0, true)
+	assertProgress(1.0, false)
 
 	// reverse migration of first of remaining two dumps
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.5, false)
+	assertProgress(0.5, true)
 
 	// reverse migration of second of remaining two dumps
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.0, false)
+	assertProgress(0.0, true)
 }
 
 type testMigrationDriver struct{}
