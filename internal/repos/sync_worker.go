@@ -54,7 +54,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(dbHandle, workerstore.Options{
+	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
@@ -74,7 +74,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
-	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),

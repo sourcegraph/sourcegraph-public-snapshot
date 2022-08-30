@@ -63,10 +63,22 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 	otBridgeTracer.SetTextMapPropagator(compositePropagator)
 
 	// Set up logging
-	otelLogger := logger.AddCallerSkip(2) // no additional scope needed, this is already otel scope
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { otelLogger.Warn("error encountered", log.Error(err)) }))
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		if debug {
+			otelLogger.Warn("error encountered", log.Error(err))
+		} else {
+			otelLogger.Debug("error encountered", log.Error(err))
+		}
+	}))
 	bridgeLogger := logger.AddCallerSkip(2).Scoped("bridge", "OpenTracing to OpenTelemetry compatibility layer")
-	otBridgeTracer.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
+	otBridgeTracer.SetWarningHandler(func(msg string) {
+		if debug {
+			bridgeLogger.Warn(msg)
+		} else {
+			bridgeLogger.Debug(msg)
+		}
+	})
 
 	// Done
 	return otBridgeTracer, otelTracerProvider, &otelBridgeCloser{provider}, nil

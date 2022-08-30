@@ -49,23 +49,31 @@ func Upgrade(
 		if !ok {
 			return errors.New("bad format for -to")
 		}
+		if oobmigration.CompareVersions(from, to) != oobmigration.VersionOrderBefore {
+			return errors.Newf("invalid range (from=%s >= to=%s)", from, to)
+		}
 
-		// Construct inclusive upgrade version range `[from, to]`. This also checks
-		// for known major version upgrades (e.g., 3.0.0 -> 4.0.0) and ensures that
-		// the given values are in the correct order (e.g., from < to).
+		// Construct inclusive upgrade range (with knowledge of major upgrades)
 		versionRange, err := oobmigration.UpgradeRange(from, to)
 		if err != nil {
 			return err
 		}
 
+		// Determine the set of versions that need to have out of band migrations completed
+		// prior to a subsequent instance upgrade. We'll "pause" the migration at these points
+		// and run the out of band migration routines to completion.
+		interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
+		if err != nil {
+			return err
+		}
 		// Find the relevant schema and data migrations to perform (and in what order)
 		// for the given version range. Perform the upgrade on the configured databases.
-		plan, err := planUpgrade(versionRange)
+		plan, err := planMigration(from, to, versionRange, interrupts)
 		if err != nil {
 			return err
 		}
 
-		if err := runUpgrade(
+		return runMigration(
 			ctx,
 			runnerFactory,
 			plan,
@@ -73,11 +81,7 @@ func Upgrade(
 			dryRunFlag.Get(cmd),
 			registerMigrators,
 			out,
-		); err != nil {
-			return err
-		}
-
-		return nil
+		)
 	})
 
 	return &cli.Command{
