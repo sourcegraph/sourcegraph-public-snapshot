@@ -363,7 +363,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 id="toggle-blame"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
+                {({ actionType }) => (
+                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
+                )}
             </RepoHeaderContributionPortal>
         </>
     )
