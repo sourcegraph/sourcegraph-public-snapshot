@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -61,7 +62,9 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errDisabledSourcegraphDotCom
 	}
 
+	logger := log.Scoped("SetRepositoryPermissionsForUsers", "")
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		logger.Error("...checking license")
 		return nil, err
 	}
 
@@ -158,12 +161,12 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
@@ -273,6 +276,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	}
 
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		log.Debug("checking license for explicit permissins api...")
 		return nil, err
 	}
 

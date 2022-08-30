@@ -31,6 +31,7 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 	}
 
 	removeExternalServiceAfterTest(t, esID)
+	gqltestutil.MockCheckFeature("explicit-permissions-api")
 	gqltestutil.MockLicenseCheckErr("")
 
 	// Triggering the sync job
