@@ -205,6 +205,13 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         )
     )
 
+    /**
+     * A long time ago, we fetched `repo` in a separate GraphQL query.
+     * This GraphQL query was merged into the `resolveRevision` query to
+     * speed up the network requests waterfall. To minimize the blast radius
+     * of changes required to make it work, continue working with the `repo`
+     * data as it was received from a separate query.
+     */
     const repoOrError = isErrorLike(resolvedRevisionOrError) ? resolvedRevisionOrError : resolvedRevisionOrError?.repo
 
     // The external links to show in the repository header, if any.
@@ -350,13 +357,41 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         useActionItemsBar,
     }
 
-    const repoContainerContext: RepoContainerContext | undefined = repoOrError
-        ? {
-              ...repoRevisionContainerContext,
-              repo: repoOrError,
-              onDidUpdateExternalLinks: setExternalLinks,
-          }
-        : undefined
+    /**
+     * `RepoContainerContextRoutes` depend on `repoOrError`. We render these routes only when
+     * the `repoOrError` value is resolved.
+     */
+    const getRepoContainerContextRoutes = (): (false | JSX.Element)[] | null => {
+        if (repoOrError) {
+            const repoContainerContext: RepoContainerContext = {
+                ...repoRevisionContainerContext,
+                repo: repoOrError,
+                onDidUpdateExternalLinks: setExternalLinks,
+            }
+
+            return [
+                ...props.repoContainerRoutes.map(
+                    ({ path, render, exact, condition = () => true }) =>
+                        condition(repoContainerContext) && (
+                            <Route
+                                path={repoContainerContext.routePrefix + path}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={exact}
+                                render={routeComponentProps =>
+                                    render({
+                                        ...repoContainerContext,
+                                        ...routeComponentProps,
+                                    })
+                                }
+                            />
+                        )
+                ),
+                <Route key="hardcoded-key" component={RepoPageNotFound} />,
+            ]
+        }
+
+        return null
+    }
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
@@ -455,25 +490,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 )}
                             />
                         ))}
-                        {repoContainerContext &&
-                            props.repoContainerRoutes.map(
-                                ({ path, render, exact, condition = () => true }) =>
-                                    condition(repoContainerContext) && (
-                                        <Route
-                                            path={repoContainerContext.routePrefix + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                            // RouteProps.render is an exception
-                                            render={routeComponentProps =>
-                                                render({
-                                                    ...repoContainerContext,
-                                                    ...routeComponentProps,
-                                                })
-                                            }
-                                        />
-                                    )
-                            )}
-                        {repoContainerContext && <Route key="hardcoded-key" component={RepoPageNotFound} />}
+                        {getRepoContainerContextRoutes()}
                     </Switch>
                 </ErrorBoundary>
             </BlameContextProvider>

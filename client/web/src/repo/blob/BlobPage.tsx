@@ -7,6 +7,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { Optional } from 'utility-types'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
@@ -89,13 +90,9 @@ interface BlobPageProps
 /**
  * Blob data including specific properties used in `BlobPage` but not `Blob`
  */
-interface BlobPageInfo extends BlobInfo {
+interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     richHTML: string
     aborted: boolean
-}
-
-interface LocalBlobPageInfo extends Omit<BlobPageInfo, 'commitID'> {
-    commitID?: string
 }
 
 export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = props => {
@@ -182,7 +179,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 return blob
                             }
 
-                            const blobInfo: LocalBlobPageInfo = {
+                            const blobInfo: BlobPageInfo = {
                                 content: blob.content,
                                 html: blob.highlight.html ?? '',
                                 repoName,
@@ -210,7 +207,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
     const [nextFetchWithDisabledTimeout, highlightedBlobInfoOrError] = useEventObservable<
         void,
-        LocalBlobPageInfo | null | ErrorLike
+        BlobPageInfo | null | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -241,7 +238,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             }
                         }
 
-                        const blobInfo: LocalBlobPageInfo = {
+                        const blobInfo: BlobPageInfo = {
                             content: blob.content,
                             html: blob.highlight.html ?? '',
                             lsif: blob.highlight.lsif ?? '',
