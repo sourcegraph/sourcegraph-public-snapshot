@@ -89,7 +89,7 @@
   "workspaces": {
     "packages": [
       "client/*",
-      "client/sandboxes/*"
+      "dev/release"
     ]
   },
   "devDependencies": {

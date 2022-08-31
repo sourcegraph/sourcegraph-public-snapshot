@@ -5618,6 +5618,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sourcegraph/dev-release@workspace:dev/release":
+  version: 0.0.0-use.local
+  resolution: "@sourcegraph/dev-release@workspace:dev/release"
+  languageName: unknown
+  linkType: soft
+
 "@sourcegraph/eslint-config@npm:0.32.0":
   version: 0.32.0
   resolution: "@sourcegraph/eslint-config@npm:0.32.0"
