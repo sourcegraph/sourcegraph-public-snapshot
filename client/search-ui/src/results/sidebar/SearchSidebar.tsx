@@ -117,27 +117,3 @@ export const SearchSidebarSection: FC<SearchSidebarSectionProps> = props => {
         />
     )
 }
-
-interface SearchSidebarSectionProps
-    extends Omit<ComponentProps<typeof SearchFilterSection>, 'startCollapsed' | 'onToggle'> {
-    sectionId: SectionID
-}
-
-/**
- * Provides a collapsable section UI which is connected to SidePanel component
- * and persist expand/collapse state with temporal settings.
- */
-export const SearchSidebarSection: FC<SearchSidebarSectionProps> = props => {
-    const { className, sectionId, ...attributes } = props
-    const { collapsedSections, persistToggleState } = useContext(SearchSidebarContext)
-
-    return (
-        <SearchFilterSection
-            sectionId={sectionId}
-            startCollapsed={collapsedSections?.[sectionId]}
-            onToggle={persistToggleState}
-            className={classNames(className, styles.item)}
-            {...attributes}
-        />
-    )
-}

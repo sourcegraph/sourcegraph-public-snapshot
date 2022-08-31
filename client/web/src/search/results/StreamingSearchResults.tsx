@@ -8,13 +8,10 @@ import { Observable } from 'rxjs'
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
 import {
-    AggregationUIMode,
     FetchFileParameters,
-    SearchAggregationResult,
     SidebarButtonStrip,
     StreamingProgress,
     StreamingSearchResultsList,
-    useAggregationUIMode,
 } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -44,6 +41,7 @@ import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './sidebar/aggregation'
 import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
 
 import styles from './StreamingSearchResults.module.scss'

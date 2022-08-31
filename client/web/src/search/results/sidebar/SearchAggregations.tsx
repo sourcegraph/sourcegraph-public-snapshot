@@ -6,13 +6,13 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import {
+    AggregationChartCard,
     AggregationModeControls,
     AggregationUIMode,
     useAggregationSearchMode,
     useAggregationUIMode,
-    AggregationChartCard,
     useSearchAggregationData,
-} from '../aggregation'
+} from './aggregation'
 
 import styles from './SearchAggregations.module.scss'
 
@@ -27,7 +27,8 @@ interface SearchAggregationsProps {
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
-    disableProactiveSearchAggregations: boolean
+    /** Whether to proactively load and display search aggregations */
+    proactive: boolean
 
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
@@ -38,7 +39,7 @@ interface SearchAggregationsProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { query, patternType, disableProactiveSearchAggregations, onQuerySubmit } = props
+    const { query, patternType, proactive, onQuerySubmit } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -47,12 +48,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
         patternType,
         aggregationMode,
         limit: 10,
-        disableProactiveSearchAggregations,
+        proactive,
     })
-
-    /**
-     * If disableProactiveSearchAggregations do not run queries or show chart until user selects a mode.
-     */
 
     return (
         <article className="pt-2">
@@ -65,7 +62,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 onModeChange={setAggregationMode}
             />
 
-            {!!disableProactiveSearchAggregations && aggregationMode !== null && (
+            {(proactive || aggregationMode !== null) && (
                 <>
                     <AggregationChartCard
                         aria-label="Sidebar search aggregation chart"

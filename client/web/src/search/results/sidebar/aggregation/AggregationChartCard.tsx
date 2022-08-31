@@ -7,7 +7,7 @@ import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/al
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Text, Link, Tooltip, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { GetSearchAggregationResult, SearchAggregationDatum } from '../../graphql-operations'
+import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
 import { AggregationChart } from './AggregationChart'
 

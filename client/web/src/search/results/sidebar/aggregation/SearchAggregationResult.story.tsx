@@ -7,7 +7,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { GetSearchAggregationResult, SearchAggregationMode } from '../../graphql-operations'
+import { GetSearchAggregationResult, SearchAggregationMode } from '../../../../graphql-operations'
 
 import { AGGREGATION_SEARCH_QUERY } from './hooks'
 import { SearchAggregationResult } from './SearchAggregationResult'

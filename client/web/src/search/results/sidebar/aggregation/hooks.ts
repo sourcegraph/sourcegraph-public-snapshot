@@ -3,10 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '@sourcegraph/search-ui'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -172,7 +171,7 @@ interface SearchAggregationDataInput {
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
     limit: number
-    disableProactiveSearchAggregations: boolean
+    proactive?: boolean
 }
 
 type SearchAggregationResults =
@@ -181,7 +180,7 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit, disableProactiveSearchAggregations } = input
+    const { query, patternType, aggregationMode, limit, proactive } = input
 
     const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
@@ -196,7 +195,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 patternType,
                 mode: aggregationMode,
                 limit,
-                skipAggregation: aggregationMode === null && !!disableProactiveSearchAggregations,
+                skipAggregation: aggregationMode === null && !proactive,
             },
 
             // Skip extra API request when we had no aggregation mode, and then
@@ -222,7 +221,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
 
                 // Catch initial page mount when aggregation mode isn't set on the FE and BE
                 // calculated aggregation mode automatically on the backend based on given query
-                if (calculatedAggregationMode !== aggregationMode && !disableProactiveSearchAggregations) {
+                if (calculatedAggregationMode !== aggregationMode && proactive) {
                     setAggregationMode(calculatedAggregationMode)
                 }
 
