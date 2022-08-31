@@ -483,7 +483,13 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, cs, repo)
+	// TODO: After this change the syncer will only be able to sync
+	// - changesets created by batch changes
+	// - imported changesets, if a site credential exists.
+	// It can NOT sync imported changesets anymore when only a user credential
+	// is present.
+	srcer := sources.NewSourcer(s.httpFactory)
+	source, err := srcer.ForChangeset(ctx, s.syncStore, cs)
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
 			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")
@@ -536,19 +542,4 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
-}
-
-func loadChangesetSource(
-	ctx context.Context, cf *httpcli.Factory, syncStore SyncStore,
-	ch *btypes.Changeset, repo *types.Repo,
-) (sources.ChangesetSource, error) {
-	srcer := sources.NewSourcer(cf)
-	// This is a ChangesetSource authenticated with the external service
-	// token.
-	source, err := srcer.ForRepo(ctx, syncStore, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	return sources.WithAuthenticatorForChangeset(ctx, syncStore, source, ch, repo, true)
 }
