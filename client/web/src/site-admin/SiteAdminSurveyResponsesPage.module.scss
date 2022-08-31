@@ -1,19 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-.container {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-}
-
-.item {
-    width: 32%;
-    @media (--md-breakpoint-up) {
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-}
-
 .wide-border {
     border-width: 3px !important;
+}
+
+.border-right {
+    border-right: 1px solid var(--border-color-2);
 }

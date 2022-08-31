@@ -46,19 +46,19 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, cf)
+		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, cf)
+		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), db, svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource", ""), svc, cf)
+		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource", "bitbucket server repo source"), svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", ""), svc, cf)
+		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", "bitbucket cloud repo source"), svc, cf)
 	case extsvc.KindGitolite:
 		return NewGitoliteSource(ctx, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", ""), svc, cf)
+		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", "phabricator repo source"), svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(ctx, svc, cf)
 	case extsvc.KindPerforce:
@@ -77,7 +77,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindRustPackages:
 		return NewRustPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
-		return NewOtherSource(ctx, svc, cf)
+		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}

@@ -7,9 +7,8 @@ import { Observable } from 'rxjs'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Code, Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { TerminalLine } from '../auth/Terminal'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -66,9 +65,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
-                    <TerminalLine className={styles.alertContent}>
-                        {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                    </TerminalLine>
+                    <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
                 </Alert>
             </div>
         )}

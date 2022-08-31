@@ -94,9 +94,13 @@ var planFeatures = map[Plan][]Feature{
 	},
 
 	PlanBusiness0: {
+		FeatureCampaigns,
+		FeatureBatchChanges,
 		FeatureSSO,
 	},
 	enterprise1: {
+		FeatureCampaigns,
+		FeatureBatchChanges,
 		FeatureSSO,
 	},
 }

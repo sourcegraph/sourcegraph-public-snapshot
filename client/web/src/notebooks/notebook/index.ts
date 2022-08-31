@@ -151,18 +151,17 @@ export class Notebook {
                 })
                 break
             case 'query': {
-                const { extensionHostAPI } = this.dependencies
+                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(
-                        extensionHostAPI !== null
-                            ? transformSearchQuery({
-                                  query,
-                                  extensionHostAPIPromise: extensionHostAPI,
-                              })
-                            : of(query),
+                        transformSearchQuery({
+                            query,
+                            extensionHostAPIPromise: extensionHostAPI,
+                            enableGoImportsSearchQueryTransform,
+                        }),
                         {
                             version: LATEST_VERSION,
                             patternType: SearchPatternType.standard,
