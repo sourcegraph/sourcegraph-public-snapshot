@@ -93,15 +93,15 @@ func (t *Trace) Finish() {
 // Deprecated APIs //
 /////////////////////
 
-// LogFields logs fields to the opentracing.Span as well as the nettrace.Trace.
+// Deprecated: Use AddEvent(...) instead.
 //
-// Deprecated: Use AddEvent instead.
+// LogFields logs fields to the opentracing.Span as well as the nettrace.Trace.
 func (t *Trace) LogFields(fields ...log.Field) {
 	t.AddEvent("LogFields", otLogFieldsToOTelAttrs(fields)...)
 }
 
+// Deprecated: Use SetAttributes(...) instead.
+//
 // TagFields adds fields to the opentracing.Span as tags
 // as well as as logs to the nettrace.Trace.
-//
-// Deprecated: Use SetAttributes instead.
 func (t *Trace) TagFields(fields ...log.Field) { t.SetAttributes(otLogFieldsToOTelAttrs(fields)...) }
