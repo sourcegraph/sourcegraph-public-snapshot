@@ -242,7 +242,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
                     <H4>
                         {licenseInfo.codeScaleExceededLimit ? (
-                            <>You've used all 100GB of storage</>
+                            <>You've used all 100GiB of storage</>
                         ) : (
                             <>Your Sourcegraph is almost full</>
                         )}
