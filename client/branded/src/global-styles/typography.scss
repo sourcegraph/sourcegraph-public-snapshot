@@ -28,26 +28,6 @@ p {
     margin-bottom: var(--paragraph-margin-bottom);
 }
 
-sup,
-sub {
-    position: relative;
-    line-height: 0;
-    vertical-align: baseline;
-}
-
-// 1. Correct the text wrapping in Edge and IE.
-// 2. Correct the color inheritance from `fieldset` elements in IE.
-legend {
-    display: block;
-    width: 100%;
-    max-width: 100%; // 1
-    padding: 0;
-    margin-bottom: 0.5rem;
-    line-height: inherit;
-    color: inherit; // 2
-    white-space: normal; // 1
-}
-
 // Content grouping
 //
 // 1. Add the correct box sizing in Firefox.
@@ -127,13 +107,27 @@ small,
 sup,
 sub {
     font-size: 0.5em;
+    position: relative;
+    line-height: 0;
+    vertical-align: baseline;
 }
+
 sup {
     top: -1em;
 }
 
+// 1. Correct the text wrapping in Edge and IE.
+// 2. Correct the color inheritance from `fieldset` elements in IE.
 legend {
     font-size: 1rem;
+    display: block;
+    width: 100%;
+    max-width: 100%; // 1
+    padding: 0;
+    margin-bottom: 0.5rem;
+    line-height: inherit;
+    color: inherit; // 2
+    white-space: normal; // 1
 }
 
 // Body / Base / Medium
