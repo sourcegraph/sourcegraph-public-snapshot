@@ -2394,7 +2394,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `
