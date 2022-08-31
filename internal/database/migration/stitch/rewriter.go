@@ -114,6 +114,8 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	reorderMigrations,
 }
 
+var codeintelSchemaMigrationsCommentPattern = lazyregexp.New(`COMMENT ON (TABLE|COLUMN) codeintel_schema_migrations(\.[a-z_]+)? IS '[^']+';`)
+
 // rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
 // title of "squashed migration".
 func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
@@ -123,6 +125,11 @@ func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version,
 
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
+	})
+
+	// Replace comments on possibly missing table in init migrations
+	mapContents(contents, migrationFilename(1000000004, "up.sql"), func(old string) string {
+		return codeintelSchemaMigrationsCommentPattern.ReplaceAllString(old, "-- Comments removed")
 	})
 }
 
