@@ -1,8 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { createLocation } from 'history'
+import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
+import { createLocation, createMemoryHistory } from 'history'
+import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
 
 import { ConnectionNodes } from './ConnectionNodes'
+import { FilteredConnection } from './FilteredConnection'
 
 function fakeConnection<N>({
     hasNextPage,
@@ -36,6 +38,53 @@ const defaultConnectionNodesProps = {
     pluralNoun: 'cats',
     query: '',
 }
+
+describe('FilteredConnection', () => {
+    afterAll(cleanup)
+
+    describe('useURLQuery', () => {
+        it('does not update the history if searchFragment didnt change', async () => {
+            const history = createMemoryHistory()
+            history.push('/?foo=bar')
+
+            // Hook into history.replace to detect when FilteredConnection updates search
+            // fragment
+            const oldReplaceHistory = history.replace.bind(history)
+            const fakeReplaceHistory = sinon.spy(args => oldReplaceHistory(args))
+            history.replace = fakeReplaceHistory
+
+            // This is the fake connection
+            const connection = fakeConnection({ hasNextPage: true, totalCount: 2, nodes: [{}] })
+            const connectionSubject = new BehaviorSubject(connection)
+
+            render(
+                <FilteredConnection
+                    {...defaultConnectionNodesProps}
+                    location={history.location}
+                    history={history}
+                    useURLQuery={true}
+                    queryConnection={() => connectionSubject}
+                />
+            )
+
+            act(() => {
+                // Emulate polling by re-emiting the connection again.
+                // This should not lead to history being updated
+                connectionSubject.next(connection)
+                connectionSubject.next(connection)
+                connectionSubject.next(connection)
+            })
+
+            // Click "Show more" button, should cause history to be updated
+            fireEvent.click(screen.getByRole('button')!)
+            expect(history.location.search).toEqual('?foo=bar&first=40')
+            fireEvent.click(screen.getByRole('button')!)
+            expect(history.location.search).toEqual('?foo=bar&first=80')
+
+            await waitFor(() => sinon.assert.calledTwice(fakeReplaceHistory))
+        })
+    })
+})
 
 describe('ConnectionNodes', () => {
     afterAll(cleanup)
