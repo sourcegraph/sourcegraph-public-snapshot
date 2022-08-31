@@ -2471,7 +2471,3 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 `
 
 func stringPtr(s string) *string { return &s }
-
-func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-}
