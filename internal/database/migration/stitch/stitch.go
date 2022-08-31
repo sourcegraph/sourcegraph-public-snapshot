@@ -64,18 +64,6 @@ func overlayDefinitions(schemaName, root string, revs []string) (map[int]definit
 	definitionMap := map[int]definition.Definition{}
 	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
-		revVersion, ok := oobmigration.NewVersionFromString(rev)
-		if !ok {
-			return nil, nil, errors.Newf("illegal rev %q", rev)
-		}
-		firstVersionForSchema, ok := schemaBounds[schemaName]
-		if !ok {
-			return nil, nil, errors.Newf("illegal schema %q", rev)
-		}
-		if oobmigration.CompareVersions(revVersion, firstVersionForSchema) != oobmigration.VersionOrderAfter {
-			continue
-		}
-
 		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
 		if err != nil {
 			return nil, nil, err
@@ -102,6 +90,18 @@ const squashedMigrationPrefix = "squashed migrations"
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
 func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
+	revVersion, ok := oobmigration.NewVersionFromString(rev)
+	if !ok {
+		return shared.MigrationBounds{}, errors.Newf("illegal rev %q", rev)
+	}
+	firstVersionForSchema, ok := schemaBounds[schemaName]
+	if !ok {
+		return shared.MigrationBounds{}, errors.Newf("illegal schema %q", rev)
+	}
+	if oobmigration.CompareVersions(revVersion, firstVersionForSchema) != oobmigration.VersionOrderAfter {
+		return shared.MigrationBounds{PreCreation: true}, nil
+	}
+
 	fs, err := ReadMigrations(schemaName, root, rev)
 	if err != nil {
 		return shared.MigrationBounds{}, err
