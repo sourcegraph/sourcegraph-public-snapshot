@@ -15,7 +15,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { BlameHunk } from '../blame/useBlameDecorations'
+import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
 
@@ -85,16 +85,8 @@ export const BlameDecoration: React.FunctionComponent<{
     onDeselect?: (line: number) => void
 }> = ({ line, blameHunk, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
-    const onOpen = useCallback(() => {
-        if (typeof line === 'number' && onSelect) {
-            onSelect(line)
-        }
-    }, [line, onSelect])
-    const onClose = useCallback(() => {
-        if (typeof line === 'number' && onDeselect) {
-            onDeselect(line)
-        }
-    }, [line, onDeselect])
+    const onOpen = useCallback(() => onSelect?.(line), [onSelect, line])
+    const onClose = useCallback(() => onDeselect?.(line), [onDeselect, line])
     const { isOpen, open, close, closeWithTimeout, resetCloseTimeout } = usePopover({
         id,
         timeout: 1000,

@@ -76,14 +76,13 @@ const fetchBlame = memoizeObservable(
     makeRepoURI
 )
 
-const now = Date.now()
-
 /**
  * Get display info shared between status bar items and text document decorations.
  */
 const getDisplayInfoFromHunk = (
     { author, commit, message }: Omit<BlameHunk, 'displayInfo'>,
-    sourcegraphURL: string
+    sourcegraphURL: string,
+    now: number
 ): BlameHunkDisplayInfo => {
     const displayName = truncate(author.person.displayName, { length: 25 })
     const username = author.person.user ? `(${author.person.user.username}) ` : ''
@@ -100,7 +99,7 @@ const getDisplayInfoFromHunk = (
     }
 }
 
-export const useBlameDecorations = (
+export const useBlameHunks = (
     {
         repoName,
         commitID,
@@ -124,14 +123,13 @@ export const useBlameDecorations = (
         )
     )
 
-    const hunksWithDisplayInfo = useMemo(
-        () =>
-            hunks?.map(hunk => ({
-                ...hunk,
-                displayInfo: getDisplayInfoFromHunk(hunk, sourcegraphURL),
-            })),
-        [hunks, sourcegraphURL]
-    )
+    const hunksWithDisplayInfo = useMemo(() => {
+        const now = Date.now()
+        return hunks?.map(hunk => ({
+            ...hunk,
+            displayInfo: getDisplayInfoFromHunk(hunk, sourcegraphURL, now),
+        }))
+    }, [hunks, sourcegraphURL])
 
     return hunksWithDisplayInfo
 }

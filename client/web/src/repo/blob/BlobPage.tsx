@@ -39,7 +39,7 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameDecorations } from '../blame/useBlameDecorations'
+import { useBlameHunks } from '../blame/useBlameHunks'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -284,7 +284,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
 
     useBlobPanelViews(props)
 
-    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath }, props.platformContext.sourcegraphURL)
+    const blameDecorations = useBlameHunks({ repoName, commitID, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
