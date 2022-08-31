@@ -72,14 +72,22 @@ type Sourcer interface {
 	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
 }
 
-type sourcer struct {
-	cf *httpcli.Factory
-}
-
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
 func NewSourcer(cf *httpcli.Factory) Sourcer {
+	return newSourcer(cf, loadBatchesSource)
+}
+
+type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error)
+
+type sourcer struct {
+	cf        *httpcli.Factory
+	newSource changesetSourceFactory
+}
+
+func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	return &sourcer{
-		cf,
+		cf:        cf,
+		newSource: csf,
 	}
 }
 
@@ -89,7 +97,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, errors.Wrap(err, "loading changeset repo")
 	}
 	// Consider all available external services for this repo.
-	css, err := s.loadBatchesSource(ctx, tx, repo.ExternalServiceIDs())
+	css, err := s.newSource(ctx, tx, s.cf, repo.ExternalServiceIDs())
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +115,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 
 func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error) {
 	// Consider all available external services for this repo.
-	css, err := s.loadBatchesSource(ctx, tx, repo.ExternalServiceIDs())
+	css, err := s.newSource(ctx, tx, s.cf, repo.ExternalServiceIDs())
 	if err != nil {
 		return nil, err
 	}
@@ -117,28 +125,28 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
-		return nil, ErrNoPushCredentials{}
+		return nil, ErrMissingCredentials
 	}
 
 	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
-	css, err := s.loadBatchesSource(ctx, tx, extSvcIDs)
+	css, err := s.newSource(ctx, tx, s.cf, extSvcIDs)
 	if err != nil {
 		return nil, err
 	}
 	return css.WithAuthenticator(au)
 }
 
-func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, externalServiceIDs []int64) (ChangesetSource, error) {
+func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error) {
 	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
 		IDs: externalServiceIDs,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(ctx, s.cf, extSvc)
+	css, err := buildChangesetSource(ctx, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -148,13 +156,13 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
 	}
 
-	cloneURL, err := extractCloneURL(ctx, repo)
+	cloneURL, err := extractCloneURL(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +390,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 }
 
 // extractCloneURL returns a remote URL from the repo, preferring HTTPS over SSH.
-func extractCloneURL(ctx context.Context, repo *types.Repo) (*vcs.URL, error) {
+func extractCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	if len(repo.Sources) == 0 {
 		return nil, errors.New("no clone URL found for repo")
 	}
@@ -395,16 +403,12 @@ func extractCloneURL(ctx context.Context, repo *types.Repo) (*vcs.URL, error) {
 		}
 		cloneURLs = append(cloneURLs, parsedURL)
 	}
+
 	sort.SliceStable(cloneURLs, func(i, j int) bool {
 		return !cloneURLs[i].IsSSH()
 	})
-	cloneURL := cloneURLs[0]
-	// Remove any existing credentials from the clone URL, external service clone
-	// URLs aren't meant to be used in batch changes.
-	// The CloneURLs on repo.Sources should never contain credentials anymore, but
-	// just be safe.
-	cloneURL.User = nil
-	return cloneURL, nil
+
+	return cloneURLs[0], nil
 }
 
 var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")

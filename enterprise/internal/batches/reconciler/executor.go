@@ -184,7 +184,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(ctx, remoteRepo)
+	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
 		return err
 	}

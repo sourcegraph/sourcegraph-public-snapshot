@@ -606,6 +606,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Err:                     tc.sourcerErr,
 				ChangesetExists:         tc.alreadyExists,
 				IsArchivedPushErrorTrue: tc.isRepoArchived,
+				CurrentAuthenticator:    &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "token"}},
 			}
 
 			if tc.sourcerMetadata != nil {
