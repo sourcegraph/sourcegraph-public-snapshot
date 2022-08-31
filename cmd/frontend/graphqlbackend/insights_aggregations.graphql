@@ -132,7 +132,7 @@ type AggregationGroup {
 Defines how the data series is generated.
 """
 union SearchAggregationResult =
-    ExhaustiveSearchAggregationResult
+      ExhaustiveSearchAggregationResult
     | NonExhaustiveSearchAggregationResult
     | SearchAggregationNotAvailable
 
