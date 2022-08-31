@@ -33,8 +33,9 @@ import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { StatusMessagesResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import styles from './StatusMessagesNavItem.module.scss'
 import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
+
+import styles from './StatusMessagesNavItem.module.scss'
 
 function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(STATUS_MESSAGES).pipe(

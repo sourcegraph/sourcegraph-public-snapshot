@@ -378,14 +378,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     )}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
-                            <StatusMessagesNavItem
-                                user={{
-                                    id: props.authenticatedUser.id,
-                                    username: props.authenticatedUser.username,
-                                    isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                }}
-                                history={history}
-                            />
+                            <StatusMessagesNavItem history={history} />
                         </NavAction>
                     )}
                     {!props.authenticatedUser ? (
