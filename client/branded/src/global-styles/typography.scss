@@ -8,6 +8,7 @@
 }
 
 // ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
 h2,
 h3,
 h4,
@@ -26,16 +27,6 @@ sub {
 p {
     margin-top: 0;
     margin-bottom: var(--paragraph-margin-bottom);
-}
-
-// Content grouping
-//
-// 1. Add the correct box sizing in Firefox.
-// 2. Show the overflow in Edge and IE.
-hr {
-    box-sizing: content-box; // 1
-    height: 0; // 1
-    overflow: visible; // 2
 }
 
 b {
@@ -197,7 +188,14 @@ label.text-uppercase small,
     }
 }
 
+// Content grouping
+//
+// 1. Add the correct box sizing in Firefox.
+// 2. Show the overflow in Edge and IE.
 hr {
+    box-sizing: content-box; // 1
+    height: 0; // 1
+    overflow: visible; // 2
     margin-top: var(--hr-margin-y);
     margin-bottom: var(--hr-margin-y);
     border: 0;
