@@ -1,8 +1,8 @@
-import { Remote } from 'comlink'
 import { NEVER, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '../api/contract'
 import { ProxySubscribable, proxySubscribable } from '../api/extension/api/common'
+import { pretendRemote } from '../api/util'
 
 import { Controller } from './controller'
 
@@ -13,13 +13,15 @@ export function createNoopController(): Controller {
         registerCommand: () => ({
             unsubscribe: () => {},
         }),
-        extHostAPI: Promise.resolve(makeRemote(noopFlatExtensionHostAPI)),
+        extHostAPI: Promise.resolve(pretendRemote(noopFlatExtensionHostAPI)),
         unsubscribe: () => {},
     }
 }
 
 const NOOP = (): void => {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const NOOP_EMPTY_ARRAY_PROXY = (): ProxySubscribable<any> => proxySubscribable(of([]))
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const NOOP_NEVER_PROXY = (): ProxySubscribable<any> => proxySubscribable(NEVER)
 
 const noopFlatExtensionHostAPI: FlatExtensionHostAPI = {
@@ -44,6 +46,7 @@ const noopFlatExtensionHostAPI: FlatExtensionHostAPI = {
 
     updateContext: NOOP,
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerContributions: (): any => ({
         unsubscribe: NOOP,
     }),
@@ -83,32 +86,4 @@ const noopFlatExtensionHostAPI: FlatExtensionHostAPI = {
     haveInitialExtensionsLoaded: () => proxySubscribable(of(true)),
 
     getActiveExtensions: NOOP_EMPTY_ARRAY_PROXY,
-}
-
-// Since our public Controller interface exposes the APIs on the comlink internal Remote<> type, we need
-// to mimic this behavior. A remote oject is an object where all methods are wrapped in a Promise. We
-// use a proxy to achieve this.
-function makeRemote<T>(object: T): Remote<T> {
-    const proxy: any = new Proxy(
-        {},
-        {
-            get(_target, prop) {
-                const raw = object[prop as keyof T]
-                if (typeof raw === 'function') {
-                    return (...args: any[]) => Promise.resolve(raw(...args))
-                }
-                return Promise.resolve(raw)
-            },
-            set() {
-                throw new Error('set is not supported on the extensions controller')
-            },
-            apply() {
-                throw new Error('apply is not supported on the extensions controller')
-            },
-            construct() {
-                throw new Error('construct is not supported on the extensions controller')
-            },
-        }
-    )
-    return proxy
 }

@@ -358,7 +358,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
-                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                             
                                             onClick={
                                                 createActionButton.eventToLog
                                                     ? () => {

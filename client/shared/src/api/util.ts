@@ -131,7 +131,6 @@ export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Obse
  * NOTE2: for testing purposes only!!
  */
 export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     (new Proxy(object, {
         get: (a, property) => {
             if (property === 'then') {
