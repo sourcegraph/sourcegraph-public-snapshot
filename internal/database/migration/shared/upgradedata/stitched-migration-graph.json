@@ -485,127 +485,172 @@
 			}
 		],
 		"BoundsByRev": {
+			"v3.20.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.21.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.22.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.23.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.24.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
 			"v3.25.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000004
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.26.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000005
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.27.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000005
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.28.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000005
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.29.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000006
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.30.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000008
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.31.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000011
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.32.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000013
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.33.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000016
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.34.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000021
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.35.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000024
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.36.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000025
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.37.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000027
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.38.0": {
 				"RootID": 1000000020,
 				"LeafIDs": [
 					1646761143
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.39.0": {
 				"RootID": 1000000020,
 				"LeafIDs": [
 					1649801281
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.40.0": {
 				"RootID": 1000000020,
 				"LeafIDs": [
 					1652289966
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.41.0": {
 				"RootID": 1000000026,
 				"LeafIDs": [
 					1651021000,
 					1652289966
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.42.0": {
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1656517037,
 					1656608833
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.43.0": {
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1659572248
-				]
+				],
+				"PreCreation": false
 			},
 			"v4.0.0": {
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1659572248
-				]
+				],
+				"PreCreation": false
 			}
 		}
 	},
@@ -677,7 +722,7 @@
 			{
 				"ID": 1000000004,
 				"Name": "comments",
-				"UpQuery": "COMMENT ON TABLE codeintel_schema_migrations IS 'Holds a single column storing the status of the most recent migration attempt.';\nCOMMENT ON COLUMN codeintel_schema_migrations.version IS 'The schema version that was the target of the most recent migration attempt.';\nCOMMENT ON COLUMN codeintel_schema_migrations.dirty IS 'Whether or not the most recent migration attempt failed.';\n\nCOMMENT ON TABLE lsif_data_documents IS 'Stores reference, hover text, moniker, and diagnostic data about a particular text document witin a dump.';\nCOMMENT ON COLUMN lsif_data_documents.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_documents.path IS 'The path of the text document relative to the associated dump root.';\nCOMMENT ON COLUMN lsif_data_documents.data IS 'A gob-encoded payload conforming to the [DocumentData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L13:6) type.';\n\nCOMMENT ON TABLE lsif_data_metadata IS 'Stores the number of result chunks associated with a dump.';\nCOMMENT ON COLUMN lsif_data_metadata.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_metadata.num_result_chunks IS 'A bound of populated indexes in the lsif_data_result_chunks table for the associated dump. This value is used to hash identifiers into the result chunk index to which they belong.';\n\nCOMMENT ON TABLE lsif_data_result_chunks IS 'Associates result set identifiers with the (document path, range identifier) pairs that compose the set.';\nCOMMENT ON COLUMN lsif_data_result_chunks.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_result_chunks.idx IS 'The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).';\nCOMMENT ON COLUMN lsif_data_result_chunks.data IS 'A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L70:6) type.';\n\nCOMMENT ON TABLE lsif_data_definitions IS 'Associates (document, range) pairs with the import monikers attached to the range.';\nCOMMENT ON COLUMN lsif_data_definitions.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_definitions.scheme IS 'The moniker scheme.';\nCOMMENT ON COLUMN lsif_data_definitions.identifier IS 'The moniker identifier.';\nCOMMENT ON COLUMN lsif_data_definitions.data IS 'A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L100:6) types.';\n\nCOMMENT ON TABLE lsif_data_references IS 'Associates (document, range) pairs with the export monikers attached to the range.';\nCOMMENT ON COLUMN lsif_data_references.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_references.scheme IS 'The moniker scheme.';\nCOMMENT ON COLUMN lsif_data_references.identifier IS 'The moniker identifier.';\nCOMMENT ON COLUMN lsif_data_references.data IS 'A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L100:6) types.';",
+				"UpQuery": "-- Comments removed\n-- Comments removed\n-- Comments removed\n\nCOMMENT ON TABLE lsif_data_documents IS 'Stores reference, hover text, moniker, and diagnostic data about a particular text document witin a dump.';\nCOMMENT ON COLUMN lsif_data_documents.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_documents.path IS 'The path of the text document relative to the associated dump root.';\nCOMMENT ON COLUMN lsif_data_documents.data IS 'A gob-encoded payload conforming to the [DocumentData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L13:6) type.';\n\nCOMMENT ON TABLE lsif_data_metadata IS 'Stores the number of result chunks associated with a dump.';\nCOMMENT ON COLUMN lsif_data_metadata.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_metadata.num_result_chunks IS 'A bound of populated indexes in the lsif_data_result_chunks table for the associated dump. This value is used to hash identifiers into the result chunk index to which they belong.';\n\nCOMMENT ON TABLE lsif_data_result_chunks IS 'Associates result set identifiers with the (document path, range identifier) pairs that compose the set.';\nCOMMENT ON COLUMN lsif_data_result_chunks.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_result_chunks.idx IS 'The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).';\nCOMMENT ON COLUMN lsif_data_result_chunks.data IS 'A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L70:6) type.';\n\nCOMMENT ON TABLE lsif_data_definitions IS 'Associates (document, range) pairs with the import monikers attached to the range.';\nCOMMENT ON COLUMN lsif_data_definitions.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_definitions.scheme IS 'The moniker scheme.';\nCOMMENT ON COLUMN lsif_data_definitions.identifier IS 'The moniker identifier.';\nCOMMENT ON COLUMN lsif_data_definitions.data IS 'A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L100:6) types.';\n\nCOMMENT ON TABLE lsif_data_references IS 'Associates (document, range) pairs with the export monikers attached to the range.';\nCOMMENT ON COLUMN lsif_data_references.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_references.scheme IS 'The moniker scheme.';\nCOMMENT ON COLUMN lsif_data_references.identifier IS 'The moniker identifier.';\nCOMMENT ON COLUMN lsif_data_references.data IS 'A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/lsifstore/types.go#L100:6) types.';",
 				"DownQuery": "",
 				"Privileged": false,
 				"NonIdempotent": false,
@@ -1088,143 +1133,176 @@
 			}
 		],
 		"BoundsByRev": {
+			"v3.20.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.21.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
 			"v3.22.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000002
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.23.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000003
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.24.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000004
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.25.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000005
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.26.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000005
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.27.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000014
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.28.0": {
 				"RootID": -1000000000,
 				"LeafIDs": [
 					1000000015
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.29.0": {
 				"RootID": -1000000005,
 				"LeafIDs": [
 					1000000015
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.30.0": {
 				"RootID": -1000000005,
 				"LeafIDs": [
 					1000000018
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.31.0": {
 				"RootID": -1000000005,
 				"LeafIDs": [
 					1000000019
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.32.0": {
 				"RootID": -1000000005,
 				"LeafIDs": [
 					1000000019
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.33.0": {
 				"RootID": -1000000015,
 				"LeafIDs": [
 					1000000025
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.34.0": {
 				"RootID": -1000000015,
 				"LeafIDs": [
 					1000000030
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.35.0": {
 				"RootID": -1000000015,
 				"LeafIDs": [
 					1000000030
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.36.0": {
 				"RootID": -1000000015,
 				"LeafIDs": [
 					1000000030
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.37.0": {
 				"RootID": -1000000015,
 				"LeafIDs": [
 					1000000030
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.38.0": {
 				"RootID": 1000000029,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.39.0": {
 				"RootID": 1000000029,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.40.0": {
 				"RootID": 1000000029,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.41.0": {
 				"RootID": 1000000029,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.42.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.43.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			},
 			"v4.0.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1000000034
-				]
+				],
+				"PreCreation": false
 			}
 		}
 	},
@@ -6425,116 +6503,135 @@
 				"RootID": -1528395684,
 				"LeafIDs": [
 					1528395718
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.21.0": {
 				"RootID": -1528395684,
 				"LeafIDs": [
 					1528395733
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.22.0": {
 				"RootID": -1528395684,
 				"LeafIDs": [
 					1528395747
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.23.0": {
 				"RootID": -1528395684,
 				"LeafIDs": [
 					1528395768
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.24.0": {
 				"RootID": -1528395684,
 				"LeafIDs": [
 					1528395773
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.25.0": {
 				"RootID": -1528395733,
 				"LeafIDs": [
 					1528395787
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.26.0": {
 				"RootID": -1528395733,
 				"LeafIDs": [
 					1528395800
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.27.0": {
 				"RootID": -1528395733,
 				"LeafIDs": [
 					1528395816
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.28.0": {
 				"RootID": -1528395733,
 				"LeafIDs": [
 					1528395822
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.29.0": {
 				"RootID": -1528395787,
 				"LeafIDs": [
 					1528395834
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.30.0": {
 				"RootID": -1528395787,
 				"LeafIDs": [
 					1528395853
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.31.0": {
 				"RootID": -1528395787,
 				"LeafIDs": [
 					1528395871
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.32.0": {
 				"RootID": -1528395787,
 				"LeafIDs": [
 					1528395891
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.33.0": {
 				"RootID": -1528395834,
 				"LeafIDs": [
 					1528395918
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.34.0": {
 				"RootID": -1528395834,
 				"LeafIDs": [
 					1528395944
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.35.0": {
 				"RootID": -1528395834,
 				"LeafIDs": [
 					1528395964
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.36.0": {
 				"RootID": -1528395834,
 				"LeafIDs": [
 					1528395968
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.37.0": {
 				"RootID": -1528395834,
 				"LeafIDs": [
 					1645106226
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.38.0": {
 				"RootID": 1528395943,
 				"LeafIDs": [
 					1646652951,
 					1647282553
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.39.0": {
 				"RootID": 1528395943,
@@ -6542,20 +6639,23 @@
 					1649441222,
 					1649759318,
 					1649432863
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.40.0": {
 				"RootID": 1528395943,
 				"LeafIDs": [
 					1652228814,
 					1652707934
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.41.0": {
 				"RootID": 1644868458,
 				"LeafIDs": [
 					1655481894
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.42.0": {
 				"RootID": 1646027072,
@@ -6564,21 +6664,24 @@
 					1658174103,
 					1658225452,
 					1657663493
-				]
+				],
+				"PreCreation": false
 			},
 			"v3.43.0": {
 				"RootID": 1646027072,
 				"LeafIDs": [
 					1660312877,
 					1658874734
-				]
+				],
+				"PreCreation": false
 			},
 			"v4.0.0": {
 				"RootID": 1646027072,
 				"LeafIDs": [
 					1659085788,
 					1660742069
-				]
+				],
+				"PreCreation": false
 			}
 		}
 	}
