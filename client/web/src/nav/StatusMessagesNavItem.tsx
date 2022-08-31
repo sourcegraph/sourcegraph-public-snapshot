@@ -80,7 +80,6 @@ interface StatusMessageEntryProps {
     entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
     messageHint?: string
-    progressHint?: string
     title?: string
 }
 
@@ -212,7 +211,6 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
                     </Link>
                 </div>
             )}
-            {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
         </div>
     )
 }
@@ -387,7 +385,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
                             entryType="progress"
-                            progressHint={''}
                         />
                     )
                 case 'ExternalServiceSyncError':
