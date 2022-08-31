@@ -34,8 +34,8 @@ const cgMultipleQueryPatternMsg = "Grouping by capture group does not support se
 const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
 
 // Possible reasons that grouping would fail
-const shardTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
-const generalTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
+const shardTimeoutMsg = "The query was unable to complete in the allocated time."
+const generalTimeoutMsg = "The query was unable to complete in the allocated time."
 
 // These should be very rare
 const unknowAggregationModeMsg = "The requested grouping is not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level

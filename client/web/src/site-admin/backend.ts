@@ -56,7 +56,11 @@ import {
     FeatureFlagsResult,
     FeatureFlagsVariables,
     FeatureFlagFields,
+    SiteAdminAccessTokenConnectionFields,
+    SiteAdminAccessTokensVariables,
+    SiteAdminAccessTokensResult,
 } from '../graphql-operations'
+import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
 
@@ -1013,3 +1017,31 @@ export const REPOSITORY_STATS = gql`
         }
     }
 `
+
+export function queryAccessTokens(args: { first?: number }): Observable<SiteAdminAccessTokenConnectionFields> {
+    return requestGraphQL<SiteAdminAccessTokensResult, SiteAdminAccessTokensVariables>(
+        gql`
+            query SiteAdminAccessTokens($first: Int) {
+                site {
+                    accessTokens(first: $first) {
+                        ...SiteAdminAccessTokenConnectionFields
+                    }
+                }
+            }
+            fragment SiteAdminAccessTokenConnectionFields on AccessTokenConnection {
+                nodes {
+                    ...AccessTokenFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+            }
+            ${accessTokenFragment}
+        `,
+        { first: args.first ?? null }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.accessTokens)
+    )
+}
