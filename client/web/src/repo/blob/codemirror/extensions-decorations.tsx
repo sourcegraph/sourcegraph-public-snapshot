@@ -15,7 +15,6 @@ import {
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
-import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
@@ -23,8 +22,6 @@ import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared
 import { LineDecoratorContents } from '../LineDecorator'
 
 import lineDecoratorStyles from '../LineDecorator.module.scss'
-
-export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
 
 /**
  * This class manages inline text document decorations.
@@ -49,10 +46,8 @@ class TextDocumentDecorationManager implements PluginValue {
         }
     }
 
-    private updateDecorations(specs: TextDocumentDecorationSpec[], isLightTheme: boolean): void {
-        this.decorations = groupDecorationsByLine(
-            specs.reduce((acc, [, items]) => [...acc, ...items], [] as TextDocumentDecoration[])
-        )
+    private updateDecorations(decorations: TextDocumentDecoration[], isLightTheme: boolean): void {
+        this.decorations = groupDecorationsByLine(decorations)
         this.updateInlineDecorations(this.decorations, isLightTheme)
     }
 
@@ -125,7 +120,7 @@ class LineDecorationWidget extends WidgetType {
 /**
  * Facet to allow extensions to provide Sourcegraph text document decorations.
  */
-export const showTextDocumentDecorations = Facet.define<TextDocumentDecorationSpec[], TextDocumentDecorationSpec[]>({
+export const showTextDocumentDecorations = Facet.define<TextDocumentDecoration[], TextDocumentDecoration[]>({
     combine: decorations => decorations.flat(),
     compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: [

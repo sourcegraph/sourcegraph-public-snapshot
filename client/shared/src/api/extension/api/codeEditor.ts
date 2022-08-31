@@ -17,8 +17,6 @@ export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.Statu
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
-export type DecorationsByExtension = [sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration][]
-
 /** @internal */
 export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
     public readonly [proxyMarker] = true
