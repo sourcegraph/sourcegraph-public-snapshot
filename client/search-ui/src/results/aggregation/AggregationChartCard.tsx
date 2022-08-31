@@ -25,7 +25,11 @@ type SearchAggregationResult = GetSearchAggregationResult['searchQueryAggregate'
 
 function getAggregationError(aggregation?: SearchAggregationResult): Error | undefined {
     if (aggregation?.__typename === 'SearchAggregationNotAvailable') {
-        return new Error(aggregation.reason)
+        let reason = aggregation.reason
+        if (reason.length > 0 && !reason.endsWith('.')) {
+            reason = reason + '.'
+        }
+        return new Error(reason)
     }
 
     return
@@ -95,7 +99,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 <BarsBackground size={size} />
                 <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
-                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />.{' '}
+                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
                         <Link to="">Learn more</Link>
                     </div>
                 </div>
