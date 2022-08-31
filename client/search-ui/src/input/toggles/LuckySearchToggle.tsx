@@ -4,7 +4,18 @@ import { mdiClose, mdiLightningBolt, mdiRadioboxBlank, mdiRadioboxMarked } from 
 import classNames from 'classnames'
 
 import { isMacPlatform } from '@sourcegraph/common'
-import { Button, H3, Icon, Input, Label, Popover, PopoverContent, PopoverTrigger, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    H3,
+    Icon,
+    Input,
+    Label,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Tooltip,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { ToggleProps } from './QueryInputToggle'
 
@@ -72,7 +83,7 @@ const LuckySearchToggleMenu: React.FunctionComponent<
     )
 
     return (
-        <PopoverContent aria-labelledby="lucky-search-popover-header">
+        <PopoverContent aria-labelledby="lucky-search-popover-header" position={Position.bottomEnd}>
             <div className="d-flex align-items-baseline px-3 py-2">
                 <H3 id="lucky-search-popover-header" className="m-0">
                     Smart Search
