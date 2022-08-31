@@ -57,7 +57,9 @@ func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]gorout
 		bstore,
 		reconcilerStore,
 		gitserver.NewClient(bstore.DatabaseDB()),
-		sources.NewSourcer(httpcli.NewExternalClientFactory()),
+		sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		observationContext,
 	)
 

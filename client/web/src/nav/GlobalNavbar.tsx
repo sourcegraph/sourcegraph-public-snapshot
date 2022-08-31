@@ -140,7 +140,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
 
     return (
         <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
             </Link>
         </NavAction>

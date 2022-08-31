@@ -300,24 +300,22 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {props.getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
                     </SearchSidebarSection>
                 ) : null}
-                {!coreWorkflowImprovementsEnabled && (
-                    <SearchSidebarSection
-                        sectionId={SectionID.SEARCH_REFERENCE}
-                        className={styles.item}
-                        header="Search reference"
-                        showSearch={true}
-                        startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
-                        onToggle={onSearchReferenceToggle}
-                        // search reference should always preserve the filter
-                        // (false is just an arbitrary but static value)
-                        clearSearchOnChange={false}
-                    >
-                        {getSearchReferenceFactory({
-                            telemetryService: props.telemetryService,
-                            setQueryState,
-                        })}
-                    </SearchSidebarSection>
-                )}
+                <SearchSidebarSection
+                    sectionId={SectionID.SEARCH_REFERENCE}
+                    className={styles.item}
+                    header="Search reference"
+                    showSearch={true}
+                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
+                    onToggle={onSearchReferenceToggle}
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange={false}
+                >
+                    {getSearchReferenceFactory({
+                        telemetryService: props.telemetryService,
+                        setQueryState,
+                    })}
+                </SearchSidebarSection>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_SNIPPETS}
                     className={styles.item}

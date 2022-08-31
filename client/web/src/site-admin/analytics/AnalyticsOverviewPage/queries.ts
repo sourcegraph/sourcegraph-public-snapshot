@@ -101,7 +101,7 @@ export const OVERVIEW_STATISTICS = gql`
                     }
                 }
             }
-            adminUsers: users(siteAdmin: true, deleted: false) {
+            adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
                 totalCount
             }
         }

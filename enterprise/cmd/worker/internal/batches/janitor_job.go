@@ -73,18 +73,22 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		executorMetricsReporter,
 
 		janitor.NewReconcilerWorkerResetter(
+			logger.Scoped("ReconcilerWorkerResetter", ""),
 			reconcilerStore,
 			janitorMetrics,
 		),
 		janitor.NewBulkOperationWorkerResetter(
+			logger.Scoped("BulkOperationWorkerResetter", ""),
 			bulkOperationStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceExecutionWorkerResetter(
+			logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
 			workspaceExecutionStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
+			logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
 			workspaceResolutionStore,
 			janitorMetrics,
 		),
