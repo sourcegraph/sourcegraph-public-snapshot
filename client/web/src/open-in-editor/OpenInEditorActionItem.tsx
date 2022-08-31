@@ -1,13 +1,17 @@
 import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { SettingsCascadeOrError } from 'out/src/settings/settings'
+import { useLocation } from 'react-router'
 import { Unsubscribable } from 'rxjs'
 
-import { SimpleActionItem } from '../actions/SimpleActionItem'
-import { PlatformContext } from '../platform/context'
+import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
+
+import { SimpleActionItem } from '../../../shared/src/actions/SimpleActionItem'
+import { parseBrowserRepoURL } from '../util/url'
 
 import { buildEditorUrl } from './build-url'
+import type { EditorSettings } from './editor-settings'
 import { getEditor } from './editors'
 
 export interface OpenInEditorActionItemProps {
@@ -18,6 +22,8 @@ export interface OpenInEditorActionItemProps {
 export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionItemProps> = props => {
     const [settingsCascadeOrError, setSettingsCascadeOrError] = useState<SettingsCascadeOrError | undefined>(undefined)
     const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
+    const location = useLocation()
+    const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
     const settings =
         settingsCascadeOrError?.final && !('message' in settingsCascadeOrError.final) // isErrorLike fails with some TypeScript error
             ? settingsCascadeOrError.final
@@ -26,21 +32,26 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         if (settings) {
             try {
                 return buildEditorUrl(
-                    undefined, // TODO: Add ViewComponent
-                    settings.openInEditor,
+                    `${repoName.split('/').pop() ?? ''}/${filePath}`,
+                    range,
+                    {
+                        editorId: 'vscode',
+                        projectsPaths: { default: '/Users/veszelovszki/go/src/github.com/sourcegraph' },
+                    },
                     props.platformContext.sourcegraphURL
                 )
             } catch {
                 // TODO: Swallowing errors this way is not nice
-                return undefined
             }
         }
 
         return undefined
-    }, [props.platformContext.sourcegraphURL, settings])
+    }, [filePath, props.platformContext.sourcegraphURL, range, repoName, settings])
 
     const assetsRoot = props.assetsRoot ?? (window.context?.assetsRoot || '')
-    const editor = editorUrl ? getEditor(settings?.openInEditor?.editorId || '') : undefined
+    const editor = editorUrl
+        ? getEditor((settings?.openInEditor as EditorSettings | undefined)?.editorId || '')
+        : undefined
 
     useEffect(() => {
         setSettingSubscription(
@@ -56,9 +67,9 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
 
     const onClick = useCallback(() => {
         if (editorUrl) {
-            alert(`Opening ${editorUrl}`);
+            alert(`Opening ${editorUrl}`)
         } else {
-            alert('Opening setup popover')
+            alert(`Opening setup popover. Btw, editor URL is this: ${editorUrl}`)
         }
     }, [editorUrl])
 

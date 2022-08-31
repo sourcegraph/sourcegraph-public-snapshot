@@ -20,9 +20,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
-import {OpenInEditorActionItem} from '../../../../shared/src/open-in-editor/OpenInEditorActionItem';
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 
 import styles from './ActionItemsBar.module.scss'
 
