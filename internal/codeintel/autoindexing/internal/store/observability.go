@@ -52,7 +52,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		Name: "src_codeintel_dbstore_indexes_inserted",
 		Help: "The number of codeintel index records inserted.",
 	})
-	prometheus.MustRegister(indexesInsertedCounter)
+	observationContext.Registerer.MustRegister(indexesInsertedCounter)
 
 	return &operations{
 		// Commits
