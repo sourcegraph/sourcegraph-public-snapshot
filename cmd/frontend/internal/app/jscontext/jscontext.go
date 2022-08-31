@@ -116,7 +116,7 @@ type JSContext struct {
 
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 
-	LicenseInfo *hooks.LicenseInfo `json:"license_info"`
+	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
