@@ -358,7 +358,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
-                                             
                                             onClick={
                                                 createActionButton.eventToLog
                                                     ? () => {
