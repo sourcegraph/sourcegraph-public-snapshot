@@ -75,10 +75,10 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const handleBarClick = (event: MouseEvent, datum: Datum): void => {
+    const handleBarClick = (event: MouseEvent, datum: Datum, index: number): void => {
         const link = getDatumLink(datum)
 
-        onDatumLinkClick?.(event, datum)
+        onDatumLinkClick?.(event, datum, index)
 
         if (!event.isDefaultPrevented() && link) {
             window.open(link)
