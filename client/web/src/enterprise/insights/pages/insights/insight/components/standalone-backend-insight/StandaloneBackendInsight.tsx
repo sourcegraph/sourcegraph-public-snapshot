@@ -5,10 +5,10 @@ import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import {
     GetInsightViewResult,
     GetInsightViewVariables,

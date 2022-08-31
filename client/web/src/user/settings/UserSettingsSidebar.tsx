@@ -3,12 +3,12 @@ import * as React from 'react'
 import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemDescriptor } from '../../util/contributions'

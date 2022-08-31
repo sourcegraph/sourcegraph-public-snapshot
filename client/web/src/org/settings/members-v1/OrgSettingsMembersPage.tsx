@@ -9,11 +9,11 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { queryGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { OrgAreaOrganizationFields } from '../../../graphql-operations'

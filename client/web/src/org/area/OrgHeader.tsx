@@ -5,10 +5,10 @@ import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
+import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
-import { useFeatureFlag } from '@sourcegraph/shared/src/featureFlags/useFeatureFlag'
 import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'

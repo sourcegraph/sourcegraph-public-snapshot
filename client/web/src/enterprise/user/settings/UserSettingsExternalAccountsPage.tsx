@@ -6,9 +6,9 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { H2 } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '@sourcegraph/shared/src/backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
