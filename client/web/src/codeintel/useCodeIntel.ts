@@ -16,7 +16,6 @@ import {
     LoadAdditionalImplementationsVariables,
 } from '../graphql-operations'
 
-import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildPreciseLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
@@ -25,6 +24,7 @@ import {
 } from './ReferencesPanelQueries'
 import { SettingsGetter } from './settings'
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
 
 interface CodeIntelData {
     references: {

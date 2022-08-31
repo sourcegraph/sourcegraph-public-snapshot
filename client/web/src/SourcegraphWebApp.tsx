@@ -99,6 +99,7 @@ import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './SourcegraphWebApp.module.scss'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -472,6 +473,7 @@ export class SourcegraphWebApp extends React.Component<
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        setCodeIntelSearchContext(spec)
         if (this.extensionsController === null) {
             return
         }
