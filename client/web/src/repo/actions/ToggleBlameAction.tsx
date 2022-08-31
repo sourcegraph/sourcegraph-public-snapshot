@@ -17,7 +17,7 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; file
 }) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
-    
+
     // Turn off visibility when the file path changes.
     useEffect(() => {
         setIsBlameVisible(false)
