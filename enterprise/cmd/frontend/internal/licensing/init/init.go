@@ -56,7 +56,9 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			return nil
 		}
 
-		licenseInfo := &hooks.LicenseInfo{}
+		licenseInfo := &hooks.LicenseInfo{
+			CurrentPlan: string(info.Plan()),
+		}
 		if info.Plan() == licensing.PlanBusiness0 {
 			const codeScaleLimit = 100 * 1024 * 1024 * 1024
 			licenseInfo.CodeScaleLimit = "100GiB"

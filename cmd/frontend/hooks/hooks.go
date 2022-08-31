@@ -12,6 +12,8 @@ var PostAuthMiddleware func(http.Handler) http.Handler
 // LicenseInfo contains information about the legitimate usage of the current
 // license on the instance.
 type LicenseInfo struct {
+	CurrentPlan string
+
 	CodeScaleLimit         string
 	CodeScaleCloseToLimit  bool
 	CodeScaleExceededLimit bool
