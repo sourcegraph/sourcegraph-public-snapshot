@@ -53,7 +53,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
             className={classNames(className, styles.aggregationGroup)}
         >
             <div
-                // Div onMounterEnter is needed here because button with disabled true doesn't
+                // Div onMouseEnter is needed here because button with disabled true doesn't
                 // emit any mouse or pointer events.
                 onMouseEnter={() => handleModeHover(SearchAggregationMode.REPO)}
             >
