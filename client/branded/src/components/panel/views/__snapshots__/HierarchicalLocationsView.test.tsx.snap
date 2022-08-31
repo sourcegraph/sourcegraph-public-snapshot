@@ -205,9 +205,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 <span
                   class=""
                 >
-                   
                   <span>
-                    file1.txt
+                    <span>
+                      file1.txt
+                    </span>
                   </span>
                 </span>
               </span>
@@ -234,9 +235,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 <span
                   class=""
                 >
-                   
                   <span>
-                    file2.txt
+                    <span>
+                      file2.txt
+                    </span>
                   </span>
                 </span>
               </span>

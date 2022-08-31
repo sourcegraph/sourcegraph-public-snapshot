@@ -284,6 +284,17 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
+### sg ci search-failures
+
+Open Sourcegraph's CI failures Grafana logs page in browser.
+
+Arguments: `[text to search for]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--step="<value>"`: Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')
+
 ## sg test
 
 Run the given test suite.
@@ -1096,11 +1107,13 @@ Available preset environments:
 
 * cloud
 * k8s
+* s2
 
 ```sh
 # See which version is deployed on a preset environment
 $ sg live cloud
 $ sg live k8s
+$ sg live s2
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com
