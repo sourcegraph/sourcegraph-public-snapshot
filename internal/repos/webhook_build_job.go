@@ -58,7 +58,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	baseStore := basestore.NewWithHandle(store.Handle())
 	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
 
-	cf := httpcli.ExternalClientFactory
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger))
 	opts := []httpcli.Opt{}
 	doer, err := cf.Doer(opts...)
 	if err != nil {

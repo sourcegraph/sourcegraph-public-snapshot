@@ -28,9 +28,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -112,7 +112,7 @@ func newExternalHTTPHandler(
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = ot.HTTPMiddleware(h)
+	h = instrumentation.HTTPMiddleware("external", h)
 
 	return h
 }
@@ -151,7 +151,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	h = gcontext.ClearHandler(h)
 	logger := log.Scoped("internal", "internal http handlers")
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = ot.HTTPMiddleware(h)
+	h = instrumentation.HTTPMiddleware("internal", h)
 	return h
 }
 

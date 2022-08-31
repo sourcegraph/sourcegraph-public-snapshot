@@ -110,10 +110,11 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	rewriteUnmarkedConcurrentIndexCreationMigrations,
 	rewriteConcurrentIndexCreationDownMigrations,
 	rewriteRepoStarsProcedure,
+	rewriteCodeinsightsDowngrades,
 	reorderMigrations,
 }
 
-// rewriteInitialCodeintelMigration renames the initial codeintel migration file to include the expected
+// rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
 // title of "squashed migration".
 func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
 	if schemaName != "codeintel" {
@@ -268,6 +269,36 @@ func rewriteRepoStarsProcedure(schemaName string, version oobmigration.Version, 
 			UPDATE repo SET stars = 0
 			FROM locked s WHERE repo.id = s.id
 		`
+	})
+}
+
+// rewriteCodeinsightsDowngrades rewrites a few historic codeinsights migrations to ensure downgrades work
+// as expected.
+//
+// See https://github.com/sourcegraph/sourcegraph/pull/25707.
+// See https://github.com/sourcegraph/sourcegraph/pull/26313.
+func rewriteCodeinsightsDowngrades(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	// Ensure we drop dashboard last as insight views have a dependency on it
+	mapContents(contents, migrationFilename(1000000014, "down.sql"), func(_ string) string {
+		return `
+			DROP TABLE IF EXISTS dashboard_grants;
+			DROP TABLE IF EXISTS dashboard_insight_view;
+			DROP TABLE IF EXISTS dashboard;
+		`
+	})
+
+	// Drop type created in up migration to allow idempotent up -> down -> up
+	mapContents(contents, migrationFilename(1000000017, "down.sql"), func(s string) string {
+		return strings.Replace(
+			s,
+			`COMMIT;`,
+			`DROP TYPE IF EXISTS time_unit; COMMIT;`,
+			1,
+		)
 	})
 }
 

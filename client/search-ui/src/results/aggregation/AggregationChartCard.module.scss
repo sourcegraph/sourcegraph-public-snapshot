@@ -1,12 +1,22 @@
+// Chart (parent-size) container
 .container {
     position: relative;
-    overflow: auto;
+}
+
+.missing-label-count {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    padding: 0.25rem;
+    background: var(--body-bg);
+    color: var(--text-muted);
 }
 
 // Container for both errors (business-like and internal error alerts messages)
 .error-container {
     display: flex;
     flex-direction: column;
+    position: relative;
     overflow: auto;
     margin: 0;
 
@@ -22,17 +32,59 @@
     overflow: auto;
 }
 
+.aggregation-error-container {
+    :global(.theme-dark) & rect {
+        fill: var(--gray-09);
+    }
+
+    :global(.theme-light) & rect {
+        fill: var(--gray-03);
+    }
+
+    // Simple UI mode theme
+    :global(.core-workflow-improvements-enabled) & {
+        :global(.theme-dark) & rect {
+            fill: var(--gray-10);
+        }
+
+        :global(.theme-light) & rect {
+            fill: var(--gray-02);
+            opacity: 0.6;
+        }
+    }
+}
+// Wrapper-container for custom search availability error message UI
+.error-message-layout {
+    padding: 0 0.5rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 // Custom search availability error message UI
 .error-message {
     margin: auto;
-    padding: 0 0.5rem;
+    max-width: 500px;
 }
 
-.missing-label-count {
-    position: absolute;
-    top: 10px;
-    right: 0;
-    padding: 0.25rem;
-    background: var(--body-bg);
-    color: var(--text-muted);
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zero-state-background {
+    width: 100%;
+    flex-grow: 1;
+    margin: auto;
+
+    // Visually compensate bottom spacing between error chart mock
+    // UI and aggregation controls UI which are placed below this
+    // zero state block
+    padding-bottom: 1.5rem;
+    padding-top: 0.5rem;
 }
