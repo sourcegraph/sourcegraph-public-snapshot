@@ -4,12 +4,23 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Button,
+    Link,
+    Alert,
+    Icon,
+    Text,
+    Tooltip,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
-import { TerminalLine } from '../auth/Terminal'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -37,7 +48,7 @@ interface RepositoryNodeProps {
 
 const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
-        className="repository-node list-group-item py-2"
+        className="repository-node list-group-item px-0 py-2"
         data-test-repository={node.name}
         data-test-cloned={node.mirrorInfo.cloned}
     >
@@ -66,9 +77,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
-                    <TerminalLine className={styles.alertContent}>
-                        {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                    </TerminalLine>
+                    <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
                 </Alert>
             </div>
         )}
@@ -219,25 +228,32 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     statuses are displayed below.
                 </Alert>
             )}
-            <H2>Repositories</H2>
-            <Text>
-                Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
-                    code hosts
-                </Link>
-                .
-            </Text>
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
             <Container className="mb-3">
-                {error && !loading && (
-                    <Alert variant="warning" as="p">
-                        {error.message}
-                    </Alert>
-                )}
+                {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
-                    listClassName="list-group list-group-flush mt-3"
+                    listClassName="list-group list-group-flush mb-0"
+                    summaryClassName="mt-2"
+                    withCenteredSummary={true}
                     noun="repository"
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}

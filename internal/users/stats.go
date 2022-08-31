@@ -7,17 +7,71 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type UsersStatsDateTimeRange struct {
+	Lte   *string
+	Gte   *string
+	Empty *bool
+	Not   *bool
+}
+
+func (d *UsersStatsDateTimeRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+	conds := []*sqlf.Query{}
+
+	if d.Empty != nil && *d.Empty {
+		conds = append(conds, sqlf.Sprintf(column+" IS NULL"))
+	} else {
+		if d.Lte != nil {
+			lte, err := time.Parse(time.RFC3339, *d.Lte)
+			if err != nil {
+				return nil, err
+			}
+			conds = append(conds, sqlf.Sprintf(column+" <= %s", lte))
+		}
+		if d.Gte != nil {
+			gte, err := time.Parse(time.RFC3339, *d.Gte)
+			if err != nil {
+				return nil, err
+			}
+			conds = append(conds, sqlf.Sprintf(column+" >= %s", gte))
+		}
+	}
+
+	if d.Not != nil && *d.Not {
+		return []*sqlf.Query{sqlf.Sprintf("NOT (%s)", sqlf.Join(conds, "AND"))}, nil
+	}
+	return conds, nil
+}
+
+type UsersStatsNumberRange struct {
+	Gte *float64
+	Lte *float64
+}
+
+func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+	var conds []*sqlf.Query
+
+	if d.Lte != nil {
+		conds = append(conds, sqlf.Sprintf(column+" <= %s", d.Lte))
+	}
+	if d.Gte != nil {
+		conds = append(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
+	}
+
+	return conds, nil
+}
+
 type UsersStatsFilters struct {
-	Query            *string
-	SiteAdmin        *bool
-	Username         *string
-	Email            *string
-	LastActivePeriod *string
-	Deleted          *bool
+	Query        *string
+	SiteAdmin    *bool
+	Username     *string
+	Email        *string
+	LastActiveAt *UsersStatsDateTimeRange
+	DeletedAt    *UsersStatsDateTimeRange
+	CreatedAt    *UsersStatsDateTimeRange
+	EventsCount  *UsersStatsNumberRange
 }
 
 type UsersStats struct {
@@ -40,35 +94,43 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	if s.Filters.Email != nil {
 		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
 	}
-	if s.Filters.Deleted != nil {
-		if *s.Filters.Deleted {
-			conds = append(conds, sqlf.Sprintf("deleted_at IS NOT NULL"))
-		} else {
-			conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-		}
-	}
-	if s.Filters.LastActivePeriod != nil && *s.Filters.LastActivePeriod != "ALL" {
-		lastActiveStartTime, err := makeLastActiveStartTime(*s.Filters.LastActivePeriod)
+	if s.Filters.DeletedAt != nil {
+		deletedAtConds, err := s.Filters.DeletedAt.toSQLConds("deleted_at")
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, sqlf.Sprintf("last_active_at >= %s", lastActiveStartTime))
+		conds = append(conds, deletedAtConds...)
+	}
+
+	if s.Filters.LastActiveAt != nil {
+		lastActiveAtConds, err := s.Filters.LastActiveAt.toSQLConds("last_active_at")
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, lastActiveAtConds...)
+	}
+	if s.Filters.CreatedAt != nil {
+		createdAtConds, err := s.Filters.CreatedAt.toSQLConds("created_at")
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, createdAtConds...)
+	}
+
+	if s.Filters.EventsCount != nil {
+		eventsCountConds, err := s.Filters.EventsCount.toSQLConds("events_count")
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, eventsCountConds...)
+		if s.Filters.EventsCount.Lte != nil {
+			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
+		}
+		if s.Filters.EventsCount.Gte != nil {
+			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
+		}
 	}
 	return conds, nil
-}
-
-func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
-	now := time.Now()
-	switch lastActivePeriod {
-	case "TODAY":
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC), nil
-	case "THIS_WEEK":
-		return timeutil.StartOfWeek(now.UTC(), 0), nil
-	case "THIS_MONTH":
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC), nil
-	default:
-		return now, errors.Newf("invalid lastActivePeriod: %s", lastActivePeriod)
-	}
 }
 
 var (
@@ -111,7 +173,8 @@ func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 type UsersStatsListUsersFilters struct {
 	OrderBy    *string
 	Descending *bool
-	First      *int32
+	Limit      *int32
+	Offset     *int32
 }
 
 func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsersFilters) ([]*UserStatItem, error) {
@@ -134,8 +197,14 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 
 	// LIMIT
 	limit := int32(100)
-	if filters.First != nil {
-		limit = *filters.First
+	if filters.Limit != nil {
+		limit = *filters.Limit
+	}
+
+	// OFFSET
+	offset := int32(0)
+	if filters.Offset != nil {
+		offset = *filters.Offset
 	}
 
 	conds, err := s.makeQueryParameters()
@@ -144,7 +213,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	}
 
 	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
-	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s`, sqlf.Join(conds, "AND"), orderBy, limit))
+	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 

@@ -209,7 +209,7 @@ require github.com/hmarr/codeowners v0.4.0
 require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab
+	github.com/sourcegraph/zoekt v0.0.0-20220831095746-37cdc94f44dc
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -408,7 +408,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.33.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.33.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.34.0
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.9.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.9.0
 	go.opentelemetry.io/proto/otlp v0.18.0

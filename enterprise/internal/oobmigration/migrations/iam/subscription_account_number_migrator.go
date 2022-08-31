@@ -27,7 +27,7 @@ func NewSubscriptionAccountNumberMigrator(store *basestore.Store, batchSize int)
 func (m *subscriptionAccountNumberMigrator) ID() int                 { return 15 }
 func (m *subscriptionAccountNumberMigrator) Interval() time.Duration { return time.Second * 5 }
 
-func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(subscriptionAccountNumberMigratorProgressQuery)))
 	return progress, err
 }

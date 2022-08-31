@@ -42,7 +42,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Integrations](integration/index.md)
   - [Browser extension](integration/browser_extension/index.md)
   - [Editors](integration/editor.md)
-  - [Browser search engine](integration/browser_search_engine.md)
+  - [Browser search engine](integration/browser_extension/how-tos/browser_search_engine.md)
 - [Extensions](extensions/index.md)
 - [CLI](cli/index.md)
   - [Quickstart](cli/quickstart.md)
