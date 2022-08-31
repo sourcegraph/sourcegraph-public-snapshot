@@ -1,10 +1,35 @@
-# <a href="https://sourcegraph.com"><picture><source srcset="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
+<p align="center">
+  <a href="https://sourcegraph.com" target="_blank">
+    <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/YEuWmEJA/38872827-37f4-4d2f-992d-c6870d794f57.svg" alt="Sourcegraph 4.0" width="300px">
+  </a>
 
-[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main)](https://buildkite.com/sourcegraph/sourcegraph)
+<p align="center">
+    <a href="https://docs.sourcegraph.com">Docs</a> •
+    <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CONTRIBUTING.md">Contributing</a> •
+    <a href="https://twitter.com/sourcegraph">Twitter</a>
+    <br /><br />
+    <a href="https://buildkite.com/sourcegraph/sourcegraph">
+        <img src="https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main" alt="Build status" />
+    </a>
+    <a href="https://api.securityscorecards.dev/projects/github.com/sourcegraph/sourcegraph">
+        <img src="https://img.shields.io/ossf-scorecard/github.com/sourcegraph/sourcegraph?label=openssf%20scorecard" alt="Scorecard" />
+    </a>
+    <a href="https://github.com/sourcegraph/sourcegraph/releases/">
+        <img src="https://img.shields.io/github/release/sourcegraph/Sourcegraph.svg" alt="Latest release" />
+    </a>
+    <a href="https://srcgr.ph/discord">
+        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
+    </a>
+    <a href="https://github.com/sourcegraph/sourcegraph/contributors/">
+        <img src="https://img.shields.io/github/contributors/sourcegraph/Sourcegraph.svg?color=000000" alt="Contributors" />
+    </a>
+</p>
+<br />
+<p align="center">
+  Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform
+</p>
 
-[Sourcegraph](https://about.sourcegraph.com/) is a fast and featureful code search and navigation engine.
-
-![sourcegraph com_github com_golang_go_-_blob_src_net_http_request go_L855_6](https://user-images.githubusercontent.com/989826/126650657-cef98203-1505-4848-aab6-57acda1ec35f.png)
+&nbsp;
 
 **Features**
 
