@@ -67,14 +67,14 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                                         <span className={styles.description}>{`${processDescription(
                                             entry.description || ''
                                         )}`}</span>
-                                        {entry.annotations?.resultCountString && (
-                                            <>
-                                                {' '}
-                                                <span className="text-muted">
-                                                    ({entry.annotations?.resultCountString})
+                                        {entry.annotations
+                                            ?.filter(({ name }) => name === 'ResultCount')
+                                            ?.map(({ name, value }) => (
+                                                <span key={name} className="text-muted">
+                                                    {' '}
+                                                    ({value})
                                                 </span>
-                                            </>
-                                        )}
+                                            ))}
                                     </span>
                                     <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                                     <span className={styles.suggestion}>

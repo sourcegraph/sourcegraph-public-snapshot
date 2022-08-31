@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -50,7 +49,6 @@ func (m *MaxAlerter) Add(a *Alert) {
 
 type QueryDescription struct {
 	Description string
-	Annotations map[streamhttp.AnnotationKey]string
 	Query       string
 	PatternType query.SearchType
 	Annotations map[AnnotationName]string

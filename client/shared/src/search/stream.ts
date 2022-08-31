@@ -231,12 +231,12 @@ interface Alert {
     proposedQueries: ProposedQuery[] | null
 }
 
-// Same key values from internal/search/streaming/http/events.go
-export type AnnotationKey = 'resultCountString'
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
 
 interface ProposedQuery {
     description?: string | null
-    annotations?: { [key in AnnotationKey]: string }
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 
