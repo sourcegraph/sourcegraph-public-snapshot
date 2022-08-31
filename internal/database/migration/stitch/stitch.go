@@ -107,7 +107,11 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		return shared.MigrationBounds{}, err
 	}
 
-	revDefinitions, err := definition.ReadDefinitions(fs, migrationPath(schemaName))
+	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	if err != nil {
+		return shared.MigrationBounds{}, err
+	}
+	revDefinitions, err := definition.ReadDefinitions(fs, pathForSchemaAtRev)
 	if err != nil {
 		return shared.MigrationBounds{}, errors.Wrap(err, "@"+rev)
 	}

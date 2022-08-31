@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,7 +20,11 @@ var gitTreePattern = lazyregexp.New("^tree .+:.+\n")
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
 func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, error) {
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", doMagicHacking(rev), migrationPath(schemaName)))
+	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", doMagicHacking(rev), pathForSchemaAtRev))
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
@@ -50,7 +55,11 @@ func readMigrationFileContents(schemaName, dir, rev, path string) (string, error
 		return "", err
 	}
 
-	if v, ok := m[filepath.Join(migrationPath(schemaName), path)]; ok {
+	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	if err != nil {
+		return "", err
+	}
+	if v, ok := m[filepath.Join(pathForSchemaAtRev, path)]; ok {
 		return v, nil
 	}
 
@@ -116,8 +125,18 @@ func archiveContents(dir, rev string) (map[string]string, error) {
 	return revContents, nil
 }
 
-func migrationPath(schemaName string) string {
-	return filepath.Join("migrations", schemaName)
+func migrationPath(schemaName, rev string) (string, error) {
+	revVersion, ok := oobmigration.NewVersionFromString(rev)
+	if !ok {
+		return "", errors.Newf("illegal rev %q", rev)
+	}
+	if oobmigration.CompareVersions(revVersion, oobmigration.NewVersion(3, 21)) == oobmigration.VersionOrderBefore {
+		if schemaName == "frontend" {
+			return "migrations", nil
+		}
+	}
+
+	return filepath.Join("migrations", schemaName), nil
 }
 
 func doMagicHacking(rev string) string {
