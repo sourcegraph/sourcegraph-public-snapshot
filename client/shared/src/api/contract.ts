@@ -26,6 +26,12 @@ import {
 } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
+export interface CodeIntelProviders {
+    references: boolean
+    definitions: boolean
+    implementations: boolean
+    language: string
+}
 /**
  * This is exposed from the extension host thread to the main thread
  * e.g. for communicating  direction "main -> ext host"
@@ -65,6 +71,7 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
+    providersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<CodeIntelProviders>
 
     // Tree
     getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>

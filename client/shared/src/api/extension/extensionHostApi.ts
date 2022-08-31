@@ -197,6 +197,11 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
+        providersForDocument: () => {
+            return proxySubscribable(
+                of({ definitions: false, references: false, implementations: false, language: '' })
+            )
+        },
         hasReferenceProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
             const document = getTextDocument(textParameters.textDocument.uri)
 
@@ -398,7 +403,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
-
                         return multiContributions.map(contributions => {
                             try {
                                 const evaluatedContributions = evaluateContributions(computedContext, contributions)

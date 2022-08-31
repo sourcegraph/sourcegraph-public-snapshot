@@ -5433,12 +5433,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/commons@npm:^1, @sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.7.2":
-  version: 1.8.0
-  resolution: "@sinonjs/commons@npm:1.8.0"
+"@sinonjs/commons@npm:^1, @sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.7.2, @sinonjs/commons@npm:^1.8.1":
+  version: 1.8.3
+  resolution: "@sinonjs/commons@npm:1.8.3"
   dependencies:
     type-detect: 4.0.8
-  checksum: 97639bd46b0b8c9a1160e91b856c743fa231f7b0dd7d308f39a46eec86739b47158a509638a905c14e633489d65175cee42eed4f598ff50e6692c57e39d6edf1
+  checksum: 6159726db5ce6bf9f2297f8427f7ca5b3dff45b31e5cee23496f1fa6ef0bb4eab878b23fb2c5e6446381f6a66aba4968ef2fc255c1180d753d4b8c271636a2e5
   languageName: node
   linkType: hard
 
@@ -5448,6 +5448,15 @@ __metadata:
   dependencies:
     "@sinonjs/commons": ^1.7.0
   checksum: 8e331aa1412d905ecc8efd63550f58a6f77dcb510f878172004e53be63eb82650623618763001a918fc5e21257b86c45041e4e97c454ed6a2d187de084abbd11
+  languageName: node
+  linkType: hard
+
+"@sinonjs/fake-timers@npm:^7.1.0":
+  version: 7.1.2
+  resolution: "@sinonjs/fake-timers@npm:7.1.2"
+  dependencies:
+    "@sinonjs/commons": ^1.7.0
+  checksum: c84773d7973edad5511a31d2cc75023447b5cf714a84de9bb50eda45dda88a0d3bd2c30bf6e6e936da50a048d5352e2151c694e13e59b97d187ba1f329e9a00c
   languageName: node
   linkType: hard
 
@@ -5470,14 +5479,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/samsam@npm:^5.0.2, @sinonjs/samsam@npm:^5.0.3":
-  version: 5.0.3
-  resolution: "@sinonjs/samsam@npm:5.0.3"
+"@sinonjs/samsam@npm:^5.0.2, @sinonjs/samsam@npm:^5.0.3, @sinonjs/samsam@npm:^5.3.1":
+  version: 5.3.1
+  resolution: "@sinonjs/samsam@npm:5.3.1"
   dependencies:
     "@sinonjs/commons": ^1.6.0
     lodash.get: ^4.4.2
     type-detect: ^4.0.8
-  checksum: c23d1ef0e94f93d690da147904b3b8f59575a5a96d392236083a8260bcee03aeb8528cdd799156252103532bd83d420d45cdb26525d2196caf23e32080d52aa8
+  checksum: 1c2c49d51b1840775980e9496707d68b936f443896f92e48150c4f7713d14904e576740e52660b602f8a53b665bd5f149c5c733758030758427ddb1621090279
   languageName: node
   linkType: hard
 
@@ -5686,6 +5695,20 @@ __metadata:
   peerDependencies:
     sourcegraph: ">=24.6.0"
   checksum: 026b86831b08be5dc6a6713aa9181440a9b811c0b7a2bc978a1fd98950b4f8cfec1b6c5bdbb339ba2669def576f47a51ffb452d79293d333c15aea5425f057cd
+  languageName: node
+  linkType: hard
+
+"@sourcegraph/extension-api-stubs@npm:^1.6.1":
+  version: 1.6.1
+  resolution: "@sourcegraph/extension-api-stubs@npm:1.6.1"
+  dependencies:
+    "@sourcegraph/extension-api-classes": ^1.1.0
+    "@types/sinon": 10.0.4
+    graphql: ^15.4.0
+    rxjs: ^6.5.1
+    sinon: ^10.0.0
+    sourcegraph: ^25.5.0
+  checksum: 89e7005d543560c0aa79570ba302e9cd5fce7d49fc8a89966843caa882ab90eb172490649e069f66f0ca44431dbba24bc9184d23114379455e28956e75567bc0
   languageName: node
   linkType: hard
 
@@ -8234,6 +8257,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/mock-require@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@types/mock-require@npm:2.0.1"
+  dependencies:
+    "@types/node": "*"
+  checksum: 8749a4b3fcb9f3d6ebaeff442f00997ca59c4806bc00fea648a1fd06b1ea8510a6900b8e47070561ddf15ce98abc80dfe24ff21a307c2b0d1a6845bd865f708b
+  languageName: node
+  linkType: hard
+
 "@types/mockdate@npm:2.0.0":
   version: 2.0.0
   resolution: "@types/mockdate@npm:2.0.0"
@@ -8646,6 +8678,15 @@ __metadata:
   version: 0.5.1
   resolution: "@types/simmerjs@npm:0.5.1"
   checksum: 391de9040fa6c656665789863bbe3a2539c9d71bb34f59f1d88712bded377b77853bb6e764fc0ffa39c0e62a709c0a53481595b96a4a89a842b669ad5d9cbbfe
+  languageName: node
+  linkType: hard
+
+"@types/sinon@npm:10.0.4":
+  version: 10.0.4
+  resolution: "@types/sinon@npm:10.0.4"
+  dependencies:
+    "@sinonjs/fake-timers": ^7.1.0
+  checksum: 8060328504f82aa4d121cd32256686c197fa36c0ea4bd740620438835b2fd7f95d605da06cd4c10afa86d514ca22e2a118ade80f59089201967506afb4734375
   languageName: node
   linkType: hard
 
@@ -17993,7 +18034,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"get-caller-file@npm:^1.0.1":
+"get-caller-file@npm:^1.0.1, get-caller-file@npm:^1.0.2":
   version: 1.0.3
   resolution: "get-caller-file@npm:1.0.3"
   checksum: 2b90a7f848896abcebcdc0acc627a435bcf05b9cd280599bc980ebfcdc222416c3df12c24c4845f69adc4346728e8966f70b758f9369f3534182791dfbc25c05
@@ -24019,6 +24060,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mock-require@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "mock-require@npm:3.0.3"
+  dependencies:
+    get-caller-file: ^1.0.2
+    normalize-path: ^2.1.1
+  checksum: 6355c0bd9d7acb5247155142928b0154ace2913264b42d9a611a85d469ed11048f405efe432ffc627a57efb87ec359589a7419bf680b4fd248612311deb031bd
+  languageName: node
+  linkType: hard
+
 "mockdate@npm:^3.0.2":
   version: 3.0.2
   resolution: "mockdate@npm:3.0.2"
@@ -24307,16 +24358,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nise@npm:^4.0.1":
-  version: 4.0.3
-  resolution: "nise@npm:4.0.3"
+"nise@npm:^4.0.1, nise@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "nise@npm:4.1.0"
   dependencies:
     "@sinonjs/commons": ^1.7.0
     "@sinonjs/fake-timers": ^6.0.0
     "@sinonjs/text-encoding": ^0.7.1
     just-extend: ^4.0.2
     path-to-regexp: ^1.7.0
-  checksum: 0783236f2df4da750ac35132052c086960070a3ae9935df539c3f560e8dd096998a8b420c3a74d219b7a6d661f22bc40eab75b9f01b20264565ba3f011bcf0d0
+  checksum: b2ea1c96a41c392adf746509904af565ebd667ad4e40267f6d73be3648f04267945624ba0ce6a991b779f3ae246181f71975152b93b4dafee1f62886fa897c32
   languageName: node
   linkType: hard
 
@@ -28856,6 +28907,7 @@ pvutils@latest:
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/eslint-plugin-wildcard": 1.0.0
     "@sourcegraph/extension-api-classes": ^1.1.0
+    "@sourcegraph/extension-api-stubs": ^1.6.1
     "@sourcegraph/prettierrc": ^3.0.3
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/stylelint-plugin-sourcegraph": ^1.0.1
@@ -28928,6 +28980,7 @@ pvutils@latest:
     "@types/mime-types": 2.1.0
     "@types/mini-css-extract-plugin": 2.0.1
     "@types/mocha": 8.2.0
+    "@types/mock-require": ^2.0.1
     "@types/mockdate": 2.0.0
     "@types/mz": 2.7.3
     "@types/node": 13.13.5
@@ -29084,6 +29137,7 @@ pvutils@latest:
     mini-css-extract-plugin: ^2.1.0
     minimatch: ^3.0.4
     mocha: ^8.3.2
+    mock-require: ^3.0.3
     mockdate: ^3.0.2
     monaco-editor: ^0.24.0
     monaco-editor-webpack-plugin: ^3.1.0
@@ -29239,12 +29293,12 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^6.3.3, rxjs@npm:^6.4.0, rxjs@npm:^6.6.0, rxjs@npm:^6.6.3":
-  version: 6.6.3
-  resolution: "rxjs@npm:6.6.3"
+"rxjs@npm:^6.3.3, rxjs@npm:^6.4.0, rxjs@npm:^6.5.1, rxjs@npm:^6.6.0, rxjs@npm:^6.6.3":
+  version: 6.6.7
+  resolution: "rxjs@npm:6.6.7"
   dependencies:
     tslib: ^1.9.0
-  checksum: c7206389f5a91f89c2248aa9ef5ce73f979524c676e557ec2088b10ec138d91fd653ebee6cdb65532b6c05278eb3c8364ccd6feb9a499092d67731318cf05977
+  checksum: bc334edef1bb8bbf56590b0b25734ba0deaf8825b703256a93714308ea36dff8a11d25533671adf8e104e5e8f256aa6fdfe39b2e248cdbd7a5f90c260acbbd1b
   languageName: node
   linkType: hard
 
@@ -29787,6 +29841,20 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"sinon@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "sinon@npm:10.0.0"
+  dependencies:
+    "@sinonjs/commons": ^1.8.1
+    "@sinonjs/fake-timers": ^6.0.1
+    "@sinonjs/samsam": ^5.3.1
+    diff: ^4.0.2
+    nise: ^4.1.0
+    supports-color: ^7.1.0
+  checksum: 84fe418bbf27c314bc06def873dc18c40e45fdb508a5ce321cfd1aea95184a1cf8d4c007954f6c8a2349379f0241879a7b860f1bd7d10321d9b90a924ba03d0e
+  languageName: node
+  linkType: hard
+
 "sinon@npm:^9.0.2":
   version: 9.0.2
   resolution: "sinon@npm:9.0.2"
@@ -30120,7 +30188,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"sourcegraph@workspace:client/extension-api":
+"sourcegraph@^25.5.0, sourcegraph@workspace:client/extension-api":
   version: 0.0.0-use.local
   resolution: "sourcegraph@workspace:client/extension-api"
   dependencies:

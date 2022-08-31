@@ -56,8 +56,6 @@ import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { findLanguageSpec } from './language-specs/languages'
-import { LanguageSpec } from './language-specs/languagespec'
 import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
@@ -67,6 +65,8 @@ import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
+import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 

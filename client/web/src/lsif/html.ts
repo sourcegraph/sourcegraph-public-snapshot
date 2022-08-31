@@ -1,6 +1,6 @@
 import escape from 'escape-html'
 
-import { DocumentInfo, Occurrence, SyntaxKind } from './lsif-typed'
+import { DocumentInfo, Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 class HtmlBuilder {
     public readonly buffer: string[] = []
