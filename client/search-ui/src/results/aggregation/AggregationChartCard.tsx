@@ -26,7 +26,7 @@ type SearchAggregationResult = GetSearchAggregationResult['searchQueryAggregate'
 function getAggregationError(aggregation?: SearchAggregationResult): Error | undefined {
     if (aggregation?.__typename === 'SearchAggregationNotAvailable') {
         let reason = aggregation.reason
-        if (reason.length > 0 && !reason.endsWith('.')) {
+        if (!reason.endsWith('.')) {
             reason = reason + '.'
         }
         return new Error(reason)
