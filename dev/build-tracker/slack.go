@@ -151,16 +151,19 @@ func slackMention(teammate *team.Teammate) string {
 func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
+
 	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
+
+	// create a bulleted list of all the failed jobs
 	failedSection += "*Failed jobs:*\n\n"
-	for _, j := range build.Jobs {
-		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
-			failedSection += fmt.Sprintf("• %s", *j.Name)
-			if j.WebURL != "" {
-				failedSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
-			}
-			failedSection += "\n"
+	failedJobs := build.failedJobs()
+	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
+	for _, j := range failedJobs {
+		failedSection += fmt.Sprintf("• %s", *j.Name)
+		if j.WebURL != "" {
+			failedSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
 		}
+		failedSection += "\n"
 	}
 
 	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))

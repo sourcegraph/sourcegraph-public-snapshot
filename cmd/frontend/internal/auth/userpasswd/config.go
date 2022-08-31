@@ -3,8 +3,7 @@ package userpasswd
 import (
 	"net/http"
 
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -31,10 +30,10 @@ func getProviderConfig() (pc *schema.BuiltinAuthProvider, multiple bool) {
 	return pc, false
 }
 
-func handleEnabledCheck(w http.ResponseWriter) (handled bool) {
+func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
 	pc, multiple := getProviderConfig()
 	if multiple {
-		log15.Error("At most 1 builtin auth provider may be set in site config.")
+		logger.Error("At most 1 builtin auth provider may be set in site config.")
 		http.Error(w, "Misconfigured builtin auth provider.", http.StatusInternalServerError)
 		return true
 	}

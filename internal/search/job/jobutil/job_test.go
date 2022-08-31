@@ -161,7 +161,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -205,7 +205,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -226,7 +226,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -247,7 +247,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -268,7 +268,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -290,7 +290,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -312,7 +312,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -338,7 +338,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -388,7 +388,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -414,7 +414,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -465,7 +465,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -505,7 +505,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -536,7 +536,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -560,7 +560,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -578,7 +578,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -596,7 +596,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -614,7 +614,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -624,6 +624,25 @@ func TestNewPlanJob(t *testing.T) {
           (repoOpts.hasKVPs[0].key . tag))
         (REPOSEARCH
           (repoOpts.hasKVPs[0].key . tag))))))`),
+		}, {
+			query:      `(...)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeStructural,
+			want: autogold.Want("stream structural search", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . structural)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          )
+        (STRUCTURALSEARCH
+          (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
+          )))))`),
 		},
 	}
 
@@ -634,7 +653,7 @@ func TestNewPlanJob(t *testing.T) {
 
 			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
+				PatternType:         tc.searchType,
 				Protocol:            tc.protocol,
 				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,

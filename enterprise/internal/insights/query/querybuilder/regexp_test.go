@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
 )
@@ -229,10 +230,18 @@ func TestReplace_Valid(t *testing.T) {
 func TestReplace_Invalid(t *testing.T) {
 	t.Run("multiple patterns", func(t *testing.T) {
 		_, err := NewPatternReplacer("/replace(me)/ or asdf", query.SearchTypeStandard)
-		require.ErrorIs(t, err, multiplePatternErr)
+		require.ErrorIs(t, err, MultiplePatternErr)
 	})
 	t.Run("literal pattern", func(t *testing.T) {
 		_, err := NewPatternReplacer("asdf", query.SearchTypeStandard)
-		require.ErrorIs(t, err, unsupportedPatternTypeErr)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
+	t.Run("no pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("", query.SearchTypeRegex)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
+	t.Run("filters with no pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("repo:repoA rev:3.40.0", query.SearchTypeStandard)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
 	})
 }

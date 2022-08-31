@@ -2,11 +2,16 @@ import { ComponentProps, MouseEvent, ReactElement, useMemo } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleBand } from '@visx/scale'
+import classNames from 'classnames'
 import { ScaleBand, ScaleLinear } from 'd3-scale'
+
+import { getBrowserName } from '@sourcegraph/common'
 
 import { MaybeLink } from '../../../core'
 import { ActiveSegment } from '../types'
 import { Category } from '../utils/get-grouped-categories'
+
+import styles from './GroupedBars.module.scss'
 
 interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     activeSegment: ActiveSegment<Datum> | null
@@ -20,8 +25,10 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
-    onBarClick: (datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum) => void
 }
+
+const isSafari = getBrowserName() === 'safari'
 
 export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement {
     const {
@@ -65,7 +72,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         const [datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (datum) {
-            onBarClick(datum)
+            onBarClick(event, datum)
         }
     }
 
@@ -84,6 +91,8 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                             <MaybeLink
                                 key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
                                 to={getDatumLink(datum)}
+                                onFocus={() => onBarHover(datum, category)}
+                                onClick={event => onBarClick(event, datum)}
                             >
                                 <rect
                                     x={barX}
@@ -91,10 +100,18 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                                     width={barWidth}
                                     height={barHeight}
                                     fill={getDatumColor(datum)}
-                                    rx={4}
-                                    // TODO: Move hardcoded to the public API and make it overridable
-                                    // see https://github.com/sourcegraph/sourcegraph/issues/40259
-                                    opacity={activeSegment ? (activeSegment.category.id === category.id ? 1 : 0.5) : 1}
+                                    rx={2}
+                                    opacity={
+                                        isSafari && activeSegment
+                                            ? activeSegment.category.id === category.id
+                                                ? 1
+                                                : 0.5
+                                            : 1
+                                    }
+                                    className={classNames({
+                                        [styles.barActive]: activeSegment && activeSegment?.category.id === category.id,
+                                        [styles.barFade]: activeSegment && activeSegment?.category.id !== category.id,
+                                    })}
                                 />
                             </MaybeLink>
                         )

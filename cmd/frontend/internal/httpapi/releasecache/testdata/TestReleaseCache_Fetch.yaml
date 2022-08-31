@@ -1,0 +1,113 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\n\t\tquery($owner: String!, $name: String!, $first: Int!, $after:
+      String, $order: ReleaseOrder!) {\n\t\t\trepository(owner: $owner, name: $name)
+      {\n\t\t\t\treleases(first: $first, after: $after, orderBy: $order) {\n\t\t\t\t\tnodes
+      {\n\t\t\t\t\t\ttagName\n\t\t\t\t\t\tisDraft\n\t\t\t\t\t\tisPrerelease\n\t\t\t\t\t}\n\t\t\t\t\tpageInfo
+      {\n\t\t\t\t\t\thasNextPage\n\t\t\t\t\t\tendCursor\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t","variables":{"first":100,"name":"src-cli","order":{"direction":"DESC","field":"CREATED_AT"},"owner":"sourcegraph"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":{"releases":{"nodes":[{"tagName":"4.0.0-rc.0","isDraft":false,"isPrerelease":true},{"tagName":"3.43.1","isDraft":false,"isPrerelease":false},{"tagName":"3.43.0","isDraft":false,"isPrerelease":false},{"tagName":"3.42.3","isDraft":false,"isPrerelease":false},{"tagName":"3.42.2","isDraft":false,"isPrerelease":false},{"tagName":"3.42.1","isDraft":false,"isPrerelease":false},{"tagName":"3.42.0","isDraft":false,"isPrerelease":false},{"tagName":"3.41.1","isDraft":false,"isPrerelease":false},{"tagName":"3.41.0","isDraft":false,"isPrerelease":false},{"tagName":"3.40.11","isDraft":false,"isPrerelease":false},{"tagName":"3.40.10","isDraft":false,"isPrerelease":false},{"tagName":"3.40.9","isDraft":false,"isPrerelease":false},{"tagName":"3.40.8","isDraft":false,"isPrerelease":false},{"tagName":"3.40.7","isDraft":false,"isPrerelease":false},{"tagName":"3.40.6","isDraft":false,"isPrerelease":false},{"tagName":"3.40.5","isDraft":false,"isPrerelease":false},{"tagName":"3.40.4","isDraft":false,"isPrerelease":false},{"tagName":"3.40.3","isDraft":false,"isPrerelease":false},{"tagName":"3.40.2","isDraft":false,"isPrerelease":false},{"tagName":"3.40.1","isDraft":false,"isPrerelease":false},{"tagName":"3.40.0","isDraft":false,"isPrerelease":false},{"tagName":"3.39.2","isDraft":false,"isPrerelease":false},{"tagName":"3.39.1","isDraft":false,"isPrerelease":false},{"tagName":"3.39.0","isDraft":false,"isPrerelease":false},{"tagName":"3.38.0","isDraft":false,"isPrerelease":false},{"tagName":"3.37.0","isDraft":false,"isPrerelease":false},{"tagName":"3.36.4","isDraft":false,"isPrerelease":false},{"tagName":"3.36.3","isDraft":false,"isPrerelease":false},{"tagName":"3.36.2","isDraft":false,"isPrerelease":false},{"tagName":"3.36.1","isDraft":false,"isPrerelease":false},{"tagName":"3.36.0","isDraft":false,"isPrerelease":false},{"tagName":"3.35.3","isDraft":false,"isPrerelease":false},{"tagName":"3.35.2","isDraft":false,"isPrerelease":false},{"tagName":"3.35.1","isDraft":false,"isPrerelease":false},{"tagName":"3.35.0","isDraft":false,"isPrerelease":false},{"tagName":"3.34.2","isDraft":false,"isPrerelease":false},{"tagName":"3.34.1","isDraft":false,"isPrerelease":false},{"tagName":"3.34.0","isDraft":false,"isPrerelease":false},{"tagName":"3.33.8","isDraft":false,"isPrerelease":false},{"tagName":"3.33.7","isDraft":false,"isPrerelease":false},{"tagName":"3.33.6","isDraft":false,"isPrerelease":false},{"tagName":"3.33.5","isDraft":false,"isPrerelease":false},{"tagName":"3.33.4","isDraft":false,"isPrerelease":false},{"tagName":"3.33.3","isDraft":false,"isPrerelease":false},{"tagName":"3.33.2","isDraft":false,"isPrerelease":false},{"tagName":"3.33.1","isDraft":false,"isPrerelease":false},{"tagName":"3.33.0","isDraft":false,"isPrerelease":false},{"tagName":"3.32.2","isDraft":false,"isPrerelease":false},{"tagName":"3.32.1","isDraft":false,"isPrerelease":false},{"tagName":"3.32.0","isDraft":false,"isPrerelease":false},{"tagName":"3.31.1","isDraft":false,"isPrerelease":false},{"tagName":"3.31.0","isDraft":false,"isPrerelease":false},{"tagName":"3.30.5","isDraft":false,"isPrerelease":false},{"tagName":"3.30.4","isDraft":false,"isPrerelease":false},{"tagName":"3.30.3","isDraft":false,"isPrerelease":false},{"tagName":"3.30.2","isDraft":false,"isPrerelease":false},{"tagName":"3.30.1","isDraft":false,"isPrerelease":false},{"tagName":"3.30.0","isDraft":false,"isPrerelease":false},{"tagName":"3.29.3","isDraft":false,"isPrerelease":false},{"tagName":"3.29.2","isDraft":false,"isPrerelease":false},{"tagName":"3.29.1","isDraft":false,"isPrerelease":false},{"tagName":"3.29.0","isDraft":false,"isPrerelease":false},{"tagName":"3.28.3","isDraft":false,"isPrerelease":false},{"tagName":"3.28.2","isDraft":false,"isPrerelease":false},{"tagName":"3.28.1","isDraft":false,"isPrerelease":false},{"tagName":"3.28.0","isDraft":false,"isPrerelease":false},{"tagName":"3.27.1","isDraft":false,"isPrerelease":false},{"tagName":"3.27.0","isDraft":false,"isPrerelease":false},{"tagName":"3.26.3","isDraft":false,"isPrerelease":false},{"tagName":"3.26.2","isDraft":false,"isPrerelease":false},{"tagName":"3.26.1","isDraft":false,"isPrerelease":false},{"tagName":"3.26.0","isDraft":false,"isPrerelease":false},{"tagName":"3.25.3","isDraft":false,"isPrerelease":false},{"tagName":"3.25.2","isDraft":false,"isPrerelease":false},{"tagName":"3.25.1","isDraft":false,"isPrerelease":false},{"tagName":"3.25.0","isDraft":false,"isPrerelease":false},{"tagName":"3.24.7","isDraft":false,"isPrerelease":false},{"tagName":"3.24.6","isDraft":false,"isPrerelease":false},{"tagName":"3.24.5","isDraft":false,"isPrerelease":false},{"tagName":"3.24.4","isDraft":false,"isPrerelease":false},{"tagName":"3.24.3","isDraft":false,"isPrerelease":false},{"tagName":"3.24.2","isDraft":false,"isPrerelease":false},{"tagName":"3.24.1","isDraft":false,"isPrerelease":false},{"tagName":"3.24.0","isDraft":false,"isPrerelease":false},{"tagName":"3.23.3","isDraft":false,"isPrerelease":false},{"tagName":"3.23.2","isDraft":false,"isPrerelease":false},{"tagName":"3.23.1","isDraft":false,"isPrerelease":false},{"tagName":"3.23.0","isDraft":false,"isPrerelease":false},{"tagName":"3.22.4","isDraft":false,"isPrerelease":false},{"tagName":"3.22.3","isDraft":false,"isPrerelease":false},{"tagName":"3.22.2","isDraft":false,"isPrerelease":false},{"tagName":"3.22.1","isDraft":false,"isPrerelease":false},{"tagName":"3.22.0","isDraft":false,"isPrerelease":false},{"tagName":"3.21.9","isDraft":false,"isPrerelease":false},{"tagName":"3.21.8","isDraft":false,"isPrerelease":false},{"tagName":"3.21.7","isDraft":false,"isPrerelease":false},{"tagName":"3.21.6","isDraft":false,"isPrerelease":false},{"tagName":"3.21.5","isDraft":false,"isPrerelease":false},{"tagName":"3.21.4","isDraft":false,"isPrerelease":false},{"tagName":"3.21.3","isDraft":false,"isPrerelease":false}],"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOnYyOpK5MjAyMC0xMC0yMVQxMjoyNTozNC0wNzowMM4B9cFt"}}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 25 Aug 2022 16:40:34 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - EF98:03BC:1A2EE5:42AA45:6307A601
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "18"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\n\t\tquery($owner: String!, $name: String!, $first: Int!, $after:
+      String, $order: ReleaseOrder!) {\n\t\t\trepository(owner: $owner, name: $name)
+      {\n\t\t\t\treleases(first: $first, after: $after, orderBy: $order) {\n\t\t\t\t\tnodes
+      {\n\t\t\t\t\t\ttagName\n\t\t\t\t\t\tisDraft\n\t\t\t\t\t\tisPrerelease\n\t\t\t\t\t}\n\t\t\t\t\tpageInfo
+      {\n\t\t\t\t\t\thasNextPage\n\t\t\t\t\t\tendCursor\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t","variables":{"after":"Y3Vyc29yOnYyOpK5MjAyMC0xMC0yMVQxMjoyNTozNC0wNzowMM4B9cFt","first":100,"name":"src-cli","order":{"direction":"DESC","field":"CREATED_AT"},"owner":"sourcegraph"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":{"releases":{"nodes":[{"tagName":"3.21.2","isDraft":false,"isPrerelease":false},{"tagName":"3.21.1","isDraft":false,"isPrerelease":false},{"tagName":"3.21.0","isDraft":false,"isPrerelease":false},{"tagName":"3.20.0","isDraft":false,"isPrerelease":false},{"tagName":"3.19.1","isDraft":false,"isPrerelease":false},{"tagName":"3.19.0","isDraft":false,"isPrerelease":false},{"tagName":"3.18.0","isDraft":false,"isPrerelease":false},{"tagName":"3.17.1","isDraft":false,"isPrerelease":false},{"tagName":"3.17.0","isDraft":false,"isPrerelease":false},{"tagName":"3.16.1","isDraft":false,"isPrerelease":false},{"tagName":"3.16.0","isDraft":false,"isPrerelease":false},{"tagName":"3.18.0-alpha","isDraft":false,"isPrerelease":true},{"tagName":"3.15.0","isDraft":false,"isPrerelease":false},{"tagName":"3.14","isDraft":false,"isPrerelease":false},{"tagName":"3.13.0","isDraft":false,"isPrerelease":false},{"tagName":"3.13.0-alpha","isDraft":false,"isPrerelease":true},{"tagName":"3.12.0","isDraft":false,"isPrerelease":false},{"tagName":"3.11.2","isDraft":false,"isPrerelease":false},{"tagName":"3.11.1","isDraft":false,"isPrerelease":false},{"tagName":"3.10.13","isDraft":false,"isPrerelease":false},{"tagName":"3.11.0","isDraft":false,"isPrerelease":false},{"tagName":"3.10.12","isDraft":false,"isPrerelease":false},{"tagName":"3.10.11","isDraft":false,"isPrerelease":false},{"tagName":"3.10.10","isDraft":false,"isPrerelease":false},{"tagName":"3.10.9","isDraft":false,"isPrerelease":false},{"tagName":"3.10.8","isDraft":false,"isPrerelease":false},{"tagName":"3.10.7","isDraft":false,"isPrerelease":false},{"tagName":"3.10.6","isDraft":false,"isPrerelease":false},{"tagName":"3.10.5","isDraft":false,"isPrerelease":false},{"tagName":"3.10.4","isDraft":false,"isPrerelease":false},{"tagName":"3.10.3","isDraft":false,"isPrerelease":false},{"tagName":"3.10.2","isDraft":false,"isPrerelease":false},{"tagName":"3.10.1","isDraft":false,"isPrerelease":false},{"tagName":"3.10.0","isDraft":false,"isPrerelease":false},{"tagName":"3.9.0","isDraft":false,"isPrerelease":false},{"tagName":"3.8.0","isDraft":false,"isPrerelease":false},{"tagName":"3.7.1","isDraft":false,"isPrerelease":false},{"tagName":"3.7.0","isDraft":false,"isPrerelease":false},{"tagName":"3.6.1","isDraft":false,"isPrerelease":false},{"tagName":"3.6.0","isDraft":false,"isPrerelease":false},{"tagName":"3.5.0","isDraft":false,"isPrerelease":false},{"tagName":"3.4.0","isDraft":false,"isPrerelease":false},{"tagName":"3.3.1","isDraft":false,"isPrerelease":false},{"tagName":"3.3.0","isDraft":false,"isPrerelease":false},{"tagName":"3.2.0","isDraft":false,"isPrerelease":false},{"tagName":"3.1.0","isDraft":false,"isPrerelease":false},{"tagName":"3.0.2","isDraft":false,"isPrerelease":false},{"tagName":"3.0.1","isDraft":false,"isPrerelease":false},{"tagName":"3.0.0","isDraft":false,"isPrerelease":false},{"tagName":"2.1.2","isDraft":false,"isPrerelease":false},{"tagName":"2.1.1","isDraft":false,"isPrerelease":false},{"tagName":"2.1.0","isDraft":false,"isPrerelease":false},{"tagName":"2.0.0","isDraft":false,"isPrerelease":false},{"tagName":"1.2.0","isDraft":false,"isPrerelease":false},{"tagName":"1.1.2","isDraft":false,"isPrerelease":false},{"tagName":"1.1.1","isDraft":false,"isPrerelease":false},{"tagName":"1.1.0","isDraft":false,"isPrerelease":false},{"tagName":"1.0.1","isDraft":false,"isPrerelease":false},{"tagName":"1.0.0","isDraft":false,"isPrerelease":false}],"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpK5MjAxOC0wNC0yM1QyMTo0Mjo1Ny0wNzowMM4Aow3p"}}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 25 Aug 2022 16:40:34 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - EF98:03BC:1A2EF8:42AA9A:6307A601
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "19"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
