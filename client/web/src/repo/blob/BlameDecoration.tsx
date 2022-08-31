@@ -15,7 +15,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { BlameHunk } from '../blame/useBlameDecorations'
+import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
 

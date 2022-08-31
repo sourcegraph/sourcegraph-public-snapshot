@@ -17,7 +17,7 @@ import {
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 
-import { BlameHunk } from '../../blame/useBlameDecorations'
+import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import blameColumnStyles from '../BlameColumn.module.scss'

@@ -100,7 +100,7 @@ const getDisplayInfoFromHunk = (
     }
 }
 
-export const useBlameDecorations = (
+export const useBlameHunks = (
     {
         repoName,
         commitID,

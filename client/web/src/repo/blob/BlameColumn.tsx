@@ -3,7 +3,7 @@ import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 
-import { BlameHunk } from '../blame/useBlameDecorations'
+import { BlameHunk } from '../blame/useBlameHunks'
 
 import { BlameDecoration } from './BlameDecoration'
 
