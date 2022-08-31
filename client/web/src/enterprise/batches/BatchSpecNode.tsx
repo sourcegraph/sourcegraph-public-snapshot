@@ -122,11 +122,13 @@ const StateIcon: React.FunctionComponent<
     React.PropsWithChildren<{ state: BatchSpecState; source: BatchSpecSource }>
 > = ({ state, source }) => {
     if (source === BatchSpecSource.LOCAL) {
-        return <Icon
-            aria-hidden={true}
-            className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
-            svgPath={mdiCheckCircle}
-        />
+        return (
+            <Icon
+                aria-hidden={true}
+                className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
+                svgPath={mdiCheckCircle}
+            />
+        )
     }
     switch (state) {
         case BatchSpecState.COMPLETED:
