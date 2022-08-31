@@ -457,7 +457,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	store := db.ExternalServices()
-	BeforeCreateExternalService = func(ctx context.Context, _ ExternalServiceStore) error {
+	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })

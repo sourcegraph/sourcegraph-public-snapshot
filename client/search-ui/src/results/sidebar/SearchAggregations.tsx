@@ -45,10 +45,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     return (
         <article className="pt-2">
             <AggregationModeControls
-                size="sm"
-                className="mb-3"
+                loading={loading}
                 mode={aggregationMode}
                 availability={data?.searchQueryAggregate?.modeAvailability}
+                size="sm"
+                className="mb-3"
                 onModeChange={setAggregationMode}
             />
 
