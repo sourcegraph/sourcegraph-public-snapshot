@@ -3,7 +3,6 @@ package graphql
 import (
 	"encoding/json"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -43,34 +42,39 @@ func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVe
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
 
-func (e *ExecutorResolver) isOutdated() bool {
+func (e *ExecutorResolver) IsOutdated() (bool, error) {
+	sv := version.Version()
 	ev := e.executor.ExecutorVersion
 
-	if !e.Active() || version.IsDev(ev) {
-		return false
+	isDev := version.IsDev(ev) && version.IsDev(sv)
+
+	if !e.Active() || isDev {
+		return false, nil
 	}
 
-	/**
-	 * Valid build date examples for sourcegraph
-	 * 169135_2022-08-25_a2b623dce148
-	 * 169120_2022-08-25_a94c7eb7beca
-	 *
-	 * Valid build date example for executor (patch)
-	 * executor-patch-notest-es-ignite-debug_168065_2022-08-18_e94e18c4ebcc_patch
-	 */
-	r, _ := regexp.Compile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
-	strings.Trim()
+	r := regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
+	evm := r.FindStringSubmatch(ev)
+	svm := r.FindStringSubmatch(sv)
+	if len(evm) > 1 && len(svm) > 1 {
+		return svm[1] > evm[1], nil
+	}
 
-	v := version.Version()
+	// if we get here then we assume the versions are in semver format
+	// we use the sourcegraph version as a constraint and expect the executor version to be
+	// greater than the sourcegraph version, if not we return true to indicate the executor is
+	// outdated.
+	c, err := semver.NewConstraint("> " + sv)
+	if err != nil {
+		return false, nil
+	}
 
-	sv, err := semver.NewVersion(sv)
+	v, err := semver.NewVersion(ev)
+	if err != nil {
+		return false, err
+	}
 
-	return true
+	return c.Check(v), nil
 }
-
-func compareSemverVersion(sv, ev string) bool {}
-
-func compareBuildVersion(sv, ev string) bool {}
 
 // DateTime implements the DateTime GraphQL scalar type.
 type DateTime struct{ time.Time }
