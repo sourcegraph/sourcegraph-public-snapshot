@@ -227,8 +227,6 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
 
-	fmt.Println("now")
-
 	return &stats, nil
 }
 
