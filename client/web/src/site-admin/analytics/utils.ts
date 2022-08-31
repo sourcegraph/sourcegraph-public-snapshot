@@ -19,17 +19,17 @@ export function buildFrequencyDatum(
         const index = datums.findIndex(datum => datum.daysUsed >= days)
         if (isGradual || days === max) {
             result.push({
-                label: `${days} days`,
+                label: days === max ? `${days}+` : `${days}`,
                 value: index >= 0 ? datums.slice(index).reduce((sum, datum) => sum + datum.frequency, 0) : 0,
             })
         } else if (index >= 0 && datums[index].daysUsed === days) {
             result.push({
-                label: `${days} days`,
+                label: `${days}`,
                 value: datums[index].frequency,
             })
         } else {
             result.push({
-                label: `${days}+ days`,
+                label: `${days}+`,
                 value: 0,
             })
         }

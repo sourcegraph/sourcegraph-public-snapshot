@@ -1,11 +1,5 @@
 @import './colors.scss';
-@import './border-radius.scss';
 @import './variables.scss';
-
-// Bootstrap configuration before Bootstrap is imported
-$border-radius: var(--border-radius);
-$border-radius-sm: var(--border-radius);
-$border-radius-lg: var(--border-radius);
 
 $box-shadow: var(--box-shadow);
 
@@ -65,10 +59,10 @@ $enable-transitions: false;
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities';
 
 /* stylelint-enable @sourcegraph/no-restricted-imports */
-
+@import './reboot';
+@import './utilities';
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
@@ -79,7 +73,6 @@ $enable-transitions: false;
 @import './list-group';
 @import './custom-forms';
 @import './typography';
-@import './reboot';
 @import './tables';
 @import './code';
 @import './input-group';

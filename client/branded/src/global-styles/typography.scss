@@ -7,6 +7,63 @@
     --headings-margin-bottom: 0.5rem;
 }
 
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+h2,
+h3,
+h4,
+h6 {
+    margin-top: 0;
+    margin-bottom: var(--headings-margin-bottom);
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+// Reset margins on paragraphs
+// Similarly, the top margin on `<p>`s get reset. However, we also reset the
+// bottom margin to use `rem` units instead of `em`.
+p {
+    margin-top: 0;
+    margin-bottom: var(--paragraph-margin-bottom);
+}
+
+sup,
+sub {
+    position: relative;
+    line-height: 0;
+    vertical-align: baseline;
+}
+
+// 1. Correct the text wrapping in Edge and IE.
+// 2. Correct the color inheritance from `fieldset` elements in IE.
+legend {
+    display: block;
+    width: 100%;
+    max-width: 100%; // 1
+    padding: 0;
+    margin-bottom: 0.5rem;
+    line-height: inherit;
+    color: inherit; // 2
+    white-space: normal; // 1
+}
+
+// Content grouping
+//
+// 1. Add the correct box sizing in Firefox.
+// 2. Show the overflow in Edge and IE.
+hr {
+    box-sizing: content-box; // 1
+    height: 0; // 1
+    overflow: visible; // 2
+}
+
+b {
+    font-weight: bolder; // Add the correct font weight in Chrome, Edge, and Safari
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
+
 h1 {
     font-size: 1.625rem; // 26px
     font-weight: 600;
@@ -20,8 +77,6 @@ h2 {
     font-weight: 600;
     letter-spacing: (0.25/20) + em;
     line-height: var(--line-height-typography);
-    margin-top: 0;
-    margin-bottom: var(--headings-margin-bottom);
 }
 
 h3 {
@@ -29,8 +84,6 @@ h3 {
     font-weight: 600;
     letter-spacing: (0.25/16) + em;
     line-height: var(--line-height-typography);
-    margin-top: 0;
-    margin-bottom: var(--headings-margin-bottom);
 }
 
 h4 {
@@ -38,8 +91,6 @@ h4 {
     font-weight: 500;
     letter-spacing: (0.25/14) + em;
     line-height: var(--line-height-typography);
-    margin-top: 0;
-    margin-bottom: var(--headings-margin-bottom);
 }
 
 h5 {
@@ -55,8 +106,6 @@ h6 {
     font-size: 0.625rem;
     font-weight: 400;
     line-height: var(--line-height-typography);
-    margin-top: 0;
-    margin-bottom: var(--headings-margin-bottom);
 }
 
 %small {
@@ -78,39 +127,13 @@ small,
 sup,
 sub {
     font-size: 0.5em;
-    position: relative;
-    line-height: 0;
-    vertical-align: baseline;
 }
-
 sup {
     top: -1em;
 }
 
-sub {
-    bottom: -0.25em;
-}
-
-// Reset margins on paragraphs
-// Similarly, the top margin on `<p>`s get reset. However, we also reset the
-// bottom margin to use `rem` units instead of `em`.
-p {
-    margin-top: 0;
-    margin-bottom: var(--paragraph-margin-bottom);
-}
-
-// 1. Correct the text wrapping in Edge and IE.
-// 2. Correct the color inheritance from `fieldset` elements in IE.
 legend {
     font-size: 1rem;
-    display: block;
-    width: 100%;
-    max-width: 100%; // 1
-    padding: 0;
-    margin-bottom: 0.5rem;
-    line-height: inherit;
-    color: inherit; // 2
-    white-space: normal; // 1
 }
 
 // Body / Base / Medium
@@ -119,7 +142,6 @@ legend {
 }
 
 // Body / Base / Strong
-b,
 strong {
     font-weight: 600;
 }
@@ -181,18 +203,11 @@ label.text-uppercase small,
     }
 }
 
-// Content grouping
-//
-// 1. Add the correct box sizing in Firefox.
-// 2. Show the overflow in Edge and IE.
 hr {
     margin-top: var(--hr-margin-y);
     margin-bottom: var(--hr-margin-y);
     border: 0;
     border-top: 1px solid var(--border-color);
-    box-sizing: content-box; // 1
-    height: 0; // 1
-    overflow: visible; // 2
 }
 
 mark,

@@ -13,7 +13,6 @@
 .header {
     display: flex;
     align-items: flex-start;
-    padding: 0 0.5rem;
 
     &.align-right {
         justify-content: end;
@@ -45,14 +44,12 @@
         height: 1.25rem;
 
         input {
-            margin-left: -1rem !important;
+            margin-left: -0.75rem !important;
         }
     }
 }
 
 .sortable-icons {
-    margin-left: 0.5rem;
-    margin-right: -1rem;
     svg {
         fill: var(--card-border-color);
         width: 2.25rem;
@@ -94,4 +91,8 @@
 
 .link-color {
     color: var(--link-color);
+}
+
+.pagination {
+    width: 20rem;
 }

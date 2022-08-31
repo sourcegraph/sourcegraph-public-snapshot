@@ -21,6 +21,7 @@ type environment struct {
 var environments = []environment{
 	{Name: "cloud", URL: "https://sourcegraph.com"},
 	{Name: "k8s", URL: "https://k8s.sgdev.org"},
+	{Name: "s2", URL: "https://sourcegraph.sourcegraph.com"},
 }
 
 func environmentNames() []string {

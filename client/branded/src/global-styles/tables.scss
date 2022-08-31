@@ -1,3 +1,5 @@
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
 table {
     border-collapse: collapse; // Prevent double borders
 }
@@ -7,6 +9,8 @@ th {
     // closest parent with a set `text-align`.
     text-align: inherit;
 }
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
 
 .table {
     --table-cell-padding: 0.625rem;

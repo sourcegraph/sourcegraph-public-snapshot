@@ -40,6 +40,8 @@
     --form-check-input-margin-y: 0.2rem;
 }
 
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
 label {
     // Allow labels to use `margin` for spacing.
     display: inline-block;
@@ -50,6 +52,14 @@ label {
 // Details at https://github.com/twbs/bootstrap/issues/24990
 select {
     word-wrap: normal;
+}
+
+// Remove the default `border-radius` that macOS Chrome adds.
+//
+// Details at https://github.com/twbs/bootstrap/issues/24093
+button {
+    // stylelint-disable-next-line property-blacklist
+    border-radius: 0;
 }
 
 // Work around a Firefox/IE bug where the transparent `button` background
@@ -167,6 +177,8 @@ progress {
     font: inherit; // 2
     -webkit-appearance: button; // 1
 }
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
 
 .form-control {
     display: block;

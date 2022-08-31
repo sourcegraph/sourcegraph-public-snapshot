@@ -343,7 +343,7 @@ export class FilteredConnection<
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
                             const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
-                            if (this.props.location.search !== searchFragment) {
+                            if (this.props.location.search !== `?${searchFragment}`) {
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,

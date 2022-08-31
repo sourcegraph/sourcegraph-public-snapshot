@@ -84,7 +84,7 @@ export const AllButtons: Story = () => (
         <ButtonVariants variants={['primary']} size="sm" outline={true} />
         <H2>Links</H2>
         <Text>Links can be made to look like buttons.</Text>
-        {/* Used `as={Link}` here, to demonstrate usage, however prefer to use `ButtonLink` for such use cases as this. */}
+        {/* Used `as={Link}` here to demonstrate possible usage, however prefer to use `ButtonLink` for such use cases as this. */}
         <Button
             variant="secondary"
             as={Link}
@@ -104,6 +104,7 @@ export const AllButtons: Story = () => (
         <Button size="sm" variant="secondary" display="block">
             Block
         </Button>
+
         <H2>Button Group</H2>
         <ButtonGroup className="mb-3">
             <Button variant="secondary" display="block">

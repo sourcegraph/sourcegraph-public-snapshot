@@ -1205,9 +1205,15 @@ type SearchQueryAggregate {
 
     """
     A result of aggregating a search query for the specified aggregation mode.
-    Limit - is the maximum number of aggregation groups to return, this limit will not override any internal limits.
+    mode - the requested aggregation mode, if null a default will be selected based on the search query
+    limit - is the maximum number of aggregation groups to return, this limit will not override any internal limits.
+    extendedTimeout - indicates of the aggregation request should use an extended timeout.
     """
-    aggregations(mode: SearchAggregationMode, limit: Int = 50): SearchAggregationResult!
+    aggregations(
+        mode: SearchAggregationMode
+        limit: Int = 50
+        extendedTimeout: Boolean = false
+    ): SearchAggregationResult!
 }
 
 """
@@ -1314,11 +1320,26 @@ Indicates that a search aggregation is not available
 """
 type SearchAggregationNotAvailable {
     """
-    The reason a search aggregation is not available
+    The specific reason a search aggregation is not available
     """
     reason: String!
+    """
+    The general reason a search aggregation is not available
+    """
+    reasonType: String!
     """
     The SearchAggregationMode that is unavailable
     """
     mode: SearchAggregationMode!
+}
+
+"""
+An enum to describe the reasons why a search aggregations are not available
+"""
+enum NotAvailableReasonType {
+    INVALID_QUERY
+    INVALID_AGGREGATION_MODE_FOR_QUERY
+    TIMEOUT_EXTENSION_AVAILABLE
+    TIMEOUT_NO_EXTENSION_AVAILABLE
+    OTHER_ERROR
 }

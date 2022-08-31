@@ -1,5 +1,5 @@
 :root {
-    --dt-font-weight: 700;
+    --link-hover-decoration: underline;
 }
 
 // Reboot
@@ -74,7 +74,7 @@ ul ol {
 }
 
 dt {
-    font-weight: var(--dt-font-weight);
+    font-weight: 700;
 }
 
 dd {
@@ -124,4 +124,15 @@ svg {
 // and https://developer.paciellogroup.com/blog/2018/03/focus-visible-and-backwards-compatibility/
 [tabindex='-1']:focus:not(:focus-visible) {
     outline: 0 !important;
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    background-color: transparent; // Remove the gray background on active links in IE 10.
+
+    &:hover {
+        color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
+    }
 }
