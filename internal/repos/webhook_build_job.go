@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -42,7 +42,7 @@ func (w *webhookBuildJob) Config() []env.Config {
 func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("background", "background webhook build job"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -56,9 +56,9 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	db := database.NewDB(logger, mainAppDB)
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(store.Handle())
+	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
 
-	cf := httpcli.ExternalClientFactory
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger))
 	opts := []httpcli.Opt{}
 	doer, err := cf.Doer(opts...)
 	if err != nil {
@@ -67,7 +67,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	return []goroutine.BackgroundRoutine{
 		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewResetter(ctx, logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
 		webhookworker.NewCleaner(ctx, baseStore, observationContext),
 	}, nil
 }

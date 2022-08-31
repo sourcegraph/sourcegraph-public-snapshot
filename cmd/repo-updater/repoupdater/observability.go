@@ -5,14 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -55,22 +54,15 @@ func (m HandlerMetrics) MustRegister(r prometheus.Registerer) {
 func ObservedHandler(
 	logger log.Logger,
 	m HandlerMetrics,
-	tr opentracing.Tracer,
+	tr trace.TracerProvider,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return ot.MiddlewareWithTracer(tr,
+		return instrumentation.HTTPMiddleware("",
 			&observedHandler{
 				next:    next,
 				logger:  logger,
 				metrics: m,
 			},
-			nethttp.OperationNameFunc(func(r *http.Request) string {
-				return "HTTP " + r.Method + ":" + r.URL.Path
-			}),
-			nethttp.MWComponentName("repo-updater"),
-			nethttp.MWSpanObserver(func(sp opentracing.Span, r *http.Request) {
-				sp.SetTag("http.uri", r.URL.EscapedPath())
-			}),
 		)
 	}
 }

@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
@@ -343,16 +345,16 @@ func getGitDir() (string, error) {
 	return dir, nil
 }
 
-func runGit(dir string, args ...string) error {
-	cmd := exec.Command("git", args...)
+func runCommand(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	log.Printf("starting git %s", strings.Join(args, " "))
+	log.Printf("starting %q %s", command, strings.Join(args, " "))
 	err := cmd.Run()
-	log.Printf("finished git in %s", time.Since(start))
+	log.Printf("finished %q in %s", command, time.Since(start))
 
 	return err
 }
@@ -374,6 +376,11 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 		return errors.Wrap(err, "removing stale git lock files")
 	}
 
+	err = trackDefaultBranches(dir)
+	if err != nil {
+		return errors.Wrap(err, "ensuring that remote refspecs point to default branches")
+	}
+
 	for {
 		// convenient way to stop the daemon to do manual operations like add
 		// more upstreams.
@@ -389,12 +396,12 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
 			opt.Logger.Printf("running garbage collection to maintain optimum repository health")
-			if err := runGit(dir, "gc", "--aggressive"); err != nil {
+			if err := runCommand(dir, "git", "gc", "--aggressive"); err != nil {
 				return err
 			}
 		}
 
-		if err := runGit(dir, "fetch", "--all", "--no-tags"); err != nil {
+		if err := runCommand(dir, "git", "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}
 
@@ -414,7 +421,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			return err
 		} else if !hasOrigin {
 			opt.Logger.Printf("skipping push since remote origin is missing")
-		} else if err := runGit(dir, "push", "origin"); err != nil {
+		} else if err := runCommand(dir, "git", "push", "origin"); err != nil {
 			return err
 		}
 
@@ -542,4 +549,36 @@ func remoteHead(r *git.Repository, remote string) (*object.Commit, error) {
 
 	log.Printf("ignoring remote %q because it doesn't have any of the common default branches %v", remote, commonDefaultBranches)
 	return nil, nil
+}
+
+//go:embed default-branch.sh
+var defaultBranchScript string
+
+// trackDefaultBranches ensures that the refspec for each remote points to
+// the current default branch.
+func trackDefaultBranches(dir string) error {
+	f, err := os.CreateTemp("", "default-branch-*.sh")
+	if err != nil {
+		return errors.Wrap(err, "creating temp file")
+	}
+
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	_, err = f.WriteString(defaultBranchScript)
+	if err != nil {
+		return errors.Wrap(err, "writing default branch script")
+	}
+
+	err = f.Close()
+	if err != nil {
+		return errors.Wrap(err, "closing temp file")
+	}
+
+	err = runCommand(dir, "bash", f.Name())
+	if err != nil {
+		return errors.Wrap(err, "while running bash script")
+	}
+
+	return nil
 }

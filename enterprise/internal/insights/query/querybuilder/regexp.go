@@ -175,6 +175,10 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		return nil, MultiplePatternErr
 	}
 
+	if len(patterns) == 0 {
+		return nil, UnsupportedPatternTypeErr
+	}
+
 	pattern := patterns[0]
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
 		return nil, UnsupportedPatternTypeErr

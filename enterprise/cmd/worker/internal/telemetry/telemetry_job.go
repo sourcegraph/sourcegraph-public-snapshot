@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/otel"
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -27,7 +28,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -119,7 +119,7 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	handlerMetrics := newHandlerMetrics(observationContext)
