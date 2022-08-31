@@ -24,7 +24,7 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to run git show: `%s`", out)
 	}
 
 	if ok := gitTreePattern.Match(out); !ok {
