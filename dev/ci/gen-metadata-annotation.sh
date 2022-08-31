@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-set -x
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../..
-#set -euo pipefail
+set -e
 
 if [[ -z ${BUILD_METADATA} ]]; then
     echo "Build metadata is empty. Not generating information"
