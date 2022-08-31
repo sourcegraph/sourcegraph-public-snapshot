@@ -132,6 +132,8 @@ func migrationPath(schemaName, rev string) (string, error) {
 	}
 	if oobmigration.CompareVersions(revVersion, oobmigration.NewVersion(3, 21)) == oobmigration.VersionOrderBefore {
 		if schemaName == "frontend" {
+			// Return the root directory if we're looking for the frontend schema
+			// at or before 3.20. This was the only schema in existence then.
 			return "migrations", nil
 		}
 	}
