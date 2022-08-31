@@ -23,13 +23,13 @@ const selectRow = (line: number): void => getRowByLine(line)?.classList.add('hig
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements, blameHunks }) => {
-    /*
-        Array to store the DOM element and the blame hunk to render in it.
-        As blame decorations are displayed in the column view, we need to add a corresponding
-        cell to each row regrdless of whether there is a blame hunk to render in it or not (empty cell).
-        Array length equals to the number of rows in the table.
-        Array index represents 0-based line number.
-    */
+    /**
+     * Array to store the DOM element and the blame hunk to render in it.
+     * As blame decorations are displayed in the column view, we need to add a corresponding
+     * cell to each row regrdless of whether there is a blame hunk to render in it or not (empty cell).
+     * Array length equals to the number of rows in the table.
+     * Array index represents 0-based line number.
+     */
     const [cells, setCells] = React.useState<[HTMLTableCellElement, BlameHunk | undefined][]>([])
 
     /*
