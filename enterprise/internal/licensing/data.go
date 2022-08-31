@@ -7,13 +7,13 @@ const (
 	// oldEnterprise is the old "Enterprise" plan.
 	oldEnterprise Plan = "old-enterprise-0"
 
-	// team is the "Team" plan.
-	team Plan = "team-0"
+	// PlanTeam0 is the "Team" plan pre-4.0.
+	PlanTeam0 Plan = "team-0"
 	// enterprise0 is the "Enterprise" plan pre-4.0.
 	enterprise0 Plan = "enterprise-0"
 
-	// business0 is the "Business" plan for 4.0.
-	business0 Plan = "business-0"
+	// PlanBusiness0 is the "Business" plan for 4.0.
+	PlanBusiness0 Plan = "business-0"
 	// enterprise1 is the "Enterprise" plan for 4.0.
 	enterprise1 Plan = "enterprise-1"
 )
@@ -21,10 +21,10 @@ const (
 var allPlans = []Plan{
 	oldEnterpriseStarter,
 	oldEnterprise,
-	team,
+	PlanTeam0,
 	enterprise0,
 
-	business0,
+	PlanBusiness0,
 	enterprise1,
 }
 
@@ -86,14 +86,14 @@ var planFeatures = map[Plan][]Feature{
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
 	},
-	team: {
+	PlanTeam0: {
 		FeatureSSO,
 	},
 	enterprise0: {
 		FeatureSSO,
 	},
 
-	business0: {
+	PlanBusiness0: {
 		FeatureCampaigns,
 		FeatureBatchChanges,
 		FeatureSSO,
@@ -104,7 +104,3 @@ var planFeatures = map[Plan][]Feature{
 		FeatureSSO,
 	},
 }
-
-// NoLicenseMaximumExternalServiceCount is the maximum number of external services that the
-// instance supports when running without a license.
-const NoLicenseMaximumExternalServiceCount = 1
