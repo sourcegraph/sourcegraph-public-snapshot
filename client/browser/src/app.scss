@@ -1,10 +1,5 @@
 @import '../../branded/src/global-styles/colors';
 
-// Bootstrap configuration before Bootstrap is imported
-$border-radius: var(--border-radius);
-$border-radius-sm: var(--border-radius);
-$border-radius-lg: var(--border-radius);
-
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 

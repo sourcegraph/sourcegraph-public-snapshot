@@ -62,7 +62,7 @@ $enable-transitions: false;
 @import 'bootstrap/scss/reboot';
 
 /* stylelint-enable @sourcegraph/no-restricted-imports */
-
+@import './utilities';
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
@@ -81,7 +81,6 @@ $enable-transitions: false;
 @import './progress';
 @import './collapse';
 @import './grid';
-@import './utilities';
 
 * {
     box-sizing: border-box;

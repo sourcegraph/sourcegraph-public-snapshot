@@ -1,8 +1,4 @@
 // Utilies classes extracted from bootstrap library.
-$overflows: auto, hidden;
-$positions: static, relative, absolute, fixed, sticky;
-$displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex;
-
 :root {
     --border-width: 1px;
     --font-weight-normal: 400;
@@ -42,6 +38,7 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
 }
 
 // Displays
+$displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex;
 
 @each $breakpoint in map-keys($grid-breakpoints) {
     @include media-breakpoint-up($breakpoint) {
@@ -55,9 +52,8 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
     }
 }
 
-//
 // Utilities for toggling `display` in print
-//
+
 @media print {
     @each $value in $displays {
         .d-print-#{$value} {
@@ -85,6 +81,7 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
 }
 
 // Overflow
+$overflows: auto, hidden;
 
 @each $value in $overflows {
     .overflow-#{$value} {
@@ -93,6 +90,7 @@ $displays: none, inline, inline-block, block, table, table-row, table-cell, flex
 }
 
 // Position
+$positions: static, relative, absolute, fixed, sticky;
 
 @each $position in $positions {
     .position-#{$position} {
