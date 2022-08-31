@@ -31,5 +31,5 @@ ${runType}
 ${diff}
 ${messageFlags}
 <br/>
-Note that a Job has **Soft Failed** when you see this icon ⚠️.
+Note that a Job has [**soft failed**](https://docs.sourcegraph.com/dev/background-information/ci#soft-failures) when you see this icon: ⚠️.
 EOF
