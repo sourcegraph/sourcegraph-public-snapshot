@@ -50,7 +50,7 @@ For deployment configuration, please refer to the relevant [installation guide](
 - <span class="badge badge-experimental">Experimental</span> [Analytics](./analytics.md)
 - [Batch Changes](../batch_changes/index.md)
 - [Beta and experimental features](beta_and_experimental_features.md)
-- [Code navigation](../code_intelligence/index.md)
+- [Code navigation](../code_navigation/index.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)

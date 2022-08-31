@@ -10,12 +10,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -107,16 +104,12 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, tokenRefresher)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
-		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, logger, db, svc)
-		if err != nil {
-			return nil, errors.Wrap(err, "refreshing OAuth token")
-		}
-		c.Token = refreshed
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -402,94 +395,4 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		}
 	}
 	return out, nil
-}
-
-func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
-	parsed, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing external service config")
-	}
-
-	config, ok := parsed.(*schema.GitLabConnection)
-	if !ok {
-		return "", errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
-	}
-
-	// We may have old config without a refresh token
-	if config.TokenOauthRefresh == "" {
-		gitlab.TokenMissingRefreshCounter.Inc()
-		return config.Token, nil
-	}
-
-	var oauthConfig *oauth2.Config
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab == nil ||
-			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
-			continue
-		}
-		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		break
-	}
-
-	if oauthConfig == nil {
-		logger.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
-			log.Int64("externalServiceID", svc.ID),
-		)
-		return config.Token, nil
-	}
-
-	tok := &oauth2.Token{
-		AccessToken:  config.Token,
-		RefreshToken: config.TokenOauthRefresh,
-		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
-	}
-
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
-	if err != nil {
-		return "", errors.Wrap(err, "refresh token")
-	}
-
-	if refreshedToken.AccessToken != tok.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
-		}()
-
-		rawConfig, err := svc.Config.Decrypt(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		rawConfig, err = jsonc.Edit(rawConfig, refreshedToken.AccessToken, "token")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth token")
-		}
-		rawConfig, err = jsonc.Edit(rawConfig, refreshedToken.RefreshToken, "token.oauth.refresh")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth refresh token")
-		}
-		rawConfig, err = jsonc.Edit(rawConfig, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth token expiry")
-		}
-		svc.UpdatedAt = time.Now()
-		svc.Config.Set(rawConfig)
-		if err := db.ExternalServices().Upsert(ctx, svc); err != nil {
-			return "", errors.Wrap(err, "upserting external service")
-		}
-	}
-	return refreshedToken.AccessToken, nil
-}
-
-func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
-	url := strings.TrimSuffix(p.Url, "/")
-	return &oauth2.Config{
-		ClientID:     p.ClientID,
-		ClientSecret: p.ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  url + "/oauth/authorize",
-			TokenURL: url + "/oauth/token",
-		},
-		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-	}
 }

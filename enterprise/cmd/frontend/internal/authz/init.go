@@ -56,7 +56,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		return problems
 	})
 
-	// Warn about usage of auth providers that are not enabled by the license.
+	// Warn about usage of authz providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {

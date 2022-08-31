@@ -199,6 +199,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--build, -n="<value>"`: Override branch detection with a specific build `number`
+* `--commit, -c="<value>"`: Override branch detection with the latest build for `commit`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--view, -v`: Open build page in browser
@@ -254,6 +255,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--build, -n="<value>"`: Override branch detection with a specific build `number`
+* `--commit, -c="<value>"`: Override branch detection with the latest build for `commit`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
@@ -282,6 +284,17 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
+### sg ci search-failures
+
+Open Sourcegraph's CI failures Grafana logs page in browser.
+
+Arguments: `[text to search for]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--step="<value>"`: Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')
+
 ## sg test
 
 Run the given test suite.
@@ -296,17 +309,18 @@ Available testsuites in `sg.config.yaml`:
 * bext-build
 * bext-e2e
 * bext-integration
+* client
+* client-e2e
+* client-regression
 * docsite
-* frontend
-* frontend-e2e
 * web-integration
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
-$ sg test frontend
-$ sg test frontend-e2e
+$ sg test client
+$ sg test client-e2e
 
 # List available test suites:
 $ sg test -help
@@ -345,6 +359,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to ./annotations directory
+* `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -688,7 +703,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the sourcegraph repository.
+* `--file="<value>"`: The target schema description file.
+* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log
 
@@ -710,18 +726,6 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
-
-### sg migration upgrade
-
-Upgrade Sourcegraph instance databases to a target version.
-
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--from="<value>"`: The source (current) instance version. Must be of the form `v{Major}.{Minor}`.
-* `--skip-version-check`: Skip validation of the instance's current version.
-* `--to="<value>"`: The target instance version. Must be of the form `v{Major}.{Minor}`.
 
 ### sg migration leaves
 
@@ -1103,11 +1107,13 @@ Available preset environments:
 
 * cloud
 * k8s
+* s2
 
 ```sh
 # See which version is deployed on a preset environment
 $ sg live cloud
 $ sg live k8s
+$ sg live s2
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com

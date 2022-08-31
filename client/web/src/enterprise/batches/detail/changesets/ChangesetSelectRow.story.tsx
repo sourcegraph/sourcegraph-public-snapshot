@@ -1,4 +1,3 @@
-import { number } from '@storybook/addon-knobs'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -16,31 +15,46 @@ import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
+const MAX_CHANGESETS = 100
+
 const config: Meta = {
     title: 'web/batches/ChangesetSelectRow',
     decorators: [decorator],
+    argTypes: {
+        visibleChangesets: {
+            name: 'Visible changesets',
+            control: { type: 'range', min: 0, max: MAX_CHANGESETS },
+            defaultValue: 10,
+        },
+        selectableChangesets: {
+            name: 'Selectable changesets',
+            control: { type: 'range', min: 0, max: MAX_CHANGESETS },
+            defaultValue: 100,
+        },
+        selectedChangesets: {
+            name: 'Selected changesets',
+            control: { type: 'range', min: 0, max: MAX_CHANGESETS },
+            defaultValue: 0,
+        },
+    },
 }
 
 export default config
 
 const onSubmit = (): void => {}
 
-const CHANGESET_IDS = new Array<string>(100).fill('fake-id').map((id, index) => `${id}-${index}`)
+const CHANGESET_IDS = new Array<string>(MAX_CHANGESETS).fill('fake-id').map((id, index) => `${id}-${index}`)
 const HALF_CHANGESET_IDS = CHANGESET_IDS.slice(0, 50)
 const queryAll100ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS)
 const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS.slice(0, 50))
 
 const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
 
-export const AllStates: Story = () => {
-    const totalChangesets = number('Total changesets', 100)
-    const visibleChangesets = number('Visible changesets', 10, { range: true, min: 0, max: totalChangesets })
-    const selectableChangesets = number('Selectable changesets', 100, { range: true, min: 0, max: totalChangesets })
-    const selectedChangesets = number('Selected changesets', 0, { range: true, min: 0, max: selectableChangesets })
-
-    const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS.slice(0, selectableChangesets))
-    const initialSelected = CHANGESET_IDS.slice(0, selectedChangesets)
-    const initialVisible = CHANGESET_IDS.slice(0, visibleChangesets)
+export const AllStates: Story = args => {
+    const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () =>
+        of(CHANGESET_IDS.slice(0, args.selectableChangesets))
+    const initialSelected = CHANGESET_IDS.slice(0, args.selectedChangesets)
+    const initialVisible = CHANGESET_IDS.slice(0, args.visibleChangesets)
 
     const queryAvailableBulkOperations: typeof _queryAvailableBulkOperations = () => of(allBulkOperations)
 

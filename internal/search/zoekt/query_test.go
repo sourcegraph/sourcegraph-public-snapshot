@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
-	zoekt "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt/query"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
@@ -99,9 +99,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Name == "regex" {
-				t.Skip("@jac needs to port optimizeRegex from zoekt so we generate the same regex")
-			}
 			sourceQuery, _ := query.ParseRegexp(tt.Pattern)
 			b, _ := query.ToBasicQuery(sourceQuery)
 

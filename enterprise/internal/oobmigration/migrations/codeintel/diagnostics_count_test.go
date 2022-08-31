@@ -9,20 +9,20 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewDiagnosticsCountMigrator(store, 250)
 	serializer := newSerializer()
 
-	assertProgress := func(expectedProgress float64) {
-		if progress, err := migrator.Progress(context.Background()); err != nil {
+	assertProgress := func(expectedProgress float64, applyReverse bool) {
+		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
 			t.Fatalf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
 			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
@@ -64,27 +64,27 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		}
 	}
 
-	assertProgress(0)
+	assertProgress(0, false)
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(0.5)
+	assertProgress(0.5, false)
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1)
+	assertProgress(1, false)
 
 	assertCounts(expectedCounts)
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.5)
+	assertProgress(0.5, true)
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0)
+	assertProgress(0, true)
 }

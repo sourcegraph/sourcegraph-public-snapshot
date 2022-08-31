@@ -106,6 +106,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 				&CodeIntel{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
 				&Repos{DB: db, Cache: true},
 				&BatchChanges{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&Extensions{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 			}
 			for _, store := range stores {
 				if err := store.CacheAll(ctx); err != nil {

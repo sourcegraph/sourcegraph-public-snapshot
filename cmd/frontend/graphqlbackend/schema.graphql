@@ -418,7 +418,7 @@ type Mutation {
         date: String
     ): GitCommit
     """
-    Logs a user event.
+    Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
     """
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     """
@@ -1239,6 +1239,10 @@ type Query {
         """
         cloned: Boolean = true
         """
+        Include only repositories of the given clone status.
+        """
+        cloneStatus: CloneStatus
+        """
         Include repositories that are not yet cloned and for which cloning is not in progress.
         """
         notCloned: Boolean = true
@@ -1263,6 +1267,7 @@ type Query {
         """
         descending: Boolean = false
     ): RepositoryConnection!
+
     """
     Looks up a Phabricator repository by name.
     """
@@ -2233,6 +2238,24 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
+    """
+    Additional optional information describing attributes of this query.
+    """
+    annotations: [SearchQueryAnnotation!]
+}
+
+"""
+Additional information describing attributes of a query.
+"""
+type SearchQueryAnnotation {
+    """
+    A name for this query annotation label.
+    """
+    name: String!
+    """
+    An opaque value for this query annotation.
+    """
+    value: String!
 }
 
 """
@@ -2852,6 +2875,11 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs associated with the repo.
     """
     keyValuePairs: [KeyValuePair!]!
+
+    """
+    The size of repo when cloned on disk
+    """
+    diskSizeBytes: BigInt
 }
 
 """
@@ -5772,11 +5800,19 @@ type Site implements SettingsSubject {
         Returns users for the given lastActive enum period.
         When omitted does NOT apply and returns for all period available.
         """
-        lastActivePeriod: SiteUsersLastActivePeriod
+        lastActiveAt: SiteUsersDateRangeInput
         """
         Returns either deleted or not deleted users. Returns all users when omitted.
         """
-        deleted: Boolean
+        deletedAt: SiteUsersDateRangeInput
+        """
+        Returns users who where created within a given date time range.
+        """
+        createdAt: SiteUsersDateRangeInput
+        """
+        Returns users whose events count within a given range.
+        """
+        eventsCount: SiteUsersNumberRangeInput
     ): SiteUsers!
 
     """
@@ -5798,6 +5834,11 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+    """
+    Whether to enable the extension registry and the use of extensions.
+    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
+    """
+    enableLegacyExtensions: Boolean!
 }
 
 """
@@ -6337,6 +6378,25 @@ type AnalyticsBatchChangesResult {
 }
 
 """
+Extentions analytics.
+"""
+type AnalyticsExtensionsResult {
+    """
+    JetBrains IDE plugin search events.
+    """
+    jetbrains: AnalyticsStatItem!
+    """
+    VSCode IDE extension search events.
+    """
+    vscode: AnalyticsStatItem!
+    """
+    Browser (chrome, firefox, safari) extensions code navigation events.
+    This includes events like "Go to Def", "Find ref" and "Find implementation"
+    """
+    browser: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6364,6 +6424,10 @@ type Analytics {
     Batch changes statistics
     """
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+    """
+    Extensions statistics
+    """
+    extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
 }
 
 """
@@ -6440,13 +6504,39 @@ enum SiteUserOrderBy {
 }
 
 """
-SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
 """
-enum SiteUsersLastActivePeriod {
-    ALL
-    TODAY
-    THIS_WEEK
-    THIS_MONTH
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
+}
+
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
+input SiteUsersNumberRangeInput {
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
 }
 
 """
@@ -6462,9 +6552,13 @@ type SiteUsers {
     """
     nodes(
         """
-        Returns the first n users from the list.
+        Returns the "limit" number users from the list.
         """
-        first: Int
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
         """
         Returns users ordered by a given column.
         """
@@ -7104,16 +7198,6 @@ type CloningProgress {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
-"""
-type IndexingProgress {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message produced when repositories could not
 be synced from an external service
 """
@@ -7140,20 +7224,9 @@ type SyncError {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories could not
-be indexed
-"""
-type IndexingError {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -7172,6 +7245,29 @@ type RepositoryStats {
     The number of lines indexed
     """
     indexedLinesCount: BigInt!
+
+    """
+    The number of all repositories in the instance, without soft-deleted or blocked repositories.
+    """
+    total: Int!
+    """
+    The number of cloned repositories in the instance. This number might be
+    higher than 'total', if soft-deleted repositories haven't been cleaned up
+    yet.
+    """
+    cloned: Int!
+    """
+    The number of repositories in the instance that are currently being cloned.
+    """
+    cloning: Int!
+    """
+    The number of repositories in the instance that not cloned yet.
+    """
+    notCloned: Int!
+    """
+    The number of repositories where initial cloning or subsequent fetching resulted in an error.
+    """
+    failedFetch: Int!
 }
 
 """
@@ -7444,4 +7540,13 @@ type WebhookLogHeader {
     The header values.
     """
     values: [String!]!
+}
+
+"""
+The clone status of a repository.
+"""
+enum CloneStatus {
+    NOT_CLONED
+    CLONING
+    CLONED
 }

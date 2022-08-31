@@ -14,6 +14,17 @@
 
 ## Unreleased
 
+<!-- Add changes changes to this section before release. -->'
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
+
+## 3.42 -> 3.43.1
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
+
 ## 3.41 -> 3.42.2
 
 Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
@@ -408,10 +419,6 @@ service and then create the new one (this will result in a few seconds of downti
 kubectl delete svc sourcegraph-frontend
 kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
 ```
-
-### Language server deployment
-
-Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in favor of [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). As a consequence, Sourcegraph 3.0 does not automatically run or manage language servers. If you had code navigation enabled in 2.x, you will need to follow the instructions for each language extension and deploy them individually. Read the [code navigation documentation](https://docs.sourcegraph.com/user/code_intelligence).
 
 ### HTTPS / TLS
 

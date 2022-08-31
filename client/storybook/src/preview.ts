@@ -38,6 +38,9 @@ export const parameters: Parameters = {
     },
     // disables snapshotting for all stories by default
     chromatic: { disableSnapshot: true },
+    // This fixes an issue where some stories with knobs wound up in a state of infinite recursion
+    // See https://github.com/storybookjs/storybook/issues/15051
+    docs: { source: { type: 'code' } },
 }
 
 configureActions({ depth: 100, limit: 20 })

@@ -28,9 +28,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -42,7 +42,7 @@ func newExternalHTTPHandler(
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 	handlers *internalhttpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
-	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
+	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) http.Handler {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -71,11 +71,11 @@ func newExternalHTTPHandler(
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
 
-	githubAppCloudSetupHandler := newGitHubAppCloudSetupHandler()
+	githubAppSetupHandler := newGitHubAppSetupHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	logger := log.Scoped("external", "external http handlers")
-	appHandler := app.NewHandler(db, logger, githubAppCloudSetupHandler)
+	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
@@ -112,7 +112,7 @@ func newExternalHTTPHandler(
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = ot.HTTPMiddleware(h)
+	h = instrumentation.HTTPMiddleware("external", h)
 
 	return h
 }
@@ -151,7 +151,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	h = gcontext.ClearHandler(h)
 	logger := log.Scoped("internal", "internal http handlers")
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = ot.HTTPMiddleware(h)
+	h = instrumentation.HTTPMiddleware("internal", h)
 	return h
 }
 

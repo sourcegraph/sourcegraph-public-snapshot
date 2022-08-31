@@ -197,6 +197,14 @@
             "pointer": true
           }
         },
+        "enableMergedFileSymbolSidebar": {
+          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
@@ -333,6 +341,14 @@
             "pointer": true
           }
         },
+        "enableGoImportsSearchQueryTransform": {
+          "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsCompute": {
           "description": "Enables Compute powered Code Insights",
           "type": "boolean",
@@ -351,6 +367,22 @@
         },
         "enableLazyBlobSyntaxHighlighting": {
           "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSidebarFilePrefetch": {
+          "description": "Pre-fetch plaintext file revisions from sidebar on hover.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableLazyFileResultSyntaxHighlighting": {
+          "description": "Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -491,7 +523,7 @@
       }
     },
     "quicklinks": {
-      "description": "Links that should be accessible quickly from the home and search pages.",
+      "description": "DEPRECATED: This setting will be removed in a future version of Sourcegraph.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/QuickLink"

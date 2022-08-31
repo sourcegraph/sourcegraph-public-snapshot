@@ -272,3 +272,56 @@
 /admin/observability/alert_solutions /admin/observability/alerts 308
 
 /admin/deploy/managed /cloud 308
+
+/code_intelligence/explanations/writing_an_indexer /code_navigation/explanations/writing_an_indexer 308
+/code_intelligence/explanations/auto_indexing_inference /code_navigation/explanations/auto_indexing_inference 308
+/code_intelligence/explanations/auto_indexing /code_navigation/explanations/auto_indexing 308
+/code_intelligence/explanations/features /code_navigation/explanations/features 308
+/code_intelligence/explanations/introduction_to_code_intelligence /code_navigation/explanations/introduction_to_code_navigation 308
+/code_intelligence/explanations/precise_code_intelligence /code_navigation/explanations/precise_code_navigation 308
+/code_intelligence/explanations/rockskip /code_navigation/explanations/rockskip 308
+/code_intelligence/explanations/search_based_code_intelligence /code_navigation/explanations/search_based_code_navigation 308
+/code_intelligence/explanations/uploads /code_navigation/explanations/uploads 308
+/code_intelligence/explanations /code_navigation/explanations 308
+
+/code_intelligence/explanations/diagrams /code_navigation/explanations/diagrams 308
+/code_intelligence/explanations/diagrams/index-states.mermaid /code_navigation/explanations/diagrams/index-states.mermaid 308
+/code_intelligence/explanations/diagrams/index-states.svg /code_navigation/explanations/diagrams/index-states.svg 308
+/code_intelligence/explanations/diagrams/upload-states.mermaid /code_navigation/explanations/diagrams/upload-states.mermaid 308
+/code_intelligence/explanations/diagrams/upload-states.svg /code_navigation/explanations/diagrams/upload-states.svg 308
+
+/code_intelligence/apidocs /code_navigation/apidocs 308
+
+/code_intelligence/how-to/adding_lsif_to_many_repos /code_navigation/how-to/adding_lsif_to_many_repos 308
+/code_intelligence/how-to/adding_lsif_to_workflows /code_navigation/how-to/adding_lsif_to_workflows 308
+/code_intelligence/how-to/configure_auto_indexing /code_navigation/how-to/configure_auto_indexing 308
+/code_intelligence/how-to/configure_data_retention /code_navigation/how-to/configure_data_retention 308
+/code_intelligence/how-to/enable_auto_indexing /code_navigation/how-to/enable_auto_indexing 308
+/code_intelligence/how-to/enable_code_intel_on_air_gapped_instances /code_navigation/how-to/enable_code_intel_on_air_gapped_instances 308
+/code_intelligence/how-to/index_a_cpp_repository /code_navigation/how-to/index_a_cpp_repository 308
+/code_intelligence/how-to/index_a_go_repository /code_navigation/how-to/index_a_go_repository 308
+/code_intelligence/how-to/index_a_typescript_and_javascript_repository /code_navigation/how-to/index_a_typescript_and_javascript_repository 308
+/code_intelligence/how-to/index_other_languages /code_navigation/how-to/index_other_languages 308
+/code_intelligence/how-to /code_navigation/how-to 308
+
+/code_intelligence/how-to/img/CodeReview.gif /code_navigation/how-to/img/CodeReview.gif 308
+/code_intelligence/how-to/img/experimental-language-server-enable.png /code_navigation/how-to/img/experimental-language-server-enable.png 308
+/code_intelligence/how-to/img/extension-example.gif /code_navigation/how-to/img/extension-example.gif 308
+/code_intelligence/how-to/img/network-description.png /code_navigation/how-to/img/network-description.png 308
+/code_intelligence/how-to/img/network-waterfall.png /code_navigation/how-to/img/network-waterfall.png 308
+/code_intelligence/how-to/img/popover.png /code_navigation/how-to/img/popover.png 308
+/code_intelligence/how-to/img/Symbols.png /code_navigation/how-to/img/Symbols.png 308
+/code_intelligence/how-to/img/SymbolSidebar.png /code_navigation/how-to/imgSymbolSidebar.png 308
+/code_intelligence/how-to/img/workflow.png /code_navigation/how-to/img/workflow.png 308
+/code_intelligence/how-to/img /code_navigation/how-to/img 308
+
+/code_intelligence/references/auto_indexing_configuration /code_navigation/references/auto_indexing_configuration 308
+/code_intelligence/references/envvars /code_navigation/references/envvars 308
+/code_intelligence/references/faq /code_navigation/references/faq 308
+/code_intelligence/references/indexers /code_navigation/references/indexers 308
+/code_intelligence/references/precise_examples /code_navigation/references/precise_examples 308
+/code_intelligence/references/requirements /code_navigation/references/requirements 308
+/code_intelligence/references/troubleshooting /code_navigation/references/troubleshooting 308
+/code_intelligence/references /code_navigation/references 308
+
+/code_intelligence /code_navigation 308

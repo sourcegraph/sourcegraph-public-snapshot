@@ -4,11 +4,9 @@ import (
 	"context"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -16,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,9 +41,11 @@ func IsEnabled() bool {
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(postgres)
+
 	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
+			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights are not available on single-container deployments")
 		} else {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")
 		}
@@ -75,25 +74,4 @@ func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
 	}
 
 	return edb.NewInsightsDB(db), nil
-}
-
-func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	var insightsMigrator oobmigration.Migrator
-	if !IsEnabled() {
-		// This allows this migration to be "complete" even when insights is not enabled.
-		insightsMigrator = migration.NewMigratorNoOp()
-	} else {
-		insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
-		if err != nil {
-			return err
-		}
-		insightsMigrator = migration.NewMigrator(insightsDB, db)
-	}
-
-	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
-	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
-		return errors.Wrap(err, "failed to register settings migration job")
-	}
-
-	return nil
 }

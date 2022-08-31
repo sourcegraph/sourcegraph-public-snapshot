@@ -9,14 +9,15 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -120,7 +121,7 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 
@@ -788,34 +789,38 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
-		// required field for the sync worker, but
-		// the value is thrown out here
-		var executionLogs *[]any
-
-		var job SyncJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&executionLogs,
-			&job.ExternalServiceID,
-			&job.NextSyncAt,
-		); err != nil {
+		job, err := scanJob(rows)
+		if err != nil {
 			return nil, err
 		}
-
-		jobs = append(jobs, job)
+		jobs = append(jobs, *job)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
 	return jobs, nil
+}
+
+func scanJob(sc dbutil.Scanner) (*SyncJob, error) {
+	// required field for the sync worker, but
+	// the value is thrown out here
+	var executionLogs *[]any
+
+	var job SyncJob
+	return &job, sc.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&executionLogs,
+		&job.ExternalServiceID,
+		&job.NextSyncAt,
+	)
 }
 
 func metadataColumn(metadata any) (msg json.RawMessage, err error) {

@@ -3,7 +3,7 @@ package casetransform
 import (
 	"testing"
 
-	"github.com/grafana/regexp/syntax"
+	"regexp/syntax"
 )
 
 func TestLowerRegexpASCII(t *testing.T) {

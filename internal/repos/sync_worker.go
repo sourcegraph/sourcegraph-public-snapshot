@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -54,11 +54,11 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(dbHandle, workerstore.Options{
+	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
-		Scan:              scanSingleJob,
+		Scan:              workerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
@@ -74,7 +74,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
-	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
@@ -95,7 +95,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 	} else {
 		observationContext = &observation.Context{
 			Logger:     log.Scoped("sync_worker", ""),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: r,
 		}
 	}
@@ -145,19 +145,6 @@ func runJobCleaner(ctx context.Context, logger log.Logger, handle basestore.Tran
 		case <-t.C:
 		}
 	}
-}
-
-func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	if err != nil {
-		return nil, false, err
-	}
-
-	jobs, err := scanJobs(rows)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-
-	return &jobs[0], true, nil
 }
 
 // SyncJob represents an external service that needs to be synced

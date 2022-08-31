@@ -177,14 +177,12 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					Dotcom: &schema.Dotcom{
-						GithubAppCloud: &schema.GithubAppCloud{
-							AppID:        "1234",
-							ClientID:     "1234",
-							ClientSecret: "1234",
-							Slug:         "test-app",
-							PrivateKey:   bogusKey,
-						},
+					GitHubApp: &schema.GitHubApp{
+						AppID:        "1234",
+						ClientID:     "1234",
+						ClientSecret: "1234",
+						Slug:         "test-app",
+						PrivateKey:   bogusKey,
 					},
 				},
 			})

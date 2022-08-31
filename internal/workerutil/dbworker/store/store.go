@@ -11,11 +11,11 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -178,6 +178,7 @@ type store struct {
 	columnReplacer                  *strings.Replacer
 	modifiedColumnExpressionMatches [][]MatchingColumnExpressions
 	operations                      *operations
+	logger                          log.Logger
 }
 
 var _ Store = &store{}
@@ -233,8 +234,8 @@ type Options struct {
 	// is not necessary by the caller.
 	ViewName string
 
-	// Scan is the function used to convert a rows object into a record of the expected shape.
-	Scan RecordScanFn
+	// Scan is the function used to scan a resultset into a slice of the expected type.
+	Scan ResultsetScanFn
 
 	// OrderByExpression is the SQL expression used to order candidate records when selecting the next
 	// batch of work to perform. This expression may use the alias provided in `ViewName`, if one was
@@ -278,15 +279,16 @@ type Options struct {
 	clock glock.Clock
 }
 
-// RecordScanFn is a function that interprets row values as a particular record. This function should
-// return a false-valued flag if the given result set was empty. This function must close the rows
-// value if the given error value is nil.
+// ResultsetScanFn is a function that scans row values from a resultset into
+// records. This function must close the rows value if the given error value is
+// nil.
 //
-// See the `CloseRows` function in the store/base package for suggested implementation details.
-type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
+// See the `CloseRows` function in the store/base package for suggested
+// implementation details.
+type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error)
 
 // New creates a new store with the given database handle and options.
-func New(handle basestore.TransactableHandle, options Options) Store {
+func New(logger log.Logger, handle basestore.TransactableHandle, options Options) Store {
 	return NewWithMetrics(handle, options, &observation.TestContext)
 }
 
@@ -295,6 +297,7 @@ func NewWithMetrics(handle basestore.TransactableHandle, options Options, observ
 }
 
 func newStore(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
+	logger := observationContext.Logger
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
 	}
@@ -328,14 +331,14 @@ func newStore(handle basestore.TransactableHandle, options Options, observationC
 				continue
 			}
 
-			log15.Error(``+
+			logger.Error(``+
 				`dbworker store: column expression refers to a column modified by dequeue in a complex expression. `+
 				`The given expression will currently evaluate to the OLD value of the row, and the associated handler `+
 				`will not have a completely up-to-date record. Please refer to this column without a transform.`,
-				"index", i,
-				"expression", expression.Query(sqlf.PostgresBindVar),
-				"columnName", match.columnName,
-				"storeName", options.Name,
+				log.Int("index", i),
+				log.String("expression", expression.Query(sqlf.PostgresBindVar)),
+				log.String("columnName", match.columnName),
+				log.String("storeName", options.Name),
 			)
 		}
 	}
@@ -346,6 +349,7 @@ func newStore(handle basestore.TransactableHandle, options Options, observationC
 		columnReplacer:                  strings.NewReplacer(replacements...),
 		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
 		operations:                      newOperations(options.Name, observationContext),
+		logger:                          logger,
 	}
 }
 
@@ -358,6 +362,7 @@ func (s *store) With(other basestore.ShareableStore) Store {
 		columnReplacer:                  s.columnReplacer,
 		modifiedColumnExpressionMatches: s.modifiedColumnExpressionMatches,
 		operations:                      s.operations,
+		logger:                          s.logger,
 	}
 }
 
@@ -531,7 +536,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.columnReplacer.Replace("{worker_hostname}"):   workerHostnameExpr,
 	}
 
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+	records, err := s.options.Scan(s.Query(ctx, s.formatQuery(
 		dequeueQuery,
 		s.options.OrderByExpression,
 		quote(s.options.ViewName),
@@ -551,12 +556,15 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if err != nil {
 		return nil, false, err
 	}
-	if !exists {
+	if len(records) > 1 {
+		return nil, false, errors.Newf("more than one record dequeued: %d", len(records))
+	}
+	if len(records) == 0 {
 		return nil, false, nil
 	}
-	trace.Log(log.Int("recordID", record.RecordID()))
+	trace.Log(otlog.Int("recordID", records[0].RecordID()))
 
-	return record, true, nil
+	return records[0], true, nil
 }
 
 const dequeueQuery = `
@@ -680,15 +688,15 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 
 			debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
 			if debugErr != nil {
-				log15.Error("failed to fetch debug information for job",
-					"recordID", recordID,
-					"err", debugErr,
+				s.logger.Error("failed to fetch debug information for job",
+					log.Int("recordID", recordID),
+					log.Error(debugErr),
 				)
 			}
-			log15.Error("heartbeat lost a job",
-				"recordID", recordID,
-				"debug", debug,
-				"options.workerHostname", options.WorkerHostname,
+			s.logger.Error("heartbeat lost a job",
+				log.Int("recordID", recordID),
+				log.String("debug", debug),
+				log.String("options.workerHostname", options.WorkerHostname),
 			)
 		}
 	}
@@ -749,9 +757,9 @@ ORDER BY
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
-	ctx, _, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-		log.String("after", after.String()),
+	ctx, _, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+		otlog.String("after", after.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -779,8 +787,8 @@ WHERE {id} = %s
 // used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 // or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
 func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
-	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -801,16 +809,17 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	if !ok {
 		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
 		if debugErr != nil {
-			log15.Error("failed to fetch debug information for job",
-				"recordID", id,
-				"err", debugErr,
+			println("foo", s.logger, "foo")
+			s.logger.Error("failed to fetch debug information for job",
+				log.Int("recordID", id),
+				log.Error(debugErr),
 			)
 		}
-		log15.Error("addExecutionLogEntry failed and didn't match rows",
-			"recordID", id,
-			"debug", debug,
-			"options.workerHostname", options.WorkerHostname,
-			"options.state", options.State,
+		s.logger.Error("addExecutionLogEntry failed and didn't match rows",
+			log.Int("recordID", id),
+			log.String("debug", debug),
+			log.String("options.workerHostname", options.WorkerHostname),
+			log.String("options.state", options.State),
 		)
 		return entryID, ErrExecutionLogEntryNotUpdated
 	}
@@ -830,9 +839,9 @@ RETURNING array_length({execution_logs}, 1)
 // UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 // found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
 func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
-	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("recordID", recordID),
-		log.Int("entryID", entryID),
+	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("recordID", recordID),
+		otlog.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -855,16 +864,16 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 	if !ok {
 		debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
 		if debugErr != nil {
-			log15.Error("failed to fetch debug information for job",
-				"recordID", recordID,
-				"err", debugErr,
+			s.logger.Error("failed to fetch debug information for job",
+				log.Int("recordID", recordID),
+				log.Error(debugErr),
 			)
 		}
-		log15.Error("updateExecutionLogEntry failed and didn't match rows",
-			"recordID", recordID,
-			"debug", debug,
-			"options.workerHostname", options.WorkerHostname,
-			"options.state", options.State,
+		s.logger.Error("updateExecutionLogEntry failed and didn't match rows",
+			log.Int("recordID", recordID),
+			log.String("debug", debug),
+			log.String("options.workerHostname", options.WorkerHostname),
+			log.String("options.state", options.State),
 		)
 
 		return ErrExecutionLogEntryNotUpdated
@@ -888,8 +897,8 @@ RETURNING
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
 func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -915,8 +924,8 @@ RETURNING {id}
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -946,8 +955,8 @@ RETURNING {id}
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1001,7 +1010,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.Log(otlog.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -1023,7 +1032,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.Log(otlog.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }

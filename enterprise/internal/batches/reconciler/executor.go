@@ -154,7 +154,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
-		ExternalBranch:      e.spec.Spec.HeadRef,
+		ExternalBranch:      e.spec.HeadRef,
 		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != store.ErrNoResults {
@@ -229,10 +229,10 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	}
 
 	cs := &sources.Changeset{
-		Title:      e.spec.Spec.Title,
+		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -347,10 +347,10 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	// We must construct the sources.Changeset after invoking changesetSource,
 	// since that may change the remoteRepo.
 	cs := sources.Changeset{
-		Title:      e.spec.Spec.Title,
+		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -382,10 +382,10 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := sources.Changeset{
-		Title:      e.spec.Spec.Title,
-		Body:       e.spec.Spec.Body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		Title:      e.spec.Title,
+		Body:       e.spec.Body,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -474,10 +474,10 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := &sources.Changeset{
-		Title:      e.spec.Spec.Title,
-		Body:       e.spec.Spec.Body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		Title:      e.spec.Title,
+		Body:       e.spec.Body,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -524,7 +524,7 @@ func (e *executor) remoteRepo(ctx context.Context) (*types.Repo, error) {
 }
 
 func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
-	return decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), e.ch, e.spec.Spec.Body)
+	return decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), e.ch, e.spec.Body)
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
@@ -618,35 +618,13 @@ func handleArchivedRepo(
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
-	desc := spec.Spec
-
-	diff, err := desc.Diff()
-	if err != nil {
-		return opts, err
-	}
-
-	commitMessage, err := desc.CommitMessage()
-	if err != nil {
-		return opts, err
-	}
-
-	commitAuthorName, err := desc.AuthorName()
-	if err != nil {
-		return opts, err
-	}
-
-	commitAuthorEmail, err := desc.AuthorEmail()
-	if err != nil {
-		return opts, err
-	}
-
 	opts = protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
-		BaseCommit: api.CommitID(desc.BaseRev),
+		BaseCommit: api.CommitID(spec.BaseRev),
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     diff + "\n",
-		TargetRef: desc.HeadRef,
+		Patch:     string(spec.Diff) + "\n",
+		TargetRef: spec.HeadRef,
 
 		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
@@ -655,9 +633,9 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		UniqueRef: false,
 
 		CommitInfo: protocol.PatchCommitInfo{
-			Message:     commitMessage,
-			AuthorName:  commitAuthorName,
-			AuthorEmail: commitAuthorEmail,
+			Message:     spec.CommitMessage,
+			AuthorName:  spec.CommitAuthorName,
+			AuthorEmail: spec.CommitAuthorEmail,
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the

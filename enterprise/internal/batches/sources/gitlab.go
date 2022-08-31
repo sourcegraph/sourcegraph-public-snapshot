@@ -70,7 +70,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 		}
 	}
 
-	provider := gitlab.NewClientProvider(urn, baseURL, cli)
+	provider := gitlab.NewClientProvider(urn, baseURL, cli, nil)
 	return &GitLabSource{
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),

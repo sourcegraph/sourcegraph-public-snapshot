@@ -144,7 +144,6 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
 			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
-			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),

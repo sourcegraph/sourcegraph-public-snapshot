@@ -3,6 +3,8 @@ package licensing
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProductNameWithBrand(t *testing.T) {
@@ -40,12 +42,21 @@ func TestProductNameWithBrand(t *testing.T) {
 		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "trial"}, want: "Sourcegraph Enterprise (trial)"},
 		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "dev"}, want: "Sourcegraph Enterprise (dev use only)"},
 		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
+
+		{hasLicense: true, licenseTags: []string{"plan:enterprise-1"}, want: "Sourcegraph Enterprise"},
+		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "starter"}, want: "Sourcegraph Enterprise"}, // Enterprise should overrule the old Starter plan
+		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "trial"}, want: "Sourcegraph Enterprise (trial)"},
+		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "dev"}, want: "Sourcegraph Enterprise (dev use only)"},
+		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
+
+		{hasLicense: true, licenseTags: []string{"plan:business-0"}, want: "Sourcegraph Business"},
+		{hasLicense: true, licenseTags: []string{"plan:business-0", "trial"}, want: "Sourcegraph Business (trial)"},
+		{hasLicense: true, licenseTags: []string{"plan:business-0", "dev"}, want: "Sourcegraph Business (dev use only)"},
+		{hasLicense: true, licenseTags: []string{"plan:business-0", "dev", "trial"}, want: "Sourcegraph Business (trial, dev use only)"},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("hasLicense=%v licenseTags=%v", test.hasLicense, test.licenseTags), func(t *testing.T) {
-			if got := ProductNameWithBrand(test.hasLicense, test.licenseTags); got != test.want {
-				t.Errorf("got %q, want %q", got, test.want)
-			}
+			assert.Equal(t, test.want, ProductNameWithBrand(test.hasLicense, test.licenseTags))
 		})
 	}
 }

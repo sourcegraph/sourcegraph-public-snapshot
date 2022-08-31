@@ -1,14 +1,12 @@
 package store
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -23,13 +21,7 @@ var batchSpecResolutionWorkerOpts = dbworkerstore.Options{
 	TableName:         "batch_spec_resolution_jobs",
 	ColumnExpressions: batchSpecResolutionJobColums.ToSqlf(),
 
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		jobs, err := scanBatchSpecResolutionJobs(rows, err)
-		if err != nil || len(jobs) == 0 {
-			return nil, false, err
-		}
-		return jobs[0], true, nil
-	},
+	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(scanBatchSpecResolutionJob)),
 
 	OrderByExpression: sqlf.Sprintf("batch_spec_resolution_jobs.state = 'errored', batch_spec_resolution_jobs.updated_at DESC"),
 
