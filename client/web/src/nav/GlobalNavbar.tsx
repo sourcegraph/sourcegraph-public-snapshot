@@ -366,7 +366,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && extensionsController !== null && (
+                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}

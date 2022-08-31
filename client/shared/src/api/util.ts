@@ -45,7 +45,9 @@ export const syncRemoteSubscription = (
     new Subscription(async () => {
         const subscriptionProxy = await subscriptionPromise
         await subscriptionProxy.unsubscribe()
-        subscriptionProxy[releaseProxy]()
+        if (typeof subscriptionProxy[releaseProxy] === 'function') {
+            subscriptionProxy[releaseProxy]()
+        }
     })
 
 /**

@@ -295,7 +295,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    {extensionsController !== null ? (
+                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <ActionsContainer
                             {...props}
                             extensionsController={extensionsController}
