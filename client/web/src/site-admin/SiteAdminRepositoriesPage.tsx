@@ -247,7 +247,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                             <>Your Sourcegraph is almost full</>
                         )}
                     </H4>
-                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GB storage limit. </> : <></>}
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
                     Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
                     unlimited storage for your code.
                 </Alert>
