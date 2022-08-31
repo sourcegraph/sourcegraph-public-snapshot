@@ -496,7 +496,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				}
 				return svcs, nil
 			})
-			licensing.MockLicenseCheckErr("")
+			licensing.MockCheckFeatureError("")
 			allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -519,9 +519,34 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		cfg                        conf.Unified
 		gitlabConnections          []*schema.GitLabConnection
 		bitbucketServerConnections []*schema.BitbucketServerConnection
-		expAuthzProviders          func(*testing.T, []authz.Provider)
-		expSeriousProblems         []string
+		githubConnections          []*schema.GitHubConnection
+		perforceConnections        []*schema.PerforceConnection
+
+		expSeriousProblems []string
 	}{
+		{
+			description: "GitHub connection with authz enabled but missing license for ACLs",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Github: &schema.GitHubAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitHub",
+							Type:         extsvc.TypeGitHub,
+							Url:          "https://github.mine",
+						},
+					}},
+				},
+			},
+			githubConnections: []*schema.GitHubConnection{
+				{
+					Authorization: &schema.GitHubAuthorization{},
+					Url:           "https://github.com/my-org",
+				},
+			},
+			expSeriousProblems: []string{"failed"},
+		},
 		{
 			description: "GitLab connection with authz enabled but missing license for ACLs",
 			cfg: conf.Unified{
@@ -571,6 +596,23 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			},
 			expSeriousProblems: []string{"failed"},
 		},
+		{
+			description: "Perforce connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			perforceConnections: []*schema.PerforceConnection{
+				{
+					Authorization: &schema.PerforceAuthorization{},
+					P4Port:        "ssl:111.222.333.444:1666",
+					P4User:        "admin",
+					P4Passwd:      "pa$$word",
+					Depots: []string{
+						"//Sourcegraph",
+						"//Engineering/Cloud",
+					},
+				},
+			},
+			expSeriousProblems: []string{"failed"},
+		},
 	}
 
 	for _, test := range tests {
@@ -600,12 +642,26 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
+					case extsvc.KindGitHub:
+						for _, gh := range test.githubConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gh)),
+							})
+						}
+					case extsvc.KindPerforce:
+						for _, pf := range test.perforceConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(pf)),
+							})
+						}
 					}
 				}
 				return svcs, nil
 			})
 
-			licensing.MockLicenseCheckErr("failed")
+			licensing.MockCheckFeatureError("failed")
 			_, _, seriousProblems, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -615,7 +671,6 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 
 			assert.Equal(t, test.expSeriousProblems, seriousProblems)
 		})
-
 	}
 }
 

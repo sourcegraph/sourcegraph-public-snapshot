@@ -3,8 +3,6 @@ package gitlab
 import (
 	"net/url"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -47,9 +45,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 		return nil, nil
 	}
 
-	logger := log.Scoped("newAuthzProvider", "")
 	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
-		logger.Error("Check license for ACLs (GitLab)", log.Error(errLicense))
 		return nil, errLicense
 	}
 

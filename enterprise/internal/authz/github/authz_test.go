@@ -43,7 +43,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
-		licensing.MockLicenseCheckErr("")
+		licensing.MockCheckFeatureError("")
 		providers, problems, warnings := NewAuthzProviders(
 			database.NewMockExternalServiceStore(),
 			[]*ExternalConnection{
@@ -76,7 +76,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
-			licensing.MockLicenseCheckErr("")
+			licensing.MockCheckFeatureError("")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
@@ -105,7 +105,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		})
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
-			licensing.MockLicenseCheckErr("failed")
+			licensing.MockCheckFeatureError("failed")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
@@ -133,7 +133,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
-			licensing.MockLicenseCheckErr("")
+			licensing.MockCheckFeatureError("")
 			providers, problems, warnings := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{

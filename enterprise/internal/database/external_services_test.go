@@ -1276,7 +1276,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 	} {
-		licensing.MockLicenseCheckErr("")
+		licensing.MockCheckFeatureError("")
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string

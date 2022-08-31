@@ -1,8 +1,6 @@
 package bitbucketserver
 
 import (
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -46,9 +44,7 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	logger := log.Scoped("newAuthzProvider", "")
 	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
-		logger.Error("Check license for ACLs(BitBucket)", log.Error(errLicense))
 		return nil, errLicense
 	}
 

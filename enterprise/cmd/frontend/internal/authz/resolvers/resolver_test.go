@@ -57,7 +57,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		licensing.MockLicenseCheckErr("")
+		licensing.MockCheckFeatureError("")
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
@@ -303,7 +303,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		}
 	})
 
-	licensing.MockLicenseCheckErr("")
+	licensing.MockCheckFeatureError("")
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 

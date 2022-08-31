@@ -46,7 +46,7 @@ func ProvidersFromConfig(
 	seriousProblems []string,
 	warnings []string,
 ) {
-	logger := log.Scoped("ProvidersFromConfig", "")
+	logger := log.Scoped("authz", " parse provider from config")
 
 	allowAccessByDefault = true
 	defer func() {
