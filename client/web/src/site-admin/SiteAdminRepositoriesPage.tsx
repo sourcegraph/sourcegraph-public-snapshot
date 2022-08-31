@@ -7,7 +7,19 @@ import { Observable } from 'rxjs'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code, Button, Link, Alert, Icon, H2, H4, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Button,
+    Link,
+    Alert,
+    Icon,
+    H2,
+    H4,
+    Text,
+    Tooltip,
+    Container,
+    LoadingSpinner,
+} from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -227,10 +239,19 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 .
             </Text>
             {licenseInfo != null && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
-            <Alert variant={ licenseInfo.codeScaleExceededLimit ? "danger" : "warning"}>
-                <H4>{licenseInfo.codeScaleExceededLimit ? <>You've used all 100GB of storage</> : <>Your Sourcegraph is almost full</>}</H4>
-                {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GB storage limit. </> : <></>}Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for unlimited storage for your code.
-            </Alert>)}
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
             <Container className="mb-3">
                 {error && !loading && (
                     <Alert variant="warning" as="p">
