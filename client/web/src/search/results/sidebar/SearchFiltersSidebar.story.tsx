@@ -1,5 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -23,7 +24,9 @@ const config: Meta = {
 export default config
 
 const defaultProps: SearchFiltersSidebarProps = {
-    query: '',
+    liveQuery: '',
+    submittedURLQuery: '',
+    patternType: SearchPatternType.literal,
     onNavbarQueryChange: () => {},
     onSearchSubmit: () => {},
     selectedSearchContextSpec: 'global',

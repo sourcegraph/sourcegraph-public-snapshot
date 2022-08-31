@@ -4,6 +4,7 @@ import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
+    SearchAggregations,
     getDynamicFilterLinks,
     getRepoFilterLinks,
     getSearchSnippetLinks,
@@ -12,7 +13,9 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
+    AggregationUIMode,
 } from '@sourcegraph/search-ui'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -22,37 +25,46 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
 
 import { getRevisions } from './Revisions'
 
 export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
-    query: string
-    onNavbarQueryChange: (queryState: QueryStateUpdate) => void
-    onSearchSubmit: (updates: QueryUpdate[]) => void
-
+    liveQuery: string
+    submittedURLQuery: string
+    patternType: SearchPatternType
     filters?: Filter[]
     selectedSearchContextSpec?: string
+    aggregationUIMode?: AggregationUIMode
+    onNavbarQueryChange: (queryState: QueryStateUpdate) => void
+    onSearchSubmit: (updates: QueryUpdate[]) => void
 }
 
 export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
     const {
-        query,
+        liveQuery,
+        submittedURLQuery,
+        patternType,
         filters,
         selectedSearchContextSpec,
-        telemetryService,
-        settingsCascade,
+        aggregationUIMode,
         onNavbarQueryChange,
         onSearchSubmit,
+        telemetryService,
+        settingsCascade,
         children,
         ...attributes
     } = props
 
+    // Feature flags
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
+    // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
-    const repoName = useLastRepoName(query, repoFilters)
+    const repoName = useLastRepoName(liveQuery, repoFilters)
 
     const onDynamicFilterClicked = useCallback(
         (value: string, kind?: string) => {
@@ -70,13 +82,27 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService, onSearchSubmit]
     )
 
+    const handleAggregationBarLinkClick = (query: string): void => {
+        onSearchSubmit([{ type: 'replaceQuery', value: query }])
+    }
+
     return (
-        <SearchSidebar onClose={() => setSelectedTab(null)} {...attributes}>
+        <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
+
+            {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+                <SearchSidebarSection sectionId={SectionID.GROUPED_BY} header="Group results by">
+                    <SearchAggregations
+                        query={submittedURLQuery}
+                        patternType={patternType}
+                        onQuerySubmit={handleAggregationBarLinkClick}
+                    />
+                </SearchSidebarSection>
+            )}
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
                 {getSearchTypeLinks({
-                    query,
+                    query: liveQuery,
                     onNavbarQueryChange,
                     selectedSearchContextSpec,
                     buildSearchURLQueryFromQueryState,
