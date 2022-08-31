@@ -39,7 +39,7 @@ docker run "$@" \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
-  -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY"
+  -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"
