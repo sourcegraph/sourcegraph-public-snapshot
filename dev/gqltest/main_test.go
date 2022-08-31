@@ -61,13 +61,13 @@ func TestMain(m *testing.M) {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		log.Fatal("Failed to check if site needs init: ", err)
+		log.Fatal("Failed to check if site needs init:", err)
 	}
 
 	if needsSiteInit {
 		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
 		if err != nil {
-			log.Fatal("Failed to create site admin: ", err)
+			log.Fatal("Failed to create site admin:", err)
 		}
 		log.Println("Site admin has been created:", *username)
 	} else {
@@ -76,6 +76,22 @@ func TestMain(m *testing.M) {
 			log.Fatal("Failed to sign in:", err)
 		}
 		log.Println("Site admin authenticated:", *username)
+	}
+
+	licenseKey := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
+	if licenseKey != "" {
+		// Update site configuration to set up a test license key if the instance doesn't have one yet.
+		siteConfig, err := client.SiteConfiguration()
+		if err != nil {
+			log.Fatal("Failed to get site configuration:", err)
+		}
+
+		siteConfig.LicenseKey = licenseKey
+		err = client.UpdateSiteConfiguration(siteConfig)
+		if err != nil {
+			log.Fatal("Failed to update site configuration:", err)
+		}
+		log.Println("License key updated")
 	}
 
 	if !testing.Verbose() {
