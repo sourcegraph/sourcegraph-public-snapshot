@@ -686,7 +686,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 
 // listPublicNonArchived handles the `public` keyword of the `repositoryQuery` config option when achived repos are excluded.
 // It returns the public non-archived repositories listed on the /search/repositories endpoint.
-// TODO: Remove this method when https://github.com/orgs/github-community/discussions/12554 gets resolved and just use listPublic()
+// TODO: Remove this method when https://github.com/orgs/community/discussions/12554 gets resolved and just use listPublic()
 func (s *GitHubSource) listPublicNonArchived(ctx context.Context, results chan *githubResult) {
 	s.listSearch(ctx, "archived:false is:public", results)
 }
