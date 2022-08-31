@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -114,6 +115,8 @@ type JSContext struct {
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
+
+	LicenseInfo *hooks.LicenseInfo `json:"license_info"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -174,6 +177,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
+
+	// We don't care if the user doesn't exist
+	user, _ := actor.User(req.Context(), db.Users())
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -238,6 +244,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
 		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+
+		LicenseInfo: hooks.GetLicenseInfo(user != nil && user.SiteAdmin),
 	}
 }
 
