@@ -7198,16 +7198,6 @@ type CloningProgress {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
-"""
-type IndexingProgress {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message produced when repositories could not
 be synced from an external service
 """
@@ -7234,20 +7224,9 @@ type SyncError {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories could not
-be indexed
-"""
-type IndexingError {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
 An arbitrarily large integer encoded as a decimal string.
