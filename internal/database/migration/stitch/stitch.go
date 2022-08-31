@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,6 +45,12 @@ func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedM
 	}, nil
 }
 
+var schemaBounds = map[string]oobmigration.Version{
+	"frontend":     oobmigration.NewVersion(0, 0),
+	"codeintel":    oobmigration.NewVersion(3, 21),
+	"codeinsights": oobmigration.NewVersion(3, 24),
+}
+
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,
 // then spot-rewrites portions of definitions to ensure they can be reordered to form a valid migration graph
 // (as it would be defined today). The root and leaf migration identifiers for each of the given revs are also
@@ -57,6 +64,18 @@ func overlayDefinitions(schemaName, root string, revs []string) (map[int]definit
 	definitionMap := map[int]definition.Definition{}
 	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
+		revVersion, ok := oobmigration.NewVersionFromString(rev)
+		if !ok {
+			return nil, nil, errors.Newf("illegal rev %q", rev)
+		}
+		firstVersionForSchema, ok := schemaBounds[schemaName]
+		if !ok {
+			return nil, nil, errors.Newf("illegal schema %q", rev)
+		}
+		if oobmigration.CompareVersions(revVersion, firstVersionForSchema) != oobmigration.VersionOrderAfter {
+			continue
+		}
+
 		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
 		if err != nil {
 			return nil, nil, err
