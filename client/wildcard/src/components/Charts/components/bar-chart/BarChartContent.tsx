@@ -1,4 +1,4 @@
-import { ReactElement, SVGProps, useRef, useState } from 'react'
+import { MouseEvent, ReactElement, SVGProps, useRef, useState } from 'react'
 
 import { Group } from '@visx/group'
 import classNames from 'classnames'
@@ -29,7 +29,7 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarClick: (datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum) => void
 }
 
 export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): ReactElement {
@@ -64,6 +64,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         >
             {stacked ? (
                 <StackedBars
+                    aria-label="chart content group"
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}
@@ -77,6 +78,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                 />
             ) : (
                 <GroupedBars
+                    aria-label="chart content group"
                     activeSegment={activeSegment}
                     categories={categories}
                     xScale={xScale}

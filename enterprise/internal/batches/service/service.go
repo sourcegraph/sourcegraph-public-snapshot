@@ -42,10 +42,13 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
+	logger := sglog.Scoped("batches.Service", "batch changes service")
 	svc := &Service{
-		logger:     sglog.Scoped("NewWithClock", ""),
-		store:      store,
-		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
+		logger: logger,
+		store:  store,
+		sourcer: sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		clock:      clock,
 		operations: newOperations(store.ObservationContext()),
 	}
@@ -173,7 +176,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 	// TODO: Should name require a minimum length?
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +255,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -465,6 +468,18 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	// Temporarily prevent mounts for server-side processing.
 	if hasMount(opts.spec) {
 		return errors.New("mounts are not allowed for server-side processing")
+	}
+
+	// The global env is always mocked to be empty for executors, so we just
+	// want to throw a validation error here for now.
+	var errs error
+	for i, step := range opts.spec.Spec.Steps {
+		if !step.Env.IsStatic() {
+			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
+		}
+	}
+	if errs != nil {
+		return errs
 	}
 
 	opts.spec.CreatedFromRaw = true

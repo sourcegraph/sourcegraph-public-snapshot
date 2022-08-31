@@ -50,19 +50,19 @@ import {
     OutOfBandMigrationFields,
     OutOfBandMigrationsResult,
     OutOfBandMigrationsVariables,
-    OrgRepositoriesVariables,
-    OrgRepositoriesResult,
-    OrgRepositoriesTotalCountVariables,
     UserRepositoriesTotalCountVariables,
     SetUserTagResult,
     SetUserTagVariables,
     FeatureFlagsResult,
     FeatureFlagsVariables,
     FeatureFlagFields,
+    SiteAdminAccessTokenConnectionFields,
+    SiteAdminAccessTokensVariables,
+    SiteAdminAccessTokensResult,
 } from '../graphql-operations'
+import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
-type OrgRepositories = (NonNullable<OrgRepositoriesResult['node']> & { __typename: 'Org' })['repositories']
 
 /**
  * Fetches all users.
@@ -232,114 +232,6 @@ export async function fetchUserRepositoriesCount(
                 externalServiceID: args.externalServiceID ?? null,
             }
         ).toPromise()
-    )
-}
-
-export async function fetchOrgRepositoriesCount(
-    args: Partial<OrgRepositoriesTotalCountVariables>
-): Promise<RepoCountResult> {
-    return dataOrThrowErrors(
-        await requestGraphQL<RepoCountResult, OrgRepositoriesTotalCountVariables>(
-            gql`
-                query OrgRepositoriesTotalCount(
-                    $id: ID!
-                    $first: Int
-                    $query: String
-                    $cloned: Boolean
-                    $notCloned: Boolean
-                    $indexed: Boolean
-                    $notIndexed: Boolean
-                    $externalServiceIDs: [ID]
-                ) {
-                    node(id: $id) {
-                        ... on Org {
-                            __typename
-                            repositories(
-                                first: $first
-                                query: $query
-                                cloned: $cloned
-                                notCloned: $notCloned
-                                indexed: $indexed
-                                notIndexed: $notIndexed
-                                externalServiceIDs: $externalServiceIDs
-                            ) {
-                                totalCount(precise: true)
-                            }
-                        }
-                    }
-                }
-            `,
-            {
-                id: args.id!,
-                cloned: args.cloned ?? true,
-                notCloned: args.notCloned ?? true,
-                indexed: args.indexed ?? true,
-                notIndexed: args.notIndexed ?? true,
-                first: args.first ?? null,
-                query: args.query ?? null,
-                externalServiceIDs: args.externalServiceIDs ?? null,
-            }
-        ).toPromise()
-    )
-}
-
-export function listOrgRepositories(args: Partial<OrgRepositoriesVariables>): Observable<OrgRepositories> {
-    return requestGraphQL<OrgRepositoriesResult, OrgRepositoriesVariables>(
-        gql`
-            query OrgRepositories(
-                $id: ID!
-                $first: Int
-                $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
-                $indexed: Boolean
-                $notIndexed: Boolean
-                $externalServiceIDs: [ID]
-            ) {
-                node(id: $id) {
-                    ... on Org {
-                        __typename
-                        repositories(
-                            first: $first
-                            query: $query
-                            cloned: $cloned
-                            notCloned: $notCloned
-                            indexed: $indexed
-                            notIndexed: $notIndexed
-                            externalServiceIDs: $externalServiceIDs
-                        ) {
-                            nodes {
-                                ...SiteAdminRepositoryFields
-                            }
-                            totalCount(precise: true)
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${siteAdminRepositoryFieldsFragment}
-        `,
-        {
-            id: args.id!,
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            externalServiceIDs: args.externalServiceIDs ?? null,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (data.node === null || data.node.__typename !== 'Org') {
-                throw new Error('organization not found')
-            }
-            return data.node.repositories
-        })
     )
 }
 
@@ -1125,3 +1017,31 @@ export const REPOSITORY_STATS = gql`
         }
     }
 `
+
+export function queryAccessTokens(args: { first?: number }): Observable<SiteAdminAccessTokenConnectionFields> {
+    return requestGraphQL<SiteAdminAccessTokensResult, SiteAdminAccessTokensVariables>(
+        gql`
+            query SiteAdminAccessTokens($first: Int) {
+                site {
+                    accessTokens(first: $first) {
+                        ...SiteAdminAccessTokenConnectionFields
+                    }
+                }
+            }
+            fragment SiteAdminAccessTokenConnectionFields on AccessTokenConnection {
+                nodes {
+                    ...AccessTokenFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+            }
+            ${accessTokenFragment}
+        `,
+        { first: args.first ?? null }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.accessTokens)
+    )
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,6 +19,28 @@ func newJob(name string, exit int) *Job {
 		Name:       &name,
 		ExitStatus: &exit,
 	}}
+}
+
+func TestSlackMention(t *testing.T) {
+	t.Run("If SlackID is empty, ask people to update their team.yml", func(t *testing.T) {
+		result := slackMention(&team.Teammate{
+			SlackID: "",
+			Name:    "Bob Burgers",
+			Email:   "bob@burgers.com",
+			GitHub:  "bobbyb",
+		})
+
+		require.Equal(t, "Bob Burgers (bob@burgers.com) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", result)
+	})
+	t.Run("Use SlackID if it exists", func(t *testing.T) {
+		result := slackMention(&team.Teammate{
+			SlackID: "USE_ME",
+			Name:    "Bob Burgers",
+			Email:   "bob@burgers.com",
+			GitHub:  "bobbyb",
+		})
+		require.Equal(t, "<@USE_ME>", result)
+	})
 }
 
 func TestGetTeammateFromBuild(t *testing.T) {
@@ -36,7 +59,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
 
 		num := 160000
-		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
+		commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
 		pipelineID := "sourcegraph"
 		build := &Build{
 			Build: buildkite.Build{
@@ -55,7 +78,8 @@ func TestGetTeammateFromBuild(t *testing.T) {
 
 		teammate, err := client.getTeammateForBuild(build)
 		require.NoError(t, err)
-		require.Equal(t, teammate.Name, "Ryan Slade")
+		require.NotEqual(t, teammate.SlackID, "")
+		require.Equal(t, teammate.Name, "Leo Papaloizos")
 	})
 	t.Run("commit author preferred over build author", func(t *testing.T) {
 		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)

@@ -3,8 +3,8 @@ package batches
 import (
 	"database/sql"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -28,7 +28,7 @@ var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 	logger := log.Scoped("store.batches", "batches store")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -48,7 +48,7 @@ func InitReconcilerWorkerStore() (dbworkerstore.Store, error) {
 var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.reconciler", "reconciler worker store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -68,7 +68,7 @@ func InitBulkOperationWorkerStore() (dbworkerstore.Store, error) {
 var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.bulk_ops", "bulk operation worker store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -88,7 +88,7 @@ func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store, error) {
 var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.execution", "the batch spec workspace execution worker store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -108,7 +108,7 @@ func InitBatchSpecResolutionWorkerStore() (dbworkerstore.Store, error) {
 var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

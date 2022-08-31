@@ -80,8 +80,23 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
+func (b *Build) failedJobs() []*Job {
+	result := make([]*Job, 0)
+	for _, j := range b.Jobs {
+		if j.failed() {
+			result = append(result, &j)
+		}
+	}
+
+	return result
+}
+
 type Job struct {
 	buildkite.Job
+}
+
+func (j *Job) id() string {
+	return strp(j.ID)
 }
 
 func (j *Job) name() string {
@@ -208,10 +223,20 @@ func (s *BuildStore) Add(event *Event) {
 	// Keep track of the job, if there is one
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
+		s.logger.Debug("job added",
+			log.Int("buildNumber", event.buildNumber()),
+			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Int("totalJobs", len(build.Jobs)),
+		)
 		build.Jobs[wrappedJob.name()] = *wrappedJob
+	} else {
+		s.logger.Warn("job has no name - not added",
+			log.Int("buildNumber", event.buildNumber()),
+			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Int("totalJobs", len(build.Jobs)),
+		)
 	}
 
-	s.logger.Debug("job added", log.Int("buildNumber", event.buildNumber()), log.Int("totalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {

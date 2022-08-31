@@ -470,6 +470,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+	SrcCliVersionCache *SrcCliVersionCache `json:"srcCliVersionCache,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
@@ -962,6 +964,18 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
+}
+
+// Github description: GitHub configuration, both for queries and receiving release webhooks.
+type Github struct {
+	// Repository description: The repository to get the latest version of.
+	Repository *Repository `json:"repository,omitempty"`
+	// Token description: The access token to use when communicating with GitHub.
+	Token string `json:"token"`
+	// Uri description: The URI of the GitHub instance.
+	Uri string `json:"uri,omitempty"`
+	// WebhookSecret description: The release webhook secret.
+	WebhookSecret string `json:"webhookSecret"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1535,6 +1549,14 @@ type Repos struct {
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
 }
+
+// Repository description: The repository to get the latest version of.
+type Repository struct {
+	// Name description: The repository name.
+	Name string `json:"name,omitempty"`
+	// Owner description: The repository namespace.
+	Owner string `json:"owner,omitempty"`
+}
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
@@ -1779,6 +1801,8 @@ type SettingsExperimentalFeatures struct {
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
+	EnableGoImportsSearchQueryTransform *bool `json:"enableGoImportsSearchQueryTransform,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
@@ -1787,6 +1811,8 @@ type SettingsExperimentalFeatures struct {
 	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
+	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover.
+	EnableSidebarFilePrefetch *bool `json:"enableSidebarFilePrefetch,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
@@ -1976,6 +2002,8 @@ type SiteConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
+	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
+	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
@@ -2058,6 +2086,16 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+}
+
+// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+type SrcCliVersionCache struct {
+	// Enabled description: Enables the src-cli version cache API endpoint.
+	Enabled bool `json:"enabled"`
+	// Github description: GitHub configuration, both for queries and receiving release webhooks.
+	Github Github `json:"github"`
+	// Interval description: The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.
+	Interval string `json:"interval,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the required changes.
