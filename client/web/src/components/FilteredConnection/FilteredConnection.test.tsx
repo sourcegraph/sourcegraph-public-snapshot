@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
-import { BehaviorSubject, from } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
 
 import { ConnectionNodes } from './ConnectionNodes'
