@@ -33,8 +33,8 @@ import {
     Text,
 } from '@sourcegraph/wildcard'
 
+import sidebarStyles from './SearchFilterSection.module.scss'
 import styles from './SearchReference.module.scss'
-import sidebarStyles from './SearchSidebarSection.module.scss'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
