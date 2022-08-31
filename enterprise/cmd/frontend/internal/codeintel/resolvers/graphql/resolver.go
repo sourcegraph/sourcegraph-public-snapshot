@@ -140,8 +140,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
-	uploadResolver := r.resolver.UploadsResolver()
-	uploadConnectionResolver := uploadResolver.UploadsConnectionResolverFromFactory(opts)
+	uploadConnectionResolver := r.resolver.UploadsResolver().UploadsConnectionResolverFromFactory(opts)
 
 	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, uploadConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
@@ -161,8 +160,8 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 	if err != nil {
 		return nil, err
 	}
-	uploadResolver := r.resolver.UploadsResolver()
-	if _, err := uploadResolver.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+
+	if _, err := r.resolver.UploadsResolver().DeleteUploadByID(ctx, int(uploadID)); err != nil {
 		return nil, err
 	}
 
@@ -278,8 +277,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIn
 		return nil, err
 	}
 
-	uploadResolver := r.resolver.UploadsResolver()
-	commitGraphResolver := uploadResolver.CommitGraphResolverFromFactory(ctx, int(repositoryID))
+	commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
 
 	return commitGraphResolver, nil
 }
