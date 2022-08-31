@@ -100,16 +100,16 @@ type SearchFileResult struct {
 	} `json:"revSpec"`
 }
 
-type ProposedQuery struct {
+type QueryDescription struct {
 	Description string `json:"description"`
 	Query       string `json:"query"`
 }
 
 // SearchAlert is an alert specific to searches (i.e. not site alert).
 type SearchAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	ProposedQueries []ProposedQuery `json:"proposedQueries"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description"`
+	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
 // SearchFiles searches files with given query. It returns the match count and
@@ -623,7 +623,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 				Description: alert.Description,
 			}
 			for _, pq := range alert.ProposedQueries {
-				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, ProposedQuery{
+				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, QueryDescription{
 					Description: pq.Description,
 					Query:       pq.Query,
 				})

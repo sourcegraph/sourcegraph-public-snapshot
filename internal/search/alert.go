@@ -16,7 +16,7 @@ type Alert struct {
 	PrometheusType  string
 	Title           string
 	Description     string
-	ProposedQueries []*ProposedQuery
+	ProposedQueries []*QueryDescription
 	Kind            string // An identifier indicating the kind of alert
 	// The higher the priority the more important is the alert.
 	Priority int
@@ -47,7 +47,7 @@ func (m *MaxAlerter) Add(a *Alert) {
 	m.Unlock()
 }
 
-type ProposedQuery struct {
+type QueryDescription struct {
 	Description string
 	Query       string
 	PatternType query.SearchType
@@ -63,7 +63,7 @@ const (
 	ResultCount AnnotationName = "ResultCount"
 )
 
-func (q *ProposedQuery) QueryString() string {
+func (q *QueryDescription) QueryString() string {
 	if q.Description != "Remove quotes" {
 		switch q.PatternType {
 		case query.SearchTypeStandard:
@@ -121,7 +121,7 @@ func AlertForTimeout(usedTime time.Duration, suggestTime time.Duration, queryStr
 		PrometheusType: "timed_out",
 		Title:          "Timed out while searching",
 		Description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
-		ProposedQueries: []*ProposedQuery{
+		ProposedQueries: []*QueryDescription{
 			{
 				Description: "query with longer timeout",
 				Query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
@@ -157,7 +157,7 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 		PrometheusType: "structural_search_not_set",
 		Title:          "No results",
 		Description:    "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
-		ProposedQueries: []*ProposedQuery{
+		ProposedQueries: []*QueryDescription{
 			{
 				Description: "Activate structural search",
 				Query:       queryString,
