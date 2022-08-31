@@ -47,7 +47,7 @@
     "storybook:web": "yarn workspace @sourcegraph/web run storybook",
     "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
-    "build-storybook": "yarn workspace @sourcegraph/storybook run build",
+    "storybook:build": "yarn workspace @sourcegraph/storybook run build",
     "cover-storybook": "nyc --hook-require=false --silent yarn jest client/storybook/src/coverage",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
