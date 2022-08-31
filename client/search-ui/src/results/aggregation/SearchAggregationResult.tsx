@@ -69,6 +69,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
             <div className={styles.controls}>
                 <AggregationModeControls
+                    loading={loading}
                     mode={aggregationMode}
                     availability={data?.searchQueryAggregate?.modeAvailability}
                     onModeChange={setAggregationMode}

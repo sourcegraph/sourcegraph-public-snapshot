@@ -11,13 +11,14 @@ import styles from './AggregationModeControls.module.scss'
 
 interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
     mode: SearchAggregationMode | null
+    loading: boolean
     availability?: SearchAggregationModeAvailability[]
     size?: 'sm' | 'lg'
     onModeChange: (nextMode: SearchAggregationMode) => void
 }
 
 export const AggregationModeControls: FC<AggregationModeControlsProps> = props => {
-    const { mode, availability = [], onModeChange, size, className, ...attributes } = props
+    const { mode, loading, availability = [], onModeChange, size, className, ...attributes } = props
 
     const availabilityGroups = availability.reduce((store, availability) => {
         store[availability.mode] = availability
@@ -26,6 +27,12 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
     }, {} as Partial<Record<SearchAggregationMode, SearchAggregationModeAvailability>>)
 
     const isModeAvailable = (mode: SearchAggregationMode): boolean => {
+        if (loading) {
+            // Prevent changing aggregation types while data is loading
+            // disable all aggregation modes as we fetch the data.
+            return false
+        }
+
         const isAvailable = availabilityGroups[mode]?.available
 
         // Returns true by default because we don't want to disable all modes

@@ -52,15 +52,7 @@ function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessag
                     message
                 }
 
-                ... on IndexingProgress {
-                    message
-                }
-
                 ... on SyncError {
-                    message
-                }
-
-                ... on IndexingError {
                     message
                 }
 
@@ -88,7 +80,6 @@ interface StatusMessageEntryProps {
     entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
     messageHint?: string
-    progressHint?: string
     title?: string
 }
 
@@ -220,7 +211,6 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
                     </Link>
                 </div>
             )}
-            {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
         </div>
     )
 }
@@ -383,13 +373,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             )
         }
 
-        const cloningProgress = noActivityOrStatus.find(message_ => message_.type === 'CloningProgress')
-        const indexing = noActivityOrStatus.find(message_ => message_.type === 'IndexingProgress')
-
-        if (cloningProgress && indexing) {
-            noActivityOrStatus = noActivityOrStatus.filter(message_ => message_.type !== 'IndexingProgress')
-        }
-
         return noActivityOrStatus.map(status => {
             switch (status.type) {
                 case 'CloningProgress':
@@ -402,19 +385,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
                             entryType="progress"
-                            progressHint={indexing && indexing.type === 'IndexingProgress' ? indexing.message : ''}
-                        />
-                    )
-                case 'IndexingProgress':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message="Repositories available for search"
-                            linkTo={links.viewRepositories}
-                            linkText="Manage repositories"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="success"
-                            progressHint={status.message}
                         />
                     )
                 case 'ExternalServiceSyncError':
@@ -439,18 +409,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"
-                        />
-                    )
-                case 'IndexingError':
-                    return (
-                        <StatusMessagesNavItemEntry
-                            key={status.message}
-                            message={status.message}
-                            messageHint="Your repositories are up-to-date, but search speed may be slower than usual."
-                            linkTo={links.viewRepositories}
-                            linkText="Troubleshoot"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="warning"
                         />
                     )
             }

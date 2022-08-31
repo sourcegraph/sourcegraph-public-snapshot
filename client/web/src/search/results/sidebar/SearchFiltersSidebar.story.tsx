@@ -1,26 +1,17 @@
 import { Meta, Story } from '@storybook/react'
-// We need to import `create` to make a mock store just for this story.
-// eslint-disable-next-line no-restricted-imports
-import create from 'zustand'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import {
-    BuildSearchQueryURLParameters,
-    InitialParametersSource,
-    SearchPatternType,
-    SearchQueryState,
-    SearchQueryStateStoreProvider,
-} from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
+import { WebStory } from '../../../components/WebStory'
+
+import { SearchFiltersSidebar, SearchFiltersSidebarProps } from './SearchFiltersSidebar'
 
 const config: Meta = {
-    title: 'search-ui/results/sidebar/SearchSidebar',
+    title: 'web/search/results/sidebar/SearchFiltersSidebar',
     parameters: {
         design: {
             type: 'figma',
@@ -32,39 +23,15 @@ const config: Meta = {
 
 export default config
 
-const mockUseQueryState = create<SearchQueryState>((set, get) => ({
-    parametersSource: InitialParametersSource.DEFAULT,
-    queryState: { query: '' },
-    searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.standard,
-    searchQueryFromURL: '',
-    setQueryState: queryStateUpdate => {
-        if (typeof queryStateUpdate === 'function') {
-            set({ queryState: queryStateUpdate(get().queryState) })
-        } else {
-            set({ queryState: queryStateUpdate })
-        }
-    },
-    submitSearch: () => {},
-}))
-
-const defaultProps: SearchSidebarProps = {
-    caseSensitive: false,
-    patternType: SearchPatternType.standard,
+const defaultProps: SearchFiltersSidebarProps = {
+    liveQuery: '',
+    submittedURLQuery: '',
+    patternType: SearchPatternType.literal,
+    onNavbarQueryChange: () => {},
+    onSearchSubmit: () => {},
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    buildSearchURLQueryFromQueryState: (parameters: BuildSearchQueryURLParameters) => {
-        const currentState = mockUseQueryState.getState()
-
-        return buildSearchURLQuery(
-            parameters.query,
-            parameters.patternType ?? currentState.searchPatternType,
-            parameters.caseSensitive ?? currentState.searchCaseSensitivity,
-            parameters.searchContextSpec,
-            parameters.searchParametersList
-        )
-    },
 }
 
 const quicklinks: QuickLink[] = [
@@ -151,30 +118,20 @@ const filters: Filter[] = [
     })),
 ]
 
-export const EmptySidebar: Story = () => (
-    <BrandedStory>
-        {() => (
-            <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
-                <SearchSidebar {...defaultProps} />
-            </SearchQueryStateStoreProvider>
-        )}
-    </BrandedStory>
-)
+export const EmptySidebar: Story = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
 
 EmptySidebar.storyName = 'empty sidebar'
 
 export const WithEverything: Story = () => (
-    <BrandedStory>
+    <WebStory>
         {() => (
-            <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
-                <SearchSidebar
-                    {...defaultProps}
-                    settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
-                    filters={filters}
-                />
-            </SearchQueryStateStoreProvider>
+            <SearchFiltersSidebar
+                {...defaultProps}
+                settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
+                filters={filters}
+            />
         )}
-    </BrandedStory>
+    </WebStory>
 )
 
 WithEverything.storyName = 'with everything'
