@@ -19,5 +19,3 @@ export * from './results/sidebar/SearchTypeLink'
 export * from './results/sidebar/SidebarButtonStrip'
 export * from './results/StreamingSearchResultsList'
 export * from './util'
-
-export * from './graphql-operations'

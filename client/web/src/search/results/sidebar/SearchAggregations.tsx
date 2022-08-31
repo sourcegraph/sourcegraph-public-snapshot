@@ -58,7 +58,6 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 mode={aggregationMode}
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 size="sm"
-                className="mb-3"
                 onModeChange={setAggregationMode}
             />
 

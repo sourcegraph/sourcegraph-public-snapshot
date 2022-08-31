@@ -3,9 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '@sourcegraph/search-ui'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -221,7 +222,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
 
                 // Catch initial page mount when aggregation mode isn't set on the FE and BE
                 // calculated aggregation mode automatically on the backend based on given query
-                if (calculatedAggregationMode !== aggregationMode && proactive) {
+                if (calculatedAggregationMode !== aggregationMode) {
                     setAggregationMode(calculatedAggregationMode)
                 }
 
