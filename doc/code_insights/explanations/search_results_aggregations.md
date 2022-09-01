@@ -84,3 +84,11 @@ single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order 
 
 Structural searches are slow and aggregations are unlikely to complete within a 2-second timeout for such searches. You
 can try to trigger an explicit aggregation for such cases.
+
+### Standard searches with embedded regexp
+
+Standard searches with embedded regexp such as below do not support aggregation by capture group. This is because they
+are functionally similar to a query with an `or` operator.
+```regexp
+database /(\w+)/
+```
