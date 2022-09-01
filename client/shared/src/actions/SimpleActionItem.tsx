@@ -13,10 +13,18 @@ export interface SimpleActionItemProps {
     onClick: () => void
 }
 
-export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = props => (
-        <Tooltip content={props.tooltip}>
-            <Button className={classNames(props.className, styles.simpleActionItem)} onClick={props.onClick} aria-label={props.tooltip}>
-                <img src={props.iconURL} alt={props.tooltip || ''} />
+export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = props => {
+    const { className, iconURL, tooltip, onClick, ...otherProps } = props
+    return (
+        <Tooltip content={tooltip}>
+            <Button
+                className={classNames(className, styles.simpleActionItem)}
+                onClick={onClick}
+                aria-label={tooltip}
+                {...otherProps}
+            >
+                <img src={iconURL} alt={tooltip || ''} />
             </Button>
         </Tooltip>
     )
+}
