@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +19,6 @@ import (
 )
 
 func RunOutOfBandMigrations(
-	logger log.Logger,
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
