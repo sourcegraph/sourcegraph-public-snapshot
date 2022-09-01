@@ -101,8 +101,14 @@ type SearchFileResult struct {
 }
 
 type QueryDescription struct {
-	Description string `json:"description"`
-	Query       string `json:"query"`
+	Description string       `json:"description"`
+	Query       string       `json:"query"`
+	Annotations []Annotation `json:"annotations"`
+}
+
+type Annotation struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // SearchAlert is an alert specific to searches (i.e. not site alert).
@@ -623,9 +629,15 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 				Description: alert.Description,
 			}
 			for _, pq := range alert.ProposedQueries {
+				annotations := make([]Annotation, 0, len(pq.Annotations))
+				for _, a := range pq.Annotations {
+					annotations = append(annotations, Annotation{Name: a.Name, Value: a.Value})
+				}
+
 				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, QueryDescription{
 					Description: pq.Description,
 					Query:       pq.Query,
+					Annotations: annotations,
 				})
 			}
 		},

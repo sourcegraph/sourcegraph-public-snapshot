@@ -9,12 +9,6 @@ import { SourcegraphContext } from '../jscontext'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
-    const user = {
-        id: 'VXNlcjox',
-        username: 'user',
-        isSiteAdmin: false,
-    }
-
     let oldContext: SourcegraphContext & Mocha.SuiteFunction
 
     beforeEach(() => {
@@ -29,40 +23,26 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = (): Observable<StatusMessagesResult['statusMessages']> => of([])
         expect(
             renderWithBrandedContext(
-                <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
+                <StatusMessagesNavItem fetchMessages={fetchMessages} history={createMemoryHistory()} />
             ).asFragment()
         ).toMatchSnapshot()
     })
 
-    describe('one CloningProgress message', () => {
+    test('one CloningProgress message', () => {
         const message: StatusMessageFields = {
             type: 'CloningProgress',
             message: 'Currently cloning repositories...',
         }
 
         const fetchMessages = () => of([message])
-        test('as non-site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
-
-        test('as site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        user={{ ...user, isSiteAdmin: true }}
-                        history={createMemoryHistory()}
-                    />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
+        expect(
+            renderWithBrandedContext(
+                <StatusMessagesNavItem fetchMessages={fetchMessages} history={createMemoryHistory()} />
+            ).asFragment()
+        ).toMatchSnapshot()
     })
 
-    describe('one ExternalServiceSyncError message', () => {
+    test('one ExternalServiceSyncError message', () => {
         const message: StatusMessageFields = {
             type: 'ExternalServiceSyncError',
             message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
@@ -73,52 +53,24 @@ describe('StatusMessagesNavItem', () => {
         }
 
         const fetchMessages = () => of([message])
-        test('as non-site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
-
-        test('as site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        user={{ ...user, isSiteAdmin: true }}
-                        history={createMemoryHistory()}
-                    />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
+        expect(
+            renderWithBrandedContext(
+                <StatusMessagesNavItem fetchMessages={fetchMessages} history={createMemoryHistory()} />
+            ).asFragment()
+        ).toMatchSnapshot()
     })
 
-    describe('one SyncError message', () => {
+    test('one SyncError message', () => {
         const message: StatusMessageFields = {
             type: 'SyncError',
             message: 'syncer.sync.store.upsert-repos: pg: unique constraint foobar',
         }
 
         const fetchMessages = () => of([message])
-        test('as non-site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
-
-        test('as site admin', () => {
-            expect(
-                renderWithBrandedContext(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        user={{ ...user, isSiteAdmin: true }}
-                        history={createMemoryHistory()}
-                    />
-                ).asFragment()
-            ).toMatchSnapshot()
-        })
+        expect(
+            renderWithBrandedContext(
+                <StatusMessagesNavItem fetchMessages={fetchMessages} history={createMemoryHistory()} />
+            ).asFragment()
+        ).toMatchSnapshot()
     })
 })

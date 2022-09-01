@@ -12,11 +12,11 @@
   },
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "format:check": "yarn -s run format --write=false --check --list-different=false --loglevel=warn",
+    "format:check": "yarn run format --write=false --check --list-different=false --loglevel=warn",
     "_lint:js": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" NODE_OPTIONS=\"--max_old_space_size=16192\" eslint",
     "lint:js:changed": "yarn _lint:js $(git diff --diff-filter=d --name-only origin/main... | grep -E '\\.[tj]sx?$' | xargs)",
-    "lint:js:root": "yarn -s run _lint:js --quiet '*.[tj]s?(x)'",
-    "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run lint:js --quiet && yarn -s lint:js:root",
+    "lint:js:root": "yarn run _lint:js --quiet '*.[tj]s?(x)'",
+    "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn run lint:js --quiet && yarn lint:js:root",
     "_lint:css": "stylelint --quiet",
     "lint:css:changed": "yarn _lint:css --allow-empty-input \"*.none\" $(git diff --diff-filter=d --name-only origin/main... | grep -E '.s?css$' | xargs)",
     "lint:css:all": "yarn _lint:css 'client/*/src/**/*.scss'",
@@ -26,8 +26,8 @@
     "watch-web": "yarn workspace @sourcegraph/web run watch",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
-    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook /out/.*test.js",
-    "_test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json mocha --parallel=$CI --retries=1 --jobs=2",
+    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook \"/out/.*test.js\"",
+    "_test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json mocha --parallel=${CI:-\"false\"} --retries=1 --jobs=2",
     "test-integration": "yarn _test-integration \"./client/web/src/integration/**/*.test.ts\"",
     "test-integration:debug": "BROWSER=chrome KEEP_BROWSER=true DEVTOOLS=true DISABLE_APP_ASSETS_MOCKING=true WINDOW_WIDTH=1920 WINDOW_HEIGHT=1080 yarn _test-integration --retries=0 --jobs=1",
     "test-browser-integration": "yarn workspace @sourcegraph/browser run test-integration",
@@ -47,15 +47,14 @@
     "storybook:web": "yarn workspace @sourcegraph/web run storybook",
     "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
-    "build-storybook": "yarn workspace @sourcegraph/storybook run build",
+    "storybook:build": "yarn workspace @sourcegraph/storybook run build",
     "cover-storybook": "nyc --hook-require=false --silent yarn jest client/storybook/src/coverage",
-    "deduplicate": "yarn-deduplicate -s fewer",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "yarn workspace @sourcegraph/browser run build",
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
-    "build-vsce": "yarn --cwd client/vscode run build",
-    "watch-vsce": "yarn --cwd client/vscode run watch"
+    "build-vsce": "yarn workspace @sourcegraph/vscode run build",
+    "watch-vsce": "yarn workspace @sourcegraph/vscode run watch"
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
@@ -90,7 +89,7 @@
   "workspaces": {
     "packages": [
       "client/*",
-      "client/sandboxes/*"
+      "dev/release"
     ]
   },
   "devDependencies": {
@@ -112,7 +111,7 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^27.5.1",
     "@lhci/cli": "0.8.1",
-    "@mermaid-js/mermaid-cli": "^8.13.4",
+    "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",
     "@peculiar/webcrypto": "^1.1.7",
     "@percy/cli": "^1.6.0",
@@ -121,6 +120,7 @@
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
+    "@sentry/cli": "^1.74.4",
     "@sentry/webpack-plugin": "^1.18.9",
     "@slack/web-api": "^5.15.0",
     "@sourcegraph/eslint-config": "0.32.0",
@@ -342,7 +342,6 @@
     "typescript": "^4.7.2",
     "utc-version": "^2.0.2",
     "vsce": "^2.7.0",
-    "web-ext": "^7.1.1",
     "webpack": "^5.45.1",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.7.2",
@@ -350,7 +349,6 @@
     "webpack-manifest-plugin": "^3.1.0",
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
-    "yarn-deduplicate": "^3.1.0",
     "yauzl": "^2.10.0"
   },
   "dependencies": {
@@ -387,6 +385,7 @@
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.9",
+    "@storybook/addon-knobs": "^6.4.0",
     "@stripe/react-stripe-js": "^1.8.0-0",
     "@stripe/stripe-js": "^1.29.0",
     "@types/react-resizable": "^3.0.2",
@@ -498,5 +497,6 @@
     "tslib": "2.1.0",
     "prettier": "2.2.1",
     "jsprim": "1.4.2"
-  }
+  },
+  "packageManager": "yarn@3.2.3"
 }

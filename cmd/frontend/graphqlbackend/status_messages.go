@@ -44,20 +44,12 @@ func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, boo
 	return r, r.message.Cloning != nil
 }
 
-func (r *statusMessageResolver) ToIndexingProgress() (*statusMessageResolver, bool) {
-	return r, r.message.Indexing != nil
-}
-
 func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.ExternalServiceSyncError != nil
 }
 
 func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
-}
-
-func (r *statusMessageResolver) ToIndexingError() (*statusMessageResolver, bool) {
-	return r, r.message.IndexingError != nil
 }
 
 func (r *statusMessageResolver) Message() (string, error) {
@@ -69,9 +61,6 @@ func (r *statusMessageResolver) Message() (string, error) {
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
-	}
-	if r.message.IndexingError != nil {
-		return r.message.IndexingError.Message, nil
 	}
 	return "", errors.New("status message is of unknown type")
 }
