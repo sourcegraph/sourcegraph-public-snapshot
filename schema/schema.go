@@ -1864,18 +1864,18 @@ type SettingsExperimentalFeatures struct {
 }
 
 type SettingsOpenInEditor struct {
-	EditorId                string            `json:"editorId,omitempty"`
-	ProjectPathsDefault     string            `json:"projectPaths.default,omitempty"`
-	ProjectPathsLinux       string            `json:"projectPaths.linux,omitempty"`
-	ProjectPathsMac         string            `json:"projectPaths.mac,omitempty"`
-	ProjectPathsWindows     string            `json:"projectPaths.windows,omitempty"`
-	Replacements            map[string]string `json:"replacements,omitempty"`
-	JetBrainsForceApi       string            `json:"jetBrains.forceApi,omitempty"`
-	VSCodeIsBasePathUNCPath bool              `json:"vscode.isBasePathUNCPath,omitempty"`
-	VSCodeUseInsiders       bool              `json:"vscode.useInsiders,omitempty"`
-	VSCodeUseSSH            bool              `json:"vscode.useSSH,omitempty"`
-	VSCodeRemoteHostForSSH  string            `json:"vscode.remoteHostForSSH,omitempty"`
-	CustomUrlPattern        string            `json:"custom.urlPattern,omitempty"`
+	EditorId                   string            `json:"editorId,omitempty"`
+	ProjectPathsDefault        string            `json:"projectPaths.default,omitempty"`
+	ProjectPathsLinux          string            `json:"projectPaths.linux,omitempty"`
+	ProjectPathsMac            string            `json:"projectPaths.mac,omitempty"`
+	ProjectPathsWindows        string            `json:"projectPaths.windows,omitempty"`
+	Replacements               map[string]string `json:"replacements,omitempty"`
+	JetBrainsForceApi          string            `json:"jetBrains.forceApi,omitempty"`
+	VSCodeIsProjectPathUNCPath bool              `json:"vscode.isProjectPathUNCPath,omitempty"`
+	VSCodeUseInsiders          bool              `json:"vscode.useInsiders,omitempty"`
+	VSCodeUseSSH               bool              `json:"vscode.useSSH,omitempty"`
+	VSCodeRemoteHostForSSH     string            `json:"vscode.remoteHostForSSH,omitempty"`
+	CustomUrlPattern           string            `json:"custom.urlPattern,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

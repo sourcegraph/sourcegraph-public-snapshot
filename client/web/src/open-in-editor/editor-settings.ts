@@ -6,7 +6,7 @@ export type EditorReplacements = Record<string, string>
 
 export interface EditorSettings {
     editorId?: EditorId
-    projectsPaths?: {
+    projectPaths?: {
         default?: string
         linux?: string
         mac?: string
@@ -17,7 +17,7 @@ export interface EditorSettings {
         forceApi?: typeof jetBrainsApis[number]
     }
     vscode?: {
-        isBasePathUNCPath?: boolean
+        isProjectPathUNCPath?: boolean
         useInsiders?: boolean
         useSSH?: boolean
         remoteHostForSSH?: string

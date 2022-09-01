@@ -1,10 +1,10 @@
 import { buildEditorUrl } from './build-url'
 import { EditorSettings } from './editor-settings'
 
-function buildSettings({ editorId, projectsPaths, ...props }: EditorSettings = {}): EditorSettings {
+function buildSettings({ editorId, projectPaths, ...props }: EditorSettings = {}): EditorSettings {
     return {
         editorId: editorId || 'vscode',
-        projectsPaths: projectsPaths || { default: '/home/user/projects' },
+        projectPaths: projectPaths || { default: '/home/user/projects' },
         ...props,
     }
 }
@@ -51,7 +51,7 @@ describe('buildUrl tests', () => {
                 defaultRange,
                 buildSettings({
                     editorId: 'goland',
-                    projectsPaths: { default: '/home/user/projects', mac: '/Users/user/projects' },
+                    projectPaths: { default: '/home/user/projects', mac: '/Users/user/projects' },
                 }),
                 baseUrl
             )
@@ -91,8 +91,8 @@ describe('buildUrl tests', () => {
                 defaultPath,
                 defaultRange,
                 buildSettings({
-                    projectsPaths: { default: '/server/projects' },
-                    vscode: { isBasePathUNCPath: true },
+                    projectPaths: { default: '/server/projects' },
+                    vscode: { isProjectPathUNCPath: true },
                 }),
                 baseUrl
             )
@@ -103,7 +103,7 @@ describe('buildUrl tests', () => {
             const url = buildEditorUrl(
                 defaultPath,
                 defaultRange,
-                buildSettings({ projectsPaths: { default: 'C:\\Projects' } }),
+                buildSettings({ projectPaths: { default: 'C:\\Projects' } }),
                 baseUrl
             )
             expect(url.toString()).toBe('vscode://file/C:\\Projects/sourcegraph/.gitignore:43:0')
@@ -191,7 +191,7 @@ describe('buildUrl tests', () => {
                 buildEditorUrl(
                     defaultPath,
                     defaultRange,
-                    buildSettings({ projectsPaths: { default: '../projects' } }),
+                    buildSettings({ projectPaths: { default: '../projects' } }),
                     baseUrl
                 )
             }).toThrow()
@@ -199,12 +199,7 @@ describe('buildUrl tests', () => {
 
         it('recognizes missing editor ID', () => {
             expect(() => {
-                buildEditorUrl(
-                    defaultPath,
-                    defaultRange,
-                    { projectsPaths: { default: '/home/user/projects' } },
-                    baseUrl
-                )
+                buildEditorUrl(defaultPath, defaultRange, { projectPaths: { default: '/home/user/projects' } }, baseUrl)
             }).toThrow()
         })
 
@@ -215,7 +210,7 @@ describe('buildUrl tests', () => {
                     defaultRange,
                     buildSettings({
                         editorId: 'custom',
-                        projectsPaths: { default: '/home/user/projects' },
+                        projectPaths: { default: '/home/user/projects' },
                     }),
                     baseUrl
                 )

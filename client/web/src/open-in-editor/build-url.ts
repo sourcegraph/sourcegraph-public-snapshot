@@ -21,7 +21,9 @@ export function buildEditorUrl(
     const urlPattern = getUrlPattern(editor, editorSettings || {}) // Default is only there to soothe TypeScript
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
-        editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.vscode?.isBasePathUNCPath) ? '/' : ''
+        editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.vscode?.isProjectPathUNCPath)
+            ? '/'
+            : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
     const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
@@ -36,45 +38,43 @@ export function getEditorSettingsErrorMessage(
     editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string
 ): string | undefined {
-    const learnMorePath = getLearnMorePath(sourcegraphBaseUrl)
+    const learnMoreURL = new URL('https://docs.sourcegraph.com/integration/open_in_editor').href
 
     if (!editorSettings) {
-        return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMorePath})`
+        return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
     }
 
     const projectPath = getProjectPath(editorSettings)
 
     if (typeof projectPath !== 'string') {
-        return `Add \`projectsPaths.default\` or some OS-specific path to your user settings to open files in the editor. [Learn more](${learnMorePath})`
+        return `Add \`projectPaths.default\` or some OS-specific path to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
     }
 
     // Skip this check on Windows because path.isAbsolute only checks Linux and macOS compatible paths reliably
     if (!isProjectPathValid(projectPath)) {
-        return `\`projectsPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
+        return `\`projectPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
             new URL('/user/settings', sourcegraphBaseUrl).href
         }).`
     }
 
     if (typeof editorSettings.editorId !== 'string') {
-        return `Add \`openineditor.editorId\` to your user settings to open files. [Learn more](${learnMorePath})`
+        return `Add \`editorId\` to your user settings to open files. [Learn more](${learnMoreURL})`
     }
     const editor = getEditor(editorSettings.editorId)
 
     if (!editor) {
         return (
-            `Setting \`openineditor.editorId\` must be set to a valid value in your [user settings](${
+            `Setting \`editorId\` must be set to a valid value in your [user settings](${
                 new URL('/user/settings', sourcegraphBaseUrl).href
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )
     }
     if (editorSettings.editorId === 'custom' && typeof editorSettings.custom?.urlPattern !== 'string') {
-        return `Add \`openineditor.customUrlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMorePath})`
+        return `Add \`custom.urlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMoreURL})`
     }
 
     if (editorSettings.vscode?.useSSH && !editorSettings.vscode.remoteHostForSSH) {
-        throw new TypeError(
-            '`openineditor.vscode.mode` is set to "ssh" but `openineditor.vscode.remoteHostForSSH` is not set.'
-        )
+        throw new TypeError('`vscode.useSSH` is set to "true" but `vscode.remoteHostForSSH` is not set.')
     }
 
     return undefined
@@ -85,22 +85,18 @@ export function isProjectPathValid(projectPath: string | undefined): boolean {
 }
 
 function getProjectPath(editorSettings: EditorSettings): string | undefined {
-    if (editorSettings.projectsPaths) {
-        if (navigator.userAgent.includes('Win') && editorSettings.projectsPaths.windows) {
-            return editorSettings.projectsPaths.windows
+    if (editorSettings.projectPaths) {
+        if (navigator.userAgent.includes('Win') && editorSettings.projectPaths.windows) {
+            return editorSettings.projectPaths.windows
         }
-        if (navigator.userAgent.includes('Mac') && editorSettings.projectsPaths.mac) {
-            return editorSettings.projectsPaths.mac
+        if (navigator.userAgent.includes('Mac') && editorSettings.projectPaths.mac) {
+            return editorSettings.projectPaths.mac
         }
-        if (navigator.userAgent.includes('Linux') && editorSettings.projectsPaths.linux) {
-            return editorSettings.projectsPaths.linux
+        if (navigator.userAgent.includes('Linux') && editorSettings.projectPaths.linux) {
+            return editorSettings.projectPaths.linux
         }
     }
-    return editorSettings.projectsPaths?.default
-}
-
-function getLearnMorePath(sourcegraphBaseUrl: string): string {
-    return new URL('/extensions/sourcegraph/open-in-editor', sourcegraphBaseUrl).href
+    return editorSettings.projectPaths?.default
 }
 
 function isWindowsPath(path: string): boolean {

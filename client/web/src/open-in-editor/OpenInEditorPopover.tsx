@@ -26,7 +26,9 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
     const {editorSettings, togglePopover} = props
 
     const [selectedEditorId, setSelectedEditorId] = React.useState<string | undefined>(editorSettings?.editorId)
-    const [defaultProjectPath, setDefaultProjectPath] = React.useState<string | undefined>(editorSettings?.projectsPaths?.default)
+    const [defaultProjectPath, setDefaultProjectPath] = React.useState<string | undefined>(
+        editorSettings?.projectPaths?.default
+    )
     const areSettingsValid = selectedEditorId && isProjectPathValid(defaultProjectPath)
 
     const handleEditorChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
@@ -69,6 +71,7 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
                     type="text"
                     label="Project path"
                     name="projectPath"
+                    placeholder="/Users/username/projects"
                     required={true}
                     autoCorrect="off"
                     autoCapitalize="off"
@@ -84,7 +87,9 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
                     message={
                         <>
                             Use a different editor?{' '}
-                            <Link to="https://docs.sourcegraph.com/TODO">Set up another editor</Link>
+                            <Link to="https://docs.sourcegraph.com/integration/open_in_editor">
+                                Set up another editor
+                            </Link>
                         </>
                     }
                     value={selectedEditorId}
