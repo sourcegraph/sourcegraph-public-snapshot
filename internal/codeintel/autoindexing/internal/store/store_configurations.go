@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -44,4 +45,30 @@ const updateIndexConfigurationByRepositoryIDQuery = `
 -- source: internal/codeintel/stores/dbstore/configuration.go:UpdateIndexConfigurationByRepositoryID
 INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
 	ON CONFLICT (repository_id) DO UPDATE SET data = %s
+`
+
+func (s *store) SetInferenceScript(ctx context.Context, script string) (err error) {
+	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setInferenceScriptQuery, script))
+}
+
+const setInferenceScriptQuery = `
+-- source: internal/codeintel/stores/dbstore/configuration.go:GetInferenceScript
+UPDATE codeintel_inference_scripts
+SET script = %s
+`
+
+func (s *store) GetInferenceScript(ctx context.Context) (script string, err error) {
+	ctx, _, endObservation := s.operations.getInferenceScript.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	script, _, err = basestore.ScanFirstNullString(s.db.Query(ctx, sqlf.Sprintf(getInferenceScriptQuery)))
+	return
+}
+
+const getInferenceScriptQuery = `
+-- source: internal/codeintel/stores/dbstore/configuration.go:GetInferenceScript
+SELECT script FROM codeintel_inference_scripts
 `
