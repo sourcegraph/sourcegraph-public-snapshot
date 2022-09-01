@@ -1,11 +1,12 @@
 import React from 'react'
 
+import { mdiInformation } from '@mdi/js'
 import * as H from 'history'
 
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text } from '@sourcegraph/wildcard'
-import { mdiInformation } from '@mdi/js'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -15,7 +16,6 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 
 export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History
@@ -142,7 +142,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
             )}
             {Object.entries(codeHostExternalServices)
                 .filter(
-                    ([_id, externalService]) => !allowedCodeHosts || allowedCodeHosts.includes(externalService.kind)
+                    externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1].kind)
                 )
                 .map(([id, externalService]) => (
                     <div className={styles.addExternalServicesPageCard} key={id}>
@@ -153,14 +153,14 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 <>
                     <br />
                     <Text>
-                        <Icon aria-label="Information icon" svgPath={mdiInformation}></Icon> Upgrade to{' '}
+                        <Icon aria-label="Information icon" svgPath={mdiInformation}/> Upgrade to{' '}
                         <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
                         repositories from other code hosts.
                     </Text>
                     {Object.entries(codeHostExternalServices)
                         .filter(
-                            ([_id, externalService]) =>
-                                allowedCodeHosts && !allowedCodeHosts.includes(externalService.kind)
+                            externalService =>
+                                allowedCodeHosts && !allowedCodeHosts.includes(externalService[1].kind)
                         )
                         .map(([id, externalService]) => (
                             <div className={styles.addExternalServicesPageCard} key={id}>
@@ -168,7 +168,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                                     to={getAddURL(id)}
                                     {...externalService}
                                     enabled={false}
-                                    badge={'enterprise'}
+                                    badge="enterprise"
                                     tooltip="Upgrade to Sourcegraph Enterprise to add repositories from other code hosts"
                                 />
                             </div>
