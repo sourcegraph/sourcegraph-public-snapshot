@@ -3808,7 +3808,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mermaid-js/mermaid-cli@npm:^8.13.10":
+"@mermaid-js/mermaid-cli@npm:^8.14.0":
   version: 8.14.0
   resolution: "@mermaid-js/mermaid-cli@npm:8.14.0"
   dependencies:
@@ -28830,7 +28830,7 @@ pvutils@latest:
     "@lezer/highlight": ^1.0.0
     "@lhci/cli": 0.8.1
     "@mdi/js": ^6.7.96
-    "@mermaid-js/mermaid-cli": ^8.13.10
+    "@mermaid-js/mermaid-cli": ^8.14.0
     "@microsoft/fetch-event-source": ^2.0.1
     "@octokit/rest": ^16.36.0
     "@opentelemetry/api": ^1.1.0
