@@ -71,6 +71,7 @@ yarn-error.log
 /ui/assets/styles/
 /ui/assets/*.br
 /ui/assets/*.gz
+/ui/assets/stats-*
 
 *.json.actual
 
