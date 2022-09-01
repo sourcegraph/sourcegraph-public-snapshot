@@ -42,7 +42,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, db database.DB, comm
 		return info.OID().String()
 	}
 
-	logger = logger.Scoped("InventoryContext", "returns the inventory context for compute the inventory for the repository at the given commit").
+	logger = logger.Scoped("InventoryContext", "returns the inventory context for computing the inventory for the repository at the given commit").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
