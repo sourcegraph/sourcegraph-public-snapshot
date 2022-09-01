@@ -32,7 +32,8 @@ interface ExternalServiceCardProps {
     to?: string
     className?: string
     enabled?: boolean
-    requiredTier?: string
+    badge?: string
+    tooltip?: string
 }
 
 export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildren<ExternalServiceCardProps>> = ({
@@ -44,33 +45,45 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
     namespace,
     className = '',
     enabled = true,
-    requiredTier = '',
+    badge = '',
+    tooltip = '',
 }) => {
-    let cardTitle = (<H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
-                    {title}
-                    {namespace && (
-                        <small>
-                            {' '}
-                            by
-                            <Icon aria-hidden={true} svgPath={mdiAccount} />
-                            <Link to={namespace.url}>{namespace.namespaceName}</Link>
-                        </small>
-                    )}
-                </H3>)
-    cardTitle = !enabled && requiredTier ? (
-        <Tooltip content="Test">
-            {cardTitle}
-        </Tooltip>
-        ) : cardTitle
+    let cardTitle = (
+        <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
+            {title}
+            {namespace && (
+                <small>
+                    {' '}
+                    by
+                    <Icon aria-hidden={true} svgPath={mdiAccount} />
+                    <Link to={namespace.url}>{namespace.namespaceName}</Link>
+                </small>
+            )}
+        </H3>
+    )
+    cardTitle = tooltip ? <Tooltip content={tooltip}>{cardTitle}</Tooltip> : cardTitle
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border' + (enabled ? '' : ' text-muted'), className)}>
-            <Icon disabled={!enabled} className={classNames('mb-0 mr-3', styles.icon)} as={CardIcon} aria-hidden={true} />
-            <div className="flex-1">
+            <Icon
+                disabled={!enabled}
+                className={classNames('mb-0 mr-3', styles.icon)}
+                as={CardIcon}
+                aria-hidden={true}
+            />
+            <div>
                 {cardTitle}
                 {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
-            {to && enabled && <Icon className="align-self-center" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />}
-            {!enabled && <Badge className="align-self-center" variant="outlineSecondary">{requiredTier.toUpperCase()}</Badge>}
+            <div className={"flex-1 align-self-center"}>
+            {to && enabled && (
+                <Icon className="float-right" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
+            )}
+            {badge && (
+                <Badge className="float-right" variant="outlineSecondary">
+                    {badge.toUpperCase()}
+                </Badge>
+            )}
+            </div>
         </div>
     )
     return to && enabled ? (

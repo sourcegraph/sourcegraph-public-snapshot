@@ -77,11 +77,6 @@ export interface AddExternalServiceOptions {
     defaultDisplayName: string
 
     /**
-     * List of tiers in which this configuration is available
-     */
-    tiers: string[]
-
-    /**
      * Default external service configuration
      */
     defaultConfig: string
@@ -534,7 +529,6 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
   "token": "<access token>",
   "orgs": []
 }`,
-    tiers: ['free', 'business', 'enterprise'],
 }
 const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,
@@ -666,7 +660,6 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETCLOUD,
@@ -755,7 +748,6 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             </Text>
         </div>
     ),
-    tiers: ['free', 'business', 'enterprise'],
 }
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETSERVER,
@@ -919,7 +911,6 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
@@ -936,7 +927,6 @@ const GITLAB_DOTCOM: AddExternalServiceOptions = {
 }`,
     editorActions: gitlabEditorActions(false),
     instructions: gitlabInstructions(false),
-    tiers: ['free', 'business', 'enterprise'],
 }
 const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     ...GITLAB_DOTCOM,
@@ -990,7 +980,6 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const GITOLITE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITOLITE,
@@ -1047,7 +1036,6 @@ const GITOLITE: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.PHABRICATOR,
@@ -1098,7 +1086,6 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const GENERIC_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
@@ -1154,7 +1141,6 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const PERFORCE: AddExternalServiceOptions = {
     kind: ExternalServiceKind.PERFORCE,
@@ -1214,7 +1200,6 @@ const PERFORCE: AddExternalServiceOptions = {
             },
         },
     ],
-    tiers: ['enterprise'],
 }
 const JVM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.JVMPACKAGES,
@@ -1248,7 +1233,6 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const PAGURE: AddExternalServiceOptions = {
@@ -1270,7 +1254,6 @@ const PAGURE: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const GERRIT: AddExternalServiceOptions = {
@@ -1292,7 +1275,6 @@ const GERRIT: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
@@ -1328,7 +1310,6 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const GO_MODULES = {
@@ -1360,7 +1341,6 @@ const GO_MODULES = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const PYTHON_PACKAGES = {
@@ -1393,7 +1373,6 @@ const PYTHON_PACKAGES = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 const RUST_PACKAGES = {
@@ -1418,7 +1397,6 @@ const RUST_PACKAGES = {
         </div>
     ),
     editorActions: [],
-    tiers: ['enterprise'],
 }
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {

@@ -15,6 +15,7 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 
 export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History
@@ -79,8 +80,11 @@ export const AddExternalServicesPage: React.FunctionComponent<
         }
     }
 
-    const tier = "business"
-    const numCodeHosts = 0
+    const licenseInfo = window.context.licenseInfo
+    var allowedCodeHosts: ExternalServiceKind[] | null = null
+    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
+        allowedCodeHosts = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
+    }
 
     return (
         <div className="add-external-services-page mt-3">
@@ -136,18 +140,44 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     </div>
                 </Alert>
             )}
-            {Object.entries(codeHostExternalServices).filter(([_, externalService]) => externalService.tiers.includes(tier)).map(([id, externalService]) => (
-                <div className={styles.addExternalServicesPageCard} key={id}>
-                    <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                </div>
-            ))}
-            <br/>
-            <p><Icon aria-label="Information icon" svgPath={mdiInformation}></Icon> Upgrade to Sourcegraph Enterprise to add repositories from other code hosts.</p>
-            {Object.entries(codeHostExternalServices).filter(([_, externalService]) => !externalService.tiers.includes(tier)).map(([id, externalService]) => (
-                <div className={styles.addExternalServicesPageCard} key={id}>
-                    <ExternalServiceCard to={getAddURL(id)} {...externalService} enabled={false} requiredTier={'enterprise'}/>
-                </div>
-            ))}
+            {Object.entries(codeHostExternalServices)
+                .filter(([_, externalService]) => !allowedCodeHosts || allowedCodeHosts.includes(externalService.kind))
+                .map(([id, externalService]) => (
+                    <div className={styles.addExternalServicesPageCard} key={id}>
+                        <ExternalServiceCard
+                            to={getAddURL(id)}
+                            {...externalService}
+                        />
+                    </div>
+                ))}
+            {allowedCodeHosts && (
+                <>
+                    <br />
+                    <p>
+                        <Icon aria-label="Information icon" svgPath={mdiInformation}></Icon> Upgrade to{' '}
+                        <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
+                        repositories from other code hosts.
+                    </p>
+                    {Object.entries(codeHostExternalServices)
+                        .filter(
+                            ([_, externalService]) =>
+                                allowedCodeHosts && !allowedCodeHosts.includes(externalService.kind)
+                        )
+                        .map(([id, externalService]) => (
+                            <div className={styles.addExternalServicesPageCard} key={id}>
+                                <ExternalServiceCard
+                                    to={getAddURL(id)}
+                                    {...externalService}
+                                    enabled={false}
+                                    badge={'enterprise'}
+                                    tooltip={
+                                        'Upgrade to Sourcegraph Enterprise to add repositories from other code hosts'
+                                    }
+                                />
+                            </div>
+                        ))}
+                </>
+            )}
             {Object.entries(nonCodeHostExternalServices).length > 0 && (
                 <>
                     <br />
