@@ -108,9 +108,7 @@ export interface FlatExtensionHostAPI {
 
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParameters | null>
 
-    getTextDecorations: (
-        viewerId: ViewerId
-    ) => ProxySubscribable<[sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]][]>
+    getTextDecorations: (viewerId: ViewerId) => ProxySubscribable<clientType.TextDocumentDecoration[]>
 
     /**
      * Add a viewer.

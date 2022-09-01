@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 
@@ -31,7 +31,6 @@ import {
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { StatusMessagesResult } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
 
@@ -144,8 +143,6 @@ const getBorderClassname = (entryType: EntryType): string => {
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildren<StatusMessageEntryProps>> = props => {
     const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
-        const payload = { notificationType: props.entryType }
-        eventLogger.log('UserNotificationsLinkClicked', payload, payload)
         props.linkOnClick(event)
     }
 
@@ -218,7 +215,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        let first = true
         this.subscriptions.add(
             (this.props.fetchMessages ?? fetchAllStatusMessages)()
                 .pipe(
@@ -230,11 +226,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 )
                 .subscribe(messagesOrError => {
                     this.setState({ messagesOrError })
-
-                    if (first) {
-                        this.trackUserNotificationsEvent('loaded')
-                        first = false
-                    }
                 })
         )
     }
@@ -342,31 +333,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private getOpenedNotificationsPayload(messagesOrError: MessagesOrError): { status: string[] } {
-        const messageTypes =
-            typeof messagesOrError === 'string'
-                ? [messagesOrError]
-                : isErrorLike(messagesOrError)
-                ? ['error']
-                : messagesOrError.map(message => message.type)
-
-        return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
-    }
-
-    private trackUserNotificationsEvent(eventName: string): void {
-        if (window.context.sourcegraphDotComMode && this.state.messagesOrError) {
-            const payload = this.getOpenedNotificationsPayload(this.state.messagesOrError)
-            eventLogger.log(`UserNotifications${upperFirst(eventName)}`, payload, payload)
-        }
-    }
-
     public render(): JSX.Element | null {
-        const { isOpen } = this.state
-
-        if (isOpen) {
-            this.trackUserNotificationsEvent('opened')
-        }
-
         return (
             <Popover isOpen={this.state.isOpen} onOpenChange={event => this.setState({ isOpen: event.isOpen })}>
                 <PopoverTrigger

@@ -68,13 +68,11 @@ type ExternalServiceStore interface {
 	// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
 	DistinctKinds(ctx context.Context) ([]string, error)
 
-	// GetAffiliatedSyncErrors returns the most recent sync failure message for each
-	// external service affiliated with the supplied user. If the latest run did not
-	// have an error, the string will be empty. We fetch external services owned by
-	// the supplied user and if they are a site admin we additionally return site
-	// level external services. We exclude cloud_default repos as they are never
-	// synced.
-	GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error)
+	// GetLatestSyncErrors returns the most recent sync failure message for
+	// each external service. If the latest sync did not have an error, the
+	// string will be empty. We exclude cloud_default external services as they
+	// are never synced.
+	GetLatestSyncErrors(ctx context.Context) (map[int64]string, error)
 
 	// GetByID returns the external service for id.
 	//
@@ -1181,10 +1179,7 @@ LIMIT 1
 	return lastError, err
 }
 
-func (e *externalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
-	if u == nil {
-		return nil, errors.New("nil user")
-	}
+func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
 	q := sqlf.Sprintf(`
 SELECT DISTINCT ON (es.id) es.id, essj.failure_message
 FROM external_services es
@@ -1192,15 +1187,9 @@ FROM external_services es
                    ON es.id = essj.external_service_id
                        AND essj.state IN ('completed', 'errored', 'failed')
                        AND essj.finished_at IS NOT NULL
-WHERE
-  (
-    (es.namespace_user_id = %s) OR
-    (%s AND es.namespace_user_id IS NULL AND es.namespace_org_id IS NULL)
-  )
-  AND es.deleted_at IS NULL
-  AND NOT es.cloud_default
+WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
-`, u.ID, u.SiteAdmin)
+`)
 
 	rows, err := e.Query(ctx, q)
 	if err != nil {

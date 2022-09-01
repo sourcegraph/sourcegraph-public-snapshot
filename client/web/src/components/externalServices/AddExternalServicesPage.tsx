@@ -1,10 +1,12 @@
 import React from 'react'
 
+import { mdiInformation } from '@mdi/js'
 import * as H from 'history'
 
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, Button, Link, Alert, H2, H3, Text } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -78,6 +80,12 @@ export const AddExternalServicesPage: React.FunctionComponent<
         }
     }
 
+    const licenseInfo = window.context.licenseInfo
+    let allowedCodeHosts: ExternalServiceKind[] | null = null
+    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
+        allowedCodeHosts = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
+    }
+
     return (
         <div className="add-external-services-page mt-3">
             <PageTitle title="Add repositories" />
@@ -132,11 +140,38 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     </div>
                 </Alert>
             )}
-            {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
-                <div className={styles.addExternalServicesPageCard} key={id}>
-                    <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                </div>
-            ))}
+            {Object.entries(codeHostExternalServices)
+                .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1].kind))
+                .map(([id, externalService]) => (
+                    <div className={styles.addExternalServicesPageCard} key={id}>
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                    </div>
+                ))}
+            {allowedCodeHosts && (
+                <>
+                    <br />
+                    <Text>
+                        <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
+                        <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
+                        repositories from other code hosts.
+                    </Text>
+                    {Object.entries(codeHostExternalServices)
+                        .filter(
+                            externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1].kind)
+                        )
+                        .map(([id, externalService]) => (
+                            <div className={styles.addExternalServicesPageCard} key={id}>
+                                <ExternalServiceCard
+                                    to={getAddURL(id)}
+                                    {...externalService}
+                                    enabled={false}
+                                    badge="enterprise"
+                                    tooltip="Upgrade to Sourcegraph Enterprise to add repositories from other code hosts"
+                                />
+                            </div>
+                        ))}
+                </>
+            )}
             {Object.entries(nonCodeHostExternalServices).length > 0 && (
                 <>
                     <br />

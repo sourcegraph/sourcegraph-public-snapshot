@@ -305,8 +305,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
+		Env: env,
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

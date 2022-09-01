@@ -1,5 +1,6 @@
 import { ReactElement, useMemo } from 'react'
 
+import { ParentSize } from '@visx/responsive'
 import { getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 
@@ -11,12 +12,15 @@ import { BarChart, BarChartProps } from '@sourcegraph/wildcard'
  * as public api of aggregation chart
  */
 type PredefinedBarProps =
+    | 'width'
+    | 'height'
     | 'mode'
     | 'pixelsPerXTick'
     | 'pixelsPerYTick'
     | 'maxAngleXTick'
     | 'getScaleXTicks'
     | 'getTruncatedXTick'
+
 type SharedBarProps<Datum> = Omit<BarChartProps<Datum>, PredefinedBarProps>
 
 export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
@@ -24,19 +28,25 @@ export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
 }
 
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
-    const { mode, ...attributes } = props
+    const { mode, className, ...attributes } = props
 
     const getTruncatedXLabel = useMemo(() => getTruncationFormatter(mode), [mode])
 
     return (
-        <BarChart
-            {...attributes}
-            pixelsPerYTick={20}
-            pixelsPerXTick={20}
-            maxAngleXTick={45}
-            getScaleXTicks={getXScaleTicks}
-            getTruncatedXTick={getTruncatedXLabel}
-        />
+        <ParentSize className={className}>
+            {parent => (
+                <BarChart
+                    {...attributes}
+                    width={parent.width}
+                    height={parent.height}
+                    pixelsPerYTick={20}
+                    pixelsPerXTick={20}
+                    maxAngleXTick={45}
+                    getScaleXTicks={getXScaleTicks}
+                    getTruncatedXTick={getTruncatedXLabel}
+                />
+            )}
+        </ParentSize>
     )
 }
 
