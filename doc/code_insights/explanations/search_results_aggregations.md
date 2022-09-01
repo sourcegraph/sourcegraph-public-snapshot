@@ -60,3 +60,8 @@ Saving aggregations to a dashboard of code insights is not yet available.
 Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete 
 within a 2-second timeout. You can trigger an explicit search with no timeout, or you can refine your query using a 
 single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order to bypass this.
+
+### Structural searches
+
+Structural searches are slow and aggregations are unlikely to complete within a 2-second timeout for such searches. You
+can try to trigger an explicit aggregation for such cases.
