@@ -14,8 +14,6 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
-    AggregationUIMode,
-    GroupResultsPing,
 } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -29,7 +27,7 @@ import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
-import { AggregationUIMode } from '../components/aggregation'
+import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
 import { SearchAggregations } from './SearchAggregations'
