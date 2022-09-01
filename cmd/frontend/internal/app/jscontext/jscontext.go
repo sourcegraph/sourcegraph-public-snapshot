@@ -178,14 +178,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-    var licenseInfo *hooks.LicenseInfo
-    if !actor.IsAuthenticated() {
-        licenseInfo = hooks.GetLicenseInfo(false)
-    } else {
-        // Ignore err as we don't care if user does not exist
-        user, _ := actor.User(req.Context(), db.Users())
-        licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
-    }
+	var licenseInfo *hooks.LicenseInfo
+	if !actor.IsAuthenticated() {
+		licenseInfo = hooks.GetLicenseInfo(false)
+	} else {
+		// Ignore err as we don't care if user does not exist
+		user, _ := actor.User(req.Context(), db.Users())
+		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
