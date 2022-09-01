@@ -43,7 +43,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 </DocumentFragment>
 `;
 
-exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`] = `
+exports[`StatusMessagesNavItem one CloningProgress message 1`] = `
 <DocumentFragment>
   <button
     aria-label="Show status messages"
@@ -51,23 +51,27 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     type="button"
   >
     <svg
-      aria-label="Repositories up-to-date"
+      aria-label="Cloning repositories..."
       class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
-      viewBox="0 -4 20 20"
+      viewBox="0 0 20 20"
       width="24"
     >
       <g>
         <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+          d="M13.7873 7.14774C12.9858 5.90993 11.5895 5.08203 9.96484 5.08203C8.20576 5.08203 6.7313 6.04556 6.03009 7.44799L5.61324 8.28169L4.68879 8.40098C2.9321 8.62765 1.71484 10.0076 1.71484 11.6654C1.71484 13.4489 3.18134 14.9154 4.96484 14.9154H10.3872V16.6654H4.96484C2.21484 16.6654 -0.0351562 14.4154 -0.0351562 11.6654C-0.0351562 9.08203 1.88151 6.9987 4.46484 6.66536C5.46484 4.66536 7.54818 3.33203 9.96484 3.33203C12.0727 3.33203 13.9079 4.34461 15.0445 5.89054L13.7873 7.14774Z"
           fill="#798BAF"
         />
         <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
+          d="M12.6934 15.2025C11.353 13.8621 11.2692 11.684 12.4421 10.176L13.6149 11.4327C13.0285 12.1866 13.1961 13.3595 13.8663 14.0297C14.2851 14.3648 14.7878 14.6161 15.3742 14.6161V13.1081L17.7199 15.5376L15.3742 17.8833V16.2916C14.3689 16.2916 13.3636 15.8727 12.6934 15.2025Z"
+          fill="#5E6E8C"
+        />
+        <path
+          d="M13.8663 9.58962L16.2119 7.16016V8.75187C17.2172 8.75187 18.1388 9.17075 18.8927 9.75717C20.2331 11.0976 20.3169 13.2757 19.144 14.7836L17.9712 13.6108C18.5576 12.8568 18.3901 11.684 17.7199 11.0138C17.301 10.6787 16.7984 10.4274 16.2119 10.4274V11.9353L13.8663 9.58962Z"
+          fill="#5E6E8C"
         />
       </g>
       <defs>
@@ -86,7 +90,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
 </DocumentFragment>
 `;
 
-exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
+exports[`StatusMessagesNavItem one ExternalServiceSyncError message 1`] = `
 <DocumentFragment>
   <button
     aria-label="Show status messages"
@@ -94,23 +98,23 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     type="button"
   >
     <svg
-      aria-label="Repositories up-to-date"
+      aria-label="Syncing repositories failed!"
       class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
-      viewBox="0 -4 20 20"
+      viewBox="0 0 20 20"
       width="24"
     >
       <g>
         <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+          d="M15.3129 6.28624C14.2107 4.51968 12.2477 3.33203 9.96484 3.33203C7.54818 3.33203 5.46484 4.66536 4.46484 6.66536C1.88151 6.9987 -0.0351562 9.08203 -0.0351562 11.6654C-0.0351562 14.4154 2.21484 16.6654 4.96484 16.6654H9.32894L10.3379 14.9154H4.96484C3.18134 14.9154 1.71484 13.4489 1.71484 11.6654C1.71484 10.0076 2.9321 8.62765 4.68879 8.40098L5.61324 8.28169L6.03009 7.44799C6.7313 6.04556 8.20576 5.08203 9.96484 5.08203C11.9829 5.08203 13.6486 6.35936 14.2597 8.11301L15.3129 6.28624Z"
           fill="#798BAF"
         />
         <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
+          d="M15.4749 9.62828C15.639 9.34396 16.0494 9.34396 16.2136 9.62828L19.9071 16.0256C20.0712 16.3099 19.866 16.6653 19.5377 16.6653H12.1508C11.8224 16.6653 11.6173 16.3099 11.7814 16.0256L15.4749 9.62828Z"
+          fill="#F59F00"
         />
       </g>
       <defs>
@@ -129,7 +133,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 </DocumentFragment>
 `;
 
-exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
+exports[`StatusMessagesNavItem one SyncError message 1`] = `
 <DocumentFragment>
   <button
     aria-label="Show status messages"
@@ -137,152 +141,23 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     type="button"
   >
     <svg
-      aria-label="Repositories up-to-date"
+      aria-label="Syncing repositories failed!"
       class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
       data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
-      viewBox="0 -4 20 20"
+      viewBox="0 0 20 20"
       width="24"
     >
       <g>
         <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+          d="M15.3129 6.28624C14.2107 4.51968 12.2477 3.33203 9.96484 3.33203C7.54818 3.33203 5.46484 4.66536 4.46484 6.66536C1.88151 6.9987 -0.0351562 9.08203 -0.0351562 11.6654C-0.0351562 14.4154 2.21484 16.6654 4.96484 16.6654H9.32894L10.3379 14.9154H4.96484C3.18134 14.9154 1.71484 13.4489 1.71484 11.6654C1.71484 10.0076 2.9321 8.62765 4.68879 8.40098L5.61324 8.28169L6.03009 7.44799C6.7313 6.04556 8.20576 5.08203 9.96484 5.08203C11.9829 5.08203 13.6486 6.35936 14.2597 8.11301L15.3129 6.28624Z"
           fill="#798BAF"
         />
         <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
-        />
-      </g>
-      <defs>
-        <clippath
-          id="clip0"
-        >
-          <rect
-            fill="white"
-            height="20"
-            width="20"
-          />
-        </clippath>
-      </defs>
-    </svg>
-  </button>
-</DocumentFragment>
-`;
-
-exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
-<DocumentFragment>
-  <button
-    aria-label="Show status messages"
-    class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
-    type="button"
-  >
-    <svg
-      aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
-      data-state="closed"
-      fill="currentColor"
-      height="24"
-      role="img"
-      viewBox="0 -4 20 20"
-      width="24"
-    >
-      <g>
-        <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
-          fill="#798BAF"
-        />
-        <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
-        />
-      </g>
-      <defs>
-        <clippath
-          id="clip0"
-        >
-          <rect
-            fill="white"
-            height="20"
-            width="20"
-          />
-        </clippath>
-      </defs>
-    </svg>
-  </button>
-</DocumentFragment>
-`;
-
-exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
-<DocumentFragment>
-  <button
-    aria-label="Show status messages"
-    class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
-    type="button"
-  >
-    <svg
-      aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
-      data-state="closed"
-      fill="currentColor"
-      height="24"
-      role="img"
-      viewBox="0 -4 20 20"
-      width="24"
-    >
-      <g>
-        <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
-          fill="#798BAF"
-        />
-        <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
-        />
-      </g>
-      <defs>
-        <clippath
-          id="clip0"
-        >
-          <rect
-            fill="white"
-            height="20"
-            width="20"
-          />
-        </clippath>
-      </defs>
-    </svg>
-  </button>
-</DocumentFragment>
-`;
-
-exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
-<DocumentFragment>
-  <button
-    aria-label="Show status messages"
-    class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
-    type="button"
-  >
-    <svg
-      aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
-      data-state="closed"
-      fill="currentColor"
-      height="24"
-      role="img"
-      viewBox="0 -4 20 20"
-      width="24"
-    >
-      <g>
-        <path
-          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
-          fill="#798BAF"
-        />
-        <path
-          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
-          fill="#37B24D"
+          d="M15.4749 9.62828C15.639 9.34396 16.0494 9.34396 16.2136 9.62828L19.9071 16.0256C20.0712 16.3099 19.866 16.6653 19.5377 16.6653H12.1508C11.8224 16.6653 11.6173 16.3099 11.7814 16.0256L15.4749 9.62828Z"
+          fill="#F59F00"
         />
       </g>
       <defs>

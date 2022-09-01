@@ -5,7 +5,6 @@ title: 'Sourcegraph docs'
 <a href="https://sourcegraph.com"><picture><source srcset="assets/logo-theme-dark.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="assets/logo-theme-light.svg" height="48px" /></picture></a>
 
 <p class="subtitle">Code search and intelligence</p>
-
 <p class="lead">
 Understand, fix, and automate across your codebase with Sourcegraph.
 </p>
@@ -39,7 +38,7 @@ To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com
 - Reference:
   - [Query syntax reference](code_search/reference/queries.md)
   - [API documentation](api/index.md)
-  
+
 ### Other links
 
 - [Sourcegraph changelog](./CHANGELOG.md)

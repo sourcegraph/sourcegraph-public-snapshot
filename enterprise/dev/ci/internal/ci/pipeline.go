@@ -81,6 +81,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
+	if op, err := exposeBuildMetadata(c); err == nil {
+		ops.Merge(operations.NewNamedSet("Metadata", op))
+	}
+
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
@@ -301,8 +305,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
+		Env: env,
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

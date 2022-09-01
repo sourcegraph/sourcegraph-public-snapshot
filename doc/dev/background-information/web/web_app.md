@@ -73,7 +73,7 @@ To use it locally, use `yarn storybook` command to start the Storybook developme
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
