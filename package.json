@@ -116,7 +116,7 @@
     "@peculiar/webcrypto": "^1.1.7",
     "@percy/cli": "^1.6.0",
     "@percy/puppeteer": "^2.0.0",
-    "@pmmmwh/react-refresh-webpack-plugin": "0.5.0-rc.1",
+    "@pmmmwh/react-refresh-webpack-plugin": "0.5.7",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",

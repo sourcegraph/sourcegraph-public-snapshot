@@ -4509,24 +4509,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pmmmwh/react-refresh-webpack-plugin@npm:0.5.0-rc.1":
-  version: 0.5.0-rc.1
-  resolution: "@pmmmwh/react-refresh-webpack-plugin@npm:0.5.0-rc.1"
+"@pmmmwh/react-refresh-webpack-plugin@npm:0.5.7":
+  version: 0.5.7
+  resolution: "@pmmmwh/react-refresh-webpack-plugin@npm:0.5.7"
   dependencies:
-    ansi-html: ^0.0.7
+    ansi-html-community: ^0.0.8
+    common-path-prefix: ^3.0.0
     core-js-pure: ^3.8.1
     error-stack-parser: ^2.0.6
+    find-up: ^5.0.0
     html-entities: ^2.1.0
     loader-utils: ^2.0.0
     schema-utils: ^3.0.0
     source-map: ^0.7.3
   peerDependencies:
     "@types/webpack": 4.x || 5.x
-    react-refresh: ^0.10.0
+    react-refresh: ">=0.10.0 <1.0.0"
     sockjs-client: ^1.4.0
-    type-fest: 1.x
+    type-fest: ">=0.17.0 <3.0.0"
     webpack: ">=4.43.0 <6.0.0"
-    webpack-dev-server: 3.x || >=4.0.0-beta.0
+    webpack-dev-server: 3.x || 4.x
     webpack-hot-middleware: 2.x
     webpack-plugin-serve: 0.x || 1.x
   peerDependenciesMeta:
@@ -4542,7 +4544,7 @@ __metadata:
       optional: true
     webpack-plugin-serve:
       optional: true
-  checksum: 92b672d073b718a5f52bad83bb7e41c7e86374932a1dcc66d7ac527c95c660308b06dd662ef991abcb8f62b81b8d34a5e02c5800d61234f9944ef6db7aa1ae39
+  checksum: 3490649181878cc8808fb91f3870ef095e5a1fb9647b3ac83740df07379c9d1cf540f24bf2b09d5f26a3a8c805b2c6b9c5be7192bdb9317d0ffffa67426e9f66
   languageName: node
   linkType: hard
 
@@ -28843,7 +28845,7 @@ pvutils@latest:
     "@peculiar/webcrypto": ^1.1.7
     "@percy/cli": ^1.6.0
     "@percy/puppeteer": ^2.0.0
-    "@pmmmwh/react-refresh-webpack-plugin": 0.5.0-rc.1
+    "@pmmmwh/react-refresh-webpack-plugin": 0.5.7
     "@pollyjs/adapter": ^5.0.0
     "@pollyjs/core": ^5.1.0
     "@pollyjs/persister-fs": ^5.0.0
