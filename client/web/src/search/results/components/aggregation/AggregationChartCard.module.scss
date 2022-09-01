@@ -32,6 +32,11 @@
     }
 }
 
+.error-button {
+    display: inline-flex;
+    align-items: center;
+}
+
 // Internal error-alert UI
 .error-alert {
     margin: 0 0 0.5rem 0;
