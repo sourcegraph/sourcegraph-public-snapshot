@@ -497,7 +497,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				return svcs, nil
 			})
 			licensing.MockCheckFeatureError("")
-			allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
+			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
 				externalServices,
@@ -522,7 +522,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		githubConnections          []*schema.GitHubConnection
 		perforceConnections        []*schema.PerforceConnection
 
-		expSeriousProblems []string
+		expInvalidConnections []string
+		expSeriousProblems    []string
 	}{
 		{
 			description: "GitHub connection with authz enabled but missing license for ACLs",
@@ -545,7 +546,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 					Url:           "https://github.com/my-org",
 				},
 			},
-			expSeriousProblems: []string{"failed"},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"github"},
 		},
 		{
 			description: "GitLab connection with authz enabled but missing license for ACLs",
@@ -571,7 +573,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expSeriousProblems: []string{"failed"},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"gitlab"},
 		},
 		{
 			description: "Bitbucket connection with authz enabled but missing license for ACLs",
@@ -594,7 +597,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 					Token:    "secret-token",
 				},
 			},
-			expSeriousProblems: []string{"failed"},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"bitbucketServer"},
 		},
 		{
 			description: "Perforce connection with authz enabled but missing license for ACLs",
@@ -611,7 +615,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 					},
 				},
 			},
-			expSeriousProblems: []string{"failed"},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"perforce"},
 		},
 	}
 
@@ -662,7 +667,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			})
 
 			licensing.MockCheckFeatureError("failed")
-			_, _, seriousProblems, _ := ProvidersFromConfig(
+			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
 				externalServices,
@@ -670,6 +675,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			)
 
 			assert.Equal(t, test.expSeriousProblems, seriousProblems)
+			assert.Equal(t, test.expInvalidConnections, invalidConnections)
 		})
 	}
 }

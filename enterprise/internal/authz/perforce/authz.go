@@ -27,7 +27,7 @@ func NewAuthzProviders(conns []*types.PerforceConnection, db database.DB) (ps []
 	for _, c := range conns {
 		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGitLab)
+			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
