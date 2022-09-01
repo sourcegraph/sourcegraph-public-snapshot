@@ -191,9 +191,13 @@ var sg = &cli.App{
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Configure logger, for commands that use components that use loggers
-		os.Setenv("SRC_DEVELOPMENT", "true")
-		os.Setenv("SRC_LOG_FORMAT", "console")
-		liblog := log.Init(log.Resource{Name: "sg"})
+		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
+			os.Setenv(log.EnvDevelopment, "true")
+		}
+		if _, set := os.LookupEnv(log.EnvLogFormat); !set {
+			os.Setenv(log.EnvLogFormat, "console")
+		}
+		liblog := log.Init(log.Resource{Name: "sg", Version: BuildCommit})
 		interrupt.Register(func() { _ = liblog.Sync() })
 
 		// Add autosuggestion hooks to commands with subcommands but no action

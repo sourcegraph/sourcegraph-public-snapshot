@@ -95,7 +95,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 <BarsBackground size={size} />
                 <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
-                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />.{' '}
+                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
                         <Link to="">Learn more</Link>
                     </div>
                 </div>

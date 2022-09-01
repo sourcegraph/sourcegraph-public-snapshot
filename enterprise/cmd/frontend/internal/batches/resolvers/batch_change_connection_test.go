@@ -79,7 +79,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestBatchChangesListing(t *testing.T) {
 	store := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}

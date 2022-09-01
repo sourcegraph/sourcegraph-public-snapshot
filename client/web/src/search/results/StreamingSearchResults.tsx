@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
 import {
     AggregationUIMode,
     FetchFileParameters,
     SearchAggregationResult,
-    SearchSidebar,
     SidebarButtonStrip,
     StreamingProgress,
     StreamingSearchResultsList,
@@ -35,12 +35,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import {
-    buildSearchURLQueryFromQueryState,
-    useExperimentalFeatures,
-    useNavbarQueryState,
-    useNotepad,
-} from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
@@ -49,7 +44,7 @@ import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-import { getRevisions } from './sidebar/Revisions'
+import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
 
 import styles from './StreamingSearchResults.module.scss'
 
@@ -67,7 +62,6 @@ export interface StreamingSearchResultsProps
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -84,10 +78,10 @@ export const StreamingSearchResults: React.FunctionComponent<
         extensionsController,
     } = props
 
+    const history = useHistory()
     // Feature flags
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
-    const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -95,7 +89,10 @@ export const StreamingSearchResults: React.FunctionComponent<
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const liveQuery = useNavbarQueryState(state => state.queryState.query)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const setQueryState = useNavbarQueryState(state => state.setQueryState)
+    const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
 
     // Local state
@@ -117,7 +114,7 @@ export const StreamingSearchResults: React.FunctionComponent<
         [caseSensitive, patternType, trace]
     )
 
-    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
+    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     // Log view event on first load
@@ -132,7 +129,7 @@ export const StreamingSearchResults: React.FunctionComponent<
 
     // Log search query event when URL changes
     useEffect(() => {
-        const metrics = query ? collectMetrics(query) : undefined
+        const metrics = submittedURLQuery ? collectMetrics(submittedURLQuery) : undefined
 
         telemetryService.log(
             'SearchResultsQueried',
@@ -140,8 +137,8 @@ export const StreamingSearchResults: React.FunctionComponent<
                 code_search: {
                     query_data: {
                         query: metrics,
-                        combined: query,
-                        empty: !query,
+                        combined: submittedURLQuery,
+                        empty: !submittedURLQuery,
                     },
                 },
             },
@@ -156,15 +153,17 @@ export const StreamingSearchResults: React.FunctionComponent<
                         // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
                         // on Sourcegraph.com, and only after sanitizing to remove certain filters.
                         combined:
-                            !authenticatedUser && isSourcegraphDotCom ? sanitizeQueryForTelemetry(query) : undefined,
-                        empty: !query,
+                            !authenticatedUser && isSourcegraphDotCom
+                                ? sanitizeQueryForTelemetry(submittedURLQuery)
+                                : undefined,
+                        empty: !submittedURLQuery,
                     },
                 },
             }
         )
         // Only log when the query changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [query])
+    }, [submittedURLQuery])
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -223,13 +222,13 @@ export const StreamingSearchResults: React.FunctionComponent<
                 results?.state === 'complete'
                     ? {
                           type: 'search',
-                          query,
+                          query: submittedURLQuery,
                           caseSensitive,
                           patternType,
                           searchContext: props.selectedSearchContextSpec,
                       }
                     : null,
-            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
+            [results, submittedURLQuery, patternType, caseSensitive, props.selectedSearchContextSpec]
         )
     )
 
@@ -245,6 +244,25 @@ export const StreamingSearchResults: React.FunctionComponent<
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
+    // Reset expanded state when new search is started
+    useEffect(() => {
+        setAllExpanded(false)
+    }, [location.search])
+
+    const handleSidebarSearchSubmit = useCallback(
+        (updates: QueryUpdate[]) =>
+            submitQuerySearch(
+                {
+                    activation: props.activation,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    history,
+                    source: 'filter',
+                },
+                updates
+            ),
+        [submitQuerySearch, props.activation, props.selectedSearchContextSpec, history]
+    )
+
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
@@ -252,11 +270,11 @@ export const StreamingSearchResults: React.FunctionComponent<
                 ...props,
                 caseSensitive,
                 patternType,
-                query: applyAdditionalFilters(query, additionalFilters),
+                query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
                 source: 'excludedResults',
             })
         },
-        [query, telemetryService, patternType, caseSensitive, props]
+        [submittedURLQuery, telemetryService, patternType, caseSensitive, props]
     )
 
     const handleSearchAggregationBarClick = (query: string): void => {
@@ -271,35 +289,34 @@ export const StreamingSearchResults: React.FunctionComponent<
 
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
-            <PageTitle key="page-title" title={query} />
+            <PageTitle key="page-title" title={submittedURLQuery} />
 
             <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
-            <SearchSidebar
-                enableSearchAggregation={enableSearchAggregations}
-                activation={props.activation}
-                caseSensitive={caseSensitive}
+            <SearchFiltersSidebar
+                liveQuery={liveQuery}
+                submittedURLQuery={submittedURLQuery}
                 patternType={patternType}
+                filters={results?.filters}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
-                filters={results?.filters}
-                getRevisions={getRevisions}
-                prefixContent={
-                    <GettingStartedTour
-                        className="mb-1"
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        telemetryService={props.telemetryService}
-                        isAuthenticated={!!props.authenticatedUser}
-                    />
-                }
-                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-            />
+                onNavbarQueryChange={setQueryState}
+                onSearchSubmit={handleSidebarSearchSubmit}
+            >
+                <GettingStartedTour
+                    className="mb-1"
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={!!props.authenticatedUser}
+                />
+            </SearchFiltersSidebar>
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
                 <SearchAggregationResult
-                    query={query}
+                    query={submittedURLQuery}
                     patternType={patternType}
                     aria-label="Aggregation results panel"
                     className={styles.contents}
@@ -313,7 +330,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                         {...props}
                         patternType={patternType}
                         caseSensitive={caseSensitive}
-                        query={query}
+                        query={submittedURLQuery}
                         enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                         enableCodeMonitoring={enableCodeMonitoring}
                         resultsFound={resultsFound}
@@ -335,7 +352,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     <div className={styles.contents}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
-                            query={query}
+                            query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -352,7 +369,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                             <SavedSearchModal
                                 {...props}
                                 patternType={patternType}
-                                query={query}
+                                query={submittedURLQuery}
                                 authenticatedUser={authenticatedUser}
                                 onDidCancel={onSaveQueryModalClose}
                             />
