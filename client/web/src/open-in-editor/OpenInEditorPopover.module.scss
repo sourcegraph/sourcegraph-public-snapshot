@@ -1,0 +1,14 @@
+.open-in-editor-popover {
+    isolation: isolate;
+    display: flex;
+    flex-direction: row;
+
+    min-width: 190px;
+    max-width: 70vw;
+
+    background-color: var(--color-bg-1);
+}
+
+.close {
+    color: var(--icon-color);
+}

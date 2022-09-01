@@ -5,12 +5,14 @@ import { Unsubscribable } from 'rxjs'
 
 import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
+import { Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { SimpleActionItem } from '../../../shared/src/actions/SimpleActionItem'
 
 import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
 import { getEditor } from './editors'
+import { OpenInEditorPopover } from './OpenInEditorPopover'
 import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
 export interface OpenInEditorActionItemProps {
@@ -27,6 +29,8 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
             ? settingsCascadeOrError.final
             : undefined
     const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
+    const [popoverOpen, setPopoverOpen] = useState(false)
+    const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
     const openCurrentUrlInEditor = useOpenCurrentUrlInEditor()
 
@@ -54,16 +58,28 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         if (editor) {
             openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL)
         } else {
-            alert('Opening setup popover.')
+            togglePopover()
         }
-    }, [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor])
+    }, [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor, togglePopover])
 
     return (
-        <SimpleActionItem
-            tooltip={editor ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
-            className="enabled"
-            iconURL={editor ? `${assetsRoot}/img/editors/${editor.id}.svg` : `${assetsRoot}/img/open-in-editor.svg`}
-            onClick={onClick}
-        />
+        <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+            <PopoverTrigger as="div">
+                <SimpleActionItem
+                    tooltip={editor ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
+                    className="enabled"
+                    iconURL={
+                        editor ? `${assetsRoot}/img/editors/${editor.id}.svg` : `${assetsRoot}/img/open-in-editor.svg`
+                    }
+                    onClick={onClick}
+                />
+            </PopoverTrigger>
+            <PopoverContent position={Position.left} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
+                <OpenInEditorPopover
+                    editorSettings={settings?.openInEditor as EditorSettings | undefined}
+                    togglePopover={togglePopover}
+                />
+            </PopoverContent>
+        </Popover>
     )
 }
