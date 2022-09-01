@@ -25,7 +25,7 @@ build_browser() {
 
 build_web() {
   echo "--- yarn web"
-  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn -s run build-web --color"
+  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn run build-web --color"
 }
 
 export -f build_browser
