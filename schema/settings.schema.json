@@ -446,7 +446,7 @@
           "type": "string"
         },
         "projectPaths.windows": {
-          "description": "Overrides the default path when the browser detects Windows. Doesn't need a trailing slash.",
+          "description": "Overrides the default path when the browser detects Windows. Doesn't need a trailing backslash.",
           "type": "string"
         },
         "replacements": {
