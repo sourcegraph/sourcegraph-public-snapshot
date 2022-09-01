@@ -17,7 +17,7 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 - Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
 - Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
 - Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
-- Does your check or test need a secret ? Take a look at how to add [secrets](#managing-secrets).
+- Does your check or test need a secret? Take a look at [how to manage secrets](#managing-secrets).
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
