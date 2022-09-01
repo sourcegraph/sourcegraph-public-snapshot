@@ -165,7 +165,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Contains information about the product license. */
     licenseInfo?: {
-        currentPlan?: string
+        currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
 
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean

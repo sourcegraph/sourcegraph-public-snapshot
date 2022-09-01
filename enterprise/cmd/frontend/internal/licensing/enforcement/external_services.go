@@ -2,7 +2,6 @@ package enforcement
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -37,21 +36,6 @@ func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store databa
 		}
 
 		switch info.Plan() {
-		case licensing.PlanTeam0: // The "team-0" plan can have at most one code host connection
-			currentCount, err := store.Count(ctx, database.ExternalServicesListOptions{})
-			if err != nil {
-				return errors.Wrap(err, "count external services")
-			}
-			if currentCount > 0 {
-				return errcode.NewPresentationError(
-					fmt.Sprintf(
-						"Unable to create code host connection: the current plan cannot exceed %d code host connection (this instance now has %d). [**Upgrade your license.**](/site-admin/license)",
-						1,
-						currentCount,
-					),
-				)
-			}
-
 		case licensing.PlanBusiness0: // The "business-0" plan can only have cloud code hosts (GitHub.com/GitLab.com/Bitbucket.org)
 			config, err := es.Configuration(ctx)
 			if err != nil {
