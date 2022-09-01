@@ -29,6 +29,8 @@
   <b>Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform</b>
 </p>
 
+&nbsp;
+
 ---
 
 ## Use cases
