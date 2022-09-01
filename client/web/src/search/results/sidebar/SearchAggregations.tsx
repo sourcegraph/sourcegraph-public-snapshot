@@ -12,7 +12,9 @@ import {
     useAggregationSearchMode,
     useAggregationUIMode,
     useSearchAggregationData,
+    isNonExhaustiveAggregationResults,
 } from '../components/aggregation'
+import { AggregationLimitLabel } from '../components/aggregation/AggregationLimitLabel'
 
 import styles from './SearchAggregations.module.scss'
 
@@ -47,8 +49,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
         query,
         patternType,
         aggregationMode,
-        limit: 10,
         proactive,
+        limit: 10,
     })
 
     return (
@@ -83,6 +85,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                         >
                             <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
                         </Button>
+
+                        {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="sm" />}
                     </footer>
                 </>
             )}

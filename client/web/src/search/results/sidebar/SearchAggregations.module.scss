@@ -16,6 +16,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .details-action {

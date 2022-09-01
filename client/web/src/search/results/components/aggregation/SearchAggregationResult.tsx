@@ -6,8 +6,14 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
+import { AggregationLimitLabel } from './AggregationLimitLabel'
 import { AggregationModeControls } from './AggregationModeControls'
-import { useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
+import {
+    isNonExhaustiveAggregationResults,
+    useAggregationSearchMode,
+    useAggregationUIMode,
+    useSearchAggregationData,
+} from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -77,6 +83,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                         availability={data?.searchQueryAggregate?.modeAvailability}
                         onModeChange={setAggregationMode}
                     />
+
+                    {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
                 </div>
 
                 <AggregationChartCard
