@@ -31,11 +31,11 @@
 
 ## Use cases
 
-- Improve code security
-- Accelerate developer onboarding
-- Resolve incidents faster
-- Streamline code reuse
-- Boost code health
+- [Improve code security](https://about.sourcegraph.com/use-cases#code-security)
+- [Accelerate developer onboarding](https://about.sourcegraph.com/use-cases#onboarding)
+- [Resolve incidents faster](https://about.sourcegraph.com/use-cases#incident-response)
+- [Streamline code reuse](https://about.sourcegraph.com/use-cases#code-reuse)
+- [Boost code health](https://about.sourcegraph.com/use-cases#code-health)
 
 ## Features
 
