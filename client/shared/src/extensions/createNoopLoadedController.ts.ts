@@ -1,11 +1,10 @@
 import { NEVER } from 'rxjs'
 
-import { isErrorLike } from '@sourcegraph/common'
-
 import { createExtensionHostAPI } from '../api/extension/extensionHostApi'
 import { createExtensionHostState } from '../api/extension/extensionHostState'
 import { pretendRemote } from '../api/util'
 import { PlatformContext } from '../platform/context'
+import { isSettingsValid } from '../settings/settings'
 
 import { Controller } from './controller'
 
@@ -18,19 +17,15 @@ export function createNoopController(platformContext: PlatformContext): Controll
         }),
         extHostAPI: new Promise((resolve, reject) => {
             platformContext.settings.subscribe(settingsCascade => {
-                if (
-                    settingsCascade.final === null ||
-                    settingsCascade.subjects === null ||
-                    isErrorLike(settingsCascade.final)
-                ) {
+                if (!isSettingsValid(settingsCascade)) {
                     reject(new Error('Settings are not valid'))
+                    return
                 }
 
                 const extensionHostState = createExtensionHostState(
                     {
                         clientApplication: 'sourcegraph',
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-                        initialSettings: settingsCascade as any,
+                        initialSettings: settingsCascade,
                     },
                     null,
                     null
