@@ -29,6 +29,8 @@
   <b>Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform</b>
 </p>
 
+---
+
 ## Use cases
 
 - [Improve code security](https://about.sourcegraph.com/use-cases#code-security)
@@ -69,6 +71,7 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart) to install `sg` and dependencies
 1. Start the development environment in OSS mode:
+
    ```sh
    sg start oss
    ```
