@@ -82,6 +82,13 @@ func runOutOfBandMigrations(
 	out *output.Output,
 	ids []int,
 ) (err error) {
+	if len(ids) != 0 {
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+		if dryRun {
+			return nil
+		}
+	}
+
 	store := oobmigration.NewStoreWithDB(db)
 	runner := outOfBandMigrationRunnerWithStore(store)
 	if err := runner.SynchronizeMetadata(ctx); err != nil {
