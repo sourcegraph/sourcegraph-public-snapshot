@@ -8,7 +8,7 @@ import { Editor, getEditor, supportedEditors } from './editors'
 export function buildEditorUrl(
     repoBaseNameAndPath: string,
     range: UIRangeSpec['range'] | undefined,
-    editorSettings: EditorSettings,
+    editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string
 ): URL {
     const editorSettingsErrorMessage = getEditorSettingsErrorMessage(editorSettings, sourcegraphBaseUrl)
@@ -16,14 +16,12 @@ export function buildEditorUrl(
         throw new TypeError(editorSettingsErrorMessage)
     }
 
-    const projectPath = getProjectPath(editorSettings) as string
-    const editor = getEditor(editorSettings.editorId ?? 'vscode') as Editor // Default is only there to soothe TypeScript
-    const urlPattern = getUrlPattern(editor, editorSettings)
+    const projectPath = getProjectPath(editorSettings || {}) as string // Default is only there to soothe TypeScript
+    const editor = getEditor(editorSettings?.editorId ?? 'vscode') as Editor // Default is only there to soothe TypeScript
+    const urlPattern = getUrlPattern(editor, editorSettings || {}) // Default is only there to soothe TypeScript
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
-        editor.id === 'vscode' && (/^[A-Za-z]:\\/.test(projectPath) || editorSettings.vscode?.isBasePathUNCPath)
-            ? '/'
-            : ''
+        editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.vscode?.isBasePathUNCPath) ? '/' : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
     const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
@@ -31,22 +29,7 @@ export function buildEditorUrl(
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)
         .replace('%col', `${column}`)
-    return new URL(doReplacements(url, editorSettings.replacements))
-}
-
-function getProjectPath(editorSettings: EditorSettings): string | undefined {
-    if (editorSettings.projectsPaths) {
-        if (navigator.userAgent.includes('Win') && editorSettings.projectsPaths.windows) {
-            return editorSettings.projectsPaths.windows
-        }
-        if (navigator.userAgent.includes('Mac') && editorSettings.projectsPaths.mac) {
-            return editorSettings.projectsPaths.mac
-        }
-        if (navigator.userAgent.includes('Linux') && editorSettings.projectsPaths.linux) {
-            return editorSettings.projectsPaths.linux
-        }
-    }
-    return editorSettings.projectsPaths?.default
+    return new URL(doReplacements(url, editorSettings?.replacements))
 }
 
 export function getEditorSettingsErrorMessage(
@@ -64,7 +47,9 @@ export function getEditorSettingsErrorMessage(
     if (typeof projectPath !== 'string') {
         return `Add \`projectsPaths.default\` or some OS-specific path to your user settings to open files in the editor. [Learn more](${learnMorePath})`
     }
-    if (!path.isAbsolute(projectPath)) {
+
+    // Skip this check on Windows because path.isAbsolute only checks Linux and macOS compatible paths reliably
+    if (!isWindowsPath(projectPath) && !path.isAbsolute(projectPath)) {
         return `\`projectsPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
             new URL('/user/settings', sourcegraphBaseUrl).href
         }).`
@@ -86,11 +71,36 @@ export function getEditorSettingsErrorMessage(
         return `Add \`openineditor.customUrlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMorePath})`
     }
 
+    if (editorSettings.vscode?.useSSH && !editorSettings.vscode.remoteHostForSSH) {
+        throw new TypeError(
+            '`openineditor.vscode.mode` is set to "ssh" but `openineditor.vscode.remoteHostForSSH` is not set.'
+        )
+    }
+
     return undefined
+}
+
+function getProjectPath(editorSettings: EditorSettings): string | undefined {
+    if (editorSettings.projectsPaths) {
+        if (navigator.userAgent.includes('Win') && editorSettings.projectsPaths.windows) {
+            return editorSettings.projectsPaths.windows
+        }
+        if (navigator.userAgent.includes('Mac') && editorSettings.projectsPaths.mac) {
+            return editorSettings.projectsPaths.mac
+        }
+        if (navigator.userAgent.includes('Linux') && editorSettings.projectsPaths.linux) {
+            return editorSettings.projectsPaths.linux
+        }
+    }
+    return editorSettings.projectsPaths?.default
 }
 
 function getLearnMorePath(sourcegraphBaseUrl: string): string {
     return new URL('/extensions/sourcegraph/open-in-editor', sourcegraphBaseUrl).href
+}
+
+function isWindowsPath(path: string): boolean {
+    return /^[A-Za-z]:\\/.test(path)
 }
 
 function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
@@ -98,15 +108,16 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
         return editor.urlPattern
     }
     if (editor.id === 'vscode') {
+        const protocolHandler = editorSettings.vscode?.useInsiders ? 'vscode-insiders' : 'vscode'
         if (editorSettings.vscode?.useSSH) {
             if (!editorSettings.vscode.remoteHostForSSH) {
                 throw new TypeError(
                     '`openineditor.vscode.mode` is set to "ssh" but `openineditor.vscode.remoteHostForSSH` is not set.'
                 )
             }
-            return `vscode://vscode-remote/ssh-remote+${editorSettings.vscode.remoteHostForSSH}%file:%line:%col`
+            return `${protocolHandler}://vscode-remote/ssh-remote+${editorSettings.vscode.remoteHostForSSH}%file:%line:%col`
         }
-        return `${editorSettings.vscode?.useInsiders ? 'vscode-insiders' : 'vscode'}://file%file:%line:%col`
+        return `${protocolHandler}://file%file:%line:%col`
     }
     if (editor.isJetBrainsProduct) {
         if (editorSettings.jetbrains?.forceApi === 'builtInServer') {
@@ -117,7 +128,7 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
         return `${editor.id}://open?file=%file&line=%line&column=%col`
     }
     if (editor.id === 'custom') {
-        return editorSettings.custom?.urlPattern ?? ''
+        return editorSettings.custom?.urlPattern ?? '' // Default is only there to soothe TypeScript
     }
     throw new TypeError(`No url pattern found for editor ${editor.id}`)
 }
@@ -125,7 +136,7 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
 function doReplacements(urlWithoutReplacements: string, replacements: EditorReplacements | undefined): string {
     let url = urlWithoutReplacements
     if (replacements) {
-        for (const [search, replacement] of Object.keys(replacements)) {
+        for (const [search, replacement] of Object.entries(replacements)) {
             url = url.replace(new RegExp(search), replacement)
         }
     }
