@@ -82,35 +82,45 @@ func TestMain(m *testing.M) {
 
 	licenseKey := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if licenseKey != "" {
-		// Update site configuration to set up a test license key if the instance doesn't have one yet.
 		siteConfig, err := client.SiteConfiguration()
 		if err != nil {
 			log.Fatal("Failed to get site configuration:", err)
 		}
 
-		siteConfig.LicenseKey = licenseKey
-		err = client.UpdateSiteConfiguration(siteConfig)
-		if err != nil {
-			log.Fatal("Failed to update site configuration:", err)
-		}
-		log.Println("License key updated")
-
-		// Verify the provided license is valid, retry because the configuration update
-		// endpoint is eventually consistent.
-		err = gqltestutil.Retry(5*time.Second, func() error {
-			ps, err := client.ProductSubscription()
-			if err != nil {
-				return errors.Wrap(err, "get product subscription")
+		err = func() error {
+			// Update site configuration to set up a test license key if the instance doesn't have one yet.
+			if siteConfig.LicenseKey != "" {
+				return nil
 			}
 
-			if ps.License == nil {
-				return gqltestutil.ErrContinueRetry
+			siteConfig.LicenseKey = licenseKey
+			err = client.UpdateSiteConfiguration(siteConfig)
+			if err != nil {
+				return errors.Wrap(err, "update site configuration")
+			}
+
+			// Verify the provided license is valid, retry because the configuration update
+			// endpoint is eventually consistent.
+			err = gqltestutil.Retry(5*time.Second, func() error {
+				ps, err := client.ProductSubscription()
+				if err != nil {
+					return errors.Wrap(err, "get product subscription")
+				}
+
+				if ps.License == nil {
+					return gqltestutil.ErrContinueRetry
+				}
+				return nil
+			})
+			if err != nil {
+				return errors.Wrap(err, "verify license")
 			}
 			return nil
-		})
+		}()
 		if err != nil {
-			log.Fatal("Failed to verify license:", err)
+			log.Fatal("Failed to update license:", err)
 		}
+		log.Println("License key added and verified")
 	}
 
 	if !testing.Verbose() {
