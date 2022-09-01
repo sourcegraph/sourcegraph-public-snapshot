@@ -1,0 +1,44 @@
+.popover {
+    &-trigger {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        width: 100%;
+        max-width: 240px;
+
+        color: var(--body-color);
+        &:hover {
+            color: var(--body-color);
+        }
+
+        .content {
+            white-space: pre;
+            color: var(--text-muted);
+
+            &::before {
+                content: attr(data-contents);
+            }
+        }
+    }
+
+    &-content {
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        margin-left: 140px;
+        max-width: 348px;
+
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+
+        .author {
+            font-weight: 500;
+        }
+
+        .separator {
+            color: var(--color-bg-2);
+        }
+
+        .link {
+            color: var(--body-color);
+        }
+    }
+}

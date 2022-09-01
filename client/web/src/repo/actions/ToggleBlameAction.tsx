@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
@@ -11,13 +11,21 @@ import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../compone
 
 import styles from './ToggleBlameAction.module.scss'
 
-export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown' }> = ({ actionType }) => {
+export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; filePath: string }> = ({
+    actionType,
+    filePath,
+}) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
+    // Turn off visibility when the file path changes.
+    useEffect(() => {
+        setIsBlameVisible(false)
+    }, [filePath, setIsBlameVisible])
+
     const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
-    const toggleBlameState = useCallback(() => setIsBlameVisible(isVisible => !isVisible), [setIsBlameVisible])
+    const toggleBlameState = useCallback(() => setIsBlameVisible(!isBlameVisible), [isBlameVisible, setIsBlameVisible])
 
     if (!extensionsAsCoreFeatures) {
         return null
