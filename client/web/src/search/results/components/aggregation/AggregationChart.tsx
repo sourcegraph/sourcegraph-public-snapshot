@@ -45,6 +45,7 @@ export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): Re
                     height={parent.height}
                     pixelsPerYTick={20}
                     pixelsPerXTick={20}
+                    hideXTicks={true}
                     maxAngleXTick={45}
                     getScaleXTicks={getXScaleTicks}
                     getTruncatedXTick={getTruncatedXLabel}
