@@ -517,32 +517,18 @@ spec:
             value: "<REDIS_STORE_DSN>"
 ```
 
-## Connect to an external Jaeger instance
+## Configure a tracing backend
+Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
-If you have an existing Jaeger instance you would like to connect Sourcegraph to (instead of running the Jaeger instance inside the Sourcegraph cluster), do:
+By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
 
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Update the Jaeger agent containers to point to your Jaeger collector.
-   1. Find all instances of Jaeger agent (`grep -R 'jaegertracing/jaeger-agent'`).
-   1. Update the `args` field of the Jaeger agent container configuration to point to the external
-      collector. E.g.,
-      ```
-      args:
-        - --reporter.grpc.host-port=external-jaeger-collector-host:14250
-        - --reporter.type=grpc
-      ```
-1. Apply these changes to the cluster.
+1. Modify [base/otel-collector/otel-collector.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml). Make the necessary changes to the `exporters` and `service` blocks to connect to your backend as described in the documentation linked above.
+1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml). Update the `command` of the `otel-collector` container to point to the mounted config by changing the flag to `"--config=/etc/otel-collector/config.yaml"`.
+1. Apply edited `ConfigMap` and `Deployment` manifests.
 
-### Disable Jaeger entirely
 
-To disable Jaeger entirely, do:
-
-1. Update the Sourcegraph [site
-   configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
-   `observability.tracing` field.
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
-1. Apply these changes to the cluster.
+### Enable the bundled Jaeger deployment
+If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC
 
