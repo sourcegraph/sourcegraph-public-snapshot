@@ -4819,7 +4819,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@radix-ui/react-tooltip@npm:^0.1.8 || 0.1.8-rc.2":
+"@radix-ui/react-tooltip@npm:^0.1.8 || 0.1.8-rc.2 || 0.1":
   version: 0.1.8-rc.2
   resolution: "@radix-ui/react-tooltip@npm:0.1.8-rc.2"
   dependencies:
@@ -28847,7 +28847,7 @@ pvutils@latest:
     "@pollyjs/adapter": ^5.0.0
     "@pollyjs/core": ^5.1.0
     "@pollyjs/persister-fs": ^5.0.0
-    "@radix-ui/react-tooltip": ^0.1.8 || 0.1.8-rc.2
+    "@radix-ui/react-tooltip": ^0.1.8 || 0.1.8-rc.2 || 0.1
     "@reach/accordion": ^0.16.1
     "@reach/combobox": ^0.16.5
     "@reach/dialog": ^0.16.2
