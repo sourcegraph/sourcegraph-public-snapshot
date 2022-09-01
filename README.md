@@ -49,15 +49,15 @@
 
 Sourcegraph has three editions:
 
-- [Sourcegraph Cloud](https://sourcegraph.com) lets you search over the open-source ecosystem plus your private code. [Search strings](https://sourcegraph.com/search?q=context:global+failed+to+ensure+HEAD+exists&patternType=literal), [search patterns](https://sourcegraph.com/search?q=context:global+lang:python+range%28len%28:%5B1%5D%29%29&patternType=structural), [search symbols](https://sourcegraph.com/search?q=context:global+type:symbol+lang:typescript+%28OA%7Coa%7COa%29uth+%5BHh%5Dandler+-file:%28%5E%7C/%29node_modules/+&patternType=regexp&case=yes) and [find references](https://sourcegraph.com/github.com/spf13/cobra@a684a6d7f5e37385d954dd3b5a14fc6912c6ab9d/-/blob/command.go?L221:19&subtree=true#tab=references) across your entire codebase and the open-source world.
+- [Sourcegraph Cloud](https://sourcegraph.com) lets you search over the open source ecosystem. [Search strings](https://sourcegraph.com/search?q=context:global+failed+to+ensure+HEAD+exists&patternType=literal), [search patterns](https://sourcegraph.com/search?q=context:global+lang:python+range%28len%28:%5B1%5D%29%29&patternType=structural), [search symbols](https://sourcegraph.com/search?q=context:global+type:symbol+lang:typescript+%28OA%7Coa%7COa%29uth+%5BHh%5Dandler+-file:%28%5E%7C/%29node_modules/+&patternType=regexp&case=yes) and [find references](https://sourcegraph.com/github.com/spf13/cobra@a684a6d7f5e37385d954dd3b5a14fc6912c6ab9d/-/blob/command.go?L221:19&subtree=true#tab=references) across your entire codebase and the open source world.
 - [Sourcegraph Enterprise](https://docs.sourcegraph.com/#getting-started) lets you run your own Sourcegraph instance in your own environment.
-- [Sourcegraph OSS](#sourcegraph-oss) is an open-source version of Sourcegraph that provides the core functionality of Sourcegraph (code search, code browsing, basic code navigation), but lacks more advanced features (enterprise authentication, repository permissions, admin controls, advanced code navigation, etc.)
+- [Sourcegraph OSS](#sourcegraph-oss) is an open source version of Sourcegraph that provides the core functionality of Sourcegraph (code search, code browsing, basic code navigation), but lacks more advanced features (enterprise authentication, repository permissions, admin controls, advanced code navigation, etc.)
 
 > Source code for all three editions is contained in this repository. See the [License section](#license) for more details.
 
 More:
 
-- Install the open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en) to add Sourcegraph-like powers to your code review and code host.
+- Install the open source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en) to add Sourcegraph-like powers to your code review and code host.
 - File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 - Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about features, use cases, and organizations that use Sourcegraph.
 
