@@ -141,9 +141,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 </Alert>
             )}
             {Object.entries(codeHostExternalServices)
-                .filter(
-                    externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1].kind)
-                )
+                .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1].kind))
                 .map(([id, externalService]) => (
                     <div className={styles.addExternalServicesPageCard} key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
@@ -153,14 +151,13 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 <>
                     <br />
                     <Text>
-                        <Icon aria-label="Information icon" svgPath={mdiInformation}/> Upgrade to{' '}
+                        <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
                         <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
                         repositories from other code hosts.
                     </Text>
                     {Object.entries(codeHostExternalServices)
                         .filter(
-                            externalService =>
-                                allowedCodeHosts && !allowedCodeHosts.includes(externalService[1].kind)
+                            externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1].kind)
                         )
                         .map(([id, externalService]) => (
                             <div className={styles.addExternalServicesPageCard} key={id}>
