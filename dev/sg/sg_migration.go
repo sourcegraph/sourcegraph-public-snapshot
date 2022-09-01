@@ -84,8 +84,6 @@ var (
 		Required:    true,
 		Destination: &targetRevision,
 	}
-
-	logger = log.Scoped("sg migration", "")
 )
 
 var (
@@ -117,7 +115,7 @@ var (
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
 	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, localGitExpectedSchemaFactory)
-	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
+	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
