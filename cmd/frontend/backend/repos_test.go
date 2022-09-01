@@ -235,6 +235,10 @@ func TestReposGetInventory(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	logtest.Init(m)
+	if !testing.Verbose() {
+		logtest.InitWithlevel(m, log.LevelNone)
+	} else {
+		logtest.Init(m)
+	}
 	os.Exit(m.Run())
 }
