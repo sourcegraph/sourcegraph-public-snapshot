@@ -77,6 +77,7 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 
 	return &repositoryConnectionResolver{
 		db:          r.db,
+		logger:      r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
 		opt:         opt,
 		cloned:      args.Cloned,
 		notCloned:   args.NotCloned,
@@ -97,6 +98,7 @@ type RepositoryConnectionResolver interface {
 }
 
 func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
+	// TODO(burmudar): This is ununsed ?
 	return &repositoryConnectionResolver{
 		db:         db,
 		opt:        opt,

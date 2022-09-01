@@ -131,6 +131,8 @@ func TestResolverTo(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+	logtest.Init(m)
+	// TODO(burmudar): remove this log15 usage
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 		log.SetOutput(io.Discard)
