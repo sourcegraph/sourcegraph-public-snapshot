@@ -253,7 +253,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
         //  TODO(tj): if not exists? doesn't seem that we can guarantee that just based on uri
         addViewerIfNotExists: viewerData => {
-            console.log('HELLOOOOOO')
             const viewerId = `viewer#${state.lastViewerId++}`
             if (viewerData.type === 'CodeEditor') {
                 state.modelReferences.increment(viewerData.resource)
@@ -263,7 +262,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 case 'CodeEditor': {
                     const textDocument = getTextDocument(viewerData.resource)
                     viewComponent = new ExtensionCodeEditor({ ...viewerData, viewerId }, textDocument)
-                    console.log(viewComponent)
                     break
                 }
 
