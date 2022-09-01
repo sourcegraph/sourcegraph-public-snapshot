@@ -38,10 +38,10 @@ import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
 import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 
+import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './components/aggregation'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './sidebar/aggregation'
 import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
 
 import styles from './StreamingSearchResults.module.scss'

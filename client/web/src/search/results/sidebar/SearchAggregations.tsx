@@ -12,7 +12,7 @@ import {
     useAggregationSearchMode,
     useAggregationUIMode,
     useSearchAggregationData,
-} from './aggregation'
+} from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'
 

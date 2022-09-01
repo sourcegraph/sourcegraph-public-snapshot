@@ -25,8 +25,8 @@ import { Code } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
+import { AggregationUIMode } from '../components/aggregation'
 
-import { AggregationUIMode } from './aggregation'
 import { getRevisions } from './Revisions'
 import { SearchAggregations } from './SearchAggregations'
 

@@ -21,11 +21,11 @@
     // in different themes and UI search modes (standard, simple) we have to
     // override default sidebar chart styles in order to fit it in the full UI colors.
     :global(.core-workflow-improvements-enabled) & {
-        :global(.theme-dark) & rect {
+        :global(.theme-dark) & [data-error-layout] rect {
             fill: var(--gray-09);
         }
 
-        :global(.theme-light) & rect {
+        :global(.theme-light) & [data-error-layout] rect {
             fill: var(--gray-03);
         }
     }

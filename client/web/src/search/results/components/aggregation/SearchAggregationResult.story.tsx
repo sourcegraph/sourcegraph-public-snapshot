@@ -13,7 +13,7 @@ import { AGGREGATION_SEARCH_QUERY } from './hooks'
 import { SearchAggregationResult } from './SearchAggregationResult'
 
 const config: Meta = {
-    title: 'search-ui/results/SearchAggregationResult',
+    title: 'web/search/results/SearchAggregationResult',
 }
 
 export default config
