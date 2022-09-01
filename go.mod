@@ -9,20 +9,20 @@ require (
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gobwas/glob v0.2.3
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/hexops/autogold v1.3.0
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-	github.com/mattn/go-isatty v0.0.14
+	github.com/mattn/go-isatty v0.0.16
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/scip v0.2.0
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220825181731-397a768a5290
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	google.golang.org/protobuf v1.28.0
@@ -68,7 +68,7 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.17 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
@@ -85,10 +85,10 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.1 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
-	github.com/sourcegraph/log v0.0.0-20220707160925-6a936691c838 // indirect
+	github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9 // indirect
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
@@ -98,16 +98,15 @@ require (
 	github.com/yuin/goldmark v1.4.13 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.21.0 // indirect
+	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.0.0-20220823224334-20c2bfdbfe24 // indirect
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.12 // indirect
-	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/genproto v0.0.0-20220414192740-2d67ff6cf2b4 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
