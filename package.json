@@ -120,7 +120,7 @@
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
-    "@sentry/cli": "^1.74.4",
+    "@sentry/cli": "^1.74.5",
     "@sentry/webpack-plugin": "^1.18.9",
     "@slack/web-api": "^5.15.0",
     "@sourcegraph/eslint-config": "0.32.0",

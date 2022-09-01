@@ -5362,6 +5362,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sentry/cli@npm:^1.74.5":
+  version: 1.74.5
+  resolution: "@sentry/cli@npm:1.74.5"
+  dependencies:
+    https-proxy-agent: ^5.0.0
+    mkdirp: ^0.5.5
+    node-fetch: ^2.6.7
+    npmlog: ^4.1.2
+    progress: ^2.0.3
+    proxy-from-env: ^1.1.0
+    which: ^2.0.2
+  bin:
+    sentry-cli: bin/sentry-cli
+  checksum: f416416d85a567fef9cef9bbba5d700b63e7374531ed9b68f26fd4bf77cacb7067d483a53b5f24be4e98829a4260ad539de393e11710ef77bb61d57dcc6f7073
+  languageName: node
+  linkType: hard
+
 "@sentry/core@npm:7.8.1":
   version: 7.8.1
   resolution: "@sentry/core@npm:7.8.1"
@@ -28857,7 +28874,7 @@ pvutils@latest:
     "@reach/visually-hidden": ^0.16.0
     "@react-aria/live-announcer": ^3.1.0
     "@sentry/browser": ^7.8.1
-    "@sentry/cli": ^1.74.4
+    "@sentry/cli": ^1.74.5
     "@sentry/webpack-plugin": ^1.18.9
     "@slack/web-api": ^5.15.0
     "@slimsag/react-shortcuts": ^1.2.1
