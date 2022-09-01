@@ -237,6 +237,8 @@ You can monitor the health of a deployment in several ways:
 
 ## Tracing
 
+### Configure a tracing backend
+
 [Tracing](../../observability/tracing.md) export can be configured via the [OpenTelemetry collector](../../observability/opentelemetry.md) deployed by default in all Sourcegraph docker-compose deployments.
 To get started, edit the mounted configuration file in `otel-collector/config.yaml` based on the [OpenTelemetry collector configuration guidance](../../observability/opentelemetry.md) and edit your `docker-compose.yaml` file to have the `otel-collector` service use the mounted configuration:
 
@@ -249,6 +251,8 @@ services:
     volumes:
       - '../otel-collector/config.yaml:/etc/otel-collector/config.yaml'
 ```
+
+#### Enable the bundled Jaeger deployment
 
 Alternatively, you can use the `jaeger` overlay to easily deploy Sourcegraph with some default configuration that exports traces to a standalone Jaeger instance:
 
