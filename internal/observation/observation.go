@@ -48,8 +48,12 @@ const (
 	EmitForTraces
 	EmitForHoney
 
-	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
+	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
 )
+
+func (b ErrorFilterBehaviour) Without(e ErrorFilterBehaviour) ErrorFilterBehaviour {
+	return b ^ e
+}
 
 // Op configures an Operation instance.
 type Op struct {

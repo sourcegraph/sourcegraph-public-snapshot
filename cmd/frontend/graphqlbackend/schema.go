@@ -47,3 +47,7 @@ var searchContextsSchema string
 // notebooksSchema is the Notebooks raw graqhql schema.
 //go:embed notebooks.graphql
 var notebooksSchema string
+
+// insightsAggregationsSchema is the Code Insights Aggregations raw graqhql schema.
+//go:embed insights_aggregations.graphql
+var insightsAggregationsSchema string

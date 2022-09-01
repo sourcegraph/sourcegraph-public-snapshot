@@ -209,7 +209,7 @@ require github.com/hmarr/codeowners v0.4.0
 require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab
+	github.com/sourcegraph/zoekt v0.0.0-20220831095746-37cdc94f44dc
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

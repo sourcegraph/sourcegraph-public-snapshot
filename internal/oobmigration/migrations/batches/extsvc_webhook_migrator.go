@@ -38,7 +38,7 @@ func (m *externalServiceWebhookMigrator) Interval() time.Duration { return time.
 
 // Progress returns the percentage (ranged [0, 1]) of external services with a
 // populated has_webhooks column.
-func (m *externalServiceWebhookMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *externalServiceWebhookMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorProgressQuery)))
 	return progress, err
 }

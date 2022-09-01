@@ -191,13 +191,11 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	logger := s.Logger.With(log.Object("ExternalService",
-		log.Int64("id", req.ExternalServiceID)),
-	)
+	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
-		sourcerLogger := s.Logger.Scoped("repos.Sourcer", "repositories source")
+		sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
 
 		db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
 		depsSvc := livedependencies.GetService(db)

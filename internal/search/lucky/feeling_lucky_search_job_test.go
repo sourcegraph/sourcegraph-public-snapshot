@@ -83,12 +83,12 @@ func TestGeneratedSearchJob(t *testing.T) {
 		if err == nil {
 			return ""
 		}
-		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Description
+		return err.(*alertobserver.ErrLuckyQueries).ProposedQueries[0].Annotations[search.ResultCount]
 	}
 
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
-	autogold.Want("1 result", autogold.Raw("test (1 result)")).Equal(t, autogold.Raw(test(1)))
-	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Want("1 result", autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
+	autogold.Want("limit results", autogold.Raw("500+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
 func TestNewFeelingLuckySearchJob_ResultCount(t *testing.T) {
