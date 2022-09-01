@@ -48,6 +48,7 @@ func (e ErrRepoSeeOther) Error() string {
 // more idiomatic solution.
 func NewRepos(logger log.Logger, db database.DB) *repos {
 	repoStore := db.Repos()
+	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
 		logger: logger,
 		db:     db,
@@ -224,7 +225,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(s.logger.Scoped("InventoryContext", ""), repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}

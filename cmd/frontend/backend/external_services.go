@@ -130,6 +130,7 @@ type repoupdaterClient interface {
 // timeout as an argument which is recommended to be 5 seconds unless the caller
 // has special requirements for it to be larger or smaller.
 func SyncExternalService(ctx context.Context, logger log.Logger, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) (err error) {
+	logger = logger.Scoped("SyncExternalService", "handles triggering of repo-updater syncing for a particular external service")
 	// Set a timeout to validate external service sync. It usually fails in
 	// under 5s if there is a problem.
 	ctx, cancel := context.WithTimeout(ctx, timeout)

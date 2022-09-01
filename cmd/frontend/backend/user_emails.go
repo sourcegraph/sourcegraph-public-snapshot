@@ -83,6 +83,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused 
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
+	logger = logger.Scoped("UserEmails", "handles user emails")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
 	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
@@ -201,6 +202,7 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
 func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, logger log.Logger, db database.DB, id int32, change string) error {
+	logger = logger.Scoped("UserEmails", "handles user emails")
 	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
 		logger.Warn("Failed to get user email", log.Error(err))

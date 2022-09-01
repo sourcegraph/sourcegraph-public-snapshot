@@ -37,7 +37,7 @@ type SessionIssuerHelper interface {
 }
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
-	logger = logger.Scoped("SessionIssuer.HandlerFunc", "")
+	logger = logger.Scoped("SessionIssuer.HandlerFunc", "validates a token and then sets up a session")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -82,7 +82,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 				return
 			}
 
-			if err := backend.SyncExternalService(ctx, logger.Scoped("SyncExternalService", ""), svc, 5*time.Second, repoupdater.DefaultClient); err != nil {
+			if err := backend.SyncExternalService(ctx, logger, svc, 5*time.Second, repoupdater.DefaultClient); err != nil {
 				logger.Error("OAuth failed: error syncing external service", log.Error(err))
 				http.Error(w, "error syncing code host", http.StatusInternalServerError)
 				return
