@@ -25,7 +25,7 @@ var (
 var pageCommand = &cli.Command{
 	Name:      "page",
 	UsageText: "sg page --opsgenie.token [TOKEN] --message \"something is broken\" --responder.schedule [my-schedule-on-ops-genie]",
-	Usage:     "Utility to page engineers, mostly used within scripts to automate paging alerts.",
+	Usage:     "Utility to page engineers, mostly used within scripts to automate paging alerts",
 	Category:  CategoryUtil,
 	Action:    pageExec,
 	Flags: []cli.Flag{
