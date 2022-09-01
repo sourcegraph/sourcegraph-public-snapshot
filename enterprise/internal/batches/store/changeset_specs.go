@@ -99,9 +99,12 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				}
 			}
 
-			published, err := json.Marshal(c.Published)
-			if err != nil {
-				return err
+			var published []byte
+			if c.Published.Val != nil {
+				published, err = json.Marshal(c.Published)
+				if err != nil {
+					return err
+				}
 			}
 
 			if err := inserter.Insert(
@@ -570,8 +573,10 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 
 	c.Type = btypes.ChangesetSpecType(typ)
 
-	if err := json.Unmarshal(published, &c.Published); err != nil {
-		return err
+	if len(published) != 0 {
+		if err := json.Unmarshal(published, &c.Published); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -1,0 +1,181 @@
+// Utilies classes extracted from bootstrap library.
+:root {
+    --border-width: 1px;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --zindex-sticky: 1020;
+}
+
+@import './utilities/align';
+@import './utilities/border-radius';
+@import './utilities/border';
+@import './utilities/flex';
+@import './utilities/spacing';
+@import './utilities/screenreaders';
+@import './utilities/text';
+
+// Background
+
+@each $color, $value in $theme-colors {
+    .bg-#{$color} {
+        background-color: $value !important;
+    }
+    a.bg-#{$color},
+    button.bg-#{$color} {
+        &:hover,
+        &:focus {
+            background-color: darken($value, 10%) !important;
+        }
+    }
+}
+
+.bg-white {
+    background-color: var(--white) !important;
+}
+
+.bg-transparent {
+    background-color: transparent !important;
+}
+
+// Displays
+$displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex;
+
+@each $breakpoint in map-keys($grid-breakpoints) {
+    @include media-breakpoint-up($breakpoint) {
+        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+        @each $value in $displays {
+            .d#{$infix}-#{$value} {
+                display: $value !important;
+            }
+        }
+    }
+}
+
+// Utilities for toggling `display` in print
+
+@media print {
+    @each $value in $displays {
+        .d-print-#{$value} {
+            display: $value !important;
+        }
+    }
+}
+
+// Float
+
+@each $breakpoint in map-keys($grid-breakpoints) {
+    @include media-breakpoint-up($breakpoint) {
+        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+        .float#{$infix}-left {
+            float: left !important;
+        }
+        .float#{$infix}-right {
+            float: right !important;
+        }
+        .float#{$infix}-none {
+            float: none !important;
+        }
+    }
+}
+
+// Overflow
+$overflows: auto, hidden;
+
+@each $value in $overflows {
+    .overflow-#{$value} {
+        overflow: $value !important;
+    }
+}
+
+// Position
+$positions: static, relative, absolute, fixed, sticky;
+
+@each $position in $positions {
+    .position-#{$position} {
+        position: $position !important;
+    }
+}
+
+.sticky-top {
+    @supports (position: sticky) {
+        position: sticky;
+        top: 0;
+        z-index: var(--zindex-sticky);
+    }
+}
+
+// Shadows
+
+.shadow {
+    box-shadow: var(--box-shadow) !important;
+}
+
+.shadow-none {
+    box-shadow: none !important;
+}
+
+// Sizing
+
+@each $prop, $abbrev in (width: w, height: h) {
+    @each $size, $length in $sizes {
+        .#{$abbrev}-#{$size} {
+            #{$prop}: $length !important;
+        }
+    }
+}
+
+.mw-100 {
+    max-width: 100% !important;
+}
+
+.mh-100 {
+    max-height: 100% !important;
+}
+
+// Viewport additional helpers
+
+.min-vw-100 {
+    min-width: 100vw !important;
+}
+
+.min-vh-100 {
+    min-height: 100vh !important;
+}
+
+.vw-100 {
+    width: 100vw !important;
+}
+
+.vh-100 {
+    height: 100vh !important;
+}
+
+// Stretched link
+
+.stretched-link {
+    &::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        // Just in case `pointer-events: none` is set on a parent
+        pointer-events: auto;
+        content: '';
+        // IE10 bugfix, see https://stackoverflow.com/questions/16947967/ie10-hover-pseudo-class-doesnt-work-without-background-color
+        background-color: rgba(0, 0, 0, 0);
+    }
+}
+
+// Visibility
+
+.visible {
+    visibility: visible !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}

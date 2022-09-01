@@ -1105,23 +1105,29 @@ Prints the Sourcegraph version deployed to the given environment.
 
 Available preset environments:
 
-* cloud
+* s2
+* dotcom
 * k8s
 
 ```sh
 # See which version is deployed on a preset environment
-$ sg live cloud
+$ sg live s2
+$ sg live dotcom
 $ sg live k8s
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com
 
-# List environments:
+# List environments
 $ sg live -help
+
+# Check for commits further back in history
+$ sg live -n 50 s2
 ```
 
 Flags:
 
+* `--commits, -c, -n="<value>"`: Number of commits to check for live version (default: 20)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg ops
@@ -1268,3 +1274,22 @@ Arguments: `[classic]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+
+## sg page
+
+Utility to page engineers, mostly used within scripts to automate paging alerts.
+
+```sh
+$ sg page --opsgenie.token [TOKEN] --message "something is broken" --responder.schedule [my-schedule-on-ops-genie]
+```
+
+Flags:
+
+* `--description="<value>"`: Description for the paging alert
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--message="<value>"`: Message for the paging alert
+* `--opsgenie.token="<value>"`: OpsGenie token
+* `--priority="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
+* `--responder.escalation="<value>"`: Escalation team to alert (at least one responder must be given)
+* `--responder.schedule="<value>"`: Schedule team to alert (at least one responder must be given)
+* `--url="<value>"`: URL field for alert details (optional)

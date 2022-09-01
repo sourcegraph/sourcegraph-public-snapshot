@@ -3,11 +3,14 @@ package init
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
@@ -18,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
@@ -34,6 +38,46 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
+
+	logger := log.Scoped("licensing.int", "initialize licensing enforcement")
+	hooks.GetLicenseInfo = func(isSiteAdmin bool) *hooks.LicenseInfo {
+		if !isSiteAdmin {
+			return nil
+		}
+
+		info, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			logger.Error("Failed to get license info", log.Error(err))
+			return nil
+		}
+
+		// We don't enforce anything in Free instance as of 4.0 launch.
+		if info == nil {
+			return nil
+		}
+
+		licenseInfo := &hooks.LicenseInfo{
+			CurrentPlan: string(info.Plan()),
+		}
+		if info.Plan() == licensing.PlanBusiness0 {
+			const codeScaleLimit = 100 * 1024 * 1024 * 1024
+			licenseInfo.CodeScaleLimit = "100GiB"
+
+			stats, err := usagestats.GetRepositories(ctx, db)
+			if err != nil {
+				logger.Error("Failed to get repository stats", log.Error(err))
+				return nil
+			}
+
+			if stats.GitDirBytes >= codeScaleLimit {
+				licenseInfo.CodeScaleExceededLimit = true
+			} else if stats.GitDirBytes >= codeScaleLimit*0.9 {
+				licenseInfo.CodeScaleCloseToLimit = true
+			}
+		}
+
+		return licenseInfo
+	}
 
 	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
 	// feature, then alternative debug handlers will be invoked.

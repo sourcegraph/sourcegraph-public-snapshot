@@ -146,6 +146,17 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+			return nil, nil // not an error
+		}
+		return nil, err
+	}
+	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
+	return &BigInt{Int: repo.RepoSizeBytes}, err
+}
+
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Repo = &id
