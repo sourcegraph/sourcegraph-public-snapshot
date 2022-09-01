@@ -244,7 +244,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                     {/* Always render base status bar even though it isn't displayed in unified mode
                     in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
                     mode switch, which noticeably decreases status bar performance. */}
-                    {extensionInfo.extensionsController !== null ? (
+                    {extensionInfo.extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <>
                             <StatusBar
                                 getStatusBarItems={getBaseStatusBarItems}

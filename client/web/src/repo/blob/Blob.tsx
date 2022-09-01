@@ -853,7 +853,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     })
                     .toArray()}
             </div>
-            {!props.disableStatusBar && extensionsController !== null && (
+            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
                     extensionsController={extensionsController}

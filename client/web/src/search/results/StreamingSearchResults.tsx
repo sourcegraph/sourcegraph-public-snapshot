@@ -99,7 +99,8 @@ export const StreamingSearchResults: React.FunctionComponent<
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
-    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
+    const extensionHostAPI =
+        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
 
     const options: StreamSearchOptions = useMemo(
