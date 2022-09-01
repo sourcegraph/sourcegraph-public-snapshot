@@ -135,7 +135,9 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 />
 
                 {!!missingCount && (
-                    <Tooltip content={`There are ${missingCount} more groups that were not included in this aggregation.`}>
+                    <Tooltip
+                        content={`There are ${missingCount} more groups that were not included in this aggregation.`}
+                    >
                         <Text size="small" className={styles.missingLabelCount}>
                             +{missingCount}
                         </Text>

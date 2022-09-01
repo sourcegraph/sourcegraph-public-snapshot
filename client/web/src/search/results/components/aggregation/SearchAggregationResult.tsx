@@ -63,7 +63,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 </Button>
             </header>
 
-            <span className='text-muted'>Aggregation is based on results with no count limitation (<Code>count:all</Code>).</span>
+            <span className="text-muted">
+                Aggregation is based on results with no count limitation (<Code>count:all</Code>).
+            </span>
 
             <hr className="mt-2 mb-3" />
 

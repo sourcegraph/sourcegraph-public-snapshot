@@ -162,7 +162,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
         getScaleTicks = getXScaleTicks,
-        hideTicks = false
+        hideTicks = false,
     } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 

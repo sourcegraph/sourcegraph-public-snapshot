@@ -31,10 +31,7 @@ export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
     const { mode, maxXLabelLength, className, ...attributes } = props
 
-    const getTruncatedXLabel = useMemo(
-        () => getTruncationFormatter(mode, maxXLabelLength),
-        [mode, maxXLabelLength]
-    )
+    const getTruncatedXLabel = useMemo(() => getTruncationFormatter(mode, maxXLabelLength), [mode, maxXLabelLength])
 
     return (
         <ParentSize className={className}>
@@ -106,7 +103,10 @@ const getTruncatedTickFromTheEnd = (maxLength: number) => (tick: string): string
  * github.com/sourcegraph/sourcegraph -> ...urcegraph/sourcegraph
  * ```
  */
-const getTruncationFormatter = (aggregationMode: SearchAggregationMode | undefined | null, maxLength: number): ((tick: string) => string) => {
+const getTruncationFormatter = (
+    aggregationMode: SearchAggregationMode | undefined | null,
+    maxLength: number
+): ((tick: string) => string) => {
     switch (aggregationMode) {
         // These types possible have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
