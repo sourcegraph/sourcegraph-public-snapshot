@@ -1273,7 +1273,7 @@ Flags:
 
 ## sg page
 
-Utility to page engineers, mostly used within scripts to automate paging alerts..
+Utility to page engineers, mostly used within scripts to automate paging alerts.
 
 ```sh
 $ sg page --opsgenie.token [TOKEN] --message "something is broken" --responder.schedule [my-schedule-on-ops-genie]
