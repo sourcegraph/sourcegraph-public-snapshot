@@ -1,5 +1,5 @@
-import { combineLatest, ReplaySubject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { combineLatest, ReplaySubject, of } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { asError, LocalStorageSubject } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
@@ -55,6 +55,8 @@ export function createPlatformContext(
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
+
+    const shouldUseInlineExtensionsObservable = shouldUseInlineExtensions(requestGraphQL)
 
     const context: BrowserPlatformContext = {
         /**
@@ -118,19 +120,28 @@ export function createPlatformContext(
         getGraphQLClient: getBrowserGraphQLClient,
         createExtensionHost: () => createExtensionHost({ assetsURL }),
         getScriptURLForExtension: () => {
-            if (isInPage || shouldUseInlineExtensions()) {
-                // inline extensions have fixed scriptURLs
+            if (isInPage) {
                 return undefined
             }
-            // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
-            // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
-            // with a CSP that allowlists https://* in script-src (see
-            // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
-            // add-ons have an even stricter restriction.)
+
             return bundleURLs =>
-                Promise.allSettled(bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))).then(results =>
-                    results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
-                )
+                shouldUseInlineExtensionsObservable.toPromise().then(shouldUseInlineExtensions => {
+                    if (shouldUseInlineExtensions) {
+                        // inline extensions have fixed scriptURLs
+                        return bundleURLs
+                    }
+
+                    // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
+                    // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
+                    // with a CSP that allowlists https://* in script-src (see
+                    // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
+                    // add-ons have an even stricter restriction.)
+                    return Promise.allSettled(
+                        bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))
+                    ).then(results =>
+                        results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
+                    )
+                })
         },
         urlToFile: ({ rawRepoName, ...target }, context) => {
             // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.
@@ -146,13 +157,10 @@ export function createPlatformContext(
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
-        getStaticExtensions: () => {
-            if (shouldUseInlineExtensions()) {
-                return getInlineExtensions()
-            }
-
-            return undefined
-        },
+        getStaticExtensions: () =>
+            shouldUseInlineExtensionsObservable.pipe(
+                switchMap(shouldUseInline => (shouldUseInline ? getInlineExtensions() : of(undefined)))
+            ),
     }
     return context
 }

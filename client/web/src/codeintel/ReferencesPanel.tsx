@@ -18,6 +18,7 @@ import {
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -50,8 +51,9 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
+import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
@@ -207,6 +209,14 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     )
 }
 
+interface BlobMemoryHistoryState {
+    /**
+     * Whether or not to sync this change from the blob history object to the
+     * panel's history object.
+     */
+    syncToPanel?: boolean
+}
+
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
@@ -281,7 +291,7 @@ export const ReferencesList: React.FunctionComponent<
         activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
 
     // When the token for which we display data changed, we want to reset
     // activeLocation.
@@ -298,7 +308,7 @@ export const ReferencesList: React.FunctionComponent<
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            blobMemoryHistory.push(definitions[0].url)
+            blobMemoryHistory.push(definitions[0].url, { syncToPanel: false })
             setActiveLocation(definitions[0])
         }
     }, [blobMemoryHistory, props.jumpToFirst, definitions])
@@ -308,7 +318,7 @@ export const ReferencesList: React.FunctionComponent<
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
-            blobMemoryHistory.push(location.url)
+            blobMemoryHistory.push(location.url, { syncToPanel: false })
         }
         setActiveLocation(location)
     }
@@ -331,7 +341,7 @@ export const ReferencesList: React.FunctionComponent<
         if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
             if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url)
+                blobMemoryHistory.push(url, { syncToPanel: false })
             }
         }
 
@@ -393,7 +403,7 @@ export const ReferencesList: React.FunctionComponent<
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : undefined}
                             svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
-                            size="sm"
+                            size="md"
                             className={styles.filterIcon}
                         />
                     </small>
@@ -459,7 +469,7 @@ export const ReferencesList: React.FunctionComponent<
                                 <Button
                                     aria-label="Close"
                                     onClick={() => setActiveLocation(undefined)}
-                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    className={classNames('p-0', styles.sideBlobCollapseButton)}
                                     size="sm"
                                     data-testid="close-code-view"
                                 >
@@ -487,6 +497,7 @@ export const ReferencesList: React.FunctionComponent<
                         {...props}
                         blobNav={onBlobNav}
                         history={blobMemoryHistory}
+                        panelHistory={panelHistory}
                         location={blobMemoryHistory.location}
                         activeLocation={activeLocation}
                     />
@@ -596,12 +607,39 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelProps & {
             activeLocation: Location
 
-            location: H.Location
-            history: H.History
+            location: H.Location<BlobMemoryHistoryState>
+            history: H.History<BlobMemoryHistoryState>
             blobNav: (url: string) => void
+            panelHistory: H.History
         }
     >
 > = props => {
+    const { history, panelHistory } = props
+    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+
+    // When using CodeMirror we have to forward history entries to the panel's
+    // router. That's because the CodeMirror <-> React integration uses its own
+    // Router and so clicks on <Link />s are not caught by the panel's router
+    // context.
+    useEffect(
+        () =>
+            history.listen((location, method) => {
+                if (useCodeMirror && location.state?.syncToPanel !== false) {
+                    switch (method) {
+                        case 'PUSH':
+                            panelHistory.push(location)
+                            break
+                        case 'REPLACE':
+                            panelHistory.replace(location)
+                            break
+                    }
+                }
+            }),
+        [useCodeMirror, history, panelHistory]
+    )
+
+    const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -610,6 +648,8 @@ const SideBlob: React.FunctionComponent<
             repository: props.activeLocation.repo,
             commit: props.activeLocation.commitID,
             path: props.activeLocation.file,
+            format: highlightFormat,
+            html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -648,29 +688,23 @@ const SideBlob: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const { html, aborted } = data?.repository?.commit?.blob?.highlight
-    if (aborted) {
-        return (
-            <Text alignment="center" className="text-warning">
-                <i>
-                    Highlighting <Code>{props.activeLocation.file}</Code> failed
-                </i>
-            </Text>
-        )
-    }
+    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+
+    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
-        <Blob
+        <BlobComponent
             {...props}
             nav={props.blobNav}
             history={props.history}
             location={props.location}
             disableStatusBar={true}
-            disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
+            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{
-                html,
+                html: html ?? '',
+                lsif: lsif ?? '',
                 content: props.activeLocation.content,
                 filePath: props.activeLocation.file,
                 repoName: props.activeLocation.repo,
@@ -848,7 +882,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     group.path
                                 )}{' '}
                             </Link>
-                            <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
                                 {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>

@@ -43,11 +43,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
 
     return (
         <Tooltip content={label}>
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={createLinkUrl(getURLForMode(location, otherMode))}
-            >
+            <RepoHeaderActionButtonLink file={false} to={createLinkUrl(getURLForMode(location, otherMode))}>
                 <Icon aria-hidden={true} svgPath={mdiEye} />{' '}
                 <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
             </RepoHeaderActionButtonLink>

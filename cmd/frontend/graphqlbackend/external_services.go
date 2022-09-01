@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -99,7 +100,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
 	}
 	if namespaceUserID > 0 {
 		externalService.NamespaceUserID = namespaceUserID
@@ -148,8 +149,12 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
-	oldConfig := es.Config
+
 	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
+	oldConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// 🚨 SECURITY: check access to external service
 	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -175,10 +180,14 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
+	newConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
-	if oldConfig != es.Config {
+	if oldConfig != newConfig {
 		err = backend.SyncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
 		if err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)

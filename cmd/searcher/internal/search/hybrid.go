@@ -8,10 +8,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -339,8 +339,5 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 // logWithTrace is a helper which returns l.WithTrace if there is a
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
-	if tc := trace.Context(ctx); tc != nil {
-		return l.WithTrace(*tc)
-	}
-	return l
+	return l.WithTrace(trace.Context(ctx))
 }

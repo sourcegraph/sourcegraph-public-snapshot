@@ -77,7 +77,7 @@ Sourcegraph gives you code navigation in:
 
 ![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-file.png)
 
-Read the [code navigation documentation](../code_intelligence/index.md) to learn more and to set it up.
+Read the [code navigation documentation](../code_navigation/index.md) to learn more and to set it up.
 
 ---
 

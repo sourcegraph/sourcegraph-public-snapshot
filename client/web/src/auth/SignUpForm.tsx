@@ -264,8 +264,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn-block"
                         variant="primary"
+                        display="block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -277,7 +277,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             <div className="mb-2" key={index}>
                                 <Button
                                     href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn-block"
+                                    display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
                                     as="a"

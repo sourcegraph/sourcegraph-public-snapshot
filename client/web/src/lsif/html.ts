@@ -1,6 +1,6 @@
 import escape from 'escape-html'
 
-import { JsonDocument, Occurrence, SyntaxKind } from './lsif-typed'
+import { DocumentInfo, Occurrence, SyntaxKind } from './lsif-typed'
 
 class HtmlBuilder {
     public readonly buffer: string[] = []
@@ -69,8 +69,8 @@ function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: 
 }
 
 // Currently assumes that no ranges overlap in the occurrences.
-export function render(lsif_json: string, content: string): string {
-    const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences?.map(occ => new Occurrence(occ))
+export function render(info: DocumentInfo): string {
+    const occurrences = Occurrence.fromInfo(info)
     if (!occurrences) {
         return ''
     }
@@ -84,7 +84,7 @@ export function render(lsif_json: string, content: string): string {
         return a.range.start.character - b.range.start.character
     })
 
-    const lines = content.replaceAll('\r\n', '\n').split('\n')
+    const lines = info.content.replaceAll('\r\n', '\n').split('\n')
     const html = new HtmlBuilder()
 
     let occIndex = 0

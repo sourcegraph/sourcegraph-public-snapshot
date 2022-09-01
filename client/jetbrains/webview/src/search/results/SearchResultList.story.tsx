@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { subMonths } from 'date-fns'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { SymbolKind } from '@sourcegraph/search'
@@ -23,6 +24,9 @@ const config: Meta = {
 }
 
 export default config
+
+// Use a consistent diff for date to avoid monthly snapshot failures
+const AUTHOR_DATE = subMonths(new Date(), 7).toISOString()
 
 export const JetBrainsSearchResultListStory: Story = () => {
     const rootElementRef = useRef<HTMLDivElement>(null)
@@ -58,7 +62,7 @@ export const JetBrainsSearchResultListStory: Story = () => {
             oid: 'hunk12ef',
             message: 'Commit message',
             authorName: 'Test User',
-            authorDate: '2022-01-01T00:00:00Z',
+            authorDate: AUTHOR_DATE,
             repoStars: 3,
             content: '',
             // Array of [line, character, length] triplets

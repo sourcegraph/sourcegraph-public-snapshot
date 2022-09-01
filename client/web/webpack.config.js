@@ -42,6 +42,7 @@ const {
   SOURCEGRAPH_API_URL,
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
@@ -148,7 +149,10 @@ const config = {
     getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-      filename: IS_PRODUCTION ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
+      filename:
+        IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
+          ? 'styles/[name].[contenthash].bundle.css'
+          : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
     !WEBPACK_SERVE_INDEX &&
@@ -159,7 +163,7 @@ const config = {
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
-    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(),
+    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
@@ -190,11 +194,12 @@ const config = {
     VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
+        silent: true,
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
         release: `frontend@${VERSION}`,
-        include: path.join(STATIC_ASSETS_PATH, 'scripts'),
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
   ].filter(Boolean),
   resolve: {

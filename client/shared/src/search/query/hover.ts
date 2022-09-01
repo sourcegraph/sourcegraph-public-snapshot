@@ -158,20 +158,18 @@ const toSelectorHover = (token: MetaSelector): string => {
 const toPredicateHover = (token: MetaPredicate): string => {
     const parameters = token.value.parameters.slice(1, -1)
     switch (token.value.path.join('.')) {
-        case 'contains':
-            return '**Built-in predicate**. Search only inside repositories that satisfy the specified `file:` and `content:` filters. `file:` and `content:` filters should be regular expressions.'
         case 'contains.file':
+        case 'has.file':
+            return '**Built-in predicate**. Search only inside repositories that satisfy the specified `path:` and `content:` filters. `path:` and `content:` filters should be regular expressions.'
+        case 'contains.path':
+        case 'has.path':
             return `**Built-in predicate**. Search only inside repositories that contain a **file path** matching the regular expression \`${parameters}\`.`
         case 'contains.content':
+        case 'has.content':
             return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
         case 'contains.commit.after':
+        case 'has.commit.after':
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
-        case 'dependencies':
-        case 'deps':
-            return '**Built-in predicate**. Search only repository dependencies of repositories matching the regular expression'
-        case 'dependents':
-        case 'revdeps':
-            return '**Built-in predicate**. Search only repositories depending on repositories matching the regular expression'
         case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
     }

@@ -20,6 +20,7 @@ var liveCommand = &cli.Command{
 # See which version is deployed on a preset environment
 sg live cloud
 sg live k8s
+sg live s2
 
 # See which version is deployed on a custom environment
 sg live https://demo.sourcegraph.com

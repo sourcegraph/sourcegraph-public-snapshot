@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -78,9 +79,7 @@ type JSContext struct {
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode  bool   `json:"sourcegraphDotComMode"`
-	GitHubAppCloudSlug     string `json:"githubAppCloudSlug"`
-	GitHubAppCloudClientID string `json:"githubAppCloudClientID"`
+	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -116,6 +115,8 @@ type JSContext struct {
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
+
+	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -177,17 +178,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	var githubAppCloudSlug string
-	var githubAppCloudClientID string
-	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
-		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
-		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
+	var licenseInfo *hooks.LicenseInfo
+	if !actor.IsAuthenticated() {
+		licenseInfo = hooks.GetLicenseInfo(false)
+	} else {
+		// Ignore err as we don't care if user does not exist
+		user, _ := actor.User(req.Context(), db.Users())
+		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
-	var enableLegacyExtensions = true
-	if siteConfig.ExperimentalFeatures != nil {
-		enableLegacyExtensions = siteConfig.ExperimentalFeatures.EnableLegacyExtensions
-	}
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -215,9 +214,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode:  envvar.SourcegraphDotComMode(),
-		GitHubAppCloudSlug:     githubAppCloudSlug,
-		GitHubAppCloudClientID: githubAppCloudClientID,
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -252,7 +249,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: enableLegacyExtensions,
+		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+
+		LicenseInfo: licenseInfo,
 	}
 }
 

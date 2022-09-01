@@ -62,7 +62,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "TestService",
-		Config:      string(config),
+		Config:      extsvc.NewUnencryptedConfig(string(config)),
 	}
 	if err := esStore.Upsert(ctx, svc); err != nil {
 		t.Fatal(err)

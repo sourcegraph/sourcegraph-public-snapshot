@@ -1,16 +1,14 @@
 import React from 'react'
 
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
-import { ToggleBlameAction } from './actions/ToggleBlameAction'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
-import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
-import { RepositoryBranchesTab } from './tree/BranchesTab'
 import { RepositoryTagTab } from './tree/TagTab'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
@@ -34,6 +32,11 @@ const RepositoryReleasesArea = lazyComponent(
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
+const RepositoryBranchesTab = lazyComponent(() => import('./tree/BranchesTab'), 'RepositoryBranchesTab')
+const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
+    () => import('../extensions/components/ActionItemsBar'),
+    'ActionItemsBar'
+)
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
@@ -43,13 +46,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
@@ -83,13 +79,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
@@ -167,7 +156,16 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     ].map(routePath => ({
         path: routePath,
         exact: routePath === '',
-        render: (props: RepositoryFileTreePageProps) => <RepositoryFileTreePage {...props} />,
+        render: (props: RepositoryFileTreePageProps) => (
+            <TraceSpanProvider
+                name="RepositoryFileTreePage"
+                attributes={{
+                    objectType: props.match.params.objectType,
+                }}
+            >
+                <RepositoryFileTreePage {...props} />
+            </TraceSpanProvider>
+        ),
     })),
     {
         path: '/-/commits',
@@ -190,13 +188,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}

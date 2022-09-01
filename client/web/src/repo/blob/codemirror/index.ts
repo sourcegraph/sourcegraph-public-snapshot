@@ -1,5 +1,11 @@
-import * as H from 'history'
+import { Facet } from '@codemirror/state'
 
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { BlobProps } from '../Blob'
 
-export const [locationField, updateLocation] = createUpdateableField<H.Location | null>(null)
+/**
+ * This facet is a necessary evil to allow access to props passed to the blob
+ * component from React components rendered by extensions.
+ */
+export const blobPropsFacet = Facet.define<BlobProps, BlobProps>({
+    combine: props => props[0],
+})

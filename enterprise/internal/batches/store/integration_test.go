@@ -23,6 +23,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
+		t.Run("BatchChangesDeletedNamespace", storeTest(db, nil, testBatchChangesDeletedNamespace))
 		t.Run("Changesets", storeTest(db, nil, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, nil, testStoreChangesetEvents))
 		t.Run("ChangesetScheduling", storeTest(db, nil, testStoreChangesetScheduling))

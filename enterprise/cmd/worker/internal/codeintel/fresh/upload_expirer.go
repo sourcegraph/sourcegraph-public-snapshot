@@ -3,8 +3,8 @@ package codeintel
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -41,7 +41,7 @@ func (j *uploadExpirerJob) Config() []env.Config {
 func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "codeintel job routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	metrics := expiration.NewMetrics(observationContext)
@@ -65,9 +65,10 @@ func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]g
 
 	db := database.NewDBWith(logger, dbStore)
 	uploadSvc := uploads.GetService(db, database.NewDBWith(logger, lsifStore), gitserverClient)
-	policySvc := policies.GetService(db)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 
 	return []goroutine.BackgroundRoutine{
 		expiration.NewExpirer(uploadSvc, policySvc, policyMatcher, metrics),
+		expiration.NewReferenceCountUpdater(uploadSvc),
 	}, nil
 }

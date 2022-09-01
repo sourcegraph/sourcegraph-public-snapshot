@@ -146,6 +146,17 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+			return nil, nil // not an error
+		}
+		return nil, err
+	}
+	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
+	return &BigInt{Int: repo.RepoSizeBytes}, err
+}
+
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Repo = &id
@@ -310,6 +321,19 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 	return int32(repo.Stars), nil
+}
+
+func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	kvps := make([]KeyValuePair, 0, len(repo.KeyValuePairs))
+	for k, v := range repo.KeyValuePairs {
+		kvps = append(kvps, KeyValuePair{key: k, value: v})
+	}
+	return kvps, nil
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
@@ -534,7 +558,7 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
 				return nil, errors.Wrap(err, "parse config")
 			}
@@ -566,4 +590,68 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
+}
+
+type KeyValuePair struct {
+	key   string
+	value *string
+}
+
+func (k KeyValuePair) Key() string {
+	return k.key
+}
+
+func (k KeyValuePair) Value() *string {
+	return k.value
+}
+
+func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+}
+
+func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	return &EmptyResponse{}, err
+}
+
+func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }

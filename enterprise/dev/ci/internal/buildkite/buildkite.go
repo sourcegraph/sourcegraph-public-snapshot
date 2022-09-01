@@ -421,14 +421,19 @@ func Skip(reason string) StepOpt {
 }
 
 type softFailExitStatus struct {
-	ExitStatus int `json:"exit_status"`
+	// ExitStatus must be an int or *
+	ExitStatus any `json:"exit_status"`
 }
 
-// SoftFail indicates the specified exit codes should trigger a soft fail.
-// https://buildkite.com/docs/pipelines/command-step#command-step-attributes
+// SoftFail indicates the specified exit codes should trigger a soft fail. If
+// called without arguments, it assumes that the caller want to accept any exit
+// code as a softfailure.
+//
 // This function also adds a specific env var named SOFT_FAIL_EXIT_CODES, enabling
 // to get exit codes from the scripts until https://github.com/sourcegraph/sourcegraph/issues/27264
 // is fixed.
+//
+// See: https://buildkite.com/docs/pipelines/command-step#command-step-attributes
 func SoftFail(exitCodes ...int) StepOpt {
 	return func(step *Step) {
 		var codes []string
@@ -438,6 +443,13 @@ func SoftFail(exitCodes ...int) StepOpt {
 				ExitStatus: code,
 			})
 		}
+		if len(codes) == 0 {
+			// if we weren't given any soft fail code, it means we want to accept all of them, i.e '*'
+			// https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes
+			codes = append(codes, "*")
+			step.SoftFail = append(step.SoftFail, softFailExitStatus{ExitStatus: "*"})
+		}
+
 		// https://github.com/sourcegraph/sourcegraph/issues/27264
 		step.Env["SOFT_FAIL_EXIT_CODES"] = strings.Join(codes, " ")
 	}

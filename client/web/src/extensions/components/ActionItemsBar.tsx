@@ -5,7 +5,7 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
@@ -184,6 +184,7 @@ const actionItemClassName = classNames(
  * TODO: description
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
+    const { extensionsController } = props
     const { isOpen, barReference } = props.useActionItemsBar()
 
     const {
@@ -195,7 +196,11 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
     } = useCarousel({ direction: 'topToBottom' })
 
     const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
+            [extensionsController]
+        )
     )
 
     if (!isOpen) {
@@ -218,56 +223,60 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
-                <ActionsContainer
-                    menu={ContributableMenu.EditorTitle}
-                    returnInactiveMenuItems={true}
-                    extensionsController={props.extensionsController}
-                    empty={null}
-                    location={props.location}
-                    platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
-                >
-                    {items => (
-                        <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
-                            {items.map((item, index) => {
-                                const hasIconURL = !!item.action.actionItem?.iconURL
-                                const className = classNames(
-                                    actionItemClassName,
-                                    !hasIconURL && classNames(styles.actionNoIcon, getIconClassName(index), 'text-sm')
-                                )
-                                const inactiveClassName = classNames(
-                                    styles.actionInactive,
-                                    !hasIconURL && styles.actionNoIconInactive
-                                )
-                                const listItemClassName = classNames(
-                                    styles.listItem,
-                                    index !== items.length - 1 && 'mb-1'
-                                )
+                {extensionsController !== null ? (
+                    <ActionsContainer
+                        menu={ContributableMenu.EditorTitle}
+                        returnInactiveMenuItems={true}
+                        extensionsController={extensionsController}
+                        empty={null}
+                        location={props.location}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                    >
+                        {items => (
+                            <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
+                                {items.map((item, index) => {
+                                    const hasIconURL = !!item.action.actionItem?.iconURL
+                                    const className = classNames(
+                                        actionItemClassName,
+                                        !hasIconURL &&
+                                            classNames(styles.actionNoIcon, getIconClassName(index), 'text-sm')
+                                    )
+                                    const inactiveClassName = classNames(
+                                        styles.actionInactive,
+                                        !hasIconURL && styles.actionNoIconInactive
+                                    )
+                                    const listItemClassName = classNames(
+                                        styles.listItem,
+                                        index !== items.length - 1 && 'mb-1'
+                                    )
 
-                                const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
+                                    const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
 
-                                return (
-                                    <li key={item.action.id} className={listItemClassName}>
-                                        <ActionItem
-                                            {...props}
-                                            {...item}
-                                            className={className}
-                                            dataContent={dataContent}
-                                            variant="actionItem"
-                                            iconClassName={styles.icon}
-                                            pressedClassName={styles.actionPressed}
-                                            inactiveClassName={inactiveClassName}
-                                            hideLabel={true}
-                                            tabIndex={-1}
-                                            hideExternalLinkIcon={true}
-                                            disabledDuringExecution={true}
-                                        />
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    )}
-                </ActionsContainer>
+                                    return (
+                                        <li key={item.action.id} className={listItemClassName}>
+                                            <ActionItem
+                                                {...props}
+                                                {...item}
+                                                extensionsController={extensionsController}
+                                                className={className}
+                                                dataContent={dataContent}
+                                                variant="actionItem"
+                                                iconClassName={styles.icon}
+                                                pressedClassName={styles.actionPressed}
+                                                inactiveClassName={inactiveClassName}
+                                                hideLabel={true}
+                                                tabIndex={-1}
+                                                hideExternalLinkIcon={true}
+                                                disabledDuringExecution={true}
+                                            />
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </ActionsContainer>
+                ) : null}
                 {canScrollPositive && (
                     <Button
                         className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
@@ -281,17 +290,19 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <div className="list-unstyled m-0">
-                    <div className={styles.listItem}>
-                        <Tooltip content="Add extensions">
-                            <Link
-                                to="/extensions"
-                                className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
-                                aria-label="Add"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} />
-                            </Link>
-                        </Tooltip>
-                    </div>
+                    {extensionsController !== null ? (
+                        <div className={styles.listItem}>
+                            <Tooltip content="Add extensions">
+                                <Link
+                                    to="/extensions"
+                                    className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
+                                    aria-label="Add"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                </Link>
+                            </Tooltip>
+                        </div>
+                    ) : null}
                 </div>
             </ErrorBoundary>
         </div>
@@ -313,10 +324,16 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
     extensionsController,
     className,
 }) => {
+    const panelName = extensionsController !== null ? 'extensions' : 'actions'
+
     const { isOpen, toggle, toggleReference, barInPage } = useActionItemsToggle()
 
     const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
+            [extensionsController]
+        )
     )
 
     return barInPage ? (
@@ -324,7 +341,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
-                    <Tooltip content={`${isOpen ? 'Close' : 'Open'} extensions panel`}>
+                    <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
                         {/**
                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
                          * break its onClick handler and it will no longer prevent the default page reload (with no href).
@@ -333,8 +350,8 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                             <ButtonLink
                                 aria-label={
                                     isOpen
-                                        ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
-                                        : 'Open extensions panel'
+                                        ? `Close ${panelName} panel. Press the down arrow key to enter the ${panelName} panel.`
+                                        : `Open ${panelName} panel`
                                 }
                                 className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                                 onSelect={toggle}

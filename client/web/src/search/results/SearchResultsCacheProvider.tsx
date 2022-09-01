@@ -13,6 +13,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
+import { useExperimentalFeatures } from '../../stores'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined
@@ -37,17 +38,25 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
+    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+        features => features.enableGoImportsSearchQueryTransform
+    )
 
     const history = useHistory()
 
-    const transformedQuery = useMemo(() => transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI }), [
-        query,
-        extensionHostAPI,
-    ])
+    const transformedQuery = useMemo(
+        () =>
+            transformSearchQuery({
+                query,
+                extensionHostAPIPromise: extensionHostAPI,
+                enableGoImportsSearchQueryTransform,
+            }),
+        [query, extensionHostAPI, enableGoImportsSearchQueryTransform]
+    )
 
     const results = useObservable(
         useMemo(() => {

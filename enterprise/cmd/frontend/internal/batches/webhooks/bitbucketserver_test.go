@@ -60,14 +60,14 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
-			Config: bt.MarshalJSON(t, &schema.BitbucketServerConnection{
+			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
 				Token: bitbucketServerToken,
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
 				},
-			}),
+			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
@@ -75,7 +75,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		bitbucketSource, err := repos.NewBitbucketServerSource(logtest.Scoped(t), extSvc, cf)
+		bitbucketSource, err := repos.NewBitbucketServerSource(ctx, logtest.Scoped(t), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}

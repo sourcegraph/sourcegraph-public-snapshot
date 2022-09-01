@@ -22,7 +22,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { useExperimentalFeatures } from '../stores'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -42,12 +42,11 @@ interface SearchConsolePageProps
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
-    const {
-        globbing,
-        streamSearch,
-        extensionsController: { extHostAPI: extensionHostAPI },
-        isSourcegraphDotCom,
-    } = props
+    const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
+    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
+    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+        features => features.enableGoImportsSearchQueryTransform
+    )
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -63,12 +62,15 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     }, [props.history, searchQuery])
 
     const transformedQuery = useMemo(() => {
-        const query = parseSearchURLQuery(props.location.search)
+        let query = parseSearchURLQuery(props.location.search)
+        query = query?.replace(/\/\/.*/g, '') || ''
+
         return transformSearchQuery({
-            query: query?.replace(/\/\/.*/g, '') || '',
+            query,
             extensionHostAPIPromise: extensionHostAPI,
+            enableGoImportsSearchQueryTransform,
         })
-    }, [props.location.search, extensionHostAPI])
+    }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 
     const autocompletion = useMemo(
         () =>
@@ -133,7 +135,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 results={results}
                                 showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 executedQuery={props.location.search}
                             />
                         ))}

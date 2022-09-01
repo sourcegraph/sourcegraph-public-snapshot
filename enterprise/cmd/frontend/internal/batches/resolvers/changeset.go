@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -286,17 +285,17 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if spec.Spec.IsImportingExisting() {
+	if spec.Type == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 
-	return spec.Spec, nil
+	return spec, nil
 }
 
 func (r *changesetResolver) PublicationState() string {
@@ -461,17 +460,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			return nil, err
 		}
 
-		diff, err := desc.Diff()
-		if err != nil {
-			return nil, errors.New("ChangesetSpec has no diff")
-		}
-
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
 			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
-			diff,
+			string(desc.Diff),
 		)
 	}
 

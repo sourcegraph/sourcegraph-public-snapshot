@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -124,28 +123,31 @@ func ExternalServiceKindSupported(kind string) error {
 // result instead of using the entire repoupdater client implementation, we use a thinner API which
 // only needs the SyncExternalService method to be defined on the object.
 type repoupdaterClient interface {
-	SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error)
+	SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
 }
 
 // SyncExternalService will eagerly trigger a repo-updater sync. It accepts a
 // timeout as an argument which is recommended to be 5 seconds unless the caller
 // has special requirements for it to be larger or smaller.
-func SyncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) error {
+func SyncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) (err error) {
 	// Set a timeout to validate external service sync. It usually fails in
 	// under 5s if there is a problem.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, err := client.SyncExternalService(ctx, svc.ToAPIService())
+	defer func() {
+		// err is either nil or contains an actual error from the API call. And we return it
+		// nonetheless.
+		err = errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", svc.Kind, svc.ID)
 
-	// If context error is anything but a deadline exceeded error, we do not want to propagate
-	// it. But we definitely want to log the error as a warning.
-	if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
-		log15.Warn("SyncExternalService: context error discarded", "err", ctx.Err())
-		return nil
-	}
+		// If context error is anything but a deadline exceeded error, we do not want to propagate
+		// it. But we definitely want to log the error as a warning.
+		if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
+			log15.Warn("SyncExternalService: context error discarded", "err", ctx.Err())
+			err = nil
+		}
+	}()
 
-	// err is either nil or contains an actual error from the API call. And we return it
-	// nonetheless.
-	return errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", svc.Kind, svc.ID)
+	_, err = client.SyncExternalService(ctx, svc.ID)
+	return err
 }

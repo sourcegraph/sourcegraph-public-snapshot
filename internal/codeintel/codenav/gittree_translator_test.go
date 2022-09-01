@@ -11,12 +11,14 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var client = gitserver.NewClient(database.NewMockDB())
+var client = codeintelgitserver.New(database.NewMockDB(), NewMockDBStore(), &observation.TestContext)
 
 func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 	args := &requestArgs{

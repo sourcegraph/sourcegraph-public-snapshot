@@ -15,7 +15,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 

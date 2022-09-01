@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,29 +10,42 @@ import { formatNumber } from '../utils'
 import styles from './index.module.scss'
 
 interface ValueLegendItemProps {
-    color: string
+    color?: string
     description: string
-    value: number
+    value: number | string
     tooltip?: string
+    className?: string
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description, tooltip }) => (
-    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
-        <span style={{ color }} className={styles.count}>
-            {formatNumber(value)}
-        </span>
-        <Tooltip content={tooltip}>
-            <Text
-                as="span"
-                alignment="center"
-                className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
-            >
-                {description}
-                {tooltip && <span className={styles.linkColor}>*</span>}
-            </Text>
-        </Tooltip>
-    </div>
-)
+export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
+    value,
+    color = 'var(--body-color)',
+    description,
+    tooltip,
+    className,
+}) => {
+    const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
+    const unformattedNumber = `${value}`
+    return (
+        <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
+            <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
+                <span style={{ color }} className={styles.count}>
+                    {formattedNumber}
+                </span>
+            </Tooltip>
+            <Tooltip content={tooltip}>
+                <Text
+                    as="span"
+                    alignment="center"
+                    className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                >
+                    {description}
+                    {tooltip && <span className={styles.linkColor}>*</span>}
+                </Text>
+            </Tooltip>
+        </div>
+    )
+}
 
 export interface ValueLegendListProps {
     className?: string

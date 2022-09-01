@@ -921,7 +921,7 @@ export async function handleCodeHost({
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount && !minimalUI) {
+    if (codeHost.getCommandPaletteMount && !minimalUI && extensionsController !== null) {
         subscriptions.add(
             addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
                 renderCommandPalette({
@@ -940,7 +940,7 @@ export async function handleCodeHost({
     // Render extension debug menu
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    if (showGlobalDebug) {
+    if (showGlobalDebug && extensionsController !== null) {
         const mount = createGlobalDebugMount()
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
@@ -1573,7 +1573,9 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    subscriptions.add(extensionsController)
+    if (extensionsController !== null) {
+        subscriptions.add(extensionsController)
+    }
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1622,7 +1624,7 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else {
+            } else if (extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

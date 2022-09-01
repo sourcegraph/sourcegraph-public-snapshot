@@ -3,24 +3,17 @@
 package ci
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
-	"github.com/slack-go/slack"
-
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -64,7 +57,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(runtype.ReleaseBranch) {
+	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
@@ -83,10 +76,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.42.0"
+	const minimumUpgradeableVersion = "3.43.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
+
+	if op, err := exposeBuildMetadata(c); err == nil {
+		ops.Merge(operations.NewNamedSet("Metadata", op))
+	}
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -176,7 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests)
+			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+			// addVsceIntegrationTests,
+		)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -223,10 +222,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.ExecutorPatchNoTest:
 		ops = operations.NewSet(
-			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
+			buildExecutor(c, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c),
+			publishExecutorDockerMirror(c),
 		)
 
 	default:
@@ -245,11 +244,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch) {
-			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease)
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(imageBuildOps)
@@ -290,10 +289,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch) {
-			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c.Version))
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+			publishOps.Append(publishExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(publishOps)
@@ -306,8 +305,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
+		Env: env,
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,
@@ -325,28 +323,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Validate generated pipeline have unique keys
 	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
-	}
-
-	// Add a notify block
-	if c.RunType.Is(runtype.MainBranch) {
-		ctx := context.Background()
-
-		// Slack client for retriving Slack profile data, not for making the request - for
-		// more details, see the config.Notify docstring.
-		slc := slack.New(c.Notify.SlackToken)
-
-		// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
-		// is a public repository.
-		ghc := github.NewClient(http.DefaultClient)
-
-		// Get teammate based on GitHub author of commit
-		teammates := team.NewTeammateResolver(ghc, slc)
-		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
-		if err != nil {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", errors.Newf("failed to get Slack user: %w", err))
-		} else {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
-		}
 	}
 
 	return pipeline, nil

@@ -33,9 +33,13 @@ type PhabricatorSource struct {
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.PhabricatorConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 	return &PhabricatorSource{logger: logger, svc: svc, conn: &c, cf: cf}, nil
@@ -182,7 +186,9 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger, s Store) {
-	cf := httpcli.ExternalClientFactory
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(logger),
+	)
 
 	for {
 		phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
@@ -193,7 +199,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, log
 		}
 
 		for _, phab := range phabs {
-			src, err := NewPhabricatorSource(logger, phab, cf)
+			src, err := NewPhabricatorSource(ctx, logger, phab, cf)
 			if err != nil {
 				logger.Error("failed to instantiate PhabricatorSource", log.Error(err))
 				continue
@@ -211,7 +217,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, log
 				continue
 			}
 
-			cfg, err := phab.Configuration()
+			cfg, err := phab.Configuration(ctx)
 			if err != nil {
 				logger.Error("failed to parse Phabricator config", log.Error(err))
 				continue

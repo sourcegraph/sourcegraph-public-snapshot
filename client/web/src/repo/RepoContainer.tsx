@@ -58,7 +58,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
-import { BlameContextProvider } from './blame/useBlameVisibility'
+import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -124,6 +124,7 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -274,6 +275,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         }, [repoOrError, resolvedRevisionOrError, coreWorkflowImprovementsEnabled, props.telemetryService])
     )
 
+    const { extensionsController } = props
+
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
         const workspaceRootUri =
@@ -284,8 +287,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 revision: resolvedRevisionOrError.commitID,
             })
 
-        if (workspaceRootUri) {
-            props.extensionsController.extHostAPI
+        if (workspaceRootUri && extensionsController !== null) {
+            extensionsController.extHostAPI
                 .then(extensionHostAPI =>
                     extensionHostAPI.addWorkspaceRoot({
                         uri: workspaceRootUri,
@@ -299,15 +302,15 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
         // Clear the Sourcegraph extensions model's roots when navigating away.
         return () => {
-            if (workspaceRootUri) {
-                props.extensionsController.extHostAPI
+            if (workspaceRootUri && extensionsController !== null) {
+                extensionsController.extHostAPI
                     .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
                     .catch(error => {
                         console.error('Error removing workspace root', error)
                     })
             }
         }
-    }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
+    }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
@@ -367,120 +370,119 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
-            <BlameContextProvider>
-                <RepoHeader
-                    actionButtons={props.repoHeaderActionButtons}
-                    useActionItemsToggle={useActionItemsToggle}
-                    breadcrumbs={props.breadcrumbs}
-                    revision={revision}
-                    repo={repoOrError}
-                    resolvedRev={resolvedRevisionOrError}
-                    onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                    location={props.location}
-                    history={props.history}
-                    settingsCascade={props.settingsCascade}
-                    authenticatedUser={props.authenticatedUser}
-                    platformContext={props.platformContext}
-                    extensionsController={props.extensionsController}
-                    telemetryService={props.telemetryService}
-                />
+            <RepoHeader
+                actionButtons={props.repoHeaderActionButtons}
+                useActionItemsToggle={useActionItemsToggle}
+                breadcrumbs={props.breadcrumbs}
+                revision={revision}
+                repo={repoOrError}
+                resolvedRev={resolvedRevisionOrError}
+                onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                location={props.location}
+                history={props.history}
+                settingsCascade={props.settingsCascade}
+                authenticatedUser={props.authenticatedUser}
+                platformContext={props.platformContext}
+                extensionsController={extensionsController}
+                telemetryService={props.telemetryService}
+            />
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={2}
+                id="go-to-code-host"
+                {...repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <GoToCodeHostAction
+                        key="go-to-code-host"
+                        repo={repoOrError}
+                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                        filePath={filePath}
+                        commitRange={commitRange}
+                        position={position}
+                        range={range}
+                        externalLinks={externalLinks}
+                        fetchFileExternalLinks={fetchFileExternalLinks}
+                        actionType={actionType}
+                        repoName={repoName}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
+
+            {isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={2}
-                    id="go-to-code-host"
+                    priority={110}
+                    id="code-intelligence-status"
                     {...repoHeaderContributionsLifecycleProps}
                 >
-                    {({ actionType }) => (
-                        <GoToCodeHostAction
-                            key="go-to-code-host"
-                            repo={repoOrError}
-                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                            revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
-                            filePath={filePath}
-                            commitRange={commitRange}
-                            position={position}
-                            range={range}
-                            externalLinks={externalLinks}
-                            fetchFileExternalLinks={fetchFileExternalLinks}
-                            actionType={actionType}
-                            repoName={repoName}
-                        />
-                    )}
-                </RepoHeaderContributionPortal>
-
-                {isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={110}
-                        id="code-intelligence-status"
-                        {...repoHeaderContributionsLifecycleProps}
-                    >
-                        {({ actionType }) =>
-                            props.codeIntelligenceBadgeMenu && actionType === 'nav' ? (
-                                <props.codeIntelligenceBadgeMenu
-                                    key="code-intelligence-status"
-                                    repoName={repoName}
-                                    revision={rawRevision || 'HEAD'}
-                                    filePath={filePath || ''}
-                                    settingsCascade={props.settingsCascade}
-                                />
-                            ) : (
-                                <></>
-                            )
-                        }
-                    </RepoHeaderContributionPortal>
-                )}
-
-                <ErrorBoundary location={props.location}>
-                    <Switch>
-                        {[
-                            '',
-                            ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
-                            '/-/blob',
-                            '/-/tree',
-                            '/-/commits',
-                            '/-/docs',
-                            '/-/branch',
-                            '/-/contributors',
-                            '/-/compare',
-                            '/-/tag',
-                            '/-/home',
-                        ].map(routePath => (
-                            <Route
-                                path={`${repoMatchURL}${routePath}`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={routePath === ''}
-                                render={routeComponentProps => (
-                                    <RepoRevisionContainer
-                                        {...routeComponentProps}
-                                        {...context}
-                                        {...childBreadcrumbSetters}
-                                        routes={props.repoRevisionContainerRoutes}
-                                        revision={revision || ''}
-                                        resolvedRevisionOrError={resolvedRevisionOrError}
-                                        // must exactly match how the revision was encoded in the URL
-                                        routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                        useActionItemsBar={useActionItemsBar}
-                                    />
-                                )}
+                    {({ actionType }) =>
+                        props.codeIntelligenceBadgeMenu && actionType === 'nav' ? (
+                            <props.codeIntelligenceBadgeMenu
+                                key="code-intelligence-status"
+                                repoName={repoName}
+                                revision={rawRevision || 'HEAD'}
+                                filePath={filePath || ''}
+                                settingsCascade={props.settingsCascade}
                             />
-                        ))}
-                        {props.repoContainerRoutes.map(
-                            ({ path, render, exact, condition = () => true }) =>
-                                condition(context) && (
-                                    <Route
-                                        path={context.routePrefix + path}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={exact}
-                                        // RouteProps.render is an exception
-                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                    />
-                                )
-                        )}
-                        <Route key="hardcoded-key" component={RepoPageNotFound} />
-                    </Switch>
-                </ErrorBoundary>
-            </BlameContextProvider>
+                        ) : (
+                            <></>
+                        )
+                    }
+                </RepoHeaderContributionPortal>
+            )}
+
+            <ErrorBoundary location={props.location}>
+                <Switch>
+                    {[
+                        '',
+                        ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
+                        '/-/blob',
+                        '/-/tree',
+                        '/-/commits',
+                        '/-/docs',
+                        '/-/branch',
+                        '/-/contributors',
+                        '/-/compare',
+                        '/-/tag',
+                        '/-/home',
+                    ].map(routePath => (
+                        <Route
+                            path={`${repoMatchURL}${routePath}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={routePath === ''}
+                            render={routeComponentProps => (
+                                <RepoRevisionContainer
+                                    {...routeComponentProps}
+                                    {...context}
+                                    {...childBreadcrumbSetters}
+                                    routes={props.repoRevisionContainerRoutes}
+                                    revision={revision || ''}
+                                    resolvedRevisionOrError={resolvedRevisionOrError}
+                                    // must exactly match how the revision was encoded in the URL
+                                    routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                    useActionItemsBar={useActionItemsBar}
+                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                                />
+                            )}
+                        />
+                    ))}
+                    {props.repoContainerRoutes.map(
+                        ({ path, render, exact, condition = () => true }) =>
+                            condition(context) && (
+                                <Route
+                                    path={context.routePrefix + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                    // RouteProps.render is an exception
+                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                />
+                            )
+                    )}
+                    <Route key="hardcoded-key" component={RepoPageNotFound} />
+                </Switch>
+            </ErrorBoundary>
         </div>
     )
 }
