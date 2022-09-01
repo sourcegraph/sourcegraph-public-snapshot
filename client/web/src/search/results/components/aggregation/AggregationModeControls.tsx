@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
-import { SearchAggregationModeAvailability } from '../../graphql-operations'
+import { SearchAggregationModeAvailability } from '../../../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 
