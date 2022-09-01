@@ -6,13 +6,13 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import {
+    AggregationChartCard,
     AggregationModeControls,
     AggregationUIMode,
     useAggregationSearchMode,
     useAggregationUIMode,
-    AggregationChartCard,
     useSearchAggregationData,
-} from '../aggregation'
+} from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'
 
@@ -27,6 +27,9 @@ interface SearchAggregationsProps {
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
+    /** Whether to proactively load and display search aggregations */
+    proactive: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected
@@ -36,11 +39,17 @@ interface SearchAggregationsProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { query, patternType, onQuerySubmit } = props
+    const { query, patternType, proactive, onQuerySubmit } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
-    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 10 })
+    const { data, error, loading } = useSearchAggregationData({
+        query,
+        patternType,
+        aggregationMode,
+        limit: 10,
+        proactive,
+    })
 
     return (
         <article className="pt-2">
@@ -49,32 +58,34 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                 mode={aggregationMode}
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 size="sm"
-                className="mb-3"
                 onModeChange={setAggregationMode}
             />
 
-            <AggregationChartCard
-                aria-label="Sidebar search aggregation chart"
-                data={data?.searchQueryAggregate?.aggregations}
-                loading={loading}
-                error={error}
-                mode={aggregationMode}
-                className={styles.chartContainer}
-                onBarLinkClick={onQuerySubmit}
-            />
-
-            <footer className={styles.actions}>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    outline={true}
-                    className={styles.detailsAction}
-                    data-testid="expand-aggregation-ui"
-                    onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
-                </Button>
-            </footer>
+            {(proactive || aggregationMode !== null) && (
+                <>
+                    <AggregationChartCard
+                        aria-label="Sidebar search aggregation chart"
+                        data={data?.searchQueryAggregate?.aggregations}
+                        loading={loading}
+                        error={error}
+                        mode={aggregationMode}
+                        className={styles.chartContainer}
+                        onBarLinkClick={onQuerySubmit}
+                    />
+                    <footer className={styles.actions}>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            outline={true}
+                            className={styles.detailsAction}
+                            data-testid="expand-aggregation-ui"
+                            onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
+                        </Button>
+                    </footer>
+                </>
+            )}
         </article>
     )
 }

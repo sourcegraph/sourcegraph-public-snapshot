@@ -42,6 +42,7 @@ const {
   SOURCEGRAPH_API_URL,
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
@@ -162,7 +163,7 @@ const config = {
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
-    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(),
+    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
