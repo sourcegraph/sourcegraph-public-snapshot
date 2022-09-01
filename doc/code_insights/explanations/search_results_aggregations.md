@@ -9,24 +9,21 @@ You can aggregate any search by:
 1. The repositories with search results
 1. The files with search results (for non-commit and non-diff searches)
 1. The authors who created the search results (for commit and diff searches)
-1. The dates at which results were created (for commit and diff searches)
-1. All found matches for the first capture group pattern 
+1. All found matches for the first capture group pattern (for regexp searches with a capture group)
 
 Aggregations are returned in order of greatest to least results count. 
 
 Aggregations are exhaustive across all repositories the user running the search has access to, unless the chart notes otherwise (see [Limitations](#limitations) below). 
 
-We may continue adding new aggregation categories, like code host, based on feedback. If there are categories you'd like to see, please [let us know](mailto:feedback@sourcegraph.com).
+We may continue adding new aggregation categories, like date and code host, based on feedback. If there are categories you'd like to see, please [let us know](mailto:feedback@sourcegraph.com).
 
 ## Feature visibility
 
-You can turn the aggregations off with the flag: 
+You can turn the aggregations on with the feature flag: `search-aggregation-filters`
 
-TODO
+You can turn off just the proactive aggregations with the feature flag: `disable-proactive-insight-aggregation`
 
-You can turn just the proactive aggregations off with the flag: 
-
-TODO
+You can read more about creating feature flags [here](/dev/how-to/use_feature_flags#create-a-feature-flag).
 
 ## Limitations
 
@@ -46,6 +43,6 @@ TODO
 
 Saving aggregations to a dashboard of code insights is not yet available. 
 
-### Other? (author/date limitations perhaps for only certain search types)
+### Other (limitations perhaps for only certain search types)
 
 TODO
