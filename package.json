@@ -152,7 +152,7 @@
     "@storybook/theming": "^6.5.9",
     "@terminus-term/to-string-loader": "^1.1.7-beta.1",
     "@testing-library/dom": "^8.13.0",
-    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.1.1",
     "@testing-library/react-hooks": "^8.0.0",
     "@testing-library/user-event": "^13.5.0",
