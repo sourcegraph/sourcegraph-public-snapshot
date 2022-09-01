@@ -77,7 +77,7 @@ Saving aggregations to a dashboard of code insights is not yet available.
 ### Slow diff and commit queries
 
 Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete 
-within a 2-second timeout. You can trigger an explicit search with no timeout, or you can refine your query using a 
+within a 2-second timeout. You can trigger an explicit search with an extended 1-minute timeout, or you can refine your query using a 
 single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order to bypass this.
 
 ### Structural searches
