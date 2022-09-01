@@ -14,6 +14,7 @@ import {
     Link,
     Alert,
     Icon,
+    H4,
     Text,
     Tooltip,
     Container,
@@ -141,7 +142,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     telemetryService,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('SiteAdminRepos')
+        telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
@@ -219,6 +220,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
+    const licenseInfo = window.context.licenseInfo
+
     return (
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
@@ -245,6 +248,21 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 }
                 className="mb-3"
             />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GiB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}

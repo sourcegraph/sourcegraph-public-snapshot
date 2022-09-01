@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -114,6 +115,8 @@ type JSContext struct {
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
+
+	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -173,6 +176,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	var openTelemetry *schema.OpenTelemetry
 	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
 		openTelemetry = clientObservability.OpenTelemetry
+	}
+
+	var licenseInfo *hooks.LicenseInfo
+	if !actor.IsAuthenticated() {
+		licenseInfo = hooks.GetLicenseInfo(false)
+	} else {
+		// Ignore err as we don't care if user does not exist
+		user, _ := actor.User(req.Context(), db.Users())
+		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -238,6 +250,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
 		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+
+		LicenseInfo: licenseInfo,
 	}
 }
 
