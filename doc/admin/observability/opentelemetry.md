@@ -48,6 +48,31 @@ service:
         - logging # The exporter name must be added here to enable it
 ```
 
+### Sampling
+
+To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image. 
+
+If enabled, this sampling mechanism will be applied to all traces, regardless if a request was explictly marked as to be traced. 
+
+Refer to the next snippet for an example on how to update the configuration to enable sampling.
+
+```yaml
+exporters:
+  # ...
+
+processors:
+  probabilistic_sampler:
+    hash_seed: 22 # An integer used to compute the hash algorithm. Note that all collectors for a given tier (e.g. behind the same load balancer) should have the same hash_seed.
+    sampling_percentage: 10.0 # (default = 0): Percentage at which traces are sampled; >= 100 samples all traces
+
+service:
+  pipelines:
+    # ...
+    traces:
+      #...
+      processors: [probabilistic_sampler] # Plug the probabilistic sampler to the traces. 
+```
+
 #### Configure exporting to logging
 
 Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
