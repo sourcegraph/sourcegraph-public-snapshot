@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
@@ -11,7 +11,17 @@ import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegr
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, H2, Text } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Badge,
+    useEventObservable,
+    Alert,
+    LoadingSpinner,
+    H2,
+    Text,
+    ButtonLink,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -96,7 +106,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
-                            html: blob.highlight.html,
+                            html: blob.highlight.html ?? '',
                             repoName: repo.name,
                             revision,
                             commitID,
@@ -121,12 +131,6 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         },
         [nextFetchWithDisabledTimeout]
     )
-
-    useEffect(() => {
-        if (!blobInfoOrError) {
-            console.error('error')
-        }
-    }, [blobInfoOrError])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 
@@ -313,9 +317,14 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                                         <div className="col">Not available</div>
                                     </div>
                                     <div className="text-right">
-                                        <Link className="btn btn-sm btn-link mr-0 pr-0" to="/help/batch_changes">
+                                        <ButtonLink
+                                            size="sm"
+                                            className="mr-0 pr-0"
+                                            to="/help/batch_changes"
+                                            variant="link"
+                                        >
                                             Learn more
-                                        </Link>
+                                        </ButtonLink>
                                     </div>
                                 </div>
                             )}
@@ -350,9 +359,9 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
 
     const allBatchChanges = (
         <div className="text-right">
-            <Link className="btn btn-sm btn-link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
+            <ButtonLink size="sm" variant="link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
                 View all batch changes
-            </Link>
+            </ButtonLink>
         </div>
     )
 

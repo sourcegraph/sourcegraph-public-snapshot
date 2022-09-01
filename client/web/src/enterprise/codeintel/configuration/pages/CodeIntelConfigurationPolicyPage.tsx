@@ -110,7 +110,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code graph configuration policy" />
+            <PageTitle title="Code graph data configuration policy" />
             <PageHeader
                 headingElement="h2"
                 path={[

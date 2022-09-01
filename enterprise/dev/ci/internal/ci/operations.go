@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -50,7 +51,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
-
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
@@ -106,7 +106,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations " + strings.Join(targets, " ")
+	cmd = cmd + "lint -annotations -fail-fast=false " + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
@@ -145,13 +145,6 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
-}
-
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // Adds Typescript check.
@@ -587,7 +580,9 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/e2e/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -606,7 +601,9 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/qa/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -814,12 +811,29 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	}
 }
 
+// executorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
 // ~15m (building executor base VM)
-func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -835,12 +849,14 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -857,12 +873,29 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 	}
 }
 
+// executorDockerMirrorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorDockerMirrorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
 // ~15m (building executor docker mirror base VM)
-func buildExecutorDockerMirror(version string) operations.Operation {
+func buildExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -871,12 +904,14 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func publishExecutorDockerMirror(version string) operations.Operation {
+func publishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
@@ -891,6 +926,36 @@ func uploadBuildeventTrace() operations.Operation {
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}
+}
+
+func exposeBuildMetadata(c Config) (operations.Operation, error) {
+	overview := struct {
+		RunType      string       `json:"RunType"`
+		Version      string       `json:"Version"`
+		Diff         string       `json:"Diff"`
+		MessageFlags MessageFlags `json:"MessageFlags"`
+	}{
+		RunType:      c.RunType.String(),
+		Diff:         c.Diff.String(),
+		MessageFlags: c.MessageFlags,
+	}
+	data, err := json.Marshal(&overview)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(p *bk.Pipeline) {
+		p.AddStep(":memo::pipeline: Pipeline metadata",
+			bk.SoftFail(),
+			bk.Env("BUILD_METADATA", string(data)),
+			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:         bk.AnnotationTypeInfo,
+					IncludeNames: false,
+				},
+			}),
+		)
+	}, nil
 }
 
 // Request render.com to create client preview app for current PR

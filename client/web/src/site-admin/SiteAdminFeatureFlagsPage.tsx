@@ -2,14 +2,14 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { RouteComponentProps } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Code, H3, Text, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -123,8 +123,6 @@ const filters: FilteredConnectionFilter[] = [
 export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
 > = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
-    const history = useHistory()
-
     // Try to parse out a git rev based on the product version, otherwise just fall back
     // to main.
     const productGitVersion = parseProductReference(productVersion)
@@ -193,22 +191,20 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                 ]}
                 description={
                     <>
-                        <Text>
-                            Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
-                            They are designed to be useful for A/B testing, and the values of all active feature flags
-                            are added to every event log for the purpose of analytics. To learn more, refer to{' '}
-                            <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
-                                How to use feature flags
-                            </Link>
-                            .
-                        </Text>
+                        Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
+                        They are designed to be useful for A/B testing, and the values of all active feature flags are
+                        added to every event log for the purpose of analytics. To learn more, refer to{' '}
+                        <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
+                            How to use feature flags
+                        </Link>
+                        .
                     </>
                 }
                 className="mb-3"
                 actions={
-                    <Button variant="primary" onClick={() => history.push('./feature-flags/configuration/new')}>
+                    <ButtonLink variant="primary" to="./feature-flags/configuration/new">
                         Create feature flag
-                    </Button>
+                    </ButtonLink>
                 }
             />
 

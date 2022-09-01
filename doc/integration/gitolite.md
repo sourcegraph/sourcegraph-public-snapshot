@@ -1,3 +1,7 @@
+---
+ignoreDisconnectedPageCheck: true
+---
+
 # Gitolite integration with Sourcegraph
 
 You can use Sourcegraph with [Gitolite](http://gitolite.com/).

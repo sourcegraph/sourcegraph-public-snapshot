@@ -30,6 +30,13 @@ func (token *OAuthBearerToken) Hash() string {
 	return hex.EncodeToString(key[:])
 }
 
+// WithToken returns an Oauth Bearer Token authenticator with a new token
+func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
+	return &OAuthBearerToken{
+		Token: newToken,
+	}
+}
+
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
 // clients and holds an additional RSA keypair.
 type OAuthBearerTokenWithSSH struct {

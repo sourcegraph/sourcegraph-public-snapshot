@@ -24,14 +24,21 @@ type Predicate interface {
 
 var DefaultPredicateRegistry = PredicateRegistry{
 	FieldRepo: {
-		"contains":              func() Predicate { return &RepoContainsPredicate{} },
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
+		"has.file":              func() Predicate { return &RepoContainsFilePredicate{} },
+		"contains.path":         func() Predicate { return &RepoContainsPathPredicate{} },
+		"has.path":              func() Predicate { return &RepoContainsPathPredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
+		"has.content":           func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
+		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
+		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
+		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
+		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
@@ -83,14 +90,14 @@ func (EmptyPredicate) Field() string            { return "" }
 func (EmptyPredicate) Name() string             { return "" }
 func (EmptyPredicate) ParseParams(string) error { return nil }
 
-// RepoContainsPredicate represents the `repo:contains()` predicate,
-// which filters to repos that contain either a file or content
-type RepoContainsPredicate struct {
-	File    string
+// RepoContainsFilePredicate represents the `repo:contains.file()` predicate,
+// which filters to repos that contain a path and/or content
+type RepoContainsFilePredicate struct {
+	Path    string
 	Content string
 }
 
-func (f *RepoContainsPredicate) ParseParams(params string) error {
+func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 	nodes, err := Parse(params, SearchTypeRegex)
 	if err != nil {
 		return err
@@ -102,41 +109,41 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 		}
 	}
 
-	if f.File == "" && f.Content == "" {
-		return errors.New("one of file or content must be set")
+	if f.Path == "" && f.Content == "" {
+		return errors.New("one of path or content must be set")
 	}
 
 	return nil
 }
 
-func (f *RepoContainsPredicate) parseNode(n Node) error {
+func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 	switch v := n.(type) {
 	case Parameter:
 		if v.Negated {
 			return errors.New("predicates do not currently support negated values")
 		}
 		switch strings.ToLower(v.Field) {
-		case "file":
-			if f.File != "" {
-				return errors.New("cannot specify file multiple times")
+		case "path":
+			if f.Path != "" {
+				return errors.New("cannot specify path multiple times")
 			}
 			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("`contains` predicate has invalid `file` argument: %w", err)
+				return errors.Errorf("`contains.file` predicate has invalid `path` argument: %w", err)
 			}
-			f.File = v.Value
+			f.Path = v.Value
 		case "content":
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
 			}
 			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("`contains` predicate has invalid `content` argument: %w", err)
+				return errors.Errorf("`contains.file` predicate has invalid `content` argument: %w", err)
 			}
 			f.Content = v.Value
 		default:
 			return errors.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
+		return errors.Errorf(`prepend 'path:' or 'content:' to "%s" to search repositories containing path or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")
@@ -152,8 +159,8 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 	return nil
 }
 
-func (f *RepoContainsPredicate) Field() string { return FieldRepo }
-func (f *RepoContainsPredicate) Name() string  { return "contains" }
+func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
+func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
 
 /* repo:contains.content(pattern) */
 
@@ -175,25 +182,25 @@ func (f *RepoContainsContentPredicate) ParseParams(params string) error {
 func (f *RepoContainsContentPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsContentPredicate) Name() string  { return "contains.content" }
 
-/* repo:contains.file(pattern) */
+/* repo:contains.path(pattern) */
 
-type RepoContainsFilePredicate struct {
+type RepoContainsPathPredicate struct {
 	Pattern string
 }
 
-func (f *RepoContainsFilePredicate) ParseParams(params string) error {
+func (f *RepoContainsPathPredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return errors.Errorf("contains.file argument: %w", err)
+		return errors.Errorf("contains.path argument: %w", err)
 	}
 	if params == "" {
-		return errors.Errorf("contains.file argument should not be empty")
+		return errors.Errorf("contains.path argument should not be empty")
 	}
 	f.Pattern = params
 	return nil
 }
 
-func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
-func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
+func (f *RepoContainsPathPredicate) Field() string { return FieldRepo }
+func (f *RepoContainsPathPredicate) Name() string  { return "contains.path" }
 
 /* repo:contains.commit.after(...) */
 
@@ -230,6 +237,39 @@ func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
 
 func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+
+type RepoHasTagPredicate struct {
+	Key string
+}
+
+func (f *RepoHasTagPredicate) ParseParams(params string) (err error) {
+	if len(params) == 0 {
+		return errors.New("tag must be non-empty")
+	}
+	f.Key = params
+	return nil
+}
+
+func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
+func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
+
+type RepoHasKVPPredicate struct {
+	Key   string
+	Value string
+}
+
+func (p *RepoHasKVPPredicate) ParseParams(params string) (err error) {
+	split := strings.Split(params, ":")
+	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
+		return errors.New("expected params in the form of key:value")
+	}
+	p.Key = split[0]
+	p.Value = split[1]
+	return nil
+}
+
+func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
+func (p *RepoHasKVPPredicate) Name() string  { return "has" }
 
 /* file:contains.content(pattern) */
 

@@ -39,11 +39,7 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown' }> = 
              * break its underlying <ButtonLink>'s onClick handler and it will no longer prevent the default page reload (with no href).
              */}
             <span>
-                <RepoHeaderActionButtonLink
-                    aria-label={descriptiveText}
-                    onSelect={toggleBlameState}
-                    className="btn-icon"
-                >
+                <RepoHeaderActionButtonLink aria-label={descriptiveText} onSelect={toggleBlameState}>
                     <Icon
                         aria-hidden={true}
                         svgPath={mdiGit}

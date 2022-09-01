@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -42,39 +45,24 @@ func TestInitializeJob(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name         string
-		mockedConfig schema.SiteConfiguration
-		shouldInit   bool
+		name       string
+		setting    bool
+		shouldInit bool
 	}{
 		{
-			name:         "missing setting",
-			mockedConfig: schema.SiteConfiguration{},
-			shouldInit:   false,
-		},
-		{
-			name: "setting exists but enabled field missing",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{},
-			},
+			name:       "job set disabled",
+			setting:    false,
 			shouldInit: false,
 		},
 		{
-			name: "setting exists but enabled field set false",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: false},
-			},
-			shouldInit: false,
-		},
-		{
-			name:         "setting exists and is enabled",
-			mockedConfig: validEnabledConfiguration(),
-			shouldInit:   true,
+			name:       "setting exists and is enabled",
+			setting:    true,
+			shouldInit: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
-
+			mockEnvVars(t, test.setting)
 			if have, want := isEnabled(), test.shouldInit; have != want {
 				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
 			}
@@ -86,51 +74,32 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name         string
-		mockedConfig schema.SiteConfiguration
-		expectErr    error
+		name      string
+		setting   bool
+		expectErr error
 	}{
 		{
-			name:         "missing setting",
-			mockedConfig: schema.SiteConfiguration{},
-			expectErr:    disabledErr,
-		},
-		{
-			name: "setting exists but enabled field missing",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{},
-			},
+			name:      "job set disabled",
+			setting:   false,
 			expectErr: disabledErr,
 		},
 		{
-			name: "setting exists but enabled field set false",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: false},
-			},
-			expectErr: disabledErr,
-		},
-		{
-			name:         "setting exists and is enabled",
-			mockedConfig: validEnabledConfiguration(),
-			expectErr:    nil,
+			name:      "setting exists and is enabled",
+			setting:   true,
+			expectErr: nil,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
-
+			confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+			mockEnvVars(t, test.setting)
 			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
-			if err != nil {
-				if !errors.Is(err, disabledErr) {
-					t.Error("unexpected error from Handle function, expected disabled error")
-				}
-			} else {
-				if test.expectErr != nil {
-					t.Error("expected error but did not receive one")
-				}
+			if !errors.Is(err, test.expectErr) {
+				t.Errorf("unexpected error from Handle function, expected error: %v, received: %s", test.expectErr, err.Error())
+
 			}
 		})
 	}
@@ -142,7 +111,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
+	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+	mockEnvVars(t, true)
 
 	initAllowedEvents(t, db, []string{"event1", "event2"})
 
@@ -159,17 +129,28 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	flags := make(map[string]bool)
+	flags["testflag"] = true
+
+	ptr := func(s string) *string {
+		return &s
+	}
 
 	want := []*database.Event{
 		{
-			Name:   "event1",
-			UserID: 1,
-			Source: "test",
+			Name:             "event1",
+			UserID:           1,
+			Source:           "test",
+			EvaluatedFlagSet: flags,
+			DeviceID:         ptr("device-1"),
+			InsertID:         ptr("insert-1"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device-2"),
+			InsertID: ptr("insert-2"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, want)
@@ -190,26 +171,37 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		}
 		autogold.Want("loads events without error", []*database.Event{
 			{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
-				Source:   "test",
-				Version:  "0.0.0+dev",
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
+				Source:           "test",
+				Version:          "0.0.0+dev",
+				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+				DeviceID:         valast.Addr("device-1").(*string),
+				InsertID:         valast.Addr("insert-1").(*string),
 			},
 			{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device-2").(*string),
+				InsertID: valast.Addr("insert-2").(*string),
 			},
 		}).Equal(t, got)
 	})
 
 	t.Run("loads using specified batch size from settings", func(t *testing.T) {
-		config := validEnabledConfiguration()
+		config := validConfiguration()
 		config.ExportUsageTelemetry.BatchSize = 1
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
@@ -223,16 +215,20 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads using specified batch size from settings", []*database.Event{
-			{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
-				Source:   "test",
-				Version:  "0.0.0+dev",
+		autogold.Want("loads using specified batch size from settings", []*database.Event{{
+			ID:     1,
+			Name:   "event1",
+			UserID: 1,
+			Argument: json.RawMessage{
+				123,
+				125,
 			},
-		}).Equal(t, got)
+			Source:           "test",
+			Version:          "0.0.0+dev",
+			EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+			DeviceID:         valast.Addr("device-1").(*string),
+			InsertID:         valast.Addr("insert-1").(*string),
+		}}).Equal(t, got)
 	})
 }
 
@@ -242,17 +238,25 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
-			Name:   "event1",
-			UserID: 1,
-			Source: "test",
+			Name:     "event1",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -264,9 +268,10 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		t.Error(err)
 	}
 
-	config := validEnabledConfiguration()
+	config := validConfiguration()
 	config.ExportUsageTelemetry.BatchSize = 1
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+	mockEnvVars(t, true)
 
 	handler := mockTelemetryHandler(t, noopHandler())
 	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
@@ -275,12 +280,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
@@ -293,12 +303,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("second execution of handler should return second event", []*database.Event{{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
@@ -329,22 +344,32 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
 		{
-			Name:   "allowed",
-			UserID: 1,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "not-allowed",
-			UserID: 2,
-			Source: "test",
+			Name:     "not-allowed",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "allowed",
-			UserID: 3,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   3,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -356,8 +381,9 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 		t.Error(err)
 	}
 
-	config := validEnabledConfiguration()
+	config := validConfiguration()
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+	mockEnvVars(t, true)
 
 	handler := mockTelemetryHandler(t, noopHandler())
 	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
@@ -367,20 +393,30 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{
 				{
-					ID:       1,
-					Name:     "allowed",
-					UserID:   1,
-					Argument: json.RawMessage("{}"),
+					ID:     1,
+					Name:   "allowed",
+					UserID: 1,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 				{
-					ID:       3,
-					Name:     "allowed",
-					UserID:   3,
-					Argument: json.RawMessage("{}"),
+					ID:     3,
+					Name:   "allowed",
+					UserID: 3,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 			}).Equal(t, got)
 			return nil
@@ -393,12 +429,8 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	})
 }
 
-func validEnabledConfiguration() schema.SiteConfiguration {
-	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
-		Enabled:          true,
-		TopicName:        "test-topic",
-		TopicProjectName: "test-project",
-	}}
+func validConfiguration() schema.SiteConfiguration {
+	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{}}
 }
 
 func TestHandleInvalidConfig(t *testing.T) {
@@ -408,7 +440,8 @@ func TestHandleInvalidConfig(t *testing.T) {
 	db := database.NewDB(logger, dbHandle)
 	bookmarkStore := newBookmarkStore(db)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
+	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+	mockEnvVars(t, true)
 
 	obsContext := &observation.Context{
 		Logger:       logger,
@@ -418,20 +451,14 @@ func TestHandleInvalidConfig(t *testing.T) {
 	}
 
 	t.Run("handle fails when missing project name", func(t *testing.T) {
-		config := validEnabledConfiguration()
-		config.ExportUsageTelemetry.TopicProjectName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
+		projectName = ""
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
 	})
 	t.Run("handle fails when missing topic name", func(t *testing.T) {
-		config := validEnabledConfiguration()
-		config.ExportUsageTelemetry.TopicName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
+		topicName = ""
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
@@ -441,16 +468,30 @@ func TestHandleInvalidConfig(t *testing.T) {
 
 func TestBuildBigQueryObject(t *testing.T) {
 	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
+	flags := make(featureflag.EvaluatedFlagSet)
+	flags["testflag"] = true
+
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	event := &database.Event{
-		ID:              1,
-		Name:            "GREAT_EVENT",
-		URL:             "https://sourcegraph.com/search",
-		UserID:          5,
-		AnonymousUserID: "anonymous",
-		Argument:        json.RawMessage("argument"),
-		Source:          "src",
-		Version:         "1.1.1",
-		Timestamp:       atTime,
+		ID:               1,
+		Name:             "GREAT_EVENT",
+		URL:              "https://sourcegraph.com/search",
+		UserID:           5,
+		AnonymousUserID:  "anonymous",
+		Argument:         json.RawMessage("argument"),
+		Source:           "src",
+		Version:          "1.1.1",
+		Timestamp:        atTime,
+		EvaluatedFlagSet: flags,
+		CohortID:         ptr("cohort1"),
+		FirstSourceURL:   ptr("first_source_url"),
+		LastSourceURL:    ptr("last_source_url"),
+		Referrer:         ptr("reff"),
+		DeviceID:         ptr("devid"),
+		InsertID:         ptr("insertid"),
 	}
 
 	metadata := &instanceMetadata{
@@ -463,17 +504,23 @@ func TestBuildBigQueryObject(t *testing.T) {
 
 	got := buildBigQueryObject(event, metadata)
 	autogold.Want("build big query object", &bigQueryEvent{
-		SiteID:            "site-id-1",
-		LicenseKey:        "license-key-1",
+		SiteID: "site-id-1", LicenseKey: "license-key-1",
 		InitialAdminEmail: "admin@place.com",
 		DeployType:        "docker",
 		EventName:         "GREAT_EVENT",
 		AnonymousUserID:   "anonymous",
+		FirstSourceURL:    "first_source_url",
+		LastSourceURL:     "last_source_url",
 		UserID:            5,
 		Source:            "src",
 		Timestamp:         "2022-07-22T00:00:00Z",
 		Version:           "1.1.1",
+		FeatureFlags:      `{"testflag":true}`,
+		CohortID:          valast.Addr("cohort1").(*string),
+		Referrer:          "reff",
 		PublicArgument:    "argument",
+		DeviceID:          valast.Addr("devid").(*string),
+		InsertID:          valast.Addr("insertid").(*string),
 	}).Equal(t, got)
 }
 
@@ -485,6 +532,7 @@ func TestGetInstanceMetadata(t *testing.T) {
 	version.Mock("fake-Version-1")
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
 	deploy.Mock("fake-deploy-type")
+	mockEnvVars(t, true)
 
 	stateStore.GetFunc.SetDefaultReturn(database.GlobalState{
 		SiteID:      "fake-site-id",
@@ -510,6 +558,49 @@ func TestGetInstanceMetadata(t *testing.T) {
 func noopHandler() sendEventsCallbackFunc {
 	return func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 		return nil
+	}
+}
+
+func Test_getBatchSize(t *testing.T) {
+	tests := []struct {
+		name   string
+		config *conf.Unified
+		want   int
+	}{
+		{
+			name:   "null config object",
+			config: nil,
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "null inner config object",
+			config: &conf.Unified{},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "null export data object",
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "no batch size specified",
+			config: &conf.Unified{SiteConfiguration: validConfiguration()},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "override batch size",
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{BatchSize: 5}}},
+			want:   5,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			confClient.Mock(test.config)
+			got := getBatchSize()
+			if got != test.want {
+				t.Errorf("unexpected batch size want:%d, got:%d", test.want, got)
+			}
+		})
 	}
 }
 
@@ -633,4 +724,20 @@ func initAllowedEvents(t *testing.T, db database.DB, names []string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func mockEnvVars(t *testing.T, flag bool) {
+	prevEnabled := enabled
+	prevTopicName := topicName
+	prevProjectName := projectName
+
+	t.Cleanup(func() {
+		enabled = prevEnabled
+		topicName = prevTopicName
+		projectName = prevProjectName
+	})
+
+	enabled = flag
+	topicName = "test-name"
+	projectName = "project-name"
 }

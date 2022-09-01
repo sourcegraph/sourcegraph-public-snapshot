@@ -161,7 +161,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -205,7 +205,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -226,7 +226,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -247,7 +247,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -268,7 +268,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -290,7 +290,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -312,7 +312,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -338,7 +338,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -388,7 +388,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -414,7 +414,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -465,7 +465,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -505,7 +505,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (OR
     (TIMEOUT
       (timeout . 20s)
@@ -536,7 +536,7 @@ func TestNewPlanJob(t *testing.T) {
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -553,14 +553,14 @@ func TestNewPlanJob(t *testing.T) {
           NoopJob)))))`),
 	},
 		{
-			query:      `repo:contains.file(a) repo:contains.content(b)`,
+			query:      `repo:contains.path(a) repo:contains.content(b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
-			want: autogold.Want("repo contains file and repo contains content", `
+			want: autogold.Want("repo contains path and repo contains content", `
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -571,14 +571,14 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSEARCH
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))))))`),
 		}, {
-			query:      `repo:contains(file:a content:b)`,
+			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
-			want: autogold.Want("repo contains file and content", `
+			want: autogold.Want("repo contains path and content", `
 (ALERT
   (query . )
   (originalQuery . )
-  (patternType . literal)
+  (patternType . regex)
   (TIMEOUT
     (timeout . 20s)
     (LIMIT
@@ -588,7 +588,63 @@ func TestNewPlanJob(t *testing.T) {
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
         (REPOSEARCH
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))))))`),
-		}}
+		}, {
+			query:      `repo:has(key:value)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has kvp", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . regex)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
+        (REPOSEARCH
+          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))))))`),
+		}, {
+			query:      `repo:has.tag(tag)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has tag", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . regex)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          (repoOpts.hasKVPs[0].key . tag))
+        (REPOSEARCH
+          (repoOpts.hasKVPs[0].key . tag))))))`),
+		}, {
+			query:      `(...)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeStructural,
+			want: autogold.Want("stream structural search", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . structural)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          )
+        (STRUCTURALSEARCH
+          (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
+          )))))`),
+		},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
@@ -597,8 +653,9 @@ func TestNewPlanJob(t *testing.T) {
 
 			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
+				PatternType:         tc.searchType,
 				Protocol:            tc.protocol,
+				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
 
@@ -734,16 +791,16 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 		output: autogold.Want("79", `{"Pattern":"package diff provides","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:noexist.go) test`,
+		input:  `repo:contains.file(path:noexist.go) test`,
 		output: autogold.Want("83", `{"Pattern":"test","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:go.mod) count:100 fmt`,
+		input:  `repo:contains.file(path:go.mod) count:100 fmt`,
 		output: autogold.Want("87", `{"Pattern":"fmt","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":100,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `type:commit LSIF`,
 		output: autogold.Want("90", `{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
 	}, {
-		input:  `repo:contains(file:diff.pb.go) type:commit LSIF`,
+		input:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
 		output: autogold.Want("91", `{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
 	}, {
 		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
@@ -773,7 +830,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `patterntype:regexp // literal slash`,
 		output: autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:contains.file(Dockerfile)`,
+		input:  `repo:contains.path(Dockerfile)`,
 		output: autogold.Want("108", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `repohasfile:Dockerfile`,

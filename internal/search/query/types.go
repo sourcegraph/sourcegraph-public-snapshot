@@ -340,9 +340,9 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 }
 
 // RepoHasFileContentArgs represents the args of any of the following predicates:
-// - repo:contains.file(f)
-// - repo:contains.content(c)
-// - repo:contains(file:f content:c)
+// - repo:contains.file(path:foo content:bar) || repo:has.file(path:foo content:bar)
+// - repo:contains.path(foo) || repo:has.path(foo)
+// - repo:contains.content(c) || repo:has.content(c)
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
@@ -360,7 +360,7 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPathPredicate, negated bool) {
 		res = append(res, RepoHasFileContentArgs{
 			Path:    pred.Pattern,
 			Negated: negated,
@@ -374,9 +374,9 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
 		res = append(res, RepoHasFileContentArgs{
-			Path:    pred.File,
+			Path:    pred.Path,
 			Content: pred.Content,
 			Negated: negated,
 		})
@@ -386,12 +386,8 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 }
 
 func (p Parameters) FileContainsContent() (include []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldFile && (name == "contains" || name == "contains.content") {
-			var pred FileContainsContentPredicate
-			pred.ParseParams(value)
-			include = append(include, pred.Pattern)
-		}
+	VisitTypedPredicate(toNodes(p), func(pred *FileContainsContentPredicate, negated bool) {
+		include = append(include, pred.Pattern)
 	})
 	return include
 }
@@ -408,6 +404,31 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 	})
 
 	return value
+}
+
+type RepoKVPFilter struct {
+	Key     string
+	Value   *string
+	Negated bool
+}
+
+func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate, negated bool) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Value:   &pred.Value,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate, negated bool) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Negated: negated,
+		})
+	})
+
+	return res
 }
 
 func (p Parameters) FileHasOwner() (include, exclude []string) {

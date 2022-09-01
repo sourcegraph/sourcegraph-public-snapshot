@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/zoekt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -111,7 +113,7 @@ func (s *searchClient) Plan(
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            featureflag.FromContext(ctx),
+		Features:            toFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:         searchType,
 		Protocol:            protocol,
 	}
@@ -159,6 +161,25 @@ func (e *QueryError) Error() string {
 	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
 }
 
+func SearchTypeFromString(patternType string) (query.SearchType, error) {
+	switch patternType {
+	case "standard":
+		return query.SearchTypeStandard, nil
+	case "literal":
+		return query.SearchTypeLiteral, nil
+	case "regexp":
+		return query.SearchTypeRegex, nil
+	case "structural":
+		return query.SearchTypeStructural, nil
+	case "lucky":
+		return query.SearchTypeLucky, nil
+	case "keyword":
+		return query.SearchTypeKeyword, nil
+	default:
+		return -1, errors.Errorf("unrecognized patternType %q", patternType)
+	}
+}
+
 // detectSearchType returns the search type to perform. The search type derives
 // from three sources: the version and patternType parameters passed to the
 // search endpoint and the `patternType:` filter in the input query string which
@@ -166,22 +187,7 @@ func (e *QueryError) Error() string {
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
-		switch *patternType {
-		case "standard":
-			searchType = query.SearchTypeStandard
-		case "literal":
-			searchType = query.SearchTypeLiteral
-		case "regexp":
-			searchType = query.SearchTypeRegex
-		case "structural":
-			searchType = query.SearchTypeStructural
-		case "lucky":
-			searchType = query.SearchTypeLucky
-		case "keyword":
-			searchType = query.SearchTypeKeyword
-		default:
-			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
-		}
+		return SearchTypeFromString(*patternType)
 	} else {
 		switch version {
 		case "V1":
@@ -223,6 +229,26 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	})
 	return searchType
 }
+
+func toFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
+		metricFeatureFlagUnavailable.Inc()
+		logger.Warn("search feature flags are not available")
+	}
+
+	return &search.Features{
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
+		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
+	}
+}
+
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})
 
 func getBoolPtr(b *bool, def bool) bool {
 	if b == nil {

@@ -156,6 +156,7 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  just_in_time                  | boolean                     |           | not null | false
  group_by                      | text                        |           |          | 
  backfill_attempts             | integer                     |           | not null | 0
+ needs_migration               | boolean                     |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)

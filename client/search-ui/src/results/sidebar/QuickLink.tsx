@@ -6,7 +6,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import styles from './SearchSidebarSection.module.scss'
+import styles from './SearchFilterSection.module.scss'
 
 export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCascade']): React.ReactElement[] => {
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []

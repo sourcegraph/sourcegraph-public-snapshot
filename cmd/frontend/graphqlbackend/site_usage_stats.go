@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
@@ -18,7 +18,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	opt := &usagestatsdeprecated.SiteUsageStatisticsOptions{}
+	opt := &usagestats.SiteUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -31,7 +31,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 		m := int(*args.Months)
 		opt.MonthPeriods = &m
 	}
-	activity, err := usagestatsdeprecated.GetSiteUsageStatistics(opt)
+	activity, err := usagestats.GetSiteUsageStatistics(ctx, r.db, opt)
 	if err != nil {
 		return nil, err
 	}

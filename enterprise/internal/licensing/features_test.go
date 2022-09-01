@@ -21,6 +21,22 @@ func TestCheckFeature(t *testing.T) {
 		return "plan:" + string(p)
 	}
 
+	t.Run(string(FeatureSSO), func(t *testing.T) {
+		check(t, FeatureSSO, nil, false)
+
+		check(t, FeatureSSO, license("starter"), false)
+		check(t, FeatureSSO, license("starter", string(FeatureSSO)), true)
+		check(t, FeatureSSO, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureSSO, license(plan(oldEnterprise)), true)
+		check(t, FeatureSSO, license(), true)
+
+		check(t, FeatureSSO, license(plan(PlanTeam0)), true)
+		check(t, FeatureSSO, license(plan(enterprise0)), true)
+
+		check(t, FeatureSSO, license(plan(PlanBusiness0)), true)
+		check(t, FeatureSSO, license(plan(enterprise1)), true)
+	})
+
 	t.Run(string(FeatureACLs), func(t *testing.T) {
 		check(t, FeatureACLs, nil, false)
 
@@ -29,9 +45,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureACLs, license(plan(oldEnterprise)), true)
 		check(t, FeatureACLs, license(), true)
 
-		check(t, FeatureACLs, license(plan(team)), false)
-		check(t, FeatureACLs, license(plan(enterprise)), false)
-		check(t, FeatureACLs, license(plan(enterprise), string(FeatureACLs)), true)
+		check(t, FeatureACLs, license(plan(PlanTeam0)), false)
+		check(t, FeatureACLs, license(plan(enterprise0)), false)
+		check(t, FeatureACLs, license(plan(enterprise0), string(FeatureACLs)), true)
 	})
 
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
@@ -42,9 +58,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureExtensionRegistry, license(plan(oldEnterprise)), true)
 		check(t, FeatureExtensionRegistry, license(), true)
 
-		check(t, FeatureExtensionRegistry, license(plan(team)), false)
-		check(t, FeatureExtensionRegistry, license(plan(enterprise)), false)
-		check(t, FeatureExtensionRegistry, license(plan(enterprise), string(FeatureExtensionRegistry)), true)
+		check(t, FeatureExtensionRegistry, license(plan(PlanTeam0)), false)
+		check(t, FeatureExtensionRegistry, license(plan(enterprise0)), false)
+		check(t, FeatureExtensionRegistry, license(plan(enterprise0), string(FeatureExtensionRegistry)), true)
 	})
 
 	t.Run(string(FeatureRemoteExtensionsAllowDisallow), func(t *testing.T) {
@@ -55,9 +71,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(oldEnterprise)), true)
 		check(t, FeatureRemoteExtensionsAllowDisallow, license(), true)
 
-		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(team)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise), string(FeatureRemoteExtensionsAllowDisallow)), true)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(PlanTeam0)), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise0)), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise0), string(FeatureRemoteExtensionsAllowDisallow)), true)
 	})
 
 	t.Run(string(FeatureBranding), func(t *testing.T) {
@@ -68,9 +84,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBranding, license(plan(oldEnterprise)), true)
 		check(t, FeatureBranding, license(), true)
 
-		check(t, FeatureBranding, license(plan(team)), false)
-		check(t, FeatureBranding, license(plan(enterprise)), false)
-		check(t, FeatureBranding, license(plan(enterprise), string(FeatureBranding)), true)
+		check(t, FeatureBranding, license(plan(PlanTeam0)), false)
+		check(t, FeatureBranding, license(plan(enterprise0)), false)
+		check(t, FeatureBranding, license(plan(enterprise0), string(FeatureBranding)), true)
 	})
 
 	testBatchChanges := func(feature Feature) func(*testing.T) {
@@ -82,9 +98,12 @@ func TestCheckFeature(t *testing.T) {
 			check(t, feature, license(plan(oldEnterprise)), true)
 			check(t, feature, license(), true)
 
-			check(t, feature, license(plan(team)), false)
-			check(t, feature, license(plan(enterprise)), false)
-			check(t, feature, license(plan(enterprise), string(feature)), true)
+			check(t, feature, license(plan(PlanTeam0)), false)
+			check(t, feature, license(plan(enterprise0)), false)
+			check(t, feature, license(plan(enterprise0), string(feature)), true)
+
+			check(t, feature, license(plan(PlanBusiness0)), true)
+			check(t, feature, license(plan(enterprise1)), true)
 		}
 	}
 
@@ -101,9 +120,12 @@ func TestCheckFeature(t *testing.T) {
 			check(t, feature, license(plan(oldEnterprise)), true)
 			check(t, feature, license(), true)
 
-			check(t, feature, license(plan(team)), false)
-			check(t, feature, license(plan(enterprise)), false)
-			check(t, feature, license(plan(enterprise), string(feature)), true)
+			check(t, feature, license(plan(PlanTeam0)), false)
+			check(t, feature, license(plan(enterprise0)), false)
+			check(t, feature, license(plan(enterprise0), string(feature)), true)
+
+			check(t, feature, license(plan(PlanBusiness0)), true)
+			check(t, feature, license(plan(enterprise1)), true)
 		}
 	}
 	// Code Insights
@@ -117,9 +139,9 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureMonitoring, license(plan(oldEnterprise)), true)
 		check(t, FeatureMonitoring, license(), true)
 
-		check(t, FeatureMonitoring, license(plan(team)), false)
-		check(t, FeatureMonitoring, license(plan(enterprise)), false)
-		check(t, FeatureMonitoring, license(plan(enterprise), string(FeatureMonitoring)), true)
+		check(t, FeatureMonitoring, license(plan(PlanTeam0)), false)
+		check(t, FeatureMonitoring, license(plan(enterprise0)), false)
+		check(t, FeatureMonitoring, license(plan(enterprise0), string(FeatureMonitoring)), true)
 	})
 
 	t.Run(string(FeatureBackupAndRestore), func(t *testing.T) {
@@ -130,8 +152,8 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBackupAndRestore, license(plan(oldEnterprise)), true)
 		check(t, FeatureBackupAndRestore, license(), true)
 
-		check(t, FeatureBackupAndRestore, license(plan(team)), false)
-		check(t, FeatureBackupAndRestore, license(plan(enterprise)), false)
-		check(t, FeatureBackupAndRestore, license(plan(enterprise), string(FeatureBackupAndRestore)), true)
+		check(t, FeatureBackupAndRestore, license(plan(PlanTeam0)), false)
+		check(t, FeatureBackupAndRestore, license(plan(enterprise0)), false)
+		check(t, FeatureBackupAndRestore, license(plan(enterprise0), string(FeatureBackupAndRestore)), true)
 	})
 }

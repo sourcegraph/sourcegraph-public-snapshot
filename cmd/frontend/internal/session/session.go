@@ -284,8 +284,12 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
-	// Get the user from the request context
-	return db.Users().InvalidateSessionsByID(ctx, id)
+	return InvalidateSessionsByIDs(ctx, db, []int32{id})
+}
+
+// Bulk "InvalidateSessionsByID" action.
+func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
+	return db.Users().InvalidateSessionsByIDs(ctx, ids)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates

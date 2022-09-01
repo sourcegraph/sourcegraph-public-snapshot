@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,10 +22,6 @@ func TestStatusMessages(t *testing.T) {
 				}
 
 				... on SyncError {
-					message
-				}
-
-				... on IndexingError {
 					message
 				}
 
@@ -82,7 +79,11 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		externalServices := database.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
+		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{
+			ID:          1,
+			DisplayName: "GitHub.com testing",
+			Config:      extsvc.NewEmptyConfig(),
+		}, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -103,11 +104,6 @@ func TestStatusMessages(t *testing.T) {
 				{
 					SyncError: &repos.SyncError{
 						Message: "Could not save to database",
-					},
-				},
-				{
-					IndexingError: &repos.IndexingError{
-						Message: "Could not complete indexing.",
 					},
 				},
 			}
@@ -137,10 +133,6 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
-							},
-							{
-								"__typename": "IndexingError",
-								"message": "Could not complete indexing."
 							}
 						]
 					}

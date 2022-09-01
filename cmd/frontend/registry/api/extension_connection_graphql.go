@@ -70,6 +70,11 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			query = *args2.Query
 		}
 
+		// Verify that the instance has extensions enabled
+		if r.err = ExtensionRegistryReadEnabled(); r.err != nil {
+			return
+		}
+
 		// Query local registry extensions.
 		var local []graphqlbackend.RegistryExtension
 		if r.args.Local && ListLocalRegistryExtensions != nil {

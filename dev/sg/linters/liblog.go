@@ -32,6 +32,8 @@ func lintLoggingLibraries() *linter {
 			"internal/observation/fields.go",
 			// Dependencies require direct usage of zap
 			"cmd/frontend/internal/app/otlpadapter",
+			// Not worth fixing the deprecated package
+			"cmd/frontend/internal/usagestatsdeprecated",
 		}
 	)
 
