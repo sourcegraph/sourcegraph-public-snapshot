@@ -50,7 +50,7 @@ service:
 
 ### Sampling
 
-To reduced the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image. 
+To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image. 
 
 If enabled, this sampling mechanism will be applied to all traces, regardless if a request was explictly marked as to be traced. 
 
@@ -71,7 +71,7 @@ service:
     traces:
       #...
       processors: [probabilistic_sampler] # Plug the probabilistic sampler to the traces. 
-```yaml
+```
 
 #### Configure exporting to logging
 
