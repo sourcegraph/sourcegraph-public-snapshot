@@ -26,17 +26,22 @@
 </p>
 <br />
 <p align="center">
-  Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform
+  <b>Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform</b>
 </p>
 
-&nbsp;
+## Use cases
 
-**Features**
+- Improve code security
+- Accelerate developer onboarding
+- Resolve incidents faster
+- Streamline code reuse
+- Boost code health
+
+## Features
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
-- Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
+- Code intelligence for many languages via [SCIP](https://about.sourcegraph.com/blog/announcing-scip).
 - Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
-- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions).
 
 ## Try it now
 
