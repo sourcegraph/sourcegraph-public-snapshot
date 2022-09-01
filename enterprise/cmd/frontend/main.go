@@ -73,7 +73,7 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Debug("enterprise edition")
 	}
 
-	auth.Init(db)
+	auth.Init(logger.Scoped("auth", "global authentication for the enterprise frontend"), db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()

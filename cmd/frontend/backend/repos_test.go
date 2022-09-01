@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -234,8 +235,6 @@ func TestReposGetInventory(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-	}
+	logtest.Init(m)
 	os.Exit(m.Run())
 }

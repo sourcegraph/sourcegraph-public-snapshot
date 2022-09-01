@@ -159,7 +159,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		goroutine.Go(func() {
 			defer run.Release()
 
-			invCtx, err := backend.InventoryContext(repos[key.repo].Name, db, key.commitID, true)
+			invCtx, err := backend.InventoryContext(logger.Scoped("InventoryContext", ""), repos[key.repo].Name, db, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return
