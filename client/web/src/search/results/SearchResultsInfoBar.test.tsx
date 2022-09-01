@@ -39,7 +39,7 @@ const renderSearchResultsInfoBar = (
     )
 
 describe('SearchResultsInfoBar', () => {
-    beforeEach(() => {
+    beforeAll(() => {
         window.context = {
             enableLegacyExtensions: true,
         } as any
