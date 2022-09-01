@@ -50,7 +50,7 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, logger log.Logger, db database.DB) (ps []Provider, problems conf.Problems) {
+func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
