@@ -22,7 +22,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
-import { useBlameDecorations } from '../../repo/blame/useBlameDecorations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
@@ -86,31 +85,12 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
         base: [],
     })
 
-    const baseBlameDecorations = useBlameDecorations(
-        extensionInfo?.base?.filePath
-            ? {
-                  repoName: extensionInfo.base.repoName,
-                  commitID: extensionInfo.base.commitID,
-                  filePath: extensionInfo.base.filePath,
-              }
-            : undefined
-    )
-    const headBlameDecorations = useBlameDecorations(
-        extensionInfo?.head?.filePath
-            ? {
-                  repoName: extensionInfo.head.repoName,
-                  commitID: extensionInfo.head.commitID,
-                  filePath: extensionInfo.head.filePath,
-              }
-            : undefined
-    )
-
     const mergedDecorations: Record<'head' | 'base', DecorationMapByLine> = useMemo(
         () => ({
-            head: groupDecorationsByLine([...(headBlameDecorations || []), ...decorations.head]),
-            base: groupDecorationsByLine([...(baseBlameDecorations || []), ...decorations.base]),
+            head: groupDecorationsByLine(decorations.head),
+            base: groupDecorationsByLine(decorations.base),
         }),
-        [decorations, baseBlameDecorations, headBlameDecorations]
+        [decorations]
     )
 
     /** Emits whenever the ref callback for the code element is called */

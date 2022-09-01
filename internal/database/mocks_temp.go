@@ -12688,15 +12688,15 @@ type MockExternalServiceStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *ExternalServiceStoreDoneFunc
-	// GetAffiliatedSyncErrorsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetAffiliatedSyncErrors.
-	GetAffiliatedSyncErrorsFunc *ExternalServiceStoreGetAffiliatedSyncErrorsFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *ExternalServiceStoreGetByIDFunc
 	// GetLastSyncErrorFunc is an instance of a mock function object
 	// controlling the behavior of the method GetLastSyncError.
 	GetLastSyncErrorFunc *ExternalServiceStoreGetLastSyncErrorFunc
+	// GetLatestSyncErrorsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLatestSyncErrors.
+	GetLatestSyncErrorsFunc *ExternalServiceStoreGetLatestSyncErrorsFunc
 	// GetSyncJobByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetSyncJobByID.
 	GetSyncJobByIDFunc *ExternalServiceStoreGetSyncJobByIDFunc
@@ -12770,11 +12770,6 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 				return
 			},
 		},
-		GetAffiliatedSyncErrorsFunc: &ExternalServiceStoreGetAffiliatedSyncErrorsFunc{
-			defaultHook: func(context.Context, *types.User) (r0 map[int64]string, r1 error) {
-				return
-			},
-		},
 		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
 			defaultHook: func(context.Context, int64) (r0 *types.ExternalService, r1 error) {
 				return
@@ -12782,6 +12777,11 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 		},
 		GetLastSyncErrorFunc: &ExternalServiceStoreGetLastSyncErrorFunc{
 			defaultHook: func(context.Context, int64) (r0 string, r1 error) {
+				return
+			},
+		},
+		GetLatestSyncErrorsFunc: &ExternalServiceStoreGetLatestSyncErrorsFunc{
+			defaultHook: func(context.Context) (r0 map[int64]string, r1 error) {
 				return
 			},
 		},
@@ -12883,11 +12883,6 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.Done")
 			},
 		},
-		GetAffiliatedSyncErrorsFunc: &ExternalServiceStoreGetAffiliatedSyncErrorsFunc{
-			defaultHook: func(context.Context, *types.User) (map[int64]string, error) {
-				panic("unexpected invocation of MockExternalServiceStore.GetAffiliatedSyncErrors")
-			},
-		},
 		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
 			defaultHook: func(context.Context, int64) (*types.ExternalService, error) {
 				panic("unexpected invocation of MockExternalServiceStore.GetByID")
@@ -12896,6 +12891,11 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 		GetLastSyncErrorFunc: &ExternalServiceStoreGetLastSyncErrorFunc{
 			defaultHook: func(context.Context, int64) (string, error) {
 				panic("unexpected invocation of MockExternalServiceStore.GetLastSyncError")
+			},
+		},
+		GetLatestSyncErrorsFunc: &ExternalServiceStoreGetLatestSyncErrorsFunc{
+			defaultHook: func(context.Context) (map[int64]string, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetLatestSyncErrors")
 			},
 		},
 		GetSyncJobByIDFunc: &ExternalServiceStoreGetSyncJobByIDFunc{
@@ -12984,14 +12984,14 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 		DoneFunc: &ExternalServiceStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		GetAffiliatedSyncErrorsFunc: &ExternalServiceStoreGetAffiliatedSyncErrorsFunc{
-			defaultHook: i.GetAffiliatedSyncErrors,
-		},
 		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
 			defaultHook: i.GetByID,
 		},
 		GetLastSyncErrorFunc: &ExternalServiceStoreGetLastSyncErrorFunc{
 			defaultHook: i.GetLastSyncError,
+		},
+		GetLatestSyncErrorsFunc: &ExternalServiceStoreGetLatestSyncErrorsFunc{
+			defaultHook: i.GetLatestSyncErrors,
 		},
 		GetSyncJobByIDFunc: &ExternalServiceStoreGetSyncJobByIDFunc{
 			defaultHook: i.GetSyncJobByID,
@@ -13674,118 +13674,6 @@ func (c ExternalServiceStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ExternalServiceStoreGetAffiliatedSyncErrorsFunc describes the behavior
-// when the GetAffiliatedSyncErrors method of the parent
-// MockExternalServiceStore instance is invoked.
-type ExternalServiceStoreGetAffiliatedSyncErrorsFunc struct {
-	defaultHook func(context.Context, *types.User) (map[int64]string, error)
-	hooks       []func(context.Context, *types.User) (map[int64]string, error)
-	history     []ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetAffiliatedSyncErrors delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) GetAffiliatedSyncErrors(v0 context.Context, v1 *types.User) (map[int64]string, error) {
-	r0, r1 := m.GetAffiliatedSyncErrorsFunc.nextHook()(v0, v1)
-	m.GetAffiliatedSyncErrorsFunc.appendCall(ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetAffiliatedSyncErrors method of the parent MockExternalServiceStore
-// instance is invoked and the hook queue is empty.
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) SetDefaultHook(hook func(context.Context, *types.User) (map[int64]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetAffiliatedSyncErrors method of the parent MockExternalServiceStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) PushHook(hook func(context.Context, *types.User) (map[int64]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) SetDefaultReturn(r0 map[int64]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.User) (map[int64]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) PushReturn(r0 map[int64]string, r1 error) {
-	f.PushHook(func(context.Context, *types.User) (map[int64]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) nextHook() func(context.Context, *types.User) (map[int64]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) appendCall(r0 ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall objects describing
-// the invocations of this function.
-func (f *ExternalServiceStoreGetAffiliatedSyncErrorsFunc) History() []ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall {
-	f.mutex.Lock()
-	history := make([]ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall is an object that
-// describes an invocation of method GetAffiliatedSyncErrors on an instance
-// of MockExternalServiceStore.
-type ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.User
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int64]string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ExternalServiceStoreGetAffiliatedSyncErrorsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ExternalServiceStoreGetByIDFunc describes the behavior when the GetByID
 // method of the parent MockExternalServiceStore instance is invoked.
 type ExternalServiceStoreGetByIDFunc struct {
@@ -14003,6 +13891,115 @@ func (c ExternalServiceStoreGetLastSyncErrorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExternalServiceStoreGetLastSyncErrorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServiceStoreGetLatestSyncErrorsFunc describes the behavior when
+// the GetLatestSyncErrors method of the parent MockExternalServiceStore
+// instance is invoked.
+type ExternalServiceStoreGetLatestSyncErrorsFunc struct {
+	defaultHook func(context.Context) (map[int64]string, error)
+	hooks       []func(context.Context) (map[int64]string, error)
+	history     []ExternalServiceStoreGetLatestSyncErrorsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLatestSyncErrors delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) GetLatestSyncErrors(v0 context.Context) (map[int64]string, error) {
+	r0, r1 := m.GetLatestSyncErrorsFunc.nextHook()(v0)
+	m.GetLatestSyncErrorsFunc.appendCall(ExternalServiceStoreGetLatestSyncErrorsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetLatestSyncErrors
+// method of the parent MockExternalServiceStore instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultHook(hook func(context.Context) (map[int64]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLatestSyncErrors method of the parent MockExternalServiceStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushHook(hook func(context.Context) (map[int64]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) SetDefaultReturn(r0 map[int64]string, r1 error) {
+	f.SetDefaultHook(func(context.Context) (map[int64]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) PushReturn(r0 map[int64]string, r1 error) {
+	f.PushHook(func(context.Context) (map[int64]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) nextHook() func(context.Context) (map[int64]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) appendCall(r0 ExternalServiceStoreGetLatestSyncErrorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServiceStoreGetLatestSyncErrorsFuncCall objects describing the
+// invocations of this function.
+func (f *ExternalServiceStoreGetLatestSyncErrorsFunc) History() []ExternalServiceStoreGetLatestSyncErrorsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreGetLatestSyncErrorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreGetLatestSyncErrorsFuncCall is an object that
+// describes an invocation of method GetLatestSyncErrors on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreGetLatestSyncErrorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int64]string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreGetLatestSyncErrorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreGetLatestSyncErrorsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

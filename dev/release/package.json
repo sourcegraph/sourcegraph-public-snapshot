@@ -1,10 +1,10 @@
 {
-  "name": "release",
-  "description": "Scripts for managing release captain duties",
   "private": true,
+  "name": "@sourcegraph/dev-release",
+  "version": "0.0.1",
+  "description": "Scripts for managing release captain duties",
   "scripts": {
-    "release": "ts-node --transpile-only ./src/main.ts",
-    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'"
-  },
-  "dependencies": {}
+    "release": "yarn run -T ts-node --transpile-only ./src/main.ts",
+    "lint:js": "yarn run -T eslint --cache 'src/**/*.[jt]s?(x)'"
+  }
 }
