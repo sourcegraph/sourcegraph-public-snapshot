@@ -55,11 +55,13 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
         <div className={styles.openInEditorPopover}>
             <Button className={styles.close} onClick={togglePopover}>
                 <VisuallyHidden>Close</VisuallyHidden>
-                <Icon svgPath={mdiClose} inline={false} aria-hidden={true}/>
+                <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
             <H3>Set your preferred editor</H3>
-            <Text>Open this and other files directly in your editor. Set your project path and editor to get started.
-                Update anytime in your user settings.</Text>
+            <Text>
+                Open this and other files directly in your editor. Set your project path and editor to get started.
+                Update anytime in your user settings.
+            </Text>
 
             <Form onSubmit={onSubmit} noValidate={true}>
                 <Input
@@ -79,16 +81,28 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
                 <Select
                     id="OpenInEditorForm-editor"
                     label="Editor"
-                    message={<>Use a different editor? <Link to="https://docs.sourcegraph.com/TODO">Set up another
-                        editor</Link></>}
+                    message={
+                        <>
+                            Use a different editor?{' '}
+                            <Link to="https://docs.sourcegraph.com/TODO">Set up another editor</Link>
+                        </>
+                    }
                     value={selectedEditorId}
                     onChange={handleEditorChange}
                 >
-                    <option value=""/>
-                    {[...supportedEditors].sort((a, b) => a.name.localeCompare(b.name)).map(editor => <option
-                        key={editor.id} value={editor.id}>{editor.name}</option>)}
+                    <option value="" />
+                    {[...supportedEditors]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter(editor => editor.id !== 'custom')
+                        .map(editor => (
+                            <option key={editor.id} value={editor.id}>
+                                {editor.name}
+                            </option>
+                        ))}
                 </Select>
-                <Button variant="primary" type="submit" disabled={!areSettingsValid}>Save</Button>
+                <Button variant="primary" type="submit" disabled={!areSettingsValid}>
+                    Save
+                </Button>
             </Form>
         </div>
     )
