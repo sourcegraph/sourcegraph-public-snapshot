@@ -75,10 +75,10 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
 			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
-			cliutil.AddLog(logger, appName, newRunner, outputFactory),
-			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
-			cliutil.Downgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
-			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, registerMigrators),
+			cliutil.AddLog(appName, newRunner, outputFactory),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}
 
