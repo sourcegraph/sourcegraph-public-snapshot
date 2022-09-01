@@ -1270,3 +1270,22 @@ Arguments: `[classic]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+
+## sg page
+
+Utility to page engineers, mostly used within scripts to automate paging alerts.
+
+```sh
+$ sg page --opsgenie.token [TOKEN] --message "something is broken" --responder.schedule [my-schedule-on-ops-genie]
+```
+
+Flags:
+
+* `--description="<value>"`: Description for the paging alert
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--message="<value>"`: Message for the paging alert
+* `--opsgenie.token="<value>"`: OpsGenie token
+* `--priority="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
+* `--responder.escalation="<value>"`: Escalation team to alert (at least one responder must be given)
+* `--responder.schedule="<value>"`: Schedule team to alert (at least one responder must be given)
+* `--url="<value>"`: URL field for alert details (optional)
