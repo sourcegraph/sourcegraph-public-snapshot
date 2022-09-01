@@ -257,7 +257,6 @@ func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.Retenti
 				IndexIntermediateCommits:  p.IndexIntermediateCommits,
 			}
 		}
-		
 		retentionPolicy = append(retentionPolicy, r)
 	}
 
