@@ -327,10 +327,10 @@ func canAggregateByPath(searchQuery, patternType string) (bool, *notAvailableRea
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// cannot aggregate over:
-	// - searches by commit or repo
+	// - searches by commit, diff or repo
 	for _, parameter := range parameters {
 		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
-			if strings.EqualFold(parameter.Value, "commit") || strings.EqualFold(parameter.Value, "repo") {
+			if strings.EqualFold(parameter.Value, "commit") || strings.EqualFold(parameter.Value, "diff") || strings.EqualFold(parameter.Value, "repo") {
 				reason := fmt.Sprintf(fileUnsupportedFieldValueFmt,
 					parameter.Field, parameter.Value)
 				return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
@@ -390,13 +390,18 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// At the moment we don't allow capture group aggregation for path and repo searches
+	// At the moment we don't allow capture group aggregation for path, repo, diff or commit searches
+	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}}
+	notAllowedFieldTypeValues := map[string]struct{}{"repo": {}, "path": {}, "commit": {}, "diff": {}}
 	for _, parameter := range parameters {
-		if strings.EqualFold(parameter.Field, query.FieldSelect) && (strings.EqualFold(parameter.Value, "repo") || strings.EqualFold(parameter.Value, "file")) {
+		paramValue := strings.ToLower(parameter.Value)
+		_, notAllowedSelect := notAllowedSelectValues[paramValue]
+		if strings.EqualFold(parameter.Field, query.FieldSelect) && notAllowedSelect {
 			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
 			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}
-		if strings.EqualFold(parameter.Field, query.FieldType) && (strings.EqualFold(parameter.Value, "repo") || strings.EqualFold(parameter.Value, "path")) {
+		_, notAllowedFieldType := notAllowedFieldTypeValues[paramValue]
+		if strings.EqualFold(parameter.Field, query.FieldType) && notAllowedFieldType {
 			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
 			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}

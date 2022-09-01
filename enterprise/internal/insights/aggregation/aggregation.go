@@ -72,15 +72,6 @@ func newEventMatch(event result.Match) *eventMatch {
 			Date:        match.Commit.Author.Date,
 			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
 		}
-	case *result.CommitDiffMatch:
-		return &eventMatch{
-			Repo:        string(match.Repo.Name),
-			RepoID:      int32(match.Repo.ID),
-			Author:      match.Commit.Author.Name,
-			Date:        match.Commit.Author.Date,
-			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
-		}
-
 	default:
 		return &eventMatch{}
 	}
