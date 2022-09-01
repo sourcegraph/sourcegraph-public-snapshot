@@ -25,6 +25,11 @@ You can turn off just the proactive aggregations with the feature flag: `disable
 
 You can read more about creating feature flags [here](../../dev/how-to/use_feature_flags.md#create-a-feature-flag).
 
+## Drilldowns 
+
+You can drilldown into a search aggregation by clicking a result in the chart. Your original search query will be updated
+with a `repo`, `file`, `author` filter or regexp pattern depending on the aggregation mode.
+
 ## Limitations
 
 ### Timeout limits
@@ -37,7 +42,7 @@ TODO
 
 ### Single capture group 
 
-TODO 
+Aggrega
 
 ### Saving aggregations to a code insights dashboard
 
