@@ -13,7 +13,6 @@ import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith, shareReplay } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
@@ -192,7 +191,7 @@ class TextDecorationManager implements PluginValue {
     constructor(
         view: EditorView,
         context: Observable<Context>,
-        setDecorations: StateEffectType<[TextDocumentDecorationType, TextDocumentDecoration[]][]>
+        setDecorations: StateEffectType<TextDocumentDecoration[]>
     ) {
         this.subscription = context
             .pipe(
@@ -211,9 +210,9 @@ class TextDecorationManager implements PluginValue {
 }
 
 function textDocumentDecorations(context: Observable<Context>): Extension {
-    const [decorationsField, , setDecorations] = createUpdateableField<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][]
-    >([], field => showTextDocumentDecorations.from(field))
+    const [decorationsField, , setDecorations] = createUpdateableField<TextDocumentDecoration[]>([], field =>
+        showTextDocumentDecorations.from(field)
+    )
     return [decorationsField, ViewPlugin.define(view => new TextDecorationManager(view, context, setDecorations))]
 }
 

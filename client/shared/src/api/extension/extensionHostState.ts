@@ -3,11 +3,10 @@ import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { isErrorLike } from '@sourcegraph/common'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
-import { Settings, SettingsCascade } from '../../settings/settings'
+import { SettingsCascade } from '../../settings/settings'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -67,11 +66,6 @@ export function createExtensionHostState(
 
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
-
-            'experimentalFeatures.enableExtensionsDecorationsColumnView':
-                !isErrorLike(initData.initialSettings.final) &&
-                (initData.initialSettings.final as Settings).experimentalFeatures
-                    ?.enableExtensionsDecorationsColumnView === true,
 
             // Arbitrary, undocumented versioning for extensions that need different behavior for different
             // Sourcegraph versions.

@@ -8,13 +8,8 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import {
-    DecorationMapByLine,
-    flattenDecorations,
-    groupDecorationsByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
@@ -80,18 +75,10 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
     /**
      * Decorations for the file at the two revisions of the diff
      */
-    const [decorations, setDecorations] = useState<Record<'head' | 'base', TextDocumentDecoration[]>>({
-        head: [],
-        base: [],
+    const [decorations, setDecorations] = useState<Record<'head' | 'base', DecorationMapByLine>>({
+        head: new Map(),
+        base: new Map(),
     })
-
-    const mergedDecorations: Record<'head' | 'base', DecorationMapByLine> = useMemo(
-        () => ({
-            head: groupDecorationsByLine(decorations.head),
-            base: groupDecorationsByLine(decorations.base),
-        }),
-        [decorations]
-    )
 
     /** Emits whenever the ref callback for the code element is called */
     const codeElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -190,11 +177,10 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                                 : of(null),
                         ])
                     ),
-
                     tap(([baseDecorations, headDecorations]) => {
                         setDecorations({
-                            base: (baseDecorations && flattenDecorations(baseDecorations)) || [],
-                            head: (headDecorations && flattenDecorations(headDecorations)) || [],
+                            base: groupDecorationsByLine(baseDecorations),
+                            head: groupDecorationsByLine(headDecorations),
                         })
                     })
                 ),
@@ -312,7 +298,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                                             persistLines={persistLines}
                                             key={hunk.oldRange.startLine}
                                             hunk={hunk}
-                                            decorations={mergedDecorations}
+                                            decorations={decorations}
                                         />
                                     ) : (
                                         <DiffHunk
@@ -322,7 +308,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                                             persistLines={persistLines}
                                             key={hunk.oldRange.startLine}
                                             hunk={hunk}
-                                            decorations={mergedDecorations}
+                                            decorations={decorations}
                                         />
                                     )
                                 )}
