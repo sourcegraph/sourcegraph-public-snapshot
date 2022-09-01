@@ -1,4 +1,4 @@
-## Search results aggregations
+# Search results aggregations
 
 In version 4.0 and later, Code Insights provides aggregations shown on the search screen.
 
@@ -34,20 +34,29 @@ with a `repo`, `file`, `author` filter or regexp pattern depending on the aggreg
 
 ### Timeout limits
 
-TODO
+At the moment all aggregations search queries are ran with a 2 second timeout, even if your search specified a timeout.
 
 ### Number of bars displayed
 
-TODO
+The side panel will display a maximum of 10 bars. If expanded, a maximum of 30 bars will be displayed. If there are more
+results this will be displayed on the panel.
 
 ### Single capture group 
 
-Aggrega
+Aggregations by capture group will match on the first capture group in the search query only. For example, for a query:
+
+```regexp
+hello-(\w+)-(\w+)
+```
+
+and a match like `hello-beautiful-world` only `beautiful` will be shown as a match.
 
 ### Saving aggregations to a code insights dashboard
 
 Saving aggregations to a dashboard of code insights is not yet available. 
 
-### Other (limitations perhaps for only certain search types)
+### Slow diff and commit queries
 
-TODO
+Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete 
+within a 2-second timeout. You can trigger an explicit search with no timeout, or you can refine your query using a 
+single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order to bypass this.
