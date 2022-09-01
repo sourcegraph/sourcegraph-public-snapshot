@@ -15,6 +15,7 @@ export const executorFieldsFragment = gql`
         queueName
         active
         os
+        isOutdated
         architecture
         dockerVersion
         executorVersion

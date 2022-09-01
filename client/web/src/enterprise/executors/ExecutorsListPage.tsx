@@ -2,24 +2,10 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { useQuery } from '@sourcegraph/http-client'
-import {
-    Badge,
-    LoadingSpinner,
-    Container,
-    Link,
-    PageHeader,
-    Icon,
-    H3,
-    H4,
-    Text,
-    Tooltip,
-    Alert,
-} from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip, Alert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -27,15 +13,12 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../components/FilteredConnection'
-import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { ExecutorFields, GetSourcegraphVersionResult, GetSourcegraphVersionVariables } from '../../graphql-operations'
+import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { GET_SOURCEGRAPH_VERSION } from './backend'
 import { queryExecutors as defaultQueryExecutors } from './useExecutors'
-import { isExecutorVersionOutdated } from './utils'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -67,7 +50,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+    useEffect(() => eventLogger.logPageView('ExecutorsList'))
 
     const history = useHistory()
 
@@ -77,23 +60,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
         [queryExecutors, apolloClient]
     )
 
-    const { data, loading, error } = useQuery<GetSourcegraphVersionResult, GetSourcegraphVersionVariables>(
-        GET_SOURCEGRAPH_VERSION,
-        {
-            fetchPolicy: 'cache-and-network',
-        }
-    )
-
     const querySubject = useMemo(() => new Subject<string>(), [])
-
-    if (loading) {
-        return <LoadingSpinner />
-    }
-
-    if (error || !data?.site) {
-        const title = error ? String(error) : 'Unable to fetch sourcegraph version.'
-        return <HeroPage icon={AlertCircleIcon} title={title} />
-    }
 
     return (
         <>
@@ -128,12 +95,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 </Text>
             </Container>
             <Container>
-                <FilteredConnection<
-                    ExecutorFields,
-                    {
-                        sourcegraphVersion: string
-                    }
-                >
+                <FilteredConnection<ExecutorFields>
                     listComponent="ul"
                     listClassName="list-group mb-2"
                     showMoreClassName="mb-0"
@@ -141,9 +103,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                     pluralNoun="executors"
                     querySubject={querySubject}
                     nodeComponent={ExecutorNode}
-                    nodeComponentProps={{
-                        sourcegraphVersion: data.site.productVersion,
-                    }}
+                    nodeComponentProps={{}}
                     queryConnection={queryExecutorsCallback}
                     history={history}
                     location={props.location}
@@ -158,118 +118,105 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
 
 export interface ExecutorNodeProps {
     node: ExecutorFields
-    sourcegraphVersion: string
 }
 
-export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({
-    node,
-    sourcegraphVersion,
-}) => {
-    const isOutdated = useMemo(() => isExecutorVersionOutdated(node.active, node.executorVersion, sourcegraphVersion), [
-        node.active,
-        node.executorVersion,
-        sourcegraphVersion,
-    ])
-
-    return (
-        <li className="list-group-item">
-            <Collapsible
-                wholeTitleClickable={false}
-                titleClassName="flex-grow-1"
-                title={
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <H4 className="mb-0">
-                                {node.active ? (
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => (
+    <li className="list-group-item">
+        <Collapsible
+            wholeTitleClickable={false}
+            titleClassName="flex-grow-1"
+            title={
+                <div className="d-flex justify-content-between">
+                    <div>
+                        <H4 className="mb-0">
+                            {node.active ? (
+                                <Icon
+                                    aria-hidden={true}
+                                    className="text-success mr-2"
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
+                            ) : (
+                                <Tooltip content="This executor missed at least three heartbeats.">
                                     <Icon
-                                        aria-hidden={true}
-                                        className="text-success mr-2"
+                                        aria-label="This executor missed at least three heartbeats."
+                                        className="text-warning mr-2"
                                         svgPath={mdiCheckboxBlankCircle}
                                     />
-                                ) : (
-                                    <Tooltip content="This executor missed at least three heartbeats.">
-                                        <Icon
-                                            aria-label="This executor missed at least three heartbeats."
-                                            className="text-warning mr-2"
-                                            svgPath={mdiCheckboxBlankCircle}
-                                        />
-                                    </Tooltip>
-                                )}
-                                {node.hostname}{' '}
-                                <Badge
-                                    variant="secondary"
-                                    tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
-                                >
-                                    {node.queueName}
-                                </Badge>
-                            </H4>
-                        </div>
-                        <span>
-                            last seen <Timestamp date={node.lastSeenAt} />
-                        </span>
+                                </Tooltip>
+                            )}
+                            {node.hostname}{' '}
+                            <Badge
+                                variant="secondary"
+                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            >
+                                {node.queueName}
+                            </Badge>
+                        </H4>
                     </div>
-                }
-            >
-                <dl className="mt-2 mb-0">
-                    <div className="d-flex w-100">
-                        <div className="flex-grow-1">
-                            <dt>OS</dt>
-                            <dd>
-                                <TelemetryData data={node.os} />
-                            </dd>
+                    <span>
+                        last seen <Timestamp date={node.lastSeenAt} />
+                    </span>
+                </div>
+            }
+        >
+            <dl className="mt-2 mb-0">
+                <div className="d-flex w-100">
+                    <div className="flex-grow-1">
+                        <dt>OS</dt>
+                        <dd>
+                            <TelemetryData data={node.os} />
+                        </dd>
 
-                            <dt>Architecture</dt>
-                            <dd>
-                                <TelemetryData data={node.architecture} />
-                            </dd>
+                        <dt>Architecture</dt>
+                        <dd>
+                            <TelemetryData data={node.architecture} />
+                        </dd>
 
-                            <dt>Executor version</dt>
-                            <dd>
-                                <TelemetryData data={node.executorVersion} />
-                            </dd>
+                        <dt>Executor version</dt>
+                        <dd>
+                            <TelemetryData data={node.executorVersion} />
+                        </dd>
 
-                            <dt>Docker version</dt>
-                            <dd>
-                                <TelemetryData data={node.dockerVersion} />
-                            </dd>
-                        </div>
-                        <div className="flex-grow-1">
-                            <dt>Git version</dt>
-                            <dd>
-                                <TelemetryData data={node.gitVersion} />
-                            </dd>
-
-                            <dt>Ignite version</dt>
-                            <dd>
-                                <TelemetryData data={node.igniteVersion} />
-                            </dd>
-
-                            <dt>src-cli version</dt>
-                            <dd>
-                                <TelemetryData data={node.srcCliVersion} />
-                            </dd>
-
-                            <dt>First seen at</dt>
-                            <dd>
-                                <Timestamp date={node.firstSeenAt} />
-                            </dd>
-                        </div>
+                        <dt>Docker version</dt>
+                        <dd>
+                            <TelemetryData data={node.dockerVersion} />
+                        </dd>
                     </div>
-                </dl>
-            </Collapsible>
+                    <div className="flex-grow-1">
+                        <dt>Git version</dt>
+                        <dd>
+                            <TelemetryData data={node.gitVersion} />
+                        </dd>
 
-            {isOutdated && (
-                <Alert variant="warning" className="mt-3">
-                    <Text className="m-0">{node.hostname} is outdated.</Text>
-                    <Text className="m-0">
-                        Please upgrade this executor to a version compatible with your Sourcegraph installation (
-                        {sourcegraphVersion}).
-                    </Text>
-                </Alert>
-            )}
-        </li>
-    )
-}
+                        <dt>Ignite version</dt>
+                        <dd>
+                            <TelemetryData data={node.igniteVersion} />
+                        </dd>
+
+                        <dt>src-cli version</dt>
+                        <dd>
+                            <TelemetryData data={node.srcCliVersion} />
+                        </dd>
+
+                        <dt>First seen at</dt>
+                        <dd>
+                            <Timestamp date={node.firstSeenAt} />
+                        </dd>
+                    </div>
+                </div>
+            </dl>
+        </Collapsible>
+
+        {node.isOutdated && (
+            <Alert variant="warning" className="mt-3">
+                <Text className="m-0">{node.hostname} is outdated.</Text>
+                <Text className="m-0">
+                    Please upgrade this executor to a version compatible with your Sourcegraph version.
+                </Text>
+            </Alert>
+        )}
+    </li>
+)
 
 export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">

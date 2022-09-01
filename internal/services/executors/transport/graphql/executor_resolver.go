@@ -46,9 +46,10 @@ func (e *ExecutorResolver) IsOutdated() (bool, error) {
 	sv := version.Version()
 	ev := e.executor.ExecutorVersion
 
-	isDev := version.IsDev(ev) && version.IsDev(sv)
+	isExecutorDev := ev != "" && version.IsDev(ev)
+	isSgDev := sv != "" && version.IsDev(sv)
 
-	if !e.Active() || isDev {
+	if !e.Active() || isSgDev || isExecutorDev {
 		return false, nil
 	}
 
