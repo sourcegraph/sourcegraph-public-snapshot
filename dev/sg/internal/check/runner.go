@@ -10,12 +10,19 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+)
+
+const (
+	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
+	manualFixChoice    = "Manual fix: Let me fix this manually"
+	goBackChoice       = "Go back"
 )
 
 type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
@@ -39,6 +46,8 @@ type Runner[Args any] struct {
 	// Concurrency controls the maximum number of checks across categories to evaluate at
 	// the same time - defaults to 10.
 	Concurrency int
+	// FailFast indicates if the runner should stop upon encountering the first error.
+	FailFast bool
 	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
 	// if a check fails. The suggestion string can be in Markdown.
 	SuggestOnCheckFailure SuggestFunc[Args]
@@ -199,8 +208,13 @@ var errSkipped = errors.New("skipped")
 // runAllCategoryChecks is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
 	var runAllSpan *analytics.Span
+	var cancelAll context.CancelFunc
+	ctx, cancelAll = context.WithCancel(ctx)
+	defer cancelAll()
 	ctx, runAllSpan = r.startSpan(ctx, "runAllCategoryChecks")
 	defer runAllSpan.End()
+
+	allCancelled := atomic.NewBool(false)
 
 	if r.RenderDescription != nil {
 		r.RenderDescription(r.Output)
@@ -227,6 +241,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		// aggregated results
 		categoriesSkipped   = map[int]bool{}
 		categoriesDurations = map[int]time.Duration{}
+		checksSkipped       = map[string]bool{}
 
 		// used for progress bar - needs to be thread-safe since it can be updated from
 		// multiple categories at once.
@@ -243,6 +258,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
+			checksSkipped[checkName] = true
 			progress.StatusBarUpdatef(i, "Check %q skipped: %s", checkName, err.Error())
 		}
 		updateCheckFailed = func(i int, checkName string, err error) {
@@ -323,10 +339,27 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					// progress to discard.
 					var updateOutput strings.Builder
 					if err := check.Update(ctx, std.NewFixedOutput(&updateOutput, true), args); err != nil {
-						updateCheckFailed(i, check.Name, err)
+						// If we've hit a cancellation, mark as skipped
+						if allCancelled.Load() {
+							// override error and set as skipped
+							err = errors.New("skipped because another check failed")
+							check.cachedCheckErr = err
+							updateCheckSkipped(i, check.Name, err)
+							span.Skipped()
+							return err
+						}
 
+						// mark check as failed
+						updateCheckFailed(i, check.Name, err)
 						check.cachedCheckOutput = updateOutput.String()
 						span.Failed()
+
+						// If we should fail fast, mark as failed
+						if r.FailFast {
+							allCancelled.Store(true)
+							cancelAll()
+						}
+
 						return err
 					}
 
@@ -370,8 +403,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 
 		if _, ok := categoriesSkipped[i]; ok {
-			r.Output.WriteSkippedf("%s %s[SKIPPED. Reason: %s]%s", summaryStr,
-				output.StyleBold, categoriesSkipped[i], output.StyleReset)
+			r.Output.WriteSkippedf("%s %s[SKIPPED]%s",
+				summaryStr, output.StyleBold, output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}
@@ -386,7 +419,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			r.Output.WriteFailuref(summaryStr)
 
 			for _, check := range category.Checks {
-				if check.cachedCheckErr != nil {
+				if checksSkipped[check.Name] {
+					r.Output.WriteSkippedf("%s %s[SKIPPED]%s: %s",
+						check.Name, output.StyleBold, output.StyleReset, check.cachedCheckErr)
+				} else if check.cachedCheckErr != nil {
 					// Slightly different formatting for each destination
 					var suggestion string
 					if r.SuggestOnCheckFailure != nil {
@@ -455,12 +491,12 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 
 	choices := map[int]string{}
 	if fixableCategory {
-		choices[1] = "You try fixing all of it for me."
-		choices[2] = "I want to fix these manually"
-		choices[3] = "Go back"
+		choices[1] = automaticFixChoice
+		choices[2] = manualFixChoice
+		choices[3] = goBackChoice
 	} else {
-		choices[1] = "I want to fix these manually"
-		choices[2] = "Go back"
+		choices[1] = manualFixChoice
+		choices[2] = goBackChoice
 	}
 
 	choice, err := getChoice(r.Input, r.Output, choices)

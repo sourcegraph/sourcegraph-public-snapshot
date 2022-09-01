@@ -1,4 +1,3 @@
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
@@ -44,7 +43,7 @@ export const JSONRequest: Story = () => (
 
 JSONRequest.storyName = 'JSON request'
 
-export const JSONResponse: Story = () => (
+export const JSONResponse: Story = args => (
     <WebStory>
         {() => (
             <MessagePanel
@@ -52,14 +51,17 @@ export const JSONResponse: Story = () => (
                     headers: messagePanelObject.JSON.headers,
                     body: messagePanelObject.JSON.body,
                 }}
-                requestOrStatusCode={number('status code', 200, {
-                    min: 100,
-                    max: 599,
-                })}
+                requestOrStatusCode={args.requestOrStatusCode}
             />
         )}
     </WebStory>
 )
+JSONResponse.argTypes = {
+    requestOrStatusCode: {
+        control: { type: 'number', min: 100, max: 599 },
+        defaultValue: 200,
+    },
+}
 
 JSONResponse.storyName = 'JSON response'
 
@@ -83,7 +85,7 @@ export const PlainRequest: Story = () => (
 
 PlainRequest.storyName = 'plain request'
 
-export const PlainResponse: Story = () => (
+export const PlainResponse: Story = args => (
     <WebStory>
         {() => (
             <MessagePanel
@@ -91,13 +93,16 @@ export const PlainResponse: Story = () => (
                     headers: messagePanelObject.plain.headers,
                     body: messagePanelObject.plain.body,
                 }}
-                requestOrStatusCode={number('status code', 200, {
-                    min: 100,
-                    max: 599,
-                })}
+                requestOrStatusCode={args.requestOrStatusCode}
             />
         )}
     </WebStory>
 )
+PlainResponse.argTypes = {
+    requestOrStatusCode: {
+        control: { type: 'number', min: 100, max: 599 },
+        defaultValue: 200,
+    },
+}
 
 PlainResponse.storyName = 'plain response'

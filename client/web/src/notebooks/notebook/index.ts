@@ -150,14 +150,17 @@ export class Notebook {
                     }),
                 })
                 break
-            case 'query':
+            case 'query': {
+                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
+                // Removes comments
+                const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(
                         transformSearchQuery({
-                            // Removes comments
-                            query: block.input.query.replace(/\/\/.*/g, ''),
-                            extensionHostAPIPromise: this.dependencies.extensionHostAPI,
+                            query,
+                            extensionHostAPIPromise: extensionHostAPI,
+                            enableGoImportsSearchQueryTransform,
                         }),
                         {
                             version: LATEST_VERSION,
@@ -168,6 +171,7 @@ export class Notebook {
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
+            }
             case 'file':
                 this.blocks.set(block.id, {
                     ...block,

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type TriggerJob struct {
@@ -158,21 +157,10 @@ func (s *codeMonitorStore) CountQueryTriggerJobs(ctx context.Context, queryID in
 	return count, err
 }
 
-func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	if err != nil {
-		return nil, false, err
-	}
-	records, err := scanTriggerJobs(rows)
-	if err != nil || len(records) == 0 {
-		return &TriggerJob{}, false, err
-	}
-	return records[0], true, nil
-}
-
 func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 	var js []*TriggerJob
 	for rows.Next() {
-		j, err := scanTriggerJob(rows)
+		j, err := ScanTriggerJob(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -181,7 +169,7 @@ func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 	return js, rows.Err()
 }
 
-func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
+func ScanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 	var resultsJSON []byte
 	m := &TriggerJob{}
 	err := scanner.Scan(

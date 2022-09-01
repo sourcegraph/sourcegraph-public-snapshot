@@ -222,12 +222,18 @@ type unlockFunc func(err error) error
 // the given schema context. This is meant to enable a short development loop where the user can
 // re-apply the `up` command without having to create a dummy migration log to proceed.
 //
+// If the ignoreSinglePendingLog flag is set to true, then the callback will be invoked if there is
+// a single pending migration log, and it's the next migration that would be applied with respect to
+// the given schema context. This is meant to be used in the upgrade process, where an interrupted
+// migrator command will appear as a concurrent upgrade attempt.
+//
 // This method returns a true-valued flag if it should be re-invoked by the caller.
 func (r *Runner) withLockedSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 	f lockedVersionCallback,
 ) (retry bool, _ error) {
 	// Take an advisory lock to determine if there are any migrator instances currently
@@ -260,7 +266,14 @@ func (r *Runner) withLockedSchemaState(
 
 	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
 	// instances to finish their current work.
-	if retry, err := validateSchemaState(ctx, schemaContext, definitions, byState, ignoreSingleDirtyLog); err != nil {
+	if retry, err := validateSchemaState(
+		ctx,
+		schemaContext,
+		definitions,
+		byState,
+		ignoreSingleDirtyLog,
+		ignoreSinglePendingLog,
+	); err != nil {
 		return false, err
 	} else if retry {
 		// An index is currently being created. We return true here to flag to the caller that
@@ -352,6 +365,7 @@ func validateSchemaState(
 	definitions []definition.Definition,
 	byState definitionsByState,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 ) (retry bool, _ error) {
 	if ignoreSingleDirtyLog && len(byState.failed) == 1 {
 		appliedVersionMap := intSet(extractIDs(byState.applied))
@@ -365,6 +379,11 @@ func validateSchemaState(
 				return false, nil
 			}
 		}
+	}
+
+	if ignoreSinglePendingLog && len(byState.pending) == 1 {
+		schemaContext.logger.Warn("Ignoring a pending migration")
+		return false, nil
 	}
 
 	if len(byState.failed) > 0 {

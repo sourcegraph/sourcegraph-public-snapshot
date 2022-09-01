@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -50,7 +50,8 @@ RUN apk add --upgrade --no-cache \
     'openssl>=1.1.1l' \
     'busybox>=1.32.1' \
     'ncurses-libs>=6.2_p20210109-r1' \
-    'ncurses-terminfo-base>=6.2_p20210109-r1'
+    'ncurses-terminfo-base>=6.2_p20210109-r1' \
+    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana

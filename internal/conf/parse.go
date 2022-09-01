@@ -26,6 +26,11 @@ func parseConfigData(data string, cfg any) error {
 		if v.ExperimentalFeatures == nil {
 			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
+
+		if v.ExperimentalFeatures.EnableLegacyExtensions == nil {
+			// `true` is the default value before the Sourcegraph 4.0 release (should be switched to `false` after the release).
+			v.ExperimentalFeatures.EnableLegacyExtensions = func() *bool { b := true; return &b }()
+		}
 	}
 	return nil
 }
@@ -61,7 +66,7 @@ var requireRestart = []string{
 	"insights.commit.indexer.interval",
 	"codeIntelAutoIndexing.enabled",
 	"permissions.syncUsersMaxConcurrency",
-	"exportUsageTelemetry",
+	"gitHubApp",
 }
 
 // needRestartToApply determines if a restart is needed to apply the changes

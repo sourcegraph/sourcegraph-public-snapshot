@@ -1,12 +1,12 @@
 import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
+import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
+import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
 import { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -169,9 +169,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         return <LoadingSpinner />
     }
 
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Search</AnalyticsPageTitle>
 
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
@@ -181,7 +183,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={
+                                aggregation.selected === 'count'
+                                    ? `${groupingLabel} activity`
+                                    : `${groupingLabel} unique users`
+                            }
                             labelX="Time"
                             labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
                         >

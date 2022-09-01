@@ -469,6 +469,7 @@ export const hasPathLikeValue = (field: string): boolean => {
         case 'r':
         case 'file':
         case 'f':
+        case 'path':
         case 'repohasfile':
             return true
         default:
@@ -799,6 +800,7 @@ export const hasRegexpValue = (field: string): boolean => {
         case 'r':
         case 'file':
         case 'f':
+        case 'path':
         case 'repohasfile':
         case 'message':
         case 'msg':
@@ -881,12 +883,12 @@ const mapOffset = (token: Token, offset: number): Token => {
 }
 
 /**
- * Returns true if a `contains(...)` predicate is valid. This predicate is currently valid when one of
- * `file:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
+ * Returns true if a `contains.file(...)` predicate is valid. This predicate is currently valid when one of
+ * `path:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
  * makes this body invalid.
  */
-const validContainsBody = (tokens: Token[]): boolean => {
-    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'file')
+const validContainsFileBody = (tokens: Token[]): boolean => {
+    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'path')
     if (fileIndex !== -1) {
         tokens.splice(fileIndex, 1)
     }
@@ -901,21 +903,21 @@ const validContainsBody = (tokens: Token[]): boolean => {
 }
 
 /**
- * Attempts to decorate `contains(file:foo content:bar)` syntax. Fails if
+ * Attempts to decorate `contains.file(path:foo content:bar)` syntax. Fails if
  * the body contains unsupported syntax. This function takes care to
- * decorate `content:` values as regular expression syntax.
+ * decorate `path:` and `content:` values as regular expression syntax.
  */
-const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[] | undefined => {
     const result = scanSearchQuery(body, false, SearchPatternType.regexp)
     if (result.type === 'error') {
         return undefined
     }
-    if (!validContainsBody([...result.term])) {
+    if (!validContainsFileBody([...result.term])) {
         // There are more things in this query than we support.
         return undefined
     }
     const decorated: DecoratedToken[] = result.term.flatMap(token => {
-        if (token.type === 'filter' && token.field.value === 'file') {
+        if (token.type === 'filter' && token.field.value === 'path') {
             return decorate(mapOffset(token, offset))
         }
         if (token.type === 'filter' && token.field.value === 'content') {
@@ -941,20 +943,55 @@ const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | 
 }
 
 /**
+ * Attempts to decorate `repo:has(key:value)` syntax. Fails if
+ * the body contains unsupported syntax.
+ */
+const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+    const matches = body.match(/([^:]+):([^:]+)/)
+    if (!matches) {
+        return undefined
+    }
+    console.log(matches)
+
+    return [
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset, end: offset + matches[1].length },
+            quoted: false,
+        },
+        {
+            type: 'metaFilterSeparator',
+            range: { start: offset + matches[1].length, end: offset + matches[1].length + 1 },
+            value: ':',
+        },
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset + matches[1].length + 1, end: offset + matches[1].length + 1 + matches[2].length },
+            quoted: false,
+        },
+    ]
+}
+
+/**
  * Decorates the body part of predicate syntax `name(body)`.
  */
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains':
-            // eslint-disable-next-line no-case-declarations
-            const result = decorateContainsBody(body, offset)
+        case 'contains.file':
+        case 'has.file': {
+            const result = decorateContainsFileBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
-        case 'contains.file':
+        }
+        case 'contains.path':
+        case 'has.path':
         case 'contains.content':
+        case 'has.content':
         case 'has.description':
             return mapRegexpMetaSucceed({
                 type: 'pattern',
@@ -962,16 +999,22 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
-        case 'dependencies':
-        case 'deps':
-        case 'dependents':
-        case 'revdeps':
-            return mapRegexpMetaSucceed({
-                type: 'pattern',
-                range: { start: offset, end: body.length },
-                value: body,
-                kind: PatternKind.Regexp,
-            })
+        case 'has': {
+            const result = decorateRepoHasBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        }
+        case 'has.tag':
+            return [
+                {
+                    type: 'literal',
+                    range: { start: offset, end: offset + body.length },
+                    value: body,
+                    quoted: false,
+                },
+            ]
     }
     decorated.push({
         type: 'literal',
@@ -1154,6 +1197,81 @@ export const toCSSClassName = (token: DecoratedToken): string => {
 
         default:
             return 'search-query-text'
+    }
+}
+
+interface Decoration {
+    value: string
+    key: number
+    className: string
+}
+
+export function toDecoration(query: string, token: DecoratedToken): Decoration {
+    const className = toCSSClassName(token)
+
+    switch (token.type) {
+        case 'keyword':
+        case 'field':
+        case 'metaPath':
+        case 'metaRevision':
+        case 'metaRegexp':
+        case 'metaStructural':
+            return {
+                value: token.value,
+                key: token.range.start,
+                className,
+            }
+        case 'openingParen':
+            return {
+                value: '(',
+                key: token.range.start,
+                className,
+            }
+        case 'closingParen':
+            return {
+                value: ')',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaFilterSeparator':
+            return {
+                value: ':',
+                key: token.range.start,
+                className,
+            }
+        case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
+            return {
+                value: '@',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaPredicate': {
+            let value = ''
+            switch (token.kind) {
+                case 'NameAccess':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+                case 'Dot':
+                    value = '.'
+                    break
+                case 'Parenthesis':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+            }
+            return {
+                value,
+                key: token.range.start,
+                className,
+            }
+        }
+    }
+    return {
+        value: query.slice(token.range.start, token.range.end),
+        key: token.range.start,
+        className,
     }
 }
 

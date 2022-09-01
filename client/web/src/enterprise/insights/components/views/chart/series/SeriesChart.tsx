@@ -1,8 +1,7 @@
 import React, { SVGProps, useCallback } from 'react'
 
-import { LineChart, SeriesLikeChart } from '../../../../../../charts'
-import { LineChartProps } from '../../../../../../charts/components/line-chart/LineChart'
-import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
+import { LineChart, SeriesLikeChart, LineChartProps } from '@sourcegraph/wildcard'
+
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { LockedChart } from '../locked/LockedChart'
 
@@ -14,6 +13,7 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     type: SeriesBasedChartTypes
     width: number
     height: number
+    activeSeriesId?: string
     zeroYAxisMin?: boolean
     locked?: boolean
     seriesToggleState?: UseSeriesToggleReturn
@@ -59,14 +59,15 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
         return {
             opacity,
-            transitionProperty: 'opacity',
-            transitionDuration: '200ms',
-            transitionTimingFunction: 'ease-out',
+            // TODO: Bring this animation back when https://github.com/sourcegraph/sourcegraph/issues/40162 is resolved
+            // transitionProperty: 'opacity',
+            // transitionDuration: '200ms',
+            // transitionTimingFunction: 'ease-out',
         }
     }
 
     const getActiveSeries = useCallback(
-        <D,>(dataSeries: SeriesWithData<D>[]): SeriesWithData<D>[] =>
+        <D extends { id: string | number }>(dataSeries: D[]): D[] =>
             dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`)),
         [isSeriesSelected, isSeriesHovered]
     )
@@ -80,6 +81,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
             series={series}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}
+            activeSeriesId={seriesToggleState?.hoveredId}
             {...otherProps}
         />
     )

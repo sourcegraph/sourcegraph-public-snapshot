@@ -33,7 +33,7 @@ func TestParseShortLog(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string // in the format of `git shortlog -sne`
-		want    []*gitdomain.PersonCount
+		want    []*gitdomain.ContributorCount
 		wantErr error
 	}{
 		{
@@ -42,7 +42,7 @@ func TestParseShortLog(t *testing.T) {
   1125	Jane Doe <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.PersonCount{
+			want: []*gitdomain.ContributorCount{
 				{
 					Name:  "Jane Doe",
 					Email: "jane@sourcegraph.com",
@@ -60,7 +60,7 @@ func TestParseShortLog(t *testing.T) {
 			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.PersonCount{
+			want: []*gitdomain.ContributorCount{
 				{
 					Name:  "jane@sourcegraph.com",
 					Email: "jane@sourcegraph.com",
@@ -943,80 +943,6 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
-	}
-}
-
-func TestClientImplementor_ExecSafe(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	tests := []struct {
-		args                   []string
-		wantStdout, wantStderr string
-		wantExitCode           int
-		wantError              bool
-	}{
-		{
-			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?"},
-			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
-		},
-		{
-			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", "-m", "-i", "-n200", "--author=a@a.com"},
-			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
-		},
-		{
-			args:       []string{"show"},
-			wantStdout: "commit ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8\nAuthor: a <a@a.com>\nDate:   Mon Jan 2 15:04:05 2006 +0000\n\n    foo\n",
-		},
-		{
-			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", ";show"},
-			wantStderr:   "fatal: ambiguous argument ';show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
-			wantExitCode: 128,
-		},
-		{
-			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?;", "show"},
-			wantStderr:   "fatal: ambiguous argument 'show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
-			wantExitCode: 128,
-		},
-		{
-			args:      []string{"rm"},
-			wantError: true,
-		},
-		{
-			args:      []string{"checkout"},
-			wantError: true,
-		},
-		{
-			args:      []string{"show;", "echo", "hello"},
-			wantError: true,
-		},
-	}
-
-	repo := MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
-
-	client := newClientImplementor(database.NewMockDB())
-	for _, test := range tests {
-		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
-			stdout, stderr, exitCode, err := client.execSafe(context.Background(), repo, test.args)
-			if err == nil && test.wantError {
-				t.Errorf("got error %v, want error %v", err, test.wantError)
-			}
-			if test.wantError {
-				return
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(stdout) != test.wantStdout {
-				t.Errorf("got stdout %q, want %q", stdout, test.wantStdout)
-			}
-			if string(stderr) != test.wantStderr {
-				t.Errorf("got stderr %q, want %q", stderr, test.wantStderr)
-			}
-			if exitCode != test.wantExitCode {
-				t.Errorf("got exitCode %d, want %d", exitCode, test.wantExitCode)
-			}
-		})
 	}
 }
 
@@ -2247,7 +2173,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := newClientImplementor(database.NewMockDB())
+	client := NewClient(database.NewMockDB()).(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2395,7 +2321,7 @@ func TestCommitDate(t *testing.T) {
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
-	client := newClientImplementor(db)
+	client := NewClient(db).(*clientImplementor)
 	commits, err := client.Commits(ctx, repo, opt, checker)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)

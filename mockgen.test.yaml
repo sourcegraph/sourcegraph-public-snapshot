@@ -1,3 +1,11 @@
+- filename: cmd/frontend/internal/httpapi/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/httpcli
+  interfaces:
+    - Doer
+- filename: cmd/frontend/internal/httpapi/releasecache/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
+  interfaces:
+    - ReleaseCache
 - filename: cmd/symbols/fetcher/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:
@@ -34,13 +42,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
   interfaces:
     - DBStore
-    - EnqueuerDBStore
-    - EnqueuerGitserverClient
-    - GitserverClient
-    - IndexEnqueuer
     - LSIFStore
-    - RepoUpdaterClient
-    - CodeNavResolver
 - filename: enterprise/cmd/frontend/internal/executorqueue/handler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/services/executors/store
   interfaces:
@@ -65,6 +67,7 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
       interfaces:
         - DBStore
+        - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
         - GitserverClient
@@ -101,16 +104,19 @@
   interfaces:
     - SyncStore
 - filename: internal/codeintel/autoindexing/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
-  interfaces:
-    - DBStore
-    - GitServerClient
-    - InferenceService
-    - RepoUpdaterClient
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
+      interfaces:
+        - RepoUpdaterClient
+        - GitServerClient
+        - InferenceService
+        - UploadService
 - filename: internal/codeintel/autoindexing/background/scheduler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler
   interfaces:
-    - DBStore
     - PolicyMatcher
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
@@ -127,9 +133,14 @@
   interfaces:
     - Store
 - filename: internal/codeintel/policies/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store
-  interfaces:
-    - Store
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies
+      interfaces:
+        - UploadService
+        - GitserverClient
 - filename: internal/codeintel/policies/background/repomatcher/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies/background/repomatcher
   interfaces:
@@ -139,24 +150,28 @@
   interfaces:
     - GitserverClient
   package: policies
-- filename: internal/codeintel/stores/dbstore/migration/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration
-  interfaces:
-    - GitServerClient
-- filename: internal/codeintel/codenav/mocks_store.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
-  interfaces:
-    - Store
-- filename: internal/codeintel/codenav/mocks_lsifstore.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
-  interfaces:
-    - LsifStore
-- filename: internal/codeintel/codenav/mocks_uploadservice.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
-  interfaces:
-    - UploadService
-    - GitTreeTranslator
-    - GitserverClient
+- filename: internal/codeintel/codenav/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+      interfaces:
+        - LsifStore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
+      interfaces:
+        - UploadService
+        - GitTreeTranslator
+        - DBStore
+        - GitserverClient
+- filename: internal/codeintel/uploads/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
+      interfaces:
+        - GitserverClient
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
@@ -215,7 +230,7 @@
   interfaces:
     - ConfigurationSource
 - filename: internal/search/repos/mocks_test.go
-  path: github.com/google/zoekt
+  path: github.com/sourcegraph/zoekt
   interfaces:
     - Streamer
 - filename: enterprise/cmd/worker/internal/telemetry/mocks_test.go

@@ -15,8 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -153,7 +153,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		svcdup := types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github2 - Test",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   clock.Now(),
 			UpdatedAt:   clock.Now(),
 		}
@@ -269,6 +269,31 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					err:  "bad credentials",
 				},
 				testCase{
+					// If the source is unauthorized with a warning rather than an error,
+					// the sync will continue. If the warning error is unauthorized, the
+					// corresponding repos will be deleted as it's seen as permissions changes.
+					name: string(tc.repo.Name) + "/unauthorized-with-warning",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrUnauthorized{})),
+					),
+					store: s,
+					stored: types.Repos{tc.repo.With(
+						typestest.Opt.RepoSources(tc.svc.URN()),
+					)},
+					now: clock.Now,
+					diff: repos.Diff{
+						Deleted: types.Repos{
+							tc.repo.With(func(r *types.Repo) {
+								r.Sources = map[string]*types.SourceInfo{}
+								r.DeletedAt = clock.Time(0)
+								r.UpdatedAt = clock.Time(0)
+							}),
+						},
+					},
+					svcs: []*types.ExternalService{tc.svc},
+					err:  "bad credentials",
+				},
+				testCase{
 					// If the source is forbidden we should treat this as if zero repos were returned
 					// as it indicates that the source no longer has access to its repos
 					// This only applies to user added external services, since site level ones will
@@ -283,6 +308,31 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					)},
 					now:  clock.Now,
 					diff: diff,
+					svcs: []*types.ExternalService{tc.svc},
+					err:  "forbidden",
+				},
+				testCase{
+					// If the source is forbidden with a warning rather than an error,
+					// the sync will continue. If the warning error is forbidden, the
+					// corresponding repos will be deleted as it's seen as permissions changes.
+					name: string(tc.repo.Name) + "/forbidden-with-warning",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrForbidden{})),
+					),
+					store: s,
+					stored: types.Repos{tc.repo.With(
+						typestest.Opt.RepoSources(tc.svc.URN()),
+					)},
+					now: clock.Now,
+					diff: repos.Diff{
+						Deleted: types.Repos{
+							tc.repo.With(func(r *types.Repo) {
+								r.Sources = map[string]*types.SourceInfo{}
+								r.DeletedAt = clock.Time(0)
+								r.UpdatedAt = clock.Time(0)
+							}),
+						},
+					},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "forbidden",
 				},
@@ -305,10 +355,44 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					err:  "account suspended",
 				},
 				testCase{
+					// If the source is account suspended with a warning rather than an error,
+					// the sync will terminate. This is the only warning error that the sync will abort
+					name: string(tc.repo.Name) + "/accountsuspended-with-warning",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrAccountSuspended{})),
+					),
+					store: s,
+					stored: types.Repos{tc.repo.With(
+						typestest.Opt.RepoSources(tc.svc.URN()),
+					)},
+					now:  clock.Now,
+					diff: diff,
+					svcs: []*types.ExternalService{tc.svc},
+					err:  "account suspended",
+				},
+				testCase{
 					// Test that spurious errors don't cause deletions.
 					name: string(tc.repo.Name) + "/spurious-error",
 					sourcer: repos.NewFakeSourcer(nil,
 						repos.NewFakeSource(tc.svc.Clone(), io.EOF),
+					),
+					store: s,
+					stored: types.Repos{tc.repo.With(
+						typestest.Opt.RepoSources(tc.svc.URN()),
+					)},
+					now: clock.Now,
+					diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
+						typestest.Opt.RepoSources(tc.svc.URN()),
+					)}},
+					svcs: []*types.ExternalService{tc.svc},
+					err:  io.EOF.Error(),
+				},
+				testCase{
+					// If the source is a spurious error with a warning rather than an error,
+					// the sync will continue. However, no repos will be deleted.
+					name: string(tc.repo.Name) + "/spurious-error-with-warning",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(io.EOF)),
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
@@ -864,7 +948,7 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		defer cancel()
 
 		svc := &types.ExternalService{
-			Config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			Kind:   extsvc.KindGitHub,
 		}
 
@@ -1135,14 +1219,14 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1245,7 +1329,7 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 		svc1 := &types.ExternalService{
 			Kind:         extsvc.KindGitHub,
 			DisplayName:  "Github - Test1",
-			Config:       `{"url": "https://github.com"}`,
+			Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CloudDefault: true,
 			CreatedAt:    now,
 			UpdatedAt:    now,
@@ -1295,14 +1379,14 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1453,14 +1537,14 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1549,7 +1633,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		userService := &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "Github - User",
-			Config:          `{"url": "https://github.com"}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
@@ -1558,7 +1642,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		adminService := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Private",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1751,14 +1835,14 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1868,14 +1952,14 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      `{"url": "https://github.com"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1983,7 +2067,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "Github - Test1",
-				Config:          `{"url": "https://github.com"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 				CreatedAt:       now,
 				UpdatedAt:       now,
 				NamespaceUserID: user.ID,
@@ -1991,7 +2075,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "Github - Test2",
-				Config:         `{"url": "https://github.com"}`,
+				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 				CreatedAt:      now,
 				UpdatedAt:      now,
 				NamespaceOrgID: org.ID,
@@ -2100,7 +2184,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 			{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "Github - Test1",
-				Config:          `{"url": "https://github.com"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 				CreatedAt:       now,
 				UpdatedAt:       now,
 				NamespaceUserID: user.ID,
@@ -2108,7 +2192,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 			{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "Github - Test2",
-				Config:         `{"url": "https://github.com"}`,
+				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 				CreatedAt:      now,
 				UpdatedAt:      now,
 				NamespaceOrgID: org.ID,
@@ -2305,7 +2389,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	service := types.ExternalService{
 		Kind:         serviceType,
 		DisplayName:  fmt.Sprintf("%s - Test", serviceType),
-		Config:       config,
+		Config:       extsvc.NewUnencryptedConfig(config),
 		CreatedAt:    now,
 		UpdatedAt:    now,
 		CloudDefault: true,
@@ -2382,7 +2466,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()
-		workerStore := webhookworker.CreateWorkerStore(s.Handle())
+		workerStore := webhookworker.CreateWorkerStore(logger, s.Handle())
 
 		repo := &types.Repo{
 			ID:   1,
@@ -2407,7 +2491,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "TestService",
-			Config:      config,
+			Config:      extsvc.NewUnencryptedConfig(config),
 		}
 		if err := esStore.Upsert(ctx, svc); err != nil {
 			t.Fatal(err)
@@ -2428,7 +2512,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		jobChan := make(chan *webhookworker.Job)
 		metrics := workerutil.NewMetrics(&observation.Context{
 			Logger:     logger,
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
 

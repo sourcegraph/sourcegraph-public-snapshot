@@ -87,7 +87,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
 		builder := &jobBuilder{
 			query:          b,
@@ -291,12 +291,9 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol == search.Streaming
 
-	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
-	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
-
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -347,18 +344,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
-			typ := search.TextRequest
-			zoektQuery, err := zoekt.QueryToZoektQuery(f.ToBasic(), resultTypes, searchInputs.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: fileMatchLimit,
-				Select:         selector,
-			}
-
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
@@ -366,11 +351,11 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 			}
 
 			addJob(&structural.SearchJob{
-				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				RepoOpts:         repoOptions,
+				BatchRetry:       searchInputs.Protocol == search.Batch,
 			})
 		}
 
@@ -472,10 +457,6 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return *count
 	}
 
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
 	switch p {
 	case search.Batch:
 		return limits.DefaultMaxSearchResults
@@ -512,10 +493,6 @@ func mapSlice(values []string, f func(string) string) []string {
 func count(b query.Basic, p search.Protocol) int {
 	if count := b.Count(); count != nil {
 		return *count
-	}
-
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
 	}
 
 	switch p {
@@ -648,6 +625,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		HasFileContent:      b.RepoHasFileContent(),
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
+		HasKVPs:             b.RepoHasKVPs(),
 	}
 }
 
@@ -739,32 +717,8 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
 }
 
-func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
-	isGlobalSearch := func() bool {
-		if st == query.SearchTypeStructural {
-			return false
-		}
-
-		return query.ForAll(b.ToParseTree(), func(node query.Node) bool {
-			n, ok := node.(query.Parameter)
-			if !ok {
-				return true
-			}
-			switch n.Field {
-			case query.FieldContext:
-				return searchcontexts.IsGlobalSearchContextSpec(n.Value)
-			case query.FieldRepo:
-				// We allow -repo: in global search.
-				return n.Negated
-			case query.FieldRepoHasFile:
-				return false
-			case query.FieldRepoHasCommitAfter:
-				return false
-			default:
-				return true
-			}
-		})
-	}
+func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
+	isGlobalSearch := isGlobal(repoOptions) && st != query.SearchTypeStructural
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
@@ -773,7 +727,7 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	noLang := !b.Exists(query.FieldLang)
 	isEmpty := noPattern && noFile && noLang
 
-	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
+	repoUniverseSearch = isGlobalSearch && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
 	// skipRepoSubsetSearch is a value that controls whether to
 	// run unindexed search in a specific scenario of queries that
 	// contain no repo-affecting filters (global mode). When on
@@ -872,4 +826,78 @@ func toFlatJobs(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	} else {
 		return toPatternExpressionJob(inputs, b)
 	}
+}
+
+// isGlobal returns whether a given set of repo options can be fulfilled
+// with a global search with Zoekt.
+func isGlobal(op search.RepoOptions) bool {
+	// We do not do global searches if a repo: filter was specified. I
+	// (@camdencheek) could not find any documentation or historical reasons
+	// for why this is, so I'm going to speculate here for future wanderers.
+	//
+	// If a user specifies a single repo, that repo may or may not be indexed
+	// but we still want to search it. A Zoekt search will not tell us that a
+	// search returned no results because the repo filtered to was unindexed,
+	// it will just return no results.
+	//
+	// Additionally, if a user specifies a repo: filter, they are likely
+	// targeting only a few repos, so the benefits of running a filtered global
+	// search vs just paging over the few repos that match the query are
+	// probably do not outweigh the cost of potentially skipping unindexed
+	// repos.
+	//
+	// We see this assumption break down with filters like `repo:github.com/`
+	// or `repo:.*`, in which case a global search would be much faster than
+	// paging through all the repos.
+	if len(op.RepoFilters) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo descriptions, so we depend on the
+	// database to handle this filter.
+	if len(op.DescriptionPatterns) > 0 {
+		return false
+	}
+
+	// If a search context is specified, we do not know ahead of time whether
+	// the repos in the context are indexed and we need to go through the repo
+	// resolution process.
+	if !searchcontexts.IsGlobalSearchContextSpec(op.SearchContextSpec) {
+		return false
+	}
+
+	// repo:has.commit.after() is handled during the repo resolution step,
+	// and we cannot depend on Zoekt for this information.
+	if op.CommitAfter != "" {
+		return false
+	}
+
+	// There should be no cursors when calling this, but if there are that
+	// means we're already paginating. Cursors should probably not live on this
+	// struct since they are an implementation detail of pagination.
+	if len(op.Cursors) > 0 {
+		return false
+	}
+
+	// If indexed search is explicitly disabled, that implicitly means global
+	// search is also disabled since global search means Zoekt.
+	if op.UseIndex == query.No {
+		return false
+	}
+
+	// All the fields not mentioned above can be handled by Zoekt global search.
+	// Listing them here for posterity:
+	// - MinusRepoFilters
+	// - CaseSensitiveRepoFilters
+	// - HasFileContent
+	// - Visibility
+	// - Limit
+	// - ForkSet
+	// - NoForks
+	// - OnlyForks
+	// - OnlyCloned
+	// - ArchivedSet
+	// - NoArchived
+	// - OnlyArchived
+	return true
 }

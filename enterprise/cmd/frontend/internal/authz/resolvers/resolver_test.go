@@ -484,6 +484,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 						ID:          1,
 						Kind:        extsvc.KindBitbucketCloud,
 						DisplayName: "github :)",
+						Config:      extsvc.NewEmptyConfig(),
 					},
 					nil
 			} else {
@@ -523,6 +524,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 						ID:          1,
 						Kind:        extsvc.KindBitbucketServer,
 						DisplayName: "bb server no jokes here",
+						Config:      extsvc.NewEmptyConfig(),
 					},
 					nil
 			} else {

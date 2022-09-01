@@ -10,14 +10,14 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, ActionItemAction } from './ActionItem'
 
 export interface ActionsProps
-    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+    extends RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings'>,
         ContributionOptions {
     menu: ContributableMenu

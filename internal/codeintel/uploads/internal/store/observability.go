@@ -17,13 +17,18 @@ type operations struct {
 	updateSourcedCommits      *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
 	getOldestCommitDate       *observation.Operation
+	getCommitGraphMetadata    *observation.Operation
+	hasCommit                 *observation.Operation
 
 	// Repositories
+	getRepositoriesForIndexScan     *observation.Operation
 	getRepositoriesMaxStaleAge      *observation.Operation
 	setRepositoryAsDirty            *observation.Operation
+	setRepositoryAsDirtyWithTx      *observation.Operation
 	getDirtyRepositories            *observation.Operation
 	repoName                        *observation.Operation
 	setRepositoriesForRetentionScan *observation.Operation
+	hasRepository                   *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
@@ -33,6 +38,9 @@ type operations struct {
 	persistNearestUploadsLinks        *observation.Operation
 	persistUploadsVisibleAtTip        *observation.Operation
 	updateUploadRetention             *observation.Operation
+	backfillReferenceCountBatch       *observation.Operation
+	updateCommittedAt                 *observation.Operation
+	sourcedCommitsWithoutCommittedAt  *observation.Operation
 	updateUploadsReferenceCounts      *observation.Operation
 	deleteUploadsWithoutRepository    *observation.Operation
 	deleteUploadsStuckUploading       *observation.Operation
@@ -80,20 +88,28 @@ func newOperations(observationContext *observation.Context) *operations {
 		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
+		hasCommit:                 op("HasCommit"),
 
 		// Repositories
+		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
 		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
 		getDirtyRepositories:            op("GetDirtyRepositories"),
 		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		setRepositoryAsDirtyWithTx:      op("SetRepositoryAsDirtyWithTx"),
 		repoName:                        op("RepoName"),
 		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
+		hasRepository:                   op("HasRepository"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
+		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
+		updateCommittedAt:                 op("UpdateCommittedAt"),
+		sourcedCommitsWithoutCommittedAt:  op("SourcedCommitsWithoutCommittedAt"),
 		updateUploadsReferenceCounts:      op("UpdateUploadsReferenceCounts"),
 		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),

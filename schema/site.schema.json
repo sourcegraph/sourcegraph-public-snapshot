@@ -68,12 +68,12 @@
     "exportUsageTelemetry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["topicName", "topicProjectName"],
       "properties": {
         "enabled": {
           "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
           "type": "boolean",
-          "default": false
+          "default": false,
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_ENABLED."
         },
         "batchSize": {
           "description": "Maximum number of events scraped from the events table in a single scrape.",
@@ -83,11 +83,13 @@
         },
         "topicProjectName": {
           "type": "string",
-          "description": "GCP project name containing the usage data pubsub topic"
+          "description": "GCP project name containing the usage data pubsub topic",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_PROJECT."
         },
         "topicName": {
           "type": "string",
-          "description": "Destination pubsub topic name to export usage data"
+          "description": "Destination pubsub topic name to export usage data",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_NAME."
         }
       }
     },
@@ -290,7 +292,7 @@
               "default": false
             },
             "certificates": {
-              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: git will only respect these certificates and will ignore system certificates. Remember to include system certificates in this setting.",
               "type": "array",
               "items": {
                 "type": "string",
@@ -455,7 +457,7 @@
           "description": "Enable webhooks for repo syncing",
           "type": "boolean",
           "default": false,
-          "!go":{ "pointer": false }
+          "!go": { "pointer": false }
         },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
@@ -517,7 +519,8 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": true
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "examples": [
@@ -1208,10 +1211,10 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Determines what tracing provider to enable. For \"opentracing\", the required backend is a Jaeger instance. For \"opentelemetry\" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. \"datadog\" support has been removed, and the configuration option will be removed in a future release.",
+          "description": "Determines what tracing provider to enable. For \"jaeger\", a Jaeger instance is required. For \"opentelemetry\" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. \"datadog\" and \"opentracing\" options are deprecated, and the configuration option will be removed in a future release.",
           "type": "string",
-          "enum": ["opentracing", "opentelemetry", "datadog"],
-          "default": "opentracing"
+          "enum": ["jaeger", "opentelemetry", "opentracing", "datadog"],
+          "default": "jaeger"
         },
         "sampling": {
           "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for \"opentracing\", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).",
@@ -1373,6 +1376,12 @@
       "default": 0,
       "examples": [30]
     },
+    "insights.aggregations.bufferSize": {
+      "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 500
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -1398,6 +1407,32 @@
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
+    "gitHubApp": {
+      "description": "The config options for Sourcegraph GitHub App.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "description": "The slug of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "appID": {
+          "description": "The app ID of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "privateKey": {
+          "description": "The base64-encoded private key of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1407,29 +1442,57 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
-        "githubApp.cloud": {
-          "description": "The config options for Sourcegraph Cloud GitHub App.",
+        "srcCliVersionCache": {
+          "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
+          "required": ["enabled", "github"],
+          "group": "Sourcegraph.com",
           "properties": {
-            "slug": {
-              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "enabled": {
+              "description": "Enables the src-cli version cache API endpoint.",
+              "type": "boolean",
+              "default": false
             },
-            "appID": {
-              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
+            "github": {
+              "description": "GitHub configuration, both for queries and receiving release webhooks.",
+              "type": "object",
+              "required": ["token", "webhookSecret"],
+              "properties": {
+                "repository": {
+                  "description": "The repository to get the latest version of.",
+                  "type": "object",
+                  "properties": {
+                    "owner": {
+                      "description": "The repository namespace.",
+                      "type": "string",
+                      "default": "sourcegraph"
+                    },
+                    "name": {
+                      "description": "The repository name.",
+                      "type": "string",
+                      "default": "src-cli"
+                    }
+                  }
+                },
+                "token": {
+                  "description": "The access token to use when communicating with GitHub.",
+                  "type": "string"
+                },
+                "uri": {
+                  "description": "The URI of the GitHub instance.",
+                  "type": "string",
+                  "default": "https://github.com"
+                },
+                "webhookSecret": {
+                  "description": "The release webhook secret.",
+                  "type": "string"
+                }
+              }
             },
-            "privateKey": {
-              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "clientID": {
+            "interval": {
+              "description": "The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.",
               "type": "string",
-              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
-            },
-            "clientSecret": {
-              "type": "string",
-              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+              "default": "1h"
             }
           }
         }

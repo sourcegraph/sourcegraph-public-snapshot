@@ -62,12 +62,12 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
-			Config: bt.MarshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
 				Token:    token,
 				Repos:    []string{"sourcegraph/sourcegraph"},
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
-			}),
+			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
@@ -75,7 +75,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
+		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}

@@ -4,9 +4,8 @@ import { mdiRefresh } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
-import { Button, ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
+import { Button, ForwardReferenceComponent, Icon, LegendItem, LegendList, Series } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../views'
 
 import styles from './LivePreviewCard.module.scss'
@@ -63,7 +62,7 @@ const LivePreviewLegend: React.FunctionComponent<React.PropsWithChildren<LivePre
     return (
         <LegendList className="mt-3">
             {series.map(series => (
-                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={series.color} name={series.name} />
             ))}
         </LegendList>
     )

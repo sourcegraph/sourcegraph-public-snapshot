@@ -17,7 +17,6 @@ export {
     setSearchCaseSensitivity,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
-export { useThemeState } from './themeState'
 export {
     useExperimentalFeatures,
     getExperimentalFeatures,

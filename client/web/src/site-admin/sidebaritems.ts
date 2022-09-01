@@ -61,7 +61,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/external-services',
         },
         {
-            label: 'Repository status',
+            label: 'Repositories',
             to: '/site-admin/repositories',
         },
     ],

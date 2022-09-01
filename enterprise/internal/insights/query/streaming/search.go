@@ -8,9 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
-
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -25,7 +23,7 @@ type Opts struct {
 
 // Search calls the streaming search endpoint and uses decoder to decode the
 // response body.
-func Search(ctx context.Context, query string, decoder streamhttp.FrontendStreamDecoder) (err error) {
+func Search(ctx context.Context, query string, patternType *string, decoder streamhttp.FrontendStreamDecoder) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsStreamSearch")
 	defer func() {
 		span.LogFields(
@@ -37,6 +35,10 @@ func Search(ctx context.Context, query string, decoder streamhttp.FrontendStream
 	if err != nil {
 		return err
 	}
+	if patternType != nil {
+		req.URL.Query().Add("t", *patternType)
+	}
+
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", "code-insights-backend")
 

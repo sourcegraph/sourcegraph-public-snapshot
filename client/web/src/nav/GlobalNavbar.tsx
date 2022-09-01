@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -96,6 +96,7 @@ interface Props
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 /**
@@ -104,12 +105,15 @@ interface Props
  * @param containerReference a reference to navbar container
  */
 function useCalculatedNavLinkVariant(
-    containerReference: React.MutableRefObject<HTMLDivElement | null>
+    containerReference: React.MutableRefObject<HTMLDivElement | null>,
+    activation: Props['activation'],
+    authenticatedUser: Props['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
     const { width } = useWindowSize()
     const [savedWindowWidth, setSavedWindowWidth] = useState<number>()
-    useEffect(() => {
+
+    useLayoutEffect(() => {
         const container = containerReference.current
         if (!container) {
             return
@@ -120,7 +124,9 @@ function useCalculatedNavLinkVariant(
         } else if (savedWindowWidth && width > savedWindowWidth) {
             setNavLinkVariant(undefined)
         }
-    }, [containerReference, savedWindowWidth, width])
+        // Listen for change in `authenticatedUser` and `activation` to re-calculate with new dimensions,
+        // based on change in navbar's content.
+    }, [containerReference, savedWindowWidth, width, authenticatedUser, activation])
 
     return navLinkVariant
 }
@@ -134,7 +140,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
 
     return (
         <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
             </Link>
         </NavAction>
@@ -227,7 +233,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     ])
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
-    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
+    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
@@ -252,6 +258,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [searchContextsEnabled, showSearchContext])
+
+    const { extensionsController } = props
 
     return (
         <>
@@ -358,29 +366,21 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && (
+                    {props.authenticatedUser && extensionsController !== null && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
+                                extensionsController={extensionsController}
                                 location={location}
                                 menu={ContributableMenu.CommandPalette}
                             />
                         </NavAction>
                     )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <NavAction>
+                            <StatusMessagesNavItem history={history} />
+                        </NavAction>
+                    )}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>

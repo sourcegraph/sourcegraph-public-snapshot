@@ -8,7 +8,7 @@ Code Insights with automatically generated data series allow you to "detect and 
 
 Match patterns can be returned with a regular expression containing a capture group, or a pattern within parentheses. 
 
-For example, `file:\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
+For example, `file:pom\.xml|\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
 
 ```
 <java.version>1.5</java.version>
@@ -36,9 +36,9 @@ Capture groups will only display 20 returned match values to prevent extremely l
 
 This type of Code Insight only supports capture groups in the main query string. You cannot use a capture group in a filter keywork, like a `repo:` or `file:` filter. 
 
-### No multiline matches
+### No multiline matches (<3.43)
 
-You can only use a single-line regular expression. This means that `^` and `$` characters are still valid but needing to match on a `\n` is not. As a potential workaround to get more granularity, you can still use `file:contains()` and other [search predicates](https://docs.sourcegraph.com/code_search/reference/language#built-in-file-predicate). 
+On Sourcegraph instances on earlier versions than 3.43, you can only use a single-line regular expression. This means that `^` and `$` characters are still valid but needing to match on a `\n` is not. As a potential workaround to get more granularity, you can still use `file:contains()` and other [search predicates](https://docs.sourcegraph.com/code_search/reference/language#built-in-file-predicate). 
 
 ### No combinations of capture groups 
 

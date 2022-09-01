@@ -40,7 +40,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	cfg, err := es.Configuration()
+	cfg, err := es.Configuration(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	if err != nil {
 		return nil, err
 	}
-	es.Config = string(buf)
+	es.Config.Set(string(buf))
 
 	// set to time.Zero to sync ASAP
 	es.NextSyncAt = time.Time{}

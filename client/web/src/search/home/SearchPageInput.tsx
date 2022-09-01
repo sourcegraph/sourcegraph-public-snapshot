@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -18,10 +18,12 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
@@ -31,6 +33,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
+import { searchQueryHistorySource } from '../input/completion'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
@@ -71,6 +74,33 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter = useExperimentalFeatures(
         features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [hideSearchHistory] = useFeatureFlag('search-input-hide-history')
+
+    const suggestionSources = useMemo(
+        () =>
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && !hideSearchHistory
+                ? [
+                      searchQueryHistorySource({
+                          userId: props.authenticatedUser.id,
+                          selectedSearchContext: props.selectedSearchContextSpec,
+                          onSelection: index => {
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
+                          },
+                      }),
+                  ]
+                : [],
+        [
+            coreWorkflowImprovementsEnabled,
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            props.telemetryService,
+            hideSearchHistory,
+        ]
     )
 
     const quickLinks =
@@ -135,13 +165,18 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
+                        suggestionSources={suggestionSources}
+                        defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
+                        showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                {!coreWorkflowImprovementsEnabled && (
+                    <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                )}
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
