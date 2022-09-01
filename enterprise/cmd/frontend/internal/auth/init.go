@@ -25,6 +25,7 @@ import (
 
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(logger log.Logger, db database.DB) {
+	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
 	openidconnect.Init()
 	saml.Init()
 	httpheader.Init()
