@@ -10,11 +10,11 @@ import (
 
 type Predicate interface {
 	// Field is the name of the field that the predicate applies to.
-	// For example, with `file:contains()`, Field returns "file".
+	// For example, with `repo:contains.file`, Field returns "repo".
 	Field() string
 
 	// Name is the name of the predicate.
-	// For example, with `file:contains()`, Name returns "contains".
+	// For example, with `repo:contains.file`, Name returns "contains.file".
 	Name() string
 
 	// ParseParams parses the contents of the predicate arguments
