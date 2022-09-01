@@ -144,7 +144,7 @@ func SyncExternalService(ctx context.Context, logger log.Logger, svc *types.Exte
 		// If context error is anything but a deadline exceeded error, we do not want to propagate
 		// it. But we definitely want to log the error as a warning.
 		if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
-			logger.Warn("SyncExternalService: context error discarded", log.Error(ctx.Err()))
+			logger.Warn("context error discarded", log.Error(ctx.Err()))
 			err = nil
 		}
 	}()
