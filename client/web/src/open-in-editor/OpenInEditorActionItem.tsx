@@ -1,18 +1,17 @@
 import * as React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { useLocation } from 'react-router'
 import { Unsubscribable } from 'rxjs'
 
 import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
 
 import { SimpleActionItem } from '../../../shared/src/actions/SimpleActionItem'
-import { parseBrowserRepoURL } from '../util/url'
 
-import { buildEditorUrl } from './build-url'
+import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
 import { getEditor } from './editors'
+import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
 export interface OpenInEditorActionItemProps {
     platformContext: PlatformContext
@@ -20,36 +19,22 @@ export interface OpenInEditorActionItemProps {
 }
 
 export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionItemProps> = props => {
+    const assetsRoot = props.assetsRoot ?? (window.context?.assetsRoot || '')
+
     const [settingsCascadeOrError, setSettingsCascadeOrError] = useState<SettingsCascadeOrError | undefined>(undefined)
-    const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
-    const location = useLocation()
-    const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
     const settings =
         settingsCascadeOrError?.final && !('message' in settingsCascadeOrError.final) // isErrorLike fails with some TypeScript error
             ? settingsCascadeOrError.final
             : undefined
-    const editorUrl = useMemo(() => {
-        if (settings) {
-            try {
-                return buildEditorUrl(
-                    `${repoName.split('/').pop() ?? ''}/${filePath}`,
-                    range,
-                    {
-                        editorId: 'vscode',
-                        projectsPaths: { default: '/Users/veszelovszki/go/src/github.com/sourcegraph' },
-                    },
-                    props.platformContext.sourcegraphURL
-                )
-            } catch {
-                // TODO: Swallowing errors this way is not nice
-            }
-        }
+    const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
 
-        return undefined
-    }, [filePath, props.platformContext.sourcegraphURL, range, repoName, settings])
+    const openCurrentUrlInEditor = useOpenCurrentUrlInEditor()
 
-    const assetsRoot = props.assetsRoot ?? (window.context?.assetsRoot || '')
-    const editor = editorUrl
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(
+        settings?.openInEditor,
+        props.platformContext.sourcegraphURL
+    )
+    const editor = !editorSettingsErrorMessage
         ? getEditor((settings?.openInEditor as EditorSettings | undefined)?.editorId || '')
         : undefined
 
@@ -66,18 +51,18 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     }, [settingSubscription, props.platformContext.settings])
 
     const onClick = useCallback(() => {
-        if (editorUrl) {
-            alert(`Opening ${editorUrl}`)
+        if (editor) {
+            openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL)
         } else {
-            alert(`Opening setup popover. Btw, editor URL is this: ${editorUrl}`)
+            alert('Opening setup popover.')
         }
-    }, [editorUrl])
+    }, [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor])
 
     return (
         <SimpleActionItem
-            tooltip={editorUrl ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
+            tooltip={editor ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
             className="enabled"
-            iconURL={editor ? `${assetsRoot}/img/editors/jetbrains.svg` : `${assetsRoot}/img/open-in-editor.svg`}
+            iconURL={editor ? `${assetsRoot}/img/editors/${editor.id}.svg` : `${assetsRoot}/img/open-in-editor.svg`}
             onClick={onClick}
         />
     )

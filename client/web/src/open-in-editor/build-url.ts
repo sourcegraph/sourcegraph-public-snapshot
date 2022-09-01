@@ -11,41 +11,27 @@ export function buildEditorUrl(
     editorSettings: EditorSettings,
     sourcegraphBaseUrl: string
 ): URL {
-    const basePath = getProjectPathWithChecks(editorSettings, sourcegraphBaseUrl)
-    const editor = getEditorWithChecks(editorSettings.editorId, editorSettings.custom?.urlPattern, sourcegraphBaseUrl)
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(editorSettings, sourcegraphBaseUrl)
+    if (editorSettingsErrorMessage) {
+        throw new TypeError(editorSettingsErrorMessage)
+    }
+
+    const projectPath = getProjectPath(editorSettings) as string
+    const editor = getEditor(editorSettings.editorId ?? 'vscode') as Editor // Default is only there to soothe TypeScript
     const urlPattern = getUrlPattern(editor, editorSettings)
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
-        editor.id === 'vscode' && (/^[A-Za-z]:\\/.test(basePath) || editorSettings.vscode?.isBasePathUNCPath) ? '/' : ''
+        editor.id === 'vscode' && (/^[A-Za-z]:\\/.test(projectPath) || editorSettings.vscode?.isBasePathUNCPath)
+            ? '/'
+            : ''
 
-    const absolutePath = path.join(basePath, repoBaseNameAndPath)
+    const absolutePath = path.join(projectPath, repoBaseNameAndPath)
     const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
     const url = urlPattern
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)
         .replace('%col', `${column}`)
     return new URL(doReplacements(url, editorSettings.replacements))
-}
-
-function getProjectPathWithChecks(editorSettings: EditorSettings, sourcegraphBaseUrl: string): string {
-    const basePath = getProjectPath(editorSettings)
-
-    if (typeof basePath !== 'string') {
-        throw new TypeError( // TODO: Improve this error message with OS-specific things
-            `Add \`projectsPaths.default\` to your user settings to open files in the editor. [Learn more](${getLearnMorePath(
-                sourcegraphBaseUrl
-            )})`
-        )
-    }
-    if (!path.isAbsolute(basePath)) {
-        throw new Error( // TODO: Improve this error message with OS-specific things
-            `\`projectsPaths.default\` value \`${basePath}\` is not an absolute path. Please correct the error in your [user settings](${
-                new URL('/user/settings', sourcegraphBaseUrl).href
-            }).`
-        )
-    }
-
-    return basePath
 }
 
 function getProjectPath(editorSettings: EditorSettings): string | undefined {
@@ -63,34 +49,44 @@ function getProjectPath(editorSettings: EditorSettings): string | undefined {
     return editorSettings.projectsPaths?.default
 }
 
-function getEditorWithChecks(
-    editorId: string | undefined,
-    urlPattern: string | undefined,
+export function getEditorSettingsErrorMessage(
+    editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string
-): Editor {
+): string | undefined {
     const learnMorePath = getLearnMorePath(sourcegraphBaseUrl)
 
-    if (typeof editorId !== 'string') {
-        throw new TypeError(
-            `Add \`openineditor.editorId\` to your user settings to open files. [Learn more](${learnMorePath})`
-        )
+    if (!editorSettings) {
+        return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMorePath})`
     }
-    const editor = getEditor(editorId)
+
+    const projectPath = getProjectPath(editorSettings)
+
+    if (typeof projectPath !== 'string') {
+        return `Add \`projectsPaths.default\` or some OS-specific path to your user settings to open files in the editor. [Learn more](${learnMorePath})`
+    }
+    if (!path.isAbsolute(projectPath)) {
+        return `\`projectsPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
+            new URL('/user/settings', sourcegraphBaseUrl).href
+        }).`
+    }
+
+    if (typeof editorSettings.editorId !== 'string') {
+        return `Add \`openineditor.editorId\` to your user settings to open files. [Learn more](${learnMorePath})`
+    }
+    const editor = getEditor(editorSettings.editorId)
 
     if (!editor) {
-        throw new TypeError(
+        return (
             `Setting \`openineditor.editorId\` must be set to a valid value in your [user settings](${
                 new URL('/user/settings', sourcegraphBaseUrl).href
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )
     }
-    if (editorId === 'custom' && typeof urlPattern !== 'string') {
-        throw new TypeError(
-            `Add \`openineditor.customUrlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMorePath})`
-        )
+    if (editorSettings.editorId === 'custom' && typeof editorSettings.custom?.urlPattern !== 'string') {
+        return `Add \`openineditor.customUrlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMorePath})`
     }
 
-    return editor
+    return undefined
 }
 
 function getLearnMorePath(sourcegraphBaseUrl: string): string {
