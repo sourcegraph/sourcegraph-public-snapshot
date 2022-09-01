@@ -277,6 +277,27 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			patternType:  "regexp",
 			canAggregate: false,
 		},
+		{
+			name:         "cannot aggregate for query with type commit",
+			query:        "/func(\\w+)/ case:yes type:commit",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "commit"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with type diff",
+			query:        "/func(\\w+)/ case:yes type:diff",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with select commit",
+			query:        "/func(\\w+)/ case:yes select:commit",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "commit"),
+			canAggregate: false,
+		},
 	}
 	suite := canAggregateBySuite{
 		canAggregateByFunc: canAggregateByCaptureGroup,
