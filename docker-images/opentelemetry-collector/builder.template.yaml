@@ -33,3 +33,6 @@ extensions:
 
   # Contrib extensions - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v$OTEL_COLLECTOR_VERSION
+
+processors:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v$OTEL_COLLECTOR_VERSION
