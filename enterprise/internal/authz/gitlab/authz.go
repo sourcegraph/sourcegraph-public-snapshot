@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,18 +27,20 @@ func NewAuthzProviders(
 	db database.DB,
 	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
-) (ps []authz.Provider, problems []string, warnings []string) {
+) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string,
+) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		p, err := newAuthzProvider(db, c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypeGitLab)
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
 		}
 	}
 
-	return ps, problems, warnings
+	return ps, problems, warnings, invalidConnections
 }
 
 func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {

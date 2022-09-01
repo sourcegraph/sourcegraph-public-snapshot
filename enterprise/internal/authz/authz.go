@@ -45,6 +45,7 @@ func ProvidersFromConfig(
 	providers []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
+	invalidConnections []string,
 ) {
 	logger := log.Scoped("authz", " parse provider from config")
 
@@ -141,31 +142,35 @@ func ProvidersFromConfig(
 			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 		}
 
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(store, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+		ghProviders, ghProblems, ghWarnings, ghInvalidConnections := github.NewAuthzProviders(store, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
+		invalidConnections = append(invalidConnections, ghInvalidConnections...)
 	}
 
 	if len(gitLabConns) > 0 {
-		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns)
+		glProviders, glProblems, glWarnings, glInvalidConnections := gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns)
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
 		warnings = append(warnings, glWarnings...)
+		invalidConnections = append(invalidConnections, glInvalidConnections...)
 	}
 
 	if len(bitbucketServerConns) > 0 {
-		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bitbucketServerConns)
+		bbsProviders, bbsProblems, bbsWarnings, bbsInvalidConnections := bitbucketserver.NewAuthzProviders(bitbucketServerConns)
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)
+		invalidConnections = append(invalidConnections, bbsInvalidConnections...)
 	}
 
 	if len(perforceConns) > 0 {
-		pfProviders, pfProblems, pfWarnings := perforce.NewAuthzProviders(perforceConns, db)
+		pfProviders, pfProblems, pfWarnings, pfInvalidConnections := perforce.NewAuthzProviders(perforceConns, db)
 		providers = append(providers, pfProviders...)
 		seriousProblems = append(seriousProblems, pfProblems...)
 		warnings = append(warnings, pfWarnings...)
+		invalidConnections = append(invalidConnections, pfInvalidConnections...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
@@ -184,7 +189,7 @@ func ProvidersFromConfig(
 		}
 	}
 
-	return allowAccessByDefault, providers, seriousProblems, warnings
+	return allowAccessByDefault, providers, seriousProblems, warnings, invalidConnections
 }
 
 var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error)
@@ -225,7 +230,7 @@ func ProviderFromExternalService(
 
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
-		providers, problems, _ = github.NewAuthzProviders(
+		providers, problems, _, _ = github.NewAuthzProviders(
 			externalServicesStore,
 			[]*github.ExternalConnection{
 				{
@@ -240,7 +245,7 @@ func ProviderFromExternalService(
 			enableGithubInternalRepoVisibility,
 		)
 	case *schema.GitLabConnection:
-		providers, problems, _ = gitlab.NewAuthzProviders(
+		providers, problems, _, _ = gitlab.NewAuthzProviders(
 			db,
 			siteConfig,
 			[]*types.GitLabConnection{
@@ -251,7 +256,7 @@ func ProviderFromExternalService(
 			},
 		)
 	case *schema.BitbucketServerConnection:
-		providers, problems, _ = bitbucketserver.NewAuthzProviders(
+		providers, problems, _, _ = bitbucketserver.NewAuthzProviders(
 			[]*types.BitbucketServerConnection{
 				{
 					URN:                       svc.URN(),
@@ -260,7 +265,7 @@ func ProviderFromExternalService(
 			},
 		)
 	case *schema.PerforceConnection:
-		providers, problems, _ = perforce.NewAuthzProviders(
+		providers, problems, _, _ = perforce.NewAuthzProviders(
 			[]*types.PerforceConnection{
 				{
 					URN:                svc.URN(),

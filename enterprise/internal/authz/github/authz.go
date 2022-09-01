@@ -38,7 +38,7 @@ func NewAuthzProviders(
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
-) (ps []authz.Provider, problems []string, warnings []string) {
+) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {
@@ -61,6 +61,7 @@ func NewAuthzProviders(
 		// Initialize authz (permissions) provider.
 		p, err := newAuthzProvider(externalServicesStore, c)
 		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypeGitHub)
 			problems = append(problems, err.Error())
 		}
 		if p == nil {
@@ -97,7 +98,7 @@ func NewAuthzProviders(
 		ps = append(ps, p)
 	}
 
-	return ps, problems, warnings
+	return ps, problems, warnings, invalidConnections
 }
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
