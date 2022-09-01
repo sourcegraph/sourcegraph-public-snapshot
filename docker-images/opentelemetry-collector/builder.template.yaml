@@ -25,6 +25,7 @@ receivers:
 
   # Contrib receivers - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver v$OTEL_COLLECTOR_VERSION"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v$OTEL_COLLECTOR_VERSION"
 
 extensions:
   # OpenTelemetry extensions - https://go.opentelemetry.io/collector/extension
