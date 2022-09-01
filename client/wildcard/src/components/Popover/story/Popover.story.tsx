@@ -378,7 +378,13 @@ export const WithControlledState: Story = () => {
                 </Button>
 
                 <Popover isOpen={open} onOpenChange={handleOpenChange}>
-                    <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
+                    <PopoverTrigger
+                        as={Button}
+                        onFocus={() => setOpen(true)}
+                        onBlur={() => setOpen(false)}
+                        variant="secondary"
+                        className={styles.target}
+                    >
                         Target
                     </PopoverTrigger>
 
