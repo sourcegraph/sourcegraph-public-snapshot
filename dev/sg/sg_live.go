@@ -18,9 +18,9 @@ var liveCommand = &cli.Command{
 	Usage:     "Reports which version of Sourcegraph is currently live in the given environment",
 	UsageText: `
 # See which version is deployed on a preset environment
-sg live cloud
-sg live k8s
 sg live s2
+sg live dotcom
+sg live k8s
 
 # See which version is deployed on a custom environment
 sg live https://demo.sourcegraph.com
@@ -68,7 +68,7 @@ func liveExec(ctx *cli.Context) error {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
-			return flag.ErrHelp
+			return NewEmptyExitErr(1)
 		}
 	}
 
