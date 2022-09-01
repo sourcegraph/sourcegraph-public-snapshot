@@ -34,11 +34,21 @@ with a `repo`, `file`, `author` filter or a regexp pattern depending on the aggr
 
 ### Timeout limits
 
-At the moment all aggregations search queries are ran with a 2 second timeout, even if your search specified a timeout.
+At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout.
 
 ### Count limits
 
-At the moment all aggregations search queries are ran with count:all, even if your search specified a count. 
+At the moment all aggregations search queries are run with count:all, even if your search specified a count. 
+
+
+### Best effort aggregation
+
+Results are aggregated in a best-effort approach using a limited-size buffer to hold group labels in order not to strain
+the webapp when these aggregations are run. This means that in some cases we might miss some high-count results. 
+Aggregations that hit such non-exhaustive paths are reported back to the user.
+
+You can control the size of the buffer using the site setting `insights.aggregations.bufferSize`. It is set to 500 by 
+default. Note that if increasing this you might notice decreased performance on your instance.
 
 ### Number of bars displayed
 
