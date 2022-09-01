@@ -23,9 +23,15 @@ extensions:
   zpages:
    endpoint: "localhost:55679"
 
+# processors:
+#   probabilistic_sampler:
+#     hash_seed: 22
+#     sampling_percentage: 15.3
+
 service:
   extensions: [health_check,zpages]
   pipelines:
     traces:
       receivers: [otlp]
       exporters: [jaeger]
+      # processors: [probabilistic_sampler]
