@@ -7,11 +7,13 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var client *gqltestutil.Client
@@ -92,6 +94,23 @@ func TestMain(m *testing.M) {
 			log.Fatal("Failed to update site configuration:", err)
 		}
 		log.Println("License key updated")
+
+		// Verify the provided license is valid, retry because the configuration update
+		// endpoint is eventually consistent.
+		err = gqltestutil.Retry(5*time.Second, func() error {
+			ps, err := client.ProductSubscription()
+			if err != nil {
+				return errors.Wrap(err, "get product subscription")
+			}
+
+			if ps.License == nil {
+				return gqltestutil.ErrContinueRetry
+			}
+			return nil
+		})
+		if err != nil {
+			log.Fatal("Failed to verify license:", err)
+		}
 	}
 
 	if !testing.Verbose() {
