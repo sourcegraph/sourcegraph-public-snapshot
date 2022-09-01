@@ -49,7 +49,7 @@ export function getEditorSettingsErrorMessage(
     }
 
     // Skip this check on Windows because path.isAbsolute only checks Linux and macOS compatible paths reliably
-    if (!isWindowsPath(projectPath) && !path.isAbsolute(projectPath)) {
+    if (!isProjectPathValid(projectPath)) {
         return `\`projectsPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
             new URL('/user/settings', sourcegraphBaseUrl).href
         }).`
@@ -78,6 +78,10 @@ export function getEditorSettingsErrorMessage(
     }
 
     return undefined
+}
+
+export function isProjectPathValid(projectPath: string | undefined): boolean {
+    return !!projectPath && (isWindowsPath(projectPath) || path.isAbsolute(projectPath))
 }
 
 function getProjectPath(editorSettings: EditorSettings): string | undefined {

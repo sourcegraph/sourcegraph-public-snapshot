@@ -1,14 +1,21 @@
 .open-in-editor-popover {
     isolation: isolate;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 
-    min-width: 190px;
-    max-width: 70vw;
+    width: 394px;
+
+    padding: 20px 16px;
 
     background-color: var(--color-bg-1);
 }
 
 .close {
-    color: var(--icon-color);
+    display: flex;
+    position: absolute;
+    padding: 0;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
 }
