@@ -229,10 +229,12 @@ func (n *notifier) New(count int) error {
 	} else {
 		resultCountString = fmt.Sprintf("%d additional results", count)
 	}
+	annotations := make(map[search.AnnotationName]string)
+	annotations[search.ResultCount] = resultCountString
 
 	return &alertobserver.ErrLuckyQueries{
 		ProposedQueries: []*search.QueryDescription{{
-			Description: fmt.Sprintf("%s (%s)", n.description, resultCountString),
+			Description: n.description,
 			Annotations: map[search.AnnotationName]string{
 				search.ResultCount: resultCountString,
 			},
