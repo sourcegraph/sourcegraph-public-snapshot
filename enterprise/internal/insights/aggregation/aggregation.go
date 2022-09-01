@@ -153,6 +153,9 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 						chunkMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
 						for value, count := range chunkMatches {
 							key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
+							if len(key.Group) > 100 {
+								key.Group = key.Group[:100]
+							}
 							current := matches[key]
 							matches[key] = current + count
 						}
