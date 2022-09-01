@@ -56,7 +56,7 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
 		defer func() { repos.MockStatusMessages = nil }()
@@ -88,7 +88,7 @@ func TestStatusMessages(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
 					Cloning: &repos.CloningProgress{
