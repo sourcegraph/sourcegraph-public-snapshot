@@ -23,7 +23,7 @@ You can turn the aggregations on with the feature flag: `search-aggregation-filt
 
 You can turn off just the proactive aggregations with the feature flag: `disable-proactive-insight-aggregation`
 
-You can read more about creating feature flags [here](/dev/how-to/use_feature_flags#create-a-feature-flag).
+You can read more about creating feature flags [here](../../dev/how-to/use_feature_flags.md#create-a-feature-flag).
 
 ## Limitations
 
