@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes, useEffect, useState } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
@@ -34,6 +34,7 @@ interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
     const { query, patternType, onQuerySubmit, ...attributes } = props
 
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
@@ -42,11 +43,17 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         aggregationMode,
         limit: 30,
         proactive: true,
+        extendedTimeout,
     })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
     }
+
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
+
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
 
     return (
         <section {...attributes}>
@@ -83,6 +90,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 size="md"
                 className={styles.chartContainer}
                 onBarLinkClick={onQuerySubmit}
+                onExtendTimeout={handleExtendTimeout}
             />
 
             {data && (

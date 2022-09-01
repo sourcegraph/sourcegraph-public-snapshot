@@ -30,11 +30,15 @@ function useSyncedWithURLState<State, SerializedState>(
     const history = useHistory()
     const { search } = useLocation()
 
+    console.log({ urlKey })
+
     const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
     const queryParameter = useMemo(
         () => deserializer((urlSearchParameters.get(urlKey) as unknown) as SerializedState | null),
         [urlSearchParameters, urlKey, deserializer]
     )
+
+    console.log({ queryParameter })
 
     const setNextState = useCallback(
         (nextState: State) => {
@@ -91,13 +95,8 @@ type SerializedAggregationUIMode = AggregationUIMode
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => uiMode
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
-    switch (serializedValue) {
-        case 'searchPage':
-            return AggregationUIMode.SearchPage
-
-        default:
-            return AggregationUIMode.Sidebar
-    }
+    console.log({ serializedValue: serializedValue?.length })
+    return serializedValue?.length === 0 ? AggregationUIMode.SearchPage : AggregationUIMode.Sidebar
 }
 
 /**
@@ -110,6 +109,8 @@ export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> => {
         serializer: aggregationUIModeSerializer,
         deserializer: aggregationUIModeDeserializer,
     })
+
+    console.log({ aggregationMode })
 
     return [aggregationMode, setAggregationMode]
 }
