@@ -23,18 +23,7 @@ Sourcegraph's code search index scales horizontally with the number of files bei
 
 Sourcegraph clones code from your code host via the usual `git clone` or `git fetch` commands. Some organisations use custom `git` binaries or commands to speed up these operations. Sourcegraph supports using alternative git binaries to allow cloning. This can be done by inheriting from the `gitserver` docker image and installing the custom `git` onto the `$PATH`.
 
-Some monorepos use a custom command for `git fetch` to speed up fetch. Sourcegraph allows the specification of a custom git command via `CUSTOM_GIT_FETCH_CONF`, an environment variable set in gitserver, which sets the path to a file specifying your custom git command.
-
-For example, at `/bin` in gitserver, a binary exists `customGit` containing:
-```json
-[
-	{
-		"domainPath": "git.latveria.bot/vi/src",
-		"fetch": "/doom-git/git.Linux.x86_64/bin/git -c remote.origin.url=https://git.latveria.bot/vi/src -c remote.origin.mirror=true -c remote.origin.fetch='+refs/*:refs/*' journal-fetch origin"
-	}
-]
-```
-In this example `CUSTOM_GIT_FETCH_CONF='/etc/customGitFetchConf.json'`
+Learn more about this option [here](./how-to/customGitFetch.md).
 
 ## Statistics
 
