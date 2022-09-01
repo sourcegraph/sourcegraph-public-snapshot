@@ -28,13 +28,17 @@ You can read more about creating feature flags [here](../../dev/how-to/use_featu
 ## Drilldowns 
 
 You can drilldown into a search aggregation by clicking a result in the chart. Your original search query will be updated
-with a `repo`, `file`, `author` filter or regexp pattern depending on the aggregation mode.
+with a `repo`, `file`, `author` filter or a regexp pattern depending on the aggregation mode.
 
 ## Limitations
 
 ### Timeout limits
 
 At the moment all aggregations search queries are ran with a 2 second timeout, even if your search specified a timeout.
+
+### Count limits
+
+At the moment all aggregations search queries are ran with count:all, even if your search specified a count. 
 
 ### Number of bars displayed
 
