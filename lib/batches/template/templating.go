@@ -73,7 +73,7 @@ func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
 	// want to fail immediately if we encounter one. We accomplish this by setting the
 	// option "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for
 	// more.
-	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(sfm).Funcs(cstfm).Parse(spec)
+	t, err := New(name, spec, "missingkey=error", sfm, cstfm)
 
 	if err != nil {
 		// Attempt to extract the specific template variable field that caused the error
@@ -127,7 +127,7 @@ func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) 
 	// user as an error during execution. Instead, we prefer to fail immediately if we
 	// encounter an unknown variable. We accomplish this by setting the option
 	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
+	t, err := New(name, tmpl, "missingkey=error", stepCtx.ToFuncMap())
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
 	}
@@ -321,7 +321,7 @@ func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateC
 	// user as an error during execution. Instead, we prefer to fail immediately if we
 	// encounter an unknown variable. We accomplish this by setting the option
 	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
+	t, err := New(name, tmpl, "missingkey=error", tmplCtx.ToFuncMap())
 	if err != nil {
 		return "", err
 	}

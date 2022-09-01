@@ -260,6 +260,11 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
+	_, err = template.ValidateBatchSpecTemplate("spec"+spec.Name, string(rawSpec))
+	if err != nil {
+		return nil, err
+	}
+
 	actor := actor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
@@ -272,6 +277,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		CreatedFromRaw:  true,
 	}
 
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -281,6 +287,8 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
 		return nil, err
 	}
+
+	
 
 	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
@@ -691,6 +699,11 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
+	}
+
+_, err = template.ValidateBatchSpecTemplate("spec"+spec.Spec.Name, string(opts.RawSpec))
+	if err != nil {
+		return nil, err
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
