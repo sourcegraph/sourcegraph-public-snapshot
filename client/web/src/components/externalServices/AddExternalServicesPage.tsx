@@ -81,7 +81,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
     }
 
     const licenseInfo = window.context.licenseInfo
-    var allowedCodeHosts: ExternalServiceKind[] | null = null
+    let allowedCodeHosts: ExternalServiceKind[] | null = null
     if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
         allowedCodeHosts = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
     }
@@ -141,26 +141,25 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 </Alert>
             )}
             {Object.entries(codeHostExternalServices)
-                .filter(([_, externalService]) => !allowedCodeHosts || allowedCodeHosts.includes(externalService.kind))
+                .filter(
+                    ([_id, externalService]) => !allowedCodeHosts || allowedCodeHosts.includes(externalService.kind)
+                )
                 .map(([id, externalService]) => (
                     <div className={styles.addExternalServicesPageCard} key={id}>
-                        <ExternalServiceCard
-                            to={getAddURL(id)}
-                            {...externalService}
-                        />
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>
                 ))}
             {allowedCodeHosts && (
                 <>
                     <br />
-                    <p>
+                    <Text>
                         <Icon aria-label="Information icon" svgPath={mdiInformation}></Icon> Upgrade to{' '}
                         <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
                         repositories from other code hosts.
-                    </p>
+                    </Text>
                     {Object.entries(codeHostExternalServices)
                         .filter(
-                            ([_, externalService]) =>
+                            ([_id, externalService]) =>
                                 allowedCodeHosts && !allowedCodeHosts.includes(externalService.kind)
                         )
                         .map(([id, externalService]) => (
@@ -170,9 +169,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                                     {...externalService}
                                     enabled={false}
                                     badge={'enterprise'}
-                                    tooltip={
-                                        'Upgrade to Sourcegraph Enterprise to add repositories from other code hosts'
-                                    }
+                                    tooltip="Upgrade to Sourcegraph Enterprise to add repositories from other code hosts"
                                 />
                             </div>
                         ))}

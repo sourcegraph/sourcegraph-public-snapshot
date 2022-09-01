@@ -74,15 +74,15 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                 {cardTitle}
                 {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
-            <div className={"flex-1 align-self-center"}>
-            {to && enabled && (
-                <Icon className="float-right" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
-            )}
-            {badge && (
-                <Badge className="float-right" variant="outlineSecondary">
-                    {badge.toUpperCase()}
-                </Badge>
-            )}
+            <div className={'flex-1 align-self-center'}>
+                {to && enabled && (
+                    <Icon className="float-right" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
+                )}
+                {badge && (
+                    <Badge className="float-right" variant="outlineSecondary">
+                        {badge.toUpperCase()}
+                    </Badge>
+                )}
             </div>
         </div>
     )
