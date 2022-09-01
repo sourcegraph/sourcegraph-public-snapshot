@@ -19,7 +19,7 @@ jobs:
                   team/cloud=@sourcegraph/cloud
                   team/search-product=@benvenker @lguychard
                   team/search-core=@sourcegraph/search-core
-                  team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
+                  team/code-insights=@joelkw @felixfbecker @vovakulikov
                   team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
