@@ -99,6 +99,12 @@ func Test_canAggregateByPath(t *testing.T) {
 			canAggregate: false,
 		},
 		{
+			name:         "cannot aggregate for query with type:diff parameter",
+			query:        "insights type:diff",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "diff"),
+			canAggregate: false,
+		},
+		{
 			name:         "ensure type check is case insensitive ",
 			query:        "insights TYPE:commit",
 			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
