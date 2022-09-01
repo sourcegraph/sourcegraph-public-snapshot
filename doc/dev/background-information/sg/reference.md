@@ -1105,15 +1105,15 @@ Prints the Sourcegraph version deployed to the given environment.
 
 Available preset environments:
 
-* cloud
-* k8s
 * s2
+* dotcom
+* k8s
 
 ```sh
 # See which version is deployed on a preset environment
-$ sg live cloud
-$ sg live k8s
 $ sg live s2
+$ sg live dotcom
+$ sg live k8s
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com
