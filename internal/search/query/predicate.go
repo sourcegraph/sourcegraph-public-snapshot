@@ -39,7 +39,6 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
-		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
