@@ -124,6 +124,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 aria-label={ariaLabel}
                 data={getAggregationData(data)}
                 mode={mode}
+                maxXLabelLength={size === 'md' ? WIDE_LABEL_WIDTH : SHORT_LABEL_WIDTH}
                 getDatumValue={getValue}
                 getDatumColor={getColor}
                 getDatumName={getName}
@@ -160,6 +161,9 @@ const DataLayoutContainer = forwardRef((props, ref) => {
         />
     )
 }) as ForwardReferenceComponent<'div', DataLayoutContainerProps>
+
+const SHORT_LABEL_WIDTH = 8
+const WIDE_LABEL_WIDTH = 16
 
 const BAR_VALUES_FULL_UI = [95, 88, 83, 70, 65, 45, 35, 30, 30, 30, 30, 27, 27, 27, 27, 24, 10, 10, 10, 10, 10]
 const BAR_VALUES_SIDEBAR_UI = [95, 80, 75, 70, 68, 68, 55, 40, 38, 33, 30, 25, 15, 7]
