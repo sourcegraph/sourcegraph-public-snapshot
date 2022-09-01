@@ -23,7 +23,7 @@ jobs:
                   team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
-                  team/frontend-platform=@taylorsperry @jasongornall
+                  team/frontend-platform=@taylorsperry @muratsu
                   team/repo-management=@jplahn @ryphil
                   team/devops=@sourcegraph/cloud-devops
                   team/iam=@sourcegraph/iam
