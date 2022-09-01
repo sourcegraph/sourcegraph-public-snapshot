@@ -59,6 +59,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Replaced the `ALLOW_DECRYPT_MIGRATION` envvar with `ALLOW_DECRYPTION`. See [updated documentation](https://docs.sourcegraph.com/admin/config/encryption). [#39984](https://github.com/sourcegraph/sourcegraph/pull/39984)
 - Compute-powered insight now supports only one series custom colors for compute series bars [40038](https://github.com/sourcegraph/sourcegraph/pull/40038)
 - **IMPORTANT:** `repo:contains(file:foo content:bar)` has been renamed to `repo:contains.file(path:foo content:bar)`. `repo:contains.file(foo)` has been renamed to `repo:contains.path(foo)`. `repo:contains()` **is no longer a valid predicate. Saved searches using** `repo:contains()` **will need to be updated to use the new syntax.** [#40389](https://github.com/sourcegraph/sourcegraph/pull/40389)
+- Custom Git fetch configuration `experimentalFeatures.customGitFetch` is now unused. The configuration has been moved to a file and no longer uses the site-admin settings. In gitserver, use environment variable `CUSTOM_GIT_FETCH_CONF` to set the config file to read the settings from. [#39630](https://github.com/sourcegraph/sourcegraph/pull/39630).
+
 
 ### Fixed
 

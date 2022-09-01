@@ -303,11 +303,11 @@
           }
         },
         "customGitFetch": {
-          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. DEPRECATED: CONFIGURATION MOVED TO A LOCAL FILE USE ENVIRONMENT VARIABLE `CUSTOM_GIT_FETCH_CONF` TO SET FILE PATH.",
           "type": "array",
           "items": {
             "title": "CustomGitFetchMapping",
-            "description": "Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.",
+            "description": "Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command. DEPRECATED: NOW READ FROM A LOCAL FILE.",
             "type": "object",
             "additionalProperties": false,
             "required": ["domainPath", "fetch"],

@@ -2,27 +2,37 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"os/exec"
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var customGitFetch = conf.Cached(func() map[string][]string {
-	exp := conf.ExperimentalFeatures()
-	return buildCustomFetchMappings(exp.CustomGitFetch)
-})
+var customGitFetchCmdConf = env.Get("CUSTOM_GIT_FETCH_CONF", "", "custom git fetch command configuration")
 
-func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
-	if c == nil {
+func customGitFetch() map[string][]string {
+	if customGitFetchCmdConf == "" {
+		return map[string][]string{}
+	}
+
+	r, err := ioutil.ReadFile(customGitFetchCmdConf)
+	if err != nil {
+		return map[string][]string{}
+	}
+
+	var cc []*schema.CustomGitFetchMapping
+	err = json.Unmarshal(r, &cc)
+	if err != nil {
 		return map[string][]string{}
 	}
 
 	cgm := map[string][]string{}
-	for _, mapping := range c {
+	for _, mapping := range cc {
 		cgm[mapping.DomainPath] = strings.Fields(mapping.Fetch)
 	}
 
@@ -37,6 +47,7 @@ func customFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
 
 	dp := path.Join(remoteURL.Host, remoteURL.Path)
 	cmdParts := cgm[dp]
+
 	if len(cmdParts) == 0 {
 		return nil
 	}
