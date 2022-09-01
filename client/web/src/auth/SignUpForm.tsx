@@ -15,7 +15,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Link, ButtonLink, Icon, Checkbox, Label, Text } from '@sourcegraph/wildcard'
+import { Link, Icon, Checkbox, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
@@ -275,11 +275,12 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
-                                <ButtonLink
+                                <Button
                                     to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                     display="block"
-                                    onSelect={onClickExternalAuthSignup(provider.serviceType)}
+                                    onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
+                                    as={AnchorLink}
                                 >
                                     {provider.serviceType === 'github' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />
@@ -287,7 +288,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
-                                </ButtonLink>
+                                </Button>
                             </div>
                         ))}
                     </>
