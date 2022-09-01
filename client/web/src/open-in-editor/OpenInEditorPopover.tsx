@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiClose } from '@mdi/js'
 
-import { Button, Icon } from '@sourcegraph/wildcard/out/src'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { EditorSettings } from './editor-settings'
 
