@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -43,8 +45,8 @@ func getEnvironment(name string) (result environment, found bool) {
 	return result, found
 }
 
-func printDeployedVersion(e environment) error {
-	pending := std.Out.Pending(output.Styledf(output.StylePending, "Fetching newest version on %q...", e.Name))
+func printDeployedVersion(e environment, commits int) error {
+	pending := std.Out.Pending(output.Styledf(output.StylePending, "Fetching deployed version on %q...", e.Name))
 
 	resp, err := http.Get(e.URL + "/__version")
 	if err != nil {
@@ -53,7 +55,7 @@ func printDeployedVersion(e environment) error {
 	}
 	defer resp.Body.Close()
 
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done"))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched deployed version"))
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -85,7 +87,7 @@ func printDeployedVersion(e environment) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done updating list of commits"))
 
-	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%H|%cr|%an|%s`, "origin/main")
+	log, err := run.GitCmd("log", "--oneline", "-n", strconv.Itoa(commits), `--pretty=format:%H|%cr|%an|%s`, "origin/main")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
@@ -102,6 +104,8 @@ func printDeployedVersion(e environment) error {
 	std.Out.Write("")
 
 	var shaFound bool
+	var buf bytes.Buffer
+	out := std.NewOutput(&buf, false)
 	for _, logLine := range strings.Split(log, "\n") {
 		elems := strings.SplitN(logLine, "|", 4)
 		sha := elems[0]
@@ -118,12 +122,15 @@ func printDeployedVersion(e environment) error {
 		}
 
 		line := output.Linef(emoji, style, "%s (%s, %s): %s", sha[0:7], timestamp, author, message)
-		std.Out.WriteLine(line)
+		out.WriteLine(line)
 	}
 
-	if !shaFound {
-		line := output.Linef(output.EmojiWarning, output.StyleWarning, "Deployed SHA %s not found in last 20 commits on origin/main :(", buildSha)
-		std.Out.WriteLine(line)
+	if shaFound {
+		std.Out.Write(buf.String())
+	} else {
+		std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning,
+			"Deployed SHA %s not found in last %d commits on origin/main :(",
+			buildSha, commits))
 	}
 
 	return nil
