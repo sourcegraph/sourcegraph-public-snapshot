@@ -109,6 +109,12 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasPrefix(p, "doc/") || strings.HasSuffix(p, ".md") {
 			diff |= Docs
 		}
+		if strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".yml") {
+			diff |= Docs
+		}
+		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") || strings.HasSuffix(p, ".json5") {
+			diff |= Docs
+		}
 
 		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
