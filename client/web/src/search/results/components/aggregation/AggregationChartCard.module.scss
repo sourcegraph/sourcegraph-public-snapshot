@@ -1,6 +1,12 @@
 // Chart (parent-size) container
 .container {
     position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart {
+    flex-grow: 1;
 }
 
 .missing-label-count {

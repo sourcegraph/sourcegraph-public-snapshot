@@ -119,28 +119,30 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     }
 
     return (
-        <Suspense>
-            <LazyAggregationChart
-                aria-label={ariaLabel}
-                data={getAggregationData(data)}
-                mode={mode}
-                maxXLabelLength={size === 'md' ? WIDE_LABEL_WIDTH : SHORT_LABEL_WIDTH}
-                getDatumValue={getValue}
-                getDatumColor={getColor}
-                getDatumName={getName}
-                getDatumLink={getLink}
-                onDatumLinkClick={handleDatumLinkClick}
-                className={classNames(className, styles.container)}
-            />
+        <div className={classNames(className, styles.container)}>
+            <Suspense>
+                <LazyAggregationChart
+                    aria-label={ariaLabel}
+                    data={getAggregationData(data)}
+                    mode={mode}
+                    maxXLabelLength={size === 'md' ? WIDE_LABEL_WIDTH : SHORT_LABEL_WIDTH}
+                    getDatumValue={getValue}
+                    getDatumColor={getColor}
+                    getDatumName={getName}
+                    getDatumLink={getLink}
+                    onDatumLinkClick={handleDatumLinkClick}
+                    className={styles.chart}
+                />
 
-            {!!missingCount && (
-                <Tooltip content={`Aggregation is not exhaustive, there are ${missingCount} groups more`}>
-                    <Text size="small" className={styles.missingLabelCount}>
-                        +{missingCount}
-                    </Text>
-                </Tooltip>
-            )}
-        </Suspense>
+                {!!missingCount && (
+                    <Tooltip content={`Aggregation is not exhaustive, there are ${missingCount} groups more`}>
+                        <Text size="small" className={styles.missingLabelCount}>
+                            +{missingCount}
+                        </Text>
+                    </Tooltip>
+                )}
+            </Suspense>
+        </div>
     )
 }
 
