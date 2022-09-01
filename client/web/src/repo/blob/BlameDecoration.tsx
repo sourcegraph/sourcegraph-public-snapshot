@@ -10,6 +10,7 @@ import {
     Link,
     Popover,
     PopoverContent,
+    PopoverOpenEvent,
     PopoverTrigger,
     Position,
     useObservable,
@@ -94,7 +95,10 @@ export const BlameDecoration: React.FunctionComponent<{
         onClose,
     })
 
-    const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen, close, open])
+    const onPopoverOpenChange = useCallback((event: PopoverOpenEvent) => (event.isOpen ? close() : open()), [
+        close,
+        open,
+    ])
 
     if (!blameHunk) {
         return null

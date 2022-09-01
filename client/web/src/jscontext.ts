@@ -163,6 +163,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
     enableLegacyExtensions?: boolean
 
+    /** Contains information about the product license. */
+    licenseInfo?: {
+        currentPlan?: string
+
+        codeScaleLimit?: string
+        codeScaleCloseToLimit?: boolean
+        codeScaleExceededLimit?: boolean
+    }
+
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean
 }

@@ -21,9 +21,9 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "lint:js": "eslint 'src/*.[jt]s?(x)'",
-    "docs": "typedoc",
-    "prepublishOnly": "yarn run eslint && yarn run docs"
+    "lint:js": "yarn run -T eslint 'src/*.[jt]s?(x)'",
+    "docs": "yarn run -T typedoc",
+    "prepublish": "yarn run -T eslint && yarn run docs"
   },
   "devDependencies": {
     "typedoc": "^0.17.8"
