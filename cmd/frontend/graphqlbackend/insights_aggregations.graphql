@@ -147,7 +147,7 @@ type SearchAggregationNotAvailable {
     """
     The general reason a search aggregation is not available
     """
-    reasonType: String!
+    reasonType: NotAvailableReasonType!
     """
     The SearchAggregationMode that is unavailable
     """
