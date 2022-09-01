@@ -31,7 +31,6 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -59,7 +58,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -313,9 +312,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const [decorationsOrError, setDecorationsOrError] = useState<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][] | Error | undefined
-    >()
+    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -653,19 +650,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    // Memoize decorations to avoid clearing and setting decorations in `LineDecorator`s on renders in which decorations haven't changed.
-    const decorations: DecorationMapByLine = useMemo(() => {
-        if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            return groupDecorationsByLine(
-                decorationsOrError.reduce(
-                    (accumulator, [, items]) => [...accumulator, ...items],
-                    [] as TextDocumentDecoration[]
-                )
-            )
-        }
-
-        return new Map()
-    }, [decorationsOrError])
+    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
+    // decorations haven't changed.
+    const groupedDecorations = useMemo(
+        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
+        [decorationsOrError]
+    )
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -836,22 +826,23 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
                 {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
 
-                {iterate(decorations)
-                    .map(([line, items]) => {
-                        const portalID = toPortalID(line)
-                        return (
-                            <LineDecorator
-                                isLightTheme={isLightTheme}
-                                key={`${portalID}-${blobInfo.filePath}`}
-                                portalID={portalID}
-                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                line={line}
-                                decorations={items}
-                                codeViewElements={codeViewElements}
-                            />
-                        )
-                    })
-                    .toArray()}
+                {groupedDecorations &&
+                    iterate(groupedDecorations)
+                        .map(([line, items]) => {
+                            const portalID = toPortalID(line)
+                            return (
+                                <LineDecorator
+                                    isLightTheme={isLightTheme}
+                                    key={`${portalID}-${blobInfo.filePath}`}
+                                    portalID={portalID}
+                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                    line={line}
+                                    decorations={items}
+                                    codeViewElements={codeViewElements}
+                                />
+                            )
+                        })
+                        .toArray()}
             </div>
             {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
                 <StatusBar
