@@ -4464,13 +4464,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@percy/logger@npm:1.0.0-beta.68":
-  version: 1.0.0-beta.68
-  resolution: "@percy/logger@npm:1.0.0-beta.68"
-  checksum: 50035cbc36873b46e81de1498df07a216cf126cb497740ca044136c2063faddebddebd746e64cc33c3426ddd0e8f1c4faf3665e60f6b53de320c33fb7a2fb871
-  languageName: node
-  linkType: hard
-
 "@percy/logger@npm:1.6.0":
   version: 1.6.0
   resolution: "@percy/logger@npm:1.6.0"
@@ -4478,23 +4471,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@percy/puppeteer@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@percy/puppeteer@npm:2.0.0"
+"@percy/puppeteer@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@percy/puppeteer@npm:2.0.2"
   dependencies:
-    "@percy/sdk-utils": ^1.0.0-beta.32
+    "@percy/sdk-utils": ^1.0.0
   peerDependencies:
     puppeteer: ">=1"
-  checksum: 6041289d06eb1c237f15c38e1cacd46e614be76202c27593e7b03cb3f828d9b31c6530f8f83a5d10c2fe05a059632896c69626f5bd6238b56c710b7612703806
+  checksum: 953f951c2601a2290d138bc27167be7234d998cf060a337363e538805be10066ea4890f1edf6779235353240821ad5ae70890d5da4d450cd27e80befc68c9749
   languageName: node
   linkType: hard
 
-"@percy/sdk-utils@npm:^1.0.0-beta.32":
-  version: 1.0.0-beta.68
-  resolution: "@percy/sdk-utils@npm:1.0.0-beta.68"
-  dependencies:
-    "@percy/logger": 1.0.0-beta.68
-  checksum: 1dc7f7be67183e332b83d9ec99862da5bbf859a0ab057f96a6b6ce6096f15c5dba3451f68debd6c9138c4ca855838f047d596f3e3c3dac837bf5e909e40660d0
+"@percy/sdk-utils@npm:^1.0.0":
+  version: 1.10.0
+  resolution: "@percy/sdk-utils@npm:1.10.0"
+  checksum: 98807581115dc03c84dacb074344dd81711311409d4f4454c04592f0f8c362d0b931eb74f3b1550241ae1fdd6a46f88fbc46dcc11b40544775b75586427a58be
   languageName: node
   linkType: hard
 
@@ -28842,7 +28833,7 @@ pvutils@latest:
     "@opentelemetry/semantic-conventions": ^1.5.0
     "@peculiar/webcrypto": ^1.1.7
     "@percy/cli": ^1.6.0
-    "@percy/puppeteer": ^2.0.0
+    "@percy/puppeteer": ^2.0.2
     "@pmmmwh/react-refresh-webpack-plugin": 0.5.0-rc.1
     "@pollyjs/adapter": ^5.0.0
     "@pollyjs/core": ^5.1.0
