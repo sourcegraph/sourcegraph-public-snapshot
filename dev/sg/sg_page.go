@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/opsgenie/opsgenie-go-sdk-v2/alert"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
@@ -134,6 +134,6 @@ func parseOpsGeniePriority(p string) (alert.Priority, error) {
 	case "P5":
 		return alert.P5, nil
 	default:
-		return alert.Priority(""), fmt.Errorf("invalid priority %q", p)
+		return alert.Priority(""), errors.Errorf("invalid priority %q", p)
 	}
 }
