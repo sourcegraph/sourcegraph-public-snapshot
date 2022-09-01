@@ -5,7 +5,7 @@ const { decompressRecordings, deleteRecordings } = require('./utils')
 // eslint-disable-next-line no-void
 void (async () => {
   await decompressRecordings()
-  shelljs.exec('POLLYJS_MODE=replay yarn percy exec --quiet -- yarn run-integration', async code => {
+  shelljs.exec('POLLYJS_MODE=replay yarn run -T percy exec --quiet -- yarn run-integration', async code => {
     await deleteRecordings()
     process.exit(code)
   })

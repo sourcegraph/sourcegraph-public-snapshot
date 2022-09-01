@@ -201,12 +201,16 @@ require github.com/XSAM/otelsql v0.15.0
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 )
 
 require github.com/hmarr/codeowners v0.4.0
 
-require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+require (
+	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+)
 
 require (
 	github.com/sourcegraph/zoekt v0.0.0-20220831095746-37cdc94f44dc

@@ -15,6 +15,7 @@ export type FeatureFlagName =
     | 'admin-analytics-disabled'
     | 'admin-analytics-cache-disabled'
     | 'search-aggregation-filters'
+    | 'disable-proactive-insight-aggregation'
     | 'ab-lucky-search' // To be removed at latest by 12/2022.
     | 'search-input-hide-history'
 

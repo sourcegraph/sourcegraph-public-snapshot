@@ -4,7 +4,6 @@ import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
-    SearchAggregations,
     getDynamicFilterLinks,
     getRepoFilterLinks,
     getSearchSnippetLinks,
@@ -13,7 +12,6 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
-    AggregationUIMode,
 } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -27,8 +25,10 @@ import { Code } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
+import { AggregationUIMode } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
+import { SearchAggregations } from './SearchAggregations'
 
 export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
     liveQuery: string
@@ -59,6 +59,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
 
     // Feature flags
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [disableProactiveSearchAggregations, status] = useFeatureFlag('disable-proactive-insight-aggregation', false)
     const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
@@ -90,11 +91,13 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+            {/* Need to check status so that the feature flag is available before we render */}
+            {enableSearchAggregations && status === 'loaded' && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection sectionId={SectionID.GROUPED_BY} header="Group results by">
                     <SearchAggregations
                         query={submittedURLQuery}
                         patternType={patternType}
+                        proactive={!disableProactiveSearchAggregations}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />
                 </SearchSidebarSection>
@@ -185,6 +188,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         </SearchSidebar>
     )
 })
+
+SearchFiltersSidebar.displayName = 'SearchFiltersSidebar'
 
 const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode => (
     <span>
