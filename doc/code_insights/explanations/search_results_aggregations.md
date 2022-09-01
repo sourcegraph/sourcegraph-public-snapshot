@@ -32,6 +32,11 @@ with a `repo`, `file`, `author` filter or a regexp pattern depending on the aggr
 
 ## Limitations
 
+### Mode limitations
+
+If you attempt to run a query for which a given mode is not supported, the tooltip will inform you why that mode is not
+available. 
+
 ### Timeout limits
 
 At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout.
