@@ -248,7 +248,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 }
                 className="mb-3"
             />
-            {licenseInfo != null && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
                 <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
                     <H4>
                         {licenseInfo.codeScaleExceededLimit ? (
