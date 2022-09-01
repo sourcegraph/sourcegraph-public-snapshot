@@ -1118,12 +1118,16 @@ $ sg live k8s
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com
 
-# List environments:
+# List environments
 $ sg live -help
+
+# Check for commits further back in history
+$ sg live -n 50 s2
 ```
 
 Flags:
 
+* `--commits, -c, -n="<value>"`: Number of commits to check for live version (default: 20)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg ops

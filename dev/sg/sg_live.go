@@ -25,12 +25,23 @@ sg live k8s
 # See which version is deployed on a custom environment
 sg live https://demo.sourcegraph.com
 
-# List environments:
+# List environments
 sg live -help
+
+# Check for commits further back in history
+sg live -n 50 s2
 	`,
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
 	Action:      liveExec,
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:    "commits",
+			Aliases: []string{"c", "n"},
+			Value:   20,
+			Usage:   "Number of commits to check for live version",
+		},
+	},
 	BashComplete: completeOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
@@ -54,12 +65,11 @@ func liveExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
-		return flag.ErrHelp
+		return NewEmptyExitErr(1)
 	}
-
 	if len(args) != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
-		return flag.ErrHelp
+		return NewEmptyExitErr(1)
 	}
 
 	e, ok := getEnvironment(args[0])
@@ -72,5 +82,5 @@ func liveExec(ctx *cli.Context) error {
 		}
 	}
 
-	return printDeployedVersion(e)
+	return printDeployedVersion(e, ctx.Int("commits"))
 }
