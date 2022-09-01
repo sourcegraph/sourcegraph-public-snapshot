@@ -107,6 +107,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         }
     }
 
+    const showFooter =
+        data && !error && data.searchQueryAggregate?.aggregations?.__typename !== 'SearchAggregationNotAvailable'
+
     return (
         <article className="pt-2">
             <AggregationModeControls
@@ -132,20 +135,22 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                         onExtendTimeout={handleExtendTimeout}
                     />
 
-                    <footer className={styles.actions}>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            outline={true}
-                            className={styles.detailsAction}
-                            data-testid="expand-aggregation-ui"
-                            onClick={handleExpandClick}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
-                        </Button>
+                    {showFooter && (
+                        <footer className={styles.actions}>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                outline={true}
+                                className={styles.detailsAction}
+                                data-testid="expand-aggregation-ui"
+                                onClick={handleExpandClick}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
+                            </Button>
 
-                        {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="sm" />}
-                    </footer>
+                            {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="sm" />}
+                        </footer>
+                    )}
                 </>
             )}
         </article>
