@@ -6,7 +6,7 @@ import { useHistory, useLocation } from 'react-router'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../graphql-operations'
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -134,9 +134,10 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         $patternType: SearchPatternType!
         $mode: SearchAggregationMode
         $limit: Int!
+        $skipAggregation: Boolean!
     ) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
-            aggregations(mode: $mode, limit: $limit) {
+            aggregations(mode: $mode, limit: $limit) @skip(if: $skipAggregation) {
                 __typename
                 ... on ExhaustiveSearchAggregationResult {
                     mode
@@ -171,6 +172,7 @@ interface SearchAggregationDataInput {
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
     limit: number
+    proactive?: boolean
 }
 
 type SearchAggregationResults =
@@ -179,7 +181,7 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit } = input
+    const { query, patternType, aggregationMode, limit, proactive } = input
 
     const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
@@ -189,7 +191,13 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
-            variables: { query, patternType, mode: aggregationMode, limit },
+            variables: {
+                query,
+                patternType,
+                mode: aggregationMode,
+                limit,
+                skipAggregation: aggregationMode === null && !proactive,
+            },
 
             // Skip extra API request when we had no aggregation mode, and then
             // we got calculated aggregation mode from the BE. We should update
