@@ -135,7 +135,7 @@ func (oid gitObjectInfo) OID() gitdomain.OID {
 }
 
 func TestReposGetInventory(t *testing.T) {
-	var s repos
+	var s repos = repos{logger: logtest.Scoped(t)}
 	ctx := testContext()
 
 	const (
