@@ -23,7 +23,7 @@ import { BlameDecoration } from '../BlameDecoration'
 import blameColumnStyles from '../BlameColumn.module.scss'
 
 /**
- * {@link BlameDecorationManager} creates {@link gutter}s dynamically.
+ * {@link BlameDecorationManager} creates {@link gutter} dynamically.
  * Using a compartment allows us to change the gutter extensions without
  * impacting any other extensions.
  */
@@ -41,8 +41,15 @@ const longestColumnDecorations = (hunks?: BlameHunk[]): BlameHunk | undefined =>
         return acc
     }, undefined as BlameHunk | undefined)
 
+/**
+ * Get HTMLElement containing line number by line number.
+ * */
 const getLineNumberCell = (line: number): HTMLElement | null =>
     document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
+
+/**
+ * Get HTMLElement containing code chunk by line number.
+ * */
 const getCodeCell = (line: number): HTMLElement | null =>
     document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
 
@@ -115,8 +122,8 @@ class BlameDecoratorMarker extends GutterMarker {
 }
 
 class BlameDecorationManager implements PluginValue {
-    public inlineDecorations: DecorationSet = Decoration.none
-    private gutters: Map<string, { gutter: Extension; items: BlameHunk[] }> = new Map()
+    public decorations: DecorationSet = Decoration.none
+    private gutter: { gutter: Extension; items: BlameHunk[] } | undefined
     private reset: number | null = null
 
     constructor(private readonly view: EditorView) {
@@ -132,7 +139,7 @@ class BlameDecorationManager implements PluginValue {
     }
 
     private updateDecorations(specs: BlameHunk[]): void {
-        if (this.updateGutters(specs)) {
+        if (this.updateGutter(specs)) {
             // We cannot synchronously dispatch another transaction during
             // an update, so we schedule it but also cancel pending
             // transactions should this be called multiple times in a row
@@ -141,7 +148,7 @@ class BlameDecorationManager implements PluginValue {
             }
             this.reset = window.setTimeout(() => {
                 this.view.dispatch({
-                    effects: decorationGutters.reconfigure(Array.from(this.gutters.values(), ({ gutter }) => gutter)),
+                    effects: decorationGutters.reconfigure(this.gutter?.gutter || []),
                 })
             }, 50)
         }
@@ -150,17 +157,15 @@ class BlameDecorationManager implements PluginValue {
     /**
      * Create or remove gutters.
      */
-    private updateGutters(specs: BlameHunk[]): boolean {
+    private updateGutter(specs: BlameHunk[]): boolean {
         let change = false
-        const seen: Set<string> = new Set()
 
-        seen.add('blame')
-        if (!this.gutters.has('blame')) {
-            this.gutters.set('blame', {
+        if (!this.gutter) {
+            this.gutter = {
                 gutter: gutter({
                     class: blameColumnStyles.decoration,
                     lineMarker: (view, lineBlock) => {
-                        const items = this.gutters.get('blame')?.items
+                        const items = this.gutter?.items
                         if (!items) {
                             // This shouldn't be possible but just in case
                             return null
@@ -176,7 +181,7 @@ class BlameDecorationManager implements PluginValue {
                     // decorations for the visible lines are re-rendered
                     // TODO: update spacer when decorations change
                     initialSpacer: () => {
-                        const hunk = longestColumnDecorations(this.gutters.get('blame')?.items)
+                        const hunk = longestColumnDecorations(this.gutter?.items)
                         return new BlameDecoratorMarker(hunk, 0)
                     },
                     // Markers need to be updated when theme changes
@@ -184,17 +189,10 @@ class BlameDecorationManager implements PluginValue {
                         update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
                 }),
                 items: specs,
-            })
+            }
             change = true
         } else {
-            this.gutters.get('blame')!.items = specs
-        }
-
-        for (const id of this.gutters.keys()) {
-            if (!seen.has(id)) {
-                this.gutters.delete(id)
-                change = true
-            }
+            this.gutter.items = specs
         }
 
         return change
@@ -209,7 +207,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: [
         ViewPlugin.fromClass(BlameDecorationManager, {
-            decorations: manager => manager.inlineDecorations,
+            decorations: manager => manager.decorations,
         }),
         decorationGutters.of([]),
     ],
