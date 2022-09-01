@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -111,6 +112,8 @@ func init() {
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
+	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
+
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err == nil {
@@ -176,6 +179,26 @@ func init() {
 
 	// Warn if customer is using GitLab on a version < 12.0.
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
+}
+
+func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
+	licenseInfo := hooks.GetLicenseInfo(args.IsSiteAdmin)
+	if licenseInfo == nil {
+		return nil
+	}
+
+	if licenseInfo.CodeScaleCloseToLimit {
+		return []*Alert{{
+			TypeValue:    AlertTypeWarning,
+			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
+		}}
+	} else if licenseInfo.CodeScaleExceededLimit {
+		return []*Alert{{
+			TypeValue:    AlertTypeError,
+			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
+		}}
+	}
+	return nil
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
