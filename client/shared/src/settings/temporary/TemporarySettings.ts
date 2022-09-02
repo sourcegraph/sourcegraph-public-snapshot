@@ -35,7 +35,6 @@ export interface TemporarySettingsSchema {
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
-    'coreWorkflowImprovements.enabled': boolean
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {
         lastCachedTimestamp: string
@@ -44,6 +43,9 @@ export interface TemporarySettingsSchema {
         author: string
     }
     'search.results.collapseLuckySearch': boolean
+    // TODO #41002: Remove this temporary setting.
+    // This temporary setting is now turned on by default with no UI to toggle it off.
+    'coreWorkflowImprovements.enabled_deprecated': boolean
 }
 
 /**
