@@ -14,6 +14,8 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -193,9 +195,13 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	var err error
 	switch opts.TracerType {
 	case OpenTelemetry:
-		exporter, err = exporters.NewOTelCollectorExporter(context.Background(), logger)
+		exporter, err = exporters.NewOTLPExporter(context.Background(), logger)
+
 	case Jaeger:
 		exporter, err = exporters.NewJaegerExporter()
+
+	default:
+		err = errors.Newf("unknown tracer type %q", opts.TracerType)
 	}
 
 	if err != nil || exporter == nil {

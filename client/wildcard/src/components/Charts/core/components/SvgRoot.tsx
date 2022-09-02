@@ -150,6 +150,7 @@ interface SvgAxisBottomProps<Tick> {
     tickFormat?: (tick: Tick) => string
     pixelsPerTick?: number
     maxRotateAngle?: number
+    hideTicks?: boolean
     getTruncatedTick?: (formattedTick: string) => string
     getScaleTicks?: <T>(options: GetScaleTicksOptions) => T[]
 }
@@ -161,6 +162,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
         getScaleTicks = getXScaleTicks,
+        hideTicks = false,
     } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 
@@ -185,6 +187,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
 
     const getXTickProps = (props: TickRendererProps): TickProps => {
         const measuredSize = ticks.length * maxWidth
+        const fontSize = 12 // 0.75rem
         const rotate =
             upperRangeBound < measuredSize
                 ? maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2)
@@ -196,7 +199,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
                 // Truncate ticks only if we rotate them, this means truncate labels only
                 // when they overlap
                 getTruncatedTick,
-                transform: `rotate(${rotate}, ${props.x} ${props.y})`,
+                transform: `rotate(${rotate}, ${props.x + fontSize / 2} ${props.y - fontSize / 2})`,
                 textAnchor: 'start',
             }
         }
@@ -214,6 +217,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
             tickValues={ticks}
             tickComponent={props => <Tick {...getXTickProps(props)} />}
             tickFormat={tickFormat}
+            hideTicks={hideTicks}
         />
     )
 }

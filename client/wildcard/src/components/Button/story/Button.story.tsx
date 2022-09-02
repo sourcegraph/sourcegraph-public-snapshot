@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
 
@@ -104,18 +106,6 @@ export const AllButtons: Story = () => (
             Block
         </Button>
 
-        <H2>Button Group</H2>
-        <ButtonGroup className="mb-3">
-            <Button variant="secondary" display="block">
-                Grouped
-            </Button>
-            <Button variant="secondary" display="block">
-                Grouped
-            </Button>
-            <Button variant="secondary" display="block">
-                Grouped
-            </Button>
-        </ButtonGroup>
         <H2>Tooltips</H2>
         <Text>Buttons can have tooltips.</Text>
         <Tooltip content="Some extra context on the button.">
@@ -132,6 +122,91 @@ export const AllButtons: Story = () => (
 )
 
 AllButtons.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
+
+export const Group: Story = () => {
+    const [selectedButton, setSelectedButton] = useState(1)
+
+    return (
+        <>
+            <div className="mb-4">
+                <H2>Standard</H2>
+
+                <ButtonGroup>
+                    <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                        One
+                    </Button>
+                    <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
+                        Two
+                    </Button>
+                    <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
+                        Three
+                    </Button>
+                </ButtonGroup>
+            </div>
+
+            <div className="mb-4">
+                <H2>With Tooltips</H2>
+
+                <ButtonGroup>
+                    <Tooltip content="Option One">
+                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                            One
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Two">
+                        <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
+                            Two
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Three">
+                        <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
+                            Three
+                        </Button>
+                    </Tooltip>
+                </ButtonGroup>
+            </div>
+
+            <div className="mb-4">
+                <H2>With Tooltips (Disabled Buttons)</H2>
+
+                <ButtonGroup>
+                    <Tooltip content="Option One">
+                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                            One
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Two">
+                        <Button
+                            disabled={true}
+                            variant="secondary"
+                            outline={selectedButton !== 2}
+                            onClick={() => setSelectedButton(2)}
+                        >
+                            Two
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Three">
+                        <Button
+                            disabled={true}
+                            variant="secondary"
+                            outline={selectedButton !== 3}
+                            onClick={() => setSelectedButton(3)}
+                        >
+                            Three
+                        </Button>
+                    </Tooltip>
+                </ButtonGroup>
+            </div>
+        </>
+    )
+}
+Group.storyName = 'Button Group'
+Group.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,

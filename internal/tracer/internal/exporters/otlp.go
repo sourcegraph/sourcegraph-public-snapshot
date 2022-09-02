@@ -14,13 +14,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewOTelCollectorExporter exports spans to an OpenTelemetry collector.
-func NewOTelCollectorExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
+// NewOTLPExporter exports spans to an OpenTelemetry collector via the OpenTelemetry
+// protocol (OTLP).
+func NewOTLPExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
+	endpoint := otlpenv.GetEndpoint()
+	if endpoint == "" {
+		// OTEL_EXPORTER_OTLP_ENDPOINT has been explicitly set to ""
+		return nil, errors.Newf("please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT")
+	}
+
 	// Set up client to otel-collector - we replicate some of the logic used internally in
 	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831ca19e3acf341cc11459c87b9791f2f/exporters/otlp/internal/otlpconfig/envconfig.go
 	// based on our own inferred endpoint.
 	var (
-		endpoint        = otlpenv.GetEndpoint()
 		client          otlptrace.Client
 		protocol        = otlpenv.GetProtocol()
 		trimmedEndpoint = trimSchema(endpoint)

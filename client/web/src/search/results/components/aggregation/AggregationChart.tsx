@@ -25,12 +25,13 @@ type SharedBarProps<Datum> = Omit<BarChartProps<Datum>, PredefinedBarProps>
 
 export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
     mode?: SearchAggregationMode | null
+    maxXLabelLength: number
 }
 
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
-    const { mode, className, ...attributes } = props
+    const { mode, maxXLabelLength, className, ...attributes } = props
 
-    const getTruncatedXLabel = useMemo(() => getTruncationFormatter(mode), [mode])
+    const getTruncatedXLabel = useMemo(() => getTruncationFormatter(mode, maxXLabelLength), [mode, maxXLabelLength])
 
     return (
         <ParentSize className={className}>
@@ -41,6 +42,7 @@ export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): Re
                     height={parent.height}
                     pixelsPerYTick={20}
                     pixelsPerXTick={20}
+                    hideXTicks={true}
                     maxAngleXTick={45}
                     getScaleXTicks={getXScaleTicks}
                     getTruncatedXTick={getTruncatedXLabel}
@@ -85,11 +87,11 @@ const getXScaleTicks = <T,>(options: GetScaleTicksOptions): T[] => {
     return filteredTicks
 }
 
-const MAX_TRUNCATED_LABEL_LENGTH = 10
-const getTruncatedTick = (tick: string): string =>
-    tick.length >= MAX_TRUNCATED_LABEL_LENGTH ? `${tick.slice(0, MAX_TRUNCATED_LABEL_LENGTH)}...` : tick
-const getTruncatedTickFromTheEnd = (tick: string): string =>
-    tick.length >= MAX_TRUNCATED_LABEL_LENGTH ? `...${tick.slice(-MAX_TRUNCATED_LABEL_LENGTH)}` : tick
+const getTruncatedTick = (maxLength: number) => (tick: string): string =>
+    tick.length >= maxLength ? `${tick.slice(0, maxLength)}...` : tick
+
+const getTruncatedTickFromTheEnd = (maxLength: number) => (tick: string): string =>
+    tick.length >= maxLength ? `...${tick.slice(-maxLength)}` : tick
 
 /**
  * Based on aggregation mode we should pick different truncation formatters for X labels.
@@ -101,15 +103,18 @@ const getTruncatedTickFromTheEnd = (tick: string): string =>
  * github.com/sourcegraph/sourcegraph -> ...urcegraph/sourcegraph
  * ```
  */
-const getTruncationFormatter = (aggregationMode?: SearchAggregationMode | null): ((tick: string) => string) => {
+const getTruncationFormatter = (
+    aggregationMode: SearchAggregationMode | undefined | null,
+    maxLength: number
+): ((tick: string) => string) => {
     switch (aggregationMode) {
         // These types possible have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
         case SearchAggregationMode.REPO:
         case SearchAggregationMode.PATH:
-            return getTruncatedTickFromTheEnd
+            return getTruncatedTickFromTheEnd(maxLength)
 
         default:
-            return getTruncatedTick
+            return getTruncatedTick(maxLength)
     }
 }

@@ -191,10 +191,10 @@ describe('Search aggregation', () => {
             await delay(100)
 
             const aggregationCases = [
-                { mode: 'REPO', id: 'repo-aggregation-mode' },
-                { mode: 'PATH', id: 'file-aggregation-mode' },
-                { mode: 'AUTHOR', id: 'author-aggregation-mode' },
-                { mode: 'CAPTURE_GROUP', id: 'captureGroup-aggregation-mode' },
+                { mode: 'REPO', urlKey: 'repo', id: 'repo-aggregation-mode' },
+                { mode: 'PATH', urlKey: 'path', id: 'file-aggregation-mode' },
+                { mode: 'AUTHOR', urlKey: 'author', id: 'author-aggregation-mode' },
+                { mode: 'CAPTURE_GROUP', urlKey: 'group', id: 'captureGroup-aggregation-mode' },
             ]
 
             for (const testCase of aggregationCases) {
@@ -210,15 +210,13 @@ describe('Search aggregation', () => {
                     },
                     { timeout: 5000 },
                     `${origQuery}`,
-                    testCase.mode
+                    testCase.urlKey
                 )
             }
         })
 
         test('should open expanded full UI by default if UI mode is set in URL query param', async () => {
-            await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent('insights(')}&groupByUI=searchPage`
-            )
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent('insights(')}&expanded`)
 
             await driver.page.waitForSelector('[aria-label="Aggregation results panel"]')
         })
@@ -245,13 +243,13 @@ describe('Search aggregation', () => {
                     const url = new URL(document.location.href)
                     const query = url.searchParams.get('q')
                     const aggregationMode = url.searchParams.get('groupBy')
-                    const aggregationUIMode = url.searchParams.get('groupByUI')
+                    const aggregationUIMode = url.searchParams.get('expanded')
 
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'PATH' &&
-                        aggregationUIMode === 'searchPage'
+                        aggregationMode === 'path' &&
+                        aggregationUIMode === ''
                     )
                 },
                 { timeout: 5000 },
@@ -268,13 +266,13 @@ describe('Search aggregation', () => {
                     const url = new URL(document.location.href)
                     const query = url.searchParams.get('q')
                     const aggregationMode = url.searchParams.get('groupBy')
-                    const aggregationUIMode = url.searchParams.get('groupByUI')
+                    const aggregationUIMode = url.searchParams.get('expanded')
 
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'AUTHOR' &&
-                        aggregationUIMode === 'sidebar'
+                        aggregationMode === 'author' &&
+                        aggregationUIMode === null
                     )
                 },
                 { timeout: 5000 },

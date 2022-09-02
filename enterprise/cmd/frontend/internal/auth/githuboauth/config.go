@@ -12,17 +12,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Init(db database.DB) {
+func Init(logger log.Logger, db database.DB) {
+	const pkgName = "githuboauth"
+	logger = logger.Scoped(pkgName, "GitHub OAuth config watch")
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(cfg, db)
+		_, problems := parseConfig(logger, cfg, db)
 		return problems
 	})
 
-	const pkgName = "githuboauth"
-	logger := log.Scoped(pkgName, "GitHub OAuth config watch")
 	go func() {
 		conf.Watch(func() {
-			newProviders, _ := parseConfig(conf.Get(), db)
+			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
 				return
@@ -48,13 +48,13 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
+func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Github == nil {
 			continue
 		}
 
-		provider, providerProblems := parseProvider(pr.Github, db, pr)
+		provider, providerProblems := parseProvider(logger, pr.Github, db, pr)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
 			ps = append(ps, Provider{
