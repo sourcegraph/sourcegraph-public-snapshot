@@ -3,7 +3,6 @@ package cliutil
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -13,7 +12,6 @@ import (
 )
 
 func Upgrade(
-	logger log.Logger,
 	commandName string,
 	runnerFactory RunnerFactoryWithSchemas,
 	outFactory OutputFactory,

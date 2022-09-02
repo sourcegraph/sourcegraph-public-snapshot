@@ -3,13 +3,12 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/search'
-import { GetSearchAggregationResult } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import { GetSearchAggregationResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'

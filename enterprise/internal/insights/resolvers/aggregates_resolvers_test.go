@@ -99,6 +99,12 @@ func Test_canAggregateByPath(t *testing.T) {
 			canAggregate: false,
 		},
 		{
+			name:         "cannot aggregate for query with type:diff parameter",
+			query:        "insights type:diff",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "diff"),
+			canAggregate: false,
+		},
+		{
 			name:         "ensure type check is case insensitive ",
 			query:        "insights TYPE:commit",
 			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
@@ -269,6 +275,27 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
 			reason:       cgMultipleQueryPatternMsg,
 			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with type commit",
+			query:        "/func(\\w+)/ case:yes type:commit",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "commit"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with type diff",
+			query:        "/func(\\w+)/ case:yes type:diff",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with select commit",
+			query:        "/func(\\w+)/ case:yes select:commit",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "commit"),
 			canAggregate: false,
 		},
 	}

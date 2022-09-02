@@ -6,7 +6,7 @@ env:
 
 steps:
   - command:
-      - COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook
+      - COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh storybook:build
       - yarn run cover-storybook
       - yarn nyc report -r json
       - bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook
