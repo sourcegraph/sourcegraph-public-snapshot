@@ -14,7 +14,7 @@ This upgrade process involves updating only infrastructure: containers must refl
 
 To perform a standard upgrade, check the [update notes for your deployment type](#update-notes) for instructions and for any conditions that must be true or required manual actions that must be performed **prior to updating**.
 
-Also [check the status out-of-band migrations](../how-to/unfinished_migration#checking-progress) prior to upgrading. If there is a warning displayed on this page, then an out-of-band migration is currently in progress and must finish prior to moving off of the current version. The newer version of Sourcegraph will detect that there is unmigrated data and will refuse to start, requiring an unnecessary rollback procedure. Note that multi-version upgrades will complete these migrations as part of the upgrade process, so checking this status prior to a multi-version upgrade is unnecessary.
+Also [check the status out-of-band migrations](../how-to/unfinished_migration.md#checking-progress) prior to upgrading. If there is a warning displayed on this page, then an out-of-band migration is currently in progress and must finish prior to moving off of the current version. The newer version of Sourcegraph will detect that there is unmigrated data and will refuse to start, requiring an unnecessary rollback procedure. Note that multi-version upgrades will complete these migrations as part of the upgrade process, so checking this status prior to a multi-version upgrade is unnecessary.
 
 ### Multi-version upgrades
 
@@ -24,10 +24,10 @@ This upgrade process involves spinning down the active instance (incurring a def
 
 To perform a multi-version upgrade, check the [update notes for your deployment type](#update-notes) for instructions and for any conditions that must be true or required manual actions that must be performed **prior to updating**. Then check one of the following guides for environment-specific instructions.
 
-- [Sourcegraph with Docker Compose](../deploy/docker-compose/upgrade#multi-version-upgrades)
-- [Sourcegraph with Kubernetes](../deploy/kubernetes/update#multi-version-upgrades)
-- [Sourcegraph with Kubernetes and Helm](../deploy/kubernetes/helm#multi-version-upgrades)
-- [Single-container Sourcegraph with Docker](../deploy/docker-single-container#multi-version-upgrades)
+- [Sourcegraph with Docker Compose](../deploy/docker-compose/upgrade.md#multi-version-upgrades)
+- [Sourcegraph with Kubernetes](../deploy/kubernetes/update.md#multi-version-upgrades)
+- [Sourcegraph with Kubernetes and Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
+- [Single-container Sourcegraph with Docker](../deploy/docker-single-container.md#multi-version-upgrades)
 
 ## Update notes
 

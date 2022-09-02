@@ -24,7 +24,7 @@ Administration is usually handled by site administrators are the admins responsi
   - [Update notes for single-container Sourcegraph with Docker](updates/server.md)
   - [Update notes for pure-docker custom deployments](updates/pure_docker.md)
 - [Migration guides](migration/index.md)
-- [Upgrading PostgreSQL](postgres#upgrading-postgresql)
+- [Upgrading PostgreSQL](postgres.md#upgrading-postgresql)
 
 ## [Configuration](config/index.md)
 

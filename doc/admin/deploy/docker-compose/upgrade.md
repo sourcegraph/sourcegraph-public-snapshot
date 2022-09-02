@@ -59,15 +59,15 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 - **Take an up-to-date snapshot of your databases.** We are unable to exhaustively test all upgrade paths or catch all possible edge cases in a customer environment. The upgrade process aggressively mutates the shape and contents of your database, and uncaught errors in the migration process or unexpected environmental differences may cause data loss. **If you do not feel confident running this process solo**, contact customer support team to help walk you thorough the process.
 - If possible, upgrade an idle clone of the production instance and switch traffic over on success. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
-- Run the `migrator` drift detection on your current version to detect and repair any database schema discrepencies. Running with an unexpected schema may cause a painful upgrade process that may require engineering support. See the [command documentation](./../../how-to/manual_database_migrations#drift) for additional details.
+- Run the `migrator` drift detection on your current version to detect and repair any database schema discrepencies. Running with an unexpected schema may cause a painful upgrade process that may require engineering support. See the [command documentation](./../../how-to/manual_database_migrations.md#drift) for additional details.
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose:
 
 1. Spin down the instance:
   - `docker-compose stop`
-1. Spin back up each in-use local database so that the `migrator` can access them. Any [externalized database](../../external_services/postgres) is already accessible from the `migrator` so no action is needed for them.
+1. Spin back up each in-use local database so that the `migrator` can access them. Any [externalized database](../../external_services/postgres.md) is already accessible from the `migrator` so no action is needed for them.
   - `docker-compose up -d pgsql`
   - `docker-compose up -d codeintel-db`
   - `docker-compose up -d codeinsights-db`
-1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations#upgrade) for additional details.
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details.
 1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Compose](#standard-upgrades).

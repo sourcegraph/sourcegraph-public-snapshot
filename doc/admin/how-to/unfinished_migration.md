@@ -15,11 +15,11 @@ ERROR: Unfinished migrations. Please revert Sourcegraph to the previous version 
 
 ## Resolution
 
-If you were performing a [standard upgrade](../updates#standard-upgrades) between two minor versions, then the suggested action is to perform an infrastructure rollback and continue running the previous instance version until the violating out-of-band migrations have completed. The progress of the migrations can be checked [in the UI](#checking-progress). Older versions of Sourcegraph may have performed schema migrations prior to this check, but a schema rollback should not be necessary as our database schemas are backwards-compatible with one minor version.
+If you were performing a [standard upgrade](../updates/index.md#standard-upgrades) between two minor versions, then the suggested action is to perform an infrastructure rollback and continue running the previous instance version until the violating out-of-band migrations have completed. The progress of the migrations can be checked [in the UI](#checking-progress). Older versions of Sourcegraph may have performed schema migrations prior to this check, but a schema rollback should not be necessary as our database schemas are backwards-compatible with one minor version.
 
-Alternatively to rolling back and waiting, the unfinished migrations can be run directly via the `migrator`. See the [command documentation](./manual_database_migrations#run-out-of-band-migration) for additional details.
+Alternatively to rolling back and waiting, the unfinished migrations can be run directly via the `migrator`. See the [command documentation](./manual_database_migrations.md#run-out-of-band-migration) for additional details.
 
-[Multi-version upgrades](../updates#multi-version-upgrades) and downgrade operations ensure that the required out-of-band migrations have completed or finished rolling back. If this is not the case, contact support as it indicates a non-obvious error in your environment or a bug Sourcegraph's migration tooling.
+[Multi-version upgrades](../updates/index.md#multi-version-upgrades) and downgrade operations ensure that the required out-of-band migrations have completed or finished rolling back. If this is not the case, contact support as it indicates a non-obvious error in your environment or a bug Sourcegraph's migration tooling.
 
 As an emergency escape hatch, the environment variable `SRC_DISABLE_OOBMIGRATION_VALIDATION` can be set to `true` on the `frontend` and `worker` services to disable the startup check. This is not recommended as it may result in broken features or data loss.
 
@@ -35,4 +35,4 @@ If an out-of-band migration is not making progress or there are errors associate
 
 ## Further resources
 
-* [Sourcegraph - Upgrading Sourcegraph to a new version](https://docs.sourcegraph.com/admin/updates)
+* [Sourcegraph - Upgrading Sourcegraph to a new version](../updates/index.md)
