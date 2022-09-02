@@ -82,7 +82,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	if err = backend.SyncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
+	if err = backend.SyncExternalService(ctx, r.logger, es, 5*time.Second, r.repoupdaterClient); err != nil {
 		return nil, err
 	}
 

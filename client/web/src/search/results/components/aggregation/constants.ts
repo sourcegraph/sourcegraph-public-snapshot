@@ -3,4 +3,4 @@
  * type and UI modes.
  */
 export const AGGREGATION_MODE_URL_KEY = 'groupBy'
-export const AGGREGATION_UI_MODE_URL_KEY = 'groupByUI'
+export const AGGREGATION_UI_MODE_URL_KEY = 'expanded'

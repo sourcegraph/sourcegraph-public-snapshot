@@ -17,6 +17,7 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 - Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
 - Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
 - Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
+- Does your check or test need a secret? Take a look at [how to manage secrets](#managing-secrets).
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
@@ -204,7 +205,11 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 
 1. Use Google Cloud Secret manager to add it to [the `sourcegraph-ci` project](https://console.cloud.google.com/security/secret-manager?project=sourcegraph-ci).
 2. Inject it at deployment time as an environment variable in the CI agents via adding it to [the Buildkite GSM configuration](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/gsm-secrets.tf).
-3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it available to every CI step.
+3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it sure the secret is available in the nodes environment.
+4. A Kubernetes Job gets dispatched onto a node, we need to tell Kubernetes to make the variable available to the Job by updating the [Job manifest](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/buildkite-agent-stateless/buildkite-agent.Job.yaml) for the buildkite stateless agent.
+5. Run `kubectl -f apply buildkite-agent-stateless/buildkite-agent.Job.yaml` in the `buildkite/kubernetes` folder.
+
+**Note**: Jobs are created dynamically and it might take a while for the new Job manifest to be picked up.
 
 Our CI pipeline must never leak secrets:
 
