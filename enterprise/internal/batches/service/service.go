@@ -277,7 +277,6 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		CreatedFromRaw:  true,
 	}
 
-
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -287,8 +286,6 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
 		return nil, err
 	}
-
-	
 
 	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
@@ -701,7 +698,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
 
-_, err = template.ValidateBatchSpecTemplate("spec"+spec.Spec.Name, string(opts.RawSpec))
+	_, err = template.ValidateBatchSpecTemplate("spec"+spec.Spec.Name, opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}

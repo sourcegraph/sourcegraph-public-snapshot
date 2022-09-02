@@ -13,7 +13,6 @@ func New(name, tmpl, option string, ctxs ...template.FuncMap) (*template.Templat
 	for _, ctx := range ctxs {
 		t = t.Funcs(ctx)
 	}
-	
+
 	return t.Parse(tmpl)
 }
-
