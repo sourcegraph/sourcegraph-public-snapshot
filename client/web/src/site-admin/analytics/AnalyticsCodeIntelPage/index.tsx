@@ -91,7 +91,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value:
+                    referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
                 tooltip:
@@ -100,7 +101,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         : "The number of users who clicked 'References'. in code navigation hovers to view usages of an item.",
             },
             {
-                value: definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value:
+                    definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
                 tooltip:
