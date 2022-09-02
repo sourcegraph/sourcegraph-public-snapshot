@@ -14,7 +14,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -236,7 +238,7 @@ func TestReposGetInventory(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		logtest.InitWithlevel(m, log.LevelNone)
+		logtest.InitWithLevel(m, log.LevelNone)
 	} else {
 		logtest.Init(m)
 	}
