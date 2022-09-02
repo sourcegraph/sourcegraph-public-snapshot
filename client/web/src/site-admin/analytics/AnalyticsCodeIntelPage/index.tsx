@@ -223,11 +223,19 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         preciseNavigation: JSX.Element
     }
 
-    const urls: Record<string, string> = {
+    const langToIndexerUrl: Record<string, string> = {
         python: 'https://github.com/sourcegraph/scip-python',
         typescript: 'https://github.com/sourcegraph/scip-typescript',
         java: 'https://github.com/sourcegraph/scip-java',
         ruby: 'https://github.com/sourcegraph/scip-ruby',
+        go: 'https://github.com/sourcegraph/lsif-go',
+        rust: 'https://github.com/rust-analyzer/rust-analyzer',
+        scala: 'https://github.com/sourcegraph/lsif-java',
+        cpp: 'https://github.com/sourcegraph/lsif-clang',
+        csharp: 'https://github.com/tcz717/LsifDotnet',
+        dart: 'https://github.com/sourcegraph/lsif-dart',
+        haskell: 'https://github.com/mpickering/hie-lsif',
+        kotlin: 'https://github.com/sourcegraph/lsif-java',
     }
 
     const topRepos: TopRepo[] | undefined = (() => {
@@ -264,10 +272,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             </div>
                         )
                     }
-                    if (lang in urls) {
+                    if (lang in langToIndexerUrl) {
                         return (
                             <div key={lang}>
-                                Configure precise navigation for <Link to={urls[lang]}>{lang}</Link>
+                                Configure precise navigation for <Link to={langToIndexerUrl[lang]}>{lang}</Link>
                             </div>
                         )
                     }
