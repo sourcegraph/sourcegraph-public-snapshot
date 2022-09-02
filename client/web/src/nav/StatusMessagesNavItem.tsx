@@ -175,7 +175,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             codeHostMessage = 'Cloning repositories...'
             icon = CloudSyncIconRefresh
         } else {
-            codeHostMessage = 'Repositories up-to-date'
+            codeHostMessage = 'Repositories up to date'
             icon = CloudCheckIconRefresh
         }
 
@@ -196,7 +196,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
-                    title="Repositories up-to-date"
+                    title="Repositories up to date"
                     message="Repositories synced from code host and available for search."
                     linkTo="/site-admin/repositories"
                     linkText="View repositories"
@@ -243,7 +243,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key={status.message}
                                 message={status.message}
                                 title="Syncing repositories from code hosts"
-                                messageHint="Repository contents may not be up-to-date."
+                                messageHint="Repository contents may not be up to date."
                                 linkTo="/site-admin/repositories?status=failed-fetch"
                                 linkText="View affected repositories"
                                 linkOnClick={toggleIsOpen}
