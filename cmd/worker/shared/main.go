@@ -45,6 +45,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+		"codeintel-crates-syncer":               codeintel.NewCratesSyncerJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),

@@ -69,7 +69,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	changesetSpec.BatchSpecID = spec.ID
 	changesetSpec.UserID = userID
-	changesetSpec.RepoID = repo.ID
+	changesetSpec.BaseRepoID = repo.ID
 
 	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
@@ -87,7 +87,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -451,8 +451,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	conflictingRef := "refs/heads/conflicting-head-ref"
 	for _, opts := range []bt.TestSpecOpts{
-		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
-		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
+		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
+		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
 	} {
 		spec := bt.CreateChangesetSpec(t, ctx, bstore, opts)
 

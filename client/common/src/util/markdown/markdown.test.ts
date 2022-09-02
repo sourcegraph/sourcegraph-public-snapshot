@@ -85,10 +85,8 @@ describe('renderMarkdown', () => {
     it('does not allow arbitrary <object> tags', () => {
         expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
     })
-    it('does not allow SVG <object> tags', () => {
-        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe(
-            '<p><object></object></p>\n'
-        )
+    it('drops SVG <object> tags', () => {
+        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>\n')
     })
     it('allows <svg> tags', () => {
         const input =

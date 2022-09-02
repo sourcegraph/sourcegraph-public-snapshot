@@ -12,8 +12,10 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -135,7 +137,7 @@ func (oid gitObjectInfo) OID() gitdomain.OID {
 }
 
 func TestReposGetInventory(t *testing.T) {
-	var s repos
+	var s repos = repos{logger: logtest.Scoped(t)}
 	ctx := testContext()
 
 	const (
@@ -236,7 +238,9 @@ func TestReposGetInventory(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
+	} else {
+		logtest.Init(m)
 	}
 	os.Exit(m.Run())
 }

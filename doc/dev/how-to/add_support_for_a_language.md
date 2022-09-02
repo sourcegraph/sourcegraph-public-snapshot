@@ -28,7 +28,7 @@ Remember to run the code-generation step in the go-ctags repository and restart 
 
 ## Code navigation support
 
-To support precise code navigation, [write an SCIP indexer](../../code_intelligence/explanations/writing_an_indexer.md). To support search-based code navigation, ensure a `sourcegraph/{lang}` Sourcegraph extension is published to the official extension registry:
+To support precise code navigation, [write an SCIP indexer](../../code_navigation/explanations/writing_an_indexer.md). To support search-based code navigation, ensure a `sourcegraph/{lang}` Sourcegraph extension is published to the official extension registry:
 
 0. _Code navigation extensions are powered by symbol search. If the target language is not supported by symbols, stop and follow the guide above first._
 1. Add (or update) the target language's configuration in [languages.ts](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/languages.ts#L336). See the definition of [LanguageSpec](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/spec.ts#L7) for an available set of fields. The likely differences will be the characters that make up the identifier, the comment delimiters, and the set of file extensions to search within for definitions and references.

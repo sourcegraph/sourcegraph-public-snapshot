@@ -14,7 +14,7 @@ export function registerSearchStatsContributions({
 
     const ACTION_ID = 'search.stats'
 
-    if (extensionsController !== null) {
+    if (extensionsController !== null && window.context.enableLegacyExtensions) {
         subscriptions.add(
             syncRemoteSubscription(
                 extensionsController.extHostAPI.then(extensionHostAPI =>

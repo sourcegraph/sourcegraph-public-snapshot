@@ -24,6 +24,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
@@ -38,7 +39,7 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameDecorations } from '../blame/useBlameDecorations'
+import { useBlameHunks } from '../blame/useBlameHunks'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -54,11 +55,13 @@ import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
 
 import styles from './BlobPage.module.scss'
 
-interface Props
+const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
+const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
+
+interface BlobPageProps
     extends AbsoluteRepoFile,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
@@ -91,7 +94,7 @@ interface BlobPageInfo extends BlobInfo {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = props => {
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
@@ -228,7 +231,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         }
 
                         // Replace html with lsif generated HTML, if available
-                        if (!enableCodeMirror && blob.highlight.lsif) {
+                        if (!enableCodeMirror && !blob.highlight.html && blob.highlight.lsif) {
                             const html = renderLsifHtml({ lsif: blob.highlight.lsif, content: blob.content })
                             if (html) {
                                 blob.highlight.html = html
@@ -281,7 +284,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     useBlobPanelViews(props)
 
-    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
+    const blameDecorations = useBlameHunks({ repoName, commitID, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -360,7 +363,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 id="toggle-blame"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
+                {({ actionType }) => (
+                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
+                )}
             </RepoHeaderContributionPortal>
         </>
     )
@@ -430,14 +435,16 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedNotebookMarkdown
-                    {...props}
-                    markdown={blobInfoOrError.content}
-                    onCopyNotebook={onCopyNotebook}
-                    showSearchContext={showSearchContext}
-                    exportedFileName={basename(blobInfoOrError.filePath)}
-                    className={styles.border}
-                />
+                <React.Suspense fallback={<LoadingSpinner />}>
+                    <RenderedNotebookMarkdown
+                        {...props}
+                        markdown={blobInfoOrError.content}
+                        onCopyNotebook={onCopyNotebook}
+                        showSearchContext={showSearchContext}
+                        exportedFileName={basename(blobInfoOrError.filePath)}
+                        className={styles.border}
+                    />
+                </React.Suspense>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile
@@ -484,7 +491,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
-                        blameDecorations={blameDecorations}
+                        blameHunks={blameDecorations}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
                 </TraceSpanProvider>

@@ -187,18 +187,12 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_index_scheduler",
-				MetricDescriptionRoot: "scheduler",
-				By:                    []string{"op"},
+				MetricDescriptionRoot: "auto-indexing job scheduler",
+				RangeWindow:           model.Duration(time.Minute) * 10,
 			},
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
-			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
-		},
-		Aggregate: &SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
 			Duration:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
@@ -265,7 +259,7 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 // src_executor_total
 // src_executor_processor_total
 // src_executor_queued_duration_seconds_total
-func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.Group {
+func (codeIntelligence) NewExecutorQueueGroup(containerName, queueFilter string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -275,6 +269,7 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
+				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
 				By:                    []string{"queue"},
 			},
 		},
@@ -291,17 +286,19 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 	})
 }
 
+// src_executor_total
 // src_executor_processor_total
 // src_executor_processor_duration_seconds_bucket
 // src_executor_processor_errors_total
 // src_executor_processor_handlers
 func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitoring.Group {
+	// TODO: pass in as variable like in NewExecutorQueueGroup?
 	filters := []string{`queue=~"${queue:regex}"`}
 
 	constructorOptions := ObservableConstructorOptions{
 		MetricNameRoot:        "executor",
 		JobLabel:              "sg_job",
-		MetricDescriptionRoot: "handler",
+		MetricDescriptionRoot: "executor",
 		Filters:               filters,
 	}
 
@@ -320,17 +317,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total: CriticalOption(
-				monitoring.Alert().
-					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
-					LessOrEqual(0).
-					// ~5min for scale-from-zero
-					For(time.Minute*5),
-				`
-				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
-				- Make sure the executors appear under Site Admin > Executors.
-				- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
-			`),
+			Total:    NoAlertsOption("none"),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(
@@ -345,7 +332,18 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 				problem is not know to be resolved until jobs start succeeding again.
 			`),
 		},
-		Handlers: NoAlertsOption("none"),
+		Handlers: CriticalOption(
+			monitoring.Alert().
+				CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+				CustomDescription("0 active executor handlers and > 0 queue size").
+				LessOrEqual(0).
+				// ~5min for scale-from-zero
+				For(time.Minute*5),
+			`
+			- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+			- Make sure the executors appear under Site Admin > Executors.
+			- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+		`),
 	})
 }
 

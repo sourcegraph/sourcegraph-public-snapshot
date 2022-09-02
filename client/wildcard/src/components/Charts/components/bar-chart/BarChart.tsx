@@ -1,8 +1,7 @@
-import { ReactElement, SVGProps, useMemo } from 'react'
+import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
-import { noop } from 'lodash'
 
 import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
@@ -22,6 +21,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     // see https://github.com/sourcegraph/sourcegraph/issues/40009
     pixelsPerYTick?: number
     pixelsPerXTick?: number
+    hideXTicks?: boolean
     maxAngleXTick?: number
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
@@ -35,6 +35,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         data,
         pixelsPerYTick,
         pixelsPerXTick,
+        hideXTicks,
         maxAngleXTick,
         stacked = false,
         getDatumHover,
@@ -45,7 +46,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumColor,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
-        onDatumLinkClick = noop,
+        onDatumLinkClick,
         ...attributes
     } = props
 
@@ -71,14 +72,14 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const handleBarClick = (datum: Datum): void => {
+    const handleBarClick = (event: MouseEvent, datum: Datum): void => {
         const link = getDatumLink(datum)
 
-        if (link) {
+        onDatumLinkClick?.(event, datum)
+
+        if (!event.isDefaultPrevented() && link) {
             window.open(link)
         }
-
-        onDatumLinkClick(datum)
     }
 
     return (
@@ -87,6 +88,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
             <SvgAxisBottom
                 pixelsPerTick={pixelsPerXTick}
                 maxRotateAngle={maxAngleXTick}
+                hideTicks={hideXTicks}
                 getTruncatedTick={getTruncatedXTick}
                 getScaleTicks={getScaleXTicks}
             />

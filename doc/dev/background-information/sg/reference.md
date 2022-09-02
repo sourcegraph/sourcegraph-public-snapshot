@@ -284,6 +284,17 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
+### sg ci search-failures
+
+Open Sourcegraph's CI failures Grafana logs page in browser.
+
+Arguments: `[text to search for]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--step="<value>"`: Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')
+
 ## sg test
 
 Run the given test suite.
@@ -298,17 +309,18 @@ Available testsuites in `sg.config.yaml`:
 * bext-build
 * bext-e2e
 * bext-integration
+* client
+* client-e2e
+* client-regression
 * docsite
-* frontend
-* frontend-e2e
 * web-integration
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
-$ sg test frontend
-$ sg test frontend-e2e
+$ sg test client
+$ sg test client-e2e
 
 # List available test suites:
 $ sg test -help
@@ -347,6 +359,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to ./annotations directory
+* `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -564,7 +577,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
@@ -589,7 +603,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
@@ -613,7 +628,6 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 
 ### sg migration downto
 
@@ -633,8 +647,10 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -690,7 +706,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the sourcegraph repository.
+* `--file="<value>"`: The target schema description file.
+* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log
 
@@ -1091,23 +1108,29 @@ Prints the Sourcegraph version deployed to the given environment.
 
 Available preset environments:
 
-* cloud
+* s2
+* dotcom
 * k8s
 
 ```sh
 # See which version is deployed on a preset environment
-$ sg live cloud
+$ sg live s2
+$ sg live dotcom
 $ sg live k8s
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com
 
-# List environments:
+# List environments
 $ sg live -help
+
+# Check for commits further back in history
+$ sg live -n 50 s2
 ```
 
 Flags:
 
+* `--commits, -c, -n="<value>"`: Number of commits to check for live version (default: 20)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg ops
@@ -1254,3 +1277,22 @@ Arguments: `[classic]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+
+## sg page
+
+Utility to page engineers, mostly used within scripts to automate paging alerts.
+
+```sh
+$ sg page --opsgenie.token [TOKEN] --message "something is broken" --responder.schedule [my-schedule-on-ops-genie]
+```
+
+Flags:
+
+* `--description="<value>"`: Description for the paging alert
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--message="<value>"`: Message for the paging alert
+* `--opsgenie.token="<value>"`: OpsGenie token
+* `--priority="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
+* `--responder.escalation="<value>"`: Escalation team to alert (at least one responder must be given)
+* `--responder.schedule="<value>"`: Schedule team to alert (at least one responder must be given)
+* `--url="<value>"`: URL field for alert details (optional)

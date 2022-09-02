@@ -29,7 +29,17 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'description' }, { name: 'tag' }],
+                fields: [
+                    { name: 'file' },
+                    { name: 'path' },
+                    { name: 'content' },
+                    {
+                        name: 'commit',
+                        fields: [{ name: 'after' }],
+                    },
+                    { name: 'description' },
+                    { name: 'tag' },
+                ],
             },
         ],
     },
@@ -38,6 +48,10 @@ export const PREDICATES: Access[] = [
         fields: [
             {
                 name: 'contains',
+                fields: [{ name: 'content' }],
+            },
+            {
+                name: 'has',
                 fields: [{ name: 'content' }],
             },
         ],
@@ -55,6 +69,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     if (path.length === 0) {
         return tree
     }
+
+    // repo:contains() and file:contains() are not supported
+    if (path.length === 1 && path[0] === 'contains') {
+        return undefined
+    }
+
     const subtree = tree.find(value => value.name === path[0])
     if (!subtree) {
         return undefined
@@ -150,23 +170,23 @@ export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'repo') {
         return [
             {
-                label: 'contains.path(...)',
-                insertText: 'contains.path(${1:CHANGELOG})',
+                label: 'has.path(...)',
+                insertText: 'has.path(${1:CHANGELOG})',
                 asSnippet: true,
             },
             {
-                label: 'contains.content(...)',
-                insertText: 'contains.content(${1:TODO})',
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
             },
             {
-                label: 'contains.file(...)',
-                insertText: 'contains.file(path:${1:CHANGELOG} content:${2:fix})',
+                label: 'has.file(...)',
+                insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
             },
             {
-                label: 'contains.commit.after(...)',
-                insertText: 'contains.commit.after(${1:1 month ago})',
+                label: 'has.commit.after(...)',
+                insertText: 'has.commit.after(${1:1 month ago})',
                 asSnippet: true,
             },
             {

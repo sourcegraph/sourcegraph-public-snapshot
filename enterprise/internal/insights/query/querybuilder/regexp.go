@@ -6,6 +6,7 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -113,6 +114,7 @@ func peek(pattern string, currentIndex, peekOffset int) byte {
 
 type PatternReplacer interface {
 	Replace(replacement string) (BasicQuery, error)
+	HasCaptureGroups() bool
 }
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
@@ -142,9 +144,18 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
 }
 
+func (r *regexpReplacer) HasCaptureGroups() bool {
+	for _, g := range r.groups {
+		if g.capturing {
+			return true
+		}
+	}
+	return false
+}
+
 var (
-	multiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
-	unsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
+	MultiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
+	UnsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
 )
 
 func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (PatternReplacer, error) {
@@ -161,12 +172,16 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		})
 	})
 	if len(patterns) > 1 {
-		return nil, multiplePatternErr
+		return nil, MultiplePatternErr
+	}
+
+	if len(patterns) == 0 {
+		return nil, UnsupportedPatternTypeErr
 	}
 
 	pattern := patterns[0]
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
-		return nil, unsupportedPatternTypeErr
+		return nil, UnsupportedPatternTypeErr
 	}
 
 	regexpGroups := findGroups(pattern.Value)

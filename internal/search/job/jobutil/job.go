@@ -176,7 +176,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 
 	basicJob := NewParallelJob(children...)
 
-	{ // Apply file:contains() post-filter
+	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
 			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
 		}
@@ -291,9 +291,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol == search.Streaming
 
-	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
-	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
-
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
 	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
@@ -347,18 +344,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
-			typ := search.TextRequest
-			zoektQuery, err := zoekt.QueryToZoektQuery(f.ToBasic(), resultTypes, searchInputs.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: fileMatchLimit,
-				Select:         selector,
-			}
-
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
@@ -366,11 +351,11 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 			}
 
 			addJob(&structural.SearchJob{
-				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				RepoOpts:         repoOptions,
+				BatchRetry:       searchInputs.Protocol == search.Batch,
 			})
 		}
 
@@ -472,10 +457,6 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return *count
 	}
 
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
 	switch p {
 	case search.Batch:
 		return limits.DefaultMaxSearchResults
@@ -512,10 +493,6 @@ func mapSlice(values []string, f func(string) string) []string {
 func count(b query.Basic, p search.Protocol) int {
 	if count := b.Count(); count != nil {
 		return *count
-	}
-
-	if b.IsStructural() {
-		return limits.DefaultMaxSearchResults
 	}
 
 	switch p {

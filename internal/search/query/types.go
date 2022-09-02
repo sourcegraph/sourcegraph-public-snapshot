@@ -340,9 +340,9 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 }
 
 // RepoHasFileContentArgs represents the args of any of the following predicates:
-// - repo:contains.file(f)
-// - repo:contains.content(c)
-// - repo:contains(file:f content:c)
+// - repo:contains.file(path:foo content:bar) || repo:has.file(path:foo content:bar)
+// - repo:contains.path(foo) || repo:has.path(foo)
+// - repo:contains.content(c) || repo:has.content(c)
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
@@ -386,12 +386,8 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 }
 
 func (p Parameters) FileContainsContent() (include []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldFile && (name == "contains" || name == "contains.content") {
-			var pred FileContainsContentPredicate
-			pred.ParseParams(value)
-			include = append(include, pred.Pattern)
-		}
+	VisitTypedPredicate(toNodes(p), func(pred *FileContainsContentPredicate, negated bool) {
+		include = append(include, pred.Pattern)
 	})
 	return include
 }

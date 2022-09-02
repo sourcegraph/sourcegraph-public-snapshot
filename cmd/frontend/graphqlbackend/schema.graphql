@@ -418,7 +418,7 @@ type Mutation {
         date: String
     ): GitCommit
     """
-    Logs a user event.
+    Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
     """
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     """
@@ -2238,6 +2238,24 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
+    """
+    Additional optional information describing attributes of this query.
+    """
+    annotations: [SearchQueryAnnotation!]
+}
+
+"""
+Additional information describing attributes of a query.
+"""
+type SearchQueryAnnotation {
+    """
+    A name for this query annotation label.
+    """
+    name: String!
+    """
+    An opaque value for this query annotation.
+    """
+    value: String!
 }
 
 """
@@ -2857,6 +2875,11 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs associated with the repo.
     """
     keyValuePairs: [KeyValuePair!]!
+
+    """
+    The size of repo when cloned on disk
+    """
+    diskSizeBytes: BigInt
 }
 
 """
@@ -5777,11 +5800,19 @@ type Site implements SettingsSubject {
         Returns users for the given lastActive enum period.
         When omitted does NOT apply and returns for all period available.
         """
-        lastActivePeriod: SiteUsersLastActivePeriod
+        lastActiveAt: SiteUsersDateRangeInput
         """
         Returns either deleted or not deleted users. Returns all users when omitted.
         """
-        deleted: Boolean
+        deletedAt: SiteUsersDateRangeInput
+        """
+        Returns users who where created within a given date time range.
+        """
+        createdAt: SiteUsersDateRangeInput
+        """
+        Returns users whose events count within a given range.
+        """
+        eventsCount: SiteUsersNumberRangeInput
     ): SiteUsers!
 
     """
@@ -6473,13 +6504,39 @@ enum SiteUserOrderBy {
 }
 
 """
-SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
 """
-enum SiteUsersLastActivePeriod {
-    ALL
-    TODAY
-    THIS_WEEK
-    THIS_MONTH
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
+}
+
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
+input SiteUsersNumberRangeInput {
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
 }
 
 """
@@ -6495,9 +6552,13 @@ type SiteUsers {
     """
     nodes(
         """
-        Returns the first n users from the list.
+        Returns the "limit" number users from the list.
         """
-        first: Int
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
         """
         Returns users ordered by a given column.
         """
@@ -7137,16 +7198,6 @@ type CloningProgress {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
-"""
-type IndexingProgress {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message produced when repositories could not
 be synced from an external service
 """
@@ -7173,20 +7224,9 @@ type SyncError {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories could not
-be indexed
-"""
-type IndexingError {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
 An arbitrarily large integer encoded as a decimal string.

@@ -81,6 +81,13 @@ This error message comes from VS Code. Restarting the editor should resolve the 
 3. Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
 4. A CORS proxy is required to run the extension on VS Code Web for instances running in version below [3.26.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-36-0). 
 
+#### Unable to verify your access token for sourcegraph.example.com. Please try again with a new access token or restart VS Code if the instance URL has been updated.
+This error can arise from the URL and/or access token not being applied properly when entered in the UI. 
+
+Check `settings.json` by going to the extension's settings and then clicking “Edit in settings.json” under *Sourcegraph: Access Token*. Ensure that values for `sourcegraph.accessToken` and `sourcegraph.url` are present and correct.
+
+If the error persists, please [contact us](mailto:support@sourcegraph.com). 
+
 #### The search results are not displayed using my VS Code color
 
 The extension currently supports the following VS Code Color Theme:

@@ -54,7 +54,6 @@ import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
@@ -689,16 +688,9 @@ const SideBlob: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const { html, aborted, lsif } = data?.repository?.commit?.blob?.highlight
-    if (aborted) {
-        return (
-            <Text alignment="center" className="text-warning">
-                <i>
-                    Highlighting <Code>{props.activeLocation.file}</Code> failed
-                </i>
-            </Text>
-        )
-    }
+    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+
+    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
         <BlobComponent
@@ -707,7 +699,7 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
-            disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
+            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{

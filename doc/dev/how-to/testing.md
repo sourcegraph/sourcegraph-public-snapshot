@@ -251,7 +251,7 @@ There is a default mock JSContext that you can extend with object spread syntax 
 ### End-to-end tests
 
 End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
-They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/end-to-end).
+They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
 
@@ -259,19 +259,72 @@ Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/
 
 #### Running end-to-end tests
 
-To run all end-to-end tests locally, a local instance needs to be running.
-To run the tests against it, **create a user `test` with password `testtesttest` and promote it site admin**.
-Then run in the repository root:
+##### Starting a local instance
+
+To run all end-to-end tests locally, a local instance needs to be running:
 
 ```
-env TEST_USER_PASSWORD=testtesttest GITHUB_TOKEN=<token> yarn test-e2e
+sg start enterprise-e2e
 ```
 
-There's a GitHub test token in `../dev-private/enterprise/dev/external-services-config.json`.
+You can also run tests against an existing server image (note that this test must
+be run with SOURCEGRAPH_BASE_URL=http://localhost:7080 for the following to work):
+
+```
+TAG=insiders sg run server
+```
+
+##### Starting end-to-end tests
+
+In the repository root:
+
+```
+GH_TOKEN=XXX sg test client-e2e
+```
+
+You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
+If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will be set for you.
+
+If you run the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test client-e2e
+```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
-For regression tests, you can also run tests selectively with a command like `yarn run test:regression:search` in the `web/` directory, which runs the tests for search functionality.
+##### Starting regression tests
+
+1. Log in as a `test` user. If the user does not exist then see below for more information on how to create a user.
+2. Create a site-admin access token with the `site-admin:sudo` scope. The access tokens page can be found under user settings.
+3. Create your personal `GITHUB_TOKEN`. It should have access to all the repos in the Sourcegraph GitHub required to run these tests without scopes.
+4. Run in the repository root:
+
+```
+GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+```
+
+And if you're running the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+```
+
+Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
+
+##### Fixing authentication issues
+
+If you run into authentication issues, **create a user and promote it to site admin**:
+
+```
+sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
+```
+
+The above command resets the database and creates a user like. If the command completes succesfully you'll see the following output:
+
+```
+  👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
+```
 
 #### Writing end-to-end tests
 
@@ -442,6 +495,19 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
+#### Analyzing the Bundlesize check failure
+
+To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
+
+1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
+2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main yarn workspace @sourcegraph/web run analyze-bundle`.
+3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch yarn workspace @sourcegraph/web run analyze-bundle`.
+4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
+5. The generated HTML report should be automatically opened in the new browser tab.
+6. Click "Diff" at the top right corner and select the `reference.json` stats.
+7. Go to "chunks" and inspect the chunk diff failing in the CI check. Clicking on the chunk should reveal the list of modules added or removed from the chunk.
+8. 🎉
 
 ### Assessing flaky client steps
 

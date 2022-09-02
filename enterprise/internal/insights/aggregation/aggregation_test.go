@@ -14,6 +14,13 @@ import (
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func newTestSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
+	return &searchAggregationResults{
+		tabulator: tabulator,
+		countFunc: countFunc,
+	}
+}
+
 type testAggregator struct {
 	results map[string]int
 }
@@ -169,7 +176,7 @@ func TestRepoAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -221,7 +228,7 @@ func TestAuthorAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -318,7 +325,128 @@ func TestPathAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := NewSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra.Send(tc.searchEvent)
+			tc.want.Equal(t, aggregator.results)
+		})
+	}
+}
+
+func TestCaptureGroupAggregation(t *testing.T) {
+	longCaptureGroup := "111111111|222222222|333333333|444444444|555555555|666666666|777777777|888888888|999999999|000000000|"
+	testCases := []struct {
+		mode        types.SearchAggregationMode
+		searchEvent streaming.SearchEvent
+		query       string
+		want        autogold.Value
+	}{
+		{types.CAPTURE_GROUP_AGGREGATION_MODE, streaming.SearchEvent{}, "TEST", autogold.Want("no results", map[string]int{})},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python3.9")},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("two keys from 1 chunk", map[string]int{"2.7": 1, "3.9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+				},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count multiple results", map[string]int{"2.7": 2, "3.9": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+				},
+			},
+			`python(?:[0-9])\.([0-9])`,
+			autogold.Want("skips non capturing group", map[string]int{"7": 1, "9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
+			autogold.Want("capture match respects case:no", map[string]int{"2.7": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
+			autogold.Want("capture match respects case:yes", map[string]int{}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python2.7"),
+					contentMatch("myRepo", "file2.go", 1, "python2.8 python2.9"),
+				},
+			},
+			`python([0-9])\.([0-9])`,
+			autogold.Want("only get values from first capture group", map[string]int{"2": 4}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "2.7"),
+					contentMatch("myRepo", "file2.go", 1, "2.9"),
+				},
+			},
+			`([0-9]\.[0-9])`,
+			autogold.Want("whole match only", map[string]int{"2.7": 1, "2.9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"extraz"),
+					contentMatch("myRepo", "file2.go", 1, "zsmallMatchz"),
+				},
+			},
+			`z(.*)z`,
+			autogold.Want("no more than 100 characters", map[string]int{longCaptureGroup: 1, "smallMatch": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"z"),
+				},
+			},
+			`z(.*)z`,
+			autogold.Want("accepts exactly 100 characters", map[string]int{longCaptureGroup: 1}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			aggregator := testAggregator{results: make(map[string]int)}
+			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
+			if err != nil {
+				t.Errorf("expected test not to error, got %v", err)
+				t.FailNow()
+			}
+			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})

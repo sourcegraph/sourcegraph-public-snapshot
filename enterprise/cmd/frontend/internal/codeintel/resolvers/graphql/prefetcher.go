@@ -124,12 +124,13 @@ func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (store.Index, boo
 	}
 	sort.Ints(ids)
 
-	indexes, err := p.resolver.GetIndexesByIDs(ctx, ids...)
+	autoindexingResolver := p.resolver.AutoIndexingResolver()
+	indexes, err := autoindexingResolver.GetIndexesByIDs(ctx, ids...)
 	if err != nil {
 		return store.Index{}, false, err
 	}
 	for _, index := range indexes {
-		p.indexCache[index.ID] = index
+		p.indexCache[index.ID] = convertSharedIndexToDBStoreIndex(index)
 	}
 	p.indexIDs = nil
 

@@ -11,13 +11,12 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-
-	sentrylib "github.com/getsentry/sentry-go"
 
 	"github.com/sourcegraph/log"
 
@@ -41,12 +40,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -80,7 +79,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	conf.Init()
@@ -129,7 +132,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.SetMetrics(m)
 	}
 
-	cf := httpcli.ExternalClientFactory
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
 
 	var src repos.Sourcer
 	{
@@ -137,8 +143,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db)
-		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -223,7 +228,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		handler = repoupdater.ObservedHandler(
 			logger,
 			m,
-			opentracing.GlobalTracer(),
+			otel.GetTracerProvider(),
 		)(server.Handler())
 	}
 
@@ -253,7 +258,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
+		Handler: instrumentation.HTTPMiddleware("",
+			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -524,9 +530,10 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list. It also ensures that if any of our default
-// repos are missing from the cloned list they will be added for cloning ASAP.
+// syncScheduler will periodically list the uncloned repositories on gitserver
+// and update the scheduler with the list. It also ensures that if any of our
+// indexable repos are missing from the cloned list they will be added for
+// cloning ASAP.
 func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(logger, store)
 
@@ -536,18 +543,20 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 			return
 		}
 
-		// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
-		// scheduler
-		opts := database.ListIndexableReposOptions{
-			CloneStatus:    types.CloneStatusNotCloned,
-			IncludePrivate: true,
-		}
-		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			logger.Error("listing indexable repos", log.Error(err))
-			return
-		} else {
+		if envvar.SourcegraphDotComMode() {
+			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
+			// scheduler
+			opts := database.ListIndexableReposOptions{
+				CloneStatus:    types.CloneStatusNotCloned,
+				IncludePrivate: true,
+			}
+			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
+			if err != nil {
+				logger.Error("listing indexable repos", log.Error(err))
+				return
+			}
 			// Ensure that uncloned indexable repos are known to the scheduler
-			sched.EnsureScheduled(u)
+			sched.EnsureScheduled(indexable)
 		}
 
 		// Next, move any repos managed by the scheduler that are uncloned to the front

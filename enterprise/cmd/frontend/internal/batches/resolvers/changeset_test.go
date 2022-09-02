@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -81,6 +80,7 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
 	unpublishedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
@@ -100,6 +100,7 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
 	erroredChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
@@ -239,7 +240,7 @@ func TestChangesetResolver(t *testing.T) {
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
 	addChangeset(t, ctx, bstore, syncedGitHubChangeset, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,8 +255,8 @@ func TestChangesetResolver(t *testing.T) {
 			changeset: unpublishedChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      unpublishedSpec.Spec.Title,
-				Body:       unpublishedSpec.Spec.Body,
+				Title:      unpublishedSpec.Title,
+				Body:       unpublishedSpec.Body,
 				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt:         "",
@@ -274,8 +275,8 @@ func TestChangesetResolver(t *testing.T) {
 			changeset: erroredChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      erroredSpec.Spec.Title,
-				Body:       erroredSpec.Spec.Body,
+				Title:      erroredSpec.Title,
+				Body:       erroredSpec.Body,
 				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt:         "",

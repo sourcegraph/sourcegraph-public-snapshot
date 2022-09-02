@@ -326,7 +326,7 @@ Foreign-key constraints:
 ---------------------+--------------------------+-----------+----------+---------------------------------------------
  id                  | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
  rand_id             | text                     |           | not null | 
- spec                | jsonb                    |           | not null | '{}'::jsonb
+ spec                | jsonb                    |           |          | '{}'::jsonb
  batch_spec_id       | bigint                   |           |          | 
  repo_id             | integer                  |           | not null | 
  user_id             | integer                  |           |          | 
@@ -347,7 +347,7 @@ Foreign-key constraints:
  commit_message      | text                     |           |          | 
  commit_author_name  | text                     |           |          | 
  commit_author_email | text                     |           |          | 
- type                | text                     |           |          | 
+ type                | text                     |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
