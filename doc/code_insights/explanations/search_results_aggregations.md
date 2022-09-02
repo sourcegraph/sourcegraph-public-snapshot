@@ -27,15 +27,13 @@ You can read more about creating feature flags [here](../../dev/how-to/use_featu
 
 ## Drilldowns 
 
-You can drilldown into a search aggregation by clicking a result in the chart. Your original search query will be updated
-with a `repo`, `file`, `author` filter or a regexp pattern depending on the aggregation mode.
+You can drilldown into a search aggregation by clicking a result in the chart. Your original search query will be updated with a `repo`, `file`, `author` filter or a regexp pattern depending on the aggregation mode.
 
 ## Limitations
 
 ### Mode limitations
 
-If you attempt to run a query for which a given mode is not supported, the tooltip will inform you why that mode is not
-available. 
+If you attempt to run a query for which a given mode is not supported, the tooltip will inform you why that mode is not available. 
 
 ### Timeout limits
 
@@ -48,17 +46,15 @@ At the moment all aggregations search queries are run with count:all, even if yo
 
 ### Best effort aggregation
 
-Results are aggregated in a best-effort approach using a limited-size buffer to hold group labels in order not to strain
-the webapp when these aggregations are run. This means that in some cases we might miss some high-count results. 
+Results are aggregated in a best-effort approach using a limited-size buffer to hold group labels in order not to strain the webapp when these aggregations are run. 
+This means that in some cases we might miss some high-count results. 
 Aggregations that hit such non-exhaustive paths are reported back to the user.
 
-You can control the size of the buffer using the site setting `insights.aggregations.bufferSize`. It is set to 500 by 
-default. Note that if increasing this you might notice decreased performance on your instance.
+You can control the size of the buffer using the site setting `insights.aggregations.bufferSize`. It is set to 500 by default. Note that if increasing this you might notice decreased performance on your instance.
 
 ### Number of bars displayed
 
-The side panel will display a maximum of 10 bars. If expanded, a maximum of 30 bars will be displayed. If there are more
-results this will be displayed on the panel.
+The side panel will display a maximum of 10 bars. If expanded, a maximum of 30 bars will be displayed. If there are more results this will be displayed on the panel.
 
 ### Single capture group 
 
@@ -76,19 +72,16 @@ Saving aggregations to a dashboard of code insights is not yet available.
 
 ### Slow diff and commit queries
 
-Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete 
-within a 2-second timeout. You can trigger an explicit search with an extended 1-minute timeout, or you can refine your query using a 
-single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order to bypass this.
+Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete within a 2-second timeout.
+You can trigger an explicit search with an extended 1-minute timeout, or you can refine your query using a single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) in order to bypass this.
 
 ### Structural searches
 
-Structural searches are slow and aggregations are unlikely to complete within a 2-second timeout for such searches. You
-can try to trigger an explicit aggregation for such cases.
+Structural searches are slow and aggregations are unlikely to complete within a 2-second timeout for such searches. You can try to trigger an explicit aggregation for such cases.
 
 ### Standard searches with embedded regexp
 
-Standard searches with embedded regexp such as below do not support aggregation by capture group. This is because they
-are functionally similar to a query with an `or` operator.
+Standard searches with embedded regexp such as below do not support aggregation by capture group. This is because they are functionally similar to a query with an `or` operator.
 ```regexp
 database /(\w+)/
 ```
