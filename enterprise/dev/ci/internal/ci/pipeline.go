@@ -225,11 +225,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
-			buildExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildExecutor(c, true),
 			buildExecutorDockerMirror(c),
 			wait,
 			publishFinalDockerImage(c, executorVMImage),
-			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c, true),
 			publishExecutorDockerMirror(c),
 		)
 
