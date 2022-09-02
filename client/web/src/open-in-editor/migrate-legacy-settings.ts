@@ -47,7 +47,7 @@ export function migrateLegacySettings(settings: Settings): Settings {
 }
 
 function getOldSettingsInNewFormat(settings: Settings): EditorSettings {
-    const oldEditorSettings = {
+    const old = {
         ...readAtomSettings(settings),
         ...readWebStormSettings(settings),
         ...readIntelliJSettings(settings),
@@ -55,33 +55,19 @@ function getOldSettingsInNewFormat(settings: Settings): EditorSettings {
         ...readOpenInEditorExtensionSettings(settings),
     }
 
-    const mergedEditorSettings: EditorSettings = {
-        ...(oldEditorSettings.editorId ? { editorId: oldEditorSettings.editorId } : {}),
-        projectPaths: {
-            ...(oldEditorSettings.basePath ? { default: oldEditorSettings.basePath } : {}),
-            ...(oldEditorSettings.linuxBasePath ? { linux: oldEditorSettings.linuxBasePath } : {}),
-            ...(oldEditorSettings.macBasePath ? { mac: oldEditorSettings.macBasePath } : {}),
-            ...(oldEditorSettings.windowsBasePath ? { windows: oldEditorSettings.windowsBasePath } : {}),
-        },
-        ...(oldEditorSettings.replacements ? { replacements: oldEditorSettings.replacements } : {}),
-        ...(oldEditorSettings.jetbrainsForceApi
-            ? { jetbrains: { forceApi: oldEditorSettings.jetbrainsForceApi } }
-            : {}),
-        vscode: {
-            ...(oldEditorSettings.vscodeUseInsiders ? { useInsiders: oldEditorSettings.vscodeUseInsiders } : {}),
-            ...(oldEditorSettings.vscodeUseSSH ? { useSSH: oldEditorSettings.vscodeUseSSH } : {}),
-            ...(oldEditorSettings.vscodeRemoteHost ? { remoteHostForSSH: oldEditorSettings.vscodeRemoteHost } : {}),
-        },
-        ...(oldEditorSettings.customUrlPattern ? { custom: { urlPattern: oldEditorSettings.customUrlPattern } } : {}),
+    return {
+        ...(old.editorId ? { editorId: old.editorId } : {}),
+        ...(old.basePath ? { 'projectPaths.default': old.basePath } : {}),
+        ...(old.linuxBasePath ? { 'projectPaths.linux': old.linuxBasePath } : {}),
+        ...(old.macBasePath ? { 'projectPaths.mac': old.macBasePath } : {}),
+        ...(old.windowsBasePath ? { 'projectPaths.windows': old.windowsBasePath } : {}),
+        ...(old.replacements ? { replacements: old.replacements } : {}),
+        ...(old.jetbrainsForceApi ? { 'jetbrains.forceApi': old.jetbrainsForceApi } : {}),
+        ...(old.vscodeUseInsiders ? { 'vscode.useInsiders': old.vscodeUseInsiders } : {}),
+        ...(old.vscodeUseSSH ? { 'vscode.useSSH': old.vscodeUseSSH } : {}),
+        ...(old.vscodeRemoteHost ? { 'vscode.remoteHostForSSH': old.vscodeRemoteHost } : {}),
+        ...(old.customUrlPattern ? { 'custom.urlPattern': old.customUrlPattern } : {}),
     }
-    if (!Object.keys({ ...mergedEditorSettings.projectPaths }).length) {
-        delete mergedEditorSettings.projectPaths
-    }
-    if (!Object.keys({ ...mergedEditorSettings.vscode }).length) {
-        delete mergedEditorSettings.vscode
-    }
-
-    return mergedEditorSettings
 }
 
 function readOpenInEditorExtensionSettings(settings: Settings): LegacySettings {

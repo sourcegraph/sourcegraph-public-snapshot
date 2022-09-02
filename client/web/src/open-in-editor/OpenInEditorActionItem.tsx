@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Unsubscribable } from 'rxjs'
 
-import { isErrorLike } from '@sourcegraph/common/out/src'
+import { isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
 import { Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
@@ -26,13 +26,12 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     const assetsRoot = props.assetsRoot ?? (window.context?.assetsRoot || '')
 
     const [settingsCascadeOrError, setSettingsCascadeOrError] = useState<SettingsCascadeOrError | undefined>(undefined)
-    const settings =
-        settingsCascadeOrError?.final && !('message' in settingsCascadeOrError.final) // isErrorLike fails with some TypeScript error
-            ? settingsCascadeOrError.final
-            : undefined
+    const settings = !isErrorLike(settingsCascadeOrError?.final) ? settingsCascadeOrError?.final : undefined
     const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
     const [popoverOpen, setPopoverOpen] = useState(false)
-    const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+    const togglePopover = useCallback(() => {
+        setPopoverOpen(previous => !previous)
+    }, [])
 
     const openCurrentUrlInEditor = useOpenCurrentUrlInEditor()
 
@@ -54,9 +53,11 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                         const migratedSettings = migrateLegacySettings(subject.settings)
                         props.platformContext
                             .updateSettings(subject.subject.id, JSON.stringify(migratedSettings))
-                            .then(() => {})
+                            .then(() => {
+                                console.log('Migrated items successfully.')
+                            })
                             .catch(() => {
-                                // TODO: Update failed, handle this
+                                // TODO: Update failed, handle this later
                             })
                     }
                     setSettingsCascadeOrError(settings)
@@ -69,13 +70,17 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         }
     }, [settingSubscription, props.platformContext.settings, props.platformContext])
 
-    const onClick = useCallback(() => {
-        if (editor) {
-            openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL)
-        } else {
-            togglePopover()
-        }
-    }, [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor, togglePopover])
+    const onClick = useCallback(
+        (event: React.MouseEvent<HTMLElement>) => {
+            event.stopPropagation()
+            if (editor) {
+                openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL)
+            } else {
+                togglePopover()
+            }
+        },
+        [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor, togglePopover]
+    )
 
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
@@ -83,7 +88,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                 ? settingsCascadeOrError.subjects[settingsCascadeOrError.subjects.length - 1]
                 : undefined
             if (!subject) {
-                // TODO: Log that this is a very weird error
+                // This shouldn’t happen. If it does, we don’t want to save anything.
                 return
             }
             await props.platformContext.updateSettings(subject.subject.id, {
@@ -91,7 +96,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                 value: selectedEditorId,
             })
             await props.platformContext.updateSettings(subject.subject.id, {
-                path: ['openInEditor', 'defaultProjectPath'],
+                path: ['openInEditor', 'projectPaths.default'],
                 value: defaultProjectPath,
             })
         },
@@ -115,6 +120,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     editorSettings={settings?.openInEditor as EditorSettings | undefined}
                     togglePopover={togglePopover}
                     onSave={onSave}
+                    sourcegraphUrl={props.platformContext.sourcegraphURL}
                 />
             </PopoverContent>
         </Popover>

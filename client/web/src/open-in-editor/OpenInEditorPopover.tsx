@@ -17,20 +17,24 @@ export interface OpenInEditorPopoverProps {
     editorSettings?: EditorSettings
     togglePopover: () => void
     onSave: (selectedEditorId: EditorId, defaultProjectPath: string) => Promise<void>
+    sourcegraphUrl: string
 }
 
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
-export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildren<OpenInEditorPopoverProps>> = props => {
-    const {editorSettings, togglePopover} = props
+export const OpenInEditorPopover: React.FunctionComponent<
+    React.PropsWithChildren<OpenInEditorPopoverProps>
+> = props => {
+    const { editorSettings, togglePopover } = props
 
-    const [selectedEditorId, setSelectedEditorId] = React.useState<EditorId | undefined>(editorSettings?.editorId)
-    const [defaultProjectPath, setDefaultProjectPath] = React.useState<string | undefined>(
-        editorSettings?.projectPaths?.default
+    const [selectedEditorId, setSelectedEditorId] = React.useState<EditorId>(editorSettings?.editorId || '')
+    const [defaultProjectPath, setDefaultProjectPath] = React.useState<string>(
+        editorSettings?.['projectPaths.default'] || ''
     )
     const areSettingsValid = selectedEditorId && isProjectPathValid(defaultProjectPath)
+    const [areValidSettingsSaved, setValidSettingsSaved] = React.useState<boolean>(false)
 
     const handleEditorChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
         setSelectedEditorId(event.target.value)
@@ -43,21 +47,19 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
             props
                 .onSave(selectedEditorId || '', defaultProjectPath || '')
                 .then(() => {
-                    togglePopover()
+                    setValidSettingsSaved(true)
                 })
                 .catch(() => {
-                    // TODO: Log that saving was unsuccessful
+                    // TODO: Handle this failure nicely
                 }) // Fallback values are only for TS
         },
-        [defaultProjectPath, props, selectedEditorId, togglePopover]
+        [defaultProjectPath, props, selectedEditorId]
     )
 
-    const onProjectPathChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>): void => {
-            event.preventDefault()
-            setDefaultProjectPath(event.target.value)
-        },
-        [])
+    const onProjectPathChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
+        event.preventDefault()
+        setDefaultProjectPath(event.target.value)
+    }, [])
 
     return (
         <div className={styles.openInEditorPopover}>
@@ -65,56 +67,86 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
                 <VisuallyHidden>Close</VisuallyHidden>
                 <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
-            <H3>Set your preferred editor</H3>
-            <Text>
-                Open this and other files directly in your editor. Set your project path and editor to get started.
-                Update anytime in your user settings.
-            </Text>
-
-            <Form onSubmit={onSubmit} noValidate={true}>
-                <Input
-                    id="OpenInEditorForm-projectPath"
-                    type="text"
-                    label="Project path"
-                    name="projectPath"
-                    placeholder="/Users/username/projects"
-                    required={true}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    readOnly={false}
-                    value={defaultProjectPath}
-                    onChange={onProjectPathChange}
-                    className={classNames('mr-sm-2')}
-                />
-                <Select
-                    id="OpenInEditorForm-editor"
-                    label="Editor"
-                    message={
-                        <>
-                            Use a different editor?{' '}
-                            <Link to="https://docs.sourcegraph.com/integration/open_in_editor">
-                                Set up another editor
-                            </Link>
-                        </>
-                    }
-                    value={selectedEditorId}
-                    onChange={handleEditorChange}
-                >
-                    <option value="" />
-                    {[...supportedEditors]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .filter(editor => editor.id !== 'custom')
-                        .map(editor => (
-                            <option key={editor.id} value={editor.id}>
-                                {editor.name}
-                            </option>
-                        ))}
-                </Select>
-                <Button variant="primary" type="submit" disabled={!areSettingsValid}>
-                    Save
-                </Button>
-            </Form>
+            {(!areValidSettingsSaved ? renderForm : renderDone)()}
         </div>
     )
+
+    function renderForm(): React.ReactNode {
+        return (
+            <>
+                <H3>Set your preferred editor</H3>
+                <Text>
+                    Open this and other files directly in your editor. Set your project path and editor to get started.
+                    Update anytime in your user settings.
+                </Text>
+
+                <Form onSubmit={onSubmit} noValidate={true}>
+                    <Input
+                        id="OpenInEditorForm-projectPath"
+                        type="text"
+                        label="Project path"
+                        name="projectPath"
+                        placeholder="/Users/username/projects"
+                        required={true}
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        readOnly={false}
+                        value={defaultProjectPath}
+                        onChange={onProjectPathChange}
+                        className={classNames('mr-sm-2')}
+                    />
+                    <Select
+                        id="OpenInEditorForm-editor"
+                        label="Editor"
+                        message={
+                            <>
+                                Use a different editor?{' '}
+                                <Link
+                                    to="https://docs.sourcegraph.com/integration/open_in_editor"
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                >
+                                    Set up another editor
+                                </Link>
+                            </>
+                        }
+                        value={selectedEditorId}
+                        onChange={handleEditorChange}
+                    >
+                        <option value="" />
+                        {[...supportedEditors]
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .filter(editor => editor.id !== 'custom')
+                            .map(editor => (
+                                <option key={editor.id} value={editor.id}>
+                                    {editor.name}
+                                </option>
+                            ))}
+                    </Select>
+                    <Button variant="primary" type="submit" disabled={!areSettingsValid}>
+                        Save
+                    </Button>
+                </Form>
+            </>
+        )
+    }
+
+    function renderDone(): React.ReactNode {
+        return (
+            <>
+                <H3>You’re all set</H3>
+                <Text>
+                    You can modify or add additional editor paths in your{' '}
+                    <Link to={props.sourcegraphUrl + '/user/settings'} target="_blank" rel="noreferrer noopener">
+                        user settings
+                    </Link>{' '}
+                    at any time.
+                </Text>
+                <Button variant="primary" onClick={togglePopover}>
+                    Close
+                </Button>
+            </>
+        )
+    }
 }

@@ -10,7 +10,7 @@ export interface SimpleActionItemProps {
     className: string
     iconURL: string
     tooltip: string
-    onClick: () => void
+    onClick: (event: React.MouseEvent<HTMLElement>) => void
 }
 
 export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = props => {

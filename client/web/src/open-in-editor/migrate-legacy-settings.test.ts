@@ -35,14 +35,14 @@ describe('migrate legacy editor settings tests', () => {
 
         expect(newSettings).toHaveProperty('openInEditor')
         expect(newSettings.openInEditor).toHaveProperty('editorId', editorId)
-        expect(newSettings.openInEditor).toHaveProperty(['custom', 'urlPattern'], customUrlPattern)
-        expect(newSettings.openInEditor).toHaveProperty(['vscode', 'useInsiders'], true)
-        expect(newSettings.openInEditor).toHaveProperty(['vscode', 'remoteHostForSSH'], vscodeRemoteHost)
-        expect(newSettings.openInEditor).toHaveProperty(['jetbrains', 'forceApi'], 'builtInServer')
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths', 'default'], basePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths', 'linux'], linuxBasePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths', 'mac'], macBasePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths', 'windows'], windowsBasePath)
+        expect(newSettings.openInEditor).toHaveProperty(['custom.urlPattern'], customUrlPattern)
+        expect(newSettings.openInEditor).toHaveProperty(['vscode.useInsiders'], true)
+        expect(newSettings.openInEditor).toHaveProperty(['vscode.remoteHostForSSH'], vscodeRemoteHost)
+        expect(newSettings.openInEditor).toHaveProperty(['jetbrains.forceApi'], 'builtInServer')
+        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.default'], basePath)
+        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.linux'], linuxBasePath)
+        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.mac'], macBasePath)
+        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.windows'], windowsBasePath)
         expect(newSettings.openInEditor).toHaveProperty('replacements', replacements)
     })
 
@@ -75,7 +75,7 @@ describe('migrate legacy editor settings tests', () => {
             'openInIntellij.basePath': '/home/user/projectsVsCode',
             'openInAtom.basePath': '/home/user/projectsVsCode',
         })
-        expect(newSettings).toHaveProperty(['openInEditor', 'projectPaths', 'default'], basePath)
+        expect(newSettings).toHaveProperty(['openInEditor', 'projectPaths.default'], basePath)
     })
 
     it('doesn’t do anything if there are new settings available', () => {

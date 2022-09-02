@@ -21,7 +21,7 @@ export function buildEditorUrl(
     const urlPattern = getUrlPattern(editor, editorSettings || {}) // Default is only there to soothe TypeScript
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
-        editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.vscode?.isProjectPathUNCPath)
+        editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.['vscode.isProjectPathUNCPath'])
             ? '/'
             : ''
 
@@ -69,11 +69,11 @@ export function getEditorSettingsErrorMessage(
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )
     }
-    if (editorSettings.editorId === 'custom' && typeof editorSettings.custom?.urlPattern !== 'string') {
+    if (editorSettings.editorId === 'custom' && typeof editorSettings['custom.urlPattern'] !== 'string') {
         return `Add \`custom.urlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMoreURL})`
     }
 
-    if (editorSettings.vscode?.useSSH && !editorSettings.vscode.remoteHostForSSH) {
+    if (editorSettings['vscode.useSSH'] && !editorSettings['vscode.remoteHostForSSH']) {
         throw new TypeError('`vscode.useSSH` is set to "true" but `vscode.remoteHostForSSH` is not set.')
     }
 
@@ -85,18 +85,16 @@ export function isProjectPathValid(projectPath: string | undefined): boolean {
 }
 
 function getProjectPath(editorSettings: EditorSettings): string | undefined {
-    if (editorSettings.projectPaths) {
-        if (navigator.userAgent.includes('Win') && editorSettings.projectPaths.windows) {
-            return editorSettings.projectPaths.windows
-        }
-        if (navigator.userAgent.includes('Mac') && editorSettings.projectPaths.mac) {
-            return editorSettings.projectPaths.mac
-        }
-        if (navigator.userAgent.includes('Linux') && editorSettings.projectPaths.linux) {
-            return editorSettings.projectPaths.linux
-        }
+    if (navigator.userAgent.includes('Win') && editorSettings['projectPaths.windows']) {
+        return editorSettings['projectPaths.windows']
     }
-    return editorSettings.projectPaths?.default
+    if (navigator.userAgent.includes('Mac') && editorSettings['projectPaths.mac']) {
+        return editorSettings['projectPaths.mac']
+    }
+    if (navigator.userAgent.includes('Linux') && editorSettings['projectPaths.linux']) {
+        return editorSettings['projectPaths.linux']
+    }
+    return editorSettings['projectPaths.default']
 }
 
 function isWindowsPath(path: string): boolean {
@@ -108,19 +106,19 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
         return editor.urlPattern
     }
     if (editor.id === 'vscode') {
-        const protocolHandler = editorSettings.vscode?.useInsiders ? 'vscode-insiders' : 'vscode'
-        if (editorSettings.vscode?.useSSH) {
-            if (!editorSettings.vscode.remoteHostForSSH) {
+        const protocolHandler = editorSettings['vscode.useInsiders'] ? 'vscode-insiders' : 'vscode'
+        if (editorSettings['vscode.useSSH']) {
+            if (!editorSettings['vscode.remoteHostForSSH']) {
                 throw new TypeError(
                     '`openineditor.vscode.mode` is set to "ssh" but `openineditor.vscode.remoteHostForSSH` is not set.'
                 )
             }
-            return `${protocolHandler}://vscode-remote/ssh-remote+${editorSettings.vscode.remoteHostForSSH}%file:%line:%col`
+            return `${protocolHandler}://vscode-remote/ssh-remote+${editorSettings['vscode.remoteHostForSSH']}%file:%line:%col`
         }
         return `${protocolHandler}://file%file:%line:%col`
     }
     if (editor.isJetBrainsProduct) {
-        if (editorSettings.jetbrains?.forceApi === 'builtInServer') {
+        if (editorSettings['jetbrains.forceApi'] === 'builtInServer') {
             // Open files with IntelliJ's built-in REST API (port 63342) if useBuiltin is enabled instead of the idea:// protocol handler
             // ref: https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server
             return 'http://localhost:63342/api/file%file:%line:%col'
@@ -128,7 +126,7 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
         return `${editor.id}://open?file=%file&line=%line&column=%col`
     }
     if (editor.id === 'custom') {
-        return editorSettings.custom?.urlPattern ?? '' // Default is only there to soothe TypeScript
+        return editorSettings['custom.urlPattern'] ?? '' // Default is only there to soothe TypeScript
     }
     throw new TypeError(`No url pattern found for editor ${editor.id}`)
 }
