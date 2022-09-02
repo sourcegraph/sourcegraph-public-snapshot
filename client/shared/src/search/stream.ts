@@ -575,6 +575,9 @@ export function streamComputeQuery(query: string): Observable<string[]> {
                 allData.push(event.data)
                 observer.next(allData)
             },
+            onerror(event) {
+                observer.error(event)
+            },
         }).then(
             () => observer.complete(),
             error => observer.error(error)
