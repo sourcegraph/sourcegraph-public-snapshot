@@ -193,15 +193,18 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
-	var sourcer repos.Sourcer
+	var sourcer, genericSourcer repos.Sourcer
+
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+
+	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
+	depsSvc := livedependencies.GetService(db)
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+
+	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc))
+
 	if sourcer = s.Sourcer; sourcer == nil {
-		sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-
-		db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-		depsSvc := livedependencies.GetService(db)
-		cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-
-		sourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc))
+		sourcer = genericSourcer
 	}
 
 	externalServiceID := req.ExternalServiceID
@@ -222,14 +225,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	src, err := sourcer(ctx, es[0])
-
+	genericSrc, err := genericSourcer(ctx, es[0])
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
-	err = externalServiceValidate(ctx, es[0], src)
+	// We use the generic sourcer that doesnt have observability attached to it here because the way externalServiceValidate is set up,
+	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	err = externalServiceValidate(ctx, es[0], genericSrc)
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))
 		syncResult := &protocol.ExternalServiceSyncResult{
