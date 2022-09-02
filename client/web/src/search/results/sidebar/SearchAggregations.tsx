@@ -108,7 +108,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     }
 
     const showFooter =
-        data && !error && data.searchQueryAggregate?.aggregations?.__typename !== 'SearchAggregationNotAvailable'
+        !error && data?.searchQueryAggregate?.aggregations?.__typename !== 'SearchAggregationNotAvailable'
 
     return (
         <article className="pt-2">
