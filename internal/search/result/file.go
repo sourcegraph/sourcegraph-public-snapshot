@@ -39,12 +39,13 @@ func (f *File) URL() *url.URL {
 // FileMatch represents either:
 // - A collection of symbol results (len(Symbols) > 0)
 // - A collection of text content results (len(LineMatches) > 0)
-// - A result representing the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
+// - A result representing the whole file (len(PathMatches) > 0 && len(Symbols) == 0 && len(LineMatches) == 0)
 type FileMatch struct {
 	File
 
 	ChunkMatches ChunkMatches
 	Symbols      []*SymbolMatch `json:"-"`
+	PathMatches  []Range
 
 	LimitHit bool
 }
