@@ -226,10 +226,10 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                     if (status.__typename === 'ExternalServiceSyncError') {
                         return (
                             <StatusMessagesNavItemEntry
-                                key={status.message}
+                                key={status.externalService.id}
                                 title="Code host connection"
                                 message={`Failed to connect to "${status.externalService.displayName}".`}
-                                messageHint="List of repositories may not be up-to-date. Verify the configuration is correct."
+                                messageHint="Repositories synced to Sourcegraph may not be up to date."
                                 linkTo={`/site-admin/external-services/${status.externalService.id}`}
                                 linkText="View code host configuration"
                                 linkOnClick={toggleIsOpen}

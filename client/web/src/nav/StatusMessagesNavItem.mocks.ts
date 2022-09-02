@@ -9,8 +9,6 @@ import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
 export const allStatusMessages: StatusMessagesResult['statusMessages'] = [
     {
         __typename: 'ExternalServiceSyncError',
-        message:
-            'fetching from code host GitHub PRODUCTION: Error getting GitHub repository: nameWithOwner=moby/moby: request to http://github-proxy/repos/moby/moby returned status 401: Bad credentials',
         externalService: {
             id: 'RXh0ZXJuYWxTZXJ2aWNlOjE=',
             displayName: 'GitHub PRODUCTION',
