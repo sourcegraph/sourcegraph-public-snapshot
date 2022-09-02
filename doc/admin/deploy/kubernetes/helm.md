@@ -815,7 +815,7 @@ When all pods have restarted and show as Running, you can browse to your Sourceg
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes with Helm:
 
-1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replias: 0` in each deployment/stateful set's configuration and re-applying.
+1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's configuration and re-applying.
   - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
       - repo-updater
