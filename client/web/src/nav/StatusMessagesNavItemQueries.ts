@@ -18,7 +18,6 @@ export const STATUS_MESSAGES = gql`
             ... on ExternalServiceSyncError {
                 __typename
 
-                message
                 externalService {
                     id
                     displayName

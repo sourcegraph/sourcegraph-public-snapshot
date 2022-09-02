@@ -9,8 +9,6 @@ import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
 export const allStatusMessages: StatusMessagesResult['statusMessages'] = [
     {
         __typename: 'ExternalServiceSyncError',
-        message:
-            'This is a\nmulti line error message\nthat spans multiple lines and also is a bit long on some lines\nbut lets see',
         externalService: {
             id: 'RXh0ZXJuYWxTZXJ2aWNlOjE=',
             displayName: 'GitHub PRODUCTION',
@@ -19,7 +17,7 @@ export const allStatusMessages: StatusMessagesResult['statusMessages'] = [
     },
     {
         __typename: 'SyncError',
-        message: '27 repositories could not be synced',
+        message: '13 repositories failed last attempt to sync content from code host',
     },
     {
         __typename: 'CloningProgress',
