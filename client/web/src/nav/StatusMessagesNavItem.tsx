@@ -215,7 +215,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key={status.message}
                                 message={status.message}
                                 title="Cloning repositories"
-                                messageHint="Repository contents may not be up-to-date."
+                                messageHint="Not all repositories available for search yet."
                                 linkTo="/site-admin/repositories"
                                 linkText="View repositories"
                                 linkOnClick={toggleIsOpen}
