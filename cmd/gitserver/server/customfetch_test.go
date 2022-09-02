@@ -23,7 +23,7 @@ func TestEmptyCustomGitFetch(t *testing.T) {
 
 func TestCustomGitFetch(t *testing.T) {
 	// mock value for test
-	customGitFetchCmdConf = "/tmp/customGitConfig.json"
+	customGitFetchCmdConf = filepath.Join(t.TempDir(), "customGitConfig.json")
 
 	mappings := []*schema.CustomGitFetchMapping{
 		{
