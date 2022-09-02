@@ -1,30 +1,33 @@
-# OpenTelemetry <span class="badge badge-experimental">Experimental</span>
+# OpenTelemetry
 
-Sourcegraph is currently working on implementing [OpenTelemetry](https://opentelemetry.io/). The first [signal](https://opentelemetry.io/docs/concepts/signals/) to be integrated is [tracing](./tracing.md).
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
 
-## OpenTelemetry Collector
+> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md).
 
-Sourcegraph handles telemetry data through the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/). This service can be configured to ingest, process, and then export telemetry data to an observability backend of choice. This approach offers a great deal of flexibility.
+Sourcegraph exports OpenTelemetry data to a bundled [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) instance.
+This service can be configured to ingest, process, and then export observability data to an observability backend of choice.
+This approach offers a great deal of flexibility.
 
-The Collector is deployed with a [custom image](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/opentelemetry-collector). This image includes the following backend exporters:
+Sourcegraph's OpenTelemetry Collector is deployed with a [custom image, `sourcegraph/opentelemetry-collector`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/opentelemetry-collector), and is configured with a configuration YAML file.
+By default, `sourcegraph/opentelemetry-collector` is configured to not do anything with the data it receives, but [exporters to various backends](#exporters) can be configured for each signal we currently support - **currently, only [traces data](#tracing) is supported**.
 
-- [OTLP gRPC](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter) (core)
-- [OTLP HTTP](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) (core)
-- [Logging](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/loggingexporter) (core)
-- [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/jaegerexporter) (contrib)
-- [Google Cloud](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/googlecloudexporter) (contrib)
-- [Loki](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/lokiexporter) (contrib)
+Refer to the [documentation](https://opentelemetry.io/docs/collector/configuration/) for an in-depth explanation of the parts that compose a full collector pipeline.
 
-In case you require an additional exporter from the [contrib repository](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter), please [reach out to us](https://about.sourcegraph.com/contact). 
+## Tracing
 
-## Configuration
+Sourcegraph tarces are exported in OpenTelemetry format to the bundled OpenTelemetry collector.
+To learn more about Sourcegraph traces in general, refer to our [tracing documentation](tracing.md).
 
-The Collector is configured with a configuration YAML file. Refer to the [documentation](https://opentelemetry.io/docs/collector/configuration/) for an in-depth explanation of the parts that compose a full collector pipeline.
+`sourcegraph/opentelemetry-collector` includes the following exporters that support traces:
 
-### Tracing
+- [OTLP-compatible backends](#otlp-compatible-backends) (includes services like Honeycomb and Grafana Tempo)
+- [Jaeger](#jaeger)
+- [Google Cloud](#google-cloud)
 
-Basic configuration for each backend type is described below. Just adding a backend to the `exporters` block does not enable it. It must also be added to the `service` block.
-Refer to the next snippet for a basic but complete example, which is the default configuration out-of-the-box:
+> NOTE: In case you require an additional exporter from the [`opentelemetry-collector-contrib` repository](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter), please [open an issue](https://github.com/sourcegraph/sourcegraph/issues).
+
+Basic configuration for each tracing backend type is described below. Note that just adding a backend to the `exporters` block does not enable it - it must also be added to the `service` block.
+Refer to the next snippet for a basic but complete example, which is the [default out-of-the-box configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml):
 
 ```yaml
 receivers:
@@ -35,7 +38,7 @@ receivers:
         
 exporters:
   logging:
-    loglevel: info
+    loglevel: warn
     sampling_initial: 5
     sampling_thereafter: 200
 
@@ -48,11 +51,11 @@ service:
         - logging # The exporter name must be added here to enable it
 ```
 
-### Sampling
+### Sampling traces
 
-To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image. 
+To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image.
 
-If enabled, this sampling mechanism will be applied to all traces, regardless if a request was explictly marked as to be traced. 
+If enabled, this sampling mechanism will be applied to all traces, regardless if a request was explictly marked as to be traced.
 
 Refer to the next snippet for an example on how to update the configuration to enable sampling.
 
@@ -73,23 +76,23 @@ service:
       processors: [probabilistic_sampler] # Plug the probabilistic sampler to the traces. 
 ```
 
-#### Configure exporting to logging
+## Exporters
 
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
+Exporters send observability data from OpenTelemetry collector to desired backends.
+Each exporter can support one, or several, OpenTelemetry signals.
 
-> NOTE: the deployed Collector image is bundled with a [basic configuration with log exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). If this configuration serves your need, you do not have to provide a separate config. The Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/logging.yaml`. This is the default setting for our deployment methods.
+This section outlines some common configurations for exporters - for more details, refer to the [official OpenTelemetry exporters documentation](https://opentelemetry.io/docs/collector/configuration/#exporters).
 
-```yaml
-exporters:
-  logging:
-    loglevel: info
-    sampling_initial: 5
-    sampling_thereafter: 200
-```
+> NOTE: In case you require an additional exporter from the [`opentelemetry-collector-contrib` repository](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter), please [open an issue](https://github.com/sourcegraph/sourcegraph/issues).
 
-#### Connect to an OTLP gRPC backend
+### OTLP-compatible backends
 
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all options.
+Backends compatible with the [OpenTelemetry protocol (OTLP)](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) include services like [Honeycomb](https://docs.honeycomb.io/getting-data-in/opentelemetry-overview/) and [Grafana Tempo](https://grafana.com/blog/2021/04/13/how-to-send-traces-to-grafana-clouds-tempo-service-with-opentelemetry-collector/).
+OTLP-compatible backends typically accept the [OTLP gRPC protocol](#otlp-grpc-backends), but they can also implement the [OTLP HTTP protocol](#otlp-http-backends).
+
+#### OTLP gRPC backends
+
+Read the [`otlp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all options.
 
 ```yaml
 exporters:
@@ -104,9 +107,9 @@ exporters:
       insecure: true
 ```
 
-#### Connect to an OTLP HTTP backend
+#### OTLP HTTP backends
 
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
+Read the [`otlphttp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
 
 ```yaml
 exporters:
@@ -114,15 +117,15 @@ exporters:
     endpoint: https://example.com:4318/v1/traces
 ```
 
-#### Connect to Jaeger
+### Jaeger
 
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.  
+Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.  
 
 The example below describes how to connect to the bundled Jaeger backend, if it is enabled for your deployment. Connecting to your own Jaeger instance might require additional configuration.
 
 > NOTE: this requires the environment variable `$JAEGER_HOST` to be set on the Collector instance (i.e. the container in Kubernetes or Docker Compose).
 
-# 
+<span class="virtual-br"></span>
 
 > NOTE: the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml). If this configuration serves your need, you do not have to provide a separate config. The Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/jaeger.yaml`. If you enable the bundled Jaeger instance in our deployment methods, this is preconfigured for you.
 
@@ -135,9 +138,9 @@ exporters:
       insecure: true
 ```
 
-#### Connect to Google Cloud Trace
+### Google Cloud
 
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all options.    
+Read the [`googlecloud` documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all options.
 
 If you run Sourcegraph on a GCP workload, all requests will be authenticated automatically. The documentation describes other authentication methods.
 
@@ -148,26 +151,4 @@ exporters:
     project: project-name # or fetched from credentials
     retry_on_failure:
       enabled: false
-```
-
-#### Connect to Loki
-
-Read the [documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/lokiexporter/README.md) for all options.
-
-```yaml
-loki:
-  endpoint: http://loki:3100/loki/api/v1/push
-  labels:
-    resource:
-      # Allowing 'container.name' attribute and transform it to 'container_name', which is a valid Loki label name.
-      container.name: "container_name"
-      # Allowing 'k8s.cluster.name' attribute and transform it to 'k8s_cluster_name', which is a valid Loki label name.
-      k8s.cluster.name: "k8s_cluster_name"
-    attributes:
-      # Allowing 'severity' attribute and not providing a mapping, since the attribute name is a valid Loki label name.
-      severity: ""
-      http.status_code: "http_status_code" 
-    record:
-      # Adds 'traceID' as a log label, seen as 'traceid' in Loki.
-      traceID: "traceid"
 ```
