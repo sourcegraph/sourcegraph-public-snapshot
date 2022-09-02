@@ -191,10 +191,6 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
     if (!productVersion) {
         return <></>
     }
-    productVersion = parseVersion('3.43.0')
-    if (!productVersion) {
-        return <></>
-    }
 
     const nextVersion =
         productVersion.major === 3 && productVersion.minor === 43
