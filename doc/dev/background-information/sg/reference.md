@@ -577,7 +577,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
@@ -602,7 +603,8 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
@@ -626,7 +628,6 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 
 ### sg migration downto
 
@@ -646,8 +647,10 @@ Flags:
 
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
+* `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
