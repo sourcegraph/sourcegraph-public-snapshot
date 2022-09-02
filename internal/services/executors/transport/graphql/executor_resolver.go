@@ -43,13 +43,17 @@ func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
 
 func (e *ExecutorResolver) IsOutdated() (bool, error) {
-	sv := version.Version()
 	ev := e.executor.ExecutorVersion
+	return isExecutorOutdated(ev, e.Active())
+}
+
+func isExecutorOutdated(ev string, active bool) (bool, error) {
+	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
 	isSgDev := sv != "" && version.IsDev(sv)
 
-	if !e.Active() || isSgDev || isExecutorDev {
+	if !active || isSgDev || isExecutorDev {
 		return false, nil
 	}
 
@@ -64,14 +68,14 @@ func (e *ExecutorResolver) IsOutdated() (bool, error) {
 	// we use the sourcegraph version as a constraint and expect the executor version to be
 	// greater than the sourcegraph version, if not we return true to indicate the executor is
 	// outdated.
-	c, err := semver.NewConstraint("> " + sv)
+	c, err := semver.NewConstraint("< " + sv)
 	if err != nil {
-		return false, nil
+		return true, err
 	}
 
 	v, err := semver.NewVersion(ev)
 	if err != nil {
-		return false, err
+		return true, err
 	}
 
 	return c.Check(v), nil
