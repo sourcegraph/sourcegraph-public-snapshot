@@ -16,7 +16,37 @@ interface LegacySettings {
     jetbrainsForceApi?: 'builtInServer'
 }
 
-export function migrateOldSettings(settings: Settings): Settings {
+/**
+ * Leaves the original Settings object unchanged.
+ * Returns a shallow copy with the old settings removed and the new ones added.
+ */
+export function migrateLegacySettings(settings: Settings): Settings {
+    if (settings.openInEditor !== undefined) {
+        return settings
+    }
+
+    const oldEditorSettingsInNewFormat = getOldSettingsInNewFormat(settings)
+
+    const newSettings: Settings = {
+        ...settings,
+        openInEditor: oldEditorSettingsInNewFormat,
+    }
+    for (const key of Object.keys(newSettings)) {
+        if (
+            key.startsWith('openineditor.') ||
+            key.startsWith('vscode.open.') ||
+            key.startsWith('openInIntellij.') ||
+            key.startsWith('openInWebstorm.') ||
+            key.startsWith('openInAtom.')
+        ) {
+            delete newSettings[key]
+        }
+    }
+
+    return newSettings
+}
+
+function getOldSettingsInNewFormat(settings: Settings): EditorSettings {
     const oldEditorSettings = {
         ...readAtomSettings(settings),
         ...readWebStormSettings(settings),
@@ -25,41 +55,24 @@ export function migrateOldSettings(settings: Settings): Settings {
         ...readOpenInEditorExtensionSettings(settings),
     }
 
-    const currentEditorSettings: EditorSettings = (settings.openInEditor as EditorSettings) || {}
     const mergedEditorSettings: EditorSettings = {
-        ...(oldEditorSettings.editorId
-            ? { editorId: oldEditorSettings.editorId }
-            : currentEditorSettings.editorId
-            ? { editorId: currentEditorSettings.editorId }
-            : {}),
+        ...(oldEditorSettings.editorId ? { editorId: oldEditorSettings.editorId } : {}),
         projectPaths: {
-            ...(currentEditorSettings.projectPaths ? currentEditorSettings.projectPaths : {}),
             ...(oldEditorSettings.basePath ? { default: oldEditorSettings.basePath } : {}),
             ...(oldEditorSettings.linuxBasePath ? { linux: oldEditorSettings.linuxBasePath } : {}),
             ...(oldEditorSettings.macBasePath ? { mac: oldEditorSettings.macBasePath } : {}),
             ...(oldEditorSettings.windowsBasePath ? { windows: oldEditorSettings.windowsBasePath } : {}),
         },
-        ...(oldEditorSettings.replacements
-            ? { replacements: oldEditorSettings.replacements }
-            : currentEditorSettings.replacements
-            ? { replacements: currentEditorSettings.replacements }
-            : {}),
+        ...(oldEditorSettings.replacements ? { replacements: oldEditorSettings.replacements } : {}),
         ...(oldEditorSettings.jetbrainsForceApi
             ? { jetbrains: { forceApi: oldEditorSettings.jetbrainsForceApi } }
-            : currentEditorSettings.jetbrains
-            ? { jetbrains: currentEditorSettings.jetbrains }
             : {}),
         vscode: {
-            ...(currentEditorSettings.vscode ? currentEditorSettings.vscode : {}),
             ...(oldEditorSettings.vscodeUseInsiders ? { useInsiders: oldEditorSettings.vscodeUseInsiders } : {}),
             ...(oldEditorSettings.vscodeUseSSH ? { useSSH: oldEditorSettings.vscodeUseSSH } : {}),
             ...(oldEditorSettings.vscodeRemoteHost ? { remoteHostForSSH: oldEditorSettings.vscodeRemoteHost } : {}),
         },
-        ...(oldEditorSettings.customUrlPattern
-            ? { custom: { urlPattern: oldEditorSettings.customUrlPattern } }
-            : currentEditorSettings.custom
-            ? { custom: currentEditorSettings.custom }
-            : {}),
+        ...(oldEditorSettings.customUrlPattern ? { custom: { urlPattern: oldEditorSettings.customUrlPattern } } : {}),
     }
     if (!Object.keys({ ...mergedEditorSettings.projectPaths }).length) {
         delete mergedEditorSettings.projectPaths
@@ -68,23 +81,7 @@ export function migrateOldSettings(settings: Settings): Settings {
         delete mergedEditorSettings.projectPaths
     }
 
-    const newSettings: Settings = {
-        ...settings,
-        ...(Object.keys(mergedEditorSettings).length ? { openInEditor: mergedEditorSettings } : {}),
-    }
-    for (const key of Object.keys(newSettings)) {
-        if (
-            key.startsWith('openineditor') ||
-            key.startsWith('vscode.open') ||
-            key.startsWith('openInIntellij') ||
-            key.startsWith('openInWebstorm') ||
-            key.startsWith('openInAtom')
-        ) {
-            delete newSettings[key]
-        }
-    }
-
-    return newSettings
+    return mergedEditorSettings
 }
 
 function readOpenInEditorExtensionSettings(settings: Settings): LegacySettings {

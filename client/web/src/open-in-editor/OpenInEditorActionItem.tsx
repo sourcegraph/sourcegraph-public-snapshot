@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Unsubscribable } from 'rxjs'
 
+import { isErrorLike } from '@sourcegraph/common/out/src'
 import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
 import { Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
@@ -11,7 +12,8 @@ import { SimpleActionItem } from '../../../shared/src/actions/SimpleActionItem'
 
 import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
-import { getEditor } from './editors'
+import { EditorId, getEditor } from './editors'
+import { migrateLegacySettings } from './migrate-legacy-settings'
 import { OpenInEditorPopover } from './OpenInEditorPopover'
 import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
@@ -44,15 +46,28 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
 
     useEffect(() => {
         setSettingSubscription(
-            props.platformContext.settings.subscribe(settings =>
-                settings.final ? setSettingsCascadeOrError(settings) : null
-            )
+            props.platformContext.settings.subscribe(settings => {
+                if (settings.final) {
+                    /* Migrate legacy settings if needed */
+                    const subject = settings.subjects ? settings.subjects[settings.subjects.length - 1] : undefined
+                    if (subject?.settings && !isErrorLike(subject.settings) && !subject.settings.openInEditor) {
+                        const migratedSettings = migrateLegacySettings(subject.settings)
+                        props.platformContext
+                            .updateSettings(subject.subject.id, JSON.stringify(migratedSettings))
+                            .then(() => {})
+                            .catch(() => {
+                                // TODO: Update failed, handle this
+                            })
+                    }
+                    setSettingsCascadeOrError(settings)
+                }
+            })
         )
 
         return () => {
             settingSubscription?.unsubscribe()
         }
-    }, [settingSubscription, props.platformContext.settings])
+    }, [settingSubscription, props.platformContext.settings, props.platformContext])
 
     const onClick = useCallback(() => {
         if (editor) {
@@ -61,6 +76,27 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
             togglePopover()
         }
     }, [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor, togglePopover])
+
+    const onSave = useCallback(
+        async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
+            const subject = settingsCascadeOrError?.subjects
+                ? settingsCascadeOrError.subjects[settingsCascadeOrError.subjects.length - 1]
+                : undefined
+            if (!subject) {
+                // TODO: Log that this is a very weird error
+                return
+            }
+            await props.platformContext.updateSettings(subject.subject.id, {
+                path: ['openInEditor', 'editorId'],
+                value: selectedEditorId,
+            })
+            await props.platformContext.updateSettings(subject.subject.id, {
+                path: ['openInEditor', 'defaultProjectPath'],
+                value: defaultProjectPath,
+            })
+        },
+        [props.platformContext, settingsCascadeOrError?.subjects]
+    )
 
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
@@ -78,6 +114,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                 <OpenInEditorPopover
                     editorSettings={settings?.openInEditor as EditorSettings | undefined}
                     togglePopover={togglePopover}
+                    onSave={onSave}
                 />
             </PopoverContent>
         </Popover>

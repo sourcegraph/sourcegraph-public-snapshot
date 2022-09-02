@@ -9,13 +9,14 @@ import { Button, H3, Icon, Input, Link, Select, Text } from '@sourcegraph/wildca
 
 import { isProjectPathValid } from './build-url'
 import { EditorSettings } from './editor-settings'
-import { supportedEditors } from './editors'
+import { EditorId, supportedEditors } from './editors'
 
 import styles from './OpenInEditorPopover.module.scss'
 
 export interface OpenInEditorPopoverProps {
     editorSettings?: EditorSettings
     togglePopover: () => void
+    onSave: (selectedEditorId: EditorId, defaultProjectPath: string) => Promise<void>
 }
 
 /**
@@ -25,7 +26,7 @@ export interface OpenInEditorPopoverProps {
 export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildren<OpenInEditorPopoverProps>> = props => {
     const {editorSettings, togglePopover} = props
 
-    const [selectedEditorId, setSelectedEditorId] = React.useState<string | undefined>(editorSettings?.editorId)
+    const [selectedEditorId, setSelectedEditorId] = React.useState<EditorId | undefined>(editorSettings?.editorId)
     const [defaultProjectPath, setDefaultProjectPath] = React.useState<string | undefined>(
         editorSettings?.projectPaths?.default
     )
@@ -35,16 +36,21 @@ export const OpenInEditorPopover: React.FunctionComponent<React.PropsWithChildre
         setSelectedEditorId(event.target.value)
     }, [])
 
-    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => {
-        event.preventDefault()
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        event => {
+            event.preventDefault()
 
-        try {
-            alert('Settings (not really) saved.');
-        } catch {
-            alert('Error saving settings.');
-            // TODO: Handle errors
-        }
-    }, [])
+            props
+                .onSave(selectedEditorId || '', defaultProjectPath || '')
+                .then(() => {
+                    togglePopover()
+                })
+                .catch(() => {
+                    // TODO: Log that saving was unsuccessful
+                }) // Fallback values are only for TS
+        },
+        [defaultProjectPath, props, selectedEditorId, togglePopover]
+    )
 
     const onProjectPathChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>): void => {
