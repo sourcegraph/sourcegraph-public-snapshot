@@ -163,18 +163,16 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 </SearchSidebarSection>
             )}
 
-            {!coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection
-                    sectionId={SectionID.SEARCH_REFERENCE}
-                    header="Search reference"
-                    showSearch={true}
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange={false}
-                >
-                    {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
-                </SearchSidebarSection>
-            )}
+            <SearchSidebarSection
+                sectionId={SectionID.SEARCH_REFERENCE}
+                header="Search reference"
+                showSearch={true}
+                // search reference should always preserve the filter
+                // (false is just an arbitrary but static value)
+                clearSearchOnChange={false}
+            >
+                {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
+            </SearchSidebarSection>
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
                 {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
