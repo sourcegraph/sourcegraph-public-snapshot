@@ -21,7 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- The `jaeger-agent` sidecar has been replaced by an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. The bundled Jaeger instance is now disabled by default, instead of enabled. [#40456](https://github.com/sourcegraph/sourcegraph/issues/40456)
+- [Sourcegraph with Kubernetes (without Helm)](https://docs.sourcegraph.com/admin/deploy/kubernetes): The `jaeger-agent` sidecar has been replaced by an [OpenTelemetry Collector](https://docs.sourcegraph.com/admin/observability/opentelemetry) DaemonSet + Deployment configuration. The bundled Jaeger instance is now disabled by default, instead of enabled. [#40456](https://github.com/sourcegraph/sourcegraph/issues/40456)
+- [Sourcegraph with Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose): The `jaeger` service has been replaced by an [OpenTelemetry Collector](https://docs.sourcegraph.com/admin/observability/opentelemetry) service. The bundled Jaeger instance is now disabled by default, instead of enabled. [#40455](https://github.com/sourcegraph/sourcegraph/issues/40455)
 
 ### Fixed
 
