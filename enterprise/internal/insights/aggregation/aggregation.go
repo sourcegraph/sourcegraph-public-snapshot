@@ -42,7 +42,6 @@ type eventMatch struct {
 	Lang        string
 	ResultCount int
 	Content     []string
-	//ChunkMatches result.ChunkMatches
 }
 
 // NewEventEnvironment maps event matches into a consistent type
