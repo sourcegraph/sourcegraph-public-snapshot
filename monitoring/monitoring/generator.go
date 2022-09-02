@@ -62,7 +62,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
-		clog := logger.Scoped(dashboard.Name, "name of the dashboard")
+		clog := logger.Scoped(dashboard.Name, "name of the dashboard").With(log.String("instance", localGrafanaURL))
 
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
@@ -91,7 +91,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				if err != nil {
 					return errors.Wrapf(err, "Could not reload Grafana instance for dashboard %q", dashboard.Title)
 				} else {
-					clog.Info("Reloaded Grafana instance", log.String("instance", localGrafanaURL))
+					clog.Info("Reloaded Grafana instance")
 				}
 			}
 		}
@@ -118,9 +118,9 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "reloading prometheus instance")
+		rlog := logger.Scoped("prometheus", "reloading prometheus instance").With(log.String("instance", localPrometheusURL))
 		// Reload all Prometheus rules
-		rlog.Debug("Reloading Prometheus instance", log.String("instance", localPrometheusURL))
+		rlog.Debug("Reloading Prometheus instance")
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
 		if err != nil {
 			return errors.Wrapf(err, "Could not reload Prometheus at %q", localPrometheusURL)
@@ -129,7 +129,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			if resp.StatusCode != 200 {
 				return errors.Newf("Unexpected status code %d while reloading Prometheus rules", resp.StatusCode)
 			}
-			rlog.Info("Reloaded Prometheus instance", log.String("instance", localPrometheusURL))
+			rlog.Info("Reloaded Prometheus instance")
 		}
 	}
 

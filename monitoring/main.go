@@ -6,10 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -38,7 +36,6 @@ func main() {
 		InstanceID: hostname.Get(),
 	})
 	defer liblog.Sync()
-
 
 	logger := log.Scoped("monitoring-generator", "generates monitoring dashboards")
 
