@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build aix || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
+//go:build linux
 
-package x509
+package cacert
 
 import (
 	"io/fs"
@@ -24,10 +24,6 @@ const (
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	certDirEnv = "SSL_CERT_DIR"
 )
-
-func (c *Certificate) systemVerify(opts *VerifyOptions) (chains [][]*Certificate, err error) {
-	return nil, nil
-}
 
 func loadSystemRoots() (*CertPool, error) {
 	roots := NewCertPool()
