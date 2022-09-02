@@ -46,9 +46,9 @@ var DefaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
-	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
-	"JAEGER_SERVER_URL":  "http://127.0.0.1:16686",
-	"PROMETHEUS_URL":     "http://127.0.0.1:9090",
+	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
+	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
+	"OTEL_EXPORTER_OTLP_ENDPOINT": "", // disabled
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -165,7 +165,7 @@ func Main() {
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
-	if monitoringLines := maybeMonitoring(); len(monitoringLines) != 0 {
+	if monitoringLines := maybeObservability(); len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
 	}
 
