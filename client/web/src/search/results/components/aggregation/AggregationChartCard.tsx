@@ -126,7 +126,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
                         {aggregationError.type === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE ? (
-                            <Button variant="link" className={styles.errorButton} onClick={onExtendTimeout}>
+                            <Button variant="link" className={styles.errorButton} size="sm" onClick={onExtendTimeout}>
                                 <PlayIcon />
                                 Run aggregation
                             </Button>
