@@ -229,9 +229,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key={status.message}
                                 title="Code host connection"
                                 message={`Failed to connect to "${status.externalService.displayName}".`}
-                                messageHint="Verify the configuration is correct."
+                                messageHint="List of repositories may not be up-to-date. Verify the configuration is correct."
                                 linkTo={`/site-admin/external-services/${status.externalService.id}`}
-                                linkText="View code host connection"
+                                linkText="View code host configuration"
                                 linkOnClick={toggleIsOpen}
                                 entryType="error"
                             />
@@ -243,7 +243,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key={status.message}
                                 message={status.message}
                                 title="Syncing repositories from code hosts"
-                                messageHint="List of repositories may not be up-to-date."
+                                messageHint="Repository contents may not be up-to-date."
                                 linkTo="/site-admin/repositories?status=failed-fetch"
                                 linkText="View affected repositories"
                                 linkOnClick={toggleIsOpen}
