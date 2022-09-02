@@ -140,7 +140,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
         <>
             <AnalyticsPageTitle>Overview</AnalyticsPageTitle>
 
-            <Card className="p-3">
+            <Card className="p-3" data-testid="product-certificate">
                 <div className="d-flex justify-content-between align-items-start mb-3 text-nowrap">
                     <div>
                         <H2 className="mb-3">{data.site.productSubscription.productNameWithBrand}</H2>
@@ -183,7 +183,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
                 {showGetStarted && activation && (
-                    <div className={classNames('my-3', styles.padded)}>
+                    <div className={classNames('my-3', styles.padded)} data-testid="site-admin-overview-menu">
                         <div className={styles.getStartedBox}>
                             <div className="d-flex justify-content-between align-items-center">
                                 <H3>Get started with Sourcegraph</H3>
@@ -242,11 +242,11 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
                         <div className={classNames(styles.statsBox, 'p-4 mb-3')}>
                             <div className="d-flex">
                                 <ValueLegendItem
-                                    value={data.site.analytics.users.activity.summary.totalUniqueUsers}
+                                    value={data.site.analytics.users.activity.summary.totalRegisteredUsers}
                                     className={classNames('flex-1', styles.borderRight)}
                                     description="Active Users"
                                     color="var(--body-color)"
-                                    tooltip="Users using the application in the selected timeframe."
+                                    tooltip="Currently registered users using the application in the selected timeframe."
                                 />
                                 <ValueLegendItem
                                     value={totalEvents}

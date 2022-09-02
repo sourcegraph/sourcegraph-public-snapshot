@@ -3,13 +3,15 @@
         filter: brightness(110%);
     }
 
+    // Based on the current bar fill color fade version of this color
+    // for non active bars
     &--fade {
         :global(.theme-dark) & {
             filter: brightness(0.5);
         }
 
         :global(.theme-light) & {
-            filter: brightness(1.5) saturate(0.15);
+            filter: sepia(45%) brightness(134%) contrast(1.2) opacity(0.9);
         }
     }
 }

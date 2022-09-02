@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import * as H from 'history'
-import { uniq } from 'lodash'
+import { uniq, isEqual } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -343,7 +343,13 @@ export class FilteredConnection<
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
                             const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
-                            if (this.props.location.search !== `?${searchFragment}`) {
+                            const searchFragmentParams = new URLSearchParams(searchFragment)
+                            searchFragmentParams.sort()
+
+                            const oldParams = new URLSearchParams(this.props.location.search)
+                            oldParams.sort()
+
+                            if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,

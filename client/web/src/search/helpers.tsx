@@ -1,5 +1,4 @@
 import { SubmitSearchParameters } from '@sourcegraph/search'
-import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from '@sourcegraph/search-ui'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -7,6 +6,8 @@ import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
+
+import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results/components/aggregation/constants'
 
 /**
  * By default {@link submitSearch} overrides all existing query parameters.

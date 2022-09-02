@@ -72,15 +72,6 @@ func newEventMatch(event result.Match) *eventMatch {
 			Date:        match.Commit.Author.Date,
 			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
 		}
-	case *result.CommitDiffMatch:
-		return &eventMatch{
-			Repo:        string(match.Repo.Name),
-			RepoID:      int32(match.Repo.ID),
-			Author:      match.Commit.Author.Name,
-			Date:        match.Commit.Author.Date,
-			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
-		}
-
 	default:
 		return &eventMatch{}
 	}
@@ -162,6 +153,9 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 						chunkMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
 						for value, count := range chunkMatches {
 							key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
+							if len(key.Group) > 100 {
+								key.Group = key.Group[:100]
+							}
 							current := matches[key]
 							matches[key] = current + count
 						}

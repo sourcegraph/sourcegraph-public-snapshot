@@ -110,10 +110,13 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	rewriteUnmarkedConcurrentIndexCreationMigrations,
 	rewriteConcurrentIndexCreationDownMigrations,
 	rewriteRepoStarsProcedure,
+	rewriteCodeinsightsDowngrades,
 	reorderMigrations,
 }
 
-// rewriteInitialCodeintelMigration renames the initial codeintel migration file to include the expected
+var codeintelSchemaMigrationsCommentPattern = lazyregexp.New(`COMMENT ON (TABLE|COLUMN) codeintel_schema_migrations(\.[a-z_]+)? IS '[^']+';`)
+
+// rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
 // title of "squashed migration".
 func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
 	if schemaName != "codeintel" {
@@ -122,6 +125,11 @@ func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version,
 
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
+	})
+
+	// Replace comments on possibly missing table in init migrations
+	mapContents(contents, migrationFilename(1000000004, "up.sql"), func(old string) string {
+		return codeintelSchemaMigrationsCommentPattern.ReplaceAllString(old, "-- Comments removed")
 	})
 }
 
@@ -197,7 +205,7 @@ func extractPrivilegedQueriesFromSquashedMigrations(_ string, version oobmigrati
 }
 
 var unmarkedPrivilegedMigrationsMap = map[string][]int{
-	"frontend":     {1528395764, 1528395953},
+	"frontend":     {1528395717, 1528395764, 1528395953},
 	"codeintel":    {1000000003, 1000000020},
 	"codeinsights": {1000000001, 1000000027},
 }
@@ -213,7 +221,7 @@ func rewriteUnmarkedPrivilegedMigrations(schemaName string, _ oobmigration.Versi
 }
 
 var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
-	"frontend":     {1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
+	"frontend":     {1528395696, 1528395707, 1528395708, 1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
 	"codeintel":    {1000000009, 1000000010, 1000000011},
 	"codeinsights": {},
 }
@@ -268,6 +276,36 @@ func rewriteRepoStarsProcedure(schemaName string, version oobmigration.Version, 
 			UPDATE repo SET stars = 0
 			FROM locked s WHERE repo.id = s.id
 		`
+	})
+}
+
+// rewriteCodeinsightsDowngrades rewrites a few historic codeinsights migrations to ensure downgrades work
+// as expected.
+//
+// See https://github.com/sourcegraph/sourcegraph/pull/25707.
+// See https://github.com/sourcegraph/sourcegraph/pull/26313.
+func rewriteCodeinsightsDowngrades(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	// Ensure we drop dashboard last as insight views have a dependency on it
+	mapContents(contents, migrationFilename(1000000014, "down.sql"), func(_ string) string {
+		return `
+			DROP TABLE IF EXISTS dashboard_grants;
+			DROP TABLE IF EXISTS dashboard_insight_view;
+			DROP TABLE IF EXISTS dashboard;
+		`
+	})
+
+	// Drop type created in up migration to allow idempotent up -> down -> up
+	mapContents(contents, migrationFilename(1000000017, "down.sql"), func(s string) string {
+		return strings.Replace(
+			s,
+			`COMMIT;`,
+			`DROP TYPE IF EXISTS time_unit; COMMIT;`,
+			1,
+		)
 	})
 }
 

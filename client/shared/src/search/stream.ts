@@ -231,8 +231,12 @@ interface Alert {
     proposedQueries: ProposedQuery[] | null
 }
 
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
+
 interface ProposedQuery {
     description?: string | null
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 

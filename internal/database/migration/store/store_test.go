@@ -51,9 +51,9 @@ func TestEnsureSchemaTable(t *testing.T) {
 
 func TestBackfillSchemaVersions(t *testing.T) {
 	t.Run("frontend", func(t *testing.T) {
-		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395733, 1528395834)) // squashed root
-		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395733, 1528395834)) // squashed root
-		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395733, 1528395840)) // non-squashed migration
+		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395684, 1528395840)) // non-squashed migration
 	})
 
 	t.Run("codeintel", func(t *testing.T) {

@@ -21,6 +21,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     // see https://github.com/sourcegraph/sourcegraph/issues/40009
     pixelsPerYTick?: number
     pixelsPerXTick?: number
+    hideXTicks?: boolean
     maxAngleXTick?: number
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
@@ -34,6 +35,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         data,
         pixelsPerYTick,
         pixelsPerXTick,
+        hideXTicks,
         maxAngleXTick,
         stacked = false,
         getDatumHover,
@@ -86,6 +88,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
             <SvgAxisBottom
                 pixelsPerTick={pixelsPerXTick}
                 maxRotateAngle={maxAngleXTick}
+                hideTicks={hideXTicks}
                 getTruncatedTick={getTruncatedXTick}
                 getScaleTicks={getScaleXTicks}
             />
