@@ -50,7 +50,7 @@ kubectl get pods -o wide --watch
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes:
 
-1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replias: 0` in each deployment/stateful set's configuration and re-applying.
+1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's configuration and re-applying.
   - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
       - repo-updater
@@ -73,7 +73,7 @@ You can rollback by resetting your `release` branch to the old state and proceed
 ./kubectl-apply-all.sh
 ```
 
-If you are rolling back more than a single version, then you must also [roll back your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point uring the upgrade) are guaranteed to be compatible with one previous minor version.
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
 
 ## Improving update reliability and latency with node selectors
 

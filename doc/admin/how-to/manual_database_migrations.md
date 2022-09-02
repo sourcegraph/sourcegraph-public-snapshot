@@ -110,7 +110,6 @@ The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be s
 
 The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations).
 
-
 ### validate
 
 Usage: **`validate [-db=all] [--skip-out-of-band-migrations=false]`**

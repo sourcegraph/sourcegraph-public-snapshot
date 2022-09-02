@@ -838,7 +838,7 @@ You can revert to a previous version with the following command:
 helm rollback sourcegraph
 ```
 
-If you are rolling back more than a single version, then you must also [roll back your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point uring the upgrade) are guaranteed to be compatible with one previous minor version.
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
 
 ### Database Migrations
 
