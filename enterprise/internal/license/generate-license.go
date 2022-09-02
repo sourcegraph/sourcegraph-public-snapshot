@@ -68,7 +68,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	licenseKey, err := license.GenerateSignedKey(info, privateKey)
+	licenseKey, _, err := license.GenerateSignedKey(info, privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}

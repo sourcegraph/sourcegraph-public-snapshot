@@ -3,26 +3,26 @@ import { gql } from '@sourcegraph/http-client'
 export const STATUS_MESSAGES = gql`
     query StatusMessages {
         statusMessages {
-            ...StatusMessageFields
-        }
-    }
+            ... on CloningProgress {
+                __typename
 
-    fragment StatusMessageFields on StatusMessage {
-        type: __typename
+                message
+            }
 
-        ... on CloningProgress {
-            message
-        }
+            ... on SyncError {
+                __typename
 
-        ... on SyncError {
-            message
-        }
+                message
+            }
 
-        ... on ExternalServiceSyncError {
-            message
-            externalService {
-                id
-                displayName
+            ... on ExternalServiceSyncError {
+                __typename
+
+                message
+                externalService {
+                    id
+                    displayName
+                }
             }
         }
     }

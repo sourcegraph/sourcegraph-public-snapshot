@@ -249,7 +249,9 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/repo-updater
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
