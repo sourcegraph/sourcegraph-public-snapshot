@@ -14,7 +14,9 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Standard upgrades
 
-**These steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
+**The following steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
 
 First, merge the new version of Sourcegraph into your release branch.
 

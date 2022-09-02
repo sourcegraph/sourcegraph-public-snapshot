@@ -779,6 +779,8 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Standard upgrades
 
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
 1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
 > ⚠️ You can only upgrade one minor version of Sourcegraph at a time.

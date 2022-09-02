@@ -9,6 +9,8 @@ This document describes the process to update a Docker Compose Sourcegraph insta
 
 ### Standard upgrades
 
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
 If you [configured Docker Compose with a release branch](index.md#step-3-configure-the-release-branch), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.40.2.
 
 ```bash
