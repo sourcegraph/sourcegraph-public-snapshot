@@ -461,7 +461,7 @@
             "description": "Replace string. For backreferences to capturing groups, use $1, $2, ..."
           }
         },
-        "jetBrains.forceApi": {
+        "jetbrains.forceApi": {
           "description": "Forces using protocol handlers (like ikea://open?file=...) or the built-in REST API (http://localhost:63342/api/file...). If omitted, protocol handlers are used if available, otherwise the built-in REST API is used.",
           "type": "string",
           "enum": ["protocolHandler", "builtInServer"]

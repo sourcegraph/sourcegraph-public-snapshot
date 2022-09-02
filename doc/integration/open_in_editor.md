@@ -95,7 +95,7 @@ some extra configuration steps.
     {
       "openInEditor": {
         ...
-        "jetBrains.forceApi": "builtInServer"
+        "jetbrains.forceApi": "builtInServer"
       }
     }
     ```

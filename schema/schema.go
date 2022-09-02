@@ -1870,7 +1870,7 @@ type SettingsOpenInEditor struct {
 	ProjectPathsMac            string            `json:"projectPaths.mac,omitempty"`
 	ProjectPathsWindows        string            `json:"projectPaths.windows,omitempty"`
 	Replacements               map[string]string `json:"replacements,omitempty"`
-	JetBrainsForceApi          string            `json:"jetBrains.forceApi,omitempty"`
+	JetBrainsForceApi          string            `json:"jetbrains.forceApi,omitempty"`
 	VSCodeIsProjectPathUNCPath bool              `json:"vscode.isProjectPathUNCPath,omitempty"`
 	VSCodeUseInsiders          bool              `json:"vscode.useInsiders,omitempty"`
 	VSCodeUseSSH               bool              `json:"vscode.useSSH,omitempty"`
