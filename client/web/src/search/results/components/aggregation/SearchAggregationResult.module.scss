@@ -13,7 +13,8 @@
 
 .card {
     max-width: 60rem;
-    margin: 0 auto;
+    margin: 1rem auto 0;
+    border: 1px solid var(--border-color);
 }
 
 .chart-container {
@@ -40,6 +41,10 @@
     margin-top: 1.5rem;
     list-style: none;
     padding: 0;
+
+    &:empty {
+        display: none;
+    }
 }
 
 .list-result-item {

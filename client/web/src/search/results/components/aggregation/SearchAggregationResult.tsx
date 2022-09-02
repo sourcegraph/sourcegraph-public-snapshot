@@ -73,8 +73,6 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 Aggregation is based on results with no count limitation (<Code>count:all</Code>).
             </span>
 
-            <hr className="mt-2 mb-3" />
-
             <Card as={CardBody} className={styles.card}>
                 <div className={styles.controls}>
                     <AggregationModeControls

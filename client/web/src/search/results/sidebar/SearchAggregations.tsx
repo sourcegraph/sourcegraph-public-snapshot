@@ -8,13 +8,13 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 import {
     AggregationChartCard,
     AggregationModeControls,
+    AggregationLimitLabel,
     AggregationUIMode,
     useAggregationSearchMode,
     useAggregationUIMode,
     useSearchAggregationData,
     isNonExhaustiveAggregationResults,
 } from '../components/aggregation'
-import { AggregationLimitLabel } from '../components/aggregation/AggregationLimitLabel'
 
 import styles from './SearchAggregations.module.scss'
 
@@ -74,6 +74,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                         className={styles.chartContainer}
                         onBarLinkClick={onQuerySubmit}
                     />
+
                     <footer className={styles.actions}>
                         <Button
                             variant="secondary"
