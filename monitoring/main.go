@@ -6,9 +6,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	"github.com/getsentry/sentry-go"
+	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -27,7 +32,21 @@ func optsFromEnv() monitoring.GenerateOptions {
 func main() {
 	// Use standard Sourcegraph logging options and flags.
 	logging.Init()
-	logger := log15.Root()
+	liblog := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
+	defer liblog.Sync()
+
+	conf.Init()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
+	logger := log.Scoped("dashboard-generator", "generates monitoring dashboards")
 
 	// Runs the monitoring generator. Ensure that any dashboards created or removed are
 	// updated in the arguments here as required.
@@ -52,8 +71,7 @@ func main() {
 		definitions.CodeIntelPolicies(),
 		definitions.Telemetry(),
 	); err != nil {
-		println(err.Error())
-		os.Exit(1)
+		logger.Fatal(err.Error())
 	}
 }
 
