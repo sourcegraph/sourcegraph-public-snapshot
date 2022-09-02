@@ -101,9 +101,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 <div className={styles.errorMessageLayout}>
                     <div className={styles.errorMessage}>
                         We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
-                        <Link to="https://docs.sourcegraph.com/code_insights/explanations/search_results_aggregations">
-                            Learn more
-                        </Link>
+                        <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
                     </div>
                 </div>
             </DataLayoutContainer>
