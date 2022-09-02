@@ -1,9 +1,5 @@
 # How to run `migrator` operations
 
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
-
-<!---->
-
 > NOTE: It is encouraged for users to always use a recent release of the `migrator`, even against older Sourcegraph instances. This is especially true for commands such as `downgrade`, `drift`, `run-out-of-band-migrations`, and `upgrade`, which all work against Sourcegraph versions as old as 3.20.
 >
 > The `up` command is a notable exception. See the command documentation for additional details.

@@ -120,8 +120,6 @@ the following:
 
 ## Database migrations
 
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
-
 By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
 In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
