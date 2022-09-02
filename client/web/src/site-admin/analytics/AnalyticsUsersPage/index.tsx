@@ -42,15 +42,14 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
                 color: 'var(--purple)',
-                tooltip:
-                    'Users (including those who might have been deleted) using the application in the selected timeframe.',
+                tooltip: 'Users using the application in the selected timeframe.',
             },
             {
                 value: data.users.totalCount,
                 description: 'Registered Users',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'Total number of registered and not deleted users.',
+                tooltip: 'The number of users who have created an account.',
             },
             {
                 value: data.site.productSubscription.license?.userCount ?? 0,

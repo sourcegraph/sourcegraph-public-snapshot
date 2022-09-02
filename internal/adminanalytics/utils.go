@@ -51,8 +51,7 @@ var eventLogsNodesQuery = `
 SELECT
 	%s AS date,
 	COUNT(*) AS total_count,
-	-- distinct registered users + anonymous/not-registered users
-	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) + COUNT(DISTINCT anonymous_user_id) FILTER (WHERE user_id = 0) as unique_users,
+	COUNT(DISTINCT anonymous_user_id) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
@@ -63,8 +62,7 @@ GROUP BY date
 var eventLogsSummaryQuery = `
 SELECT
 	COUNT(*) AS total_count,
-	-- distinct registered users + anonymous/not-registered users
-	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) + COUNT(DISTINCT anonymous_user_id) FILTER (WHERE user_id = 0) as unique_users,
+	COUNT(DISTINCT anonymous_user_id) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
