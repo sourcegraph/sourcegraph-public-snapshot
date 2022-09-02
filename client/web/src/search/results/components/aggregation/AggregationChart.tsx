@@ -86,7 +86,7 @@ const getXScaleTicks = <T,>(options: GetScaleTicksOptions): T[] => {
         filteredTicks = filteredTicks.filter((tick, index) => index % 2 === 0)
     }
 
-    return filteredTicks
+    return filteredTicks.map(tick => tick.trim()).filter(tick => !!tick)
 }
 
 const getTruncatedTick = (maxLength: number) => (tick: string): string =>
