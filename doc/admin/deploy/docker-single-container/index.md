@@ -136,15 +136,20 @@ SELECT * FROM users;
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
+**Before upgrading:**
 
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
 
-You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+### Standard upgrades
 
-- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
-- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
-- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+
+### Multi-version upgrades
+
+Multi-version upgrades are not well supported on single-container deployments. Consider migrating to a [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md) environment on the same version and begin the upgrade to the new version from that point.
+
+With absolute necessity, temporary Postgres containers can be mounted over the same data volumes as the single-server image, and the `migrator` can target those databases. See the [Docker Compose update instructions](../docker-compose/upgrade.md#multi-version-upgrades) for more details.
 
 ## Troubleshooting
 

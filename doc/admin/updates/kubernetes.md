@@ -6,7 +6,7 @@
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, to upgrade your instance refer to either:
+3. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
     * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
     * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
 
@@ -14,7 +14,7 @@
 
 ## Unreleased
 
-<!-- Add changes changes to this section before release. -->'
+<!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
