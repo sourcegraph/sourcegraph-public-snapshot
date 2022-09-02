@@ -94,8 +94,12 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (loading) {
         return (
-            <DataLayoutContainer size={size} className={classNames(styles.loading, className)}>
-                Loading...
+            <DataLayoutContainer
+                data-error-layout={true}
+                size={size}
+                className={classNames(styles.aggregationErrorContainer, className)}
+            >
+                <BarsBackground size={size} />
             </DataLayoutContainer>
         )
     }
