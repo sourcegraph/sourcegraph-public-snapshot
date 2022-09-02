@@ -301,3 +301,11 @@ function getCalculatedAggregationMode(response?: GetSearchAggregationResult): Se
 
     return aggregationResult?.mode ?? null
 }
+
+export const isNonExhaustiveAggregationResults = (response?: GetSearchAggregationResult): boolean => {
+    if (!response) {
+        return false
+    }
+
+    return response.searchQueryAggregate?.aggregations?.__typename === 'NonExhaustiveSearchAggregationResult'
+}
