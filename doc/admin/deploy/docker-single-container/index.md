@@ -153,8 +153,6 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point.
 
-With absolute necessity, temporary Postgres containers can be mounted over the same data volumes as the single-server image, and the `migrator` can target those databases. See the [Docker Compose update instructions](../docker-compose/upgrade.md#multi-version-upgrades) for more details.
-
 ## Troubleshooting
 
 If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
