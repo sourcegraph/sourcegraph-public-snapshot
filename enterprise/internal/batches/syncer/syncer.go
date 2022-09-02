@@ -483,11 +483,6 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	// TODO: After this change the syncer will only be able to sync
-	// - changesets created by batch changes
-	// - imported changesets, if a site credential exists.
-	// It can NOT sync imported changesets anymore when only a user credential
-	// is present.
 	srcer := sources.NewSourcer(s.httpFactory)
 	source, err := srcer.ForChangeset(ctx, s.syncStore, cs)
 	if err != nil {
