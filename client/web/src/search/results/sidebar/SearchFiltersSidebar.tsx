@@ -104,11 +104,20 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService]
     )
 
+    const showAggregationsPanel = useMemo(
+        () =>
+            enableSearchAggregations &&
+            status === 'loaded' &&
+            aggregationUIMode === AggregationUIMode.Sidebar &&
+            repoFilters.length > 0,
+        [aggregationUIMode, enableSearchAggregations, repoFilters.length, status]
+    )
+
     return (
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+            {showAggregationsPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}

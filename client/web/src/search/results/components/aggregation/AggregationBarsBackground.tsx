@@ -2,7 +2,7 @@ import { SVGProps, FC } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './BarsBackground.module.scss'
+import styles from './AggregationBarsBackground.module.scss'
 
 const BAR_VALUES_FULL_UI = [95, 88, 83, 70, 65, 45, 35, 30, 30, 30, 30, 27, 27, 27, 27, 24, 10, 10, 10, 10, 10]
 const BAR_VALUES_SIDEBAR_UI = [95, 80, 75, 70, 68, 68, 55, 40, 38, 33, 30, 25, 15, 7]

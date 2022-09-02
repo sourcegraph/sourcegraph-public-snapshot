@@ -10,8 +10,8 @@ import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
 import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
 import type { AggregationChartProps } from './AggregationChart'
-import { DataLayoutContainer } from './DataContainer'
-import { ErrorContainer } from './ErrorContainer'
+import { DataLayoutContainer } from './AggregationDataContainer'
+import { AggregationErrorContainer } from './AggregationErrorContainer'
 
 import styles from './AggregationChartCard.module.scss'
 
@@ -110,10 +110,10 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (aggregationError) {
         return (
-            <ErrorContainer size={size} className={className}>
+            <AggregationErrorContainer size={size} className={className}>
                 We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
                 <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
-            </ErrorContainer>
+            </AggregationErrorContainer>
         )
     }
 
@@ -123,9 +123,9 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (getAggregationData(data).length === 0) {
         return (
-            <ErrorContainer size={size} className={className}>
+            <AggregationErrorContainer size={size} className={className}>
                 No data to display
-            </ErrorContainer>
+            </AggregationErrorContainer>
         )
     }
 

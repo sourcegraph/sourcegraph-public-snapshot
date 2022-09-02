@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import styles from './DataContainer.module.scss'
+import styles from './AggregationDataContainer.module.scss'
 
 interface DataLayoutContainerProps {
     size?: 'sm' | 'md'
