@@ -1,6 +1,12 @@
 // Chart (parent-size) container
 .container {
     position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart {
+    flex-grow: 1;
 }
 
 .missing-label-count {
@@ -18,7 +24,7 @@
     flex-direction: column;
     position: relative;
     overflow: auto;
-    margin: 0;
+    padding-top: 0.5rem;
 
     // Small mode is used for side panel (the standard size is used for the full UI)
     &--small {
@@ -85,6 +91,6 @@
     // Visually compensate bottom spacing between error chart mock
     // UI and aggregation controls UI which are placed below this
     // zero state block
-    padding-bottom: 1.5rem;
+    padding-bottom: 1rem;
     padding-top: 0.5rem;
 }

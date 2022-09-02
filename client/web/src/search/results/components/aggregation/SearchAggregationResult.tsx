@@ -3,11 +3,17 @@ import { FC, HTMLAttributes } from 'react'
 import { mdiArrowCollapse } from '@mdi/js'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { Button, H2, Icon } from '@sourcegraph/wildcard'
+import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
+import { AggregationLimitLabel } from './AggregationLimitLabel'
 import { AggregationModeControls } from './AggregationModeControls'
-import { useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
+import {
+    isNonExhaustiveAggregationResults,
+    useAggregationSearchMode,
+    useAggregationUIMode,
+    useSearchAggregationData,
+} from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -63,38 +69,44 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 </Button>
             </header>
 
-            <hr className="mt-2 mb-3" />
+            <span className="text-muted">
+                Aggregation is based on results with no count limitation (<Code>count:all</Code>).
+            </span>
 
-            <div className={styles.controls}>
-                <AggregationModeControls
-                    loading={loading}
+            <Card as={CardBody} className={styles.card}>
+                <div className={styles.controls}>
+                    <AggregationModeControls
+                        loading={loading}
+                        mode={aggregationMode}
+                        availability={data?.searchQueryAggregate?.modeAvailability}
+                        onModeChange={setAggregationMode}
+                    />
+
+                    {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
+                </div>
+
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
                     mode={aggregationMode}
-                    availability={data?.searchQueryAggregate?.modeAvailability}
-                    onModeChange={setAggregationMode}
+                    data={data?.searchQueryAggregate?.aggregations}
+                    loading={loading}
+                    error={error}
+                    size="md"
+                    className={styles.chartContainer}
+                    onBarLinkClick={onQuerySubmit}
                 />
-            </div>
 
-            <AggregationChartCard
-                aria-label="Expanded search aggregation chart"
-                mode={aggregationMode}
-                data={data?.searchQueryAggregate?.aggregations}
-                loading={loading}
-                error={error}
-                size="md"
-                className={styles.chartContainer}
-                onBarLinkClick={onQuerySubmit}
-            />
-
-            {data && (
-                <ul className={styles.listResult}>
-                    {getAggregationData(data.searchQueryAggregate.aggregations).map(datum => (
-                        <li key={datum.label} className={styles.listResultItem}>
-                            <span>{datum.label}</span>
-                            <span>{datum.count}</span>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                {data && (
+                    <ul className={styles.listResult}>
+                        {getAggregationData(data.searchQueryAggregate.aggregations).map(datum => (
+                            <li key={datum.label} className={styles.listResultItem}>
+                                <span>{datum.label}</span>
+                                <span>{datum.count}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Card>
         </section>
     )
 }
