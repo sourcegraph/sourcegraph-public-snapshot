@@ -1019,16 +1019,16 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		user           *types.User
 		extSvc         *types.ExternalService
 		repo           *types.Repo
-		credentials    auth.Authenticator
+		credential     auth.Authenticator
 		wantErr        bool
 		wantPushConfig *gitprotocol.PushConfig
 	}{
 		{
-			name:        "github OAuthBearerToken",
-			user:        user,
-			extSvc:      gitHubExtSvc,
-			repo:        gitHubRepo,
-			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			name:       "github OAuthBearerToken",
+			user:       user,
+			extSvc:     gitHubExtSvc,
+			repo:       gitHubRepo,
+			credential: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://my-secret-github-token@github.com/sourcegraph/" + string(gitHubRepo.Name),
 			},
@@ -1048,11 +1048,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:        "gitlab OAuthBearerToken",
-			user:        user,
-			extSvc:      gitLabExtSvc,
-			repo:        gitLabRepo,
-			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			name:       "gitlab OAuthBearerToken",
+			user:       user,
+			extSvc:     gitLabExtSvc,
+			repo:       gitLabRepo,
+			credential: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
 			},
@@ -1072,11 +1072,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:        "bitbucketServer BasicAuth",
-			user:        user,
-			extSvc:      bbsExtSvc,
-			repo:        bbsRepo,
-			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
+			name:       "bitbucketServer BasicAuth",
+			user:       user,
+			extSvc:     bbsExtSvc,
+			repo:       bbsRepo,
+			credential: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
 			},
@@ -1114,7 +1114,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:   admin,
 			extSvc: bbsSSHExtsvc,
 			repo:   bbsSSHRepo,
-			credentials: &auth.OAuthBearerTokenWithSSH{
+			credential: &auth.OAuthBearerTokenWithSSH{
 				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
 				PrivateKey:       "private key",
 				PublicKey:        "public key",
@@ -1127,24 +1127,24 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
-			name:        "ssh clone URL non-SSH credential",
-			user:        admin,
-			extSvc:      bbsSSHExtsvc,
-			repo:        bbsSSHRepo,
-			credentials: &auth.OAuthBearerToken{Token: "test"},
-			wantErr:     true,
+			name:       "ssh clone URL non-SSH credential",
+			user:       admin,
+			extSvc:     bbsSSHExtsvc,
+			repo:       bbsSSHRepo,
+			credential: &auth.OAuthBearerToken{Token: "test"},
+			wantErr:    true,
 		},
 	}
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.credentials != nil {
+			if tt.credential != nil {
 				cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainBatches,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
-				}, tt.credentials)
+				}, tt.credential)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1166,7 +1166,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			})
 
 			gitClient := &bt.FakeGitserverClient{ResponseErr: nil}
-			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc}
+			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
