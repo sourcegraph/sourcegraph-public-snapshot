@@ -303,9 +303,12 @@ sg ci build executor-patch-notest
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Build executor-vm
+- Scan executor-vm
 - Build executor image
-- Publish executor image
 - Build docker registry mirror image
+- executor-vm
+- Publish executor image
 - Publish docker registry mirror image
 - Upload build trace
 
