@@ -11,7 +11,6 @@ title: Deploy Sourcegraph
     flex-basis: 0;
     flex-grow: 1;
     text-decoration: none;
-    color: inherit;
     height: 15em;
     max-width: 100%;
     border-radius: 1em;
