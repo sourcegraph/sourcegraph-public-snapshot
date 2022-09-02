@@ -177,7 +177,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 ### Low resource environments
 
-To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus and Grafana).
 
 Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 
