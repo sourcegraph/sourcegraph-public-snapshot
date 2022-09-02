@@ -1228,10 +1228,14 @@
           "default": false
         },
         "urlTemplate": {
-          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.",
+          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'. If none is set, no links are generated.",
           "type": "string",
-          "default": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}",
-          "examples": ["https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"]
+          "examples": [
+            "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}",
+            "https://console.cloud.google.com/traces/list?tid={{ .TraceID }}&project=$PROJECT",
+            "https://sourcegraph.grafana.net/explore?orgId=1&left=[\"now-1h\",\"now\",\"grafanacloud-sourcegraph-traces\",{\"query\":\"{{ .TraceID }}\",\"queryType\":\"traceId\"}]",
+            "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
+          ]
         }
       }
     },
