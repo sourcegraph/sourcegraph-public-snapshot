@@ -207,6 +207,7 @@ interface SearchAggregationDataInput {
     aggregationMode: SearchAggregationMode | null
     limit: number
     proactive?: boolean
+    caseSensitive: boolean
 }
 
 type SearchAggregationResults =
@@ -215,7 +216,11 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit, proactive } = input
+    const { query, patternType, aggregationMode, limit, proactive, caseSensitive } = input
+
+    // Search parses out the case argument, but backend needs it in the query
+    // Here we're checking the caseSensitive flag and adding it back to the query if it's true
+    const aggregationQuery = caseSensitive ? `${query} case:yes` : query
 
     const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
@@ -226,7 +231,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         {
             fetchPolicy: 'cache-first',
             variables: {
-                query,
+                query: aggregationQuery,
                 patternType,
                 mode: aggregationMode,
                 limit,

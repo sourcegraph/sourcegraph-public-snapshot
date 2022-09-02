@@ -299,6 +299,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                caseSensitive={caseSensitive}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
                 onSearchSubmit={handleSidebarSearchSubmit}
@@ -315,6 +316,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 <SearchAggregationResult
                     query={submittedURLQuery}
                     patternType={patternType}
+                    caseSensitive={caseSensitive}
                     aria-label="Aggregation results panel"
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
