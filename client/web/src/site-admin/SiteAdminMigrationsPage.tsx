@@ -183,7 +183,7 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
-    let productVersion = useObservable(
+    const productVersion = useObservable(
         useMemo(() => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))), [
             fetchSiteUpdateCheck,
         ])
