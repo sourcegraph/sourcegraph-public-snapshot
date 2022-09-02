@@ -340,10 +340,10 @@ export class SourcegraphWebApp extends React.Component<
 
         return (
             <ApolloProvider client={graphqlClient}>
-                <ErrorBoundary location={null}>
-                    <FeatureFlagsProvider>
-                        <ShortcutProvider>
-                            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <ErrorBoundary location={null}>
+                        <FeatureFlagsProvider>
+                            <ShortcutProvider>
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                     <CoreWorkflowImprovementsEnabledProvider>
                                         <SearchResultsCacheProvider>
@@ -438,10 +438,10 @@ export class SourcegraphWebApp extends React.Component<
                                         </SearchResultsCacheProvider>
                                     </CoreWorkflowImprovementsEnabledProvider>
                                 </TemporarySettingsProvider>
-                            </WildcardThemeContext.Provider>
-                        </ShortcutProvider>
-                    </FeatureFlagsProvider>
-                </ErrorBoundary>
+                            </ShortcutProvider>
+                        </FeatureFlagsProvider>
+                    </ErrorBoundary>
+                </WildcardThemeContext.Provider>
             </ApolloProvider>
         )
     }
