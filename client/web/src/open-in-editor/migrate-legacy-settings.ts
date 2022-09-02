@@ -78,7 +78,7 @@ function getOldSettingsInNewFormat(settings: Settings): EditorSettings {
         delete mergedEditorSettings.projectPaths
     }
     if (!Object.keys({ ...mergedEditorSettings.vscode }).length) {
-        delete mergedEditorSettings.projectPaths
+        delete mergedEditorSettings.vscode
     }
 
     return mergedEditorSettings
@@ -117,12 +117,17 @@ function readAtomSettings(settings: Settings): LegacySettings {
 }
 
 function readLegacySettings(settings: Settings, prefix: string): LegacySettings {
-    const osPaths = (settings[prefix + '.osPaths'] as Record<string, string>) || {}
     return {
-        basePath: settings[prefix + '.basePath'] as string | undefined,
-        linuxBasePath: osPaths.linux as string | undefined,
-        macBasePath: osPaths.mac as string | undefined,
-        windowsBasePath: osPaths.windows as string | undefined,
-        replacements: settings[prefix + '.replacements'] as EditorReplacements | undefined,
+        ...(settings[prefix + '.basePath'] ? { basePath: settings[prefix + '.basePath'] as string } : null),
+        ...(settings[prefix + '.osPaths.linux']
+            ? { linuxBasePath: settings[prefix + '.osPaths.linux'] as string }
+            : null),
+        ...(settings[prefix + '.osPaths.mac'] ? { macBasePath: settings[prefix + '.osPaths.mac'] as string } : null),
+        ...(settings[prefix + '.osPaths.windows']
+            ? { windowsBasePath: settings[prefix + '.osPaths.windows'] as string }
+            : null),
+        ...(settings[prefix + '.replacements']
+            ? { replacements: settings[prefix + '.replacements'] as EditorReplacements }
+            : null),
     }
 }
