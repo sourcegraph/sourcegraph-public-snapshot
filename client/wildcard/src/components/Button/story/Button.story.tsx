@@ -206,3 +206,9 @@ export const Group: Story = () => {
     )
 }
 Group.storyName = 'Button Group'
+Group.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
