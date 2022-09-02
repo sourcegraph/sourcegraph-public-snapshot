@@ -1,17 +1,22 @@
-import { HTMLAttributes, ReactElement, MouseEvent, FC, SVGProps, forwardRef } from 'react'
+import { Suspense, HTMLAttributes, ReactElement, MouseEvent, FC, SVGProps, forwardRef } from 'react'
 
-import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text, Link, Tooltip, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { GetSearchAggregationResult, SearchAggregationDatum } from '../../graphql-operations'
+import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
-import { AggregationChart } from './AggregationChart'
+import type { AggregationChartProps } from './AggregationChart'
 
 import styles from './AggregationChartCard.module.scss'
+
+const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregationDatum>, string>(
+    () => import('./AggregationChart'),
+    'AggregationChart'
+)
 
 const getName = (datum: SearchAggregationDatum): string => datum.label ?? ''
 const getValue = (datum: SearchAggregationDatum): number => datum.count
@@ -114,32 +119,27 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     }
 
     return (
-        <ParentSize className={classNames(className, styles.container)}>
-            {parent => (
-                <>
-                    <AggregationChart
-                        aria-label={ariaLabel}
-                        width={parent.width}
-                        height={parent.height}
-                        data={getAggregationData(data)}
-                        mode={mode}
-                        getDatumValue={getValue}
-                        getDatumColor={getColor}
-                        getDatumName={getName}
-                        getDatumLink={getLink}
-                        onDatumLinkClick={handleDatumLinkClick}
-                    />
+        <Suspense>
+            <LazyAggregationChart
+                aria-label={ariaLabel}
+                data={getAggregationData(data)}
+                mode={mode}
+                getDatumValue={getValue}
+                getDatumColor={getColor}
+                getDatumName={getName}
+                getDatumLink={getLink}
+                onDatumLinkClick={handleDatumLinkClick}
+                className={classNames(className, styles.container)}
+            />
 
-                    {!!missingCount && (
-                        <Tooltip content={`Aggregation is not exhaustive, there are ${missingCount} groups more`}>
-                            <Text size="small" className={styles.missingLabelCount}>
-                                +{missingCount}
-                            </Text>
-                        </Tooltip>
-                    )}
-                </>
+            {!!missingCount && (
+                <Tooltip content={`Aggregation is not exhaustive, there are ${missingCount} groups more`}>
+                    <Text size="small" className={styles.missingLabelCount}>
+                        +{missingCount}
+                    </Text>
+                </Tooltip>
             )}
-        </ParentSize>
+        </Suspense>
     )
 }
 

@@ -36,7 +36,13 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
-    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 30 })
+    const { data, error, loading } = useSearchAggregationData({
+        query,
+        patternType,
+        aggregationMode,
+        limit: 30,
+        proactive: true,
+    })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
