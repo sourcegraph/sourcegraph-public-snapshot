@@ -1,12 +1,15 @@
 .decoration {
-    max-width: 240px;
-    padding: 0 0.75rem;
     background: var(--body-bg);
+    padding: 0;
 
     :global(.top-spacer),
     :global(.bottom-spacer) {
         background: var(--body-bg) !important;
         margin: 0 -0.75rem;
+    }
+
+    :global(.bottom-spacer) {
+        display: table-cell;
     }
 }
 
@@ -19,22 +22,4 @@ tr:global(.highlighted) {
 
 .wrapper {
     height: 1rem;
-
-    > * {
-        max-width: 100%;
-    }
-}
-
-.item {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-}
-
-.contents {
-    white-space: pre;
-
-    &::before {
-        content: attr(data-contents);
-    }
 }

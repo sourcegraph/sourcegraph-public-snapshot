@@ -234,4 +234,33 @@ You can monitor the health of a deployment in several ways:
 - Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
 - Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
   - This requires direct access to your instance's host machine.
-  
+
+## Tracing
+
+### Configure a tracing backend
+
+[Tracing](../../observability/tracing.md) export can be configured via the [OpenTelemetry collector](../../observability/opentelemetry.md) deployed by default in all Sourcegraph docker-compose deployments.
+To get started, edit the mounted configuration file in `otel-collector/config.yaml` based on the [OpenTelemetry collector configuration guidance](../../observability/opentelemetry.md) and edit your `docker-compose.yaml` file to have the `otel-collector` service use the mounted configuration:
+
+```yaml
+services:
+  # ...
+  otel-collector:
+    # ...
+    command: ['--config', '/etc/otel-collector/config.yaml']
+    volumes:
+      - '../otel-collector/config.yaml:/etc/otel-collector/config.yaml'
+```
+
+#### Enable the bundled Jaeger deployment
+
+Alternatively, you can use the `jaeger` overlay to easily deploy Sourcegraph with some default configuration that exports traces to a standalone Jaeger instance:
+
+```sh
+docker-compose \
+    -f docker-compose/docker-compose.yaml \
+    -f docker-compose/jaeger/docker-compose.yaml \
+    up
+```
+
+Once a tracing backend has been set up, refer to the [tracing guidance](../../observability/tracing.md) for more details.

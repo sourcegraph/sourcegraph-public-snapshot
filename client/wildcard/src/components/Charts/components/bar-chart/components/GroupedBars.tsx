@@ -123,6 +123,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                 width={width}
                 height={height}
                 fill="transparent"
+                opacity={0}
                 onMouseMove={handleGroupMouseMove}
                 onMouseLeave={onBarLeave}
                 onClick={handleGroupClick}

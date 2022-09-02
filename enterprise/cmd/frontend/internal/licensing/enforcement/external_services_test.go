@@ -28,21 +28,6 @@ func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
 		},
 
 		{
-			name:                 "team-0 exceeded limit",
-			license:              &license.Info{Tags: []string{"plan:team-0"}},
-			externalServiceCount: 1,
-			externalService:      nil,
-			wantErr:              true,
-		},
-		{
-			name:                 "team-0 within limit",
-			license:              &license.Info{Tags: []string{"plan:team-0"}},
-			externalServiceCount: 0,
-			externalService:      nil,
-			wantErr:              false,
-		},
-
-		{
 			name:    "business-0 with self-hosted GitHub",
 			license: &license.Info{Tags: []string{"plan:business-0"}},
 			externalService: &types.ExternalService{

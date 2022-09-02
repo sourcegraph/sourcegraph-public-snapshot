@@ -333,6 +333,7 @@ func TestPathAggregation(t *testing.T) {
 }
 
 func TestCaptureGroupAggregation(t *testing.T) {
+	longCaptureGroup := "111111111|222222222|333333333|444444444|555555555|666666666|777777777|888888888|999999999|000000000|"
 	testCases := []struct {
 		mode        types.SearchAggregationMode
 		searchEvent streaming.SearchEvent
@@ -414,6 +415,27 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			},
 			`([0-9]\.[0-9])`,
 			autogold.Want("whole match only", map[string]int{"2.7": 1, "2.9": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"extraz"),
+					contentMatch("myRepo", "file2.go", 1, "zsmallMatchz"),
+				},
+			},
+			`z(.*)z`,
+			autogold.Want("no more than 100 characters", map[string]int{longCaptureGroup: 1, "smallMatch": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"z"),
+				},
+			},
+			`z(.*)z`,
+			autogold.Want("accepts exactly 100 characters", map[string]int{longCaptureGroup: 1}),
 		},
 	}
 	for _, tc := range testCases {

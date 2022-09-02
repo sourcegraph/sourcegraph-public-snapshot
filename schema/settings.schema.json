@@ -325,14 +325,6 @@
             "pointer": true
           }
         },
-        "enableExtensionsDecorationsColumnView": {
-          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "extensionsAsCoreFeatures": {
           "description": "Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.",
           "type": "boolean",

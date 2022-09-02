@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +19,6 @@ import (
 )
 
 func RunOutOfBandMigrations(
-	logger log.Logger,
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
@@ -84,6 +82,13 @@ func runOutOfBandMigrations(
 	out *output.Output,
 	ids []int,
 ) (err error) {
+	if len(ids) != 0 {
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+		if dryRun {
+			return nil
+		}
+	}
+
 	store := oobmigration.NewStoreWithDB(db)
 	runner := outOfBandMigrationRunnerWithStore(store)
 	if err := runner.SynchronizeMetadata(ctx); err != nil {

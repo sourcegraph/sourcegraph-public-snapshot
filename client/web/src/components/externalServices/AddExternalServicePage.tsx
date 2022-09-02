@@ -45,7 +45,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
 
     useEffect(() => {
-        telemetryService.logViewEvent('AddExternalService')
+        telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
 
     const getExternalServiceInput = useCallback(

@@ -6,7 +6,7 @@ import { useHistory, useLocation } from 'react-router'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../graphql-operations'
+import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -14,7 +14,7 @@ import { AggregationUIMode } from './types'
 interface URLStateOptions<State, SerializedState> {
     urlKey: string
     deserializer: (value: SerializedState | null) => State
-    serializer: (state: State) => string
+    serializer: (state: State) => string | null
 }
 
 type SetStateResult<State> = [state: State, dispatch: (state: State) => void]
@@ -38,7 +38,13 @@ function useSyncedWithURLState<State, SerializedState>(
 
     const setNextState = useCallback(
         (nextState: State) => {
-            urlSearchParameters.set(urlKey, serializer(nextState))
+            const serializedValue = serializer(nextState)
+
+            if (serializedValue === null) {
+                urlSearchParameters.delete(urlKey)
+            } else {
+                urlSearchParameters.set(urlKey, serializedValue)
+            }
 
             history.replace({ search: `?${urlSearchParameters.toString()}` })
         },
@@ -48,21 +54,35 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = SearchAggregationMode | ''
+type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | ''
 
-const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => mode ?? ''
+const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => {
+    switch (mode) {
+        case SearchAggregationMode.REPO:
+            return 'repo'
+        case SearchAggregationMode.PATH:
+            return 'path'
+        case SearchAggregationMode.AUTHOR:
+            return 'author'
+        case SearchAggregationMode.CAPTURE_GROUP:
+            return 'group'
+
+        default:
+            return ''
+    }
+}
 
 const aggregationModeDeserializer = (
     serializedValue: SerializedAggregationMode | null
 ): SearchAggregationMode | null => {
     switch (serializedValue) {
-        case 'REPO':
+        case 'repo':
             return SearchAggregationMode.REPO
-        case 'PATH':
+        case 'path':
             return SearchAggregationMode.PATH
-        case 'AUTHOR':
+        case 'author':
             return SearchAggregationMode.AUTHOR
-        case 'CAPTURE_GROUP':
+        case 'group':
             return SearchAggregationMode.CAPTURE_GROUP
 
         default:
@@ -87,12 +107,26 @@ export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode
     return [aggregationMode, setAggregationMode]
 }
 
-type SerializedAggregationUIMode = AggregationUIMode
-const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => uiMode
+/**
+ * Serialized UI mode values
+ * '' means that we use query param key existence as a sign that = foo="bar"&extended
+ * null means that we remove mode value key form the URL = foo="bar"
+ */
+type SerializedAggregationUIMode = '' | null
+
+const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => {
+    switch (uiMode) {
+        case AggregationUIMode.SearchPage:
+            return ''
+        // Null means here that we will delete uiMode query param from the URL
+        case AggregationUIMode.Sidebar:
+            return null
+    }
+}
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
-        case 'searchPage':
+        case '':
             return AggregationUIMode.SearchPage
 
         default:
@@ -134,9 +168,10 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         $patternType: SearchPatternType!
         $mode: SearchAggregationMode
         $limit: Int!
+        $skipAggregation: Boolean!
     ) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
-            aggregations(mode: $mode, limit: $limit) {
+            aggregations(mode: $mode, limit: $limit) @skip(if: $skipAggregation) {
                 __typename
                 ... on ExhaustiveSearchAggregationResult {
                     mode
@@ -171,6 +206,7 @@ interface SearchAggregationDataInput {
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
     limit: number
+    proactive?: boolean
 }
 
 type SearchAggregationResults =
@@ -179,7 +215,7 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit } = input
+    const { query, patternType, aggregationMode, limit, proactive } = input
 
     const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
@@ -189,7 +225,13 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
-            variables: { query, patternType, mode: aggregationMode, limit },
+            variables: {
+                query,
+                patternType,
+                mode: aggregationMode,
+                limit,
+                skipAggregation: aggregationMode === null && !proactive,
+            },
 
             // Skip extra API request when we had no aggregation mode, and then
             // we got calculated aggregation mode from the BE. We should update
