@@ -99,9 +99,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     return (
         <article className="pt-2">
             <AggregationModeControls
+                availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
                 mode={aggregationMode}
-                availability={data?.searchQueryAggregate?.modeAvailability}
                 size="sm"
                 onModeChange={handleAggregationModeChange}
                 onModeHover={handleAggregationModeHover}

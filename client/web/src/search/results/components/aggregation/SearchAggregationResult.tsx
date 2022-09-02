@@ -120,20 +120,21 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                         availability={data?.searchQueryAggregate?.modeAvailability}
                         onModeChange={handleAggregationModeChange}
                         onModeHover={handleAggregationModeHover}
-                />{isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
+                    />
+                    {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
                 </div>
 
-            <AggregationChartCard
-                aria-label="Expanded search aggregation chart"
-                mode={aggregationMode}
-                data={data?.searchQueryAggregate?.aggregations}
-                loading={loading}
-                error={error}
-                size="md"
-                className={styles.chartContainer}
-                onBarLinkClick={handleBarLinkClick}
-                onBarHover={handleBarHover}
-            />
+                <AggregationChartCard
+                    aria-label="Expanded search aggregation chart"
+                    mode={aggregationMode}
+                    data={data?.searchQueryAggregate?.aggregations}
+                    loading={loading}
+                    error={error}
+                    size="md"
+                    className={styles.chartContainer}
+                    onBarLinkClick={handleBarLinkClick}
+                    onBarHover={handleBarHover}
+                />
 
                 {data && (
                     <ul className={styles.listResult}>
