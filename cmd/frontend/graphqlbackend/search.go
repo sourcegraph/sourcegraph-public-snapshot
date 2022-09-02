@@ -52,6 +52,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
+		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
@@ -64,6 +65,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
+	logger       log.Logger
 	client       client.SearchClient
 	SearchInputs *search.Inputs
 	db           database.DB
