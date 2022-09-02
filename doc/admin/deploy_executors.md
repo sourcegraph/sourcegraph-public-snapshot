@@ -140,10 +140,9 @@ mv executor /usr/local/bin
 
 The executor makes a lot assumptions about it's environment today:
 - It has to have a working installation of [ignite](https://github.com/weaveworks/ignite) that is configured, if firecracker shall be used.
-- and expects the `sourcegraph/executor-vm` base image for the VMs ready, if firecracker shall be used.
 - In addition, we also do some hardening of regular ignite in our pre-built environments to restrict networking further and use up-to-date kernels.
 Until we automate more of this outside of our pre-built images, refer to [the script that our pre-built images use](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh)
-for how we do it. Usually, 95% of this file should be portable to any environment.
+for how we do it. Usually, 95% of this file should be portable to your environment.
 
 **Step 4:** Setup required environment variables and start
 
