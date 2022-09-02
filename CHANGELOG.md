@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- `"observability.tracing": { "type": "opentelemetry" }` is now the default if `"sampling"` is set. To revert to existing behaviour, set `"type": "jaeger"` instead. The legacy values `"type": "opentracing"` and `"type": "datadog"` have been removed. [#41242](https://github.com/sourcegraph/sourcegraph/pull/41242)
+- `"observability.tracing": { "urlTemplate": "" }` is now the default, and if `"urlTemplate"` is left empty, no trace URLs are generated. To revert to existing behaviour, set `"urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"` instead. [#41242](https://github.com/sourcegraph/sourcegraph/pull/41242)
 - The `jaeger-agent` sidecar has been replaced by an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. The bundled Jaeger instance is now disabled by default, instead of enabled. [#40456](https://github.com/sourcegraph/sourcegraph/issues/40456)
 
 ### Fixed
