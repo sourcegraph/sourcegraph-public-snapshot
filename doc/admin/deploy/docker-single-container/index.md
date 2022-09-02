@@ -145,7 +145,7 @@ SELECT * FROM users;
 
 A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is a patch or single minor release away your current version) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
 
 ### Multi-version upgrades
 
