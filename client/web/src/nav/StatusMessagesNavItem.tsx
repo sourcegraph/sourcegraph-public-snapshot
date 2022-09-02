@@ -151,7 +151,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = (): void => setIsOpen(old => !old)
 
-    const { data, error, loading } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
+    const { data, error } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
         pollInterval:
             props.disablePolling !== undefined && !props.disablePolling ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
@@ -197,7 +197,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
                     title="Repositories up-to-date"
-                    message="Repositories syncing from from code host and available for search."
+                    message="Repositories synced from code host and available for search."
                     linkTo="/site-admin/repositories"
                     linkText="View repositories"
                     linkOnClick={toggleIsOpen}
@@ -266,15 +266,6 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 aria-label={isOpen ? 'Hide status messages' : 'Show status messages'}
             >
                 {error && (
-                    <Tooltip content="Sorry, we couldn’t fetch notifications!">
-                        <Icon
-                            aria-label="Sorry, we couldn’t fetch notifications!"
-                            as={CloudAlertIconRefresh}
-                            size="md"
-                        />
-                    </Tooltip>
-                )}
-                {loading && (
                     <Tooltip content="Sorry, we couldn’t fetch notifications!">
                         <Icon
                             aria-label="Sorry, we couldn’t fetch notifications!"
