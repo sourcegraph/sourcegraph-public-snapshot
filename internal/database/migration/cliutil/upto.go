@@ -43,7 +43,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 	}
 	ignoreSinglePendingLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-pending-log",
-		Usage: "Ignore a single penidng migration attempt if it will be immediately retried by this operation.",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 
