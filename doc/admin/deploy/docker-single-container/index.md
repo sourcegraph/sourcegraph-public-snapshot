@@ -151,7 +151,7 @@ To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.
 
 A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
 
-Multi-version upgrades are not well supported on single-container deployments. Consider migrating to a [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md) environment on the same version and begin the upgrade to the new version from that point.
+Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point.
 
 With absolute necessity, temporary Postgres containers can be mounted over the same data volumes as the single-server image, and the `migrator` can target those databases. See the [Docker Compose update instructions](../docker-compose/upgrade.md#multi-version-upgrades) for more details.
 
