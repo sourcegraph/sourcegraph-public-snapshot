@@ -246,6 +246,8 @@ describe('Search aggregation', () => {
             await delay(100)
 
             await driver.page.click('[data-testid="file-aggregation-mode"]')
+
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
 
             await driver.page.waitForSelector('[aria-label="Aggregation results panel"]')
