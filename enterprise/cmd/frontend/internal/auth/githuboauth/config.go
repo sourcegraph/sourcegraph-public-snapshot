@@ -16,13 +16,13 @@ func Init(logger log.Logger, db database.DB) {
 	const pkgName = "githuboauth"
 	logger = logger.Scoped(pkgName, "GitHub OAuth config watch")
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(cfg, logger, db)
+		_, problems := parseConfig(logger, cfg, db)
 		return problems
 	})
 
 	go func() {
 		conf.Watch(func() {
-			newProviders, _ := parseConfig(conf.Get(), logger, db)
+			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
 				return
@@ -48,13 +48,13 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, logger log.Logger, db database.DB) (ps []Provider, problems conf.Problems) {
+func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Github == nil {
 			continue
 		}
 
-		provider, providerProblems := parseProvider(pr.Github, logger, db, pr)
+		provider, providerProblems := parseProvider(logger, pr.Github, db, pr)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
 			ps = append(ps, Provider{

@@ -18,13 +18,13 @@ func Init(logger log.Logger, db database.DB) {
 	logger = log.Scoped(pkgName, "GitLab OAuth config watch")
 
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(cfg, logger, db)
+		_, problems := parseConfig(logger, cfg, db)
 		return problems
 	})
 
 	go func() {
 		conf.Watch(func() {
-			newProviders, _ := parseConfig(conf.Get(), logger, db)
+			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
 				return

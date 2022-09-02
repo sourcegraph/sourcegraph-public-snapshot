@@ -23,7 +23,7 @@ import (
 
 const sessionKey = "githuboauth@0"
 
-func parseProvider(p *schema.GitHubAuthProvider, logger log.Logger, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.GetURL()
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
