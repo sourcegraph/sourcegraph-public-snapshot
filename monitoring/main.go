@@ -36,17 +36,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
+	})
 	defer liblog.Sync()
 
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
-	logger := log.Scoped("dashboard-generator", "generates monitoring dashboards")
+	logger := log.Scoped("monitoring-generator", "generates monitoring dashboards")
 
 	// Runs the monitoring generator. Ensure that any dashboards created or removed are
 	// updated in the arguments here as required.

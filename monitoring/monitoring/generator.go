@@ -118,7 +118,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "reloading prometheus instances")
+		rlog := logger.Scoped("prometheus", "reloading prometheus instance")
 		// Reload all Prometheus rules
 		rlog.Debug("Reloading Prometheus instance", log.String("instance", localPrometheusURL))
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)

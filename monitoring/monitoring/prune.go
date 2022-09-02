@@ -16,7 +16,7 @@ func pruneAssets(logger log.Logger, filelist []string, grafanaDir, promDir strin
 	if grafanaDir != "" {
 		logger.Info("Pruning Grafana assets", log.String("dir", grafanaDir))
 		err := filepath.Walk(grafanaDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.Scoped("path", path)
+			plog := logger.With(log.String("path", path))
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
 				return nil
@@ -44,7 +44,7 @@ func pruneAssets(logger log.Logger, filelist []string, grafanaDir, promDir strin
 	if promDir != "" {
 		logger.Info("Pruning Prometheus assets", log.String("dir", promDir))
 		err := filepath.Walk(promDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.Scoped("path", path)
+			plog := logger.With(log.String("path", path))
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
 				return nil
