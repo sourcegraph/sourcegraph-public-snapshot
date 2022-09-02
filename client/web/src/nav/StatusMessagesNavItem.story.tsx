@@ -12,9 +12,6 @@ const decorator: DecoratorFn = Story => <Story />
 const config: Meta = {
     title: 'web/nav/StatusMessagesNavItem',
     decorators: [decorator],
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
 }
 
 export default config
