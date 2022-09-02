@@ -107,6 +107,8 @@ func runMigration(
 	ctx context.Context,
 	runnerFactory RunnerFactoryWithSchemas,
 	plan migrationPlan,
+	privilegedMode runner.PrivilegedMode,
+	privilegedHash string,
 	skipVersionCheck bool,
 	dryRun bool,
 	up bool,
@@ -167,8 +169,8 @@ func runMigration(
 
 			if err := r.Run(ctx, runner.Options{
 				Operations:             operations,
-				PrivilegedMode:         runner.ApplyPrivilegedMigrations,
-				PrivilegedHash:         "",
+				PrivilegedMode:         privilegedMode,
+				PrivilegedHash:         privilegedHash,
 				IgnoreSingleDirtyLog:   true,
 				IgnoreSinglePendingLog: true,
 			}); err != nil {
