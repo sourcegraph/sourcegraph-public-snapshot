@@ -1,6 +1,8 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/search"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/search"
+)
 
 type searchQueryDescriptionResolver struct {
 	query *search.QueryDescription

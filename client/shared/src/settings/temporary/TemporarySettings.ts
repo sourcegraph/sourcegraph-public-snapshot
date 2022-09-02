@@ -43,6 +43,7 @@ export interface TemporarySettingsSchema {
         filePath: string
         author: string
     }
+    'search.results.collapseLuckySearch': boolean
 }
 
 /**
