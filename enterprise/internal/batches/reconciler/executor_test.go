@@ -846,17 +846,14 @@ func TestLoadChangesetSource(t *testing.T) {
 	adminBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 	userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
-	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
+	t.Run("imported changeset fails when no site-credential exists", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if fakeSource.CurrentAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
+		if err == nil {
+			t.Errorf("unexpected nil error")
 		}
 	})
 
@@ -894,7 +891,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		}
 	})
 
-	t.Run("owned by admin user without credential", func(t *testing.T) {
+	t.Run("owned by user without credential", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
@@ -905,44 +902,10 @@ func TestLoadChangesetSource(t *testing.T) {
 		}
 	})
 
-	t.Run("owned by normal user without credential", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
-		}, repo)
-		if err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
-	t.Run("owned by admin user with credential", func(t *testing.T) {
+	t.Run("owned by user with credential", func(t *testing.T) {
 		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              admin.ID,
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
-		}
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: adminBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
-		}
-	})
-
-	t.Run("owned by normal user with credential", func(t *testing.T) {
-		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
 		}, token); err != nil {
@@ -955,7 +918,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
+			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
