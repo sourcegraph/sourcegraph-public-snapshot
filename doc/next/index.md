@@ -39,7 +39,7 @@ Get started with one of the available deployment methods below, from creating a 
 ## Recommended
 
 <form class="grid">
-  <button class="app-btn btn" formaction="#TODO">
+  <button class="app-btn btn" formaction="cloud">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
