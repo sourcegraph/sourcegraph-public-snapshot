@@ -1,5 +1,5 @@
-const { Console } = require('console')
 const { execSync } = require('child_process')
+const { Console } = require('console')
 const fs = require('fs')
 
 const repoRoot = execSync('git rev-parse --show-toplevel').toString().trimEnd()
@@ -56,13 +56,11 @@ class SpecFileReporter extends mocha.reporters.Spec {
         super.epilogue()
 
         // We only output the epilogue to a file when we're in BUILDKITE and there are failures
-        if (this.buildkite === true) { //&& this.failures.length > 0) {
-            let file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title || 'placeholder'}`)
+        if (this.buildkite === true && this.failures.length > 0) {
+            const file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title || 'placeholder'}`)
             const customConsole = new Console({
                 stdout: file
             })
-
-
 
             // We now want the Spec reporter (aka epilogue) to be written to a file, but Spec uses the console defined on Base!
             // So we swap out the consoleLog defined on Base with our customLog one
@@ -73,14 +71,16 @@ class SpecFileReporter extends mocha.reporters.Spec {
             // https://mochajs.org/api/reporters_base.js.html#line367
             super.epilogue()
             // The report has been written to a file, so now we swap the consoleLog back to the originalConsole logger
-            // eslint-disable-next-line @typescript-eslint/unbound-method
             mocha.reporters.Base.consoleLog = originalConsoleLog
             // We want to make sure before this reporter exits that the data written to file have been flushed
             // In some scenarios, the node process exits too quickly and the data hasn't been flushed to the file yet
-            this.safeClose(file).then(() => console.log(`${file.path} successfully closed`))
-                .catch((err) => console.error(err))
+            this.safeClose(file).then(() => {
+                const path = file.path.toString()
+                console.log(`${path} successfully closed`)
+            })
+                .catch(error => console.error(error))
                 .finally(() => {
-                    console.warn("force exiting the process after writing report to file")
+                    console.warn('force exiting the process after writing report to file')
                     // This performs the same function as passing --exit to the mocha test runner
                     // When the regression tests run, some recources are not properly cleaned up. Leading to
                     // the test runner just hanging since it is waiting on an open resource to exit.
