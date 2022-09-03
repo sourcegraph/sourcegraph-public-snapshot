@@ -272,10 +272,10 @@ func filterLocalGitErrors(filename, version string, err error) error {
 }
 
 func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
-	for _, name := range []string{"frontend", "codeintel", "codeinsights"} {
-		schema, err := resolveSchema(name)
+	for _, db := range db.Databases() {
+		schema, err := resolveSchema(db)
 		if err != nil {
-			errs = errors.Append(errs, errors.Newf("%s: %w", name, err))
+			errs = errors.Append(errs, errors.Newf("%s: %w", db.Name, err))
 		} else {
 			schemas = append(schemas, schema)
 		}
@@ -283,13 +283,13 @@ func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
 	return
 }
 
-func resolveSchema(name string) (*schemas.Schema, error) {
-	fs, err := db.GetFSForPath(name)()
+func resolveSchema(db db.Database) (*schemas.Schema, error) {
+	fs, err := db.FS()
 	if err != nil {
 		return nil, err
 	}
 
-	schema, err := schemas.ResolveSchema(fs, name)
+	schema, err := schemas.ResolveSchema(fs, db.Name)
 	if err != nil {
 		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}
