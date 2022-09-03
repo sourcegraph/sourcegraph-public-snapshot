@@ -19,7 +19,7 @@ func getSchemaJSONFilename(schemaName string) (string, error) {
 	switch schemaName {
 	case "frontend":
 		return "internal/database/schema.json", nil
-	case "codeintel":
+	case "codeintel", "console":
 		fallthrough
 	case "codeinsights":
 		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil

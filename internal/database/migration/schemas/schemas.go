@@ -15,11 +15,13 @@ var (
 	Frontend     = mustResolveSchema("frontend")
 	CodeIntel    = mustResolveSchema("codeintel")
 	CodeInsights = mustResolveSchema("codeinsights")
+	Console      = mustResolveSchema("console")
 
 	Schemas = []*Schema{
 		Frontend,
 		CodeIntel,
 		CodeInsights,
+		Console,
 	}
 )
 

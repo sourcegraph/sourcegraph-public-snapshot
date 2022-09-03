@@ -38,7 +38,7 @@ sg db reset-pg
 # Reset the 'frontend' and 'codeintel' databases
 sg db reset-pg -db=frontend,codeintel
 
-# Reset all databases ('frontend', 'codeintel', 'codeinsights')
+# Reset all databases ('frontend', 'codeintel', 'codeinsights', 'console')
 sg db reset-pg -db=all
 
 # Reset the redis database

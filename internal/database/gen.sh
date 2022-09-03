@@ -18,6 +18,7 @@ trap finish EXIT
 ./tmp-sg migration squash-all -skip-teardown -db frontend -f migrations/frontend/squashed.sql
 ./tmp-sg migration squash-all -skip-teardown -db codeintel -f migrations/codeintel/squashed.sql
 ./tmp-sg migration squash-all -skip-teardown -db codeinsights -f migrations/codeinsights/squashed.sql
+./tmp-sg migration squash-all -skip-teardown -db console -f migrations/console/squashed.sql
 
 # Primarily for nix users, where postgres is listening on a unix socket
 set +e -x
@@ -34,18 +35,22 @@ if [ $IS_UNIX_POSTGRES -eq 0 ]; then
   export PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-frontend"
   export CODEINTEL_PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-codeintel"
   export CODEINSIGHTS_PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-codeinsights"
+  export CONSOLE_PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-console"
 else
   export PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-frontend"
   export CODEINTEL_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-codeintel"
   export CODEINSIGHTS_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-codeinsights"
+  export CONSOLE_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-console"
 fi
 
 # Output-psql formatted schema description
 ./tmp-sg migration describe -db frontend --format=psql -force -out internal/database/schema.md
 ./tmp-sg migration describe -db codeintel --format=psql -force -out internal/database/schema.codeintel.md
 ./tmp-sg migration describe -db codeinsights --format=psql -force -out internal/database/schema.codeinsights.md
+./tmp-sg migration describe -db console --format=psql -force -out internal/database/schema.console.md
 
 # Output json-formatted schema description
 ./tmp-sg migration describe -db frontend --format=json -force -out internal/database/schema.json
 ./tmp-sg migration describe -db codeintel --format=json -force -out internal/database/schema.codeintel.json
 ./tmp-sg migration describe -db codeinsights --format=json -force -out internal/database/schema.codeinsights.json
+./tmp-sg migration describe -db console --format=json -force -out internal/database/schema.console.json

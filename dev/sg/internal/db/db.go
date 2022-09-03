@@ -71,10 +71,17 @@ var (
 		FS:              GetFSForPath("codeinsights"),
 	}
 
+	consoleDatabase = Database{
+		Name:            "console",
+		MigrationsTable: "console_schema_migrations",
+		FS:              GetFSForPath("console"),
+	}
+
 	databases = []Database{
 		frontendDatabase,
 		codeIntelDatabase,
 		codeInsightsDatabase,
+		consoleDatabase,
 	}
 
 	DefaultDatabase = databases[0]
