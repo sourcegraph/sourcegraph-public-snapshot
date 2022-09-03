@@ -6,6 +6,7 @@ export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 if [[ $(id -u) -eq 1 ]]; then
     source /root/.profile
 else
+    # shellcheck disable=SC1090
     source "${HOME}/.profile"
 fi
 
@@ -24,6 +25,7 @@ set +x
 if [[ $(id -u) -eq 1 ]]; then
     source /root/.sg_envrc
 else
+    # shellcheck disable=SC1090
     source "${HOME}/.sg_envrc"
 fi
 
