@@ -168,9 +168,6 @@ var (
 # Migrate local default database up all the way
 sg migration up
 
-# Migrate specific database down one migration
-sg migration down --db codeintel
-
 # Add new migration for specific database
 sg migration add --db codeintel 'add missing index'
 
