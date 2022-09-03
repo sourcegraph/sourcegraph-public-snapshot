@@ -1,4 +1,4 @@
 name: initial
 parents: []
-privileged: false
+privileged: true
 nonIdempotent: true

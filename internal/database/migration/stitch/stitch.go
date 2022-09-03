@@ -49,7 +49,7 @@ var schemaBounds = map[string]oobmigration.Version{
 	"frontend":     oobmigration.NewVersion(0, 0),
 	"codeintel":    oobmigration.NewVersion(3, 21),
 	"codeinsights": oobmigration.NewVersion(3, 24),
-	"console":      oobmigration.NewVersion(0, 0),
+	"console":      oobmigration.NewVersion(4, 0),
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,

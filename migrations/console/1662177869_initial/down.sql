@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS console_users;
+
+DROP EXTENSION IF EXISTS citext;

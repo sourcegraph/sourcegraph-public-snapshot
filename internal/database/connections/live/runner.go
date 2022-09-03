@@ -29,6 +29,10 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "codeinsights")
 	}
+	consoleSchema, ok := schemaByName(availableSchemas, "console")
+	if !ok {
+		return nil, errors.Newf("no available schema matches %q", "console")
+	}
 
 	makeFactory := func(
 		name string,
@@ -48,6 +52,7 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 		"frontend":     makeFactory("frontend", frontendSchema, RawNewFrontendDB),
 		"codeintel":    makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
 		"codeinsights": makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB),
+		"console":      makeFactory("console", consoleSchema, RawNewConsoleDB),
 	}
 
 	return runner.NewRunnerWithSchemas(logger, storeFactoryMap, availableSchemas), nil

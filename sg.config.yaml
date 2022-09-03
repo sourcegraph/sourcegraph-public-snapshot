@@ -521,6 +521,20 @@ commands:
       IMAGE: sourcegraph/minio
       CONTAINER: minio
 
+  console:
+    cmd: .bin/console
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/console github.com/sourcegraph/sourcegraph/enterprise/cmd/console
+    checkBinary: .bin/console
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/console
+      - enterprise/internal
+
   redis-postgres:
     # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
     # database:

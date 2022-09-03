@@ -39,6 +39,15 @@ func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observat
 	return connect(dsn, appName, "codeinsights", schema, migrate, observationContext)
 }
 
+func connectConsoleDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+	schema := schemas.Console
+	if !validate {
+		schema = nil
+	}
+
+	return connect(dsn, appName, "console", schema, migrate, observationContext)
+}
+
 func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(observationContext.Logger, dsn, appName, dbName)
 	if err != nil {

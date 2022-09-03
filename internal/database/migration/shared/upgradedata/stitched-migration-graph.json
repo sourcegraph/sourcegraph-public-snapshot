@@ -1306,6 +1306,136 @@
 			}
 		}
 	},
+	"console": {
+		"Definitions": [],
+		"BoundsByRev": {
+			"v3.20.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.21.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.22.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.23.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.24.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.25.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.26.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.27.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.28.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.29.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.30.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.31.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.32.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.33.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.34.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.35.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.36.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.37.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.38.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.39.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.40.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.41.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.42.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v3.43.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			},
+			"v4.0.0": {
+				"RootID": 0,
+				"LeafIDs": null,
+				"PreCreation": true
+			}
+		}
+	},
 	"frontend": {
 		"Definitions": [
 			{

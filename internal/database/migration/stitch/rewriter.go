@@ -208,6 +208,7 @@ var unmarkedPrivilegedMigrationsMap = map[string][]int{
 	"frontend":     {1528395717, 1528395764, 1528395953},
 	"codeintel":    {1000000003, 1000000020},
 	"codeinsights": {1000000001, 1000000027},
+	"console":      {},
 }
 
 // rewriteUnmarkedPrivilegedMigrations adds an explicit privileged marker to the metadata of migration
@@ -224,6 +225,7 @@ var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
 	"frontend":     {1528395696, 1528395707, 1528395708, 1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
 	"codeintel":    {1000000009, 1000000010, 1000000011},
 	"codeinsights": {},
+	"console":      {},
 }
 
 // rewriteUnmarkedConcurrentIndexCreationMigrations adds an explicit marker to the metadata of migrations that
@@ -240,6 +242,7 @@ var concurrentIndexCreationDownMigrationsMap = map[string][]int{
 	"frontend":     {1528395895, 1528395901, 1528395902, 1528395903, 1528395904, 1528395905, 1528395906},
 	"codeintel":    {},
 	"codeinsights": {},
+	"console":      {},
 }
 
 // rewriteConcurrentIndexCreationDownMigrations removes CONCURRENTLY from down migrations, which is now unsupported.

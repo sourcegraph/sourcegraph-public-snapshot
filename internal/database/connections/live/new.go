@@ -82,3 +82,21 @@ func EnsureNewCodeInsightsDB(dsn, appName string, observationContext *observatio
 func MigrateNewCodeInsightsDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
 	return connectCodeInsightsDB(dsn, appName, true, true, observationContext)
 }
+
+// RawNewConsoleDB creates a new connection to the console database. This method does not ensure that the schema
+// matches any expected shape.
+//
+// This method should not be used outside of migration utilities.
+func RawNewConsoleDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
+	return connectConsoleDB(dsn, appName, false, false, observationContext)
+}
+
+// EnsureNewConsoleDB creates a new connection to the console database. After successful connection, the schema
+// version of the database will be compared against an expected version. If it is not up to date, an error will be returned.
+//
+// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
+// then this call will behave equivalently to MigrateNewConsoleDB, which will attempt to  upgrade the database. We
+// only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for  developers.
+func EnsureNewConsoleDB(dsn, appName string, observationContext *observation.Context) (*sql.DB, error) {
+	return connectConsoleDB(dsn, appName, true, false, observationContext)
+}
