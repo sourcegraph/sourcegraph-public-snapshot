@@ -6,7 +6,7 @@ export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 if [[ $(id -u) -eq 1 ]]; then
     source /root/.profile
 else
-    source $HOME/.profile
+    source "${HOME}/.profile"
 fi
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
@@ -24,12 +24,12 @@ set +x
 if [[ $(id -u) -eq 1 ]]; then
     source /root/.sg_envrc
 else
-    source $HOME/.sg_envrc
+    source "${HOME}/.sg_envrc"
 fi
 
 echo "--- TEST: Checking Sourcegraph instance is accessible"
-curl -f ${SOURCEGRAPH_BASE_URL}
-curl -f ${SOURCEGRAPH_BASE_URL}/healthz
+curl -f "${SOURCEGRAPH_BASE_URL}"
+curl -f "${SOURCEGRAPH_BASE_URL}/healthz"
 echo "--- TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0
