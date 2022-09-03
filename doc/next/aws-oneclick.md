@@ -17,7 +17,11 @@ title: AWS one-click
 
 # AWS One-Click Installation
 
-In one-click, the launch stacks below will create an instance with Sourcegraph pre-installed, security group with ports 22 and 80, and a volume with 200GB of storage. 
+In one-click, the launch stacks below will create an instance with:
+
+- Sourcegraph pre-installed
+- security group with ports 22 and 80
+- a volume with 200GB of storage. 
 
 You will only need to choose your VPC and SSH key-pair to get started.
 
@@ -31,7 +35,7 @@ You will only need to choose your VPC and SSH key-pair to get started.
     <option value="eu-west-1">eu-west-1 (Europe - Ireland)</option>
     <option value="eu-west-2">eu-west-2 (Europe - Frankfurt)</option>
   </select>
-  <input class="submit-btn" formaction="#TODO" type="image" src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png" />
+  <input class="submit-btn" formaction="#TODO" type="image" alt="aws-oneclick-button" src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png" />
 </form>
 
-Once your stack finishes creating, Retool is running at your server's IP address, which you can navigate to in your browser. Navigate to the 'Outputs' section of the Stack and you'll find the URL for your Sourcegraph instance.
+> NOTE: Once the instance has been created, Retool will be running at your server’s IP address, which allows you to navigate to your newly created Sourcegraph instance in your browser. You can also find the URL for your Sourcegraph instance in the 'Outputs' section of the Stack.
