@@ -319,6 +319,11 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 				}
+				if patternInfo.IsRegExp {
+					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + patternInfo.Pattern)
+				} else {
+					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + regexp.QuoteMeta(patternInfo.Pattern))
+				}
 
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{searcherJob},
