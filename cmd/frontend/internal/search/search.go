@@ -312,6 +312,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),

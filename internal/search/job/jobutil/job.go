@@ -1,6 +1,7 @@
 package jobutil
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
@@ -685,9 +687,10 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
-			GlobalZoektQuery: globalZoektQuery,
-			ZoektArgs:        zoektArgs,
-			RepoOpts:         b.repoOptions,
+			GlobalZoektQuery:        globalZoektQuery,
+			ZoektArgs:               zoektArgs,
+			RepoOpts:                b.repoOptions,
+			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
@@ -708,13 +711,35 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
-			Query:          zoektQuery,
-			Typ:            typ,
-			FileMatchLimit: b.fileMatchLimit,
-			Select:         b.selector,
+			Query:             zoektQuery,
+			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
+			Typ:               typ,
+			FileMatchLimit:    b.fileMatchLimit,
+			Select:            b.selector,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
+}
+
+func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
+	switch q.(type) {
+	case *zoektquery.And:
+		for _, child := range q.(*zoektquery.And).Children {
+			res = append(res, zoektQueryPatternsAsRegexps(child)...)
+		}
+	case *zoektquery.Or:
+		for _, child := range q.(*zoektquery.Or).Children {
+			res = append(res, zoektQueryPatternsAsRegexps(child)...)
+		}
+	case *zoektquery.Regexp:
+		res = append(res, regexp.MustCompile(`(?i)`+q.(*zoektquery.Regexp).Regexp.String()))
+	case *zoektquery.Substring:
+		item := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern))
+		fmt.Println(item.String())
+		res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern)))
+	}
+
+	return res
 }
 
 func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
