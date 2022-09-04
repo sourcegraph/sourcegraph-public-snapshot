@@ -79,7 +79,7 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    test('just here to trigger this suite on ci', async () => {
+    test('just here to trigger this suite on ci', () => {
         console.log("we're literally doing nothing here")
     })
 
