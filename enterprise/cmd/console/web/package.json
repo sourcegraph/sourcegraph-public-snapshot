@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "test": "jest",
-    "esbuild": "esbuild src/index.tsx --outdir=public/dist --sourcemap --format=esm --splitting --target=esnext --define:global=window",
+    "esbuild": "esbuild src/index.tsx --outdir=public/dist --sourcemap --format=esm --bundle --splitting --target=esnext --define:global=window --define:process.env.NODE_ENV='production' --tree-shaking --metafile=esbuild.meta.json",
     "esbuild:serve": "esbuild src/index.tsx --serve=127.0.0.1:8076 --servedir=public --outdir=public/dist --sourcemap --format=esm --bundle --splitting --target=esnext --define:global=window",
     "icons": "inkscape -w 128 -h 128 public/icon.svg -o public/icon.png && convert -size 128x128 public/icon.png public/favicon.ico"
   },
@@ -94,8 +94,8 @@
     "@types/classnames": "^2.2.11",
     "@types/jest": "^27.4.1",
     "@types/node": "^14.14.37",
-    "@types/react": "^17.0.3",
-    "@types/react-dom": "^17.0.3",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
     "@typescript-eslint/eslint-plugin": "^5.18.0",
     "@typescript-eslint/parser": "^5.18.0",
     "babel-jest": "^27.5.1",
@@ -117,9 +117,9 @@
     "node-fetch": "^3.2.3",
     "observable-hooks": "^4.2.0",
     "prettier": "^2.2.1",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-test-renderer": "^18.0.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-test-renderer": "latest",
     "rxjs": "^7.5.5",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3"
