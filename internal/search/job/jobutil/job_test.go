@@ -1216,9 +1216,7 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 		{
 			name:  "respect case sensitivity setting",
 			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
-			want: []*regexp.Regexp{
-				regexp.MustCompile(regexp.QuoteMeta("foo")),
-			},
+			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
 		},
 	}
 
