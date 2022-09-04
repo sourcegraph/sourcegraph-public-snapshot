@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "esbuild": "esbuild src/index.tsx --outdir=static/dist --platform=browser --sourcemap --format=esm --bundle --splitting --target=esnext --define:process.env.NODE_ENV=\"'production'\" --tree-shaking --metafile=esbuild.meta.json",
-    "esbuild:serve": "esbuild src/index.tsx --serve=127.0.0.1:8076 --servedir=static --outdir=static/dist --sourcemap --format=esm --bundle --splitting --target=esnext",
+    "esbuild:serve": "esbuild src/index.tsx --serve=127.0.0.1:8076 --servedir=static --outdir=static/dist --sourcemap --format=esm --bundle --splitting --target=esnext --log-level=debug",
     "icons": "inkscape -w 128 -h 128 static/icon.svg -o static/icon.png && convert -size 128x128 static/icon.png static/favicon.ico"
   },
   "husky": {

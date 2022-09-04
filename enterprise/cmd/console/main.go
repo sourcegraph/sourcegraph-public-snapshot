@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"embed"
+	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -67,8 +73,8 @@ func main() {
 
 	webapp := webapp.New(webapp.Config{
 		ExternalURL: *externalURL,
-		StaticFiles: staticFilesFS,
-		SessionKey:  "asdf", // TODO(sqs) SECURITY(sqs)
+		StaticFiles: staticFilesDevFS, // staticFilesFS, TODO(sqs): switch on some env var
+		SessionKey:  "asdf",           // TODO(sqs) SECURITY(sqs)
 	})
 	webapp.Logger = logger
 
@@ -77,3 +83,57 @@ func main() {
 		logger.Fatal("failed to start HTTP listener", log.Error(err))
 	}
 }
+
+var staticFilesDevFS esbuildFS
+
+type esbuildFS struct{}
+
+func (esbuildFS) Open(name string) (fs.File, error) {
+	name = path.Clean(strings.TrimPrefix(name, "/"))
+	if name == "." {
+		name = ""
+	}
+	resp, err := http.Get("http://localhost:8076/" + name)
+	fmt.Println("GET", "http://localhost:8076/"+name)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("XXX", resp.StatusCode)
+		return nil, fmt.Errorf("http status %d", resp.StatusCode)
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return esbuildFSFile{name: name, reader: bytes.NewReader(data)}, nil
+}
+
+type esbuildFSFile struct {
+	name   string
+	reader *bytes.Reader
+}
+
+func (f esbuildFSFile) Stat() (fs.FileInfo, error) {
+	return f, nil
+}
+
+func (f esbuildFSFile) Read(b []byte) (int, error) {
+	return f.reader.Read(b)
+}
+
+func (esbuildFSFile) Close() error { return nil }
+
+func (fi esbuildFSFile) Name() string { return "/" + fi.name }
+func (fi esbuildFSFile) Size() int64  { return fi.reader.Size() }
+func (fi esbuildFSFile) Mode() fs.FileMode {
+	if fi.name == "" {
+		return fs.ModeDir
+	}
+	return 0
+}
+func (fi esbuildFSFile) ModTime() time.Time { return time.Time{} }
+func (fi esbuildFSFile) IsDir() bool        { return fi.Mode()&fs.ModeDir != 0 }
+func (fi esbuildFSFile) Sys() interface{}   { return nil }

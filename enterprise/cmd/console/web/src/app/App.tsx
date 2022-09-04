@@ -22,6 +22,7 @@ export const App: React.FunctionComponent = () => {
                 <p>Sign in</p>
             ) : (
                 <Routes>
+                    <Route path="/" element={<p>hello8</p>} />
                     <Route path="/instances" element={<Instances instances={data.instances} className="content" />} />
                 </Routes>
             )}
