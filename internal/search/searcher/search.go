@@ -244,7 +244,7 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 			})
 		}
 
-		pathMatches := make([]result.Range, 0, 3) // we don't expect a large number of path matches per file
+		pathMatches := make([]result.Range, 0, 1) // we don't expect a large number of path matches per file
 		if textPatternRegexp != nil {
 			pathSubmatches := textPatternRegexp.FindAllStringSubmatchIndex(fm.Path, -1)
 			if len(pathSubmatches) > 0 {

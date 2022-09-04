@@ -481,7 +481,7 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 }
 
 func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, zoektQueryRegexps []*regexp.Regexp) []result.Range {
-	pathMatchRanges := make([]result.Range, 0, 3) // we don't expect a large number of path matches for any given file
+	pathMatchRanges := make([]result.Range, 0, 1) // we don't expect a large number of path matches for any given file
 
 	for _, re := range zoektQueryRegexps {
 		pathSubmatches := re.FindAllStringSubmatchIndex(file.FileName, -1)
