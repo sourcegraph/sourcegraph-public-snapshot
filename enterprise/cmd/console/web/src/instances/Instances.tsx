@@ -6,16 +6,12 @@ import { InstanceData } from '../model'
 import { Instance } from './Instance'
 
 export const Instances: React.FunctionComponent<{
-    instances: InstanceData[] | undefined
+    instances: InstanceData[]
     tag?: 'main'
     className?: string
 }> = ({ instances, tag: Tag = 'main', className }) => (
     <Tag className={className}>
-        {instances === undefined ? (
-            <div className="container">
-                <p>Loading...</p>
-            </div>
-        ) : instances.length === 0 ? (
+        {instances.length === 0 ? (
             <div className="container">
                 <p>No instances found.</p>
             </div>

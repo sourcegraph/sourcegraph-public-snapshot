@@ -2,14 +2,11 @@ import './Header.css'
 
 import React from 'react'
 
-import { AuthProvider } from './auth'
-import { SettingsProps } from './useSettings'
+import { ConsoleData } from '../model'
 
-export const Header: React.FunctionComponent<
-    {
-        authProviders: AuthProvider[]
-    } & SettingsProps
-> = ({ settings, setSettings, authProviders }) => (
+export const Header: React.FunctionComponent<{
+    data: ConsoleData | undefined
+}> = ({ data }) => (
     <header id="header">
         <div className="container">
             <nav className="main">
@@ -18,15 +15,7 @@ export const Header: React.FunctionComponent<
                 </h1>
             </nav>
             <div style={{ flex: 1 }} />
-            <nav className="user">
-                <ul className="accounts">
-                    {authProviders.map(({ name, signInComponent: SignInComponent }) => (
-                        <li key={name}>
-                            <SignInComponent settings={settings} setSettings={setSettings} />
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            {data?.user ? <nav className="user">{data.user.email}</nav> : null}
         </div>
     </header>
 )

@@ -24,16 +24,3 @@
 #header #logo a {
 	text-decoration: none;
 }
-
-#header .user .accounts {
-	font-size: 0.7rem;
-	list-style-type: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	gap: calc(0.5*var(--spacing));
-}
-
-#header .user .accounts > li {
-	display: flex;
-}
