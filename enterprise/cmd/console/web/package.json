@@ -1,0 +1,129 @@
+{
+  "name": "tasklist-web",
+  "version": "0.0.0-DEVELOPMENT",
+  "description": "Tasklist aggregates your tasks from many tools.",
+  "repository": "https://github.com/sqs/tasklist.git",
+  "author": "Quinn Slack <quinn@slack.org>",
+  "license": "Apache 2",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "esbuild": "esbuild src/index.tsx --outdir=public/dist --sourcemap --format=esm --splitting --target=esnext --define:global=window",
+    "esbuild:serve": "esbuild src/index.tsx --serve=127.0.0.1:8076 --servedir=public --outdir=public/dist --sourcemap --format=esm --bundle --splitting --target=esnext --define:global=window",
+    "icons": "inkscape -w 128 -h 128 public/icon.svg -o public/icon.png && convert -size 128x128 public/icon.png public/favicon.ico"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "prettier --write"
+    ]
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "project": "tsconfig.json"
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:import/recommended",
+      "plugin:import/typescript",
+      "plugin:react/recommended",
+      "plugin:react-hooks/recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      "plugin:rxjs/recommended"
+    ],
+    "plugins": [
+      "simple-import-sort"
+    ],
+    "rules": {
+      "simple-import-sort/imports": "error",
+      "arrow-body-style": "error",
+      "arrow-parens": [
+        "error",
+        "as-needed"
+      ],
+      "@typescript-eslint/no-extra-semi": "off"
+    },
+    "ignorePatterns": "node_modules"
+  },
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120,
+    "proseWrap": "preserve",
+    "semi": false,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "arrowParens": "avoid",
+    "overrides": [
+      {
+        "files": "{*.js?(on),*.y?(a)ml,.*.js?(on),.*.y?(a)ml,*.md,.prettierrc,.stylelintrc,.babelrc}",
+        "options": {
+          "tabWidth": 2
+        }
+      },
+      {
+        "files": "{**/.vscode/*.json,**/tsconfig.json,**/tsconfig.*.json}",
+        "options": {
+          "parser": "json5",
+          "quoteProps": "preserve",
+          "singleQuote": false,
+          "trailingComma": "all"
+        }
+      }
+    ]
+  },
+  "dependencies": {
+    "@babel/core": "7.17.8",
+    "@babel/node": "^7.13.13",
+    "@babel/preset-env": "^7.13.12",
+    "@babel/preset-react": "^7.13.13",
+    "@babel/preset-typescript": "^7.13.0",
+    "@jest/types": "^26.6.2",
+    "@sourcegraph/prettierrc": "^3.0.3",
+    "@testing-library/jest-dom": "^5.11.10",
+    "@testing-library/react": "^13.0.0",
+    "@testing-library/user-event": "^14.0.4",
+    "@types/classnames": "^2.2.11",
+    "@types/gapi": "^0.0.41",
+    "@types/gapi.client.tasks": "^1.0.4",
+    "@types/jest": "^27.4.1",
+    "@types/node": "^14.14.37",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "@types/use-persisted-state": "^0.3.1",
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
+    "babel-jest": "^27.5.1",
+    "classnames": "^2.3.1",
+    "date-fns": "^2.19.0",
+    "esbuild": "^0.14.31",
+    "eslint": "^8.12.0",
+    "eslint-import-resolver-typescript": "^2.7.1",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-react": "^7.29.4",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "eslint-plugin-rxjs": "^5.0.2",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "history": "^5.0.0",
+    "husky": "^5.2.0",
+    "identity-obj-proxy": "3.0.0",
+    "jest": "^27.5.1",
+    "jose": "^4.6.0",
+    "lint-staged": "^12.3.7",
+    "node-fetch": "^3.2.3",
+    "observable-hooks": "^4.2.0",
+    "prettier": "^2.2.1",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-test-renderer": "^18.0.0",
+    "rxjs": "^7.5.5",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3",
+    "use-persisted-state": "^0.3.3"
+  }
+}

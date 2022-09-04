@@ -1,0 +1,8 @@
+{
+	http_port 8075
+}
+
+tasklist-local.sgdev.org:8077 {
+	tls internal
+	reverse_proxy localhost:8076
+}

@@ -42,6 +42,7 @@ func New(config Config) *Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.serveRoot)
+	mux.HandleFunc("/instances", handler.serveInstances)
 
 	handler.mux = mux
 	return handler
