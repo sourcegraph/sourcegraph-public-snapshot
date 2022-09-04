@@ -14,7 +14,7 @@ export const Header: React.FunctionComponent<
         <div className="container">
             <nav className="main">
                 <h1 id="logo">
-                    <a href="/">Tasks</a>
+                    <a href="/">Sourcegraph Console</a>
                 </h1>
             </nav>
             <div style={{ flex: 1 }} />

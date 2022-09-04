@@ -1,55 +1,66 @@
-.task-groups {
+.instance-groups {
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
 }
 
-.task-group {
+.instance-group {
 	padding: calc(2*var(--spacing)) 0;
 	border-bottom: solid 1px var(--border-color);
 }
-.task-group:first-child {
+
+.instance-group:first-child {
 	padding-top: var(--spacing);
 }
-.task-group:last-child {
+
+.instance-group:last-child {
 	border-bottom-width: 0;
 }
-.task-group h2 {
+
+.instance-group h2 {
 	font-size: 1.5rem;
 	font-weight: bold;
 	margin: 0 0 calc(0.5*var(--spacing)) 0;
 }
-.task-group > .container > .tasks {
+
+.instance-group>.container>.instances {
 	padding-left: 0;
 }
-.task-group > .container > .tasks > .task:not(:first-child) {
+
+.instance-group>.container>.instances>.instance:not(:first-child) {
 	margin-top: var(--spacing);
 }
 
-.task {
+.instance {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	gap: calc(0.5*var(--spacing));
 }
-.task > .date {
+
+.instance>.date {
 	color: var(--text-muted-color);
 	font-size: 0.8rem;
 	white-space: nowrap;
 }
-.task > summary > blockquote {
+
+.instance>summary>blockquote {
 	margin-left: 0;
 	padding-left: calc(0.5*var(--spacing));
 	border-left: solid 3px var(--border-color);
 	margin-top: calc(0.25*var(--spacing));
 	margin-bottom: calc(0.25*var(--spacing));
 }
-.task blockquote + p {
+
+.instance blockquote+p {
 	margin-top: calc(0.5*var(--spacing));
 }
-.task blockquote:first-child, .task p:first-child {
+
+.instance blockquote:first-child,
+.instance p:first-child {
 	margin-top: 0;
 }
-.task p:last-child {
+
+.instance p:last-child {
 	margin-bottom: 0;
 }

@@ -1889,15 +1889,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@maxim_mazurok/gapi.client.tasks@latest":
-  version: 1.0.20220402
-  resolution: "@maxim_mazurok/gapi.client.tasks@npm:1.0.20220402"
-  dependencies:
-    "@types/gapi.client": "*"
-  checksum: 9b0e932767e2287c7561fbbad4c691344028fbbc1b540938d0dfea9099465ad49a4a19df7f5b5d34dcf6366cd23b987d9b5fdd18e922990a7f950e627f3bc4d0
-  languageName: node
-  linkType: hard
-
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -1967,6 +1958,13 @@ __metadata:
   version: 3.0.3
   resolution: "@sourcegraph/prettierrc@npm:3.0.3"
   checksum: f6bb3e0cddab5464e32138d7fba7581752eefc4a47a9652be5a81b8170becd50332bb741568912ca9a504236674abb4226b217b06cab86d364b44edee86a533f
+  languageName: node
+  linkType: hard
+
+"@sourcegraph/tsconfig@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@sourcegraph/tsconfig@npm:4.0.1"
+  checksum: cd552b47dcf27b59e944dee20ff29e8f96b77c956bc96c7db44910217fb1c978ff410add86c92ff242274f91484b59b27be4980aea25c77fd922b3c5e31f5d05
   languageName: node
   linkType: hard
 
@@ -2110,29 +2108,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/gapi.client.tasks@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "@types/gapi.client.tasks@npm:1.0.4"
-  dependencies:
-    "@maxim_mazurok/gapi.client.tasks": latest
-  checksum: ad1340c126cb601d1c0c6c88d7e74ac75df414eb0cd44f346087cdcaebf754d630c71f91d69376d2409223669fa1ff6c86d7c890f58fcaf6d0f07a934c9af71b
-  languageName: node
-  linkType: hard
-
-"@types/gapi.client@npm:*":
-  version: 1.0.5
-  resolution: "@types/gapi.client@npm:1.0.5"
-  checksum: 2e85b381b45e290de13052e108e4281c0966065db085c3b4294cd801c9425f8ad37b38f76f6a1f404a963fa326564bed953db3352c933c4f417fa209ff4d3c0c
-  languageName: node
-  linkType: hard
-
-"@types/gapi@npm:^0.0.41":
-  version: 0.0.41
-  resolution: "@types/gapi@npm:0.0.41"
-  checksum: 1fcb42de9ffcdc736de6c986c987c8d18471371fb876a9f3c4df29fbb51ac7a1e1c4daca4c852eae832f59072b190f1639fc75bd307d33c6db9f9fad85f7eaff
-  languageName: node
-  linkType: hard
-
 "@types/graceful-fs@npm:^4.1.2":
   version: 4.1.5
   resolution: "@types/graceful-fs@npm:4.1.5"
@@ -2259,15 +2234,6 @@ __metadata:
   dependencies:
     "@types/jest": "*"
   checksum: 203443d0e7e5929fbc9e441146f92d85efa033b4697e427ed0164df1c40b720b6bb9bbd96a3171ea5fd8d9301b538fd0f49d4f35594d142afd0f6d2ecac25785
-  languageName: node
-  linkType: hard
-
-"@types/use-persisted-state@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@types/use-persisted-state@npm:0.3.1"
-  dependencies:
-    "@types/react": "*"
-  checksum: 7adccfa371a1a1d29d65011173c5678c44507ea94b13407965169bdb63fea096a9efbb8447c4b9884c81f7eee02faa35b284ab8097f9ee87955e383f98f41562
   languageName: node
   linkType: hard
 
@@ -2430,15 +2396,6 @@ __metadata:
     "@typescript-eslint/types": 5.18.0
     eslint-visitor-keys: ^3.0.0
   checksum: c856e3cf2fde3008e1d9bea3c73bc60d9060c7cb6d6ea186c20db9d74eff84986365f518dd1b4e142dca179e9a5cd7a6ed4381173d6abfd0ebd4d16d5cf50b94
-  languageName: node
-  linkType: hard
-
-"@use-it/event-listener@npm:^0.1.2":
-  version: 0.1.7
-  resolution: "@use-it/event-listener@npm:0.1.7"
-  peerDependencies:
-    react: ">=16.8.0"
-  checksum: 6d29f72fd4da0d3a2b015389b646d9b2f7e0ff9d04b2781bad70a81477f7ee3e79256b4abbd4d4bbd9f871d38ca6f7b48b9104e504d176b88f3a149a32fcaf99
   languageName: node
   linkType: hard
 
@@ -3239,6 +3196,56 @@ __metadata:
   checksum: 8755d76787f94e6cf79ce4666f0c5519906d7f5b02d4b884cf41e11dcd759ed69c57da0670afd9236d229a46e0f9cf519db0cd829c6dca820bb5a5c3def584ed
   languageName: node
   linkType: hard
+
+"console-web@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "console-web@workspace:."
+  dependencies:
+    "@babel/core": 7.17.8
+    "@babel/node": ^7.13.13
+    "@babel/preset-env": ^7.13.12
+    "@babel/preset-react": ^7.13.13
+    "@babel/preset-typescript": ^7.13.0
+    "@jest/types": ^26.6.2
+    "@sourcegraph/prettierrc": ^3.0.3
+    "@sourcegraph/tsconfig": ^4.0.1
+    "@testing-library/jest-dom": ^5.11.10
+    "@testing-library/react": ^13.0.0
+    "@testing-library/user-event": ^14.0.4
+    "@types/classnames": ^2.2.11
+    "@types/jest": ^27.4.1
+    "@types/node": ^14.14.37
+    "@types/react": ^17.0.3
+    "@types/react-dom": ^17.0.3
+    "@typescript-eslint/eslint-plugin": ^5.18.0
+    "@typescript-eslint/parser": ^5.18.0
+    babel-jest: ^27.5.1
+    classnames: ^2.3.1
+    date-fns: ^2.19.0
+    esbuild: ^0.15.6
+    eslint: ^8.12.0
+    eslint-import-resolver-typescript: ^2.7.1
+    eslint-plugin-import: ^2.25.4
+    eslint-plugin-react: ^7.29.4
+    eslint-plugin-react-hooks: ^4.2.0
+    eslint-plugin-rxjs: ^5.0.2
+    eslint-plugin-simple-import-sort: ^7.0.0
+    history: ^5.0.0
+    husky: ^5.2.0
+    identity-obj-proxy: 3.0.0
+    jest: ^27.5.1
+    lint-staged: ^12.3.7
+    node-fetch: ^3.2.3
+    observable-hooks: ^4.2.0
+    prettier: ^2.2.1
+    react: ^18.0.0
+    react-dom: ^18.0.0
+    react-test-renderer: ^18.0.0
+    rxjs: ^7.5.5
+    ts-node: ^9.1.1
+    typescript: ^4.2.3
+  languageName: unknown
+  linkType: soft
 
 "convert-source-map@npm:^1.4.0, convert-source-map@npm:^1.6.0, convert-source-map@npm:^1.7.0":
   version: 1.7.0
@@ -5610,13 +5617,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^4.6.0":
-  version: 4.6.0
-  resolution: "jose@npm:4.6.0"
-  checksum: 7f48cb030c9e8586e825ad5cc71e792f7b71b420afd3c45913e0719fd4abe6a756179c732604d42fbbb53c64b63f78818669599eeef11c988c0c34dd1178fe43
-  languageName: node
-  linkType: hard
-
 "js-tokens@npm:^3.0.0 || ^4.0.0, js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -7619,60 +7619,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tasklist-web@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "tasklist-web@workspace:."
-  dependencies:
-    "@babel/core": 7.17.8
-    "@babel/node": ^7.13.13
-    "@babel/preset-env": ^7.13.12
-    "@babel/preset-react": ^7.13.13
-    "@babel/preset-typescript": ^7.13.0
-    "@jest/types": ^26.6.2
-    "@sourcegraph/prettierrc": ^3.0.3
-    "@testing-library/jest-dom": ^5.11.10
-    "@testing-library/react": ^13.0.0
-    "@testing-library/user-event": ^14.0.4
-    "@types/classnames": ^2.2.11
-    "@types/gapi": ^0.0.41
-    "@types/gapi.client.tasks": ^1.0.4
-    "@types/jest": ^27.4.1
-    "@types/node": ^14.14.37
-    "@types/react": ^17.0.3
-    "@types/react-dom": ^17.0.3
-    "@types/use-persisted-state": ^0.3.1
-    "@typescript-eslint/eslint-plugin": ^5.18.0
-    "@typescript-eslint/parser": ^5.18.0
-    babel-jest: ^27.5.1
-    classnames: ^2.3.1
-    date-fns: ^2.19.0
-    esbuild: ^0.15.6
-    eslint: ^8.12.0
-    eslint-import-resolver-typescript: ^2.7.1
-    eslint-plugin-import: ^2.25.4
-    eslint-plugin-react: ^7.29.4
-    eslint-plugin-react-hooks: ^4.2.0
-    eslint-plugin-rxjs: ^5.0.2
-    eslint-plugin-simple-import-sort: ^7.0.0
-    history: ^5.0.0
-    husky: ^5.2.0
-    identity-obj-proxy: 3.0.0
-    jest: ^27.5.1
-    jose: ^4.6.0
-    lint-staged: ^12.3.7
-    node-fetch: ^3.2.3
-    observable-hooks: ^4.2.0
-    prettier: ^2.2.1
-    react: ^18.0.0
-    react-dom: ^18.0.0
-    react-test-renderer: ^18.0.0
-    rxjs: ^7.5.5
-    ts-node: ^9.1.1
-    typescript: ^4.2.3
-    use-persisted-state: ^0.3.3
-  languageName: unknown
-  linkType: soft
-
 "terminal-link@npm:^2.0.0":
   version: 2.1.1
   resolution: "terminal-link@npm:2.1.1"
@@ -7974,17 +7920,6 @@ __metadata:
   dependencies:
     punycode: ^2.1.0
   checksum: 7167432de6817fe8e9e0c9684f1d2de2bb688c94388f7569f7dbdb1587c9f4ca2a77962f134ec90be0cc4d004c939ff0d05acc9f34a0db39a3c797dada262633
-  languageName: node
-  linkType: hard
-
-"use-persisted-state@npm:^0.3.3":
-  version: 0.3.3
-  resolution: "use-persisted-state@npm:0.3.3"
-  dependencies:
-    "@use-it/event-listener": ^0.1.2
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0
-  checksum: ab637e526180aca1b487f7da38926b864d4ad524b28176e9e2ce58c441bc49f29c91e324eeb75ad579f8468c17f990793c0fff69f55b138d1be9ed8ddb79ecee
   languageName: node
   linkType: hard
 
