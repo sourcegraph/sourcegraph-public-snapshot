@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -739,8 +738,6 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 	case *zoektquery.Regexp:
 		res = append(res, regexp.MustCompile(`(?i)`+q.(*zoektquery.Regexp).Regexp.String()))
 	case *zoektquery.Substring:
-		item := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern))
-		fmt.Println(item.String())
 		res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern)))
 	}
 

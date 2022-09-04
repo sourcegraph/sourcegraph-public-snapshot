@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -700,9 +699,6 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
-
-	fmt.Printf("GlobalZoektQuery: %s\n", t.GlobalZoektQuery.Query.String())
-	fmt.Printf("GlobalZoektQuery.T: %T\n", t.GlobalZoektQuery.Query)
 
 	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, t.GlobalZoektQueryRegexps, stream)
 }
