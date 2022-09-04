@@ -1213,6 +1213,13 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
 			},
 		},
+		{
+			name:  "respect case sensitivity setting",
+			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
+			want: []*regexp.Regexp{
+				regexp.MustCompile(regexp.QuoteMeta("foo")),
+			},
+		},
 	}
 
 	for _, tc := range tests {

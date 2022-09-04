@@ -318,10 +318,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 				}
+				var patStr string
 				if patternInfo.IsRegExp {
-					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + patternInfo.Pattern)
+					patStr = patternInfo.Pattern
 				} else {
-					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + regexp.QuoteMeta(patternInfo.Pattern))
+					patStr = regexp.QuoteMeta(patternInfo.Pattern)
+				}
+				if patternInfo.IsCaseSensitive {
+					searcherJob.TextPatternRegexp = regexp.MustCompile(patStr)
+				} else {
+					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + patStr)
 				}
 
 				addJob(&repoPagerJob{
@@ -736,9 +742,17 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 			res = append(res, zoektQueryPatternsAsRegexps(child)...)
 		}
 	case *zoektquery.Regexp:
-		res = append(res, regexp.MustCompile(`(?i)`+q.(*zoektquery.Regexp).Regexp.String()))
+		if q.(*zoektquery.Regexp).CaseSensitive {
+			res = append(res, regexp.MustCompile(q.(*zoektquery.Regexp).Regexp.String()))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+q.(*zoektquery.Regexp).Regexp.String()))
+		}
 	case *zoektquery.Substring:
-		res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern)))
+		if q.(*zoektquery.Substring).CaseSensitive {
+			res = append(res, regexp.MustCompile(regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern)))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(q.(*zoektquery.Substring).Pattern)))
+		}
 	}
 
 	return res
