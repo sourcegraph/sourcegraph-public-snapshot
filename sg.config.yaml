@@ -536,8 +536,10 @@ commands:
       - enterprise/internal
 
   console-web:
-    # TODO(sqs): need to sleep etc because otherwise esbuild:serve closes when stdin is closed
-    cmd: sleep 99999999 | yarn --cwd enterprise/cmd/console/web run esbuild:serve
+    # The `< /dev/zero` is necessary because `sg` invokes the cmd with stdin closed, which otherwise
+    # would cause `esbuild --serve` to immediately exit. See
+    # https://github.com/evanw/esbuild/issues/1511.
+    cmd: yarn --cwd enterprise/cmd/console/web run esbuild:serve < /dev/zero
     install: yarn --cwd enterprise/cmd/console/web
     watch:
       - enterprise/cmd/console/web/package.json
