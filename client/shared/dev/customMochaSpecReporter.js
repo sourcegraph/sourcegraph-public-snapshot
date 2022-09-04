@@ -55,7 +55,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
     super.epilogue()
 
     // We only output the epilogue to a file when we're in BUILDKITE and there are failures
-    if (this.buildkite === true && this.failures.length > 0) {
+    if (this.buildkite === true) {
       const file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title || 'placeholder'}`)
       const customConsole = new Console({
         stdout: file,
