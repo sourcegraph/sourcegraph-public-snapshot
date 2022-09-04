@@ -1,8 +1,11 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"net"
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/log"
 
@@ -18,6 +21,10 @@ import (
 )
 
 const port = "3189"
+
+//go:embed web/static
+var staticFiles embed.FS
+var staticFilesFS, _ = fs.Sub(staticFiles, "web/static")
 
 func main() {
 	env.Lock()
@@ -48,15 +55,23 @@ func main() {
 
 	host := ""
 	if env.InsecureDev {
-		host = "127.0.0.1"
+		host = "localhost"
+	}
+
+	// TODO(sqs)
+	addr := net.JoinHostPort(host, port)
+	externalURL, err := url.Parse("http://" + addr)
+	if err != nil {
+		logger.Fatal("unable to determine external URL", log.Error(err))
 	}
 
 	webapp := webapp.New(webapp.Config{
-		SessionKey: "asdf", // TODO(sqs) SECURITY(sqs)
+		ExternalURL: *externalURL,
+		StaticFiles: staticFilesFS,
+		SessionKey:  "asdf", // TODO(sqs) SECURITY(sqs)
 	})
 	webapp.Logger = logger
 
-	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 	if err := http.ListenAndServe(addr, webapp); err != nil {
 		logger.Fatal("failed to start HTTP listener", log.Error(err))

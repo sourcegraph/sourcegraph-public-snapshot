@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"fmt"
+	"io/fs"
 
 	"net/http"
 	"net/url"
@@ -13,6 +14,8 @@ import (
 
 type Config struct {
 	ExternalURL url.URL // root external URL of the web app
+
+	StaticFiles fs.FS
 
 	SessionKey string // secret key for authenticating session data
 
@@ -40,9 +43,11 @@ func New(config Config) *Handler {
 	}
 	handler.session = sessionStore
 
+	handler.staticFiles = http.FileServer(http.FS(config.StaticFiles))
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.serveRoot)
-	mux.HandleFunc("/instances", handler.serveInstances)
+	mux.Handle("/static/", http.StripPrefix("/static/", handler.staticFiles))
 
 	handler.mux = mux
 	return handler
@@ -53,6 +58,8 @@ type Handler struct {
 	Logger log.Logger
 
 	config Config
+
+	staticFiles http.Handler
 
 	session sessions.Store
 

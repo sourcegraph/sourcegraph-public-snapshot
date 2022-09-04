@@ -1,66 +1,24 @@
-.instance-groups {
+.instances {
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
 }
 
-.instance-group {
+.instance {
 	padding: calc(2*var(--spacing)) 0;
 	border-bottom: solid 1px var(--border-color);
 }
 
-.instance-group:first-child {
+.instance:first-child {
 	padding-top: var(--spacing);
 }
 
-.instance-group:last-child {
+.instance:last-child {
 	border-bottom-width: 0;
 }
 
-.instance-group h2 {
+.instance h2 {
 	font-size: 1.5rem;
 	font-weight: bold;
 	margin: 0 0 calc(0.5*var(--spacing)) 0;
-}
-
-.instance-group>.container>.instances {
-	padding-left: 0;
-}
-
-.instance-group>.container>.instances>.instance:not(:first-child) {
-	margin-top: var(--spacing);
-}
-
-.instance {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: calc(0.5*var(--spacing));
-}
-
-.instance>.date {
-	color: var(--text-muted-color);
-	font-size: 0.8rem;
-	white-space: nowrap;
-}
-
-.instance>summary>blockquote {
-	margin-left: 0;
-	padding-left: calc(0.5*var(--spacing));
-	border-left: solid 3px var(--border-color);
-	margin-top: calc(0.25*var(--spacing));
-	margin-bottom: calc(0.25*var(--spacing));
-}
-
-.instance blockquote+p {
-	margin-top: calc(0.5*var(--spacing));
-}
-
-.instance blockquote:first-child,
-.instance p:first-child {
-	margin-top: 0;
-}
-
-.instance p:last-child {
-	margin-bottom: 0;
 }

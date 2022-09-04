@@ -6,7 +6,7 @@ export const Instance: React.FunctionComponent<{
     instance: InstanceData
     tag?: 'li'
 }> = ({ instance, tag: Tag = 'li' }) => (
-    <Tag className="task-group">
+    <Tag className="instance">
         <div className="container">
             <h2>
                 <a href={instance.url}>{instance.title}</a> <code>{instance.id}</code>

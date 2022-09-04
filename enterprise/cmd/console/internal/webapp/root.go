@@ -1,10 +1,12 @@
 package webapp
 
 import (
-	"fmt"
+	_ "embed"
 	"net/http"
 )
 
 func (h *Handler) serveRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "hello world")
+	r2 := *r
+	r2.URL.Path = "/"
+	h.staticFiles.ServeHTTP(w, &r2)
 }

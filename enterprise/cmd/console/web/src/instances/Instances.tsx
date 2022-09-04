@@ -16,7 +16,7 @@ export const Instances: React.FunctionComponent<{
                 <p>No instances found.</p>
             </div>
         ) : (
-            <ol className="instance-groups">
+            <ol className="instances">
                 {instances.map((instance, i) => (
                     <Instance key={i} instance={instance} tag="li" />
                 ))}
