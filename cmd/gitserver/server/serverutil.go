@@ -128,7 +128,7 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 		// works on linux, see cacert package for more information.
 		root, err := cacert.System()
 		if err != nil {
-			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not not specified in your TlsExternal site configuration.", log.Error(err))
+			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.", log.Error(err))
 		}
 		for _, cert := range root {
 			b.Write(cert)
