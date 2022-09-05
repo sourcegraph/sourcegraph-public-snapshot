@@ -1731,7 +1731,8 @@ type Executor implements Node {
     """
     lastSeenAt: DateTime!
     """
-    Is the executor version outdated?
+    True, if the executor does not match the version constraint of the Sourcegraph installation.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
     """
     isOutdated: Boolean!
 }
