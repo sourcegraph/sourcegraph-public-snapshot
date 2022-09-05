@@ -25,12 +25,15 @@ export function migrateLegacySettings(settings: Settings): Settings {
         return settings
     }
 
-    const oldEditorSettingsInNewFormat = getOldSettingsInNewFormat(settings)
-
+    // Migrate settings
+    const legacySettings = readLegacySettingsForAllExtensions(settings)
+    const legacyEditorSettingsInNewFormat = convertLegacySettingsToNewFormat(legacySettings)
     const newSettings: Settings = {
         ...settings,
-        openInEditor: oldEditorSettingsInNewFormat,
+        openInEditor: legacyEditorSettingsInNewFormat,
     }
+
+    // Delete migrated legacy settings
     for (const key of Object.keys(newSettings)) {
         if (
             key.startsWith('openineditor.') ||
@@ -46,63 +49,45 @@ export function migrateLegacySettings(settings: Settings): Settings {
     return newSettings
 }
 
-function getOldSettingsInNewFormat(settings: Settings): EditorSettings {
-    const old = {
-        ...readAtomSettings(settings),
-        ...readWebStormSettings(settings),
-        ...readIntelliJSettings(settings),
-        ...readVSCodeSettings(settings),
-        ...readOpenInEditorExtensionSettings(settings),
-    }
-
+function convertLegacySettingsToNewFormat(legacySettings: LegacySettings): EditorSettings {
     return {
-        ...(old.editorId ? { editorId: old.editorId } : {}),
-        ...(old.basePath ? { 'projectPaths.default': old.basePath } : {}),
-        ...(old.linuxBasePath ? { 'projectPaths.linux': old.linuxBasePath } : {}),
-        ...(old.macBasePath ? { 'projectPaths.mac': old.macBasePath } : {}),
-        ...(old.windowsBasePath ? { 'projectPaths.windows': old.windowsBasePath } : {}),
-        ...(old.replacements ? { replacements: old.replacements } : {}),
-        ...(old.jetbrainsForceApi ? { 'jetbrains.forceApi': old.jetbrainsForceApi } : {}),
-        ...(old.vscodeUseInsiders ? { 'vscode.useInsiders': old.vscodeUseInsiders } : {}),
-        ...(old.vscodeUseSSH ? { 'vscode.useSSH': old.vscodeUseSSH } : {}),
-        ...(old.vscodeRemoteHost ? { 'vscode.remoteHostForSSH': old.vscodeRemoteHost } : {}),
-        ...(old.customUrlPattern ? { 'custom.urlPattern': old.customUrlPattern } : {}),
+        ...(legacySettings.editorId ? { editorId: legacySettings.editorId } : {}),
+        ...(legacySettings.basePath ? { 'projectPaths.default': legacySettings.basePath } : {}),
+        ...(legacySettings.linuxBasePath ? { 'projectPaths.linux': legacySettings.linuxBasePath } : {}),
+        ...(legacySettings.macBasePath ? { 'projectPaths.mac': legacySettings.macBasePath } : {}),
+        ...(legacySettings.windowsBasePath ? { 'projectPaths.windows': legacySettings.windowsBasePath } : {}),
+        ...(legacySettings.replacements ? { replacements: legacySettings.replacements } : {}),
+        ...(legacySettings.jetbrainsForceApi ? { 'jetbrains.forceApi': legacySettings.jetbrainsForceApi } : {}),
+        ...(legacySettings.vscodeUseInsiders ? { 'vscode.useInsiders': legacySettings.vscodeUseInsiders } : {}),
+        ...(legacySettings.vscodeUseSSH ? { 'vscode.useSSH': legacySettings.vscodeUseSSH } : {}),
+        ...(legacySettings.vscodeRemoteHost ? { 'vscode.remoteHostForSSH': legacySettings.vscodeRemoteHost } : {}),
+        ...(legacySettings.customUrlPattern ? { 'custom.urlPattern': legacySettings.customUrlPattern } : {}),
     }
 }
 
-function readOpenInEditorExtensionSettings(settings: Settings): LegacySettings {
+function readLegacySettingsForAllExtensions(settings: Settings): LegacySettings {
     return {
-        ...readLegacySettings(settings, 'openineditor'),
-        editorId: settings['openineditor.editor'] as string | undefined,
-        customUrlPattern: settings['openineditor.customUrlPattern'] as string | undefined,
+        ...readLegacySettingsForOneExtension(settings, 'openInAtom'),
+        ...readLegacySettingsForOneExtension(settings, 'openInWebstorm'),
+        ...{
+            ...readLegacySettingsForOneExtension(settings, 'openInIntellij'),
+            jetbrainsForceApi: settings['openInIntellij.useBuiltin'] ? 'builtInServer' : undefined,
+        },
+        ...{
+            ...readLegacySettingsForOneExtension(settings, 'vscode.open'),
+            vscodeUseInsiders: settings['vscode.open.useMode'] === 'insiders',
+            vscodeUseSSH: settings['vscode.open.useMode'] === 'ssh',
+            vscodeRemoteHost: settings['vscode.open.remoteHost'] as string | undefined,
+        },
+        ...{
+            ...readLegacySettingsForOneExtension(settings, 'openineditor'),
+            editorId: settings['openineditor.editor'] as string | undefined,
+            customUrlPattern: settings['openineditor.customUrlPattern'] as string | undefined,
+        },
     }
 }
 
-function readVSCodeSettings(settings: Settings): LegacySettings {
-    return {
-        ...readLegacySettings(settings, 'vscode.open'),
-        vscodeUseInsiders: settings['vscode.open.useMode'] === 'insiders',
-        vscodeUseSSH: settings['vscode.open.useMode'] === 'ssh',
-        vscodeRemoteHost: settings['vscode.open.remoteHost'] as string | undefined,
-    }
-}
-
-function readIntelliJSettings(settings: Settings): LegacySettings {
-    return {
-        ...readLegacySettings(settings, 'openInIntellij'),
-        jetbrainsForceApi: settings['openInIntellij.useBuiltin'] ? 'builtInServer' : undefined,
-    }
-}
-
-function readWebStormSettings(settings: Settings): LegacySettings {
-    return readLegacySettings(settings, 'openInWebstorm')
-}
-
-function readAtomSettings(settings: Settings): LegacySettings {
-    return readLegacySettings(settings, 'openInAtom')
-}
-
-function readLegacySettings(settings: Settings, prefix: string): LegacySettings {
+function readLegacySettingsForOneExtension(settings: Settings, prefix: string): LegacySettings {
     return {
         ...(settings[prefix + '.basePath'] ? { basePath: settings[prefix + '.basePath'] as string } : null),
         ...(settings[prefix + '.osPaths.linux']
