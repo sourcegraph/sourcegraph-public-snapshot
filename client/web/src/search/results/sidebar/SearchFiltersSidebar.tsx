@@ -39,6 +39,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     filters?: Filter[]
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
+    caseSensitive: boolean
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
 }
@@ -47,6 +48,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const {
         liveQuery,
         submittedURLQuery,
+        caseSensitive,
         patternType,
         filters,
         selectedSearchContextSpec,
@@ -85,9 +87,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService, onSearchSubmit]
     )
 
-    const handleAggregationBarLinkClick = (query: string): void => {
-        onSearchSubmit([{ type: 'replaceQuery', value: query }])
-    }
+    const handleAggregationBarLinkClick = useCallback(
+        (query: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        },
+        [onSearchSubmit]
+    )
 
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {
@@ -111,6 +116,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                         query={submittedURLQuery}
                         patternType={patternType}
                         proactive={!disableProactiveSearchAggregations}
+                        caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />
