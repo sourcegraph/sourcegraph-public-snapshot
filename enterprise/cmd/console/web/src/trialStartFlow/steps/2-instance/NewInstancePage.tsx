@@ -10,13 +10,15 @@ export const NewInstancePage: React.FunctionComponent<{}> = () => {
     const hasOrganizationExistingInstances = true
     return (
         <TrialStartFlowContainer>
-            <h3 className="mt-4">Select instance</h3>
-            <p className="text-muted">
-                Your email domain <strong>sourcegraph.com</strong> already has 2 instances that you may be able to sign
-                into.
-            </p>
-            <OrganizationExistingInstances />
-            <section className="mt-5">
+            <section className="mb-5">
+                <h3 className="mt-4">Select instance</h3>
+                <p className="text-muted">
+                    Your email domain <strong>sourcegraph.com</strong> already has 2 cloud instances that you may be
+                    able to sign into.
+                </p>
+                <OrganizationExistingInstances />
+            </section>
+            <section>
                 <h3>Or create a new instance</h3>
                 <p className="text-muted">After it's created, you can add repositories and invite other people.</p>
                 <NewInstanceForm />

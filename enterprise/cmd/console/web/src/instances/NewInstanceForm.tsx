@@ -10,7 +10,13 @@ export const NewInstanceForm: React.FunctionComponent<{}> = () => {
     const domainSuggestion = 'acme-corp'
 
     return (
-        <Form className={styles.form}>
+        <Form
+            onSubmit={e => {
+                e.preventDefault()
+                window.location.pathname = '/instances/wait'
+            }}
+            className={styles.form}
+        >
             <Input
                 // onChange={this.onEmailFieldChange}
                 // value={this.state.email}
@@ -39,9 +45,6 @@ export const NewInstanceForm: React.FunctionComponent<{}> = () => {
                 // disabled={this.state.submitOrError === 'loading'}
                 variant="primary"
                 display="inline"
-                onClick={() => {
-                    window.location.pathname = '/instances'
-                }}
             >
                 {/* this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link' */}
                 Create instance <ArrowRightThickIcon className="icon-inline" />

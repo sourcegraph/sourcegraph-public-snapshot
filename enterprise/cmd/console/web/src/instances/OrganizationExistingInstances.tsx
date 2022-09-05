@@ -3,6 +3,7 @@ import ArrowRightThickIcon from 'mdi-react/ArrowRightThickIcon'
 import classNames from 'classnames'
 import React from 'react'
 import { InstanceData } from '../model'
+import { Link } from 'react-router-dom'
 
 const EXISTING_INSTANCES: InstanceData[] = [
     {
@@ -42,8 +43,8 @@ const ExistingInstance: React.FunctionComponent<{ instance: InstanceData; classN
                 {instance.ownerName} ({instance.ownerEmail})
             </span>
         </header>
-        <ButtonLink variant="primary">
-            Join <ArrowRightThickIcon className="icon-inline" />
+        <ButtonLink to="#" as={Link} variant="primary">
+            Sign in <ArrowRightThickIcon className="icon-inline" />
         </ButtonLink>
     </li>
 )

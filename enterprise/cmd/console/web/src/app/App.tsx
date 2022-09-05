@@ -8,6 +8,7 @@ import { Instances } from '../instances/Instances'
 import { SignupPage } from '../trialStartFlow/steps/1-signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
 import { NewInstancePage } from '../trialStartFlow/steps/2-instance/NewInstancePage'
+import { WaitForInstancePage } from '../trialStartFlow/steps/3-wait/WaitForInstancePage'
 
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])
@@ -28,6 +29,9 @@ export const App: React.FunctionComponent = () => {
                 <Switch>
                     <Route path="/new-instance">
                         <NewInstancePage />
+                    </Route>
+                    <Route path="/instances/wait">
+                        <WaitForInstancePage />
                     </Route>
                     <Route path="/instances">
                         <Instances instances={data.instances} className="content" />
