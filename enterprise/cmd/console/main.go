@@ -93,8 +93,8 @@ func (esbuildFS) Open(name string) (fs.File, error) {
 	if name == "." {
 		name = ""
 	}
-	resp, err := http.Get("http://localhost:8076/" + name)
-	fmt.Println("GET", "http://localhost:8076/"+name)
+	resp, err := http.Get("http://localhost:8077/" + name)
+	fmt.Println("GET", "http://localhost:8077/"+name)
 	if err != nil {
 		return nil, err
 	}

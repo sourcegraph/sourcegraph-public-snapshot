@@ -1,8 +1,10 @@
 import { Observable, of } from 'rxjs'
 
-import { ConsoleData, ConsoleUserData } from './data'
+import { ConsoleAnonymousData, ConsoleData, ConsoleUserData } from './data'
 
-const SAMPLE_DATA: ConsoleUserData = {
+const SAMPLE_ANONYMOUS_DATA: ConsoleAnonymousData = { user: null }
+
+const SAMPLE_USER_DATA: ConsoleUserData = {
     user: {
         email: 'alice@example.com',
     },
@@ -13,9 +15,11 @@ const SAMPLE_DATA: ConsoleUserData = {
     ],
 }
 
+const DUMMY_USER = false
+
 export function newAPIClient(): APIClient {
     return {
-        getData: (): Observable<ConsoleData> => of(SAMPLE_DATA),
+        getData: (): Observable<ConsoleData> => of(DUMMY_USER ? SAMPLE_USER_DATA : SAMPLE_ANONYMOUS_DATA),
     }
 }
 

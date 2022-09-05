@@ -14,7 +14,8 @@ import { assetPathPrefix } from './manifestPlugin'
 
 export const esbuildDevelopmentServer = async (
     listenAddress: { host: string; port: number },
-    configureProxy: (app: express.Application) => void
+    configureProxy: (app: express.Application) => void,
+    buildOptions = BUILD_OPTIONS
 ): Promise<void> => {
     const start = performance.now()
 
@@ -25,7 +26,7 @@ export const esbuildDevelopmentServer = async (
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
         { host: 'localhost', servedir: STATIC_ASSETS_PATH },
-        BUILD_OPTIONS
+        buildOptions
     )
 
     // Start a proxy at :3080. Asset requests (underneath /.assets/) go to esbuild; all other

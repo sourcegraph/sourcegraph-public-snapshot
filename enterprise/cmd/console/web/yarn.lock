@@ -2203,7 +2203,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:latest":
+"@types/react-dom@npm:^18.0.6":
   version: 18.0.6
   resolution: "@types/react-dom@npm:18.0.6"
   dependencies:
@@ -2223,7 +2223,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:latest":
+"@types/react@npm:^18.0.18":
   version: 18.0.18
   resolution: "@types/react@npm:18.0.18"
   dependencies:
@@ -3235,8 +3235,8 @@ __metadata:
     "@types/classnames": ^2.2.11
     "@types/jest": ^27.4.1
     "@types/node": ^14.14.37
-    "@types/react": latest
-    "@types/react-dom": latest
+    "@types/react": ^18.0.18
+    "@types/react-dom": ^18.0.6
     "@typescript-eslint/eslint-plugin": ^5.18.0
     "@typescript-eslint/parser": ^5.18.0
     babel-jest: ^27.5.1
@@ -3258,10 +3258,10 @@ __metadata:
     node-fetch: ^3.2.3
     observable-hooks: ^4.2.0
     prettier: ^2.2.1
-    react: latest
-    react-dom: latest
+    react: ^18.2.0
+    react-dom: ^18.2.0
     react-router-dom: ^6.3.0
-    react-test-renderer: latest
+    react-test-renderer: ^18.2.0
     rxjs: ^7.5.5
     ts-node: ^9.1.1
     typescript: ^4.2.3
@@ -6798,7 +6798,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:latest":
+"react-dom@npm:^18.2.0":
   version: 18.2.0
   resolution: "react-dom@npm:18.2.0"
   dependencies:
@@ -6867,7 +6867,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-test-renderer@npm:latest":
+"react-test-renderer@npm:^18.2.0":
   version: 18.2.0
   resolution: "react-test-renderer@npm:18.2.0"
   dependencies:
@@ -6880,7 +6880,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:latest":
+"react@npm:^18.2.0":
   version: 18.2.0
   resolution: "react@npm:18.2.0"
   dependencies:

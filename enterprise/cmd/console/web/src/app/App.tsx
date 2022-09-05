@@ -2,9 +2,10 @@ import './App.css'
 
 import { useObservableState } from 'observable-hooks'
 import React, { useMemo } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import { Instances } from '../instances/Instances'
+import { NewInstance } from '../instances/NewInstance'
 import { newAPIClient } from '../model/apiClient'
 import { Header } from './Header'
 
@@ -19,7 +20,18 @@ export const App: React.FunctionComponent = () => {
             {data === undefined ? (
                 <p>Loading...</p>
             ) : data.user === null ? (
-                <p>Sign in</p>
+                <Routes>
+                    <Route path="/new-instance" element={<NewInstance />} />
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <p>
+                                Sign in or <Link to="/new-instance">create new instance</Link>
+                            </p>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to="/sign-in" />} />
+                </Routes>
             ) : (
                 <Routes>
                     <Route path="/" element={<p>hello8</p>} />
