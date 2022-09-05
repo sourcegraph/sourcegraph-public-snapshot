@@ -76,7 +76,7 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.type",
 }
 
-var OneGigabyte = 1000000000
+var oneGigabyte = 1000000000
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
 func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
@@ -111,7 +111,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 
 			// We check if the resulting diff is greater than 1GB, since the limit
 			// for the diff column (which is bytea) is 1GB
-			if len(c.Diff) > OneGigabyte {
+			if len(c.Diff) > oneGigabyte {
 				link := "https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges"
 				return errors.Errorf("The changeset patch generated is over the size limit. You can make use of [transformChanges](%s) to break down the changesets into smaller pieces.", link)
 			}
