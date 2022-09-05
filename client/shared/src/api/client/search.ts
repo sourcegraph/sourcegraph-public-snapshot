@@ -17,15 +17,17 @@ export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
     enableGoImportsSearchQueryTransform,
+    eventLogger,
 }: {
     query: string
     extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
     enableGoImportsSearchQueryTransform: undefined | boolean
+    eventLogger: EventLogger
 }): Observable<string> {
     // We apply any non-extension transform before we send the query to the
     // extensions since we want these to take presedence over the extensions.
     if (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) {
-        query = goImportsTransform(query)
+        query = goImportsTransform(query, eventLogger)
     }
 
     if (extensionHostAPIPromise === null) {
@@ -61,7 +63,7 @@ export function transformSearchQuery({
     )
 }
 
-function goImportsTransform(query: string): string {
+function goImportsTransform(query: string, eventLogger: EventLogger): string {
     const goImportsRegex = /\bgo.imports:(\S*)/
     if (query.match(goImportsRegex)) {
         // Get package name
@@ -76,7 +78,13 @@ function goImportsTransform(query: string): string {
         const matchSingle = 'import\\s"[^\\s]*' + packageName + '[^\\s]*"$'
         const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
 
+        eventLogger.log('GoImportsSearchQueryTransformed')
+
         return query.replace(goImportsRegex, finalRegex)
     }
     return query
+}
+
+interface EventLogger {
+    log: (eventLabel: string, eventProperties?: any) => void
 }
