@@ -1,13 +1,15 @@
-# Install Sourcegraph with Docker Compose on AWS
+# Install Sourcegraph on Amazon Web Services (AWS)
 
-This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on AWS.
+This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
-## Prerequisite
+## Prerequisites
 
-- Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
-- A fork of the deployment repository [Fork the reference repo](index.md#step-1-fork-the-sourcegraph-docker-compose-deployment-repository)
+- Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
+- **[RECOMMENDED]** Follow Step 1 to 5 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to prepare a fork of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
-## Configurations
+---
+
+## Configuration
 
 Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then configure the instance following the instructions below for each section:
 
@@ -21,7 +23,7 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 #### Instance type
 
 1. Select an appropriate instance type
-   * Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
+   * Refer to the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment
 
 #### Key pair (login)
 
@@ -42,39 +44,38 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 
 #### Configure storage
 
-1. Click `Add New Volume` to add an *additional* EBS volume for storing data
-2. Click `Advanced` in the header to update the following settings:
-  * **Volume Type** (left-most column): EBS
-  * **IMPORTANT: Device**: `/dev/sdb`
-  * **Size (GiB)**: `250` GB minimum
-      * Sourcegraph needs at least as much space as all your repositories combined take up.
-      * Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.
-  * **Volume Type**: General Purpose SSD (gp3)
-  * **Delete on Termination**: Leave this setting unchecked
+1. Click **Add New Volume** to add an *additional* EBS volume for storing data
+2. Click **Advanced** in the header to update the following settings for the new Custom Volume:
+  * `Storage Type`: EBS
+  * `Device name`: `/dev/sdb`
+  * `Volume Type`: `gp3` (General Purpose SSD)
+  * `Size (GiB)`: `250GB minimum`
+      * Sourcegraph needs at least as much space as all your repositories combined take up
+      * Allocating as much disk space as you can upfront minimize the need for [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) in the future
+  * `Delete on Termination`: `No`
 
-#### Advanced details
+#### Advanced details > User Data
 
-1. Place the following script in the **User Data** text box at the bottom
-
-> WARNING: If working from a fork of the reference repository, update the following variables in the script:
-> 
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#configure-a-release-branch) the revision is the `release` branch. 
+1. Copy and paste the *Startup script* below in the **User Data** text box at the bottom
+2. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
 
 ```bash
 #!/usr/bin/env bash
 
 set -euxo pipefail
 
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
+
+# IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 EBS_VOLUME_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
-
-# 🚨 Update these variables with the correct values from your fork!
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
 
 # Install git
 yum update -y
@@ -140,13 +141,15 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d
 ```
 
-## Launch
+## Deploy
 
-You may navigate to the newly created instance in your browser using the public IP, which can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.
+1. Click **Launch Instance** in the *Summary Section* on the right to create your Sourcegraph instance
+2. Navigate to the public IP address assigned to your instance to visit your newly created Sourcegraph instance
+      - Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel
 
-You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. 
+It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
 
-You can monitor the status by SSHing into the instance and using the diagnostic commands:
+You can monitor the status by SSHing into the instance and running the following diagnostic commands:
 
 ```bash
 # Follow the status of the user data script you provided earlier
@@ -156,11 +159,13 @@ tail -f /var/log/cloud-init-output.log
 docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
+> NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
+
 ---
 
 ## Upgrade
 
-Please refer to the [Docker Compose upgrade docs](upgrade.md) for updating your Sourcegraph instance.
+Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions on updating your Sourcegraph instance.
 
 ## Storage and Backups
 

@@ -1,55 +1,65 @@
-# Install Sourcegraph with Docker Compose on Digital Ocean
+# Install Sourcegraph on Digital Ocean
 
-This guide shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single Droplet running on DigitalOcean.
+This guide will take you through how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single Droplet running on DigitalOcean.
 
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
+## Prerequisites
+
+- Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
+- **[RECOMMENDED]** Follow Step 1 to 5 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to prepare a fork of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
 ---
-## Determine server and service requirements 
 
-Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
+## Configuration
 
-## Prepare a fork 
+First, [create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new), then configure the droplet following the instructions below for each section:
 
-We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository. You will make changes to the default configuration, for example to the docker-compose YAML file, in your fork. The fork will also enable you to keep track of your customizations when upgrading your fork from the reference repo. Refer to the following steps for preparing a clone, which use GitHub as an example, then return to this page:
+#### Choose an image
 
-1. [Fork the reference repo](index.md#step-1-fork-the-sourcegraph-docker-compose-deployment-repository)
-2. [Clone your fork](index.md#step-2-clone-the-forked-repository-locally)
-3. [Configure the release branch](index.md#step-3-configure-the-release-branch)
-4. [Configure the YAML file](index.md#step-4-configure-the-yaml-file)
-5. [Publish changes to your branch](index.md#step-5-update-your-release-branch)
+1. Select **Ubuntu 18.04** under *Distributions*
 
-## Run Sourcegraph on a Digital Ocean Droplet
+#### Choose a plan
 
-* [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new).
+1. Select an appropriate droplet size
+   * Refer to the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment
 
-  * Set the operating system to be **Ubuntu 18.04**.
-  * For droplet size: use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
-  * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
-  * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
+#### Add block storage
 
-* In the "Select additional options" section of the Droplet creation page, select the "User Data" and "Monitoring" boxes,
-   and paste the following script in the "`Enter user data here...`" text box:
+1. Click on **Add Volume** to add a new block storage
+2. Select the size of the block storage --we recommend `250GB` minimum
+      * Sourcegraph needs at least as much space as all your repositories combined take up
+      * Allocating as much disk space as you can upfront minimize the need for switching to a droplet with a larger root disk later on
+3. Under **Choose configuration options**, select "Manually Format and Mount"
 
-> NOTE: Replace the following variables in the script based on how you created your fork and release branch:
->
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#configure-a-release-branch) the revision is the `release` branch. 
+#### Authentication
+
+1. **[RECOMMENDED]** Select **SSH keys** to create a **New SSH Key** for convenient access to the droplet
+
+#### Authentication > Enable backups
+
+1. **[RECOMMENDED]** Select **Enable backups** checkbox under *Select additional options* to enable weekly backups of all your data
+
+#### Authentication > User data
+
+1. Copy and paste the *Startup script* below into the **User data** text box
+4. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
 
 ```bash
 #!/usr/bin/env bash
 
 set -euxo pipefail
 
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
+
+# IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 PERSISTENT_DISK_DEVICE_NAME='/dev/sda'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
-
-# 🚨 Update these variables with the correct values from your fork!
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
 
 # Install git
 sudo apt-get update -y
@@ -115,12 +125,14 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d
 ```
 
-* Click on "Add Volume" and add new block storage with the following settings:
+## Deploy
 
-  * **Size**: We recommend > 250 GB. *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid needing to select a droplet with a larger root disk later on.)*
-  * Under **Chose configuration options**, select "Manually Format and Mount"
+1. Click **Create Droplet** to create your droplet with Sourcegraph installed
+2. Navigate to the droplet's IP address to complete initializing Sourcegraph
 
-* You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the Droplet and running the following diagnostic commands:
+It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+
+You can monitor the status by SSHing into the instance and running the following diagnostic commands:
 
 ```bash
 # Follow the status of the user data script you provided earlier
@@ -130,21 +142,20 @@ tail -f /var/log/cloud-init-output.log
 docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
-* Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a DNS entry for the IP, configure `externalURL` to reflect that.
-
-### After initialization
-
-After initial setup, we recommend you do the following:
+After the initial setup, we recommend you to do the following:
 
 * Restrict the accessibility of ports other than `80` and `443` via [Cloud
   Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
 * Set up [TLS/SSL](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)) in the Docker Compose deployment
 
+
+> NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
+
 ---
 
-## Update your Sourcegraph version
+## Upgrade
 
-Refer to the [Docker Compose upgrade docs](upgrade.md).
+Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions on updating your Sourcegraph instance.
 
 ## Storage and Backups
 
