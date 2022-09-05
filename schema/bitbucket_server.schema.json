@@ -38,6 +38,11 @@
           "type": "number",
           "default": 28800,
           "minimum": 0
+        },
+        "maxConcurrency": {
+          "description": "(Experimental, unlimited by default) Maximum concurrent requests independent of cost. While requestsPerHour will allow that many requests in an hour, maxConcurrency will limit how many requests can be active at any given moment.",
+          "type": "integer",
+          "default": -1
         }
       },
       "default": {
