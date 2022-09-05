@@ -5,6 +5,9 @@ import { mdiCloud, mdiClock } from '@mdi/js'
 import { InstanceData } from '../../model'
 import { Badge, ButtonLink, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 import { Link } from 'react-router-dom'
+import styles from './InstanceListItem.module.scss'
+import { InstanceHostname } from '../InstanceHostname'
+import { InstanceDetails } from '../InstanceDetails'
 
 export const InstanceListItem: React.FunctionComponent<{
     instance: InstanceData
@@ -16,41 +19,19 @@ export const InstanceListItem: React.FunctionComponent<{
         <header>
             <h3 className="mb-0">
                 <a href={instance.url} className="text-body">
-                    <span>{instance.url.replace('https://', '').replace('.sourcegraph.com', '')}</span>
-                    <span className="font-weight-normal">.sourcegraph.com</span>
+                    <InstanceHostname url={instance.url} />
                 </a>
             </h3>
-            <ul className="list-unstyled mt-1">
-                <li className="text-muted">
-                    <small>
-                        Owner:{' '}
-                        <a href={`mailto:${instance.ownerEmail}`} className="text-muted">
-                            {instance.ownerEmail}
-                        </a>
-                    </small>{' '}
-                    {instance.viewerIsOwner ? (
-                        <Badge variant="secondary">Owned by you</Badge>
-                    ) : instance.viewerIsOrganizationMember ? (
-                        <Badge variant="secondary">Owned by your organization</Badge>
-                    ) : null}
-                </li>
-                <li>
-                    <code className="text-muted small">{instance.id}</code>
-                </li>
-            </ul>
+            <InstanceDetails instance={instance} className="mt-1" textClassName="small text-muted" />
         </header>
         <div style={{ flex: '1' }} className="ml-2" />
         {instance.status === 'ready' ? (
             <>
                 {instance.viewerIsOwner ? (
-                    <ButtonLink variant="secondary" outline={true} as={Link}>
+                    <ButtonLink variant="secondary" outline={true} as={Link} to={`/instances/${instance.id}`}>
                         Manage
                     </ButtonLink>
-                ) : (
-                    <a href={`mailto:${instance.ownerEmail}`} className="text-muted py-2 small mr-2">
-                        Contact owner to manage
-                    </a>
-                )}
+                ) : null}
                 <ButtonLink variant="primary" outline={true} as={Link} className="ml-2">
                     Sign in
                 </ButtonLink>

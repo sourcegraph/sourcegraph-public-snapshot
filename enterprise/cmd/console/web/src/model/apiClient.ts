@@ -11,7 +11,6 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
     instances: [
         {
             id: 'c-f8a7d6ebfa8374ace',
-            title: 'Sourcegraph',
             ownerName: 'Carol Lopez',
             ownerEmail: 'carol@sourcegraph.com',
             url: 'https://sourcegraph.sourcegraph.com',
@@ -22,7 +21,6 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
         },
         {
             id: 'c-c9b7a7e739a6cd7cb',
-            title: 'Acme Corp',
             ownerName: 'Alice Smith',
             ownerEmail: 'alice@acme-corp.com',
             url: 'https://acme.sourcegraph.com',
@@ -33,7 +31,6 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
         },
         {
             id: 'c-f73a63765ac839a83',
-            title: 'Initech',
             ownerName: 'Fangfang Zhao',
             ownerEmail: 'ffz@example.com',
             url: 'https://initech.sourcegraph.com',

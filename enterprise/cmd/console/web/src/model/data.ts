@@ -15,7 +15,6 @@ export interface UserData {
 
 export interface InstanceData {
     id: string
-    title: string
     url: string
     ownerEmail: string
     ownerName: string
