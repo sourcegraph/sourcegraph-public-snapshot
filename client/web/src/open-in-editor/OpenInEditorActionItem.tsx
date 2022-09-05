@@ -89,7 +89,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
             if (!userSettings) {
-                return
+                throw new Error('No user settings. Not saving.')
             }
             await props.platformContext.updateSettings(userSettings.subject.id, {
                 path: ['openInEditor', 'editorId'],
