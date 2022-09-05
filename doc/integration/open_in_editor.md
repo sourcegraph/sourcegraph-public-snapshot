@@ -89,20 +89,20 @@ The `idea://` protocol handler does not always work on Windows. If it fails for 
 built-in REST API to open files directly from a URL with
 some extra configuration steps.
 
-1. Add this to your Sourcegraph _User settings_:
+Add this to your Sourcegraph _User settings_:
 
-    ```json
-    {
-      "openInEditor": {
-        ...
-        "jetbrains.forceApi": "builtInServer"
-      }
-    }
-    ```
+```json
+{
+  "openInEditor": {
+    ...
+    "jetbrains.forceApi": "builtInServer"
+  }
+}
+```
 
-1. Open IntelliJ settings, go to `Build, Execution, Deployment` | `Debugger` | `Built-in Server`, and
-   enable `Allow unsigned requests`. This allows Sourcegraph to make requests to the built-in server, as stated in
-   JetBrains’ [docs](https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server).
+Then open IntelliJ settings, go to `Build, Execution, Deployment` | `Debugger` | `Built-in Server`, and
+enable `Allow unsigned requests`. This allows Sourcegraph to make requests to the built-in server, as stated in
+JetBrains’ [docs](https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server).
 
 **Note:** with this workaround, “Open in Editor” will only work if your IDE is running.
 
