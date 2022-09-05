@@ -13,7 +13,7 @@ import styles from './SearchFilterSection.module.scss'
 
 export interface SearchFilterSectionProps {
     sectionId: string
-    header: string
+    header: ReactNode
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
@@ -149,7 +149,11 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     outline={true}
                     variant="secondary"
                 >
-                    <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
+                    <H5
+                        as={H2}
+                        id={`search-sidebar-section-header-${sectionId}`}
+                        className={styles.sidebarSectionHeader}
+                    >
                         {header}
                     </H5>
                     <Icon
