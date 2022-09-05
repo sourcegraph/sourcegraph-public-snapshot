@@ -244,14 +244,9 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				if err != nil {
 					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 					// 404 errors on external service config validation.
-					//
-					// Indra: This will stop the sync entirely. I do not have context on the above
-					// TODO but it is worth investigating separately.
 					if bitbucketserver.IsNotFound(err) {
-						return errors.Wrap(
-							err,
-							fmt.Sprintf("bitbucketserver.listAllRepos: skipping missing bitbucketserver.repos entry: %q", name),
-						)
+						s.logger.Warn("bitbucketserver.listAllRepos - skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
+						continue
 					}
 				}
 
