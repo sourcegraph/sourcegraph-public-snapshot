@@ -8,18 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    PageHeader,
-    CardBody,
-    Card,
-    Link,
-    Container,
-    H2,
-    H3,
-    H4,
-    Text,
-    screenReaderAnnounce,
-} from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container, H2, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -183,9 +172,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                     {pluralize('batch change', currentTotalCount)}
                                 </H3>
                             )}
-                            <H4 as={H3} className="mb-0 mr-2">
-                                Status
-                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
