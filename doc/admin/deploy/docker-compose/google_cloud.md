@@ -37,7 +37,7 @@ Expand the **Advanced options** section and the **Disks** section within to add 
   * `Description`: "Disk for storing Docker data for Sourcegraph" (or something similarly descriptive)
   * `Disk source type`: Blank disk
   * `Disk type`: SSD persistent disk
-  * `Size`: `250` GB minimum
+  * `Size`: `250GB` minimum
       * Sourcegraph needs at least as much space as all your repositories combined take up
       * Allocating as much disk space as you can upfront minimize the need for [resizing this disk](https://cloud.google.com/compute/docs/disks/add-persistent-disk#resize_pd) later on
   * `(optional, recommended) Snapshot schedule`: The most straightfoward way of automatically backing Sourcegraph's data is to set up a [snapshot schedule](https://cloud.google.com/compute/docs/disks/scheduled-snapshots) for this disk. We strongly recommend that you take the time to do so here.
@@ -46,6 +46,9 @@ Expand the **Advanced options** section and the **Disks** section within to add 
 
 #### Advanced options > Management
 Expand the **Advanced options** section and the **Management** section within:
+
+![image](https://user-images.githubusercontent.com/68532117/188502993-05ef0eb2-ceb5-47bb-a6b6-177839149dd5.png)
+
 1. Copy and paste the *Startup script* in the **Automation** field
 2. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
