@@ -115,7 +115,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     onClick={onClick}
                 />
             </PopoverTrigger>
-            <PopoverContent position={Position.left} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
+            <PopoverContent position={Position.leftStart} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
                 <OpenInEditorPopover
                     editorSettings={settings?.openInEditor as EditorSettings | undefined}
                     togglePopover={togglePopover}
