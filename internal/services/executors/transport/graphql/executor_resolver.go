@@ -61,7 +61,19 @@ func isExecutorOutdated(ev string, active bool) (bool, error) {
 	evm := r.FindStringSubmatch(ev)
 	svm := r.FindStringSubmatch(sv)
 	if len(evm) > 1 && len(svm) > 1 {
-		return svm[1] > evm[1], nil
+		layout := "2006-01-02"
+
+		st, err := time.Parse(layout, svm[1])
+		if err != nil {
+			return false, err
+		}
+
+		et, err := time.Parse(layout, evm[1])
+		if err != nil {
+			return false, err
+		}
+
+		return et.Before(st), nil
 	}
 
 	// if we get here then we assume the versions are in semver format
