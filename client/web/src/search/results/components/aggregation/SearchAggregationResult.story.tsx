@@ -102,6 +102,7 @@ export const SearchAggregationResultDemo: Story = () => (
                 <SearchAggregationResult
                     query=""
                     patternType={SearchPatternType.literal}
+                    caseSensitive={false}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     onQuerySubmit={noop}
                 />
