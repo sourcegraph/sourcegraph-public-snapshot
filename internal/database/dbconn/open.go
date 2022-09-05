@@ -212,6 +212,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 		"postgres-proxy",
 		stdlib.RegisterConnConfig(cfg),
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			OmitConnResetSession: true,
 			ArgumentOptions: otelsql.ArgumentOptions{
