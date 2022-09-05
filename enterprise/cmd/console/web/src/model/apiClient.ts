@@ -9,9 +9,27 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
         email: 'alice@example.com',
     },
     instances: [
-        { id: 'c-f8a7d6ebfa8374ace', title: 'Sourcegraph', url: 'https://sourcegraph.sourcegraph.com' },
-        { id: 'c-c9b7a7e739a6cd7cb', title: 'Acme Corp', url: 'https://acme.sourcegraph.com' },
-        { id: 'c-f73a63765ac839a83', title: 'Initech', url: 'https://initech.sourcegraph.com' },
+        {
+            id: 'c-f8a7d6ebfa8374ace',
+            title: 'Sourcegraph',
+            ownerName: 'Carol Lopez',
+            ownerEmail: 'carol@sourcegraph.com',
+            url: 'https://sourcegraph.sourcegraph.com',
+        },
+        {
+            id: 'c-c9b7a7e739a6cd7cb',
+            title: 'Acme Corp',
+            ownerName: 'Alice Smith',
+            ownerEmail: 'alice@acme-corp.com',
+            url: 'https://acme.sourcegraph.com',
+        },
+        {
+            id: 'c-f73a63765ac839a83',
+            title: 'Initech',
+            ownerName: 'Fangfang Zhao',
+            ownerEmail: 'ffz@example.com',
+            url: 'https://initech.sourcegraph.com',
+        },
     ],
 }
 

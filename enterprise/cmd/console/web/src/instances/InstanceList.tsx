@@ -1,26 +1,31 @@
-import './InstanceList.css'
-
 import React from 'react'
 
 import { InstanceData } from '../model'
-import { Instance } from './Instance'
+import { InstanceListItem } from './InstanceListItem'
+import { Tab, TabList, Tabs } from '@sourcegraph/wildcard'
+import { ContactSupport } from '../common/ContactSupport'
 
 export const InstanceList: React.FunctionComponent<{
     instances: InstanceData[]
-    tag?: 'main'
     className?: string
-}> = ({ instances, tag: Tag = 'main', className }) => (
-    <Tag className={className}>
+}> = ({ instances, className }) => (
+    <div className={className}>
+        <Tabs>
+            <TabList wrapperClassName="border-bottom-0">
+                <Tab>
+                    <span className="tablist-wrapper--tab-label">Created by you</span>
+                </Tab>
+            </TabList>
+        </Tabs>
         {instances.length === 0 ? (
-            <div className="container">
-                <p>No instances found.</p>
-            </div>
+            <p>No instances found.</p>
         ) : (
-            <ol className="instances">
+            <ol className="list-group">
                 {instances.map((instance, i) => (
-                    <Instance key={i} instance={instance} tag="li" />
+                    <InstanceListItem key={i} instance={instance} tag="li" className="list-group-item p-3" />
                 ))}
             </ol>
         )}
-    </Tag>
+        <ContactSupport className="mt-3" />
+    </div>
 )
