@@ -16,7 +16,8 @@
   },
   "references": [
     { "path": "../../../../client/web" },
-    { "path": "../../../../client/wildcard" }
+    { "path": "../../../../client/wildcard" },
+    { "path": "../../../../client/branded" }
   ],
   "include": [
     "gulpfile.js",

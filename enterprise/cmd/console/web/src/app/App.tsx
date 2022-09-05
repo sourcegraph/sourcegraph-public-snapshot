@@ -5,9 +5,8 @@ import React, { useMemo } from 'react'
 import { Link, Redirect, Route, Switch } from 'react-router-dom'
 
 import { Instances } from '../instances/Instances'
-import { NewInstance } from '../instances/NewInstance'
+import { SignupPage } from '../signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
-import { Header } from './Header'
 
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])
@@ -15,21 +14,13 @@ export const App: React.FunctionComponent = () => {
 
     return (
         <>
-            <Header data={data} />
-            {data === undefined ? (
-                <p>Loading...</p>
-            ) : data.user === null ? (
+            {data === undefined ? null : data.user === null ? (
                 <Switch>
-                    <Route path="/new-instance">
-                        <NewInstance />
-                    </Route>
-                    <Route path="/sign-in">
-                        <p>
-                            Sign in or <Link to="/new-instance">create new instance</Link>
-                        </p>
+                    <Route path="/signup">
+                        <SignupPage />
                     </Route>
                     <Route path="*">
-                        <Redirect to="/sign-in" />
+                        <Redirect to="/signup" />
                     </Route>
                 </Switch>
             ) : (
