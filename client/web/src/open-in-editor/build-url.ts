@@ -16,9 +16,9 @@ export function buildEditorUrl(
         throw new TypeError(editorSettingsErrorMessage)
     }
 
-    const projectPath = getProjectPath(editorSettings || {}) as string // Default is only there to soothe TypeScript
-    const editor = getEditor(editorSettings?.editorId ?? 'vscode') as Editor // Default is only there to soothe TypeScript
-    const urlPattern = getUrlPattern(editor, editorSettings || {}) // Default is only there to soothe TypeScript
+    const projectPath = getProjectPath(editorSettings || {}) as string
+    const editor = getEditor(editorSettings?.editorId ?? 'vscode') as Editor
+    const urlPattern = getUrlPattern(editor, editorSettings || {})
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
         editor.id === 'vscode' && (isWindowsPath(projectPath) || editorSettings?.['vscode.isProjectPathUNCPath'])
@@ -126,7 +126,7 @@ function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
         return `${editor.id}://open?file=%file&line=%line&column=%col`
     }
     if (editor.id === 'custom') {
-        return editorSettings['custom.urlPattern'] ?? '' // Default is only there to soothe TypeScript
+        return editorSettings['custom.urlPattern'] ?? ''
     }
     throw new TypeError(`No url pattern found for editor ${editor.id}`)
 }
