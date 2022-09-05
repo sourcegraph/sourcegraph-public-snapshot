@@ -39,7 +39,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	// services when the max is reached.
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
-	logger := log.Scoped("licensing.int", "initialize licensing enforcement")
+	logger := log.Scoped("licensing", "licensing enforcement")
 	hooks.GetLicenseInfo = func(isSiteAdmin bool) *hooks.LicenseInfo {
 		if !isSiteAdmin {
 			return nil
@@ -152,7 +152,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	})
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(func() {
-			productsubscription.StartCheckForUpcomingLicenseExpirations(db)
+			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
 		})
 	}
 
