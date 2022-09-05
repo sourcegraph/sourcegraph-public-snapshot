@@ -77,6 +77,10 @@ export const SignupPage: React.FunctionComponent<{}> = () => (
                     // disabled={this.state.submitOrError === 'loading'}
                     variant="primary"
                     display="block"
+                    onClick={() => {
+                        localStorage.setItem('signedIn', 'true')
+                        window.location.pathname = '/new-instance'
+                    }}
                 >
                     {/* this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link' */}
                     Sign up

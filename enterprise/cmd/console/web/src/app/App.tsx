@@ -7,6 +7,7 @@ import { Link, Redirect, Route, Switch } from 'react-router-dom'
 import { Instances } from '../instances/Instances'
 import { SignupPage } from '../signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
+import { NewInstancePage } from '../instances/NewInstancePage'
 
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])
@@ -25,8 +26,8 @@ export const App: React.FunctionComponent = () => {
                 </Switch>
             ) : (
                 <Switch>
-                    <Route path="/">
-                        <p>hello8</p>
+                    <Route path="/new-instance">
+                        <NewInstancePage />
                     </Route>
                     <Route path="/instances">
                         <Instances instances={data.instances} className="content" />

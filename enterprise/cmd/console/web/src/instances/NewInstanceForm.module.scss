@@ -1,0 +1,14 @@
+.form {
+    --check-icon-left: -1.2rem;
+}
+
+.domain-input {
+    width: auto;
+    padding-right: var(--check-icon-left);
+}
+
+.check-icon {
+    align-self: center;
+    position: relative;
+    left: var(--check-icon-left);
+}

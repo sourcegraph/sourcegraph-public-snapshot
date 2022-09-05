@@ -15,7 +15,7 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
     ],
 }
 
-const DUMMY_USER = false
+const DUMMY_USER = localStorage.getItem('signedIn') !== null
 
 export function newAPIClient(): APIClient {
     return {
