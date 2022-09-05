@@ -56,7 +56,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     if (subject?.settings && !isErrorLike(subject.settings) && !subject.settings.openInEditor) {
                         const migratedSettings = migrateLegacySettings(subject.settings)
                         props.platformContext
-                            .updateSettings(subject.subject.id, JSON.stringify(migratedSettings))
+                            .updateSettings(subject.subject.id, JSON.stringify(migratedSettings, null, 4))
                             .then(() => {
                                 console.log('Migrated items successfully.')
                             })
