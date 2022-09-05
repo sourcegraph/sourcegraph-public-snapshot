@@ -809,7 +809,6 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	if !ok {
 		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
 		if debugErr != nil {
-			println("foo", s.logger, "foo")
 			s.logger.Error("failed to fetch debug information for job",
 				log.Int("recordID", id),
 				log.Error(debugErr),
