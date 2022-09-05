@@ -19,6 +19,23 @@ type TelemetryRequest struct {
 	PublicArgument json.RawMessage
 }
 
+var NonActiveUserEvents = []string{
+	"ViewSignIn",
+	"ViewSignUp",
+	"SignOutAttempted",
+	"SignOutFailed",
+	"SignOutSucceeded",
+	"SignInAttempted",
+	"SignInFailed",
+	"SignInSucceeded",
+	"PasswordResetRequested",
+	"PasswordRandomized",
+	"PasswordChanged",
+	"EmailVerified",
+	"ExternalAuthSignupFailed",
+	"ExternalAuthSignupSucceeded",
+}
+
 // LogEvent sends a payload representing an event to the api/telemetry endpoint.
 //
 // This method should be invoked after the frontend service has started. It is
