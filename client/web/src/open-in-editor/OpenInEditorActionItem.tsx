@@ -108,7 +108,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
             <PopoverTrigger as="div">
                 <SimpleActionItem
                     tooltip={editor ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
-                    className="enabled"
+                    isActive={popoverOpen}
                     iconURL={
                         editor ? `${assetsRoot}/img/editors/${editor.id}.svg` : `${assetsRoot}/img/open-in-editor.svg`
                     }
