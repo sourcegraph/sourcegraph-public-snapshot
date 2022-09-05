@@ -141,6 +141,8 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d
 ```
 
+![image](https://user-images.githubusercontent.com/68532117/188503178-6072319e-74c8-439c-b270-cb32ef8ff7df.png)
+
 ## Deploy
 
 1. Click **Launch Instance** in the *Summary Section* on the right to create your Sourcegraph instance
