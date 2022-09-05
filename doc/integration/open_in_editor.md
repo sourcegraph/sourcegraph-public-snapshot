@@ -18,7 +18,7 @@ set up.
 
 ## Get started
 
-It only needs a minute to set up. If you haven’t used the feature, find this button on the right side of your screen:
+If you haven’t used the feature, find this button on the right side of your screen:
 
 <img src="img/open-in-editor.svg" width="20" height="20" alt="Open in Editor icon" style="margin:0 5px;" /> 
 
