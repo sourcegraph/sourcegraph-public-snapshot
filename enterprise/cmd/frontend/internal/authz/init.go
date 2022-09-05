@@ -67,7 +67,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			return nil
 		}
 
-		_, _, seriousProblems, _, invalidConnections := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+		_, _, _, _, invalidConnections := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
@@ -89,7 +89,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			}
 		}
 
-		if len(seriousProblems) == 0 {
+		if len(authzNames) == 0 {
 			return nil
 		}
 
