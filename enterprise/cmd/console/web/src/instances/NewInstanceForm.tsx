@@ -4,6 +4,7 @@ import React from 'react'
 import styles from './NewInstanceForm.module.scss'
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import ArrowRightThickIcon from 'mdi-react/ArrowRightThickIcon'
 
 export const NewInstanceForm: React.FunctionComponent<{}> = () => {
     const domainSuggestion = 'acme-corp'
@@ -43,7 +44,7 @@ export const NewInstanceForm: React.FunctionComponent<{}> = () => {
                 }}
             >
                 {/* this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link' */}
-                Create instance
+                Create instance <ArrowRightThickIcon className="icon-inline" />
             </Button>
         </Form>
     )

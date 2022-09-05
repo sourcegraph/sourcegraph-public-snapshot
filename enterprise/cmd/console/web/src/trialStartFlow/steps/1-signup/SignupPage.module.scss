@@ -1,0 +1,11 @@
+.full-name-row {
+    display: flex;
+    gap: var(--spacer);
+}
+.full-name-row > * {
+    flex: 1;
+}
+
+.googleIcon {
+    // height: 1.35rem;
+}

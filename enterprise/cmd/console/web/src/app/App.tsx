@@ -5,9 +5,9 @@ import React, { useMemo } from 'react'
 import { Link, Redirect, Route, Switch } from 'react-router-dom'
 
 import { Instances } from '../instances/Instances'
-import { SignupPage } from '../signup/SignupPage'
+import { SignupPage } from '../trialStartFlow/steps/1-signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
-import { NewInstancePage } from '../instances/NewInstancePage'
+import { NewInstancePage } from '../trialStartFlow/steps/2-instance/NewInstancePage'
 
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])

@@ -1,20 +1,22 @@
 export type ConsoleData = ConsoleAnonymousData | ConsoleUserData
 
 export interface ConsoleAnonymousData {
-	user: null
+    user: null
 }
 
 export interface ConsoleUserData {
-	user: UserData
-	instances: InstanceData[]
+    user: UserData
+    instances: InstanceData[]
 }
 
 export interface UserData {
-	email: string
+    email: string
 }
 
 export interface InstanceData {
-	id: string
-	title: string
-	url: string
+    id: string
+    title: string
+    url: string
+    ownerEmail: string
+    ownerName: string
 }
