@@ -225,7 +225,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		g.SetLimit(mc)
 	}
 
-	// Start a new goroutine 'worker" for all repos explicitly added to the code host config.
+	// Start a new goroutine "worker" for all repos explicitly added to the code host config.
 	go func() {
 		g.Go(func() error {
 			// Admins normally add to end of lists, so end of list most likely has new repos
