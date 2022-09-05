@@ -24,7 +24,7 @@ import { Context } from '@sourcegraph/template-parser'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { CodeIntelProviders, FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
@@ -60,10 +60,10 @@ export function getHoverActions(
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
                 ),
-            hasReferenceProvidersForDocument: parameters =>
+            providersForDocument: parameters =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.hasReferenceProvidersForDocument(parameters))
+                        wrapRemoteObservable(extensionHostAPI.providersForDocument(parameters))
                     )
                 ),
             getWorkspaceRoots: () =>
@@ -114,12 +114,12 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
 export function getHoverActionsContext(
     {
         getDefinition,
-        hasReferenceProvidersForDocument,
+        providersForDocument,
         getWorkspaceRoots,
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
-        hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => Observable<boolean>
+        providersForDocument: (parameters: TextDocumentPositionParameters) => Observable<CodeIntelProviders>
         getWorkspaceRoots: () => Observable<WorkspaceRootWithMetadata[]>
         platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
     },
@@ -143,7 +143,7 @@ export function getHoverActionsContext(
         // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
-        hasReferenceProvidersForDocument(parameters),
+        providersForDocument(parameters),
 
         // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is
@@ -163,11 +163,15 @@ export function getHoverActionsContext(
         ),
     ]).pipe(
         map(
-            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
+            ([definitionURLOrError, providers, showFindReferences]): HoverActionsContext => {
                 const fileUrl =
                     definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
                         ? definitionURLOrError.url
                         : ''
+                const panelURL = urlToFile(
+                    { ...hoverContext, position: hoverContext, viewState: 'panelID' },
+                    { part: hoverContext.part }
+                )
 
                 const hoveredFileUrl = urlToFile(
                     { ...hoverContext, position: hoverContext },
@@ -188,13 +192,11 @@ export function getHoverActionsContext(
                     'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
                     'findReferences.url':
-                        hasReferenceProvider && showFindReferences
-                            ? urlToFile(
-                                  { ...hoverContext, position: hoverContext, viewState: 'references' },
-                                  { part: hoverContext.part }
-                              )
+                        providers.references && showFindReferences ? panelURL.replace(/panelID$/, 'references') : null,
+                    'findImplementations.url':
+                        providers.implementations && showFindReferences
+                            ? panelURL.replace(/panelID$/, `implementations_${providers.language}`)
                             : null,
-
                     'panel.url': urlToFile(
                         { ...hoverContext, position: hoverContext, viewState: 'panelID' },
                         { part: hoverContext.part }
@@ -371,6 +373,14 @@ export function registerHoverContributions({
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
                     },
+                    {
+                        id: 'goToDefinition.not-found',
+                        title: 'Go to definition',
+                        disabledTitle: 'No definition found',
+                        command: 'open',
+                        // eslint-disable-next-line no-template-curly-in-string
+                        commandArguments: ['${goToDefinition.url}'],
+                    },
                 ],
                 menus: {
                     hover: [
@@ -385,6 +395,11 @@ export function registerHoverContributions({
                             action: 'goToDefinition.preloaded',
                             when: 'goToDefinition.url',
                             disabledWhen: 'hoveredOnDefinition',
+                        },
+                        {
+                            action: 'goToDefinition.not-found',
+                            when: 'goToDefinition.url',
+                            disabledWhen: 'definitionNotFound',
                         },
                     ],
                 },
@@ -460,6 +475,14 @@ export function registerHoverContributions({
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${findReferences.url}'],
                     },
+                    {
+                        id: 'findImplementations',
+                        // title: parseTemplate('Find references'),
+                        title: 'Find implementations',
+                        command: 'open',
+                        // eslint-disable-next-line no-template-curly-in-string
+                        commandArguments: ['${findImplementations.url}'],
+                    },
                 ],
                 menus: {
                     hover: [
@@ -471,6 +494,12 @@ export function registerHoverContributions({
                             action: 'findReferences',
                             when:
                                 'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            disabledWhen: 'false',
+                        },
+                        {
+                            action: 'findImplementations',
+                            when:
+                                'findImplementations.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                             disabledWhen: 'false',
                         },
                     ],

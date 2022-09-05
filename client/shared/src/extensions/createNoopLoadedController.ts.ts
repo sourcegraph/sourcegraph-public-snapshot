@@ -1,14 +1,13 @@
-import * as comlink from 'comlink'
-import { BehaviorSubject, combineLatest, NEVER, Observable, of, Subscribable } from 'rxjs'
+import { NEVER, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { Contributions, TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 import { FlatExtensionHostAPI } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { createExtensionHostAPI } from '../api/extension/extensionHostApi'
-import { createExtensionHostState, ExtensionHostState } from '../api/extension/extensionHostState'
+import { createExtensionHostState } from '../api/extension/extensionHostState'
 import { pretendRemote } from '../api/util'
 import { newCodeIntelAPI } from '../codeintel/api'
 import { CodeIntelContext } from '../codeintel/legacy-extensions/api'
@@ -16,11 +15,6 @@ import { PlatformContext } from '../platform/context'
 import { isSettingsValid } from '../settings/settings'
 
 import { Controller } from './controller'
-import { addWithRollback } from '../api/extension/util'
-import { evaluateContributions, parseContributionExpressions } from '../api/extension/api/contribution'
-import { Context } from '@sourcegraph/template-parser'
-import { computeContext } from '../api/extension/api/context/context'
-import { ExtensionViewer, ViewerWithPartialModel } from '../api/viewerTypes'
 
 export function createNoopController(platformContext: PlatformContext): Controller {
     return {
@@ -88,6 +82,7 @@ export function injectNewCodeintel(
 
     const codeintelOverrides: Pick<
         FlatExtensionHostAPI,
+        | 'providersForDocument'
         | 'getHover'
         | 'getDocumentHighlights'
         | 'getReferences'
@@ -95,6 +90,9 @@ export function injectNewCodeintel(
         | 'getLocations'
         | 'hasReferenceProvidersForDocument'
     > = {
+        providersForDocument(textParameters) {
+            return proxySubscribable(codeintel.providersForDocument(textParameters))
+        },
         hasReferenceProvidersForDocument(textParameters) {
             return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
         },

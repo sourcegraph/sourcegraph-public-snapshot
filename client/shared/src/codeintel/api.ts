@@ -1,12 +1,9 @@
 import {
-    Contributions,
-    Evaluated,
     fromHoverMerged,
     HoverMerged,
     TextDocumentIdentifier,
     TextDocumentPositionParameters,
 } from '@sourcegraph/client-api'
-import { parse } from '@sourcegraph/template-parser'
 import * as sourcegraph from './legacy-extensions/api'
 import * as sglegacy from 'sourcegraph'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -23,12 +20,12 @@ import { map } from 'rxjs/operators'
 import { toPosition } from '../api/extension/api/types'
 import { castArray } from 'lodash'
 import { isDefined } from '@sourcegraph/common/src/types'
-import { ContributionOptions } from '../api/extension/extensionHostApi'
-import { evaluateContributions } from '../api/extension/api/contribution'
+import { CodeIntelProviders } from '../api/contract'
 
 export type QueryGraphQLFn<T> = () => Promise<T>
 
 export interface CodeIntelAPI {
+    providersForDocument(textParameters: TextDocumentPositionParameters): Observable<CodeIntelProviders>
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
     getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getReferences(
@@ -36,7 +33,6 @@ export interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getContributions(contributionOptions?: ContributionOptions): Evaluated<Contributions>
     getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
@@ -59,8 +55,20 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         )
     }
 
+    providersForDocument(textParameters: TextDocumentPositionParameters): Observable<CodeIntelProviders> {
+        const document = toTextDocument(textParameters.textDocument)
+        const providers = findLanguageMatchingDocument(document)
+        return of({
+            definitions: true,
+            references: providers ? true : false,
+            implementations: providers?.spec.textDocumentImplemenationSupport || false,
+            language: document.languageId,
+        })
+    }
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean> {
-        return of(true)
+        const document = toTextDocument(textParameters.textDocument)
+        const providers = findLanguageMatchingDocument(document)?.providers
+        return of(providers ? true : false)
     }
     getReferences(
         textParameters: TextDocumentPositionParameters,
@@ -95,33 +103,6 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 return result ? (result as sglegacy.DocumentHighlight[]) : []
             })
         )
-    }
-    getContributions(contributionOptions?: ContributionOptions<unknown> | undefined): Evaluated<Contributions> {
-        if (!contributionOptions) {
-            return {}
-        }
-        console.log(contributionOptions)
-        const contributions: Contributions = {
-            menus: {
-                hover: [{ action: 'findImplementations' }],
-            },
-            actions: [
-                {
-                    id: 'findImplementations',
-                    title: parse<string>('"Find implementations"'),
-                    command: 'open',
-                    commandArguments: [
-                        parse<string>(
-                            "${get(context, 'implementations_LANGID') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_LANGID') || 'noop'}"
-                        ),
-                    ],
-                    actionItem: { label: parse<string>('"Find implementations"') },
-                },
-            ],
-        }
-        const x = evaluateContributions({}, contributions)
-        console.log({ x })
-        return x
     }
 }
 

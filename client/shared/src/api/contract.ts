@@ -30,6 +30,7 @@ export interface CodeIntelProviders {
     references: boolean
     definitions: boolean
     implementations: boolean
+    language: string
 }
 /**
  * This is exposed from the extension host thread to the main thread
