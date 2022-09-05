@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, FC } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -63,9 +63,7 @@ export interface StreamingSearchResultsProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export const StreamingSearchResults: React.FunctionComponent<
-    React.PropsWithChildren<StreamingSearchResultsProps>
-> = props => {
+export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => {
     const {
         streamSearch,
         location,
@@ -320,6 +318,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     aria-label="Aggregation results panel"
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
+                    telemetryService={props.telemetryService}
                 />
             )}
 

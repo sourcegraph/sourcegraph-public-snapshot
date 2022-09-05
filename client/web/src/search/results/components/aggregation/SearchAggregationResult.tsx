@@ -2,7 +2,8 @@ import { FC, HTMLAttributes } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
 import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
@@ -14,11 +15,12 @@ import {
     useAggregationUIMode,
     useSearchAggregationData,
 } from './hooks'
+import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
+interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -38,7 +40,7 @@ interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, onQuerySubmit, ...attributes } = props
+    const { query, patternType, onQuerySubmit, telemetryService, ...attributes } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -52,6 +54,43 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
+        telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
+    }
+
+    const handleBarLinkClick = (query: string, index: number): void => {
+        onQuerySubmit(query)
+        telemetryService.log(
+            GroupResultsPing.ChartBarClick,
+            { aggregationMode, index, uiMode: 'resultsScreen' },
+            { aggregationMode, index, uiMode: 'resultsScreen' }
+        )
+    }
+
+    const handleBarHover = (): void => {
+        telemetryService.log(
+            GroupResultsPing.ChartBarHover,
+            { aggregationMode, uiMode: 'resultsScreen' },
+            { aggregationMode, uiMode: 'resultsScreen' }
+        )
+    }
+
+    const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
+        setAggregationMode(mode)
+        telemetryService.log(
+            GroupResultsPing.ModeClick,
+            { aggregationMode: mode, uiMode: 'resultsScreen' },
+            { aggregationMode: mode, uiMode: 'resultsScreen' }
+        )
+    }
+
+    const handleAggregationModeHover = (aggregationMode: SearchAggregationMode, available: boolean): void => {
+        if (!available) {
+            telemetryService.log(
+                GroupResultsPing.ModeDisabledHover,
+                { aggregationMode, uiMode: 'resultsScreen' },
+                { aggregationMode, uiMode: 'resultsScreen' }
+            )
+        }
     }
 
     return (
@@ -79,9 +118,9 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                         loading={loading}
                         mode={aggregationMode}
                         availability={data?.searchQueryAggregate?.modeAvailability}
-                        onModeChange={setAggregationMode}
+                        onModeChange={handleAggregationModeChange}
+                        onModeHover={handleAggregationModeHover}
                     />
-
                     {isNonExhaustiveAggregationResults(data) && <AggregationLimitLabel size="md" />}
                 </div>
 
@@ -93,7 +132,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     error={error}
                     size="md"
                     className={styles.chartContainer}
-                    onBarLinkClick={onQuerySubmit}
+                    onBarLinkClick={handleBarLinkClick}
+                    onBarHover={handleBarHover}
                 />
 
                 {data && (
