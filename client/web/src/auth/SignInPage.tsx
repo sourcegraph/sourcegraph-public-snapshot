@@ -6,7 +6,7 @@ import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert, Icon, Text } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -74,10 +74,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
                             <Button
-                                href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
+                                to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                 display="block"
                                 variant="secondary"
-                                as="a"
+                                as={AnchorLink}
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
