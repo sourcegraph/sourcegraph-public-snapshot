@@ -164,7 +164,7 @@ func TestLockoutStore(t *testing.T) {
 		// a decent amount of fudge to this (10s).
 		want := time.Now().Add(5 * time.Minute).Truncate(jwt.TimePrecision)
 		got := *&claims.ExpiresAt.Time
-		if want.Sub(got).Abs() > 10*time.Second {
+		if durationAbs(want.Sub(got)) > 10*time.Second {
 			t.Fatalf("unexpected ExpiresAt time:\ngot:  %s\nwant: %s", got, want)
 		}
 	})
@@ -210,4 +210,19 @@ func TestLockoutStore(t *testing.T) {
 		assert.EqualError(t, error, "No previously generated token exists for the specified user")
 		assert.False(t, valid)
 	})
+}
+
+// durationAbs returns the absolute value of d.
+//
+// Copy-pasta from Duration.Abs in the stdlib, but only available in go1.19.
+// Can remove this helper once we require go1.19 as a minimum.
+func durationAbs(d time.Duration) time.Duration {
+	switch {
+	case d >= 0:
+		return d
+	case d == -1<<63:
+		return 1<<63 - 1
+	default:
+		return -d
+	}
 }
