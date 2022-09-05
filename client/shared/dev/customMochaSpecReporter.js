@@ -31,10 +31,12 @@ class SpecFileReporter extends mocha.reporters.Spec {
 
     if ('BUILDKITE_LABEL' in process.env) {
       this.title = process.env.BUILDKIATE_LABEL || 'placeholder'
+    } else {
+      console.table(process.env)
     }
 
     if (this.buildkite === true && typeof process.env.BUILDKITE_LABEL === undefined) {
-      console.warn(`In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title}'`)
+      console.info(`In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title}'`)
     }
   }
 
