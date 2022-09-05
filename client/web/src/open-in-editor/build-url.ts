@@ -38,7 +38,7 @@ export function getEditorSettingsErrorMessage(
     editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string
 ): string | undefined {
-    const learnMoreURL = new URL('https://docs.sourcegraph.com/integration/open_in_editor').href
+    const learnMoreURL = 'https://docs.sourcegraph.com/integration/open_in_editor'
 
     if (!editorSettings) {
         return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
