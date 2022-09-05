@@ -329,7 +329,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
 			bk.AnnotatedCmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles), bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
-					IncludeNames:    true,
 					MultiJobContext: "puppeteer",
 				},
 			}),
