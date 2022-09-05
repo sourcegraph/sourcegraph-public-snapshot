@@ -28,6 +28,10 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     const [settingsCascadeOrError, setSettingsCascadeOrError] = useState<SettingsCascadeOrError | undefined>(undefined)
     const settings = !isErrorLike(settingsCascadeOrError?.final) ? settingsCascadeOrError?.final : undefined
     const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
+    const userSettings = settingsCascadeOrError?.subjects
+        ? settingsCascadeOrError.subjects[settingsCascadeOrError.subjects.length - 1]
+        : undefined
+
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => {
         setPopoverOpen(previous => !previous)
@@ -84,23 +88,19 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
 
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
-            const subject = settingsCascadeOrError?.subjects
-                ? settingsCascadeOrError.subjects[settingsCascadeOrError.subjects.length - 1]
-                : undefined
-            if (!subject) {
-                // This shouldn’t happen. If it does, we don’t want to save anything.
+            if (!userSettings) {
                 return
             }
-            await props.platformContext.updateSettings(subject.subject.id, {
+            await props.platformContext.updateSettings(userSettings.subject.id, {
                 path: ['openInEditor', 'editorId'],
                 value: selectedEditorId,
             })
-            await props.platformContext.updateSettings(subject.subject.id, {
+            await props.platformContext.updateSettings(userSettings.subject.id, {
                 path: ['openInEditor', 'projectPaths.default'],
                 value: defaultProjectPath,
             })
         },
-        [props.platformContext, settingsCascadeOrError?.subjects]
+        [props.platformContext, userSettings]
     )
 
     return (
