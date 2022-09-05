@@ -12,9 +12,9 @@ import { EditorSettings } from './editor-settings'
  */
 export const useOpenCurrentUrlInEditor = (): ((editorSettings: EditorSettings, sourcegraphURL: string) => void) => {
     const location = useLocation()
-    const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
     return useCallback(
         (editorSettings: EditorSettings, sourcegraphURL: string) => {
+            const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
             const url = buildEditorUrl(
                 `${repoName.split('/').pop() ?? ''}/${filePath}`,
                 range,
@@ -23,6 +23,6 @@ export const useOpenCurrentUrlInEditor = (): ((editorSettings: EditorSettings, s
             )
             window.open(url.toString(), '_blank')
         },
-        [filePath, range, repoName]
+        [location.pathname]
     )
 }
