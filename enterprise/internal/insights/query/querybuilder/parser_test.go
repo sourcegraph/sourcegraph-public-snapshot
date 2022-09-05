@@ -98,7 +98,7 @@ func TestDetectSearchType(t *testing.T) {
 		searchType    query.SearchType
 	}{
 		{
-			"subitted and query match types",
+			"submitted and query match types",
 			"select:repo test fork:only",
 			"literal",
 			query.SearchTypeLiteral,
@@ -124,6 +124,95 @@ func TestDetectSearchType(t *testing.T) {
 			}
 			if tc.searchType != searchType {
 				t.Errorf("expected %d result, got %d", tc.searchType, searchType)
+			}
+		})
+	}
+}
+
+func TestRepoOnlyQuery(t *testing.T) {
+	testCases := []struct {
+		name        string
+		query       string
+		patternType string
+		repoOnly    bool
+	}{
+		{
+			"select:repo parameter",
+			"select:repo",
+			"literal",
+			true,
+		},
+		{
+			"repo parameter",
+			"repo:sourcegraph",
+			"literal",
+			true,
+		},
+		{
+			"multiple repo filters",
+			"repo:sourcegraph repo:k8s select:repo",
+			"literal",
+			true,
+		},
+		{
+			"regexp repo filter",
+			"repo:deploy-\\w+",
+			"regexp",
+			true,
+		},
+		{
+			"repo or query",
+			"repo:has.path(README) or repo:sourcegraph",
+			"literal",
+			true,
+		},
+		{
+			"repo and query",
+			"repo:has.path(README) and repo:sourcegraph",
+			"literal",
+			true,
+		},
+		{
+			"repo not query",
+			"not repo:sg",
+			"literal",
+			true,
+		},
+		{
+			"negated repo",
+			"-repo:sg",
+			"literal",
+			true,
+		},
+		{
+			"query with file parameter",
+			"repo:sg file:insights",
+			"literal",
+			false,
+		},
+		{
+			"query with search pattern",
+			"repo:sg test",
+			"literal",
+			false,
+		},
+		{
+			"repo and search pattern",
+			"repo:sg and test",
+			"literal",
+			false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			plan, err := ParseQuery(tc.query, tc.patternType)
+			if err != nil {
+				t.Error(err)
+				t.FailNow()
+			}
+			got := RepoOnlyQuery(plan)
+			if got != tc.repoOnly {
+				t.Errorf("expected %v, got %v", tc.repoOnly, got)
 			}
 		})
 	}

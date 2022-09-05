@@ -1,6 +1,7 @@
 package querybuilder
 
 import (
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -54,4 +55,27 @@ func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
 		parameters = append(parameters, basic.Parameters...)
 	}
 	return parameters
+}
+
+func RepoOnlyQuery(plan query.Plan) bool {
+	for _, b := range plan {
+		if !repoOnlyParameters(b.Parameters) {
+			return false
+		}
+		if !b.IsEmptyPattern() {
+			return false
+		}
+	}
+	return true
+}
+
+func repoOnlyParameters(parameters []query.Parameter) bool {
+	for _, p := range parameters {
+		fmt.Println(p.Field, p.Value)
+		if p.Field != "repo" && !(p.Field == "select" && p.Value == "repo") {
+			return false
+		}
+	}
+	fmt.Println("return true")
+	return true
 }
