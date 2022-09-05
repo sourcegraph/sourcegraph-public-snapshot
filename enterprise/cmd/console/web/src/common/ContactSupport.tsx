@@ -10,7 +10,6 @@ export const ContactSupport: React.FunctionComponent<{
 }> = ({ className }) => (
     <p className={classNames(className, 'text-muted')}>
         <Icon aria-hidden={true} svgPath={mdiHelpCircle} className="mr-1" />
-        Need help managing an instance? Contact <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>
-        .
+        Need help managing an instance? Contact <a href="mailto:support@sourcegraph.com">support@sourcegraph.com</a>.
     </p>
 )

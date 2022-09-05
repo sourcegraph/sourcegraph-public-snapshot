@@ -15,6 +15,10 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
             ownerName: 'Carol Lopez',
             ownerEmail: 'carol@sourcegraph.com',
             url: 'https://sourcegraph.sourcegraph.com',
+            viewerIsOwner: true,
+            viewerIsOrganizationMember: true,
+            viewerCanMaybeSignIn: true,
+            status: 'ready',
         },
         {
             id: 'c-c9b7a7e739a6cd7cb',
@@ -22,6 +26,10 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
             ownerName: 'Alice Smith',
             ownerEmail: 'alice@acme-corp.com',
             url: 'https://acme.sourcegraph.com',
+            viewerIsOwner: false,
+            viewerIsOrganizationMember: true,
+            viewerCanMaybeSignIn: true,
+            status: 'ready',
         },
         {
             id: 'c-f73a63765ac839a83',
@@ -29,6 +37,10 @@ const SAMPLE_USER_DATA: ConsoleUserData = {
             ownerName: 'Fangfang Zhao',
             ownerEmail: 'ffz@example.com',
             url: 'https://initech.sourcegraph.com',
+            viewerIsOwner: false,
+            viewerIsOrganizationMember: true,
+            viewerCanMaybeSignIn: true,
+            status: 'ready',
         },
     ],
 }

@@ -19,4 +19,8 @@ export interface InstanceData {
     url: string
     ownerEmail: string
     ownerName: string
+    viewerIsOwner: boolean
+    viewerIsOrganizationMember: boolean
+    viewerCanMaybeSignIn: boolean
+    status: 'waiting' | 'ready'
 }

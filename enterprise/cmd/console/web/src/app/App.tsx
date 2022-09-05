@@ -4,7 +4,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 import React, { useMemo } from 'react'
 import { Link, Redirect, Route, Switch } from 'react-router-dom'
 
-import { InstanceList } from '../instances/InstanceList'
+import { InstanceList } from '../instances/instanceList/InstanceList'
 import { SignupPage } from '../trialStartFlow/steps/1-signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
 import { NewInstancePage } from '../trialStartFlow/steps/2-instance/NewInstancePage'
