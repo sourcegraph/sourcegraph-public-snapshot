@@ -53,7 +53,7 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, repoDir string, options Options, operations *Operations) error {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, device string, options Options, operations *Operations) error {
 	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
@@ -62,7 +62,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath),
+			"--volumes", fmt.Sprintf("%s:%s", device, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
@@ -112,11 +113,8 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir, vmStartupScriptPath string) []string {
+func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
 	copyfiles := make([]string, 0, 2)
-	if dir != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dir, firecrackerContainerDir))
-	}
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
