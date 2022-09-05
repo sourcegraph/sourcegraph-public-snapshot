@@ -24,7 +24,7 @@ export const NewInstanceForm: React.FunctionComponent<{}> = () => {
                 size={24}
                 inputClassName={styles.domainInput}
                 // disabled={this.state.submitOrError === 'loading'}
-                label={<Text className="text-left mb-1">Workspace domain</Text>}
+                label={<Text className="text-left mb-1">Instance domain</Text>}
                 inputSymbol={
                     <span className={classNames(styles.checkIcon, 'ml-1')}>
                         <CheckCircleIcon className={classNames(styles.checkIcon, 'ml-1', 'text-success')} />
@@ -33,11 +33,11 @@ export const NewInstanceForm: React.FunctionComponent<{}> = () => {
                 }
             />
             <Button
-                className="mt-2"
+                className="mt-2 px-5"
                 type="submit"
                 // disabled={this.state.submitOrError === 'loading'}
                 variant="primary"
-                display="block"
+                display="inline"
                 onClick={() => {
                     window.location.pathname = '/instances'
                 }}
