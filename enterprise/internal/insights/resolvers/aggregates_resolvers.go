@@ -29,6 +29,7 @@ const (
 // Possible reasons that grouping is disabled
 const invalidQueryMsg = "Grouping is disabled because the search query is not valid."
 const fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
+const fileUnsupportedRepoQuery = `Grouping by file is not available for empty repository-only searches.`
 const authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
 const cgInvalidQueryMsg = "Grouping by capture group is only available for regexp searches that contain a capturing group."
 const cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
@@ -336,6 +337,9 @@ func canAggregateByPath(searchQuery, patternType string) (bool, *notAvailableRea
 				return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 			}
 		}
+	}
+	if querybuilder.RepoOnlyQuery(plan) {
+		return false, &notAvailableReason{reason: fileUnsupportedRepoQuery, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 	}
 	return true, nil, nil
 }

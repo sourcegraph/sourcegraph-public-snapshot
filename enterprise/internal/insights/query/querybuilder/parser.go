@@ -1,7 +1,6 @@
 package querybuilder
 
 import (
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -71,11 +70,9 @@ func RepoOnlyQuery(plan query.Plan) bool {
 
 func repoOnlyParameters(parameters []query.Parameter) bool {
 	for _, p := range parameters {
-		fmt.Println(p.Field, p.Value)
 		if p.Field != "repo" && !(p.Field == "select" && p.Value == "repo") {
 			return false
 		}
 	}
-	fmt.Println("return true")
 	return true
 }
