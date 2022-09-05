@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
@@ -30,13 +30,13 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
 
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+	gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
 		return []byte(wantContent), nil
 	}
-	t.Cleanup(func() { git.Mocks.ReadFile = nil })
+	t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
 
 	db := database.NewMockDB()
 	gitTree := NewGitTreeEntryResolver(db,

@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,15 +26,16 @@ type BitbucketServerSource struct {
 var _ ForkableChangesetSource = BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketServerSource(&c, cf, nil)
-}
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 
-func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.Factory, au auth.Authenticator) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -46,13 +47,9 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 		return nil, err
 	}
 
-	client, err := bitbucketserver.NewClient(c, cli)
+	client, err := bitbucketserver.NewClient(svc.URN(), &c, cli)
 	if err != nil {
 		return nil, err
-	}
-
-	if au != nil {
-		client = client.WithAuthenticator(au)
 	}
 
 	return &BitbucketServerSource{
@@ -62,7 +59,7 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 }
 
 func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	return GitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -108,12 +105,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.ToRef.Repository.Slug = targetRepo.Slug
 	pr.ToRef.Repository.ID = targetRepo.ID
 	pr.ToRef.Repository.Project.Key = targetRepo.Project.Key
-	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
+	pr.ToRef.ID = gitdomain.EnsureRefPrefix(c.BaseRef)
 
 	pr.FromRef.Repository.Slug = remoteRepo.Slug
 	pr.FromRef.Repository.ID = remoteRepo.ID
 	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
-	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
+	pr.FromRef.ID = gitdomain.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {

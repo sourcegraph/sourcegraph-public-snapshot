@@ -4,7 +4,7 @@ You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For ex
 
 Please review [the PostgreSQL](../postgres.md) documentation for a complete list of requirements.
 
-> NOTE: Only the frontend (_pgsql_) and code intelligence (_codeintel-db_) databases are supported to run externally at this time.
+> NOTE: As of version 3.39.0, codeinsights-db no longer relies on the internal TimescaleDB and can be externalized.
 
 
 ## General recommendations
@@ -12,7 +12,7 @@ Please review [the PostgreSQL](../postgres.md) documentation for a complete list
 If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
 
 1. Deploy _codeintel-db_ alongside the other Sourcegraph containers, i.e. not as a managed PostgreSQL instance.
-2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because precise code intelligence data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
+2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because code graph data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
 
 We also recommend having backups for the _codeintel-db_ as a best practice. The reason behind this recommendation is that _codeintel-db_ data is uploaded via CI systems. If data is lost, Sourcegraph cannot automatically rebuild it from the repositories, which means you'd have to wait until it is re-uploaded from your CI systems.
 
@@ -27,7 +27,7 @@ The addition of `PG*` environment variables to your Sourcegraph deployment files
 - `PGDATABASE`
 - `PGSSLMODE`
 
-To externalize the _code intelligence database_, use the following prefixed `CODEINTEL_PG*` variables:
+To externalize the _code navigation database_, use the following prefixed `CODEINTEL_PG*` variables:
 
 - `CODEINTEL_PGHOST`
 - `CODEINTEL_PGPORT`
@@ -36,7 +36,7 @@ To externalize the _code intelligence database_, use the following prefixed `COD
 - `CODEINTEL_PGDATABASE`
 - `CODEINTEL_PGSSLMODE`
 
-> NOTE: ⚠️ If you have configured both the frontend (pgsql) and code intelligence (codeintel-db) databases with the same values, the Sourcegraph instance will refuse to start. Each database should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
+> NOTE: ⚠️ If you have configured both the frontend (pgsql) and code navigation (codeintel-db) databases with the same values, the Sourcegraph instance will refuse to start. Each database should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
 
 ### sourcegraph/server
 
@@ -48,7 +48,7 @@ Add the following to your `docker run` command:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.38.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.43.1</code></pre>
 
 ### Docker Compose
 
@@ -100,7 +100,7 @@ Add the following to your `docker run` command:
     #     - sourcegraph
     # restart: always
 
-    # # Description: PostgreSQL database for code intelligence data.
+    # # Description: PostgreSQL database for code navigation data.
     # #
     # # Disk: 128GB / persistent SSD
     # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
@@ -126,7 +126,7 @@ Add the following to your `docker run` command:
 
 ### Kubernetes
 
-Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external frontend (`pgsql`) and code intelligence (`codeintel-db`) PostgreSQL instances, respectively. Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external frontend (`pgsql`) and code navigation (`codeintel-db`) PostgreSQL instances, respectively. Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 You are then free to remove the now unused `pgsql` and `codeintel-db` services and deployments from your cluster.
 
@@ -154,7 +154,7 @@ When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in 
 
 Add the following to your `docker run` command:
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:3.38.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:3.43.1</code></pre>
 
 ### Docker Compose
 
@@ -198,7 +198,7 @@ Add the following to your `docker run` command:
     #     - sourcegraph
     # restart: always
 
-    # # Description: PostgreSQL database for code intelligence data.
+    # # Description: PostgreSQL database for code navigation data.
     # #
     # # Disk: 128GB / persistent SSD
     # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
@@ -300,9 +300,10 @@ spec:
 ## Postgres Permissions and Database Migrations
 
 There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
-Currently the Code Insights database uses TimescaleDB. We do not offer support for running the Code Insights database as an external service.
 
 By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
+
+> NOTE: On AWS RDS, you will need to perform the operations below using the `rds_superuser` role because RDS does not grant SUPERUSER privileges to user database accounts.
 
 This may not be acceptable in all environments. At minimum we expect that the `PGUSER` and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
 
@@ -330,7 +331,9 @@ actions necessary to accomodate the migrator.
 
 ### Using restricted permissions for pgsql (frontend DB)
 
-Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+> NOTE: For AWS RDS, refer to the note from this [section](#postgres-permissions-and-database-migrations).
+
+Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`. 
 
 Update these variables to match your deployment of the Sourcegraph _frontend_ database following [the guidance from the instructions section](#instructions). This database is called `pgsql` in the Docker Compose and Kubernetes deployments.
 
@@ -386,6 +389,8 @@ The `sg_service` database role is a legacy role that should be removed from all 
 ----
 
 ### Using restricted permissions for CodeIntel DB
+
+> NOTE: For AWS RDS, refer to the note from this [section](#postgres-permissions-and-database-migrations).
 
 CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 

@@ -48,6 +48,7 @@ export interface Pattern extends BaseToken {
     type: 'pattern'
     kind: PatternKind
     value: string
+    delimited?: boolean
 }
 
 /**

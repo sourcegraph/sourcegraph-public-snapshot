@@ -32,7 +32,7 @@ func New(listener net.Listener, httpServer *http.Server, options ...ServerOption
 	return newServer(httpServer, makeListener, options...)
 }
 
-// New returns a BackgroundRoutine that serves the given handler on the given address.
+// NewFromAddr returns a BackgroundRoutine that serves the given handler on the given address.
 func NewFromAddr(addr string, httpServer *http.Server, options ...ServerOptions) goroutine.BackgroundRoutine {
 	makeListener := func() (net.Listener, error) { return NewListener(addr) }
 	return newServer(httpServer, makeListener, options...)

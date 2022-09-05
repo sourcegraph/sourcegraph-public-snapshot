@@ -5,12 +5,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
-	enterprisedbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	enterprisedbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
@@ -21,8 +25,8 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependenciesStore.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
 		dbStore:     mockDBStore,
@@ -30,10 +34,11 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -77,10 +82,11 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -105,5 +111,90 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 
 	if len(mockDBStore.InsertCloneableDependencyRepoFunc.History()) != 0 {
 		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 0, len(mockDBStore.InsertCloneableDependencyRepoFunc.History()))
+	}
+}
+
+func TestNewPackage(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   shared.Package
+		out  *precise.Package
+	}{
+		{
+			name: "jvm name normalization",
+			in: shared.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "maven/junit/junit",
+				Version: "4.2",
+			},
+			out: &precise.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+		},
+		{
+			name: "jvm name normalization no-op",
+			in: shared.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+			out: &precise.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+		},
+		{
+			name: "npm no-op",
+			in: shared.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@graphql-mesh/graphql",
+				Version: "0.24.0",
+			},
+			out: &precise.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@graphql-mesh/graphql",
+				Version: "0.24.0",
+			},
+		},
+		{
+			name: "npm bad-name",
+			in: shared.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@automapper/classes/transformer-plugin",
+				Version: "0.24.0",
+			},
+			out: nil,
+		},
+		{
+			name: "go no-op",
+			in: shared.Package{
+				Scheme:  dependencies.GoPackagesScheme,
+				Name:    "github.com/tsenart/vegeta/v12",
+				Version: "12.7.0",
+			},
+			out: &precise.Package{
+				Scheme:  dependencies.GoPackagesScheme,
+				Name:    "github.com/tsenart/vegeta/v12",
+				Version: "12.7.0",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have, err := newPackage(tc.in)
+			want := tc.out
+
+			if want == nil {
+				require.Nil(t, have)
+				require.NotNil(t, err)
+				return
+			}
+
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatalf("mismatch (-want, +have): %s", diff)
+			}
+		})
 	}
 }

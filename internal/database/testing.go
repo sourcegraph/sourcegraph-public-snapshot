@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func assertJSONEqual(t *testing.T, want, got interface{}) {
+func assertJSONEqual(t *testing.T, want, got any) {
 	wantJ := asJSON(t, want)
 	gotJ := asJSON(t, got)
 	if wantJ != gotJ {
@@ -13,11 +13,11 @@ func assertJSONEqual(t *testing.T, want, got interface{}) {
 	}
 }
 
-func jsonEqual(t *testing.T, a, b interface{}) bool {
+func jsonEqual(t *testing.T, a, b any) bool {
 	return asJSON(t, a) == asJSON(t, b)
 }
 
-func asJSON(t *testing.T, v interface{}) string {
+func asJSON(t *testing.T, v any) string {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		t.Fatal(err)

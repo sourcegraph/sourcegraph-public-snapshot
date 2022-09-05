@@ -57,6 +57,8 @@ export const renderMarkdown = (
     options: {
         /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
+        renderer?: marked.Renderer
+        headerPrefix?: string
     } & (
         | {
               /** Strip off any HTML and return a plain text string, useful for previews */
@@ -76,6 +78,8 @@ export const renderMarkdown = (
         breaks: options.breaks,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
+        renderer: options.renderer,
+        headerPrefix: options.headerPrefix ?? '',
     })
 
     let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
@@ -99,7 +103,6 @@ export const renderMarkdown = (
                 'img',
                 'picture',
                 'source',
-                'object',
                 'svg',
                 'rect',
                 'defs',
@@ -114,15 +117,12 @@ export const renderMarkdown = (
                 a: [
                     ...sanitize.defaults.allowedAttributes.a,
                     'title',
-                    'data-tooltip', // TODO support fancy tooltips through native titles
                     'class',
                     { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],
                 img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
-                // Support SVGs for code insights.
-                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
                 rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],

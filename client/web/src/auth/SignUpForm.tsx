@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiHelpCircleOutline, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -17,13 +15,13 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Checkbox, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
+import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -41,14 +39,21 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps extends FeatureFlagProps {
+interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
+    context: Pick<
+        SourcegraphContext,
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
+    >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
@@ -59,7 +64,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpFormProps>> = ({
     onSignUp,
     buttonLabel,
     className,
@@ -81,10 +86,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 asynchronousValidators: [isUsernameUnique],
             },
             password: {
-                synchronousValidators: [],
+                synchronousValidators: [password => validatePassword(context, password)],
+                asynchronousValidators: [],
             },
         }),
-        []
+        [context]
     )
 
     const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(signUpFieldValidators.email)
@@ -133,13 +139,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
+        (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
         },
         []
     )
+
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
@@ -165,14 +172,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     emailInputReference={emailInputReference}
                 />
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Label
                         htmlFor="username"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
-                    </label>
+                    </Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
                         loading={usernameState.kind === 'LOADING'}
@@ -185,23 +192,24 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             disabled={loading}
                             placeholder=" "
                             inputRef={usernameInputReference}
+                            aria-describedby="username-input-invalid-feedback"
                         />
                     </LoaderInput>
                     {usernameState.kind === 'INVALID' && (
-                        <small className="invalid-feedback" role="alert">
+                        <small className="invalid-feedback" id="username-input-invalid-feedback" role="alert">
                             {usernameState.reason}
                         </small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Label
                         htmlFor="password"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
-                    </label>
+                    </Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
                         loading={passwordState.kind === 'LOADING'}
@@ -213,39 +221,41 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             required={true}
                             disabled={loading}
                             autoComplete="new-password"
+                            minLength={context.authMinPasswordLength}
                             placeholder=" "
                             onInvalid={preventDefault}
-                            minLength={12}
                             inputRef={passwordInputReference}
                             formNoValidate={true}
+                            aria-describedby="password-input-invalid-feedback password-requirements"
                         />
                     </LoaderInput>
-                    {passwordState.kind === 'INVALID' ? (
-                        <small className="invalid-feedback" role="alert">
+                    {passwordState.kind === 'INVALID' && (
+                        <small className="invalid-feedback" id="password-input-invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>
-                    ) : (
-                        <small className="form-text text-muted">At least 12 characters</small>
                     )}
+                    <small className="form-help text-muted" id="password-requirements">
+                        {getPasswordRequirements(context)}
+                    </small>
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for{' '}
-                                <span className="text-nowrap">
-                                    30 days{' '}
-                                    <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                        <Icon as={HelpCircleOutlineIcon} />
-                                    </Link>
-                                </span>
-                            </label>
-                        </div>
+                        <Checkbox
+                            onChange={onRequestTrialFieldChange}
+                            id="EnterpriseTrialCheck"
+                            label={
+                                <>
+                                    Try Sourcegraph Enterprise free for
+                                    <span className="text-nowrap">
+                                        {' '}
+                                        30 days{' '}
+                                        <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
+                                            <Icon aria-label="See Sourcegraph pricing" svgPath={mdiHelpCircleOutline} />
+                                        </Link>
+                                    </span>
+                                </>
+                            }
+                        />
                     </div>
                 )}
                 <div className="form-group mb-0">
@@ -254,8 +264,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn-block"
                         variant="primary"
+                        display="block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -266,16 +276,16 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <Button
-                                    href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn-block"
+                                    to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
+                                    display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
-                                    as="a"
+                                    as={AnchorLink}
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <Icon as={GithubIcon} />
+                                        <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <Icon as={GitlabIcon} />
+                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>
@@ -285,7 +295,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 )}
 
                 {!experimental && (
-                    <p className="mt-3 mb-0">
+                    <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
                             <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
@@ -297,7 +307,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             </Link>
                             .
                         </small>
-                    </p>
+                    </Text>
                 )}
             </form>
         </>

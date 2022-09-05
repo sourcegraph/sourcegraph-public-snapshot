@@ -4,11 +4,10 @@ import (
 	"context"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 type CodeIntelligenceRangeResolver struct {
-	r                resolvers.AdjustedCodeIntelligenceRange
+	r                AdjustedCodeIntelligenceRange
 	locationResolver *CachedLocationResolver
 }
 
@@ -30,8 +29,4 @@ func (r *CodeIntelligenceRangeResolver) Implementations(ctx context.Context) (gq
 
 func (r *CodeIntelligenceRangeResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	return NewHoverResolver(r.r.HoverText, convertRange(r.r.Range)), nil
-}
-
-func (r *CodeIntelligenceRangeResolver) Documentation(ctx context.Context) (gql.DocumentationResolver, error) {
-	return NewDocumentationResolver(r.r.ToDocumentation()), nil
 }

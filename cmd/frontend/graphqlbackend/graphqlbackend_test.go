@@ -16,6 +16,8 @@ import (
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -26,6 +28,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+		log.SetOutput(io.Discard)
+		logtest.InitWithLevel(m, sglog.LevelNone)
+	} else {
+		logtest.Init(m)
+	}
+	os.Exit(m.Run())
+}
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
 	tests := [][3]string{
@@ -79,12 +93,11 @@ func TestResolverTo(t *testing.T) {
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
-	resolvers := []interface{}{
+	resolvers := []any{
 		&FileMatchResolver{db: db},
-		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: db},
+		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&settingsSubject{},
@@ -92,21 +105,40 @@ func TestResolverTo(t *testing.T) {
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
-		for i := 0; i < typ.NumMethod(); i++ {
-			if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-				reflect.ValueOf(r).MethodByName(name).Call(nil)
+		t.Run(typ.Name(), func(t *testing.T) {
+			for i := 0; i < typ.NumMethod(); i++ {
+				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+					reflect.ValueOf(r).MethodByName(name).Call(nil)
+				}
 			}
-		}
+		})
 	}
-}
 
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-		log.SetOutput(io.Discard)
-	}
-	os.Exit(m.Run())
+	t.Run("GitTreeEntryResolver", func(t *testing.T) {
+		blobStat, err := os.Stat("graphqlbackend_test.go")
+		if err != nil {
+			t.Fatalf("unexpected error opening file: %s", err)
+		}
+		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat}
+		if _, isBlob := blobEntry.ToGitBlob(); !isBlob {
+			t.Errorf("expected blobEntry to be blob")
+		}
+		if _, isTree := blobEntry.ToGitTree(); isTree {
+			t.Errorf("expected blobEntry to be blob, but is tree")
+		}
+
+		treeStat, err := os.Stat(".")
+		if err != nil {
+			t.Fatalf("unexpected error opening directory: %s", err)
+		}
+		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
+		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
+			t.Errorf("expected treeEntry to be tree, but is blob")
+		}
+		if _, isTree := treeEntry.ToGitTree(); !isTree {
+			t.Errorf("expected treeEntry to be tree")
+		}
+	})
 }
 
 func TestAffiliatedRepositories(t *testing.T) {
@@ -126,15 +158,18 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "github",
+				Config:      extsvc.NewEmptyConfig(),
 			},
 			{
 				ID:          2,
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "gitlab",
+				Config:      extsvc.NewEmptyConfig(),
 			},
 			{
-				ID:   3,
-				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
+				ID:     3,
+				Kind:   extsvc.KindBitbucketCloud, // unsupported, should be ignored
+				Config: extsvc.NewEmptyConfig(),
 			},
 		},
 		nil,
@@ -146,12 +181,14 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "github",
+				Config:      extsvc.NewEmptyConfig(),
 			}, nil
 		case 2:
 			return &types.ExternalService{
 				ID:          2,
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "gitlab",
+				Config:      extsvc.NewEmptyConfig(),
 			}, nil
 		}
 		return nil, nil
@@ -299,7 +336,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"affiliatedRepositories"},
+					Path:          []any{"affiliatedRepositories"},
 					Message:       "must be authenticated as user with id 1",
 					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 				},
@@ -412,7 +449,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"affiliatedRepositories", "codeHostErrors"},
+					Path:          []any{"affiliatedRepositories", "codeHostErrors"},
 					Message:       "failed to fetch from any code host",
 					ResolverError: errors.New("failed to fetch from any code host"),
 				},

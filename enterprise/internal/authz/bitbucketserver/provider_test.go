@@ -47,8 +47,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cli, save := newClient(t, "Validate/"+tc.name)
-			defer save()
+			cli := newClient(t, "Validate/"+tc.name)
 
 			p := newProvider(cli)
 
@@ -162,7 +161,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountID:   "john",
 					},
 					AccountData: extsvc.AccountData{
-						Data: new(json.RawMessage),
+						Data: extsvc.NewUnencryptedData(nil),
 					},
 				},
 				err: `not a code host of the account: want "${INSTANCEURL}" but have "https://github.com"`,
@@ -176,7 +175,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountID:   "john",
 					},
 					AccountData: extsvc.AccountData{
-						Data: new(json.RawMessage),
+						Data: extsvc.NewUnencryptedData(nil),
 					},
 				},
 				err: "unmarshaling account data: unexpected end of JSON input",
@@ -300,7 +299,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 	}
 }
 
-func marshalJSON(v interface{}) []byte {
+func marshalJSON(v any) []byte {
 	bs, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
@@ -481,13 +480,13 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 			AccountID:   strconv.Itoa(u.ID),
 		},
 		AccountData: extsvc.AccountData{
-			Data: (*json.RawMessage)(&bs),
+			Data: extsvc.NewUnencryptedData(bs),
 		},
 	}
 }
 
-func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
-	cli, save := bitbucketserver.NewTestClient(t, name, *update)
+func newClient(t *testing.T, name string) *bitbucketserver.Client {
+	cli := bitbucketserver.NewTestClient(t, name, *update)
 
 	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
 	if signingKey == "" {
@@ -504,7 +503,7 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 		t.Fatal(err)
 	}
 
-	return cli, save
+	return cli
 }
 
 func newProvider(cli *bitbucketserver.Client) *Provider {

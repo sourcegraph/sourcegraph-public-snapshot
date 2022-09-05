@@ -12,10 +12,11 @@ trap cleanup EXIT
 mkdir -p "${OUTPUT}"
 OUTPUT_FILE="${OUTPUT}/queries.yaml"
 CODEINTEL_OUTPUT_FILE="${OUTPUT}/code_intel_queries.yaml"
+CODEINSIGHTS_OUTPUT_FILE="${OUTPUT}/code_insights_queries.yaml"
 
 for source in ./config/*.yaml; do
   {
-    if [[ "$source" == *"codeintel"* ]]; then
+    if [[ "$source" == *"codeintel"* || "$source" == *"codeinsights"* ]]; then
       echo "# skipping $source"
       continue
     fi
@@ -27,7 +28,7 @@ done
 
 for source in ./config/*.yaml; do
   {
-    if [[ "$source" == *"standard"* ]]; then
+    if [[ "$source" == *"frontend"* || "$source" == *"codeinsights"* ]]; then
       echo "# skipping $source"
       continue
     fi
@@ -37,8 +38,21 @@ for source in ./config/*.yaml; do
   } >>"${CODEINTEL_OUTPUT_FILE}"
 done
 
+for source in ./config/*.yaml; do
+  {
+    if [[ "$source" == *"frontend"* || "$source" == *"codeintel"* ]]; then
+      echo "# skipping $source"
+      continue
+    fi
+    echo "# source: ${source}"
+    cat "$source"
+    echo ""
+  } >>"${CODEINSIGHTS_OUTPUT_FILE}"
+done
+
 echo "${OUTPUT_FILE}"
 echo "${CODEINTEL_OUTPUT_FILE}"
+echo "${CODEINSIGHTS_OUTPUT_FILE}"
 
 docker build -f ./Dockerfile -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
   --progress=plain \

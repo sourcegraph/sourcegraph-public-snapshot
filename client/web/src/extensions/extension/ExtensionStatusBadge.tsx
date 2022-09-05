@@ -7,10 +7,9 @@ import { ProductStatusBadge } from '@sourcegraph/wildcard'
 /**
  * Shows an "EXPERIMENTAL" badge for work-in-progress extensions.
  */
-export const ExtensionStatusBadge: React.FunctionComponent<{ viewerCanAdminister: boolean; className?: string }> = ({
-    viewerCanAdminister,
-    className,
-}) => (
+export const ExtensionStatusBadge: React.FunctionComponent<
+    React.PropsWithChildren<{ viewerCanAdminister: boolean; className?: string }>
+> = ({ viewerCanAdminister, className }) => (
     <ProductStatusBadge
         status="experimental"
         tooltip={

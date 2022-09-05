@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo } from 'react'
+import { FunctionComponent, useEffect, useMemo } from 'react'
 
 import { RouteComponentProps, Redirect } from 'react-router'
 import { catchError } from 'rxjs/operators'
@@ -17,7 +17,7 @@ interface Props extends RouteComponentProps<{ id: string }> {}
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
+export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<Props>> = ({
     match: {
         params: { id },
     },
@@ -38,7 +38,7 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
             ) : !uploadOrError.projectRoot ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
             ) : (
-                <Redirect to={`${uploadOrError.projectRoot.repository.url}/-/code-intelligence/uploads/${id}`} />
+                <Redirect to={`${uploadOrError.projectRoot.repository.url}/-/code-graph/uploads/${id}`} />
             )}
         </div>
     )

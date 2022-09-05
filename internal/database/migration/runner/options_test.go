@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestDesugarOperation(t *testing.T) {
@@ -59,6 +61,7 @@ func TestDesugarOperation(t *testing.T) {
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			schemaContext := schemaContext{
+				logger: logtest.Scoped(t),
 				schema: makeTestSchema(t, "well-formed"),
 				initialSchemaVersion: schemaVersion{
 					appliedVersions: testCase.appliedVersions,

@@ -13,12 +13,12 @@ let
   # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
   ctags-overlay = (self: super: {
     universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220206.0";
+      version = "5.9.20220403.0";
       src = super.fetchFromGitHub {
         owner = "universal-ctags";
         repo = "ctags";
-        rev = "40603a68c1f3b14dc1db4671111096733f6d2485";
-        sha256 = "sha256-oqrLO6/+TP5ccimkgZJ66agaUcNQMOalwVsY8GWS2rg=";
+        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
+        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
       };
       # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
       doCheck = false;
@@ -29,8 +29,8 @@ let
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/350731a856a1d901b0d26f6c9892785a63f48e17.tar.gz";
-      sha256 = "1pbr62q57pcbfr9pnkr02p134ljrachp704j4f9qa86i08njfy0j";
+        "https://github.com/NixOS/nixpkgs/archive/6f38b43c8c84c800f93465b2241156419fd4fd52.tar.gz";
+      sha256 = "0xw3y3jx1bcnwsc0imacbp5m8f51b66s9h8kk8qnfbckwv67dhgd";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -59,11 +59,12 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_18
+    go_1_19
 
     # Lots of our tooling and go tests rely on git et al.
     git
     parallel
+    nssTools
 
     # CI lint tools you need locally
     shfmt
@@ -75,6 +76,12 @@ pkgs.mkShell {
     nodejs-16_x
     (yarn.override { nodejs = nodejs-16_x; })
     nodePackages.typescript
+
+    cargo
+    rustc
+    rustfmt
+    libiconv
+    clippy
   ];
 
   # Startup postgres
@@ -82,7 +89,13 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  hardeningDisable = [ "fortify" ];
+
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
+
+  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+  DEV_WEB_BUILDER = "esbuild";
 }

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,25 +26,25 @@ func TestRewirer_Rewire(t *testing.T) {
 	unsupportedTestRepo := &types.Repo{
 		ID: unsupportedTestRepoID,
 		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.TypeBitbucketCloud,
+			ServiceType: extsvc.TypeOther,
 		},
 	}
 	testCases := []struct {
 		name           string
 		mappings       btypes.RewirerMappings
-		wantChangesets []ct.ChangesetAssertions
+		wantChangesets []bt.ChangesetAssertions
 		wantErr        error
 	}{
 		{
 			name:           "empty mappings",
 			mappings:       btypes.RewirerMappings{},
-			wantChangesets: []ct.ChangesetAssertions{},
+			wantChangesets: []bt.ChangesetAssertions{},
 		},
 		// NO CHANGESET SPEC
 		{
 			name: "no spec matching existing imported changeset",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         testRepoID,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 
@@ -54,9 +54,9 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(ct.ChangesetAssertions{
+				assertResetReconcilerState(bt.ChangesetAssertions{
 					Repo:       testRepoID,
 					DetachFrom: []int64{testBatchChangeID},
 				}),
@@ -65,7 +65,7 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "no spec matching existing unpublished branch changeset owned by this batch change",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         testRepoID,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 
@@ -76,9 +76,9 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(ct.ChangesetAssertions{
+				assertResetReconcilerState(bt.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 					OwnedByBatchChange: testBatchChangeID,
 					CurrentSpec:        testChangesetSpecID,
@@ -90,7 +90,7 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "no spec matching existing published and open branch changeset owned by this batch change",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         testRepoID,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 
@@ -104,9 +104,9 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(ct.ChangesetAssertions{
+				assertResetReconcilerState(bt.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateOpen,
 					OwnedByBatchChange: testBatchChangeID,
@@ -125,7 +125,7 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "no spec matching existing published and merged branch changeset owned by this batch change",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         testRepoID,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 
@@ -139,9 +139,9 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(ct.ChangesetAssertions{
+				assertResetReconcilerState(bt.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateMerged,
 					OwnedByBatchChange: testBatchChangeID,
@@ -160,7 +160,7 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "no spec matching existing published and closed branch changeset owned by this batch change",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         testRepoID,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 
@@ -174,9 +174,9 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(ct.ChangesetAssertions{
+				assertResetReconcilerState(bt.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateClosed,
 					OwnedByBatchChange: testBatchChangeID,
@@ -195,7 +195,7 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "no spec matching existing changeset, no repo perms",
 			mappings: btypes.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:         0,
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
 				}),
@@ -203,22 +203,22 @@ func TestRewirer_Rewire(t *testing.T) {
 				Repo: nil,
 			}},
 			// Nothing should be done.
-			wantChangesets: []ct.ChangesetAssertions{},
+			wantChangesets: []bt.ChangesetAssertions{},
 		},
 		// END NO CHANGESET SPEC
 		// NO CHANGESET
 		{
 			name: "new importing spec",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
 				Repo:       testRepoID,
 				ExternalID: "123",
 				// Imported changesets always start as unpublished and will be set to published once the import succeeded.
@@ -229,31 +229,32 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "new branch spec",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					ID:   testChangesetSpecID,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
 				Repo:               testRepoID,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 				AttachedTo:         []int64{testBatchChangeID},
 				OwnedByBatchChange: testBatchChangeID,
 				CurrentSpec:        testChangesetSpecID,
 				// Diff stat is copied over from changeset spec
-				DiffStat: ct.TestChangsetSpecDiffStat,
+				DiffStat: bt.TestChangsetSpecDiffStat,
 			})},
 		},
 		{
 			name: "unsupported repo",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo:       unsupportedTestRepoID,
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				RepoID: unsupportedTestRepoID,
 				Repo:   unsupportedTestRepo,
@@ -266,9 +267,10 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "inaccessible repo",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo:       testRepoID,
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				RepoID: testRepoID,
 				Repo:   nil,
@@ -280,13 +282,13 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "update importing spec: imported by other",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another batch change
@@ -294,7 +296,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// Should not be reenqueued
 				{
 					Repo:       testRepoID,
@@ -307,13 +309,13 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "update importing spec: failed before",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another batch change
@@ -322,7 +324,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
 				Repo:       testRepoID,
 				ExternalID: "123",
 				// Now should be attached to both btypes.
@@ -332,13 +334,13 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "update importing spec: created by other batch change",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another batch change
@@ -348,7 +350,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{
 				// Changeset owned by another batch change should not be retried.
 				{
 					Repo:               testRepoID,
@@ -361,14 +363,14 @@ func TestRewirer_Rewire(t *testing.T) {
 		{
 			name: "update branch spec",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					ID:   testChangesetSpecID + 1,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:               testRepoID,
 					ExternalID:         "123",
 					CurrentSpec:        testChangesetSpecID,
@@ -379,7 +381,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
 				Repo:               testRepoID,
 				ExternalID:         "123",
 				OwnedByBatchChange: testBatchChangeID,
@@ -389,20 +391,20 @@ func TestRewirer_Rewire(t *testing.T) {
 				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
 				PreviousSpec: testChangesetSpecID,
 				// Diff stat is copied over from changeset spec
-				DiffStat: ct.TestChangsetSpecDiffStat,
+				DiffStat: bt.TestChangsetSpecDiffStat,
 			})},
 		},
 		{
 			name: "update branch spec - failed before",
 			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					ID:   testChangesetSpecID + 1,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:               testRepoID,
 					ExternalID:         "123",
 					CurrentSpec:        testChangesetSpecID,
@@ -413,7 +415,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
+			wantChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
 				Repo:               testRepoID,
 				ExternalID:         "123",
 				OwnedByBatchChange: testBatchChangeID,
@@ -423,7 +425,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				// The changeset was not reconciled successfully before, so the previous spec should have remained unset.
 				PreviousSpec: 0,
 				// Diff stat is copied over from changeset spec
-				DiffStat: ct.TestChangsetSpecDiffStat,
+				DiffStat: bt.TestChangsetSpecDiffStat,
 			})},
 		},
 		// END CHANGESET SPEC AND CHANGESET
@@ -444,13 +446,13 @@ func TestRewirer_Rewire(t *testing.T) {
 				t.Fatalf("incorrect amount of changesets returned. want=%d have=%d", want, have)
 			}
 			for i, changeset := range changesets {
-				ct.AssertChangeset(t, changeset, tc.wantChangesets[i])
+				bt.AssertChangeset(t, changeset, tc.wantChangesets[i])
 			}
 		})
 	}
 }
 
-func assertResetReconcilerState(a ct.ChangesetAssertions) ct.ChangesetAssertions {
+func assertResetReconcilerState(a bt.ChangesetAssertions) bt.ChangesetAssertions {
 	a.ReconcilerState = global.DefaultReconcilerEnqueueState()
 	a.NumFailures = 0
 	a.NumResets = 0

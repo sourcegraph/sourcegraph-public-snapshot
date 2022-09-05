@@ -1,12 +1,12 @@
 import * as React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -25,43 +25,76 @@ const abbreviateNumber = (number: number): string => {
     return (number / 1e9).toFixed(1) + 'b'
 }
 
-const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
+export const limitHit = (progress: Progress): boolean =>
+    progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
+
+export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
+    const contentWithoutTimeUnit =
+        `${abbreviateNumber(progress.matchCount)}` +
+        `${limitHit(progress) ? '+' : ''} ${pluralize('result', progress.matchCount)} in ` +
+        `${(progress.durationMs / 1000).toFixed(2)}`
+    const visibleText = `${contentWithoutTimeUnit}s`
+    const readText = `${contentWithoutTimeUnit} seconds`
+    return { visibleText, readText }
+}
 
 export const StreamingProgressCount: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }
-> = ({ progress, state, showTrace, className = '' }) => (
-    <>
-        <small
-            className={classNames(
-                'd-flex align-items-center',
-                className,
-                styles.count,
-                state === 'loading' && styles.countInProgress
-            )}
-            data-testid="streaming-progress-count"
-        >
-            {abbreviateNumber(progress.matchCount)}
-            {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
-            {(progress.durationMs / 1000).toFixed(2)}s
-            {progress.repositoriesCount !== undefined && (
-                <Icon
-                    className="ml-1"
-                    data-tooltip={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
-                        'repository',
-                        progress.repositoriesCount,
-                        'repositories'
-                    )}`}
-                    as={InformationOutlineIcon}
-                />
-            )}
-        </small>
-        {showTrace && progress.trace && (
-            <small className="d-flex ml-2">
-                <Link to={progress.trace}>
-                    <Icon className="mr-2" as={ClipboardPulseOutlineIcon} />
-                    View trace
-                </Link>
+    React.PropsWithChildren<
+        Pick<StreamingProgressProps, 'progress' | 'state'> & { className?: string; hideIcon?: boolean }
+    >
+> = ({ progress, state, className = '', hideIcon = false }) => {
+    const isLoading = state === 'loading'
+    const progressText = getProgressText(progress)
+
+    return (
+        <>
+            {isLoading && <VisuallyHidden aria-live="polite">Searching</VisuallyHidden>}
+            <small
+                className={classNames(
+                    'd-flex align-items-center',
+                    className,
+                    styles.count,
+                    isLoading && styles.countInProgress
+                )}
+                data-testid="streaming-progress-count"
+            >
+                <CountContent progressText={progressText} />
+                {!hideIcon && progress.repositoriesCount !== undefined && (
+                    <Tooltip
+                        content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                            'repository',
+                            progress.repositoriesCount,
+                            'repositories'
+                        )}`}
+                    >
+                        <Icon
+                            className="ml-1"
+                            svgPath={mdiInformationOutline}
+                            tabIndex={0}
+                            aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                                'repository',
+                                progress.repositoriesCount,
+                                'repositories'
+                            )}`}
+                        />
+                    </Tooltip>
+                )}
             </small>
-        )}
+        </>
+    )
+}
+
+export const CountContent: React.FunctionComponent<{ progressText: { visibleText: string; readText: string } }> = ({
+    progressText,
+}) => (
+    <>
+        {/*
+        Span wrapper needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
+        Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+        */}
+        <span className="position-relative">
+            <VisuallyHidden aria-live="polite">{progressText.readText}</VisuallyHidden>
+        </span>
+        <span aria-hidden={true}>{progressText.visibleText}</span>
     </>
 )

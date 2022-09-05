@@ -1,0 +1,41 @@
+[
+  {
+   "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+   "DatabaseID": 263034151,
+   "NameWithOwner": "sourcegraph-vcr-repos/private-org-repo-1",
+   "Description": "",
+   "URL": "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+   "IsPrivate": true,
+   "IsFork": false,
+   "IsArchived": false,
+   "IsLocked": false,
+   "IsDisabled": false,
+   "ViewerPermission": "ADMIN"
+  },
+  {
+   "ID": "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+   "DatabaseID": 399894286,
+   "NameWithOwner": "sourcegraph-vcr-repos/test_all_read_only",
+   "Description": "",
+   "URL": "https://github.com/sourcegraph-vcr-repos/test_all_read_only",
+   "IsPrivate": true,
+   "IsFork": false,
+   "IsArchived": false,
+   "IsLocked": false,
+   "IsDisabled": false,
+   "ViewerPermission": "ADMIN"
+  },
+  {
+   "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+   "DatabaseID": 263033761,
+   "NameWithOwner": "sourcegraph-vcr-repos/public-org-repo-1",
+   "Description": "",
+   "URL": "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+   "IsPrivate": false,
+   "IsFork": false,
+   "IsArchived": false,
+   "IsLocked": false,
+   "IsDisabled": false,
+   "ViewerPermission": "ADMIN"
+  }
+ ]

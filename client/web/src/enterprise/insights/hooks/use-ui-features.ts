@@ -3,8 +3,7 @@ import { useContext, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { Insight, InsightDashboard, isSearchBasedInsight } from '../core/types'
+import { CodeInsightsBackendContext, Insight, InsightDashboard, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
     getTooltipMessage,
@@ -38,12 +37,12 @@ export interface UseUiFeatures {
     insight: {
         getContextActionsPermissions: (insight: Insight) => { showYAxis: boolean }
         getCreationPermissions: () => Observable<{ available: boolean }>
-        getEditPermissions: () => Observable<{ available: boolean }>
+        getEditPermissions: (insight: Insight | undefined | null) => Observable<{ available: boolean }>
     }
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { UIFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
+    const { UIFeatures, getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
     const { licensed, insightsLimit } = UIFeatures
 
     return useMemo(
@@ -88,16 +87,17 @@ export function useUiFeatures(): UseUiFeatures {
                 },
             },
             insight: {
-                getContextActionsPermissions: (insight: Insight) => ({
-                    showYAxis: isSearchBasedInsight(insight),
-                }),
+                getContextActionsPermissions: (insight: Insight) => ({ showYAxis: isSearchBasedInsight(insight) }),
                 getCreationPermissions: () =>
                     insightsLimit !== null
-                        ? hasInsights(insightsLimit).pipe(map(reachedLimit => ({ available: !reachedLimit })))
+                        ? getActiveInsightsCount(insightsLimit).pipe(
+                              map(insightCount => ({ available: insightCount < insightsLimit }))
+                          )
                         : of({ available: true }),
-                getEditPermissions: () => of({ available: true }),
+                getEditPermissions: (insight: Insight | undefined | null) =>
+                    insight ? of({ available: licensed || !insight?.isFrozen }) : of({ available: false }),
             },
         }),
-        [licensed, insightsLimit, hasInsights]
+        [licensed, insightsLimit, getActiveInsightsCount]
     )
 }

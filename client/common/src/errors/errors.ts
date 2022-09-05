@@ -36,3 +36,8 @@ export const createAggregateError = (errors: readonly ErrorLike[] = []): Error =
               name: AGGREGATE_ERROR_NAME,
               errors: errors.map(asError),
           })
+
+export class AbortError extends Error {
+    public readonly name = 'AbortError'
+    public readonly message = 'Aborted'
+}

@@ -11,15 +11,19 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <a
+          aria-label="/search"
           class="anchorLink"
           href="/search"
         >
           <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline icon"
             fill="none"
             height="64"
+            role="img"
             viewBox="0 0 52 52"
             width="65"
             xmlns="http://www.w3.org/2000/svg"
@@ -39,11 +43,11 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           </svg>
         </a>
       </div>
-      <div
-        class="title"
+      <h1
+        class="h1 title"
       >
-        Sign in to Sourcegraph Cloud
-      </div>
+        Sign in to Sourcegraph
+      </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"
       >
@@ -53,63 +57,71 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
-            >
-              <label
-                class="align-self-start"
-                for="username-or-email"
-              >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
               <div
-                class="d-flex justify-content-between"
+                class="mb-2"
               >
-                <label
-                  for="password"
+                <p
+                  class="alignLeft"
                 >
-                  Password
-                </label>
-                <small
-                  class="form-text text-muted"
-                >
-                  <a
-                    class="anchorLink"
-                    href="/password-reset"
-                  >
-                    Forgot password?
-                  </a>
-                </small>
+                  Username or email
+                </p>
               </div>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
+            <div
+              class="form-group d-flex flex-column align-content-start position-relative"
+            >
+              <label
+                class="label align-self-start"
+                for="password"
+              >
+                Password
+              </label>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
+              <small
+                class="form-text text-muted align-self-end position-absolute"
+              >
+                <a
+                  class="anchorLink"
+                  href="/password-reset"
+                >
+                  Forgot password?
+                </a>
+              </small>
             </div>
             <div
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -135,13 +147,15 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="anchorLink btn btnSecondary btnBlock"
               href=""
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -153,7 +167,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"
@@ -177,11 +193,14 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
+          role="img"
           viewBox="0 0 52 52"
           width="65"
           xmlns="http://www.w3.org/2000/svg"
@@ -200,11 +219,11 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           />
         </svg>
       </div>
-      <div
-        class="title"
+      <h1
+        class="h1 title"
       >
-        Sign in to Sourcegraph Server
-      </div>
+        Sign in to Sourcegraph
+      </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"
       >
@@ -214,63 +233,71 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
-            >
-              <label
-                class="align-self-start"
-                for="username-or-email"
-              >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
               <div
-                class="d-flex justify-content-between"
+                class="mb-2"
               >
-                <label
-                  for="password"
+                <p
+                  class="alignLeft"
                 >
-                  Password
-                </label>
-                <small
-                  class="form-text text-muted"
-                >
-                  <a
-                    class="anchorLink"
-                    href="/password-reset"
-                  >
-                    Forgot password?
-                  </a>
-                </small>
+                  Username or email
+                </p>
               </div>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
+            <div
+              class="form-group d-flex flex-column align-content-start position-relative"
+            >
+              <label
+                class="label align-self-start"
+                for="password"
+              >
+                Password
+              </label>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
+              <small
+                class="form-text text-muted align-self-end position-absolute"
+              >
+                <a
+                  class="anchorLink"
+                  href="/password-reset"
+                >
+                  Forgot password?
+                </a>
+              </small>
             </div>
             <div
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -296,13 +323,15 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="anchorLink btn btnSecondary btnBlock"
               href=""
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -314,7 +343,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"

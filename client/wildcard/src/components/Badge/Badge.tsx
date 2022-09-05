@@ -4,16 +4,19 @@ import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { Link } from '../Link'
+import { Tooltip } from '../Tooltip'
 
 import { BADGE_VARIANTS } from './constants'
 
 import styles from './Badge.module.scss'
 
+export type BadgeVariantType = typeof BADGE_VARIANTS[number]
+
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     /**
      * The variant style of the badge.
      */
-    variant?: typeof BADGE_VARIANTS[number]
+    variant?: BadgeVariantType
     /**
      * Allows modifying the size of the badge. Supports a smaller variant.
      */
@@ -40,7 +43,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 /**
  * An abstract UI component which renders a small "badge" with specific styles to help annotate content.
  */
-export const Badge: React.FunctionComponent<BadgeProps> = ({
+export const Badge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>> = ({
     children,
     variant,
     small,
@@ -56,18 +59,23 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
         isBranded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
 
     const commonProps = {
-        'data-tooltip': tooltip,
         className: classNames(brandedClassName, className),
         ...otherProps,
     }
 
     if (href) {
         return (
-            <Link to={href} rel="noopener" target="_blank" {...commonProps}>
-                {children}
-            </Link>
+            <Tooltip content={tooltip}>
+                <Link to={href} rel="noopener" target="_blank" {...commonProps}>
+                    {children}
+                </Link>
+            </Tooltip>
         )
     }
 
-    return <Component {...commonProps}>{children}</Component>
+    return (
+        <Tooltip content={tooltip}>
+            <Component {...commonProps}>{children}</Component>
+        </Tooltip>
+    )
 }

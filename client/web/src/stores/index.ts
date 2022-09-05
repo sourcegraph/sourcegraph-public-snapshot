@@ -17,10 +17,9 @@ export {
     setSearchCaseSensitivity,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
-export { useThemeState } from './themeState'
 export {
     useExperimentalFeatures,
     getExperimentalFeatures,
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
-export { useSearchStackState, useSearchStack } from './searchStack'
+export { useNotepadState, useNotepad } from './notepad'

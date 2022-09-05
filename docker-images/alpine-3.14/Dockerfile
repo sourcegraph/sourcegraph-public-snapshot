@@ -2,7 +2,7 @@
 # base image used by all Sourcegraph Docker images.
 
 # alpine_base CHECK:ALPINE_OK
-FROM alpine:3.14@sha256:635f0aa53d99017b38d1a0aa5b2082f7812b03e3cdb299103fe77b5c8a07f1d2 AS alpine_base
+FROM alpine:3.14@sha256:92d13cc58a46e012300ef49924edc56de5642ada25c9a457dce4a6db59892650 AS alpine_base
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -27,7 +27,7 @@ RUN apk update && apk add --no-cache \
     bind-tools \
     busybox \
     ca-certificates \
-    curl \
+    'curl>=7.79.1-r2' \
     mailcap \
     tini \
     wget
@@ -36,4 +36,4 @@ RUN apk update && apk add --no-cache \
 # Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
 # PR: https://github.com/sourcegraph/sourcegraph/pull/32682
 # @TODO: Remove this with the next release of Alpine
-RUN apk add --upgrade --no-cache libcrypto1.1>=1.1.1n-r0 libssl1.1>=1.1.1n-r0
+RUN apk add --upgrade --no-cache 'libcrypto1.1>=1.1.1n-r0' 'libssl1.1>=1.1.1n-r0'

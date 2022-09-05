@@ -2,24 +2,23 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
-	slackClient, err := slack.NewClient(ctx)
+	slackClient, err := slack.NewClient(ctx, std.Out)
 	if err != nil {
 		return nil, errors.Newf("slack.NewClient: %w", err)
 	}
@@ -28,53 +27,60 @@ func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
 }
 
 var (
-	teammateFlagSet = flag.NewFlagSet("sg teammate", flag.ExitOnError)
-	teammateCommand = &ffcli.Command{
-		Name:       "teammate",
-		ShortUsage: "sg teammate [time|handbook] <nickname>",
-		ShortHelp:  "Get information about Sourcegraph teammates.",
-		LongHelp:   `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
-		FlagSet:    teammateFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Subcommands: []*ffcli.Command{{
-			Name:       "time",
-			ShortUsage: "sg teammate time <nickname>",
-			ShortHelp:  "Get the current time of a Sourcegraph teammate.",
-			Exec: func(ctx context.Context, args []string) error {
+	teammateCommand = &cli.Command{
+		Name:        "teammate",
+		Usage:       "Get information about Sourcegraph teammates",
+		Description: `For example, you can check a teammate's current time and find their handbook bio!`,
+		UsageText: `
+# Get the current time of a team mate based on their slack handle (case insensitive).
+sg teammate time @dax
+sg teammate time dax
+# or their full name (case insensitive)
+sg teammate time thorsten ball
+
+# Open their handbook bio
+sg teammate handbook asdine
+`,
+		Category: CategoryCompany,
+		Subcommands: []*cli.Command{{
+			Name:      "time",
+			ArgsUsage: "<nickname>",
+			Usage:     "Get the current time of a Sourcegraph teammate",
+			Action: func(ctx *cli.Context) error {
+				args := ctx.Args().Slice()
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx)
+				resolver, err := getTeamResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("%s's current time is %s",
+				std.Out.Writef("%s's current time is %s",
 					teammate.Name, timeAtLocation(teammate.SlackTimezone))
 				return nil
 			},
 		}, {
-			Name:       "handbook",
-			ShortUsage: "sg teammate handbook <nickname>",
-			ShortHelp:  "Open the handbook page of a Sourcegraph teammate.",
-			Exec: func(ctx context.Context, args []string) error {
+			Name:      "handbook",
+			ArgsUsage: "<nickname>",
+			Usage:     "Open the handbook page of a Sourcegraph teammate",
+			Action: func(ctx *cli.Context) error {
+				args := ctx.Args().Slice()
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx)
+				resolver, err := getTeamResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
+				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
 			},
 		}},

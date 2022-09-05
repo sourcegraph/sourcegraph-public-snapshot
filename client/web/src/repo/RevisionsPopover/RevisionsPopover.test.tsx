@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
 
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'

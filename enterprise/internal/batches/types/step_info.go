@@ -41,7 +41,7 @@ type StepInfo struct {
 	StartedAt       time.Time
 	FinishedAt      time.Time
 	Environment     map[string]string
-	OutputVariables map[string]interface{}
+	OutputVariables map[string]any
 	Diff            *string
 	ExitCode        *int
 }
@@ -92,7 +92,7 @@ func ParseLogLines(entry workerutil.ExecutionLogEntry, lines []*batcheslib.LogEv
 					if l.Status == batcheslib.LogEventStatusSuccess {
 						outputs := m.Outputs
 						if outputs == nil {
-							outputs = map[string]interface{}{}
+							outputs = map[string]any{}
 						}
 						si.OutputVariables = outputs
 						si.Diff = &m.Diff

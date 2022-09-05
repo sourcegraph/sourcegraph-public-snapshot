@@ -1,11 +1,12 @@
-import React from 'react'
-
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
+// eslint-disable-next-line no-restricted-imports
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
+// eslint-disable-next-line no-restricted-imports
 import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
 import { registerHighlightContributions } from '@sourcegraph/common'
 
@@ -51,18 +52,20 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     },
 }
 
-export const BitbucketStyles: Story = props => (
+export const BitbucketStyles: Story = (props = {}) => (
     <BrowserRouter>
-        <HoverOverlay
-            {...commonProps()}
-            {...BITBUCKET_CLASS_PROPS}
-            {...props}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
+        <CompatRouter>
+            <HoverOverlay
+                {...commonProps()}
+                {...BITBUCKET_CLASS_PROPS}
+                {...props}
+                hoverOrError={{
+                    contents: [FIXTURE_CONTENT],
+                    aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+                }}
+                actionsOrError={FIXTURE_ACTIONS}
+            />
+        </CompatRouter>
     </BrowserRouter>
 )
 BitbucketStyles.storyName = 'Bitbucket styles'

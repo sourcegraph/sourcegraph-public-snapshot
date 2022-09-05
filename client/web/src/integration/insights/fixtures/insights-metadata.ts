@@ -1,18 +1,33 @@
-import { InsightViewNode, TimeIntervalStepUnit } from '../../../graphql-operations'
+import { InsightViewNode, SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '../../../graphql-operations'
+
+const DEFAULT_SERIES_DISPLAY_OPTIONS = {
+    limit: 20,
+    sortOptions: {
+        direction: SeriesSortDirection.DESC,
+        mode: SeriesSortMode.RESULT_COUNT,
+    },
+}
 
 interface InsightOptions {
+    id?: string
     type: 'calculated' | 'just-in-time'
 }
 
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
-    id: '001',
+    id: options.id ?? '001',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
+        searchContexts: [],
         includeRepoRegex: '',
         excludeRepoRegex: '',
     },
+    dashboards: { nodes: [] },
+
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Migration to new GraphQL TS types',
@@ -47,6 +62,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
         {
             __typename: 'SearchInsightDataSeriesDefinition',
@@ -63,6 +79,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
     ],
 })
@@ -70,11 +87,17 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
 export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '002',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
+    dashboards: { nodes: [] },
+
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
@@ -104,6 +127,7 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
     ],
 }
@@ -111,11 +135,17 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
 export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '003',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
+    dashboards: { nodes: [] },
+
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'PieChartInsightViewPresentation',
@@ -137,6 +167,7 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
             },
             isCalculated: false,
             generatedFromCaptureGroups: false,
+            groupBy: null,
             __typename: 'SearchInsightDataSeriesDefinition',
         },
     ],

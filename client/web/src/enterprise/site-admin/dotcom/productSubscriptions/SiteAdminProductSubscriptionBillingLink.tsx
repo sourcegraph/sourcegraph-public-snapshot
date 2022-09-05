@@ -1,14 +1,13 @@
 import React, { useCallback } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import { mdiOpenInNew, mdiAlertCircle } from '@mdi/js'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
@@ -31,7 +30,7 @@ const LOADING = 'loading' as const
  * SiteAdminProductSubscriptionBillingLink shows a link to the product subscription on the billing system, if there
  * is an associated billing record. It also supports setting or unsetting the association with the billing system.
  */
-export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Props> = ({
+export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     productSubscription,
     onDidUpdate,
 }) => {
@@ -73,11 +72,13 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
             <div className="d-flex align-items-center">
                 {productSubscription.urlForSiteAdminBilling && (
                     <Link to={productSubscription.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View billing subscription <Icon className="ml-1" as={ExternalLinkIcon} />
+                        View billing subscription <Icon aria-hidden={true} className="ml-1" svgPath={mdiOpenInNew} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
+                    <Tooltip content={update.message}>
+                        <Icon aria-label={update.message} className="text-danger mr-2" svgPath={mdiAlertCircle} />
+                    </Tooltip>
                 )}
                 <Button
                     onClick={productSubscriptionHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

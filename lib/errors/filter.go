@@ -49,4 +49,14 @@ func IsPred(target error) ErrorPredicate {
 	}
 }
 
-var IsContextCanceled = IsPred(context.Canceled)
+func IsContextCanceled(err error) bool {
+	return Is(err, context.Canceled)
+}
+
+func IsDeadlineExceeded(err error) bool {
+	return Is(err, context.DeadlineExceeded)
+}
+
+func IsContextError(err error) bool {
+	return IsAny(err, context.Canceled, context.DeadlineExceeded)
+}

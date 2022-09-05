@@ -2,8 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
@@ -15,16 +14,20 @@ export interface HiddenExternalChangesetNodeProps {
     node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'state' | '__typename'>
 }
 
-export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
+export const HiddenExternalChangesetNode: React.FunctionComponent<
+    React.PropsWithChildren<HiddenExternalChangesetNodeProps>
+> = ({ node }) => (
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
+            {/* eslint-disable-next-line no-restricted-syntax*/}
             <InputTooltip
                 id={`select-changeset-${node.id}`}
                 type="checkbox"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to perform a bulk operation on this changeset"
+                placement="right"
             />
         </div>
         <ChangesetStatusCell

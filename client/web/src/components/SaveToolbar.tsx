@@ -1,9 +1,7 @@
 import * as React from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -32,16 +30,9 @@ export type SaveToolbarPropsGenerator<T extends object> = (
     props: Readonly<React.PropsWithChildren<SaveToolbarProps>>
 ) => React.PropsWithChildren<SaveToolbarProps> & T
 
-export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps>> = ({
-    dirty,
-    saving,
-    error,
-    onSave,
-    onDiscard,
-    children,
-    willShowError,
-    saveDiscardDisabled,
-}) => {
+export const SaveToolbar: React.FunctionComponent<
+    React.PropsWithChildren<React.PropsWithChildren<SaveToolbarProps>>
+> = ({ dirty, saving, error, onSave, onDiscard, children, willShowError, saveDiscardDisabled }) => {
     const disabled = saveDiscardDisabled ? saveDiscardDisabled() : saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {
@@ -57,31 +48,29 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
     return (
         <>
             {error && willShowError() && (
-                <div className={styles.error}>
-                    <Icon className={styles.errorIcon} as={AlertCircleIcon} />
+                <div className={styles.error} role="alert">
+                    <Icon className={styles.errorIcon} aria-hidden={true} svgPath={mdiAlertCircle} />
                     {error.message}
                 </div>
             )}
-            <div className={styles.actions}>
+            <div className={classNames('mt-2', styles.actions)}>
                 <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className={classNames('test-save-toolbar-save', styles.item, styles.btn, styles.btnFirst)}
+                    className={classNames('test-save-toolbar-save mr-2', styles.item)}
                     onClick={onSave}
-                    variant="success"
-                    size="sm"
+                    variant="primary"
                 >
-                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} /> Save changes
+                    Save
                 </Button>
                 <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className={classNames('test-save-toolbar-discard', styles.item, styles.btn, styles.btnLast)}
+                    className={classNames('test-save-toolbar-discard', styles.item)}
                     onClick={onDiscard}
                     variant="secondary"
-                    size="sm"
                 >
-                    <Icon as={CloseIcon} /> Discard
+                    Discard changes
                 </Button>
                 {children}
                 {saving && (

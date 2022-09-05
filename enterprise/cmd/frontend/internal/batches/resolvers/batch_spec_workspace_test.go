@@ -7,10 +7,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,15 +27,17 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
 
 	spec := &btypes.BatchSpec{
@@ -75,13 +79,13 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	wantTmpl := apitest.BatchSpecWorkspace{
-		Typename: "BatchSpecWorkspace",
+		Typename: "VisibleBatchSpecWorkspace",
 		ID:       apiID,
 
 		Repository: apitest.Repository{
@@ -123,8 +127,9 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	t.Run("Queued", func(t *testing.T) {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: workspace.ID,
+			UserID:               userID,
 		}
-		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)
 		}
 
@@ -139,7 +144,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpecWorkspace": id}
+	input := map[string]any{"batchSpecWorkspace": id}
 
 	var response struct{ Node apitest.BatchSpecWorkspace }
 
@@ -158,12 +163,21 @@ query($batchSpecWorkspace: ID!) {
     ... on BatchSpecWorkspace {
       id
 
+      batchSpec {
+        id
+      }
+
+      onlyFetchWorkspace
+      unsupported
+      ignored
+
+      state
+      placeInQueue
+    }
+    ... on VisibleBatchSpecWorkspace {
       repository {
         id
         name
-      }
-      batchSpec {
-        id
       }
 
       searchResultPaths
@@ -175,17 +189,11 @@ query($batchSpecWorkspace: ID!) {
       }
 
       path
-      onlyFetchWorkspace
-      unsupported
-      ignored
 
       steps {
         run
         container
       }
-
-      state
-      placeInQueue
     }
   }
 }

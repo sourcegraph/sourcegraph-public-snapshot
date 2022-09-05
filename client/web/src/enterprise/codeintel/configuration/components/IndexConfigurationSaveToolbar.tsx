@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { SaveToolbar, SaveToolbarProps } from '@sourcegraph/web/src/components/SaveToolbar'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { SaveToolbar, SaveToolbarProps } from '../../../../components/SaveToolbar'
 
 export interface IndexConfigurationSaveToolbarProps {
     loading: boolean
@@ -10,7 +11,7 @@ export interface IndexConfigurationSaveToolbarProps {
 }
 
 export const IndexConfigurationSaveToolbar: React.FunctionComponent<
-    SaveToolbarProps & IndexConfigurationSaveToolbarProps
+    React.PropsWithChildren<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
 > = ({ dirty, loading, saving, error, onSave, onDiscard, inferEnabled, onInfer, saveDiscardDisabled }) => (
     <SaveToolbar
         dirty={dirty}

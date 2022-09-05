@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -23,11 +25,15 @@ func NewJanitor() job.Job {
 
 }
 
+func (j *janitor) Description() string {
+	return ""
+}
+
 func (j *janitor) Config() []env.Config {
 	return nil
 }
 
-func (j *janitor) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -39,7 +45,7 @@ func (j *janitor) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, 
 		// operation more frequently than that, given it's purely a debugging
 		// tool.
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
-			store: database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+			store: database.NewDB(logger, db).WebhookLogs(keyring.Default().WebhookLogKey),
 		}),
 	}, nil
 }

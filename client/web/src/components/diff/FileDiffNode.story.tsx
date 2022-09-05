@@ -1,7 +1,4 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
@@ -185,46 +182,66 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('All unified file node states overview', () => (
+const config: Meta = {
+    title: 'web/diffs/FileDiffNode',
+    decorators: [decorator],
+    includeStories: ['AllUnifiedFileNode', 'AllSplitFileNode'],
+    argTypes: {
+        persistLines: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        lineNumbers: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
+}
+
+export default config
+
+export const AllUnifiedFileNode: Story = args => (
     <WebStory>
         {webProps => (
-            <>
+            <ul className="list-unstyled">
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
                         diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />
                 ))}
-            </>
+            </ul>
         )}
     </WebStory>
-))
+)
 
-add('All split file node states overview', () => (
+AllUnifiedFileNode.storyName = 'All unified file node states overview'
+
+export const AllSplitFileNode: Story = args => (
     <WebStory>
         {webProps => (
-            <>
+            <ul className="list-unstyled">
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
                         diffMode="split"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />
                 ))}
-            </>
+            </ul>
         )}
     </WebStory>
-))
+)
+
+AllSplitFileNode.storyName = 'All split file node states overview'

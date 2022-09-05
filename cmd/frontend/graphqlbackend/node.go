@@ -243,9 +243,20 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool) {
+func (r *NodeResolver) ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool) {
 	n, ok := r.Node.(BatchSpecWorkspaceResolver)
-	return n, ok
+	if !ok {
+		return nil, ok
+	}
+	return n.ToHiddenBatchSpecWorkspace()
+}
+
+func (r *NodeResolver) ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToVisibleBatchSpecWorkspace()
 }
 
 func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
@@ -265,5 +276,10 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 
 func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
 	n, ok := r.Node.(*executor.ExecutorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
+	n, ok := r.Node.(*externalServiceSyncJobResolver)
 	return n, ok
 }

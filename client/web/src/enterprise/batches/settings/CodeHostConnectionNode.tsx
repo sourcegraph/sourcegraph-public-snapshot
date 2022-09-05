@@ -1,15 +1,22 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
-import { Badge, Button, Icon } from '@sourcegraph/wildcard'
+import { useLazyQuery } from '@sourcegraph/http-client'
+import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    CheckBatchChangesCredentialResult,
+    CheckBatchChangesCredentialVariables,
+    Scalars,
+} from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
+import { CheckButton } from './CheckButton'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -23,17 +30,28 @@ export interface CodeHostConnectionNodeProps {
 
 type OpenModal = 'add' | 'view' | 'delete'
 
-export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
+export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionNodeProps>> = ({
     node,
     refetchAll,
     userID,
 }) => {
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
+    const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
+
+    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<
+        CheckBatchChangesCredentialResult,
+        CheckBatchChangesCredentialVariables
+    >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
+
+    const buttonReference = useRef<HTMLButtonElement | null>(null)
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
         setOpenModal('add')
     }, [])
+    const onClickCheck = useCallback<React.MouseEventHandler>(async () => {
+        await checkCred({ variables: { id: node?.credential?.id ?? '' } })
+    }, [node, checkCred])
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('delete')
@@ -47,10 +65,24 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
+        buttonReference.current?.focus()
         refetchAll()
-    }, [refetchAll])
+    }, [refetchAll, buttonReference])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
+
+    const headingAriaLabel = `Sourcegraph ${
+        isEnabled ? 'has credentials configured' : 'does not have credentials configured'
+    } for ${codeHostDisplayName} (${node.externalServiceURL}).${
+        !isEnabled && node.credential?.isSiteCredential
+            ? ' Changesets on this code host will be created with a global token until a personal access token is added.'
+            : ''
+    }`
+
+    // At the moment, log the error since it is not being displayed on the page.
+    if (checkCredError) {
+        console.log(checkCredError.message)
+    }
 
     return (
         <>
@@ -66,39 +98,54 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <h3 className="text-nowrap mb-0">
+                    <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
-                            <Icon
-                                className="text-success test-code-host-connection-node-enabled"
-                                data-tooltip="Connected"
-                                as={CheckCircleOutlineIcon}
-                            />
+                            <Tooltip content="This code host has credentials connected.">
+                                <Icon
+                                    aria-label="This code host has credentials connected."
+                                    className="text-success test-code-host-connection-node-enabled"
+                                    svgPath={mdiCheckCircleOutline}
+                                />
+                            </Tooltip>
                         )}
                         {!isEnabled && (
-                            <Icon
-                                className="text-danger test-code-host-connection-node-disabled"
-                                data-tooltip="No token set"
-                                as={CheckboxBlankCircleOutlineIcon}
-                            />
+                            <Tooltip content="This code host does not have credentials configured.">
+                                <Icon
+                                    aria-label="This code host does not have credentials configured."
+                                    className="text-danger test-code-host-connection-node-disabled"
+                                    svgPath={mdiCheckboxBlankCircleOutline}
+                                />
+                            </Tooltip>
                         )}
-                        <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge
                                 variant="secondary"
                                 tooltip="Changesets on this code host will
                             be created with a global token until a personal access token is added."
+                                aria-label="Changesets on this code host will
+                            be created with a global token until a personal access token is added."
                             >
                                 Global token
                             </Badge>
                         )}
-                    </h3>
-                    <div className="mb-0 d-flex justify-content-end flex-grow-1">
-                        {isEnabled && (
+                    </H3>
+                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
+                        {isEnabled ? (
                             <>
+                                <CheckButton
+                                    label={`Check credentials for ${codeHostDisplayName}`}
+                                    onClick={onClickCheck}
+                                    loading={checkCredLoading}
+                                    successMessage={checkCredData ? 'Credential is valid' : undefined}
+                                    failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
+                                />
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                     variant="link"
+                                    aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                    ref={buttonReference}
                                 >
                                     Remove
                                 </Button>
@@ -108,12 +155,18 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                     </Button>
                                 )}
                             </>
-                        )}
-                        {!isEnabled && (
+                        ) : (
+                            /*
+                                a11y-ignore
+                                Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                            */
                             <Button
-                                className="text-nowrap test-code-host-connection-node-btn-add"
+                                className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
+                                aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
+                                ref={buttonReference}
                             >
                                 Add credentials
                             </Button>
@@ -140,6 +193,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}
                     requiresSSH={node.requiresSSH}
+                    requiresUsername={node.requiresUsername}
                 />
             )}
         </>

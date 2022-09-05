@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -233,9 +235,10 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
-	r := database.Repos(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
+	r := db.Repos()
 
 	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -272,10 +275,11 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
-	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
+	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -289,7 +293,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	database.OrgMembers(db).Create(internalCtx, org.ID, user2.ID)
+	db.OrgMembers().Create(internalCtx, org.ID, user2.ID)
 	// Third user is not a site-admin and is not a member of the org
 	user3, err := u.Create(internalCtx, database.NewUser{Username: "u3", Password: "p"})
 	if err != nil {
@@ -392,19 +396,20 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	repos, err := createRepos(internalCtx, database.Repos(db))
+	repos, err := createRepos(internalCtx, db.Repos())
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	existingSearchContext, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+	existingSearchContext, err := db.SearchContexts().CreateSearchContextWithRepositoryRevisions(
 		internalCtx,
 		&types.SearchContext{Name: "existing"},
 		[]*types.SearchContextRepositoryRevisions{},
@@ -493,18 +498,19 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	require.NoError(t, err)
 
-	repos, err := createRepos(internalCtx, database.Repos(db))
+	repos, err := createRepos(internalCtx, db.Repos())
 	require.NoError(t, err)
 
 	var scs []*types.SearchContext
 	for i := 0; i < 6; i++ {
-		sc, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+		sc, err := db.SearchContexts().CreateSearchContextWithRepositoryRevisions(
 			internalCtx,
 			&types.SearchContext{Name: strconv.Itoa(i)},
 			[]*types.SearchContextRepositoryRevisions{},
@@ -577,8 +583,9 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	u := database.Users(db)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {

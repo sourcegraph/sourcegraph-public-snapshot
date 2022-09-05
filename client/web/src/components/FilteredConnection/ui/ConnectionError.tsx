@@ -15,7 +15,10 @@ interface ConnectionErrorProps {
 /**
  * Renders FilteredConnection styled errors
  */
-export const ConnectionError: React.FunctionComponent<ConnectionErrorProps> = ({ errors, compact }) => (
+export const ConnectionError: React.FunctionComponent<React.PropsWithChildren<ConnectionErrorProps>> = ({
+    errors,
+    compact,
+}) => (
     <Alert className={classNames(compact && styles.compact)} variant="danger">
         {errors.map((error, index) => (
             <React.Fragment key={index}>

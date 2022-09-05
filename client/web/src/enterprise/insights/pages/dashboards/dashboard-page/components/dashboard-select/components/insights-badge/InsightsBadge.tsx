@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import truncatedStyles from '../trancated-text/TruncatedText.module.scss'
+import truncatedStyles from '../../../../../../../components/trancated-text/TruncatedText.module.scss'
 import styles from './InsightsBadge.module.scss'
 
 interface BadgeProps {
@@ -17,7 +17,7 @@ interface BadgeProps {
  * We can't use the standard "secondary" variant here because the selected select option
  * already uses this color for the background. We use this style variant to avoid visual merging/overlapping.
  */
-export const InsightsBadge: React.FunctionComponent<BadgeProps> = props => {
+export const InsightsBadge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>> = props => {
     const { value, className } = props
 
     return (

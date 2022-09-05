@@ -3,12 +3,17 @@ package main
 //go:generate go run ./doc.go
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,64 +56,67 @@ func clean(base string) error {
 	return nil
 }
 
-func build(base string) error {
-	// Since we don't want to pollute the local go.mod or go.sum, but we also
-	// need an isolated environment, we're going to set up an isolated directory
-	// to build src-cli. Some day https://github.com/golang/go/issues/43684 will
-	// have its solution merged and we might be able to avoid all of this with a
-	// go:generate one-liner that calls `go install
-	// github.com/sourcegraph/src-cli/cmd/src@main`, but we're not quite there
-	// yet.
+func get(url string, v any) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return errors.Wrapf(err, "http get: %s", url)
+	}
+	defer resp.Body.Close()
 
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrapf(err, "http read: %s", url)
+	}
+
+	err = json.Unmarshal(b, v)
+	if err != nil {
+		return errors.Wrapf(err, "http json unmarshal: %s", url)
+	}
+	return nil
+}
+
+func build() error {
 	dir, err := os.MkdirTemp("", "src-cli-doc-gen")
 	if err != nil {
 		return errors.Wrap(err, "creating temporary directory")
 	}
 	defer os.RemoveAll(dir)
 
-	if err := os.Chdir(dir); err != nil {
-		return errors.Wrap(err, "changing to temporary directory")
+	release := struct {
+		Name   string
+		Assets []struct {
+			Name string
+			URL  string `json:"browser_download_url"`
+		}
+	}{}
+	if err := get("https://api.github.com/repos/sourcegraph/src-cli/releases/latest", &release); err != nil {
+		return errors.Wrap(err, "src-cli release metadata")
 	}
 
-	// We have a few fun things going on here, but by far the funnest is that
-	// src-cli (and its dependencies) rely on a go.mod replacement of our
-	// upstream YAML library with our own fork. Unfortunately, doing a simple
-	// `go build` (or whatever) with the src-cli URL fails as a result, since
-	// batch-change-utils will try to call a method that doesn't exist on the
-	// upstream library.
-	//
-	// Since replacements only happen locally, we have to set up the same
-	// replacement in a local go.mod. On the bright side, that means we don't
-	// have to set GO111MODULE explicitly: this just looks like a normal Go
-	// module to Go.
-	//
-	// If this breaks in future with an obscure looking compilation error, the
-	// first thing you'll want to check is that any replacements in
-	// https://github.com/sourcegraph/src-cli/blob/main/go.mod are reproduced
-	// here as well.
-	//
-	// In summary, this is _hilariously_ cursed.
-	if err := os.WriteFile("go.mod", []byte(`module github.com/sourcegraph/sourcegraph/doc/cli/references
-
-replace github.com/gosuri/uilive v0.0.4 => github.com/mrnugget/uilive v0.0.4-fix-escape
-
-// See: https://github.com/ghodss/yaml/pull/65
-replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	`), 0600); err != nil {
-		return errors.Wrap(err, "setting up go.mod")
+	bin := fmt.Sprintf("src_%s_%s", runtime.GOOS, runtime.GOARCH)
+	url := ""
+	for _, asset := range release.Assets {
+		if bin == asset.Name {
+			url = asset.URL
+			break
+		}
 	}
 
-	goGet := exec.Command("go", "get", "github.com/sourcegraph/src-cli/cmd/src")
-	goGet.Env = append(os.Environ(), "GOBIN="+dir)
-	if out, err := goGet.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "getting src-cli:\n%s\n", string(out))
+	if url == "" {
+		return errors.Newf("failed to find %s for src-cli release %s", bin, release.Name)
 	}
 
-	if err := os.Chdir(base); err != nil {
-		return errors.Wrap(err, "returning to the working directory")
+	// more succinct to use curl than pipe http.Get into file
+	src := filepath.Join(dir, bin)
+	srcGet := exec.Command("curl", "-L", "-o", src, url)
+	if _, err := srcGet.Output(); err != nil {
+		return errors.Wrap(err, "src-cli download")
 	}
 
-	src := path.Join(dir, "src")
+	if err := os.Chmod(src, 0700); err != nil {
+		return errors.Wrap(err, "src-cli mark executable")
+	}
+
 	srcDoc := exec.Command(src, "doc", "-o", ".")
 	srcDoc.Env = os.Environ()
 	// Always set this to 8 so the docs don't change when generated on
@@ -131,7 +139,7 @@ func main() {
 		log.Fatalf("error cleaning working directory: %v", err)
 	}
 
-	if err := build(wd); err != nil {
+	if err := build(); err != nil {
 		log.Fatalf("error building documentation: %v", err)
 	}
 }

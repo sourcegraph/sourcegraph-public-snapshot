@@ -81,5 +81,5 @@ type gqlLSIFIndexesResponse struct {
 			}
 		}
 	}
-	Errors []interface{}
+	Errors []any
 }

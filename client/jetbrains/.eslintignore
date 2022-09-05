@@ -1,0 +1,3 @@
+src/main/resources/dist/
+package.json
+webview/src/graphql-operations.ts

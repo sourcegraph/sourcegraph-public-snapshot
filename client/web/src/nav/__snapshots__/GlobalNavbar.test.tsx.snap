@@ -7,7 +7,7 @@ exports[`GlobalNavbar default 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
@@ -20,6 +20,7 @@ exports[`GlobalNavbar default 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div
@@ -31,9 +32,11 @@ exports[`GlobalNavbar default 1`] = `
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -42,9 +45,11 @@ exports[`GlobalNavbar default 1`] = `
           />
         </svg>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -61,6 +66,8 @@ exports[`GlobalNavbar default 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"
@@ -73,9 +80,11 @@ exports[`GlobalNavbar default 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon iconInline icon"
+                    aria-hidden="true"
+                    class="mdi-icon mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -91,20 +100,23 @@ exports[`GlobalNavbar default 1`] = `
                 </span>
               </a>
               <button
-                aria-controls="menu--1"
+                aria-controls=""
                 aria-haspopup="true"
+                aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button--menu"
+                id="menu-button-2"
                 type="button"
               >
                 <span
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -128,9 +140,11 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon iconInline icon"
+                aria-hidden="true"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -175,9 +189,11 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon iconInline icon"
+                aria-hidden="true"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -225,7 +241,7 @@ exports[`GlobalNavbar default 1`] = `
           </a>
           <a
             class="anchorLink btn btnSm signUp"
-            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            href="https://about.sourcegraph.com/get-started/self-hosted?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
             Get started
@@ -244,7 +260,6 @@ exports[`GlobalNavbar default 1`] = `
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
-        keyboardshortcuts=""
         location="[object Object]"
         platformcontext="[object Object]"
         routes=""
@@ -265,7 +280,7 @@ exports[`GlobalNavbar low-profile 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
@@ -278,6 +293,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div
@@ -289,9 +305,11 @@ exports[`GlobalNavbar low-profile 1`] = `
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -300,9 +318,11 @@ exports[`GlobalNavbar low-profile 1`] = `
           />
         </svg>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -319,6 +339,8 @@ exports[`GlobalNavbar low-profile 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"
@@ -331,9 +353,11 @@ exports[`GlobalNavbar low-profile 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon iconInline icon"
+                    aria-hidden="true"
+                    class="mdi-icon mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -349,20 +373,23 @@ exports[`GlobalNavbar low-profile 1`] = `
                 </span>
               </a>
               <button
-                aria-controls="menu--3"
+                aria-controls=""
                 aria-haspopup="true"
+                aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button--menu--3"
+                id="menu-button-4"
                 type="button"
               >
                 <span
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -386,9 +413,11 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon iconInline icon"
+                aria-hidden="true"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -433,9 +462,11 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon iconInline icon"
+                aria-hidden="true"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -483,7 +514,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           </a>
           <a
             class="anchorLink btn btnSm signUp"
-            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            href="https://about.sourcegraph.com/get-started/self-hosted?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
             Get started
@@ -502,7 +533,6 @@ exports[`GlobalNavbar low-profile 1`] = `
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
-        keyboardshortcuts=""
         location="[object Object]"
         platformcontext="[object Object]"
         routes=""

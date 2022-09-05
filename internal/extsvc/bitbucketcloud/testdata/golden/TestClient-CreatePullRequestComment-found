@@ -1,0 +1,42 @@
+{
+  "id": 291995686,
+  "created_on": "2022-04-02T00:16:29.553212Z",
+  "updated_on": "2022-04-02T00:16:29.553287Z",
+  "content": {
+   "raw": "A test comment created at 01 Apr 22 17:16 PDT",
+   "markup": "markdown",
+   "html": "\u003cp\u003eA test comment created at 01 Apr 22 17:16 PDT\u003c/p\u003e",
+   "type": "rendered"
+  },
+  "user": {
+   "links": {
+    "avatar": {
+     "href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"
+    },
+    "html": {
+     "href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"
+    }
+   },
+   "username": "",
+   "nickname": "Sourcegraph Testing",
+   "account_status": "",
+   "display_name": "Sourcegraph Testing",
+   "website": "",
+   "created_on": "0001-01-01T00:00:00Z",
+   "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+   "is_staff": false,
+   "account_id": "623316f53fbb880068413f6b"
+  },
+  "deleted": false,
+  "links": {
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/_/diff#comment-291995686"
+   },
+   "self": {
+    "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/1/comments/291995686"
+   }
+  }
+ }

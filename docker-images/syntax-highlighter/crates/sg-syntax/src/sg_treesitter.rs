@@ -1,6 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
+use std::fmt::{Write as _}; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -9,7 +10,7 @@ use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
 use crate::SourcegraphQuery;
-use sg_lsif::{Document, Occurrence, SyntaxKind};
+use scip::types::{Document, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
 #[rustfmt::skip]
@@ -78,21 +79,9 @@ macro_rules! create_configurations {
 
         $(
             {
-                // Associate with tree-sitter FFI
-                paste! {
-                    extern "C" {
-                        pub fn [<tree_sitter_ $name>]() -> tree_sitter::Language;
-                    }
-
-                    // Make "safe" function from unsafe function.
-                    fn $name() -> tree_sitter::Language {
-                        unsafe { [<tree_sitter_ $name>]() }
-                    }
-                }
-
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
-                    $name(),
+                    paste! { [<tree_sitter_ $name>]::language() },
                     include_project_file_optional!("queries/", $name, "/highlights.scm"),
                     include_project_file_optional!("queries/", $name, "/injections.scm"),
                     include_project_file_optional!("queries/", $name, "/locals.scm"),
@@ -112,7 +101,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp )
+        create_configurations!( go, sql, c_sharp, jsonnet )
     };
 }
 
@@ -120,38 +109,36 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
+// TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
+// Currently left unchanged
 pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     let filetype = q
         .filetype
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    if !CONFIGURATIONS.contains_key(filetype.as_str()) {
-        Err(json!({
-            "error": format!("{} is not a valid filetype for treesitter", filetype)
-        }))
-    } else {
-        let data = index_language(&filetype, &q.code).map_err(jsonify_err)?;
-        let encoded = data.write_to_bytes().map_err(jsonify_err)?;
+    match index_language(&filetype, &q.code) {
+        Ok(document) => {
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-        Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+        }
+        Err(Error::InvalidLanguage) => Err(json!({
+            "error": format!("{} is not a valid filetype for treesitter", filetype)
+        })),
+        Err(err) => Err(jsonify_err(err)),
     }
 }
 
 pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
-    let lang_config = match CONFIGURATIONS.get(filetype) {
-        Some(lang_config) => lang_config,
-        None => return Err(Error::InvalidLanguage),
-    };
-
-    index_language_with_config(code, &lang_config)
+    match CONFIGURATIONS.get(filetype) {
+        Some(lang_config) => index_language_with_config(code, lang_config),
+        None => Err(Error::InvalidLanguage),
+    }
 }
 
 pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
-    let config = match CONFIGURATIONS.get(name) {
-        Some(config) => config,
-        None => return None,
-    };
+    let config = CONFIGURATIONS.get(name)?;
 
     // Create HighlightConfiguration language
     let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
@@ -173,6 +160,11 @@ pub fn index_language_with_config(
     code: &str,
     lang_config: &HighlightConfiguration,
 ) -> Result<Document, Error> {
+    // Normalize string to be always only \n endings.
+    //  We don't care that the byte offsets are "incorrect" now for this
+    //  because we are using a line,col based approach
+    let code = code.replace("\r\n", "\n");
+
     // TODO: We should automatically apply no highlights when we are
     // in an injected piece of code.
     //
@@ -183,58 +175,77 @@ pub fn index_language_with_config(
         CONFIGURATIONS.get(l)
     })?;
 
-    let mut emitter = LsifEmitter::new();
-    emitter.render(highlights, code, &get_syntax_kind_for_hl)
+    let mut emitter = ScipEmitter::new();
+    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
-struct LineManager {
+struct OffsetManager {
+    source: String,
     offsets: Vec<usize>,
 }
 
-impl LineManager {
+impl OffsetManager {
     fn new(s: &str) -> Result<Self, Error> {
         if s.is_empty() {
             // TODO: Make an error here
             // Error(
         }
 
+        let source = s.to_string();
+
         let mut offsets = Vec::new();
         let mut pos = 0;
         for line in s.lines() {
             offsets.push(pos);
+            // pos += line.chars().count() + 1;
+            //
+            // NOTE: This intentionally in bytes. The correct stuff is done in
+            // self.line_and_col later
             pos += line.len() + 1;
         }
 
-        Ok(Self { offsets })
+        Ok(Self { source, offsets })
     }
 
-    fn line_and_col(&self, offset: usize) -> (usize, usize) {
+    fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
+        // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
             let curr = window[0];
             let next = window[1];
-            if next > offset {
-                return (line, offset - curr);
+            if next > offset_byte {
+                return (
+                    line,
+                    // Return the number of characters between the locations (which is the column)
+                    self.source[curr..offset_byte].chars().count(),
+                );
             }
 
             line += 1;
         }
 
-        (line, offset - self.offsets.last().unwrap())
+        (
+            line,
+            // Return the number of characters between the locations (which is the column)
+            self.source[*self.offsets.last().unwrap()..offset_byte]
+                .chars()
+                .count(),
+        )
     }
 
-    fn range(&self, start: usize, end: usize) -> Vec<i32> {
-        let start_line = self.line_and_col(start);
-        let end_line = self.line_and_col(end);
+    // range takes in start and end offsets and returns start/end line/column.
+    fn range(&self, start_byte: usize, end_byte: usize) -> Vec<i32> {
+        let start_pos = self.line_and_col(start_byte);
+        let end_pos = self.line_and_col(end_byte);
 
-        if start_line.0 == end_line.0 {
-            vec![start_line.0 as i32, start_line.1 as i32, end_line.1 as i32]
+        if start_pos.0 == end_pos.0 {
+            vec![start_pos.0 as i32, start_pos.1 as i32, end_pos.1 as i32]
         } else {
             vec![
-                start_line.0 as i32,
-                start_line.1 as i32,
-                end_line.0 as i32,
-                end_line.1 as i32,
+                start_pos.0 as i32,
+                start_pos.1 as i32,
+                end_pos.0 as i32,
+                end_pos.1 as i32,
             ]
         }
     }
@@ -291,14 +302,14 @@ impl Ord for PackedRange {
 }
 
 /// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
-pub struct LsifEmitter {}
+pub struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
 ///
 /// You can see the original version in the tree_sitter_highlight crate.
-impl LsifEmitter {
+impl ScipEmitter {
     pub fn new() -> Self {
-        LsifEmitter {}
+        ScipEmitter {}
     }
 
     pub fn render<F>(
@@ -310,31 +321,33 @@ impl LsifEmitter {
     where
         F: Fn(Highlight) -> SyntaxKind,
     {
-        // let mut highlights = Vec::new();
         let mut doc = Document::new();
 
-        let line_manager = LineManager::new(source)?;
+        let line_manager = OffsetManager::new(source)?;
 
         let mut highlights = vec![];
         for event in highlighter {
-            match event {
-                Ok(HighlightEvent::HighlightStart(s)) => highlights.push(s),
-                Ok(HighlightEvent::HighlightEnd) => {
+            match event? {
+                HighlightEvent::HighlightStart(s) => highlights.push(s),
+                HighlightEvent::HighlightEnd => {
                     highlights.pop();
                 }
 
                 // No highlights matched
-                Ok(HighlightEvent::Source { .. }) if highlights.is_empty() => {}
+                HighlightEvent::Source { .. } if highlights.is_empty() => {}
 
                 // When a `start`->`end` has some highlights
-                Ok(HighlightEvent::Source { start, end }) => {
-                    let mut occurence = Occurrence::new();
-                    occurence.range = line_manager.range(start, end);
-                    occurence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
+                HighlightEvent::Source {
+                    start: start_byte,
+                    end: end_byte,
+                } => {
+                    let mut occurrence = Occurrence::new();
+                    occurrence.range = line_manager.range(start_byte, end_byte);
+                    occurrence.syntax_kind =
+                        get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
 
-                    doc.occurrences.push(occurence);
+                    doc.occurrences.push(occurrence);
                 }
-                Err(a) => return Err(a),
             }
         }
 
@@ -352,9 +365,9 @@ pub struct FileRange {
 }
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurences = doc.get_occurrences().to_owned();
-    occurences.sort_by_key(|o| PackedRange::from_vec(&o.range));
-    let mut occurences = VecDeque::from(occurences);
+    let mut occurrences = doc.occurrences.clone();
+    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
+    let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
 
@@ -371,34 +384,53 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
 
     for (idx, line) in line_iterator {
         result += "  ";
-        result += &line.replace("\t", " ");
+        result += &line.replace('\t', " ");
         result += "\n";
 
-        while let Some(occ) = occurences.pop_front() {
-            if occ.syntax_kind == SyntaxKind::UnspecifiedSyntaxKind {
+        while let Some(occ) = occurrences.pop_front() {
+            if occ.syntax_kind.enum_value_or_default() == SyntaxKind::UnspecifiedSyntaxKind {
                 continue;
             }
 
             let range = PackedRange::from_vec(&occ.range);
-            if range.start_line != range.end_line {
-                continue;
+            let is_single_line = range.start_line == range.end_line;
+            let end_col = if is_single_line {
+                range.end_col
+            } else {
+                line.len() as i32
+            };
+
+            match range.start_line.cmp(&(idx as i32)) {
+                std::cmp::Ordering::Less => continue,
+                std::cmp::Ordering::Greater => {
+                    occurrences.push_front(occ);
+                    break;
+                }
+                std::cmp::Ordering::Equal => {
+                    let length = (end_col - range.start_col) as usize;
+                    let multiline_suffix = if is_single_line {
+                        "".to_string()
+                    } else {
+                        format!(
+                            " {}:{}..{}:{}",
+                            range.start_line, range.start_col, range.end_line, range.end_col
+                        )
+                    };
+                    let symbol_suffix = if occ.symbol.is_empty() {
+                        "".to_owned()
+                    } else {
+                        format!(" {}", occ.symbol)
+                    };
+                    let _ = writeln!(
+                        result,
+                        "//{}{} {:?}{multiline_suffix} {}",
+                        " ".repeat(range.start_col as usize),
+                        "^".repeat(length),
+                        occ.syntax_kind,
+                        symbol_suffix,
+                    );
+                }
             }
-
-            if range.start_line < idx as i32 {
-                continue;
-            } else if range.start_line > idx as i32 {
-                occurences.push_front(occ);
-                break;
-            }
-
-            let length = (range.end_col - range.start_col) as usize;
-
-            result.push_str(&format!(
-                "//{}{} {:?}\n",
-                " ".repeat(range.start_col as usize),
-                "^".repeat(length),
-                occ.syntax_kind
-            ));
         }
     }
 
@@ -468,7 +500,7 @@ SELECT * FROM my_table
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
         let dir = read_dir("./src/snapshots/files/")?;
-        for entry in dir.into_iter() {
+        for entry in dir {
             let entry = entry?;
             let filepath = entry.path();
             let mut file = File::open(&filepath)?;
@@ -484,8 +516,6 @@ SELECT * FROM my_table
                 theme: "".to_string(),
                 code: contents.clone(),
             });
-
-            println!("Filetype: {filetype}");
 
             let document = index_language(filetype, &contents).unwrap();
             insta::assert_snapshot!(

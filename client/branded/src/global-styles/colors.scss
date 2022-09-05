@@ -8,6 +8,7 @@
 $blue: #0b70db;
 $indigo: #0864c6;
 $purple: #a305e1;
+$purple-01: #e8d1ff;
 $purple-03: #820dde;
 $pink: #d68cf3;
 $red: $oc-red-9;
@@ -31,6 +32,10 @@ $gray-08: #343a4d;
 // Exception that's used in $theme-colors.
 $gray-09: #262b38;
 
+// light and dark colors used in `$theme-colors` -> `bg-*`
+$gray-100: #f8f9fa;
+$gray-800: #343a40;
+
 // Core semantic base colors.
 $primary: $blue;
 $secondary: $gray-08;
@@ -39,9 +44,19 @@ $info: $cyan;
 $warning: $yellow;
 $danger: $red;
 $merged: $purple;
+$light: $gray-100;
+$dark: $gray-800;
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
+    'primary': $primary,
+    'secondary': $secondary,
+    'success': $success,
+    'info': $info,
+    'warning': $warning,
+    'danger': $danger,
+    'light': $light,
+    'dark': $dark,
     'merged': $merged,
 );
 
@@ -66,6 +81,7 @@ $theme-colors: (
     --blue: #{$blue};
     --indigo: #{$indigo};
     --purple: #{$purple};
+    --purple-01: #{$purple-01};
     --purple-03: #{$purple-03};
     --pink: #{$pink};
     --red: #{$red};
@@ -143,17 +159,45 @@ $theme-colors: (
     --border-color-2: var(--gray-04);
     --border-active-color: var(--primary);
     --border-primary-color: #0f59aa; // = dark variant of primary-2
+    // Start query highlighting
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
     --search-filter-separator-color: var(--oc-gray-6);
+    --search-path-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--purple);
+    --search-regexp-meta-assertion-color: var(--oc-red-9);
+    --search-regexp-meta-delimited-color: var(--oc-red-9);
+    --search-regexp-meta-lazy-quantifier-color: var(--oc-red-9);
+    --search-regexp-meta-escaped-character-color: var(--oc-red-9);
+    --search-regexp-meta-character-set-color: var(--purple);
+    --search-regexp-meta-character-class-color: var(--purple);
+    --search-regexp-meta-character-class-member-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-hyphen-color: var(--search-query-text-color);
+    --search-regexp-meta-range-quantifier-color: var(--oc-cyan-7);
+    --search-regexp-meta-alternative-color: var(--oc-cyan-7);
+    --search-revision-separator-color: var(--oc-orange-9);
+    --search-revision-include-glob-marker-color: var(--oc-red-9);
+    --search-revision-exclude-glob-marker-color: var(--oc-red-9);
+    --search-revision-commit-hash-color: var(--search-query-text-color);
+    --search-revision-label-color: var(--search-query-text-color);
+    --search-revision-reference-path-color: var(--search-query-text-color);
+    --search-revision-wildcard-color: var(--oc-cyan-7);
+    --search-predicate-name-access-color: var(--search-keyword-color);
+    --search-predicate-dot-color: var(--search-query-text-color);
+    --search-predicate-parenthesis-color: var(--oc-orange-9);
+    --search-structural-hole-color: var(--oc-red-9);
+    --search-structural-regexp-hole-color: var(--oc-red-9);
+    --search-structural-variable-color: var(--search-query-text-color);
+    --search-structural-regexp-separator-color: var(--oc-orange-9);
+    // End query highlighting
     --infobar-warning-color: var(--oc-red-8);
     --icon-color: var(--gray-06);
     --icon-muted: var(--gray-05);
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
-    --subtle-bg-2: #{rgba($gray-02, 0.6)};
+    --subtle-bg-2: #{rgba($gray-02, 0.5)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
@@ -167,6 +211,9 @@ $theme-colors: (
         rgba(215, 240, 253, 0.25) 83.64%
     );
     --modal-bg: #{rgba($gray-04, 0.5)};
+    // Colors used in the search sidebar with .core-workflow-improvements-enabled
+    --sidebar-bg: var(--color-bg-1);
+    --sidebar-border-color: var(--border-color-2);
 }
 
 .theme-dark {
@@ -207,10 +254,38 @@ $theme-colors: (
     --border-color-2: var(--gray-08);
     --border-active-color: #4393e7;
     --border-primary-color: #0f59aa; // = dark variant of primary-2
+    // Start query highlighting
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
     --search-filter-separator-color: var(--oc-gray-6);
+    --search-path-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--pink);
+    --search-regexp-meta-assertion-color: var(--oc-red-5);
+    --search-regexp-meta-delimited-color: var(--oc-red-5);
+    --search-regexp-meta-lazy-quantifier-color: var(--oc-red-5);
+    --search-regexp-meta-escaped-character-color: var(--oc-red-3);
+    --search-regexp-meta-character-set-color: var(--pink);
+    --search-regexp-meta-character-class-color: var(--oc-grape-4);
+    --search-regexp-meta-character-class-member-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-color: var(--search-query-text-color);
+    --search-regexp-meta-character-class-range-hyphen-color: var(--search-query-text-color);
+    --search-regexp-meta-range-quantifier-color: var(--oc-cyan-4);
+    --search-regexp-meta-alternative-color: var(--oc-cyan-4);
+    --search-revision-separator-color: var(--oc-orange-4);
+    --search-revision-include-glob-marker-color: var(--oc-red-5);
+    --search-revision-exclude-glob-marker-color: var(--oc-red-5);
+    --search-revision-commit-hash-color: var(--search-query-text-color);
+    --search-revision-label-color: var(--search-query-text-color);
+    --search-revision-reference-path-color: var(--search-query-text-color);
+    --search-revision-wildcard-color: var(--oc-cyan-4);
+    --search-predicate-name-access-color: var(--search-keyword-color);
+    --search-predicate-dot-color: var(--search-query-text-color);
+    --search-predicate-parenthesis-color: var(--oc-orange-4);
+    --search-structural-hole-color: var(--oc-red-5);
+    --search-structural-regexp-hole-color: var(--oc-red-5);
+    --search-structural-variable-color: var(--search-query-text-color);
+    --search-structural-regexp-separator-color: var(--oc-orange-4);
+    // End query highlighting
     --infobar-warning-color: #f05151;
     --icon-color: var(--gray-05);
     --icon-muted: var(--gray-07);
@@ -227,6 +302,9 @@ $theme-colors: (
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
+    // Colors used in the search sidebar with .core-workflow-improvements-enabled
+    --sidebar-bg: var(--black);
+    --sidebar-border-color: var(--color-bg-2);
 }
 
 // Additional colors global colors.
@@ -236,4 +314,14 @@ $theme-colors: (
     --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
+    --text-muted-transparent: #{rgba($gray-06, 0.3)};
+}
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light .theme-contrast-compliant-syntax-highlighting {
+    --line-number-color: var(--gray-07);
+}
+.theme-dark .theme-contrast-compliant-syntax-highlighting {
+    --line-number-color: var(--gray-06);
 }

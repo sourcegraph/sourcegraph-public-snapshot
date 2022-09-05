@@ -1,7 +1,3 @@
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities/spacing';
 @import 'wildcard/src/global-styles/breakpoints';
 
 .logged-out-homepage {
@@ -32,7 +28,7 @@
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
                 grid-auto-rows: minmax(4rem, auto);
-                gap: $spacer * 0.75;
+                gap: calc(var(--spacer) * 0.75);
             }
 
             @media (--sm-breakpoint-down) {
@@ -217,53 +213,13 @@
     width: 18rem;
 
     @media (--md-breakpoint-down) {
-        max-width: 50%;
+        max-width: 40%;
         flex: 1;
     }
 
     @media (--sm-breakpoint-down) {
         max-width: 100%;
         width: 100%;
-    }
-}
-
-.tips-and-tricks {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    max-width: 25rem;
-
-    @media (--md-breakpoint-down) {
-        min-width: 50%;
-        max-width: 100%;
-        flex: 1;
-    }
-
-    @media (--sm-breakpoint-down) {
-        max-width: 100%;
-        width: 100%;
-    }
-
-    &-examples {
-        display: flex;
-        flex-wrap: wrap;
-    }
-
-    &-example {
-        display: flex;
-        align-items: center;
-        margin: 0 2rem 0.75rem 0;
-    }
-
-    &-card {
-        margin-left: 0.25rem;
-        font-size: 0.75rem;
-        text-decoration: none !important;
-        padding: 0.25rem 0.75rem;
-        align-self: center;
-    }
-
-    &-more {
-        margin-top: auto;
+        flex: initial;
     }
 }

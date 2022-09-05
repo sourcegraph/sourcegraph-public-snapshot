@@ -1,6 +1,8 @@
 import React from 'react'
 
-import { TreeEntryFields } from '../graphql-operations'
+import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
+
+import { TreeRootProps } from './TreeRoot'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
@@ -44,12 +46,10 @@ export function scrollIntoView(element: Element, scrollRoot: Element): void {
 export const getDomElement = (path: string): Element | null =>
     document.querySelector(`[data-tree-path='${path.replace(/'/g, "\\'")}']`)
 
-export const treePadding = (depth: number, isTree: boolean, isDirectory = false): React.CSSProperties => ({
-    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + (isDirectory ? 0 : 8)}px`,
+export const getTreeItemOffset = (depth: number): React.CSSProperties => ({
+    marginLeft: `${depth * 12}px`,
     paddingRight: '1rem',
 })
-
-export const maxEntries = 2500
 
 // Utility functions to handle single-child directories:
 
@@ -91,3 +91,18 @@ function gitTreeToTreeObject(entry: TreeEntryInfo): SingleChildGitTree {
 export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
+
+interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> {}
+
+export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRootProps): boolean {
+    return (
+        a.repoName === b.repoName &&
+        a.revision === b.revision &&
+        a.commitID === b.commitID &&
+        a.parentPath === b.parentPath &&
+        a.isExpanded === b.isExpanded &&
+        a.location === b.location
+    )
+}
+
+export const NOOP = (): void => undefined

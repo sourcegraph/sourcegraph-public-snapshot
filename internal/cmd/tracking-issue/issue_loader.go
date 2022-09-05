@@ -143,7 +143,7 @@ func (l *IssueLoader) Load(ctx context.Context, cli *graphql.Client) (issues []*
 func (l *IssueLoader) makeNextRequest() (*graphql.Request, bool) {
 	var args []string
 	var fragments []string
-	vars := map[string]interface{}{}
+	vars := map[string]any{}
 
 	cost := 0
 	for i := range l.queries {

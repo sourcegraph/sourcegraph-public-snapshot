@@ -11,7 +11,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -19,8 +18,7 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps,
-        SettingsCascadeProps,
-        FeatureFlagProps {
+        SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -32,7 +30,10 @@ const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPa
 /**
  * The global code monitoring area.
  */
-export const GlobalCodeMonitoringArea: React.FunctionComponent<Props> = ({ match, ...outerProps }) => (
+export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    match,
+    ...outerProps
+}) => (
     <div className="w-100">
         <Page>
             <Switch>

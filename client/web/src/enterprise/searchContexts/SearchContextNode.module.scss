@@ -1,13 +1,24 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-context-node {
+    display: flex;
+    align-items: center;
+
     &:first-child {
         border-top: 1px solid var(--border-color-2);
     }
     border-bottom: 1px solid var(--border-color-2);
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 .left {
     /* Enables responsive ellipsis text truncation */
     min-width: 0;
+    max-width: 100%;
 
     &-description {
         white-space: nowrap;
@@ -20,4 +31,8 @@
     font-size: 0.75rem;
     margin-left: 1rem;
     flex-shrink: 0;
+
+    @media (--xs-breakpoint-down) {
+        margin-left: 0;
+    }
 }

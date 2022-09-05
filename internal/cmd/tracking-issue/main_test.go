@@ -14,6 +14,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -28,6 +29,30 @@ var (
 		25768, // RFC 496: Continuous integration observability
 	}
 )
+
+func TestIsRateLimitErr(t *testing.T) {
+	cases := []struct {
+		err      error
+		expected bool
+	}{
+		{
+			err:      errors.Wrap(errors.New("graphql: API rate limit exceeded for user ID 12345"), "fake error"),
+			expected: true,
+		}, {
+			err:      nil,
+			expected: false,
+		}, {
+			err:      errors.New("fake top error"),
+			expected: false,
+		},
+	}
+
+	for _, tc := range cases {
+		if isRateLimitErr(tc.err) != tc.expected {
+			t.Errorf("expected %v got %v for %s", tc.expected, !tc.expected, tc.err)
+		}
+	}
+}
 
 func TestIntegration(t *testing.T) {
 	mockLastUpdate(t)

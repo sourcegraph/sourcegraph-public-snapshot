@@ -31,7 +31,7 @@ export interface ChangesetFileDiffProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> = ({
+export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<ChangesetFileDiffProps>> = ({
     isLightTheme,
     changesetID,
     history,
@@ -82,10 +82,16 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
         if (!extensionInfo || !range) {
             return
         }
+        const extensionsController = extensionInfo.extensionsController
+
+        if (extensionsController === null) {
+            return undefined
+        }
         const baseRevision = commitOIDForGitRevision(range.base)
         const headRevision = commitOIDForGitRevision(range.head)
         return {
             ...extensionInfo,
+            extensionsController,
             head: {
                 commitID: headRevision,
                 repoID: repositoryID,
@@ -147,8 +153,9 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
     }
 }
 
-const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
+const DiffRenderingNotSupportedAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <Alert className="mb-0" variant="info">
-        Diffs for processing, merged, closed and deleted changesets are currently only available on the code host.
+        Diffs for processing, merged, closed, read-only, and deleted changesets are currently only available on the code
+        host.
     </Alert>
 )

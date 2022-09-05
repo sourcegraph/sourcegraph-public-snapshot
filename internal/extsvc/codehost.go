@@ -15,7 +15,7 @@ type CodeHost struct {
 
 func (c *CodeHost) IsPackageHost() bool {
 	switch c.ServiceType {
-	case TypeNpmPackages, TypeJVMPackages:
+	case TypeNpmPackages, TypeJVMPackages, TypeGoModules, TypePythonPackages, TypeRustPackages:
 		return true
 	}
 	return false
@@ -29,17 +29,31 @@ var (
 	GitLabDotComURL = mustParseURL("https://gitlab.com")
 	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
 
+	BitbucketOrgURL = mustParseURL("https://bitbucket.org")
+
 	MavenURL    = &url.URL{Host: "maven"}
 	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
 
 	NpmURL      = &url.URL{Host: "npm"}
 	NpmPackages = NewCodeHost(NpmURL, TypeNpmPackages)
 
+	GoURL     = &url.URL{Host: "go"}
+	GoModules = NewCodeHost(GoURL, TypeGoModules)
+
+	PythonURL      = &url.URL{Host: "python"}
+	PythonPackages = NewCodeHost(PythonURL, TypePythonPackages)
+
+	RustURL      = &url.URL{Host: "crates"}
+	RustPackages = NewCodeHost(RustURL, TypeRustPackages)
+
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
 		GitLabDotCom,
 		JVMPackages,
 		NpmPackages,
+		GoModules,
+		PythonPackages,
+		RustPackages,
 	}
 )
 

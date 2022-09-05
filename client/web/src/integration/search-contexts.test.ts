@@ -3,8 +3,10 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -12,10 +14,8 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { siteGQLID, siteID } from './jscontext'
-import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
-import { percySnapshotWithVariants } from './utils'
+import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -41,54 +41,16 @@ describe('Search contexts', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
-        driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
-
-    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
-        ViewerSettings: () => ({
-            viewerSettings: {
-                __typename: 'SettingsCascade',
-                subjects: [
-                    {
-                        __typename: 'DefaultSettings',
-                        settingsURL: null,
-                        viewerCanAdminister: false,
-                        latestSettings: {
-                            id: 0,
-                            contents: JSON.stringify({
-                                experimentalFeatures: {
-                                    showSearchContext: true,
-                                    showSearchContextManagement: true,
-                                },
-                            }),
-                        },
-                    },
-                    {
-                        __typename: 'Site',
-                        id: siteGQLID,
-                        siteID,
-                        latestSettings: {
-                            id: 470,
-                            contents: JSON.stringify({
-                                experimentalFeatures: {
-                                    showSearchContext: true,
-                                    showSearchContextManagement: true,
-                                },
-                            }),
-                        },
-                        settingsURL: '/site-admin/global-settings',
-                        viewerCanAdminister: true,
-                        allowSiteSettingsEdits: true,
-                    },
-                ],
-                final: JSON.stringify({}),
-            },
-        }),
-    }
-
     const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
         ...commonSearchGraphQLResults,
-        ...viewerSettingsWithSearchContexts,
+        ...createViewerSettingsGraphQLOverride({
+            user: {
+                experimentalFeatures: {
+                    showSearchContext: true,
+                    showSearchContextManagement: true,
+                },
+            },
+        }),
         UserRepositories: () => ({
             node: {
                 __typename: 'User',
@@ -102,7 +64,7 @@ describe('Search contexts', () => {
                             createdAt: '',
                             url: '',
                             isPrivate: false,
-                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null },
+                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null, lastError: null },
                             externalRepository: { serviceType: '', serviceID: '' },
                         },
                     ],
@@ -146,15 +108,30 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-        await driver.page.goto(
-            driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-            { waitUntil: 'networkidle0' }
-        )
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        await driver.page.waitForSelector('#monaco-query-input')
-        expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
-        expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+    withSearchQueryInput(editorName => {
+        test(`Unavailable search context should remain in the query and disable the search context dropdown (${editorName})`, async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                ...createViewerSettingsGraphQLOverride({
+                    user: {
+                        experimentalFeatures: {
+                            showSearchContext: true,
+                            showSearchContextManagement: true,
+                            ...enableEditor(editorName).experimentalFeatures,
+                        },
+                    },
+                }),
+            })
+
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+                { waitUntil: 'networkidle0' }
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+            expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
     })
 
     test('Reset unavailable search context from localStorage if query is not present', async () => {
@@ -225,13 +202,10 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
-        await driver.replaceText({
-            selector: '[data-testid="repositories-config-area"] .monaco-editor',
-            newText: repositoriesConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
+            await editor.replace(repositoriesConfig, 'paste')
+        }
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
@@ -241,7 +215,7 @@ describe('Search contexts', () => {
 
         // Take Snapshot
         await percySnapshotWithVariants(driver.page, 'Create static search context page')
-
+        await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
@@ -274,7 +248,9 @@ describe('Search contexts', () => {
             }),
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new', {
+            waitUntil: 'networkidle0',
+        })
 
         await driver.replaceText({
             selector: '[data-testid="search-context-name-input"]',
@@ -298,18 +274,17 @@ describe('Search contexts', () => {
         // Select query option
         await driver.page.click('#search-context-type-dynamic')
 
-        // Enter query
-        await driver.page.waitForSelector('[data-testid="search-context-dynamic-query"] .monaco-editor')
-        await driver.replaceText({
-            selector: '[data-testid="search-context-dynamic-query"] .monaco-editor',
-            newText: 'repo:abc',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        // Wait for search query input
+        const editor = await createEditorAPI(driver, '[data-testid="search-context-dynamic-query"] .test-query-input')
+        await editor.focus()
 
         // Take Snapshot
         await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
 
+        // Enter search query
+        await editor.replace('repo:abc')
+
+        await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
@@ -403,13 +378,8 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
-        await driver.replaceText({
-            selector: '[data-testid="repositories-config-area"] .monaco-editor',
-            newText: repositoriesConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
+        await editor.replace(repositoriesConfig, 'paste')
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
@@ -582,6 +552,7 @@ describe('Search contexts', () => {
         )
 
         await percySnapshotWithVariants(driver.page, 'Search contexts list page')
+        await accessibilityAudit(driver.page)
     })
 
     test('Switching contexts with empty query', async () => {

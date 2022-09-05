@@ -1,15 +1,16 @@
 import * as React from 'react'
 
+import { mdiLink } from '@mdi/js'
 import * as H from 'history'
-import LinkIcon from 'mdi-react/LinkIcon'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Icon } from '@sourcegraph/wildcard'
+import { isInputElement } from '@sourcegraph/shared/src/util/dom'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
-import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 /**
@@ -43,9 +44,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                     filter(
                         event =>
                             // 'y' shortcut (if no input element is focused)
-                            event.key === 'y' &&
-                            !!document.activeElement &&
-                            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                            event.key === 'y' && !!document.activeElement && !isInputElement(document.activeElement)
                     )
                 )
                 .subscribe(event => {
@@ -68,23 +67,29 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <Icon as={LinkIcon} />
+                <RepoHeaderActionMenuLink
+                    as={Link}
+                    file={true}
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
                     <span>Permalink (with full Git commit SHA)</span>
-                </RepoHeaderActionButtonLink>
+                </RepoHeaderActionMenuLink>
             )
         }
 
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={this.permalinkURL}
-                onSelect={this.onClick.bind(this)}
-                data-tooltip="Permalink (with full Git commit SHA)"
-            >
-                <Icon as={LinkIcon} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content="Permalink (with full Git commit SHA)">
+                <RepoHeaderActionButtonLink
+                    aria-label="Permalink"
+                    file={false}
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

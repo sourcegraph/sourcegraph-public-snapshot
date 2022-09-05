@@ -17,6 +17,8 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+
+	"github.com/sourcegraph/log"
 )
 
 // NewTx opens a transaction off of the given database, returning that
@@ -56,18 +58,40 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
+var dbTemplateOnce sync.Once
+
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
-func NewDB(t testing.TB) *sql.DB {
-	return newFromDSN(t, "migrated")
+func NewDB(logger log.Logger, t testing.TB) *sql.DB {
+	dbTemplateOnce.Do(func() {
+		initTemplateDB(logger, t, "migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
+	})
+
+	return newFromDSN(logger, t, "migrated")
 }
+
+var insightsTemplateOnce sync.Once
+
+// NewInsightsDB returns a connection to a clean, new temporary testing database with
+// the same schema as Sourcegraph's CodeInsights production Postgres database.
+func NewInsightsDB(logger log.Logger, t testing.TB) *sql.DB {
+	insightsTemplateOnce.Do(func() {
+		initTemplateDB(logger, t, "insights", []*schemas.Schema{schemas.CodeInsights})
+	})
+	return newFromDSN(logger, t, "insights")
+}
+
+var rawTemplateOnce sync.Once
 
 // NewRawDB returns a connection to a clean, new temporary testing database.
-func NewRawDB(t testing.TB) *sql.DB {
-	return newFromDSN(t, "raw")
+func NewRawDB(logger log.Logger, t testing.TB) *sql.DB {
+	rawTemplateOnce.Do(func() {
+		initTemplateDB(logger, t, "raw", nil)
+	})
+	return newFromDSN(logger, t, "raw")
 }
 
-func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
+func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
@@ -77,22 +101,25 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
 
-	initTemplateDB(t, config)
-
 	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
 	rngLock.Unlock()
 
-	db := dbConn(t, config)
+	db := dbConn(logger, t, config)
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName(templateNamespace)))
 
 	config.Path = "/" + dbname
-	testDB := dbConn(t, config)
+	testDB := dbConn(logger, t, config)
 	t.Logf("testdb: %s", config.String())
 
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	testDB.SetMaxOpenConns(10)
+	conns, err := strconv.Atoi(os.Getenv("TESTDB_MAXOPENCONNS"))
+	if err != nil || conns == 0 {
+		conns = 20
+	}
+	testDB.SetMaxOpenConns(conns)
+	testDB.SetMaxIdleConns(1) // Default is 2, and within tests, it's not that important to have more than one.
 
 	t.Cleanup(func() {
 		defer db.Close()
@@ -112,35 +139,35 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 	return testDB
 }
 
-var templateOnce sync.Once
-
 // initTemplateDB creates a template database with a fully migrated schema for the
 // current package. New databases can then do a cheap copy of the migrated schema
 // rather than running the full migration every time.
-func initTemplateDB(t testing.TB, config *url.URL) {
-	templateOnce.Do(func() {
-		db := dbConn(t, config)
-		defer db.Close()
+func initTemplateDB(logger log.Logger, t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
+	config, err := getDSN()
+	if err != nil {
+		t.Fatalf("failed to parse dsn: %s", err)
+	}
 
-		init := func(templateNamespace string, schemas []*schemas.Schema) {
-			templateName := templateDBName(templateNamespace)
-			name := pq.QuoteIdentifier(templateName)
+	db := dbConn(logger, t, config)
+	defer db.Close()
 
-			// We must first drop the template database because
-			// migrations would not run on it if they had already ran,
-			// even if the content of the migrations had changed during development.
+	init := func(templateNamespace string, schemas []*schemas.Schema) {
+		templateName := templateDBName(templateNamespace)
+		name := pq.QuoteIdentifier(templateName)
 
-			dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
-			dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+		// We must first drop the template database because
+		// migrations would not run on it if they had already ran,
+		// even if the content of the migrations had changed during development.
 
-			cfgCopy := *config
-			cfgCopy.Path = "/" + templateName
-			dbConn(t, &cfgCopy, schemas...).Close()
-		}
+		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
+		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
 
-		init("raw", nil)
-		init("migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
-	})
+		cfgCopy := *config
+		cfgCopy.Path = "/" + templateName
+		dbConn(logger, t, &cfgCopy, schemas...).Close()
+	}
+
+	init(templateNamespace, dbSchemas)
 }
 
 // templateDBName returns the name of the template database for the currently running package and namespace.
@@ -164,16 +191,16 @@ func wdHash() string {
 	return strconv.FormatUint(h.Sum64(), 10)
 }
 
-func dbConn(t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
+func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	t.Helper()
-	db, err := connections.NewTestDB(cfg.String(), schemas...)
+	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
 	return db
 }
 
-func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
+func dbExec(t testing.TB, db *sql.DB, q string, args ...any) {
 	t.Helper()
 	_, err := db.Exec(q, args...)
 	if err != nil {

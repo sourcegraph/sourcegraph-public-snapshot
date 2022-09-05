@@ -12,12 +12,7 @@ import (
 func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
-	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
-		// Backend always supports all latest features.
-		AllowArrayEnvironments: true,
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-	})
+	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec))
 
 	return c, err
 }
@@ -32,7 +27,8 @@ type BatchSpec struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	UserID int32
+	UserID        int32
+	BatchChangeID int64
 
 	// CreatedFromRaw is true when the BatchSpec was created through the
 	// createBatchSpecFromRaw GraphQL mutation, which means that it's meant to be
@@ -68,6 +64,7 @@ type BatchSpecStats struct {
 
 	Workspaces        int
 	SkippedWorkspaces int
+	CachedWorkspaces  int
 	Executions        int
 
 	Queued     int
@@ -183,3 +180,15 @@ func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState
 
 	return "INVALID"
 }
+
+// BatchSpecSource defines the possible sources for creating a BatchSpec. Client-side
+// batch specs (created with src-cli) are said to have the "local" source, and batch specs
+// created for server-side execution are said to have the "remote" source.
+type BatchSpecSource string
+
+const (
+	BatchSpecSourceLocal  BatchSpecState = "local"
+	BatchSpecSourceRemote BatchSpecState = "remote"
+)
+
+func (s BatchSpecSource) ToGraphQL() string { return strings.ToUpper(string(s)) }

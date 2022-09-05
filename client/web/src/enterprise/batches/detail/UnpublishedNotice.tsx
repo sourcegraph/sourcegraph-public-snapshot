@@ -9,7 +9,7 @@ interface UnpublishedNoticeProps {
     className?: string
 }
 
-export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> = ({
+export const UnpublishedNotice: React.FunctionComponent<React.PropsWithChildren<UnpublishedNoticeProps>> = ({
     unpublished,
     total,
     className,

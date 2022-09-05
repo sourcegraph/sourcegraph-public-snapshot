@@ -32,7 +32,7 @@ import { MutationRecordLike } from '../../util/dom'
 import {
     CodeIntelligenceProps,
     createGlobalDebugMount,
-    createOverlayMount,
+    getExistingOrCreateOverlayMount,
     handleCodeHost,
     observeHoverOverlayMountLocation,
     HandleCodeHostOptions,
@@ -80,7 +80,6 @@ const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): C
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: noop,
     urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
@@ -101,7 +100,7 @@ const commonArguments = () =>
         userSignedIn: true,
         minimalUI: false,
         background: {
-            notifyPrivateCloudError: () => Promise.resolve(),
+            notifyRepoSyncError: () => Promise.resolve(),
             openOptionsPage: () => Promise.resolve(),
         },
     })
@@ -129,7 +128,7 @@ describe('codeHost', () => {
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host', document.body)
+            getExistingOrCreateOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')

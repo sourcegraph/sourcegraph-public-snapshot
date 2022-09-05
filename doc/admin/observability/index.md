@@ -30,6 +30,7 @@ Sourcegraph is designed, and ships with, a number of observability tools and cap
 * [Metrics and dashboards](metrics.md)
 * [Alerting](./alerting.md)
 * [Tracing](./tracing.md)
+* [OpenTelemetry](./opentelemetry.md)
 * [Logs](./logs.md)
 * [Health checks](./health_checks.md)
 * [Troubleshooting guide](troubleshooting.md)
@@ -38,7 +39,7 @@ Sourcegraph is designed, and ships with, a number of observability tools and cap
 ## Reference
 
 * [Dashboards reference](./dashboards.md)
-* [Alert solutions](./alert_solutions.md)
+* [Alert solutions](./alerts.md)
 
 ## Support
 

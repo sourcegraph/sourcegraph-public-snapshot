@@ -3,18 +3,15 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link } from '@sourcegraph/wildcard'
+import { Button, Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
-import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
-
-import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'
 
@@ -23,11 +20,11 @@ interface CodeMonitorListProps
     authenticatedUser: AuthenticatedUser | null
 }
 
-const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
-    authenticatedUser,
-}) => (
+const CodeMonitorEmptyList: React.FunctionComponent<
+    React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
+> = ({ authenticatedUser }) => (
     <div className="text-center">
-        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+        <H2 className="text-muted mb-2">No code monitors have been created.</H2>
         {!authenticatedUser && (
             <CodeMonitorSignUpLink
                 className="my-3"
@@ -38,7 +35,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
     </div>
 )
 
-export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
+export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<CodeMonitorListProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
@@ -70,7 +67,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    <h3>Filters</h3>
+                    <H3 as={H2}>Filters</H3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}
@@ -87,10 +84,9 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
-                    <CodeMonitorInfo />
-                    <h3 className="mb-2">
+                    <H3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
-                    </h3>
+                    </H3>
                     <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,
@@ -113,7 +109,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             cursorPaging={true}
                             withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
-                            className={styles.list}
+                            listComponent="div"
                         />
                     </Container>
                 </div>

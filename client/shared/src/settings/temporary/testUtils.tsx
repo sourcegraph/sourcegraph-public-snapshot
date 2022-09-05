@@ -7,10 +7,12 @@ import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
 import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'
 
-export const MockTemporarySettings: React.FunctionComponent<{
-    settings: TemporarySettings
-    onSettingsChanged?: (settings: TemporarySettings) => void
-}> = ({ settings, onSettingsChanged, children }) => {
+export const MockTemporarySettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        settings: TemporarySettings
+        onSettingsChanged?: (settings: TemporarySettings) => void
+    }>
+> = ({ settings, onSettingsChanged, children }) => {
     const mockClient = createMockClient(
         null,
         gql`

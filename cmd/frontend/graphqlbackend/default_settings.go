@@ -43,6 +43,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/rust":       true,
 	"sourcegraph/scala":      true,
 	"sourcegraph/shell":      true,
+	"sourcegraph/starlark":   true,
 	"sourcegraph/swift":      true,
 	"sourcegraph/tcl":        true,
 	"sourcegraph/thrift":     true,
@@ -51,7 +52,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/vhdl":       true,
 }
 
-func defaultSettings(db database.DB) map[string]interface{} {
+func defaultSettings(db database.DB) map[string]any {
 	extensionIDs := []string{}
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
@@ -62,8 +63,8 @@ func defaultSettings(db database.DB) map[string]interface{} {
 		extensions[id] = true
 	}
 
-	return map[string]interface{}{
-		"experimentalFeatures": map[string]interface{}{},
+	return map[string]any{
+		"experimentalFeatures": map[string]any{},
 		"extensions":           extensions,
 	}
 }

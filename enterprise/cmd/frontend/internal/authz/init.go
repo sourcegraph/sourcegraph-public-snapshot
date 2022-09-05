@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -34,19 +33,16 @@ var clock = timeutil.Now
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
-	database.Authz = func(db dbutil.DB) database.AuthzStore {
-		return edb.NewAuthzStore(db, clock)
-	}
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
-		return edb.NewAuthzStore(db, clock)
+		return edb.NewAuthzStore(observationContext.Logger, db, clock)
 	}
 
-	extsvcStore := database.ExternalServices(db)
+	extsvcStore := db.ExternalServices()
 
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, providers, seriousProblems, warnings :=
+		_, providers, seriousProblems, warnings, _ :=
 			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
@@ -60,7 +56,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		return problems
 	})
 
-	// Warn about usage of auth providers that are not enabled by the license.
+	// Warn about usage of authz providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
@@ -71,16 +67,12 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			return nil
 		}
 
-		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
-		if len(providers) == 0 {
-			return nil
-		}
+		_, _, _, _, invalidConnections := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
-		for _, p := range providers {
-			authzTypes[p.ServiceType()] = struct{}{}
+		for _, conn := range invalidConnections {
+			authzTypes[conn] = struct{}{}
 		}
 
 		authzNames := make([]string, 0, len(authzTypes))
@@ -96,6 +88,11 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 				authzNames = append(authzNames, t)
 			}
 		}
+
+		if len(authzNames) == 0 {
+			return nil
+		}
+
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzNames, ", ")),
@@ -181,7 +178,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _ :=
+			allowAccessByDefault, authzProviders, _, _, _ :=
 				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}

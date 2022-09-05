@@ -1,4 +1,4 @@
-# <a href="https://sourcegraph.com"><picture><source srcset="./ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="./ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
+# <a href="https://sourcegraph.com"><picture><source srcset="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
 
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main)](https://buildkite.com/sourcegraph/sourcegraph)
 

@@ -5,20 +5,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/hexops/autogold"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log/logtest"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -26,15 +23,14 @@ func TestSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
-	postgres := dbtest.NewDB(t)
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	// Confirm we get no results initially.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
@@ -44,7 +40,7 @@ func TestSeriesPoints(t *testing.T) {
 	autogold.Want("SeriesPoints", []SeriesPoint{}).Equal(t, points)
 
 	// Insert some fake data.
-	_, err = timescale.Exec(`
+	_, err = insightsDB.ExecContext(context.Background(), `
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
 INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
@@ -129,7 +125,6 @@ SELECT time,
 			t.Errorf("unexpected results from include list: %v", diff)
 		}
 	})
-
 }
 
 func TestCountData(t *testing.T) {
@@ -137,13 +132,13 @@ func TestCountData(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
@@ -166,19 +161,19 @@ func TestCountData(t *testing.T) {
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:00:00Z"), Value: 2.2},
-			Metadata:    []interface{}{"some", "data", "two"},
+			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:01:00Z"), Value: 2.2},
-			Metadata:    []interface{}{"some", "data", "two"},
+			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -235,13 +230,13 @@ func TestRecordSeriesPoints(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -255,7 +250,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -263,7 +258,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 14), Value: 2.2},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    []interface{}{"some", "data", "two"},
+			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -291,13 +286,8 @@ func TestRecordSeriesPoints(t *testing.T) {
 	want := []SeriesPoint{
 		{
 			SeriesID: "one",
-			Time:     current,
-			Value:    1.1,
-		},
-		{
-			SeriesID: "one",
-			Time:     current.Add(-time.Hour * 24 * 14),
-			Value:    2.2,
+			Time:     current.Add(-time.Hour * 24 * 42),
+			Value:    3.3,
 		},
 		{
 			SeriesID: "one",
@@ -306,8 +296,13 @@ func TestRecordSeriesPoints(t *testing.T) {
 		},
 		{
 			SeriesID: "one",
-			Time:     current.Add(-time.Hour * 24 * 42),
-			Value:    3.3,
+			Time:     current.Add(-time.Hour * 24 * 14),
+			Value:    2.2,
+		},
+		{
+			SeriesID: "one",
+			Time:     current,
+			Value:    1.1,
 		},
 	}
 
@@ -339,13 +334,13 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -359,7 +354,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
 	} {
@@ -405,13 +400,13 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -425,7 +420,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 	} {
@@ -471,13 +466,13 @@ func TestDeleteSnapshots(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(timescale, permStore, clock)
+	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -492,7 +487,7 @@ func TestDeleteSnapshots(t *testing.T) {
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
 		{
@@ -500,7 +495,7 @@ func TestDeleteSnapshots(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(time.Hour), Value: 1.1}, // offsetting the time by an hour so that the point is not deduplicated
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]interface{}{"some": "data"},
+			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 	} {
@@ -553,15 +548,15 @@ func TestDelete(t *testing.T) {
 
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
 
-	postgres := dbtest.NewDB(t)
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
 

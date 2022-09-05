@@ -22,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -30,7 +30,6 @@ import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -38,8 +37,8 @@ import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { ResolvedRevision } from './backend'
+import { BlobProps } from './blob/Blob'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -63,15 +62,14 @@ export interface RepoRevisionContainerContext
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        CodeInsightsProps,
-        ExtensionAlertProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -99,16 +97,15 @@ interface RepoRevisionContainerProps
         ThemeProps,
         ActivationProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
-        FeatureFlagProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
-        ExtensionAlertProps {
+        CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -135,11 +132,9 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevisionOrError: ResolvedRevision
 }
 
-const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBreadcrumbProps> = ({
-    revision,
-    resolvedRevisionOrError,
-    repo,
-}) => {
+const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionBreadcrumbProps>
+> = ({ revision, resolvedRevisionOrError, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
     return (
@@ -159,9 +154,13 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <Icon as={RepoRevisionChevronDownIcon} />
+                <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
-            <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
+            <PopoverContent
+                position={Position.bottomStart}
+                className="pt-0 pb-0"
+                aria-labelledby="repo-revision-popover"
+            >
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}
@@ -180,7 +179,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
+export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChildren<RepoRevisionContainerProps>> = ({
     useBreadcrumb,
     ...props
 }) => {

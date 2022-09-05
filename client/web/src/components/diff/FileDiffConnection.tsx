@@ -59,7 +59,7 @@ export type PartInfo<ExtraData extends object = {}> = {
 /**
  * Displays a list of file diffs.
  */
-export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps> = props => {
+export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren<FileDiffConnectionProps>> = props => {
     const { observeViewerId, setViewerIds, getCurrentViewerIdByUri } = useMemo(() => {
         const viewerIdByUris = new BehaviorSubject<Map<string, ViewerId | undefined>>(new Map())
 
@@ -111,7 +111,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
 
     const diffsUpdates = useMemo(() => new ReplaySubject<Connection<FileDiffFields> | ErrorLike | undefined>(1), [])
     const nextDiffsUpdate: FileDiffConnectionProps['onUpdate'] = useCallback(
-        fileDiffsOrError => diffsUpdates.next(fileDiffsOrError),
+        (fileDiffsOrError: Connection<FileDiffFields> | ErrorLike | undefined) => diffsUpdates.next(fileDiffsOrError),
         [diffsUpdates]
     )
 
@@ -251,6 +251,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
     return (
         <FilteredFileDiffConnection
             {...props}
+            withCenteredSummary={true}
             nodeComponentProps={
                 props.nodeComponentProps
                     ? {

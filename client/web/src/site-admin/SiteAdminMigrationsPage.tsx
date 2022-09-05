@@ -1,10 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ArrowLeftBoldIcon from 'mdi-react/ArrowLeftBoldIcon'
-import ArrowRightBoldIcon from 'mdi-react/ArrowRightBoldIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -13,7 +10,18 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import {
+    LoadingSpinner,
+    useObservable,
+    Alert,
+    Container,
+    Icon,
+    Code,
+    H3,
+    Text,
+    Tooltip,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -71,7 +79,9 @@ const UPGRADE_RANGE = 1
 /* How many (minor) versions we can downgrade at once. */
 const DOWNGRADE_RANGE = 1
 
-export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigrationsPageProps> = ({
+export const SiteAdminMigrationsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminMigrationsPageProps>
+> = ({
     fetchAllMigrations = defaultFetchAllMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
@@ -128,20 +138,26 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <h2>Out-of-band migrations</h2>
-
-                    <p>
-                        Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
-                        old format into a new format. Consult this page prior to upgrading your Sourcegraph instance to
-                        ensure that all expected migrations have completed.
-                    </p>
+                    <PageHeader
+                        path={[{ text: 'Out-of-band migrations' }]}
+                        headingElement="h2"
+                        description={
+                            <>
+                                Out-of-band migrations run in the background of the Sourcegraph instance convert data
+                                from an old format into a new format. Consult this page prior to upgrading your
+                                Sourcegraph instance to ensure that all expected migrations have completed.
+                            </>
+                        }
+                        className="mb-3"
+                    />
 
                     <MigrationBanners migrations={migrationsOrError} fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
 
-                    <div className="list-group">
+                    <Container className="mb-3">
                         <FilteredConnection<OutOfBandMigrationFields, Omit<MigrationNodeProps, 'node'>>
+                            className="mb-0"
                             listComponent="div"
-                            listClassName={classNames('mb-3', styles.migrationsGrid)}
+                            listClassName={classNames('list-group mb-3', styles.migrationsGrid)}
                             noun="migration"
                             pluralNoun="migrations"
                             queryConnection={queryMigrations}
@@ -151,7 +167,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
                             location={props.location}
                             filters={filters}
                         />
-                    </div>
+                    </Container>
                 </>
             )}
         </div>
@@ -163,7 +179,7 @@ interface MigrationBannersProps {
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
 }
 
-const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
+const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<MigrationBannersProps>> = ({
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
@@ -176,8 +192,14 @@ const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
         return <></>
     }
 
-    const nextVersion = parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
-    const previousVersion = parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
+    const nextVersion =
+        productVersion.major === 3 && productVersion.minor === 43
+            ? parseVersion('4.0.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
+    const previousVersion =
+        productVersion.major === 4 && productVersion.minor === 0
+            ? parseVersion('3.43.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
 
     const invalidMigrations = migrationsInvalidForVersion(migrations, productVersion)
     const invalidMigrationsAfterUpgrade = migrationsInvalidForVersion(migrations, nextVersion)
@@ -202,15 +224,17 @@ interface MigrationInvalidBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
+const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<MigrationInvalidBannerProps>> = ({
+    migrations,
+}) => (
     <Alert variant="danger">
-        <p>
-            <Icon className="mr-2" as={AlertCircleIcon} />
+        <Text>
+            <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlertCircle} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
             <strong>Continuing to run your instance in this state will result in errors and possible data loss.</strong>
-        </p>
+        </Text>
 
         <ul className="mb-0">
             {migrations.map(migration => (
@@ -224,13 +248,15 @@ interface MigrationUpgradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
+const MigrationUpgradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationUpgradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
+        <Text>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
             <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
-        </p>
+        </Text>
         <ul>
             {migrations.map(migration => (
                 <li key={migration.id}>{migration.description}</li>
@@ -244,19 +270,19 @@ interface MigrationDowngradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
-    migrations,
-}) => (
+const MigrationDowngradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationDowngradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
-            <Icon className="mr-2" as={WarningIcon} />
+        <Text>
+            <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlert} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
                 the previous version.{' '}
                 <strong>If you downgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
             </span>
-        </p>
+        </Text>
 
         <ul>
             {migrations.map(migration => (
@@ -273,21 +299,21 @@ interface MigrationNodeProps {
     now?: () => Date
 }
 
-const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
+const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNodeProps>> = ({ node, now }) => (
     <React.Fragment key={node.id}>
         <span className={styles.separator} />
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <h3>{node.description}</h3>
+                <H3>{node.description}</H3>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
                     <span className="text-muted">is migrating data in</span> <strong>{node.component}</strong>
                     <span className="text-muted">.</span>
-                </p>
+                </Text>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Began running in v</span>
                     {node.introduced}
                     {node.deprecated && (
@@ -298,7 +324,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                         </>
                     )}
                     .
-                </p>
+                </Text>
             </div>
         </div>
 
@@ -306,26 +332,26 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
-                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} />
+                        <Icon className="mr-1 text-danger" aria-hidden={true} svgPath={mdiArrowLeftBold} />
                     ) : (
-                        <Icon className="mr-1" as={ArrowRightBoldIcon} />
+                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowRightBold} />
                     )}
                     {Math.floor(node.progress * 100)}%
                 </div>
 
-                <div>
-                    <meter
-                        min={0}
-                        low={0.2}
-                        high={0.8}
-                        max={1}
-                        optimum={1}
-                        value={node.progress}
-                        data-tooltip={`${Math.floor(node.progress * 100)}%`}
-                        aria-label="migration progress"
-                        data-placement="bottom"
-                    />
-                </div>
+                <Tooltip content={`${Math.floor(node.progress * 100)}%`} placement="bottom">
+                    <div>
+                        <meter
+                            min={0}
+                            low={0.2}
+                            high={0.8}
+                            max={1}
+                            optimum={1}
+                            value={node.progress}
+                            aria-label="migration progress"
+                        />
+                    </div>
+                </Tooltip>
 
                 {node.lastUpdated && node.lastUpdated !== '' && (
                     <>
@@ -360,7 +386,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                                 </div>
 
                                 <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    <code>{error.message}</code>
+                                    <Code>{error.message}</Code>
                                 </span>
                             </React.Fragment>
                         ))}

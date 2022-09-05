@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedProvider } from '@apollo/client/testing'
 import { fireEvent, render } from '@testing-library/react'
 import * as sinon from 'sinon'

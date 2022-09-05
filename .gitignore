@@ -71,6 +71,7 @@ yarn-error.log
 /ui/assets/styles/
 /ui/assets/*.br
 /ui/assets/*.gz
+/ui/assets/stats-*
 
 *.json.actual
 
@@ -122,6 +123,9 @@ elm-stuff
 # Extensions
 /client/extension-api/dist
 
+# Compute Component
+/client/web/src/search/results/components/compute/public/dist
+
 # Direnv
 .envrc
 .direnv
@@ -164,6 +168,23 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+.buildevent_file
 
 # Buildkite analytics files
 test-reports/
+
+# go workspace files shouldn't be committed
+go.work
+go.work.sum
+
+# binary
+/sg
+
+# New Yarn without using Zero-Installs (https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored)
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

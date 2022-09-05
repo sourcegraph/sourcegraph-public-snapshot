@@ -5,12 +5,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../core/constants'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
+import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -19,7 +19,6 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 import styles from './DashboardsContent.module.scss'
@@ -35,7 +34,7 @@ export interface DashboardsContentProps extends TelemetryProps {
     dashboards: InsightDashboard[]
 }
 
-export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
+export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
     const { dashboardID, telemetryService, dashboards } = props
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
@@ -94,7 +93,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        <main className="pb-4">
+        <div className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
@@ -113,16 +112,17 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     className="mr-auto"
                 />
 
-                <Button
-                    outline={true}
-                    variant="secondary"
-                    disabled={addRemovePermissions.disabled}
-                    data-tooltip={addRemovePermissions.tooltip}
-                    data-placement="bottom"
-                    onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
-                >
-                    Add or remove insights
-                </Button>
+                <Tooltip content={addRemovePermissions.tooltip} placement="bottom">
+                    <Button
+                        outline={true}
+                        variant="secondary"
+                        disabled={addRemovePermissions.disabled}
+                        onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                        data-testid="add-or-remove-insights"
+                    >
+                        Add or remove insights
+                    </Button>
+                </Tooltip>
             </DashboardHeader>
 
             {!licensed && (
@@ -138,8 +138,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
             {currentDashboard ? (
                 <DashboardInsights
-                    dashboard={currentDashboard}
+                    currentDashboard={currentDashboard}
+                    dashboards={dashboards}
                     telemetryService={telemetryService}
+                    className={styles.insights}
                     onAddInsightRequest={handleAddInsightRequest}
                 />
             ) : (
@@ -153,6 +155,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
-        </main>
+        </div>
     )
 }

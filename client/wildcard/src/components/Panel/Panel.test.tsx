@@ -1,11 +1,9 @@
-import React from 'react'
-
 import { render } from '@testing-library/react'
 
 import { Panel } from './Panel'
 
 describe('Panel', () => {
     it('renders correctly positioned at page bottom', () => {
-        expect(render(<Panel />).asFragment()).toMatchSnapshot()
+        expect(render(<Panel ariaLabel="Test panel" />).asFragment()).toMatchSnapshot()
     })
 })

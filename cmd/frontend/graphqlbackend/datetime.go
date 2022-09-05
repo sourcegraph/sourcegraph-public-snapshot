@@ -27,7 +27,7 @@ func (v DateTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.Time.Format(time.RFC3339))
 }
 
-func (v *DateTime) UnmarshalGraphQL(input interface{}) error {
+func (v *DateTime) UnmarshalGraphQL(input any) error {
 	s, ok := input.(string)
 	if !ok {
 		return errors.Errorf("invalid GraphQL DateTime scalar value input (got %T, expected string)", input)

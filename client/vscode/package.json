@@ -1,36 +1,67 @@
 {
   "private": true,
-  "name": "sourcegraph-preview",
-  "displayName": "Sourcegraph - preview",
-  "version": "0.0.2",
+  "name": "@sourcegraph/vscode",
+  "displayName": "Sourcegraph",
+  "version": "2.2.9",
   "description": "Sourcegraph for VS Code",
-  "publisher": "kandalatj",
-  "sideEffects": false,
+  "publisher": "sourcegraph",
+  "sideEffects": true,
   "license": "Apache-2.0",
   "icon": "images/logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph.git"
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board"
   },
   "engines": {
-    "vscode": "^1.61.0"
+    "vscode": "^1.63.2"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "onCommand:sourcegraph.search",
-    "onView:sourcegraph.searchSidebar",
-    "onWebviewPanel:sourcegraphSearch"
+    "onStartupFinished"
   ],
-  "main": "./dist/node/extension.js",
-  "browser": "./dist/webworker/extension.js",
+  "main": "./dist/node/main.js",
+  "browser": "./dist/webworker/main.js",
   "contributes": {
     "commands": [
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Open Sourcegraph Search Tab"
+        "title": "Search with Sourcegraph",
+        "icon": {
+          "light": "images/logo.svg",
+          "dark": "images/logo.svg"
+        }
+      },
+      {
+        "command": "sourcegraph.openInBrowser",
+        "category": "Sourcegraph",
+        "title": "Open File in Sourcegraph Web",
+        "icon": {
+          "light": "images/logomark_dark.svg",
+          "dark": "images/logomark_light.svg"
+        }
+      },
+      {
+        "command": "sourcegraph.copyFileLink",
+        "category": "Sourcegraph",
+        "title": "Copy Sourcegraph File Link"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "category": "Sourcegraph",
+        "title": "Search Selection in Sourcegraph Web"
+      },
+      {
+        "command": "sourcegraph.removeRepoTree",
+        "category": "Sourcegraph",
+        "title": "Remove Repository from Sourcegraph File System",
+        "icon": "$(trash)"
       }
     ],
     "viewsContainers": {
@@ -38,7 +69,7 @@
         {
           "id": "sourcegraph-view",
           "title": "Sourcegraph",
-          "icon": "images/logo.svg"
+          "icon": "images/logomark_dark.svg"
         }
       ]
     },
@@ -53,8 +84,13 @@
         {
           "id": "sourcegraph.files",
           "name": "Files",
-          "visibility": "visible",
-          "when": "sourcegraph.state == 'remote-browsing'"
+          "visibility": "visible"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.helpSidebar",
+          "name": "Help and feedback",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -80,7 +116,48 @@
             "string"
           ],
           "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
+        },
+        "sourcegraph.remoteUrlReplacements": {
+          "type": [
+            "object"
+          ],
+          "default": {},
+          "examples": [
+            {
+              "github": "gitlab",
+              "master": "main"
+            }
+          ],
+          "description": "For each item in this object, replace key with value in the remote url."
+        },
+        "sourcegraph.defaultBranch": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "Always open local files on Sourcegraph Web at this default branch."
+        },
+        "sourcegraph.requestHeaders": {
+          "type": [
+            "object"
+          ],
+          "default": {},
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ],
+          "description": "Each value pair will be added to the request headers made to your instance."
+        },
+        "sourcegraph.basePath": {
+          "description": "The file path on the machine to the folder that is expected to contain all repositories.",
+          "type": "string",
+          "default": null,
+          "examples": [
+            "/Users/USERNAME/Documents/"
+          ]
         }
       }
     },
@@ -89,21 +166,81 @@
         "command": "sourcegraph.search",
         "key": "ctrl+shift+8",
         "mac": "cmd+shift+8"
+      },
+      {
+        "command": "sourcegraph.openInBrowser",
+        "key": "alt+a",
+        "mac": "option+a"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "key": "alt+s",
+        "mac": "option+s"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "group": "sourcegraph",
+          "label": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.copyFileLink",
+          "group": "sourcegraph",
+          "label": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.selectionSearchWeb",
+          "group": "sourcegraph",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "sourcegraph.search",
+          "group": "sourcegraph"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "sourcegraph.removeRepoTree",
+          "when": "view == sourcegraph.files && sourcegraph.removeRepository",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
+          "group": "navigation"
+        }
       ]
     }
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "test": "echo \"No tests exist yet\" && exit 1",
-    "package": "echo \"package script not implemented yet\" && exit 1",
-    "build": "webpack --mode=development --config-name extension:node --config-name extension:webworker --config-name webviews",
-    "build:node": "webpack --mode=development --config-name extension:node --config-name webviews",
-    "build:web": "webpack --mode=development --config-name extension:webworker --config-name webviews",
-    "watch:node": "webpack --mode=development --watch --config-name extension:node --config-name webviews",
-    "watch:web": "webpack --mode=development --watch --config-name extension:node --config-name webviews"
+    "lint:js": "yarn run -T eslint --cache '**/*.[jt]s?(x)'",
+    "test": "yarn run -T ts-node ./tests/runTests.ts",
+    "package": "yarn run -T ts-node ./scripts/package.ts",
+    "prebuild": "yarn build-inline-extensions",
+    "prewatch": "yarn build-inline-extensions",
+    "vscode:prepublish": "yarn build-inline-extensions && yarn build",
+    "build-inline-extensions": "node scripts/build-inline-extensions",
+    "task:gulp": "yarn run -T cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
+    "build:esbuild:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp esbuild",
+    "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:gulp esbuild",
+    "build": "yarn run prebuild && NODE_ENV=production yarn task:gulp webpack",
+    "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
+    "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
+    "build:test": "NODE_ENV=production TARGET_TYPE=webworker IS_TEST=true yarn task:gulp webpack",
+    "watch": "yarn run prewatch && yarn task:gulp watchWebpack",
+    "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn run watch",
+    "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn run watch",
+    "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn run watch",
+    "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json yarn run -T mocha --parallel=${CI:-\"false\"} --retries=2 ./tests/**/*.test.ts",
+    "release": "yarn run -T ts-node ./scripts/publish.ts",
+    "release:major": "VSCE_RELEASE_TYPE=major yarn run -T ts-node ./scripts/release.ts",
+    "release:minor": "VSCE_RELEASE_TYPE=minor yarn run -T ts-node ./scripts/release.ts",
+    "release:patch": "VSCE_RELEASE_TYPE=patch yarn run -T ts-node ./scripts/release.ts",
+    "release:pre": "VSCE_RELEASE_TYPE=prerelease yarn run -T ts-node ./scripts/release.ts"
   }
 }

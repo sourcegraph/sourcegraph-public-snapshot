@@ -56,6 +56,26 @@ export const githubRepoScopeRequired = (tags: string[] = [], scopes?: Scopes): b
 export const gitlabAPIScopeRequired = (tags: string[] = [], scopes?: Scopes): boolean =>
     requiredScope('api', tags, scopes)
 
+export const gitlabTokenExpired = (config?: string): boolean => {
+    if (!config) {
+        return false
+    }
+
+    try {
+        const jsonConfig = JSON.parse(config)
+        const key = 'token.oauth.expiry'
+        if (jsonConfig['token.type'] === 'oauth') {
+            const tokenExpiry = jsonConfig[key] || 0
+            const currentTimeUnix = Math.round(new Date().getTime() / 1000) - 10
+            return !tokenExpiry || tokenExpiry < currentTimeUnix
+        }
+        return false
+    } catch {
+        // return false in case JSON cannot be parsed
+        return false
+    }
+}
+
 const requiredScope = (scope: string, tags: string[], scopes?: Scopes): boolean => {
     const allowedPrivate = externalServiceUserModeFromTags(tags) === 'all'
     if (!Array.isArray(scopes)) {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
@@ -80,7 +81,11 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
+	ie := NewInsightEnqueuer(clock, nil)
+	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
+
 	dataSeriesStore := store.NewMockDataSeriesStore()
+	featureStore := database.NewMockFeatureFlagStore()
 
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
 		{
@@ -97,7 +102,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := discoverAndEnqueueInsights(ctx, clock, dataSeriesStore, enqueueQueryRunnerJob); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore, featureStore); err != nil {
 		t.Fatal(err)
 	}
 
@@ -109,7 +114,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	autogold.Want("0", `[
   {
     "SeriesID": "series1",
-    "SearchQuery": "query1 count:all",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -127,7 +132,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "query2 count:all",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -145,7 +150,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series1",
-    "SearchQuery": "query1 count:all",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -163,7 +168,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "query2 count:all",
+    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,

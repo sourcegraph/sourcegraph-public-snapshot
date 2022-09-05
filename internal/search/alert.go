@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -15,7 +16,8 @@ type Alert struct {
 	PrometheusType  string
 	Title           string
 	Description     string
-	ProposedQueries []*ProposedQuery
+	ProposedQueries []*QueryDescription
+	Kind            string // An identifier indicating the kind of alert
 	// The higher the priority the more important is the alert.
 	Priority int
 }
@@ -45,21 +47,35 @@ func (m *MaxAlerter) Add(a *Alert) {
 	m.Unlock()
 }
 
-type ProposedQuery struct {
+type QueryDescription struct {
 	Description string
 	Query       string
 	PatternType query.SearchType
+	Annotations map[AnnotationName]string
 }
 
-func (q *ProposedQuery) QueryString() string {
+type AnnotationName string
+
+const (
+	// ResultCount communicates the number of results associated with a
+	// query. May be a number or string representing something approximate,
+	// like "500+".
+	ResultCount AnnotationName = "ResultCount"
+)
+
+func (q *QueryDescription) QueryString() string {
 	if q.Description != "Remove quotes" {
 		switch q.PatternType {
+		case query.SearchTypeStandard:
+			return q.Query + " patternType:standard"
 		case query.SearchTypeRegex:
 			return q.Query + " patternType:regexp"
 		case query.SearchTypeLiteral:
 			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"
+		case query.SearchTypeLucky:
+			return q.Query
 		default:
 			panic("unreachable")
 		}
@@ -105,7 +121,7 @@ func AlertForTimeout(usedTime time.Duration, suggestTime time.Duration, queryStr
 		PrometheusType: "timed_out",
 		Title:          "Timed out while searching",
 		Description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
-		ProposedQueries: []*ProposedQuery{
+		ProposedQueries: []*QueryDescription{
 			{
 				Description: "query with longer timeout",
 				Query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
@@ -140,8 +156,8 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 	return &Alert{
 		PrometheusType: "structural_search_not_set",
 		Title:          "No results",
-		Description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
-		ProposedQueries: []*ProposedQuery{
+		Description:    "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
+		ProposedQueries: []*QueryDescription{
 			{
 				Description: "Activate structural search",
 				Query:       queryString,
@@ -151,78 +167,24 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 	}
 }
 
-func AlertForMissingRepoRevs(missingRepoRevs []*RepositoryRevisions) *Alert {
-	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
-		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
-		}
-	} else {
-		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
-		}
-		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
-		}
-		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
-		for _, rr := range repoRevs {
-			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
-		}
-		if sampleSize < len(missingRepoRevs) {
-			b.WriteString("\n* ...")
-		}
-		description = b.String()
-	}
-	return &Alert{
-		PrometheusType: "missing_repo_revs",
-		Title:          "Some repositories could not be searched",
-		Description:    description,
-	}
-}
-
-func AlertForMissingDependencyRepoRevs(missingRepoRevs []*RepositoryRevisions) *Alert {
-	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it does not yet contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
-		} else {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it has multiple missing revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
-		}
-	} else {
-		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
-		}
-		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
-		}
-		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d dependencies matched by your repo:deps(...) predicate could not be searched because the following revisions either don't exist or aren't yet cloned:", len(missingRepoRevs))
-		for _, rr := range repoRevs {
-			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
-		}
-		if sampleSize < len(missingRepoRevs) {
-			b.WriteString("\n* ...")
-		}
-		description = b.String()
-	}
-	return &Alert{
-		PrometheusType: "missing_dependency_repo_revs",
-		Title:          "Some dependencies could not be searched",
-		Description:    description + "\n\nDependency repository revisions are cloned on demand. Try again in a few seconds.",
-	}
-}
-
 func AlertForInvalidRevision(revision string) *Alert {
 	revision = strings.TrimSuffix(revision, "^0")
 	return &Alert{
 		Title:       "Invalid revision syntax",
 		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+	}
+}
+
+func AlertForUnindexedLockfile(repoName api.RepoName, revisions []string) *Alert {
+	var description strings.Builder
+	fmt.Fprintf(&description, "No lockfile indexed in **%s** at these revisions yet:\n", repoName)
+	for _, r := range revisions {
+		fmt.Fprintf(&description, "- `%s`", r)
+	}
+
+	return &Alert{
+		PrometheusType: "unindexed_dependency_search",
+		Title:          "Lockfile not indexed",
+		Description:    description.String(),
 	}
 }

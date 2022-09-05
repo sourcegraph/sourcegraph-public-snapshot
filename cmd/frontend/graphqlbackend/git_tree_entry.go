@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"net/url"
 	"os"
@@ -21,9 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,8 +66,8 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 
@@ -80,13 +84,11 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		r.content, r.contentErr = git.ReadFile(
+		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
-			r.db,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
-			0,
 			authz.DefaultSubRepoPermsChecker,
 		)
 	})
@@ -190,7 +192,7 @@ func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
-	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
+	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
 	return nil
@@ -221,15 +223,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := git.ReadDir(
-		ctx,
-		r.db,
-		authz.DefaultSubRepoPermsChecker,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		path.Dir(r.Path()),
-		false,
-	)
+	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
@@ -258,17 +252,145 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (CodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (GitBlobCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitBlobCodeIntelInfoArgs{
-		Repo: repo.Name,
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo: repo,
 		Path: r.Path(),
 	})
 }
+
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIntelSupportResolver, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+		Repo:   repo,
+		Commit: string(r.Commit().OID()),
+		Path:   r.Path(),
+	})
+}
+
+func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := symbols.DefaultClient.LocalCodeIntel(ctx, types.RepoCommitPath{
+		Repo:   string(repo.Name),
+		Commit: string(r.commit.oid),
+		Path:   r.Path(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	jsonValue, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JSONValue{Value: string(jsonValue)}, nil
+}
+
+func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoArgs) (*symbolInfoResolver, error) {
+	if args == nil {
+		return nil, errors.New("expected arguments to symbolInfo")
+	}
+
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	start := types.RepoCommitPathPoint{
+		RepoCommitPath: types.RepoCommitPath{
+			Repo:   string(repo.Name),
+			Commit: string(r.commit.oid),
+			Path:   r.Path(),
+		},
+		Point: types.Point{
+			Row:    int(args.Line),
+			Column: int(args.Character),
+		},
+	}
+
+	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	return &symbolInfoResolver{symbolInfo: result}, nil
+}
+
+type symbolInfoArgs struct {
+	Line      int32
+	Character int32
+}
+
+type symbolInfoResolver struct{ symbolInfo *types.SymbolInfo }
+
+func (r *symbolInfoResolver) Definition(ctx context.Context) (*symbolLocationResolver, error) {
+	return &symbolLocationResolver{location: r.symbolInfo.Definition}, nil
+}
+
+func (r *symbolInfoResolver) Hover(ctx context.Context) (*string, error) {
+	return r.symbolInfo.Hover, nil
+}
+
+type symbolLocationResolver struct {
+	location types.RepoCommitPathMaybeRange
+}
+
+func (r *symbolLocationResolver) Repo() string   { return r.location.Repo }
+func (r *symbolLocationResolver) Commit() string { return r.location.Commit }
+func (r *symbolLocationResolver) Path() string   { return r.location.Path }
+func (r *symbolLocationResolver) Line() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Row)
+}
+
+func (r *symbolLocationResolver) Character() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Column)
+}
+
+func (r *symbolLocationResolver) Length() int32 {
+	if r.location.Range == nil {
+		return 0
+	}
+	return int32(r.location.Range.Length)
+}
+
+func (r *symbolLocationResolver) Range() (*lineRangeResolver, error) {
+	if r.location.Range == nil {
+		return nil, nil
+	}
+	return &lineRangeResolver{rnge: r.location.Range}, nil
+}
+
+type lineRangeResolver struct {
+	rnge *types.Range
+}
+
+func (r *lineRangeResolver) Line() int32      { return int32(r.rnge.Row) }
+func (r *lineRangeResolver) Character() int32 { return int32(r.rnge.Column) }
+func (r *lineRangeResolver) Length() int32    { return int32(r.rnge.Length) }
 
 type fileInfo struct {
 	path  string
@@ -286,4 +408,4 @@ func (f fileInfo) Mode() os.FileMode {
 	return 0
 }
 func (f fileInfo) ModTime() time.Time { return time.Now() }
-func (f fileInfo) Sys() interface{}   { return interface{}(nil) }
+func (f fileInfo) Sys() any           { return any(nil) }

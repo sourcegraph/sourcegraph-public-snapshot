@@ -1,32 +1,38 @@
 import React from 'react'
 
-import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { Edit, JSONPath, ModificationOptions, modify } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
+import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
+import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
+import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Code, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
+import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
 import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
+import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
-import { ExternalServiceKind } from '../../graphql-operations'
-import { EditorAction } from '../../site-admin/configHelpers'
+import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
+import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
+import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
+import { EditorAction } from '../../settings/EditorActionsGroup'
 import { PerforceIcon } from '../PerforceIcon'
 
 /**
@@ -53,7 +59,7 @@ export interface AddExternalServiceOptions {
     /**
      * Instructions that will appear on the add / edit page
      */
-    instructions?: JSX.Element | string
+    instructions?: React.ReactNode | string
 
     /**
      * The JSON schema of the external service configuration
@@ -76,10 +82,12 @@ export interface AddExternalServiceOptions {
     defaultConfig: string
 }
 
-const defaultFormattingOptions: FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 /**
@@ -88,7 +96,7 @@ const defaultFormattingOptions: FormattingOptions = {
  * `"COMMENT_SENTINEL": true` appears in the JSON.
  */
 function editWithComment(config: string, path: JSONPath, value: any, comment: string): Edit {
-    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    const edit = modify(config, path, value, defaultModificationOptions)[0]
     edit.content = edit.content.replace('"COMMENT_SENTINEL": true', comment)
     return edit
 }
@@ -111,15 +119,15 @@ const editorActionComments = {
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
-const Field = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
-    <code className="hljs-type">{props.children}</code>
+const Field: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
+    <Code className="hljs-type">{props.children}</Code>
 )
 
-const Value = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
-    <code className="hljs-attr">{props.children}</code>
+const Value: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
+    <Code className="hljs-attr">{props.children}</Code>
 )
 
-const githubInstructions = (isEnterprise: boolean): JSX.Element => (
+const githubInstructions = (isEnterprise: boolean): React.ReactNode => (
     <div>
         <ol>
             {isEnterprise && (
@@ -163,7 +171,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -173,7 +181,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -231,7 +239,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -241,7 +249,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -253,7 +261,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
                   label: 'Set GitHub URL',
                   run: (config: string) => {
                       const value = 'https://github.example.com'
-                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -264,7 +272,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Set access token',
         run: (config: string) => {
             const value = '<access token>'
-            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            const edits = modify(config, ['token'], value, defaultModificationOptions)
             return { edits, selectText: '<access token>' }
         },
     },
@@ -273,7 +281,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories in an organization',
         run: (config: string) => {
             const value = '<organization name>'
-            const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['orgs', -1], value, defaultModificationOptions)
             return { edits, selectText: '<organization name>' }
         },
     },
@@ -282,7 +290,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories matching a search query',
         run: (config: string) => {
             const value = '<search query>'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: '<search query>' }
         },
     },
@@ -291,7 +299,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add repositories affiliated with token',
         run: (config: string) => {
             const value = 'affiliated'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: 'affiliated' }
         },
     },
@@ -300,7 +308,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add a single repository',
         run: (config: string) => {
             const value = '<owner>/<repository>'
-            const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
             return { edits, selectText: '<owner>/<repository>' }
         },
     },
@@ -309,7 +317,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Exclude a repository',
         run: (config: string) => {
             const value = { name: '<owner>/<repository>' }
-            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
             return { edits, selectText: '<owner>/<repository>' }
         },
     },
@@ -330,7 +338,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         label: 'Add webhook',
         run: (config: string) => {
             const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
-            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['webhooks', -1], value, defaultModificationOptions)
             return { edits, selectText: '<your_org_on_GitHub>' }
         },
     },
@@ -344,7 +352,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Set GitLab URL',
                   run: (config: string) => {
                       const value = 'https://gitlab.example.com'
-                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -355,7 +363,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Set access token',
         run: (config: string) => {
             const value = '<access token>'
-            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            const edits = modify(config, ['token'], value, defaultModificationOptions)
             return { edits, selectText: value }
         },
     },
@@ -364,7 +372,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add projects in a group',
         run: (config: string) => {
             const value = 'groups/<my group>/projects'
-            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: '<my group>' }
         },
     },
@@ -373,7 +381,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: "Add projects that have the token's user as member",
         run: (config: string) => {
             const value = 'projects?membership=true&archived=no'
-            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
             return { edits, selectText: value }
         },
     },
@@ -381,7 +389,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         id: 'addProjectsMatchingSearch',
         label: 'Add projects matching search',
         run: (config: string) => ({
-            edits: setProperty(config, ['projectQuery', -1], '?search=<search query>', defaultFormattingOptions),
+            edits: modify(config, ['projectQuery', -1], '?search=<search query>', defaultModificationOptions),
             selectText: '<search query>',
         }),
     },
@@ -390,7 +398,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add single project by name',
         run: (config: string) => {
             const value = { name: '<group>/<name>' }
-            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projects', -1], value, defaultModificationOptions)
             return { edits, selectText: '<group>/<name>' }
         },
     },
@@ -399,7 +407,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add single project by ID',
         run: (config: string) => {
             const value = { id: 123 }
-            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['projects', -1], value, defaultModificationOptions)
             return { edits, selectText: '123' }
         },
     },
@@ -410,7 +418,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Add internal projects',
                   run: (config: string) => {
                       const value = 'projects?visibility=internal'
-                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -419,7 +427,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Add private projects',
                   run: (config: string) => {
                       const value = 'projects?visibility=private'
-                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -430,7 +438,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Exclude a project',
         run: (config: string) => {
             const value = { name: '<group>/<project>' }
-            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
             return { edits, selectText: '"<group>/<project>"' }
         },
     },
@@ -475,7 +483,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
                   label: 'Set internal or self-signed certificate',
                   run: (config: string) => {
                       const value = '<certificate>'
-                      const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                      const edits = modify(config, ['certificate'], value, defaultModificationOptions)
                       return { edits, selectText: value }
                   },
               },
@@ -502,7 +510,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         label: 'Add webhook',
         run: (config: string) => {
             const value = { secret: '<any_secret_string>' }
-            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            const edits = modify(config, ['webhooks', -1], value, defaultModificationOptions)
             return { edits, selectText: '<any_secret_string>' }
         },
     },
@@ -589,7 +597,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     You can optionally exclude repositories using the <Field>exclude</Field> field.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -599,7 +607,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -608,7 +616,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set access key ID',
             run: (config: string) => {
                 const value = '<access key id>'
-                const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
+                const edits = modify(config, ['accessKeyID'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -617,7 +625,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set secret access key',
             run: (config: string) => {
                 const value = '<secret access key>'
-                const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
+                const edits = modify(config, ['secretAccessKey'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -626,7 +634,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Set region',
             run: (config: string) => {
                 const value = '<region>'
-                const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
+                const edits = modify(config, ['region'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -638,7 +646,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     username: '<username>',
                     password: '<password>',
                 }
-                const edits = setProperty(config, ['gitCredentials'], value, defaultFormattingOptions)
+                const edits = modify(config, ['gitCredentials'], value, defaultModificationOptions)
                 return { edits, selectText: '<username>' }
             },
         },
@@ -647,7 +655,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             label: 'Exclude a repository',
             run: (config: string) => {
                 const value = { name: '<owner>/<repository>' }
-                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<owner>/<repository>' }
             },
         },
@@ -671,7 +679,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Set app password',
             run: (config: string) => {
                 const value = '<app password>'
-                const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
+                const edits = modify(config, ['appPassword'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -680,7 +688,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Set username',
             run: (config: string) => {
                 const value = '<username to which the app password belongs>'
-                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                const edits = modify(config, ['username'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -689,7 +697,16 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             label: 'Add repositories belonging to team',
             run: (config: string) => {
                 const value = '<team>'
-                const edits = setProperty(config, ['teams', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['teams', -1], value, defaultModificationOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'enableWebhooks',
+            label: 'Enable webhooks',
+            run: (config: string) => {
+                const value = '<any_secret_string>'
+                const edits = modify(config, ['webhookSecret'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -718,7 +735,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     index.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -728,7 +745,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
 }
@@ -807,7 +824,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     </ul>
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -817,7 +834,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -826,7 +843,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set URL',
             run: (config: string) => {
                 const value = 'https://bitbucket.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -835,7 +852,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set access token',
             run: (config: string) => {
                 const value = '<access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                const edits = modify(config, ['token'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -844,7 +861,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set username',
             run: (config: string) => {
                 const value = '<username that created access token>'
-                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                const edits = modify(config, ['username'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -853,7 +870,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Add repositories in a project',
             run: (config: string) => {
                 const value = '?projectname=<project>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<project>' }
             },
         },
@@ -862,7 +879,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Add individual repository',
             run: (config: string) => {
                 const value = '<project/<repository>'
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<project/<repository>' }
             },
         },
@@ -871,7 +888,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Exclude a repository',
             run: (config: string) => {
                 const value = { name: '<project/<repository>' }
-                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
                 return { edits, selectText: '{"name": "<project/<repository>"}' }
             },
         },
@@ -880,7 +897,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Set internal or self-signed certificate',
             run: (config: string) => {
                 const value = '<certificate>'
-                const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                const edits = modify(config, ['certificate'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -889,7 +906,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             label: 'Enable webhooks',
             run: (config: string) => {
                 const value = { webhooks: { secret: '<any_secret_string>' } }
-                const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
+                const edits = modify(config, ['plugin'], value, defaultModificationOptions)
                 return { edits, selectText: '<any_secret_string>' }
             },
         },
@@ -940,16 +957,16 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
 }`,
     instructions: (
         <div>
-            <p>
+            <Text>
                 In the configuration below, set <Field>url</Field> to be the URL of src serve-git.
-            </p>
-            <p>
+            </Text>
+            <Text>
                 Install the{' '}
                 <Link rel="noopener noreferrer" target="_blank" to="https://github.com/sourcegraph/src-cli">
                     Sourcegraph CLI (src)
                 </Link>
                 . src serve-git allows you to serve any git repositories that you have on disk.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -958,7 +975,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
             label: 'Sourcegraph in Docker and src serve-git running on host',
             run: (config: string) => {
                 const value = 'http://host.docker.internal:3434'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -986,7 +1003,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     Sourcegraph. This is typically the hostname of the Gitolite server.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -996,7 +1013,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1005,7 +1022,7 @@ const GITOLITE: AddExternalServiceOptions = {
             label: 'Set host',
             run: (config: string) => {
                 const value = 'git@gitolite.example.com'
-                const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
+                const edits = modify(config, ['host'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1014,7 +1031,7 @@ const GITOLITE: AddExternalServiceOptions = {
             label: 'Set prefix',
             run: (config: string) => {
                 const value = 'gitolite.example.com/'
-                const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
+                const edits = modify(config, ['prefix'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1043,7 +1060,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
             label: 'Set Phabricator URL',
             run: (config: string) => {
                 const value = 'https://phabricator.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1052,7 +1069,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
             label: 'Set Phabricator access token',
             run: (config: string) => {
                 const value = '<Phabricator access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                const edits = modify(config, ['token'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1064,7 +1081,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
                     callsign: '<Phabricator repository callsign>',
                     path: '<Sourcegraph repository full name>',
                 }
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: '<Phabricator repository callsign>' }
             },
         },
@@ -1091,7 +1108,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     appended to the host URL to obtain the repository clone URLs.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1101,7 +1118,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1110,7 +1127,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             label: 'Set Git host URL',
             run: (config: string) => {
                 const value = 'https://git.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                const edits = modify(config, ['url'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1119,7 +1136,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             label: 'Add a repository',
             run: (config: string) => {
                 const value = 'path/to/repository'
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                const edits = modify(config, ['repos', -1], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1150,7 +1167,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     Set the <Field>p4.passwd</Field> field to be the ticket value of the authenticated user.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1160,7 +1177,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1169,7 +1186,7 @@ const PERFORCE: AddExternalServiceOptions = {
             label: 'Set max changes',
             run: (config: string) => {
                 const value = 1000
-                const edits = setProperty(config, ['maxChanges'], value, defaultFormattingOptions)
+                const edits = modify(config, ['maxChanges'], value, defaultModificationOptions)
                 return { edits, selectText: value }
             },
         },
@@ -1178,7 +1195,7 @@ const PERFORCE: AddExternalServiceOptions = {
             label: 'Enforce permissions',
             run: (config: string) => {
                 const value = {}
-                const edits = setProperty(config, ['authorization'], value, defaultFormattingOptions)
+                const edits = modify(config, ['authorization'], value, defaultModificationOptions)
                 return { edits, selectText: '"authorization": {}' }
             },
         },
@@ -1202,17 +1219,17 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                 <li>
                     In the configuration below, set <Field>maven.repositories</Field> to the list of Maven repositories.
                     For example,
-                    <code>"https://maven.google.com"</code>.
+                    <Code>"https://maven.google.com"</Code>.
                 </li>
                 <li>
                     In the configuration below, set <Field>maven.dependencies</Field> to the list of artifacts that you
                     want to manually add. For example,
-                    <code>"junit:junit:4.13.2"</code> or
-                    <code>"org.hamcrest:hamcrest-core:1.3:default"</code>.
+                    <Code>"junit:junit:4.13.2"</Code> or
+                    <Code>"org.hamcrest:hamcrest-core:1.3:default"</Code>.
                 </li>
             </ol>
-            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
+            <Text>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1239,6 +1256,27 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const GERRIT: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.GERRIT,
+    title: 'Gerrit',
+    icon: GitIcon,
+    jsonSchema: gerritSchemaJSON,
+    defaultDisplayName: 'Gerrit',
+    defaultConfig: `{
+  "url": "https://gerrit.example.com",
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
     title: 'npm Dependencies',
@@ -1254,21 +1292,108 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
             <ol>
                 <li>
                     In the configuration below, set <Field>registry</Field> to the applicable npm registry. For example,
-                    <code>"https://registry.npmjs.mycompany.com"</code> or <code>"https://registry.npmjs.org"</code>.
+                    <Code>"https://registry.npmjs.mycompany.com"</Code> or <Code>"https://registry.npmjs.org"</Code>.
                     Note that this URL may not be the same as where packages can be searched (such as{' '}
-                    <code>https://www.npmjs.org</code>). If you're unsure about the exact URL URL for a custom registry,
+                    <Code>https://www.npmjs.org</Code>). If you're unsure about the exact URL URL for a custom registry,
                     check the URLs for packages that have already been resolved, such as those in existing lock files
-                    like <code>yarn.lock</code>.
+                    like <Code>yarn.lock</Code>.
                 </li>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
                     manually add. For example,
-                    <code>"react@17.0.2"</code> or <code>"@types/lodash@4.14.177"</code>. Version ranges are not
+                    <Code>"react@17.0.2"</Code> or <Code>"@types/lodash@4.14.177"</Code>. Version ranges are not
                     supported.
                 </li>
             </ol>
-            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
+            <Text>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</Text>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const GO_MODULES = {
+    kind: ExternalServiceKind.GOMODULES,
+    title: 'Go Dependencies',
+    icon: LanguageGoIcon,
+    jsonSchema: goModulesSchemaJSON,
+    defaultDisplayName: 'Go Dependencies',
+    defaultConfig: `{
+  "urls": ["https://proxy.golang.org"],
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync
+                    dependency repositories from. For example, <Code>"https://user:pass@athens.mycompany.com"</Code> or{' '}
+                    <Code>"https://proxy.golang.org"</Code>. A module will be synced from the first proxy that has it,
+                    trying the next when it's not found.
+                </li>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <Code>"cloud.google.com/go/kms@v1.1.0"</Code>.
+                </li>
+            </ol>
+            <Text>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</Text>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const PYTHON_PACKAGES = {
+    kind: ExternalServiceKind.PYTHONPACKAGES,
+    title: 'Python Dependencies',
+    icon: LanguagePythonIcon,
+    jsonSchema: pythonPackagesJSON,
+    defaultDisplayName: 'Python Dependencies',
+    defaultConfig: `{
+  "urls": ["https://pypi.org/simple"],
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>urls</Field> to the simple repository APIs you want to sync
+                    dependency repositories from. For example,{' '}
+                    <Code>"https://user:pass@artifactory.mycompany.com/simple"</Code> or{' '}
+                    <Code>"https://pypi.org/simple"</Code>. A package will be synced from the first API that has it,
+                    trying the next when it's not found.
+                </li>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <Code>"numpy==1.22.3"</Code>.
+                </li>
+            </ol>
+            <Text>⚠️ Python package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Python packages code host per Sourcegraph instance.</Text>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const RUST_PACKAGES = {
+    kind: ExternalServiceKind.RUSTPACKAGES,
+    title: 'Rust Dependencies',
+    icon: LanguageRustIcon,
+    jsonSchema: rustPackagesJSON,
+    defaultDisplayName: 'Rust Dependencies',
+    defaultConfig: `{
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <Code>"tokio@18.0.0"</Code>.
+                </li>
+            </ol>
+            <Text>⚠️ Rust package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Rust packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1285,10 +1410,14 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
+    ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? {} : { jvmPackages: JVM_PACKAGES }),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? {} : { npmPackages: NPM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
+    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1310,7 +1439,18 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
-    [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
+    [ExternalServiceKind.GERRIT]: GERRIT,
     [ExternalServiceKind.PAGURE]: PAGURE,
+    [ExternalServiceKind.GOMODULES]: GO_MODULES,
+    [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
+    [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
+    [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
+}
+
+export const externalRepoIcon = (
+    externalRepo: ExternalRepositoryFields
+): React.ComponentType<{ className?: string }> | undefined => {
+    const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
+    return defaultExternalServices[externalServiceKind]?.icon ?? undefined
 }

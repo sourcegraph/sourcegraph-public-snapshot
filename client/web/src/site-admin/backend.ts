@@ -1,4 +1,4 @@
-import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
@@ -50,19 +50,19 @@ import {
     OutOfBandMigrationFields,
     OutOfBandMigrationsResult,
     OutOfBandMigrationsVariables,
-    OrgRepositoriesVariables,
-    OrgRepositoriesResult,
-    OrgRepositoriesTotalCountVariables,
     UserRepositoriesTotalCountVariables,
     SetUserTagResult,
     SetUserTagVariables,
     FeatureFlagsResult,
     FeatureFlagsVariables,
     FeatureFlagFields,
+    SiteAdminAccessTokenConnectionFields,
+    SiteAdminAccessTokensVariables,
+    SiteAdminAccessTokensResult,
 } from '../graphql-operations'
+import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
-type OrgRepositories = (NonNullable<OrgRepositoriesResult['node']> & { __typename: 'Org' })['repositories']
 
 /**
  * Fetches all users.
@@ -149,7 +149,26 @@ export function fetchAllOrganizations(args: {
     )
 }
 
+const mirrorRepositoryInfoFieldsFragment = gql`
+    fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
+        cloned
+        cloneInProgress
+        updatedAt
+        lastError
+    }
+`
+
+const externalRepositoryFieldsFragment = gql`
+    fragment ExternalRepositoryFields on ExternalRepository {
+        serviceType
+        serviceID
+    }
+`
+
 const siteAdminRepositoryFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
     fragment SiteAdminRepositoryFields on Repository {
         id
         name
@@ -158,13 +177,10 @@ const siteAdminRepositoryFieldsFragment = gql`
         url
         isPrivate
         mirrorInfo {
-            cloned
-            cloneInProgress
-            updatedAt
+            ...MirrorRepositoryInfoFields
         }
         externalRepository {
-            serviceType
-            serviceID
+            ...ExternalRepositoryFields
         }
     }
 `
@@ -216,114 +232,6 @@ export async function fetchUserRepositoriesCount(
                 externalServiceID: args.externalServiceID ?? null,
             }
         ).toPromise()
-    )
-}
-
-export async function fetchOrgRepositoriesCount(
-    args: Partial<OrgRepositoriesTotalCountVariables>
-): Promise<RepoCountResult> {
-    return dataOrThrowErrors(
-        await requestGraphQL<RepoCountResult, OrgRepositoriesTotalCountVariables>(
-            gql`
-                query OrgRepositoriesTotalCount(
-                    $id: ID!
-                    $first: Int
-                    $query: String
-                    $cloned: Boolean
-                    $notCloned: Boolean
-                    $indexed: Boolean
-                    $notIndexed: Boolean
-                    $externalServiceIDs: [ID]
-                ) {
-                    node(id: $id) {
-                        ... on Org {
-                            __typename
-                            repositories(
-                                first: $first
-                                query: $query
-                                cloned: $cloned
-                                notCloned: $notCloned
-                                indexed: $indexed
-                                notIndexed: $notIndexed
-                                externalServiceIDs: $externalServiceIDs
-                            ) {
-                                totalCount(precise: true)
-                            }
-                        }
-                    }
-                }
-            `,
-            {
-                id: args.id!,
-                cloned: args.cloned ?? true,
-                notCloned: args.notCloned ?? true,
-                indexed: args.indexed ?? true,
-                notIndexed: args.notIndexed ?? true,
-                first: args.first ?? null,
-                query: args.query ?? null,
-                externalServiceIDs: args.externalServiceIDs ?? null,
-            }
-        ).toPromise()
-    )
-}
-
-export function listOrgRepositories(args: Partial<OrgRepositoriesVariables>): Observable<OrgRepositories> {
-    return requestGraphQL<OrgRepositoriesResult, OrgRepositoriesVariables>(
-        gql`
-            query OrgRepositories(
-                $id: ID!
-                $first: Int
-                $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
-                $indexed: Boolean
-                $notIndexed: Boolean
-                $externalServiceIDs: [ID]
-            ) {
-                node(id: $id) {
-                    ... on Org {
-                        __typename
-                        repositories(
-                            first: $first
-                            query: $query
-                            cloned: $cloned
-                            notCloned: $notCloned
-                            indexed: $indexed
-                            notIndexed: $notIndexed
-                            externalServiceIDs: $externalServiceIDs
-                        ) {
-                            nodes {
-                                ...SiteAdminRepositoryFields
-                            }
-                            totalCount(precise: true)
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${siteAdminRepositoryFieldsFragment}
-        `,
-        {
-            id: args.id!,
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            externalServiceIDs: args.externalServiceIDs ?? null,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (data.node === null || data.node.__typename !== 'Org') {
-                throw new Error('organization not found')
-            }
-            return data.node.repositories
-        })
     )
 }
 
@@ -413,20 +321,18 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             query Repositories(
                 $first: Int
                 $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
+                $cloneStatus: CloneStatus
             ) {
                 repositories(
                     first: $first
                     query: $query
-                    cloned: $cloned
-                    notCloned: $notCloned
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
+                    cloneStatus: $cloneStatus
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -441,19 +347,20 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             ${siteAdminRepositoryFieldsFragment}
         `,
         {
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
+            cloneStatus: args.cloneStatus ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.repositories)
     )
 }
+
+export const REPO_PAGE_POLL_INTERVAL = 5000
 
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     args: Partial<RepositoriesVariables>
@@ -465,7 +372,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
                 result.nodes &&
                 result.nodes.length > 0 &&
                 result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: 5000 }
+            { delay: REPO_PAGE_POLL_INTERVAL }
         )
     )
 }
@@ -1095,5 +1002,46 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.featureFlags)
+    )
+}
+
+export const REPOSITORY_STATS = gql`
+    query RepositoryStats {
+        repositoryStats {
+            __typename
+            total
+            notCloned
+            cloned
+            cloning
+            failedFetch
+        }
+    }
+`
+
+export function queryAccessTokens(args: { first?: number }): Observable<SiteAdminAccessTokenConnectionFields> {
+    return requestGraphQL<SiteAdminAccessTokensResult, SiteAdminAccessTokensVariables>(
+        gql`
+            query SiteAdminAccessTokens($first: Int) {
+                site {
+                    accessTokens(first: $first) {
+                        ...SiteAdminAccessTokenConnectionFields
+                    }
+                }
+            }
+            fragment SiteAdminAccessTokenConnectionFields on AccessTokenConnection {
+                nodes {
+                    ...AccessTokenFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+            }
+            ${accessTokenFragment}
+        `,
+        { first: args.first ?? null }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.accessTokens)
     )
 }

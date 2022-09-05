@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	c := 0
@@ -20,7 +23,7 @@ func TestGetOrAssignUserCustomerID(t *testing.T) {
 	}
 	defer func() { mockCreateCustomerID = nil }()
 
-	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,14 +5,14 @@ import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../../../core'
 import { useUiFeatures } from '../../../hooks/use-ui-features'
 
 import {
@@ -24,7 +24,9 @@ import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
-export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
+export const InsightsDashboardCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<InsightsDashboardCreationPageProps>
+> = props => {
     const { telemetryService } = props
     const history = useHistory()
     const { dashboard } = useUiFeatures()
@@ -63,7 +65,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>
-            <PageTitle title="Add new dashboard" />
+            <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
@@ -88,17 +90,18 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 Cancel
                             </Button>
 
-                            <LoaderButton
-                                alwaysShowLabel={true}
-                                data-testid="insight-save-button"
-                                loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
-                                type="submit"
-                                disabled={dashboard.createPermissions.submit.disabled || formAPI.submitting}
-                                data-tooltip={dashboard.createPermissions.submit.tooltip}
-                                className="ml-2 mb-2"
-                                variant="primary"
-                            />
+                            <Tooltip content={dashboard.createPermissions.submit.tooltip}>
+                                <LoaderButton
+                                    alwaysShowLabel={true}
+                                    data-testid="insight-save-button"
+                                    loading={formAPI.submitting}
+                                    label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
+                                    type="submit"
+                                    disabled={dashboard.createPermissions.submit.disabled || formAPI.submitting}
+                                    className="ml-2 mb-2"
+                                    variant="primary"
+                                />
+                            </Tooltip>
                         </>
                     )}
                 </InsightsDashboardCreationContent>

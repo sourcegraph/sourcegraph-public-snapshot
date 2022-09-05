@@ -1,6 +1,4 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 
@@ -16,10 +14,9 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
-import { FeatureFlagName } from '../../featureFlags/featureFlags'
-import { SourcegraphContext } from '../../jscontext'
+import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
-import { ThemePreference } from '../../stores/themeState'
+import { ThemePreference } from '../../theme'
 import {
     HOME_PANELS_QUERY,
     RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
@@ -52,7 +49,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     authenticatedUser: authUser,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
@@ -61,30 +57,29 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
 
-if (!window.context) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
 window.context.allowSignup = true
 
-const { add } = storiesOf('web/search/home/SearchPage', module)
-    .addParameters({
+const decorator: DecoratorFn = Story => {
+    useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+    return <Story />
+}
+
+const config: Meta = {
+    title: 'web/search/home/SearchPage',
+    decorators: [decorator],
+    parameters: {
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
         chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
-    })
-    .addDecorator(Story => {
-        useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
-        return <Story />
-    })
+    },
+}
+
+export default config
 
 function getMocks({
     enableSavedSearches,
@@ -122,63 +117,48 @@ function getMocks({
     ]
 }
 
-add('Cloud with panels', () => (
+export const CloudAuthedHome: Story = () => (
     <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: false,
-                        enableCollaborators: false,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
-                </MockedTestProvider>
-            )
-        }}
+        {webProps => (
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+            </MockedTestProvider>
+        )}
     </WebStory>
-))
+)
 
-add('Cloud with panels and collaborators', () => (
-    <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            useExperimentalFeatures.setState({ homepageUserInvitation: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: false,
-                        enableCollaborators: true,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
-                </MockedTestProvider>
-            )
-        }}
-    </WebStory>
-))
+CloudAuthedHome.storyName = 'Cloud authenticated home'
 
-add('Cloud marketing home', () => (
+export const CloudMarketingHome: Story = () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {webProps => (
+            <MockedFeatureFlagsProvider overrides={{}}>
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />
+            </MockedFeatureFlagsProvider>
+        )}
     </WebStory>
-))
+)
 
-add('Server with panels', () => (
+CloudMarketingHome.storyName = 'Cloud marketing home'
+
+export const ServerHome: Story = () => (
     <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: true,
-                        enableCollaborators: false,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} />
-                </MockedTestProvider>
-            )
-        }}
+        {webProps => (
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: true,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps(webProps)} />
+            </MockedTestProvider>
+        )}
     </WebStory>
-))
+)
+
+ServerHome.storyName = 'Server home'

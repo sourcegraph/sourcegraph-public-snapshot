@@ -28,7 +28,7 @@ func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*org
 }
 
 func orgInvitationByIDInt64(ctx context.Context, db database.DB, id int64) (*organizationInvitationResolver, error) {
-	orgInvitation, err := database.OrgInvitations(db).GetByID(ctx, id)
+	orgInvitation, err := db.OrgInvitations().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 		if orgInvitationConfigDefined() {
 			url, err = orgInvitationURL(*r.v, true)
 		} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
-			org, err := database.Orgs(r.db).GetByID(ctx, r.v.OrgID)
+			org, err := r.db.Orgs().GetByID(ctx, r.v.OrgID)
 			if err != nil {
 				return nil, err
 			}

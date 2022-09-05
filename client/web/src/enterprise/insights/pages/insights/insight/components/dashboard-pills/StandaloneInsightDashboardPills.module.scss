@@ -1,0 +1,18 @@
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.title {
+    margin-bottom: 0;
+    margin-right: 0.25rem;
+    color: var(--text-muted);
+}
+
+.pill {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}

@@ -7,10 +7,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,21 +29,22 @@ func TestChangesetResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	// Set up the scheduler configuration to a consistent state where a window
 	// will always open at 00:00 UTC on the "next" day.
 	schedulerWindow := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
-	ct.MockConfig(t, &conf.Unified{
+	bt.MockConfig(t, &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
 				{
@@ -67,7 +69,7 @@ func TestChangesetResolver(t *testing.T) {
 	mockBackendCommits(t, api.CommitID(baseRev))
 	mockRepoComparison(t, baseRev, headRev, testDiff)
 
-	unpublishedSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	unpublishedSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
 		HeadRef:       "refs/heads/my-new-branch",
@@ -78,15 +80,16 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
-	unpublishedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	unpublishedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         unpublishedSpec.ID,
 		ExternalServiceType: "github",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     btypes.ReconcilerStateCompleted,
 	})
-	erroredSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	erroredSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
 		HeadRef:       "refs/heads/my-failing-branch",
@@ -97,8 +100,9 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
-	erroredChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	erroredChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         erroredSpec.ID,
 		ExternalServiceType: "github",
@@ -109,7 +113,7 @@ func TestChangesetResolver(t *testing.T) {
 
 	labelEventDescriptionText := "the best label in town"
 
-	syncedGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	syncedGitHubChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
@@ -161,11 +165,35 @@ func TestChangesetResolver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := bstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
 
-	unsyncedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	readOnlyGitHubChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "123456",
+		ExternalBranch:      "read-only-pr",
+		ExternalState:       btypes.ChangesetExternalStateReadOnly,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
+			ID:          "123456",
+			Title:       "GitHub PR Title",
+			Body:        "GitHub PR Body",
+			Number:      123456,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/archived/pull/123456",
+			HeadRefName: "read-only-pr",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
+			BaseRefName: "master",
+		},
+	})
+
+	unsyncedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
@@ -173,7 +201,7 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:     btypes.ReconcilerStateQueued,
 	})
 
-	forkedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	forkedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                  repo.ID,
 		ExternalServiceType:   "github",
 		ExternalID:            "98765",
@@ -182,7 +210,7 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:       btypes.ReconcilerStateQueued,
 	})
 
-	scheduledChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	scheduledChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "987654",
@@ -194,7 +222,7 @@ func TestChangesetResolver(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -206,13 +234,13 @@ func TestChangesetResolver(t *testing.T) {
 		LastApplierID:   userID,
 		LastAppliedAt:   time.Now(),
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
-	addChangeset(t, ctx, cstore, syncedGitHubChangeset, batchChange.ID)
+	addChangeset(t, ctx, bstore, syncedGitHubChangeset, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,8 +255,8 @@ func TestChangesetResolver(t *testing.T) {
 			changeset: unpublishedChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      unpublishedSpec.Spec.Title,
-				Body:       unpublishedSpec.Spec.Body,
+				Title:      unpublishedSpec.Title,
+				Body:       unpublishedSpec.Body,
 				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt:         "",
@@ -247,8 +275,8 @@ func TestChangesetResolver(t *testing.T) {
 			changeset: erroredChangeset,
 			want: apitest.Changeset{
 				Typename:   "ExternalChangeset",
-				Title:      erroredSpec.Spec.Title,
-				Body:       erroredSpec.Spec.Body,
+				Title:      erroredSpec.Title,
+				Body:       erroredSpec.Body,
 				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt:         "",
@@ -296,6 +324,27 @@ func TestChangesetResolver(t *testing.T) {
 			},
 		},
 		{
+			name:      "read-only github changeset",
+			changeset: readOnlyGitHubChangeset,
+			want: apitest.Changeset{
+				Typename:           "ExternalChangeset",
+				Title:              "GitHub PR Title",
+				Body:               "GitHub PR Body",
+				ExternalID:         "123456",
+				CheckState:         "PENDING",
+				ReviewState:        "CHANGES_REQUESTED",
+				ScheduleEstimateAt: "",
+				Repository:         apitest.Repository{Name: string(repo.Name)},
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/archived/pull/123456",
+					ServiceKind: "GITHUB",
+					ServiceType: "github",
+				},
+				Labels: []apitest.Label{},
+				State:  string(btypes.ChangesetStateReadOnly),
+			},
+		},
+		{
 			name:      "unsynced changeset",
 			changeset: unsyncedChangeset,
 			want: apitest.Changeset{
@@ -335,7 +384,7 @@ func TestChangesetResolver(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			apiID := marshalChangesetID(tc.changeset.ID)
-			input := map[string]interface{}{"changeset": apiID}
+			input := map[string]any{"changeset": apiID}
 
 			var response struct{ Node apitest.Changeset }
 			apitest.MustExec(ctx, t, s, input, &response, queryChangeset)

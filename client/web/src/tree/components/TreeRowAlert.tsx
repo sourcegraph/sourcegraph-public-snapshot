@@ -4,10 +4,12 @@ import classNames from 'classnames'
 
 import { ErrorAlert, ErrorAlertProps } from '@sourcegraph/branded/src/components/alerts'
 
-import styles from './TreeRowAlert.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeRowAlertProps = ErrorAlertProps
 
-export const TreeRowAlert: React.FunctionComponent<TreeRowAlertProps> = ({ className, children, ...rest }) => (
-    <ErrorAlert className={classNames(styles.rowAlert, className)} {...rest} />
-)
+export const TreeRowAlert: React.FunctionComponent<React.PropsWithChildren<TreeRowAlertProps>> = ({
+    className,
+    children,
+    ...rest
+}) => <ErrorAlert className={classNames(styles.rowAlert, className)} {...rest} />

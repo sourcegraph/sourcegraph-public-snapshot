@@ -54,7 +54,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Owner:      "-",
 							Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
 							Created:    *instance.LaunchTime,
-							Meta: map[string]interface{}{
+							Meta: map[string]any{
 								"tags": ec2TagsToMap(instance.Tags),
 							},
 						}
@@ -78,7 +78,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Owner:      "-",
 						Type:       fmt.Sprintf("EC2::Volumes::%s", string(volume.VolumeType)),
 						Created:    *volume.CreateTime,
-						Meta: map[string]interface{}{
+						Meta: map[string]any{
 							"tags":        ec2TagsToMap(volume.Tags),
 							"attachments": volume.Attachments,
 						},
@@ -118,7 +118,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Owner:      "-",
 						Type:       "EKS::Cluster",
 						Created:    *cluster.Cluster.CreatedAt,
-						Meta: map[string]interface{}{
+						Meta: map[string]any{
 							"tags": cluster.Cluster.Tags, // tags are already a map
 						},
 					}

@@ -2,16 +2,15 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -55,56 +54,81 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
-// A SecurityEventLogStore provides persistence for security events.
-type SecurityEventLogStore struct {
+// SecurityEventLogsStore provides persistence for security events.
+type SecurityEventLogsStore interface {
+	basestore.ShareableStore
+
+	// Insert adds a new security event to the store.
+	Insert(ctx context.Context, e *SecurityEvent) error
+	// Bulk "Insert" action.
+	InsertList(ctx context.Context, events []*SecurityEvent) error
+	// LogEvent logs the given security events.
+	//
+	// It logs errors directly instead of returning to callers.
+	LogEvent(ctx context.Context, e *SecurityEvent)
+	// Bulk "LogEvent" action.
+	LogEventList(ctx context.Context, events []*SecurityEvent)
+}
+
+type securityEventLogsStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
-// SecurityEventLogs instantiates and returns a new SecurityEventLogStore with prepared statements.
-func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
-	return &SecurityEventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
+// using the other store handle.
+func SecurityEventLogsWith(other basestore.ShareableStore) SecurityEventLogsStore {
+	logger := log.Scoped("SecurityEvents", "Security events store")
+	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
-// Insert adds a new security event to the store.
-func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
-	argument := e.Argument
-	if argument == nil {
-		argument = []byte(`{}`)
-	}
+func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEvent) error {
+	return s.InsertList(ctx, []*SecurityEvent{event})
+}
 
-	_, err := s.Handle().DB().ExecContext(
-		ctx,
-		"INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		e.Name,
-		e.URL,
-		e.UserID,
-		e.AnonymousUserID,
-		e.Source,
-		argument,
-		version.Version(),
-		e.Timestamp.UTC(),
-	)
-	if err != nil {
+func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
+	vals := make([]*sqlf.Query, len(events))
+	for index, event := range events {
+		argument := event.Argument
+		if argument == nil {
+			argument = []byte(`{}`)
+		}
+		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
+			event.Name,
+			event.URL,
+			event.UserID,
+			event.AnonymousUserID,
+			event.Source,
+			argument,
+			version.Version(),
+			event.Timestamp.UTC(),
+		)
+	}
+	query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
+
+	if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		return errors.Wrap(err, "INSERT")
 	}
 	return nil
 }
 
-// LogEvent will log security events.
-//
-// Note that it does not return an error and will instead simply log it.
-func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+	s.LogEventList(ctx, []*SecurityEvent{e})
+}
+
+func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
 	// We don't want to begin logging authentication or authorization events in
 	// on-premises installations yet.
 	if !envvar.SourcegraphDotComMode() {
 		return
 	}
 
-	if err := s.Insert(ctx, e); err != nil {
-		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "err", err)
-		// We want to capture in sentry as it includes a stack trace which will allow us
-		// to track down the root cause.
-		sentry.CaptureError(err, map[string]string{})
+	if err := s.InsertList(ctx, events); err != nil {
+		names := make([]string, len(events))
+		for i, e := range events {
+			names[i] = string(e.Name)
+		}
+		j, _ := json.Marshal(&events)
+		trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
 	}
 }

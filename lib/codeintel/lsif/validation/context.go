@@ -30,7 +30,7 @@ func NewValidationContext() *ValidationContext {
 }
 
 // AddError creates a new validaton error and saves it in the validation context.
-func (ctx *ValidationContext) AddError(message string, args ...interface{}) *reader.ValidationError {
+func (ctx *ValidationContext) AddError(message string, args ...any) *reader.ValidationError {
 	err := reader.NewValidationError(message, args...)
 
 	ctx.ErrorsLock.Lock()

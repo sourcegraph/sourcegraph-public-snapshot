@@ -1,12 +1,12 @@
-import React from 'react'
+import { useState } from 'react'
 
-import { boolean, select } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2, Text, Tooltip, ButtonLink } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -42,46 +42,62 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => (
-    <Button
-        variant={select('Variant', BUTTON_VARIANTS, 'primary')}
-        size={select('Size', BUTTON_SIZES, undefined)}
-        disabled={boolean('Disabled', false)}
-        outline={boolean('Outline', false)}
-    >
+export const Simple: Story = (args = {}) => (
+    <Button variant={args.variant} size={args.size} disabled={args.disabled} outline={args.outline}>
         Click me!
     </Button>
 )
+Simple.argTypes = {
+    variant: {
+        name: 'Variant',
+        control: { type: 'select', options: BUTTON_VARIANTS },
+        defaultValue: 'primary',
+    },
+    size: {
+        name: 'Name',
+        control: { type: 'select', options: BUTTON_SIZES },
+        defaultValue: 'sm',
+    },
+    disabled: {
+        name: 'Disabled',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    outline: {
+        name: 'Outline',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <h1>Buttons</h1>
-        <h2>Variants</h2>
+        <H1>Buttons</H1>
+        <H2>Variants</H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
-        <h2>Outline</h2>
+        <H2>Outline</H2>
         <ButtonVariants variants={['primary', 'secondary', 'danger']} outline={true} />
-        <h2>Icons</h2>
-        <p>We can use icons with our buttons.</p>
+        <H2>Icons</H2>
+        <Text>We can use icons with our buttons.</Text>
         <ButtonVariants variants={['danger']} icon={SearchIcon} />
         <ButtonVariants variants={['danger']} icon={SearchIcon} outline={true} />
-        <h2>Smaller</h2>
-        <p>We can make our buttons smaller.</p>
+        <H2>Smaller</H2>
+        <Text>We can make our buttons smaller.</Text>
         <ButtonVariants variants={['primary']} size="sm" outline={true} />
-        <h2>Links</h2>
-        <p>Links can be made to look like buttons.</p>
-        <Button
+        <H2>Links</H2>
+        <Text>Links can be made to look like buttons.</Text>
+        <ButtonLink
             variant="secondary"
-            as="a"
-            href="https://example.com"
+            to="https://example.com"
             target="_blank"
             rel="noopener noreferrer"
             className="mb-3"
         >
             I am a link
-        </Button>
-        <p>Buttons can be made to look like links.</p>
+        </ButtonLink>
+        <Text>Buttons can be made to look like links.</Text>
         <ButtonVariants variants={['link']} />
-        <h2>Button Display</h2>
+        <H2>Button Display</H2>
         <Button className="mb-3" size="sm" variant="secondary" display="inline">
             Inline
         </Button>
@@ -89,30 +105,107 @@ export const AllButtons: Story = () => (
             Block
         </Button>
 
-        <h2>Button Group</h2>
-        <ButtonGroup className="mb-3">
-            <Button variant="secondary" display="block">
-                Grouped
+        <H2>Tooltips</H2>
+        <Text>Buttons can have tooltips.</Text>
+        <Tooltip content="Some extra context on the button.">
+            <Button variant="primary" className="mr-3">
+                Enabled
             </Button>
-            <Button variant="secondary" display="block">
-                Grouped
+        </Tooltip>
+        <Tooltip content="Some extra context on why the button is disabled.">
+            <Button variant="primary" disabled={true}>
+                Disabled
             </Button>
-            <Button variant="secondary" display="block">
-                Grouped
-            </Button>
-        </ButtonGroup>
-        <h2>Tooltips</h2>
-        <p>Buttons can have tooltips.</p>
-        <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
-            Enabled
-        </Button>
-        <Button variant="primary" disabled={true} data-tooltip="Some extra context on why the button is disabled.">
-            Disabled
-        </Button>
+        </Tooltip>
     </div>
 )
 
 AllButtons.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
+
+export const Group: Story = () => {
+    const [selectedButton, setSelectedButton] = useState(1)
+
+    return (
+        <>
+            <div className="mb-4">
+                <H2>Standard</H2>
+
+                <ButtonGroup>
+                    <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                        One
+                    </Button>
+                    <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
+                        Two
+                    </Button>
+                    <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
+                        Three
+                    </Button>
+                </ButtonGroup>
+            </div>
+
+            <div className="mb-4">
+                <H2>With Tooltips</H2>
+
+                <ButtonGroup>
+                    <Tooltip content="Option One">
+                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                            One
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Two">
+                        <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
+                            Two
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Three">
+                        <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
+                            Three
+                        </Button>
+                    </Tooltip>
+                </ButtonGroup>
+            </div>
+
+            <div className="mb-4">
+                <H2>With Tooltips (Disabled Buttons)</H2>
+
+                <ButtonGroup>
+                    <Tooltip content="Option One">
+                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
+                            One
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Two">
+                        <Button
+                            disabled={true}
+                            variant="secondary"
+                            outline={selectedButton !== 2}
+                            onClick={() => setSelectedButton(2)}
+                        >
+                            Two
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Option Three">
+                        <Button
+                            disabled={true}
+                            variant="secondary"
+                            outline={selectedButton !== 3}
+                            onClick={() => setSelectedButton(3)}
+                        >
+                            Three
+                        </Button>
+                    </Tooltip>
+                </ButtonGroup>
+            </div>
+        </>
+    )
+}
+Group.storyName = 'Button Group'
+Group.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,

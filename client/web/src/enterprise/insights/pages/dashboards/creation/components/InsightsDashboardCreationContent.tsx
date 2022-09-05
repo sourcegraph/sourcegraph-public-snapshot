@@ -1,14 +1,26 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useContext } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Input } from '@sourcegraph/wildcard'
 
 import { FormGroup } from '../../../../components/form/form-group/FormGroup'
-import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
+import { getDefaultInputProps } from '../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
-import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core/types'
+import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
+import {
+    CodeInsightsBackendContext,
+    InsightsDashboardOwner,
+    isGlobalOwner,
+    isOrganizationOwner,
+    isPersonalOwner,
+} from '../../../../core'
+
+import styles from './InsightsDashboardCreationContent.module.scss'
 
 const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
 
@@ -34,6 +46,9 @@ export interface InsightsDashboardCreationContentProps {
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, owners, onSubmit, children } = props
+
+    const { UIFeatures } = useContext(CodeInsightsBackendContext)
+    const { licensed } = UIFeatures
 
     const userOwner = owners.find(isPersonalOwner)
     const personalOwners = owners.filter(isPersonalOwner)
@@ -62,15 +77,13 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     return (
         // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
-            <FormInput
+            <Input
                 required={true}
                 autoFocus={true}
-                title="Name"
+                label="Name"
                 placeholder="Example: My personal code insights dashboard"
-                description="Shown as the title for your dashboard"
-                valid={name.meta.touched && name.meta.validState === 'VALID'}
-                error={name.meta.touched && name.meta.error}
-                {...name.input}
+                message="Shown as the title for your dashboard"
+                {...getDefaultInputProps(name)}
             />
 
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
@@ -134,6 +147,13 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
             {formAPI.submitErrors?.[FORM_ERROR] && (
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
+            )}
+
+            {!licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedBanner)}
+                    message="Unlock Code Insights to create unlimited custom dashboards"
+                />
             )}
 
             <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>

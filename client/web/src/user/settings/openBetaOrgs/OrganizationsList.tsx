@@ -5,14 +5,13 @@ import classNames from 'classnames'
 import { Maybe } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ButtonLink, Container, Link, PageHeader } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Link, PageHeader, H3 } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './organizationList.module.scss'
-export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
+export interface OrganizationsListProps extends ThemeProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'id' | 'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -31,45 +30,41 @@ interface OrgItemProps {
     org: IOrgItem
 }
 
-const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
+const OrgItem: React.FunctionComponent<React.PropsWithChildren<OrgItemProps>> = ({ org }) => (
     <li data-test-username={org.id}>
-        <div className="d-flex align-items-center justify-content-between">
-            <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
-                <div className={styles.avatarContainer}>
-                    <div className={styles.avatar}>
-                        <span>{(org.displayName || org.name).slice(0, 2).toUpperCase()}</span>
-                    </div>
-                </div>
-                <div className="d-flex flex-column">
-                    <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
-                        {org.displayName || org.name}
-                    </Link>
-                    {org.displayName && (
-                        <span className={classNames('text-muted', styles.displayName)}>{org.name}</span>
-                    )}
+        <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
+            <div className={styles.avatarContainer}>
+                <div className={styles.avatar}>
+                    <span>{(org.displayName || org.name).slice(0, 2).toUpperCase()}</span>
                 </div>
             </div>
+            <div className="d-flex flex-column">
+                <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
+                    {org.displayName || org.name}
+                </Link>
+                {org.displayName && <span className={classNames('text-muted', styles.displayName)}>{org.name}</span>}
+            </div>
+        </div>
 
-            <div className={styles.userRole}>
-                <span className="text-muted">Admin</span>
-            </div>
-            <div>
-                <ButtonLink
-                    className={styles.orgSettings}
-                    variant="secondary"
-                    to={org.settingsURL as string}
-                    size="sm"
-                    onClick={() =>
-                        eventLogger.log(
-                            'UserOrganizationSettingsClicked',
-                            { organizationId: org.id },
-                            { organizationId: org.id }
-                        )
-                    }
-                >
-                    Settings
-                </ButtonLink>
-            </div>
+        <div className={styles.userRole}>
+            <span className="text-muted">Admin</span>
+        </div>
+        <div>
+            <ButtonLink
+                className={styles.orgSettings}
+                variant="secondary"
+                to={org.settingsURL as string}
+                size="sm"
+                onClick={() =>
+                    eventLogger.log(
+                        'UserOrganizationSettingsClicked',
+                        { organizationId: org.id },
+                        { organizationId: org.id }
+                    )
+                }
+            >
+                Settings
+            </ButtonLink>
         </div>
     </li>
 )
@@ -83,7 +78,9 @@ const refreshOrganizationList = (): void => {
         .catch(() => eventLogger.logViewEvent('ErrorOrgListLoading'))
 }
 
-export const OrganizationsListPage: React.FunctionComponent<OrganizationsListProps> = ({ authenticatedUser }) => {
+export const OrganizationsListPage: React.FunctionComponent<React.PropsWithChildren<OrganizationsListProps>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => {
         refreshOrganizationList()
     }, [])
@@ -92,7 +89,7 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
     const hasOrgs = orgs.length > 0
 
     useEffect(() => {
-        eventLogger.logViewEvent('YourOrganizations', { userId: authenticatedUser.id })
+        eventLogger.logPageView('YourOrganizations', { userId: authenticatedUser.id })
     }, [authenticatedUser.id])
 
     return (
@@ -103,7 +100,6 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                 <ButtonLink
                     variant="secondary"
                     to="/organizations/joinopenbeta"
-                    size="sm"
                     onClick={() => eventLogger.log('CreateOrganizationButtonClicked')}
                 >
                     Create organization
@@ -119,14 +115,13 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                 </Container>
             )}
             {!hasOrgs && (
-                <Container>
+                <Container className={styles.noOrgContainer}>
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                        <h3>Start searching with your team on Sourcegraph</h3>
-                        <div>Product copy here that needs to be written still, this is a placeholder.</div>
+                        <H3 className="mb-1">Start searching with your team on Sourcegraph</H3>
+                        <div>Level up your team with powerful code search across your organization’s code.</div>
                         <ButtonLink
                             variant="primary"
                             to="/organizations/joinopenbeta"
-                            size="sm"
                             className="mt-3"
                             onClick={() => eventLogger.log('CreateFirstOrganizationButtonClicked')}
                         >

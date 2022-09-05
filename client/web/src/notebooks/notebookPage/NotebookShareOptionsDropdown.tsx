@@ -1,13 +1,11 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import DomainIcon from 'mdi-react/DomainIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import WebIcon from 'mdi-react/WebIcon'
+import { mdiLock, mdiWeb, mdiDomain, mdiChevronUp, mdiChevronDown } from '@mdi/js'
+// eslint-disable-next-line no-restricted-imports
+import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -29,21 +27,36 @@ interface NotebookShareOptionsDropdownProps extends TelemetryProps {
 }
 
 const ShareOptionComponent: React.FunctionComponent<
-    Omit<ShareOption, 'namespaceId'> & { isSourcegraphDotCom: boolean }
+    React.PropsWithChildren<Omit<ShareOption, 'namespaceId'> & { isSourcegraphDotCom: boolean }>
 > = ({ isSourcegraphDotCom, namespaceType, namespaceName, isPublic }) => {
     if (namespaceType === 'User') {
         if (isPublic) {
-            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
             const publicText = isSourcegraphDotCom ? 'Public' : 'Instance'
             return (
                 <>
-                    <PublicIcon className="mr-2" size="1.15rem" /> {publicText}
+                    <Icon
+                        className="mr-2"
+                        svgPath={isSourcegraphDotCom ? mdiWeb : mdiDomain}
+                        inline={false}
+                        height="1.15rem"
+                        width="1.15rem"
+                        aria-hidden={true}
+                    />{' '}
+                    {publicText}
                 </>
             )
         }
         return (
             <>
-                <LockIcon className="mr-2" size="1.15rem" /> Private
+                <Icon
+                    className="mr-2"
+                    svgPath={mdiLock}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />{' '}
+                Private
             </>
         )
     }
@@ -54,16 +67,14 @@ const ShareOptionComponent: React.FunctionComponent<
     )
 }
 
-export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShareOptionsDropdownProps> = ({
-    isSourcegraphDotCom,
-    telemetryService,
-    authenticatedUser,
-    selectedShareOption,
-    onSelectShareOption,
-}) => {
+export const NotebookShareOptionsDropdown: React.FunctionComponent<
+    React.PropsWithChildren<NotebookShareOptionsDropdownProps>
+> = ({ isSourcegraphDotCom, telemetryService, authenticatedUser, selectedShareOption, onSelectShareOption }) => {
+    const [isOpen, setIsOpen] = useState(false)
     const handleToggle = useCallback(() => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
-    }, [telemetryService])
+        setIsOpen(isOpen => !isOpen)
+    }, [telemetryService, setIsOpen])
 
     const shareOptions: ShareOption[] = useMemo(
         () => [
@@ -90,35 +101,36 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
     )
 
     return (
-        <Menu>
-            {({ isOpen }) => (
-                <>
-                    <MenuButton
-                        onClick={handleToggle}
-                        className={styles.button}
-                        outline={true}
-                        variant="secondary"
-                        data-testid="share-notebook-options-dropdown-toggle"
+        <Dropdown isOpen={isOpen} toggle={handleToggle}>
+            <DropdownToggle
+                className={styles.button}
+                outline={true}
+                variant="secondary"
+                data-testid="share-notebook-options-dropdown-toggle"
+            >
+                <span className="d-flex align-items-center">
+                    <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
+                </span>
+                <span className="ml-5">
+                    {isOpen ? (
+                        <Icon svgPath={mdiChevronUp} inline={false} aria-hidden={true} />
+                    ) : (
+                        <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
+                    )}
+                </span>
+            </DropdownToggle>
+            <DropdownMenu>
+                {shareOptions.map(option => (
+                    <DropdownItem
+                        key={`${option.namespaceId}-${option.isPublic}`}
+                        className="d-flex align-items-center"
+                        onClick={() => onSelectShareOption(option)}
+                        data-testid={`share-notebook-option-${option.namespaceName}-${option.isPublic}`}
                     >
-                        <span className="d-flex align-items-center">
-                            <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
-                        </span>
-                        <span className="ml-5">{isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}</span>
-                    </MenuButton>
-                    <MenuList>
-                        {shareOptions.map(option => (
-                            <MenuItem
-                                key={`${option.namespaceId}-${option.isPublic}`}
-                                className="d-flex align-items-center"
-                                onSelect={() => onSelectShareOption(option)}
-                                data-testid={`share-notebook-option-${option.namespaceName}-${option.isPublic}`}
-                            >
-                                <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
-                            </MenuItem>
-                        ))}
-                    </MenuList>
-                </>
-            )}
-        </Menu>
+                        <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
+                    </DropdownItem>
+                ))}
+            </DropdownMenu>
+        </Dropdown>
     )
 }

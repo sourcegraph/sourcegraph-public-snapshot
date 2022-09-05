@@ -1,17 +1,15 @@
 package streaming
 
 import (
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func BenchmarkBatchingStream(b *testing.B) {
@@ -117,15 +115,13 @@ func TestBatchingStream(t *testing.T) {
 			count.Add(int64(len(event.Results)))
 		}))
 
-		var wg sync.WaitGroup
-		wg.Add(10)
+		g := group.New()
 		for i := 0; i < 10; i++ {
-			go func() {
+			g.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
-				wg.Done()
-			}()
+			})
 		}
-		wg.Wait()
+		g.Wait()
 
 		// One should be sent immediately
 		require.Equal(t, count.Load(), int64(1))
@@ -136,152 +132,19 @@ func TestBatchingStream(t *testing.T) {
 	})
 }
 
-func TestWithSelect(t *testing.T) {
-	dataCopy := func() SearchEvent {
-		return SearchEvent{
-			Results: []result.Match{
-				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
-				},
-				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
-				},
-				&result.FileMatch{
-					File: result.File{Path: "pokeman/bulbosaur"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
-				},
-				&result.FileMatch{
-					File: result.File{Path: "digiman/ummm"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
-				},
-			},
-		}
+func TestDedupingStream(t *testing.T) {
+	var sent []result.Match
+	s := NewDedupingStream(StreamFunc(func(e SearchEvent) {
+		sent = append(sent, e.Results...)
+	}))
+
+	for i := 0; i < 2; i++ {
+		s.Send(SearchEvent{
+			Results: []result.Match{&result.FileMatch{
+				File: result.File{Path: "lombardy"},
+			}},
+		})
 	}
 
-	test := func(selector string) string {
-		selectPath, _ := filter.SelectPathFromString(selector)
-		agg := NewAggregatingStream()
-		selectAgg := WithSelect(agg, selectPath)
-		selectAgg.Send(dataCopy())
-		s, _ := json.MarshalIndent(agg.Results, "", "  ")
-		return string(s)
-	}
-
-	autogold.Want("dedupe paths for select:file.directory", `[
-  {
-    "Path": "pokeman/",
-    "LineMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/",
-    "LineMatches": null,
-    "LimitHit": false
-  }
-]`).Equal(t, test("file.directory"))
-
-	autogold.Want("dedupe paths select:file", `[
-  {
-    "Path": "pokeman/charmandar",
-    "LineMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/bulbosaur",
-    "LineMatches": null,
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/ummm",
-    "LineMatches": null,
-    "LimitHit": false
-  }
-]`).Equal(t, test("file"))
-
-	autogold.Want("don't dedupe file matches for select:content", `[
-  {
-    "Path": "pokeman/charmandar",
-    "LineMatches": [
-      {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
-      },
-      {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/charmandar",
-    "LineMatches": [
-      {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "pokeman/bulbosaur",
-    "LineMatches": [
-      {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
-      }
-    ],
-    "LimitHit": false
-  },
-  {
-    "Path": "digiman/ummm",
-    "LineMatches": [
-      {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
-      }
-    ],
-    "LimitHit": false
-  }
-]`).Equal(t, test("content"))
+	require.Equal(t, 1, len(sent))
 }

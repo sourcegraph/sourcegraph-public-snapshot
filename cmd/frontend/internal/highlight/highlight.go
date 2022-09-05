@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -21,36 +22,48 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
-
-	highlightOp *observation.Operation
 )
+
+var (
+	highlightOpOnce sync.Once
+	highlightOp     *observation.Operation
+)
+
+func getHighlightOp() *observation.Operation {
+	highlightOpOnce.Do(func() {
+		obsvCtx := observation.Context{
+			HoneyDataset: &honey.Dataset{
+				Name:       "codeintel-syntax-highlighting",
+				SampleRate: 10, // 1 in 10
+			},
+		}
+
+		highlightOp = obsvCtx.Operation(observation.Op{
+			Name:        "codeintel.syntax-highlight.Code",
+			LogFields:   []otlog.Field{},
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+		})
+	})
+
+	return highlightOp
+}
 
 func init() {
 	client = gosyntect.New(syntectServer)
-
-	obsvCtx := observation.Context{
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-syntax-highlighting",
-			SampleRate: 10, // 1 in 10
-		},
-	}
-	highlightOp = obsvCtx.Operation(observation.Op{
-		Name:        "codeintel.syntax-highlight.Code",
-		LogFields:   []otlog.Field{},
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
-	})
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -92,6 +105,9 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
+
+	// Format defines the response format of the syntax highlighting request.
+	Format gosyntect.HighlightResponseType
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -115,7 +131,7 @@ type HighlightedCode struct {
 	// Formatted HTML. This is generally from syntect, as LSIF documents
 	// will be formatted on the fly using HighlightedCode.document
 	//
-	// Can be an empty string if we have an lsiftyped.Document instead.
+	// Can be an empty string if we have an scip.Document instead.
 	// Access via HighlightedCode.HTML()
 	html template.HTML
 
@@ -123,8 +139,8 @@ type HighlightedCode struct {
 	// to generate formatted HTML.
 	//
 	// This is optional because not every language has a treesitter parser
-	// and queries that can send back an lsiftyped.Document
-	document *lsiftyped.Document
+	// and queries that can send back an scip.Document
+	document *scip.Document
 }
 
 func (h *HighlightedCode) HTML() (template.HTML, error) {
@@ -141,7 +157,7 @@ func NewHighlightedCodeWithHTML(html template.HTML) HighlightedCode {
 	}
 }
 
-func (h *HighlightedCode) LSIF() *lsiftyped.Document {
+func (h *HighlightedCode) LSIF() *scip.Document {
 	return h.document
 }
 
@@ -195,7 +211,7 @@ func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]temp
 // LinesForRanges returns a list of list of strings (which are valid HTML). Each list of strings is a set
 // of HTML lines correspond to the range passed in ranges.
 //
-// This is the corresponding function for SplitLineRanges, but uses lsiftyped.
+// This is the corresponding function for SplitLineRanges, but uses SCIP.
 //
 // TODO(tjdevries): The call heirarchy could be reversed later to only have one entry point
 func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
@@ -241,7 +257,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		currentCell = cell
 	}
 
-	addText := func(kind lsiftyped.SyntaxKind, line string) {
+	addText := func(kind scip.SyntaxKind, line string) {
 		appendTextToNode(currentCell, kind, line)
 	}
 
@@ -288,6 +304,21 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
+/// identifyError returns true + the problem code if err matches a known error.
+func identifyError(err error) (bool, string) {
+	var problem string
+	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
+		problem = "request_too_large"
+	} else if errors.Is(err, gosyntect.ErrPanic) {
+		problem = "panic"
+	} else if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
+		problem = "hss_worker_timeout"
+	} else if strings.Contains(err.Error(), "broken pipe") {
+		problem = "broken pipe"
+	}
+	return problem != "", problem
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -313,7 +344,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
 		otlog.String("repo", p.Metadata.RepoName),
 		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
@@ -363,6 +394,19 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
+		errCollector.Collect(&err)
+		plainResponse, tableErr := generatePlainTable(code)
+		if tableErr != nil {
+			return nil, false, errors.CombineErrors(err, tableErr)
+		}
+		return plainResponse, true, nil
+	}
+
+	if p.Format == gosyntect.FormatHTMLPlaintext {
+		return unhighlightedCode(err, code)
+	}
+
 	var stabilizeTimeout time.Duration
 	if p.DisableTimeout {
 		// The user wants to wait longer for results, so the default 10s worker
@@ -385,6 +429,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
+		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	// Set the Filetype part of the command if:
@@ -397,7 +442,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
+	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -413,7 +458,10 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 		// Timeout, so render plain table.
 		plainResponse, err := generatePlainTable(code)
-		return plainResponse, true, err
+		if err != nil {
+			return nil, false, err
+		}
+		return plainResponse, true, nil
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
@@ -424,47 +472,32 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 			"error", err,
 		)
-		var problem string
-		switch errors.Cause(err) {
-		case gosyntect.ErrRequestTooLarge:
-			problem = "request_too_large"
-		case gosyntect.ErrPanic:
-			problem = "panic"
-		case gosyntect.ErrHSSWorkerTimeout:
-			problem = "hss_worker_timeout"
-		}
 
-		if problem == "" && strings.Contains(err.Error(), "broken pipe") {
-			problem = "broken pipe"
-		}
-
-		if problem != "" {
+		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
-			// a case-by-case basis, but they are frequent enough that we want
-			// to fallback to plaintext rendering instead of just giving the
-			// user an error.
+			// a case-by-case basis.
 			trace.Log(otlog.Bool(problem, true))
-			errCollector.Collect(&err)
 			prometheusStatus = problem
-			plainResponse, err := generatePlainTable(code)
-			return plainResponse, false, err
 		}
 
-		return nil, false, err
+		// It is not useful to surface errors in the UI, so fall back to
+		// unhighlighted text.
+		return unhighlightedCode(err, code)
 	}
 
-	if filetypeQuery.Engine == EngineTreeSitter {
-		document := new(lsiftyped.Document)
+	// We need to return SCIP data if explicitly requested or if the selected
+	// engine is tree sitter.
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
+		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
-		// TODO: Should we generate the plaintext table here?
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 		err = proto.Unmarshal(data, document)
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 
 		// TODO(probably not this PR): I would like to not

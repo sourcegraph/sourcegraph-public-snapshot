@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { RepositoryPopoverFields } from '../../graphql-operations'
@@ -11,7 +11,10 @@ interface RepositoryNodeProps {
     currentRepo?: Scalars['ID']
 }
 
-export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
+    node,
+    currentRepo,
+}) => (
     <ConnectionPopoverNode key={node.id}>
         <ConnectionPopoverNodeLink to={`/${node.name}`} active={node.id === currentRepo}>
             {displayRepoName(node.name)}

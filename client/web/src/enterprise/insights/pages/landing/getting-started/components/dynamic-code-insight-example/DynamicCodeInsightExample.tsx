@@ -1,27 +1,25 @@
 import React, { useContext, useMemo, useEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import * as View from '../../../../../../../views'
-import { FormInput } from '../../../../../components/form/form-input/FormInput'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../../pings'
-import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../../insights/creation/search-insight'
-import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
-import { SearchInsightLivePreview } from '../../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
 import {
-    repositoriesExistValidator,
-    repositoriesFieldValidator,
-} from '../../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
+    getDefaultInputProps,
+    useField,
+    useForm,
+    InsightQueryInput,
+    RepositoriesField,
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+} from '../../../../../components'
+import { CodeInsightsBackendContext } from '../../../../../core'
+import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
+
+import { DynamicInsightPreview } from './DynamicInsightPreview'
 
 import styles from './DynamicCodeInsightExample.module.scss'
 
@@ -32,23 +30,14 @@ interface CodeInsightExampleFormValues {
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     repositories: 'github.com/sourcegraph/sourcegraph',
-    query: 'TODO archived:no fork:no',
+    query: 'TODO',
 }
-
-const createExampleDataSeries = (query: string): EditableDataSeries[] => [
-    {
-        query,
-        valid: true,
-        edit: false,
-        id: '1',
-        name: 'TODOs',
-        stroke: DATA_SERIES_COLORS.ORANGE,
-    },
-]
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+export const DynamicCodeInsightExample: React.FunctionComponent<
+    React.PropsWithChildren<DynamicCodeInsightExampleProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
 
     const {
@@ -66,8 +55,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
-            sync: repositoriesFieldValidator,
-            async: repositoriesExistValidator,
+            sync: insightRepositoriesValidator,
+            async: insightRepositoriesAsyncValidator,
         },
     })
 
@@ -89,11 +78,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
             setRepositoryValue(derivedRepositoryURL)
         }
     }, [setRepositoryValue, derivedRepositoryURL])
-
-    const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
-        telemetryService,
-        insightType: CodeInsightTrackType.InProductLandingPageInsight,
-    })
 
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
@@ -117,66 +101,47 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
-                <SearchInsightLivePreview
-                    title="In-line TODO statements"
-                    withLivePreviewControls={false}
-                    repositories={repositories.input.value}
-                    series={createExampleDataSeries(query.input.value)}
-                    stepValue="2"
-                    step="months"
+                <DynamicInsightPreview
+                    telemetryService={telemetryService}
                     disabled={!hasValidLivePreview}
-                    isAllReposMode={false}
+                    repositories={repositories.input.value}
+                    query={query.input.value}
                     className={styles.chart}
-                >
-                    {data => (
-                        <View.Content
-                            onMouseEnter={trackMouseEnter}
-                            onMouseLeave={trackMouseLeave}
-                            onDatumLinkClick={trackDatumClicks}
-                            content={[data]}
-                            layout={View.ChartViewContentLayout.ByContentSize}
-                        />
-                    )}
-                </SearchInsightLivePreview>
+                />
 
-                <FormInput
-                    title="Data series search query"
+                <Input
+                    label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
                     repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                    valid={query.meta.touched && query.meta.validState === 'VALID'}
-                    error={query.meta.touched && query.meta.error}
+                    {...getDefaultInputProps(query)}
                     className="mt-3 mb-0"
-                    {...query.input}
                 />
 
-                <FormInput
+                <Input
                     as={RepositoriesField}
                     required={true}
-                    title="Repositories"
+                    label="Repositories"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    loading={repositories.meta.validState === 'CHECKING'}
-                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                    error={repositories.meta.touched && repositories.meta.error}
-                    {...repositories.input}
+                    {...getDefaultInputProps(repositories)}
                     className="mt-3 mb-0"
                 />
             </form>
 
             <section>
-                <h2 className={classNames(styles.cardTitle)}>
+                <H2 className={classNames(styles.cardTitle)}>
                     Draw insights from your codebase about how different initiatives track over time
-                </h2>
+                </H2>
 
-                <p>
+                <Text>
                     Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
                     questions about how your code is changing and what’s in your code {'\u2014'} questions that were
                     difficult or impossible to answer before.
-                </p>
+                </Text>
 
-                <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>
+                <H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</H3>
 
                 <ul>
                     <li>Track migrations, adoption, and deprecations</li>
@@ -188,7 +153,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                 <footer className={styles.footer}>
                     {licensed ? (
                         <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon as={PlusIcon} /> Create your first insight
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
                         </Button>
                     ) : (
                         <Button
@@ -218,8 +183,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     )
 }
 
-const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
-    <p className={classNames(styles.calloutBlock, props.className)}>
+const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
+    <Text className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"
             height="41"
@@ -234,5 +199,5 @@ const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
             />
         </svg>
         <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
-    </p>
+    </Text>
 )

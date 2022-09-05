@@ -1,20 +1,22 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CreationInsightInput } from '../../../core/backend/code-insights-backend-types'
-import { useQueryParameters } from '../../../hooks/use-query-parameters'
+import { useExperimentalFeatures } from '../../../../../stores'
+import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
+import { useQueryParameters } from '../../../hooks'
 
 import { CaptureGroupCreationPage } from './capture-group'
-import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
+import { ComputeInsightCreationPage } from './compute'
+import { LangStatsInsightCreationPage } from './lang-stats'
 import { SearchInsightCreationPage } from './search-insight'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
+    Compute = 'compute',
     Search = 'search-based',
     CaptureGroup = 'capture-group',
 }
@@ -27,7 +29,7 @@ interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
 }
 
-export const InsightCreationPage: React.FunctionComponent<InsightCreationPageProps> = props => {
+export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
     const history = useHistory()
@@ -35,6 +37,8 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
+
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     if (dashboard === undefined) {
         return <LoadingSpinner inline={false} />
@@ -75,6 +79,17 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
+
+    if (codeInsightsCompute && mode === InsightCreationPageType.Compute) {
+        return (
+            <ComputeInsightCreationPage
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}

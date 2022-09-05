@@ -10,14 +10,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -30,7 +31,7 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -70,18 +71,19 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
+func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 	externalServiceStore := database.NewMockExternalServiceStore()
 	externalServiceStore.GetByIDFunc.SetDefaultReturn(
 		&types.ExternalService{
 			ID:   1,
 			Kind: extsvc.KindGitHub,
-			Config: `
+			Config: extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "githubAppInstallationID": "21994992",
-  "repos": []
-}`,
+  "repos": [],
+  "authorization": {},
+}`),
 		},
 		nil,
 	)
@@ -120,19 +122,15 @@ func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
 		},
 	}
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
 	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			Dotcom: &schema.Dotcom{
-				GithubAppCloud: &schema.GithubAppCloud{
-					AppID:      "404",
-					PrivateKey: bogusKey,
-					Slug:       "test-app",
-				},
+			GitHubApp: &schema.GitHubApp{
+				AppID:        "404",
+				PrivateKey:   bogusKey,
+				Slug:         "test-app",
+				ClientID:     "Iv1.deb0cd1048cf1040",
+				ClientSecret: "c6d0ed049217a89825c457898c701c30324f873b",
 			},
 		},
 	})
@@ -149,7 +147,7 @@ func TestGetVCSSyncer(t *testing.T) {
 	repo := api.RepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
 	repoStore := database.NewMockRepoStore()
-	codeIntelDB := new(dependenciesStore.Store)
+	depsSvc := new(dependencies.Service)
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
@@ -170,11 +168,11 @@ func TestGetVCSSyncer(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindPerforce,
 			DisplayName: "test",
-			Config:      `{}`,
+			Config:      extsvc.NewEmptyConfig(),
 		}, nil
 	})
 
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, codeIntelDB, repo)
+	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo)
 	if err != nil {
 		t.Fatal(err)
 	}

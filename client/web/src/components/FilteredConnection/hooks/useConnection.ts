@@ -3,10 +3,10 @@ import { useCallback, useMemo, useRef } from 'react'
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
-import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
+import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useConnectionUrl } from './useConnectionUrl'
 

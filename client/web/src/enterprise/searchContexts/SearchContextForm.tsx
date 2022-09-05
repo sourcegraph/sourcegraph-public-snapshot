@@ -8,8 +8,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { QueryState, SearchContextProps } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
@@ -18,9 +17,9 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import {
     Container,
     Button,
@@ -30,9 +29,12 @@ import {
     Alert,
     ProductStatusBadge,
     Link,
+    Code,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
 import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
@@ -89,8 +91,13 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
-            <span className="search-filter-keyword">context:</span>
+        <Code className={styles.searchContextFormPreview} data-testid="search-context-preview">
+            {/*
+                a11y-ignore
+                Rule: "color-contrast" (Elements must have sufficient color contrast)
+                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+            */}
+            <span className="search-filter-keyword a11y-ignore">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
                     <span className="search-keyword">@</span>
@@ -98,7 +105,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
                 </>
             )}
             <span>{searchContextName}</span>
-        </code>
+        </Code>
     )
 }
 
@@ -135,7 +142,7 @@ type RepositoriesParseResult =
           repositories: ISearchContextRepositoryRevisionsInput[]
       }
 
-export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
+export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const {
         authenticatedUser,
         onSubmit,
@@ -145,7 +152,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         platformContext,
     } = props
     const history = useHistory()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -174,7 +185,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [hasRepositoriesConfigChanged, setHasRepositoriesConfigChanged] = useState(false)
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     const onRepositoriesConfigChange = useCallback(
-        (config, isInitialValue) => {
+        (config: string, isInitialValue?: boolean) => {
             setRepositoriesConfig(config)
             if (!isInitialValue && config !== repositoriesConfig) {
                 setHasRepositoriesConfigChanged(true)
@@ -331,21 +342,20 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             authenticatedUser={authenticatedUser}
                         />
                     </div>
-                    <div className="flex-1">
-                        <div className="mb-2">Context name</div>
-                        <input
-                            className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
-                            data-testid="search-context-name-input"
-                            value={name}
-                            type="text"
-                            pattern="^[a-zA-Z0-9_\-\/\.]+$"
-                            required={true}
-                            maxLength={MAX_NAME_LENGTH}
-                            onChange={event => {
-                                setName(event.target.value)
-                            }}
-                        />
-                    </div>
+                    <Input
+                        className="flex-1 mb-0"
+                        inputClassName={styles.searchContextFormNameInput}
+                        aria-labelledby="context-name-label"
+                        label={<span className="font-weight-normal">Context name</span>}
+                        data-testid="search-context-name-input"
+                        value={name}
+                        pattern="^[a-zA-Z0-9_\-\/\.]+$"
+                        required={true}
+                        maxLength={MAX_NAME_LENGTH}
+                        onChange={event => {
+                            setName(event.target.value)
+                        }}
+                    />
                 </div>
                 <div className="text-muted my-2">
                     <small>
@@ -360,7 +370,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
                     {searchContextSpecPreview}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-2">
                         Description <span className="text-muted">(optional)</span>
@@ -381,7 +391,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div className="mt-1 text-muted">
                         <small>
                             <span>Markdown formatting is supported</span>
-                            <span className="px-1">&middot;</span>
+                            <span aria-hidden={true} className="px-1">
+                                &middot;
+                            </span>
                             <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
                         </small>
                     </div>
@@ -389,27 +401,30 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (
-                        <RadioButton
-                            key={radio.visibility}
-                            id={`visibility_${index}`}
-                            className={styles.searchContextFormRadio}
-                            name="visibility"
-                            value={radio.visibility}
-                            checked={visibility === radio.visibility}
-                            required={true}
-                            onChange={() => setVisibility(radio.visibility)}
-                            label={
-                                <div>
-                                    <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                                    <div className="text-muted">
-                                        <small>{radio.description}</small>
+                        <React.Fragment key={radio.visibility}>
+                            <RadioButton
+                                id={`visibility_${index}`}
+                                className={styles.searchContextFormRadio}
+                                name="visibility"
+                                value={radio.visibility}
+                                checked={visibility === radio.visibility}
+                                required={true}
+                                onChange={() => setVisibility(radio.visibility)}
+                                label={
+                                    <div>
+                                        <strong className={styles.searchContextFormVisibilityTitle}>
+                                            {radio.title}
+                                        </strong>
                                     </div>
-                                </div>
-                            }
-                        />
+                                }
+                            />
+                            <div className="ml-4 mb-2">
+                                <small className="text-muted">{radio.description}</small>
+                            </div>
+                        </React.Fragment>
                     ))}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">
@@ -449,6 +464,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 onChange={setQueryState}
                                 globbing={false}
                                 preventNewLine={false}
+                                applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
                             />
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
@@ -510,10 +526,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         <div className="flex-grow-1" />
                         <Button
                             data-testid="search-context-delete-button"
-                            className="text-danger"
                             onClick={toggleDeleteModal}
                             outline={true}
-                            variant="secondary"
+                            variant="danger"
                         >
                             Delete
                         </Button>

@@ -3,15 +3,17 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
-const logger = require('gulplog')
+const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const {
   ROOT_PATH,
+  STATIC_ASSETS_PATH,
   getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
@@ -25,95 +27,74 @@ const {
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
-const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-logger.info('Using mode', mode)
+const {
+  NODE_ENV,
+  CI: IS_CI,
+  INTEGRATION_TESTS,
+  ENTERPRISE,
+  EMBED_DEVELOPMENT,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
+  SOURCEGRAPH_API_URL,
+  WEBPACK_SERVE_INDEX,
+  WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_STATS_NAME,
+  WEBPACK_USE_NAMED_CHUNKS,
+  SENTRY_UPLOAD_SOURCE_MAPS,
+  COMMIT_SHA,
+  VERSION,
+  SENTRY_DOT_COM_AUTH_TOKEN,
+  SENTRY_ORGANIZATION,
+  SENTRY_PROJECT,
+} = ENVIRONMENT_CONFIG
 
-const isDevelopment = mode === 'development'
-const isProduction = mode === 'production'
-const isCI = process.env.CI === 'true'
-const isCacheEnabled = isDevelopment && !isCI
-const isEmbedDevelopment = isDevelopment && process.env.EMBED_DEVELOPMENT === 'true'
+const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
+const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 
-/** Allow overriding default Webpack naming behavior for debugging */
-const useNamedChunks = process.env.WEBPACK_USE_NAMED_CHUNKS === 'true'
-
-const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
-
-const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
-if (shouldServeIndexHTML) {
-  logger.info('Serving index.html with HTMLWebpackPlugin')
-}
-const webServerEnvironmentVariables = {
-  WEBPACK_SERVE_INDEX: JSON.stringify(process.env.WEBPACK_SERVE_INDEX),
-  SOURCEGRAPH_API_URL: JSON.stringify(process.env.SOURCEGRAPH_API_URL),
-}
-
-const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
-
-const STATOSCOPE_STATS = {
-  all: false, // disable all the stats
-  hash: true, // compilation hash
-  entrypoints: true,
-  chunks: true,
-  chunkModules: true, // modules
-  reasons: true, // modules reasons
-  ids: true, // IDs of modules and chunks (webpack 5)
-  dependentModules: true, // dependent modules of chunks (webpack 5)
-  chunkRelations: true, // chunk parents, children and siblings (webpack 5)
-  cachedAssets: true, // information about the cached assets (webpack 5)
-
-  nestedModules: true, // concatenated modules
-  usedExports: true,
-  providedExports: true, // provided imports
-  assets: true,
-  chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
-  version: true, // webpack version
-  builtAt: true, // build at time
-  timings: true, // modules timing information
-  performance: true, // info about oversized assets
-}
-
-if (shouldAnalyze) {
-  logger.info('Running bundle analyzer')
+const RUNTIME_ENV_VARIABLES = {
+  NODE_ENV,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
+  INTEGRATION_TESTS,
+  COMMIT_SHA,
+  ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
 const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
   path.resolve(ROOT_PATH, 'client', workspace, 'src')
 )
 
-const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
-const isEmbedEntrypointEnabled = isEnterpriseBuild && (isProduction || isEmbedDevelopment)
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
-
-const styleLoader = isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader
+const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
 
 const extensionHostWorker = /main\.worker\.ts$/
 
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
-  mode,
-  stats: shouldAnalyze
-    ? STATOSCOPE_STATS
-    : {
-        // Minimize logging in case if Webpack is used along with multiple other services.
-        // Use `normal` output preset in case of running standalone web server.
-        preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
-        errorDetails: true,
-        timings: true,
-      },
+  mode: IS_PRODUCTION ? 'production' : 'development',
+  stats: {
+    // Minimize logging in case if Webpack is used along with multiple other services.
+    // Use `normal` output preset in case of running standalone web server.
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    errorDetails: true,
+    timings: true,
+  },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
   },
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
-  cache: isCacheEnabled && getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
+  cache:
+    IS_PERSISTENT_CACHE_ENABLED &&
+    getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: isProduction,
+    minimize: IS_PRODUCTION,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
@@ -122,9 +103,14 @@ const config = {
           name: 'react',
           chunks: 'all',
         },
+        opentelemetry: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: 'opentelemetry',
+          chunks: 'all',
+        },
       },
     },
-    ...(isDevelopment && {
+    ...(IS_DEVELOPMENT && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
       runtimeChunk: isHotReloadEnabled ? 'single' : false,
@@ -136,50 +122,51 @@ const config = {
   entry: {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
-    app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+    app: ENTERPRISE ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
     // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
-    ...(isEmbedEntrypointEnabled && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
+    ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {
-    path: path.join(ROOT_PATH, 'ui', 'assets'),
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
-      mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
+      IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
+        ? 'scripts/[name].[contenthash].bundle.js'
+        : 'scripts/[name].bundle.js',
     chunkFilename:
-      mode === 'production' && !useNamedChunks ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
+      IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool,
+  devtool: IS_PRODUCTION ? 'source-map' : 'eval-cheap-module-source-map',
   plugins: [
-    // Needed for React
     new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify(mode),
-        ...(shouldServeIndexHTML && webServerEnvironmentVariables),
-      },
+      'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
     getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-      filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
+      filename:
+        IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
+          ? 'styles/[name].[contenthash].bundle.css'
+          : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !shouldServeIndexHTML &&
+    !WEBPACK_SERVE_INDEX &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
         // Only output files that are required to run the application.
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
-    ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && getStatoscopePlugin(),
+    ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
+    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
-    isProduction &&
+    IS_PRODUCTION &&
       new CompressionPlugin({
         filename: '[path][base].gz',
         algorithm: 'gzip',
@@ -189,7 +176,7 @@ const config = {
           level: 9,
         },
       }),
-    isProduction &&
+    IS_PRODUCTION &&
       new CompressionPlugin({
         filename: '[path][base].br',
         algorithm: 'brotliCompress',
@@ -203,6 +190,16 @@ const config = {
          * We can fall back to dynamic gzip for these.
          */
         threshold: 10240,
+      }),
+    VERSION &&
+      SENTRY_UPLOAD_SOURCE_MAPS &&
+      new SentryWebpackPlugin({
+        silent: true,
+        org: SENTRY_ORGANIZATION,
+        project: SENTRY_PROJECT,
+        authToken: SENTRY_DOT_COM_AUTH_TOKEN,
+        release: `frontend@${VERSION}`,
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
   ].filter(Boolean),
   resolve: {
@@ -223,11 +220,10 @@ const config = {
         include: hotLoadablePaths,
         exclude: extensionHostWorker,
         use: [
-          ...(isProduction ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
-              cacheDirectory: true,
+              cacheDirectory: !IS_PRODUCTION,
               ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
             },
           },
@@ -236,13 +232,13 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         exclude: [...hotLoadablePaths, extensionHostWorker],
-        use: [...(isProduction ? ['thread-loader'] : []), getBabelLoader()],
+        use: [getBabelLoader()],
       },
       {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: isDevelopment })),
+        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
       },
       {
         test: /\.(sass|scss)$/,
@@ -263,7 +259,7 @@ const config = {
         use: {
           loader: 'elm-webpack-loader',
           options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+            cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
             report: 'json',
             pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
           },

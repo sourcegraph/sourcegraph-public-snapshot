@@ -6,29 +6,32 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Observer struct {
-	Db database.DB
+	Logger   log.Logger
+	Db       database.DB
+	Zoekt    zoekt.Streamer
+	Searcher *endpoint.Map
 
 	// Inputs are used to generate alert messages based on the query.
-	*run.SearchInputs
+	*search.Inputs
 
 	// Update state.
 	HasResults bool
@@ -44,7 +47,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, o.Searcher, o.Zoekt)
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -52,7 +55,6 @@ func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) b
 func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *search.Alert {
 	repoFilters, minusRepoFilters := q.Repositories()
 	contextFilters, _ := q.StringValues(query.FieldContext)
-	dependencies := q.Dependencies()
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
 		onlyForks = *fork == query.Only
@@ -64,7 +66,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
-		proposedQueries := []*search.ProposedQuery{
+		proposedQueries := []*search.QueryDescription{
 			{
 				Description: "search in the global context",
 				Query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
@@ -81,23 +83,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
-		if len(dependencies) > 0 {
-			needsNpmConfig, err := needsNpmPackageHostConfiguration(ctx, o.Db)
-			if err == nil && needsNpmConfig {
-				if isSiteAdmin {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, first go to site admin to configure package hosts.",
-					}
-				} else {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, ask the site admin to configure package hosts.",
-					}
-				}
-			}
-		}
-
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &search.Alert{
@@ -113,14 +98,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 	}
 
-	if len(dependencies) > 0 {
-		return &search.Alert{
-			Title:       "No dependency repositories found",
-			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
-		}
-	}
-
-	var proposedQueries []*search.ProposedQuery
+	var proposedQueries []*search.QueryDescription
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
 			RepoFilters:      repoFilters,
@@ -129,7 +107,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries,
-				&search.ProposedQuery{
+				&search.QueryDescription{
 					Description: "include forked repositories in your query.",
 					Query:       o.OriginalQuery + " fork:yes",
 					PatternType: o.PatternType,
@@ -148,7 +126,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries,
-				&search.ProposedQuery{
+				&search.QueryDescription{
 					Description: "include archived repositories in your query.",
 					Query:       o.OriginalQuery + " archived:yes",
 					PatternType: o.PatternType,
@@ -223,12 +201,16 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		log15.Error("Errors during search", "error", o.err)
+		o.Logger.Warn("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 
 	return o.alert, o.err
 }
+
+type alertKind string
+
+const luckySearchQueries alertKind = "lucky-search-queries"
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
@@ -241,10 +223,9 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	var (
-		rErr *commit.RepoLimitError
-		tErr *commit.TimeLimitError
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
+		lErr *ErrLuckyQueries
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
@@ -252,7 +233,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	{
-		var e gitdomain.BadCommitError
+		var e *gitdomain.BadCommitError
 		if errors.As(err, &e) {
 			return search.AlertForInvalidRevision(e.Spec), nil
 		}
@@ -273,14 +254,25 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 
 	if errors.As(err, &mErr) {
 		var a *search.Alert
-		dependencies := o.Query.Dependencies()
-		if len(dependencies) == 0 {
-			a = search.AlertForMissingRepoRevs(mErr.Missing)
-		} else {
-			a = search.AlertForMissingDependencyRepoRevs(mErr.Missing)
-		}
+		a = AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
+	}
+
+	if errors.As(err, &lErr) {
+		title := "Also showing additional results"
+		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		if lErr.Type == LuckyAlertPure {
+			title = "No results for original query. Showing related results instead"
+			description = "The original query returned no results. Below are results for similar queries that might interest you."
+		}
+		return &search.Alert{
+			PrometheusType:  "lucky_search_notice",
+			Title:           title,
+			Kind:            string(luckySearchQueries),
+			Description:     description,
+			ProposedQueries: lErr.ProposedQueries,
+		}, nil
 	}
 
 	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
@@ -298,24 +290,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 			Title:          "Structural search needs more memory",
 			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 			Priority:       4,
-		}, nil
-	}
-
-	if errors.As(err, &rErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			Priority:       2,
-		}, nil
-	}
-
-	if errors.As(err, &tErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			Priority:       1,
 		}, nil
 	}
 
@@ -345,7 +319,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 		}
 	}
 
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
@@ -354,9 +328,12 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 	return count == 0, nil
 }
 
-func needsNpmPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindNpmPackages},
+func needsPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{
+			extsvc.KindNpmPackages,
+			extsvc.KindGoPackages,
+		},
 	})
 	if err != nil {
 		return false, err
@@ -365,7 +342,7 @@ func needsNpmPackageHostConfiguration(ctx context.Context, db database.DB) (bool
 }
 
 type errOverRepoLimit struct {
-	ProposedQueries []*search.ProposedQuery
+	ProposedQueries []*search.QueryDescription
 	Description     string
 }
 
@@ -373,8 +350,58 @@ func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
 }
 
+type LuckyAlertType int
+
+const (
+	LuckyAlertAdded LuckyAlertType = iota
+	LuckyAlertPure
+)
+
+type ErrLuckyQueries struct {
+	Type            LuckyAlertType
+	ProposedQueries []*search.QueryDescription
+}
+
+func (e *ErrLuckyQueries) Error() string {
+	return "Showing results for lucky search"
+}
+
 // isContextError returns true if ctx.Err() is not nil or if err
 // is an error caused by context cancelation or timeout.
 func isContextError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
+}
+
+func AlertForMissingRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
+	var description string
+	if len(missingRepoRevs) == 1 {
+		if len(missingRepoRevs[0].RevSpecs()) == 1 {
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+		} else {
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+		}
+	} else {
+		sampleSize := 10
+		if sampleSize > len(missingRepoRevs) {
+			sampleSize = len(missingRepoRevs)
+		}
+		repoRevs := make([]string, 0, sampleSize)
+		for _, r := range missingRepoRevs[:sampleSize] {
+			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+		}
+		b := strings.Builder{}
+		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
+		for _, rr := range repoRevs {
+			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
+		}
+		if sampleSize < len(missingRepoRevs) {
+			b.WriteString("\n* ...")
+		}
+		description = b.String()
+	}
+	return &search.Alert{
+		PrometheusType: "missing_repo_revs",
+		Title:          "Some repositories could not be searched",
+		Description:    description,
+	}
 }

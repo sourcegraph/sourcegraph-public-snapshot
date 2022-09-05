@@ -1,6 +1,6 @@
 import React from 'react'
 
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import { mdiPuzzle } from '@mdi/js'
 
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -10,14 +10,16 @@ interface ExtensionsLoadingPanelViewProps {
     className?: string
 }
 
-export const ExtensionsLoadingPanelView: React.FunctionComponent<ExtensionsLoadingPanelViewProps> = props => {
+export const ExtensionsLoadingPanelView: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsLoadingPanelViewProps>
+> = props => {
     const { className } = props
 
     return (
         <EmptyPanelView className={className}>
             <LoadingSpinner inline={false} />
             <span className="mx-2">Loading Sourcegraph extensions</span>
-            <Icon as={PuzzleIcon} />
+            <Icon aria-hidden={true} svgPath={mdiPuzzle} />
         </EmptyPanelView>
     )
 }

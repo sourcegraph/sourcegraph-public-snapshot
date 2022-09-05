@@ -2,12 +2,12 @@ import { useMemo, useEffect } from 'react'
 
 import { ReplaySubject } from 'rxjs'
 
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-
+import { ViewerId } from '../api/viewerTypes'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { HoverContext } from '../hover/HoverOverlay'
+import { getModeFromPath } from '../languages'
+
+import { toURIWithPath } from './url'
 
 interface UseCodeIntelViewerUpdatesProps extends ExtensionsControllerProps<'extHostAPI'> {
     repositoryName: string
@@ -26,6 +26,10 @@ export function useCodeIntelViewerUpdates(props?: UseCodeIntelViewerUpdatesProps
         }
 
         const { extensionsController, repositoryName, revision, filePath } = props
+
+        if (extensionsController === null) {
+            return
+        }
 
         let previousViewerId: ViewerId | undefined
         const commitID = revision || 'HEAD'

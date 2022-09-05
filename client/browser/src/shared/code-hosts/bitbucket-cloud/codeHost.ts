@@ -1,3 +1,8 @@
+import { fromEvent } from 'rxjs'
+import { map, startWith } from 'rxjs/operators'
+
+import { LineOrPositionOrRange } from '@sourcegraph/common'
+
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
@@ -143,6 +148,26 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     return mount
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^lines-\d+(:\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.slice('lines-'.length).split(':')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 export const bitbucketCloudCodeHost: CodeHost = {
     type: 'bitbucket-cloud',
     name: 'Bitbucket Cloud',
@@ -163,6 +188,7 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     hoverOverlayClassProps: {
         className: styles.hoverOverlay,
+        closeButtonClassName: styles.close,
         badgeClassName: styles.badge,
         actionItemClassName: styles.hoverOverlayActionItem,
         iconClassName: styles.icon,
@@ -170,4 +196,8 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     codeViewsRequireTokenization: true,
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
 }

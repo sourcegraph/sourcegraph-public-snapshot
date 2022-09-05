@@ -73,7 +73,7 @@ To use it locally, use `yarn storybook` command to start the Storybook developme
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
@@ -104,7 +104,7 @@ The `tsx` extension makes certain generic syntax impossible and also enables emm
 
 ### `index.*` files
 
-Index files should not never contain declarations on their own.
+Index files should never contain declarations on their own.
 Their purpose is to reexport symbols from a number of other files to make imports easier and define the the public API.
 
 ## Components
@@ -131,7 +131,7 @@ If you don't do this (and just use a normal `import`), it will still work, but i
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`yarn run prettier` will check & autoformat all code.
+`yarn run format` will check & autoformat all code.
 
 ## Tests
 

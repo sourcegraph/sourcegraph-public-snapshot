@@ -3,6 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,10 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
-// Container describes a Docker container to be observed.
+// Dashboard usually describes a Service,
+// and a service may contain one or more containers to be observed.
+//
+// It may also be used to describe a collection of services that are highly correlated, and
+// it is useful to present them in a single dashboard.
+//
+// It may also (rarely) be used to describe aggregated infrastructure-wide metrics
+// to provide operator an unified view of the system health for easier troubleshooting.
 //
 // These correspond to dashboards in Grafana.
-type Container struct {
+type Dashboard struct {
 	// Name of the Docker container, e.g. "syntect-server".
 	Name string
 
@@ -42,7 +50,7 @@ type Container struct {
 	NoSourcegraphDebugServer bool
 }
 
-func (c *Container) validate() error {
+func (c *Dashboard) validate() error {
 	if !isValidGrafanaUID(c.Name) {
 		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
@@ -52,21 +60,37 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+
+	var errs error
 	for i, v := range c.Variables {
 		if err := v.validate(); err != nil {
-			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Variable %d %q: %v", i, c.Name, err))
 		}
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
+			errs = errors.Append(errs, errors.Errorf("Group %d %q: %v", i, g.Title, err))
 		}
 	}
-	return nil
+	return errs
+}
+
+// noAlertsDefined indicates if a dashboard no alerts defined.
+func (c *Dashboard) noAlertsDefined() bool {
+	for _, g := range c.Groups {
+		for _, r := range g.Rows {
+			for _, o := range r {
+				if !o.NoAlert {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Container) renderDashboard() *sdk.Board {
+func (c *Dashboard) renderDashboard() *sdk.Board {
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -78,29 +102,33 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	alertLevelVariable := ContainerVariable{
-		Label: "Alert level",
-		Name:  "alert_level",
-		Options: ContainerVariableOptions{
-			Options: []string{"critical", "warning"},
-		},
+	if !c.noAlertsDefined() {
+		alertLevelVariable := ContainerVariable{
+			Label: "Alert level",
+			Name:  "alert_level",
+			Options: ContainerVariableOptions{
+				Options: []string{"critical", "warning"},
+			},
+		}
+		board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
 	}
-	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
 	for _, variable := range c.Variables {
 		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
 	}
-	board.Annotations.List = []sdk.Annotation{{
-		Name:       "Alert events",
-		Datasource: StringPtr("Prometheus"),
-		// Show alerts matching the selected alert_level (see template variable above)
-		Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
-		Step:        "60s",
-		TitleFormat: "{{ description }} ({{ name }})",
-		TagKeys:     "level,owner",
-		IconColor:   "rgba(255, 96, 96, 1)",
-		Enable:      false, // disable by default for now
-		Type:        "tags",
-	}}
+	if !c.noAlertsDefined() {
+		board.Annotations.List = []sdk.Annotation{{
+			Name:       "Alert events",
+			Datasource: StringPtr("Prometheus"),
+			// Show alerts matching the selected alert_level (see template variable above)
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
+			Step:        "60s",
+			TitleFormat: "{{ description }} ({{ name }})",
+			TagKeys:     "level,owner",
+			IconColor:   "rgba(255, 96, 96, 1)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		}}
+	}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -132,55 +160,57 @@ func (c *Container) renderDashboard() *sdk.Board {
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
 
-	alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
-		Expr: fmt.Sprintf(`label_replace(
-			sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
-			"description", "$1", "description", ".*: (.*)"
-		)`, c.Name),
-		Format:  "table",
-		Instant: true,
-	})
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	board.Panels = append(board.Panels, alertsDefined)
+	if !c.noAlertsDefined() {
+		alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+			Expr: fmt.Sprintf(`label_replace(
+				sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
+				"description", "$1", "description", ".*: (.*)"
+			)`, c.Name),
+			Format:  "table",
+			Instant: true,
+		})
+		setPanelSize(alertsDefined, 9, 5)
+		setPanelPos(alertsDefined, 0, 3)
+		board.Panels = append(board.Panels, alertsDefined)
 
-	alertsFiring := sdk.NewGraph("Alerts firing")
-	setPanelSize(alertsFiring, 15, 5)
-	setPanelPos(alertsFiring, 9, 3)
-	alertsFiring.GraphPanel.Legend.Show = true
-	alertsFiring.GraphPanel.Fill = 1
-	alertsFiring.GraphPanel.Bars = true
-	alertsFiring.GraphPanel.NullPointMode = "null"
-	alertsFiring.GraphPanel.Pointradius = 2
-	alertsFiring.GraphPanel.AliasColors = map[string]string{}
-	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
-		Show: true,
+		alertsFiring := sdk.NewGraph("Alerts firing")
+		setPanelSize(alertsFiring, 15, 5)
+		setPanelPos(alertsFiring, 9, 3)
+		alertsFiring.GraphPanel.Legend.Show = true
+		alertsFiring.GraphPanel.Fill = 1
+		alertsFiring.GraphPanel.Bars = true
+		alertsFiring.GraphPanel.NullPointMode = "null"
+		alertsFiring.GraphPanel.Pointradius = 2
+		alertsFiring.GraphPanel.AliasColors = map[string]string{}
+		alertsFiring.GraphPanel.Xaxis = sdk.Axis{
+			Show: true,
+		}
+		alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
+			{
+				Decimals: 0,
+				Format:   "short",
+				LogBase:  1,
+				Max:      sdk.NewFloatString(1),
+				Min:      sdk.NewFloatString(0),
+				Show:     false,
+			},
+			{
+				Format:  "short",
+				LogBase: 1,
+				Show:    true,
+			},
+		}
+		alertsFiring.AddTarget(&sdk.Target{
+			Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+			LegendFormat: "{{level}}: {{name}}",
+		})
+		alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+		alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+			Title: "Graph panel",
+			URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+		}}
+		board.Panels = append(board.Panels, alertsFiring)
 	}
-	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
-		{
-			Decimals: 0,
-			Format:   "short",
-			LogBase:  1,
-			Max:      sdk.NewFloatString(1),
-			Min:      sdk.NewFloatString(0),
-			Show:     false,
-		},
-		{
-			Format:  "short",
-			LogBase: 1,
-			Show:    true,
-		},
-	}
-	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
-		LegendFormat: "{{level}}: {{name}}",
-	})
-	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
-	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
-		Title: "Graph panel",
-		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
-	}}
-	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
 	offsetY := baseY
@@ -229,7 +259,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 				if !o.NoAlert {
 					panel.Links = append(panel.Links, sdk.Link{
 						Title:       "Alerts reference",
-						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
+						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
 						TargetBlank: boolPtr(true),
 					})
 				}
@@ -250,16 +280,19 @@ func (c *Container) renderDashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
+func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
 	if alert.isEmpty() {
 		return "", errors.New("cannot generate description for empty alert")
 	}
+
 	var description string
 
 	// description based on thresholds. no special description for 'alert.strictCompare',
 	// because the description is pretty ambiguous to fit different alerts.
 	units := o.Panel.unitType.short()
-	if alert.greaterThan {
+	if alert.description != "" {
+		description = fmt.Sprintf("%s: %s", c.Name, alert.description)
+	} else if alert.greaterThan {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.threshold, units, o.Description)
 	} else if alert.lessThan {
@@ -281,8 +314,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-//
-func (c *Container) renderRules() (*promRulesFile, error) {
+func (c *Dashboard) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
@@ -296,8 +328,12 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 					}
 
 					// The alertQuery must contribute a query that returns true when it should be firing.
-					alertQuery := fmt.Sprintf("%s((%s) %s %v)",
-						a.aggregator, o.Query, a.comparator, a.threshold)
+					var alertQuery string
+					if a.query != "" {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.query, a.comparator, a.threshold)
+					} else {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
+					}
 
 					// If the data must exist, we alert if the query returns no value as well
 					if o.DataMustExist {
@@ -315,7 +351,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						"level":        level,
 						"service_name": c.Name,
 						"description":  description,
-						"owner":        string(o.Owner),
+						"owner":        o.Owner.identifier,
 
 						// in the corresponding dashboard, this label should indicate
 						// the panel associated with this rule
@@ -363,7 +399,7 @@ type ContainerVariable struct {
 	// conjunction with Query
 	Options ContainerVariableOptions
 
-	// WildcardAllValue indicates to Grafana that is should NOT use Query or Options to
+	// WildcardAllValue indicates to Grafana that is should NOT use OptionsQuery or Options to
 	// generate a concatonated 'All' value for the variable, and use a '.*' wildcard
 	// instead. Setting this to true primarily useful if you use Query and expect it to be
 	// a large enough result set to cause issues when viewing the dashboard.
@@ -513,12 +549,13 @@ func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
 		return errors.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
+	var errs error
 	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return errors.Errorf("Row %d: %v", i, err)
+			errs = errors.Append(errs, errors.Errorf("Row %d: %v", i, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // Row of observable metrics.
@@ -530,59 +567,97 @@ func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
 		return errors.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
+
+	var errs error
 	for i, o := range r {
 		if err := o.validate(); err != nil {
-			return errors.Errorf("Observable %d %q: %v", i, o.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Observable %d %q: %v", i, o.Name, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-type ObservableOwner string
+// the handbook: https://handbook.sourcegraph.com/departments/engineering/
+type ObservableOwner struct {
+	// identifier is the team's name on OpsGenie and is used for routing alerts.
+	identifier       string
+	handbookSlug     string
+	handbookTeamName string
+}
 
-const (
-	ObservableOwnerSearch          ObservableOwner = "search"
-	ObservableOwnerSearchCore      ObservableOwner = "search-core"
-	ObservableOwnerBatches         ObservableOwner = "batches"
-	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerSecurity        ObservableOwner = "security"
-	ObservableOwnerWeb             ObservableOwner = "web"
-	ObservableOwnerCoreApplication ObservableOwner = "core application"
-	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
-	ObservableOwnerDevOps          ObservableOwner = "devops"
-	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
+// identifer must be all lowercase, and optionally  hyphenated.
+//
+// Some examples of valid identifiers:
+// foo
+// foo-bar
+// foo-bar-baz
+//
+// Some examples of invalid identifiers:
+// Foo
+// FOO
+// Foo-Bar
+// foo_bar
+var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
+
+var (
+	ObservableOwnerSearch = ObservableOwner{
+		identifier:       "search",
+		handbookSlug:     "search/product",
+		handbookTeamName: "Search",
+	}
+	ObservableOwnerSearchCore = ObservableOwner{
+		identifier:       "search-core",
+		handbookSlug:     "search/core",
+		handbookTeamName: "Search Core",
+	}
+	ObservableOwnerBatches = ObservableOwner{
+		identifier:       "batch-changes",
+		handbookSlug:     "batch-changes",
+		handbookTeamName: "Batch Changes",
+	}
+	ObservableOwnerCodeIntel = ObservableOwner{
+		identifier:       "code-intel",
+		handbookSlug:     "code-intelligence",
+		handbookTeamName: "Code intelligence",
+	}
+	ObservableOwnerSecurity = ObservableOwner{
+		identifier:       "security",
+		handbookSlug:     "security",
+		handbookTeamName: "Security",
+	}
+	ObservableOwnerRepoManagement = ObservableOwner{
+		identifier:       "repo-management",
+		handbookSlug:     "repo-management",
+		handbookTeamName: "Repo Management",
+	}
+	ObservableOwnerCodeInsights = ObservableOwner{
+		identifier:       "code-insights",
+		handbookSlug:     "code-insights",
+		handbookTeamName: "Code Insights",
+	}
+	ObservableOwnerDevOps = ObservableOwner{
+		identifier:       "devops",
+		handbookSlug:     "devops",
+		handbookTeamName: "Cloud DevOps",
+	}
+	ObservableOwnerIAM = ObservableOwner{
+		identifier:       "iam",
+		handbookSlug:     "iam",
+		handbookTeamName: "Identity and Access Management",
+	}
+	ObservableOwnerDataAnalytics = ObservableOwner{
+		identifier:       "data-analytics",
+		handbookSlug:     "data-analytics",
+		handbookTeamName: "Data & Analytics",
+	}
 )
 
-// toMarkdown returns a Markdown string that also links to the owner's team page
+// toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	var slug string
-
-	team := upperFirst(string(o))
-
-	// special cases for differences in how a team is named in ObservableOwner and how
-	// they are named in the handbook.
-	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-	switch o {
-	case ObservableOwnerCodeIntel:
-		slug = "code-intelligence"
-	case ObservableOwnerCodeInsights:
-		slug = "developer-insights/code-insights"
-	case ObservableOwnerDevOps:
-		slug = "cloud/devops"
-	case ObservableOwnerSearchCore:
-		slug = "search/core"
-	case ObservableOwnerCloudSaaS:
-		slug = "cloud/saas"
-		team = "Cloud Software-as-a-Service"
-	default:
-		slug = strings.ReplaceAll(string(o), " ", "-")
-	}
-
 	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
-		team, slug,
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
+		o.handbookTeamName, o.handbookSlug,
 	)
 }
 
@@ -639,32 +714,48 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this will not need to be set.
 	DataMustExist bool
 
-	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it
-	// easy to identify when the target of this metric is misbehaving. If no alerts are
-	// provided, NoAlert must be set and Interpretation must be provided.
-	Warning, Critical *ObservableAlertDefinition
+	// Warning alerts indicate that something *could* be wrong with Sourcegraph. We
+	// suggest checking in on these periodically, or using a notification channel that
+	// will not bother anyone if it is spammed.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Warning *ObservableAlertDefinition
 
-	// NoAlerts must be set by Observables that do not have any alerts.
-	// This ensures the omission of alerts is intentional. If set to true, an Interpretation
-	// must be provided in place of PossibleSolutions.
+	// Critical alerts indicate that something is definitively wrong with Sourcegraph,
+	// in a way that is very likely to be noticeable to users. We suggest using a
+	// high-visibility notification channel, such as paging, for these alerts.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Critical *ObservableAlertDefinition
+
+	// NoAlerts must be set by Observables that do not have any alerts. This ensures the
+	// omission of alerts is intentional. If set to true, an Interpretation must be
+	// provided in place of NextSteps.
+	//
+	// Consider adding at least a Warning or Critical alert to each Observable to make it
+	// easy to identify when the target of this metric is misbehaving.
 	NoAlert bool
 
-	// PossibleSolutions is Markdown describing possible solutions in the event that the
-	// alert is firing. This field not required if no alerts are attached to this Observable.
-	// If there is no clear potential resolution or there is no alert configured, "none"
-	// must be explicitly stated.
+	// NextSteps is Markdown describing possible next steps in the event that the alert is
+	// firing. It does not have to indicate a definite solution, just the next steps that
+	// Sourcegraph administrators (both within Sourcegraph and at customers) can understand
+	// and leverage when get a notification for this alert.
+	//
+	// NextSteps should include debugging instructions, links to background information,
+	// and potential actions to take. Contacting support should NOT be mentioned as part
+	// of a possible solution, as it is already communicated elsewhere.
+	//
+	// This field is not required if no alerts are attached to this Observable. If there
+	// is no clear potential resolution "none" must be explicitly stated, though if a
+	// Critical alert is defined providing "none" is not allowed.
 	//
 	// Use the Interpretation field for additional guidance on understanding this Observable
 	// that isn't directly related to solving it.
 	//
-	// Contacting support should not be mentioned as part of a possible solution, as it is
-	// communicated elsewhere.
-	//
 	// To make writing the Markdown more friendly in Go, string literals like this:
 	//
 	// 	Observable{
-	// 		PossibleSolutions: `
+	// 		NextSteps: `
 	// 			- Foobar 'some code'
 	// 		`
 	// 	}
@@ -681,7 +772,8 @@ type Observable struct {
 	// 4. The last line (which is all indention) is removed.
 	// 5. Non-list items are converted to a list.
 	//
-	PossibleSolutions string
+	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/alerts
+	NextSteps string
 
 	// Interpretation is Markdown that can serve as a reference for interpreting this
 	// observable. For example, Interpretation could provide guidance on what sort of
@@ -693,7 +785,9 @@ type Observable struct {
 	// explicitly stated.
 	//
 	// To make writing the Markdown more friendly in Go, string literal processing as
-	// PossibleSolutions is provided, though the output is not converted to a list.
+	// NextSteps is provided, though the output is not converted to a list.
+	//
+	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/dashboards
 	Interpretation string
 
 	// Panel provides options for how to render the metric in the Grafana panel.
@@ -716,9 +810,15 @@ func (o Observable) validate() error {
 	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
 		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
-	if o.Owner == "" && !o.NoAlert {
-		return errors.New("Owner must be defined for observables with alerts")
+	if o.Owner.identifier == "" && !o.NoAlert {
+		return errors.New("Owner.identifier must be defined for observables with alerts")
 	}
+
+	// In some cases, the identifier is an empty string. We don't want to run it through the regex.
+	if o.Owner.identifier != "" && !identifierPattern.Match([]byte(o.Owner.identifier)) {
+		return errors.Errorf(`Owner.identifier has invalid format: "%v"`, []byte(o.Owner.identifier))
+	}
+
 	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
@@ -731,9 +831,9 @@ func (o Observable) validate() error {
 		} else if !allAlertsEmpty && o.NoAlert {
 			return errors.Errorf("An alert is set, but NoAlert is also true")
 		}
-		// PossibleSolutions if there are no alerts is redundant and likely an error
-		if o.PossibleSolutions != "" {
-			return errors.Errorf(`PossibleSolutions is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
+		// NextSteps if there are no alerts is redundant and likely an error
+		if o.NextSteps != "" {
+			return errors.Errorf(`NextSteps is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
 		}
 		// Interpretation must be provided and valid
 		if o.Interpretation == "" {
@@ -753,14 +853,23 @@ func (o Observable) validate() error {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
-		// PossibleSolutions must be provided and valid
-		if o.PossibleSolutions == "" {
-			return errors.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
-		} else if o.PossibleSolutions != "none" {
-			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
-				return errors.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
-			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-				return errors.Errorf("PossibleSolutions should not include mentions of contacting support")
+
+		// NextSteps must be provided and valid
+		if o.NextSteps == "" {
+			return errors.Errorf(`NextSteps must list steps or an explicit "none"`)
+		}
+
+		// If a critical alert is set, NextSteps must be provided. Empty case
+		if !o.Critical.isEmpty() && o.NextSteps == "none" {
+			return errors.Newf(`NextSteps must be provided if a critical alert is set`)
+		}
+
+		// Check if provided NextSteps is valid
+		if o.NextSteps != "none" {
+			if nextSteps, err := toMarkdown(o.NextSteps, true); err != nil {
+				return errors.Errorf("NextSteps cannot be converted to Markdown: %w", err)
+			} else if l := strings.ToLower(nextSteps); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
+				return errors.Errorf("NextSteps should not include mentions of contacting support")
 			}
 		}
 	}
@@ -795,10 +904,14 @@ type ObservableAlertDefinition struct {
 	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
 	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
 	aggregator Aggregator
-	// Comparator sets how a metric should be compared against a threshold
+	// Comparator sets how a metric should be compared against a threshold.
 	comparator string
-	// Threshold sets the value to be compared against
+	// Threshold sets the value to be compared against.
 	threshold float64
+	// alternative query to use for an alert instead of the observables query.
+	query string
+	// alternative description to use for an alert instead of the observables description.
+	description string
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
@@ -841,6 +954,22 @@ func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
 // considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
+	return a
+}
+
+// CustomQuery sets a different query to be used for this alert instead of the query used
+// in the Grafana panel. Note that thresholds, etc will still be generated for the panel, so
+// ensure the panel query still makes sense in the context of an alert with a custom
+// query.
+func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
+	a.query = query
+	return a
+}
+
+// CustomDescription sets a different description to be used for this alert instead of the description
+// used for the Grafana panel.
+func (a *ObservableAlertDefinition) CustomDescription(desc string) *ObservableAlertDefinition {
+	a.description = desc
 	return a
 }
 

@@ -2,6 +2,8 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
+import { FetchFileParameters } from '@sourcegraph/search-ui'
+
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
@@ -120,8 +122,8 @@ export const SEARCH_RESULT: AggregateStreamingSearchResults = {
         skipped: [],
     },
     filters: [
-        { value: 'file:\\.yml$', label: 'file:\\.yml$', count: 1, limitHit: false, kind: 'file' },
-        { value: 'case:yes', label: 'case:yes', count: 0, limitHit: false, kind: 'case' },
+        { value: 'file:\\.yml$', label: 'YAML', count: 1, limitHit: false, kind: 'file' },
+        { value: 'case:yes', label: 'Make search case sensitive', count: 0, limitHit: false, kind: 'utility' },
         {
             value: 'repo:^github\\.com/golang/oauth2$',
             label: 'github.com/golang/oauth2',
@@ -301,8 +303,15 @@ export const HIGHLIGHTED_FILE_LINES_LONG = [
     ],
 ]
 
-export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES))
-export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES_SIMPLE))
+export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES[0].slice(range.startLine, range.endLine)))
+)
+export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_SIMPLE[0].slice(range.startLine, range.endLine)))
+)
+export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
+)
 
 export const NOOP_SETTINGS_CASCADE = {
     subjects: null,
@@ -325,11 +334,10 @@ export const extensionsController: Controller = {
 
 export const NOOP_PLATFORM_CONTEXT: Pick<
     PlatformContext,
-    'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
+    'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'
 > = {
     requestGraphQL: () => EMPTY,
     urlToFile: () => '',
     settings: of(NOOP_SETTINGS_CASCADE),
-    forceUpdateTooltip: () => {},
     sourcegraphURL: '',
 }

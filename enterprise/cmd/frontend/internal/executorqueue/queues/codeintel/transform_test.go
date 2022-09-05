@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -42,6 +42,7 @@ func TestTransformRecord(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
+		FetchTags:           true,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
@@ -120,6 +121,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
+		FetchTags:           true,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{

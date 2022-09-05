@@ -1,0 +1,21 @@
+.container {
+    h3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .input {
+        margin-top: 1.5rem;
+        display: grid !important;
+        grid-template-columns: 1fr 109px;
+
+        input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+}

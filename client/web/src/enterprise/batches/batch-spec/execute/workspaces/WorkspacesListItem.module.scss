@@ -1,0 +1,25 @@
+.selected:nth-child(even),
+.selected:nth-child(odd) {
+    background-color: var(--primary);
+
+    h3,
+    h4,
+    small,
+    svg,
+    span,
+    strong {
+        // !important is to override the color applied to the svg Icon and strong
+        // elements, which also have !important on them.
+        color: var(--white) !important;
+    }
+
+    &:hover {
+        background-color: var(--primary-3);
+    }
+}
+
+.select-button {
+    display: block;
+    margin: 0;
+    padding: 0;
+}

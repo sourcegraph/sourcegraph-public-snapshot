@@ -2,6 +2,7 @@
 package types
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -11,6 +12,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+)
+
+// BatchChangeSource represents how a batch change can be created
+// it can either be created locally or via an executor (SSBC)
+type BatchChangeSource string
+
+const (
+	ExecutorBatchChangeSource BatchChangeSource = "executor"
+	LocalBatchChangeSource    BatchChangeSource = "local"
 )
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
@@ -62,9 +72,11 @@ type Repo struct {
 	// The key is a URN created by extsvc.URN
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
+	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
+	// KeyValuePairs is the set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -87,6 +99,8 @@ type SearchedRepo struct {
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
+	// A set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
@@ -95,7 +109,7 @@ type RepoBlock struct {
 	Reason string
 }
 
-// CloneURLs returns all the clone URLs this repo is clonable from.
+// CloneURLs returns all the clone URLs this repo is cloneable from.
 func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
 	for _, src := range r.Sources {
@@ -140,50 +154,121 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// Update updates Repo r with the fields from the given newer Repo n,
-// returning true if modified.
-func (r *Repo) Update(n *Repo) (modified bool) {
+// RepoModified is a bitfield that tracks which fields were modified while
+// syncing a repository.
+type RepoModified uint64
+
+const (
+	RepoUnmodified   RepoModified = 0
+	RepoModifiedName              = 1 << iota
+	RepoModifiedURI
+	RepoModifiedDescription
+	RepoModifiedExternalRepo
+	RepoModifiedArchived
+	RepoModifiedFork
+	RepoModifiedPrivate
+	RepoModifiedStars
+	RepoModifiedMetadata
+	RepoModifiedSources
+)
+
+func (m RepoModified) String() string {
+	if m == RepoUnmodified {
+		return "repo unmodified"
+	}
+
+	modifications := []string{}
+	if m&RepoModifiedName == RepoModifiedName {
+		modifications = append(modifications, "name")
+	}
+	if m&RepoModifiedURI == RepoModifiedURI {
+		modifications = append(modifications, "uri")
+	}
+	if m&RepoModifiedDescription == RepoModifiedDescription {
+		modifications = append(modifications, "description")
+	}
+	if m&RepoModifiedExternalRepo == RepoModifiedExternalRepo {
+		modifications = append(modifications, "external repo")
+	}
+	if m&RepoModifiedArchived == RepoModifiedArchived {
+		modifications = append(modifications, "archived")
+	}
+	if m&RepoModifiedFork == RepoModifiedFork {
+		modifications = append(modifications, "fork")
+	}
+	if m&RepoModifiedPrivate == RepoModifiedPrivate {
+		modifications = append(modifications, "private")
+	}
+	if m&RepoModifiedStars == RepoModifiedStars {
+		modifications = append(modifications, "stars")
+	}
+	if m&RepoModifiedMetadata == RepoModifiedMetadata {
+		modifications = append(modifications, "metadata")
+	}
+	if m&RepoModifiedSources == RepoModifiedSources {
+		modifications = append(modifications, "sources")
+	}
+	if m&RepoUnmodified == RepoUnmodified {
+		modifications = append(modifications, "unmodified")
+	}
+
+	return "repo modifications: " + strings.Join(modifications, ", ")
+}
+
+// Update updates Repo r with the fields from the given newer Repo n, returning
+// RepoUnmodified (0) if no fields were modified, and a non-zero value if one
+// or more fields were modified.
+func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	if !r.Name.Equal(n.Name) {
-		r.Name, modified = n.Name, true
+		r.Name = n.Name
+		modified |= RepoModifiedName
 	}
 
 	if r.URI != n.URI {
-		r.URI, modified = n.URI, true
+		r.URI = n.URI
+		modified |= RepoModifiedURI
 	}
 
 	if r.Description != n.Description {
-		r.Description, modified = n.Description, true
+		r.Description = n.Description
+		modified |= RepoModifiedDescription
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
+		r.ExternalRepo = n.ExternalRepo
+		modified |= RepoModifiedExternalRepo
 	}
 
 	if r.Archived != n.Archived {
-		r.Archived, modified = n.Archived, true
+		r.Archived = n.Archived
+		modified |= RepoModifiedArchived
 	}
 
 	if r.Fork != n.Fork {
-		r.Fork, modified = n.Fork, true
+		r.Fork = n.Fork
+		modified |= RepoModifiedFork
 	}
 
 	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
+		r.Private = n.Private
+		modified |= RepoModifiedPrivate
 	}
 
 	if r.Stars != n.Stars {
-		r.Stars, modified = n.Stars, true
+		r.Stars = n.Stars
+		modified |= RepoModifiedStars
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata, modified = n.Metadata, true
+		r.Metadata = n.Metadata
+		modified |= RepoModifiedMetadata
 	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
-			modified = true
+			modified |= RepoModifiedSources
 		}
 	}
 
@@ -448,6 +533,13 @@ func ParseCloneStatus(s string) CloneStatus {
 	}
 }
 
+// ParseCloneStatusFromGraphQL converts the raw value of the GraphQL enum
+// CloneStatus into the corresponding CloneStatus defined here. If the GraphQL
+// value can't be matched to a CloneStatus, CloneStatusUnknown is returned.
+func ParseCloneStatusFromGraphQL(s string) CloneStatus {
+	return ParseCloneStatus(strings.ToLower(s))
+}
+
 // GitserverRepo  represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
@@ -470,7 +562,7 @@ type ExternalService struct {
 	ID              int64
 	Kind            string
 	DisplayName     string
-	Config          string
+	Config          *extsvc.EncryptableConfig
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       time.Time
@@ -484,11 +576,21 @@ type ExternalService struct {
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
+type ExternalServiceRepo struct {
+	ExternalServiceID int64      `json:"externalServiceID"`
+	RepoID            api.RepoID `json:"repoID"`
+	CloneURL          string     `json:"cloneURL"`
+	UserID            int32      `json:"userID"`
+	OrgID             int32      `json:"orgID"`
+	CreatedAt         time.Time  `json:"createdAt"`
+}
+
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
 	ID                int64
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
@@ -511,9 +613,9 @@ func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && 
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
-func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
 	if e.ID != n.ID {
-		return false
+		return false, nil
 	}
 
 	if !strings.EqualFold(e.Kind, n.Kind) {
@@ -524,8 +626,18 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DisplayName, modified = n.DisplayName, true
 	}
 
-	if e.Config != n.Config {
-		e.Config, modified = n.Config, true
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	nConfig, err := n.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+	if eConfig != nConfig {
+		e.Config.Set(nConfig)
+		modified = true
 	}
 
 	if !e.UpdatedAt.Equal(n.UpdatedAt) {
@@ -536,12 +648,12 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
-	return modified
+	return modified, nil
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg interface{}, _ error) {
-	return extsvc.ParseConfig(e.Kind, e.Config)
+func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) {
+	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
 }
 
 // Clone returns a clone of the given external service.
@@ -568,8 +680,8 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-// ExternalServices is an utility type with
-// convenience methods for operating on lists of ExternalServices.
+// ExternalServices is a utility type with convenience methods for operating on
+// lists of ExternalServices.
 type ExternalServices []*ExternalService
 
 // IDs returns the list of ids from all ExternalServices.
@@ -845,6 +957,93 @@ type BatchChangesUsageStatistics struct {
 	CurrentMonthUsersCount int64
 
 	BatchChangesCohorts []*BatchChangesCohort
+
+	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
+	// 15 seconds.
+	ActiveExecutorsCount int32
+
+	// BulkOperationsCount is the count of bulk operations used to manage changesets
+	BulkOperationsCount []*BulkOperationsCount
+
+	// ChangesetDistribution is the distribution of batch changes per source and the amount of
+	// changesets created via the different sources
+	ChangesetDistribution []*ChangesetDistribution
+
+	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
+	// across multiple sources
+	BatchChangeStatsBySource []*BatchChangeStatsBySource
+
+	// MonthlyBatchChangesExecutorUsage is the number of users who ran a job on an
+	// executor in a given month
+	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+
+	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BulkOperationsCount struct {
+	Name  string
+	Count int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type WeeklyBulkOperationStats struct {
+	// Week is the week of this cohort and is used to group batch changes by
+	// their creation date.
+	Week string
+
+	// Count is the number of bulk operations carried out in a particular week.
+	Count int32
+
+	BulkOperation string
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type MonthlyBatchChangesExecutorUsage struct {
+	// Month of the year corresponding to this executor usage data.
+	Month string
+
+	// The number of unique users who ran a job on an executor this month.
+	Count int32
+
+	// The cumulative number of minutes of executor usage for batch changes this month.
+	Minutes int64
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BatchChangeStatsBySource struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally.
+	Source BatchChangeSource
+
+	// the amount of changesets published using this batch change source.
+	PublishedChangesetsCount int32
+
+	// the amount of batch changes created from this source.
+	BatchChangesCount int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type ChangesetDistribution struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally
+	Source BatchChangeSource
+
+	// range of changeset distribution per batch_change
+	Range string
+
+	// number of batch changes with the range of changesets defined
+	BatchChangesCount int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -988,14 +1187,6 @@ type SiteUsageSummary struct {
 	IntegrationUniquesMonth int32
 	IntegrationUniquesWeek  int32
 	IntegrationUniquesDay   int32
-	ManageUniquesMonth      int32
-	CodeUniquesMonth        int32
-	VerifyUniquesMonth      int32
-	MonitorUniquesMonth     int32
-	ManageUniquesWeek       int32
-	CodeUniquesWeek         int32
-	VerifyUniquesWeek       int32
-	MonitorUniquesWeek      int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1017,20 +1208,21 @@ type SearchAggregatedEvent struct {
 }
 
 type SurveyResponse struct {
-	ID        int32
-	UserID    *int32
-	Email     *string
-	Score     int32
-	Reason    *string
-	Better    *string
-	CreatedAt time.Time
+	ID           int32
+	UserID       *int32
+	Email        *string
+	Score        int32
+	Reason       *string
+	Better       *string
+	OtherUseCase *string
+	CreatedAt    time.Time
 }
 
 type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
@@ -1115,30 +1307,6 @@ type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	TotalCount   int32
 }
 
-// UserAndEventCount represents the number of events triggered in a given
-// time frame per user and overall.
-type UserAndEventCount struct {
-	UserCount  int32
-	EventCount int32
-}
-
-// FileAndSearchPageUserAndEventCounts represents the number of events triggered
-// on the "search result" and "file" pages in a given time frame.
-type FileAndSearchPageUserAndEventCounts struct {
-	StartTime             time.Time
-	DisplayedOnFilePage   UserAndEventCount
-	DisplayedOnSearchPage UserAndEventCount
-	ClickedOnFilePage     UserAndEventCount
-	ClickedOnSearchPage   UserAndEventCount
-}
-
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
-	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
-}
-
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1220,25 +1388,51 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
-	WeeklyInsightsPageViews                 *int32
-	WeeklyInsightsGetStartedPageViews       *int32
-	WeeklyInsightsUniquePageViews           *int32
-	WeeklyInsightsGetStartedUniquePageViews *int32
-	WeeklyInsightConfigureClick             *int32
-	WeeklyInsightAddMoreClick               *int32
-	WeekStart                               time.Time
-	WeeklyInsightCreators                   *int32
-	WeeklyFirstTimeInsightCreators          *int32
-	WeeklyAggregatedUsage                   []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
-	InsightTimeIntervals                    []InsightTimeIntervalPing
-	InsightOrgVisible                       []OrgVisibleInsightPing
-	InsightTotalCounts                      InsightTotalCounts
-	TotalOrgsWithDashboard                  *int32
-	TotalDashboardCount                     *int32
-	InsightsPerDashboard                    InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
+	WeeklyInsightsPageViews                        *int32
+	WeeklyStandaloneInsightPageViews               *int32
+	WeeklyStandaloneDashboardClicks                *int32
+	WeeklyStandaloneEditClicks                     *int32
+	WeeklyInsightsGetStartedPageViews              *int32
+	WeeklyInsightsUniquePageViews                  *int32
+	WeeklyInsightsGetStartedUniquePageViews        *int32
+	WeeklyStandaloneInsightUniquePageViews         *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
+	WeeklyStandaloneInsightUniqueEditClicks        *int32
+	WeeklyInsightConfigureClick                    *int32
+	WeeklyInsightAddMoreClick                      *int32
+	WeekStart                                      time.Time
+	WeeklyInsightCreators                          *int32
+	WeeklyFirstTimeInsightCreators                 *int32
+	WeeklyAggregatedUsage                          []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
+	InsightTimeIntervals                           []InsightTimeIntervalPing
+	InsightOrgVisible                              []OrgVisibleInsightPing
+	InsightTotalCounts                             InsightTotalCounts
+	TotalOrgsWithDashboard                         *int32
+	TotalDashboardCount                            *int32
+	InsightsPerDashboard                           InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                  *int32
+	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsInfoIconHover                *int32
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover                []GroupResultPing
+	WeeklyGroupResultsChartBarClick                []GroupResultPing
+	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1254,6 +1448,7 @@ type InsightUsageStatistics struct {
 	Hovers           *int32
 	UICustomizations *int32
 	DataPointClicks  *int32
+	FiltersChange    *int32
 }
 
 type PingName string
@@ -1316,7 +1511,49 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
-	CodeMonitorEmailLinkClicks                    *int32
+	CodeMonitorEmailLinkClicked                   *int32
+	ExampleMonitorClicked                         *int32
+	GettingStartedPageViewed                      *int32
+	CreateFormSubmitted                           *int32
+	ManageFormSubmitted                           *int32
+	ManageDeleteSubmitted                         *int32
+	LogsPageViewed                                *int32
+	EmailActionsTriggered                         *int32
+	EmailActionsErrored                           *int32
+	EmailActionsTriggeredUniqueUsers              *int32
+	EmailActionsEnabled                           *int32
+	EmailActionsEnabledUniqueUsers                *int32
+	SlackActionsTriggered                         *int32
+	SlackActionsErrored                           *int32
+	SlackActionsTriggeredUniqueUsers              *int32
+	SlackActionsEnabled                           *int32
+	SlackActionsEnabledUniqueUsers                *int32
+	WebhookActionsTriggered                       *int32
+	WebhookActionsErrored                         *int32
+	WebhookActionsTriggeredUniqueUsers            *int32
+	WebhookActionsEnabled                         *int32
+	WebhookActionsEnabledUniqueUsers              *int32
+	MonitorsEnabled                               *int32
+	MonitorsEnabledUniqueUsers                    *int32
+	MonitorsEnabledLastRunErrored                 *int32
+	ReposMonitored                                *int32
+	TriggerRuns                                   *int32
+	TriggerRunsErrored                            *int32
+	P50TriggerRunTimeSeconds                      *float32
+	P90TriggerRunTimeSeconds                      *float32
+}
+
+type NotebooksUsageStatistics struct {
+	NotebookPageViews                *int32
+	EmbeddedNotebookPageViews        *int32
+	NotebooksListPageViews           *int32
+	NotebooksCreatedCount            *int32
+	NotebookAddedStarsCount          *int32
+	NotebookAddedMarkdownBlocksCount *int32
+	NotebookAddedQueryBlocksCount    *int32
+	NotebookAddedFileBlocksCount     *int32
+	NotebookAddedSymbolBlocksCount   *int32
+	NotebookAddedComputeBlocksCount  *int32
 }
 
 // Secret represents the secrets table

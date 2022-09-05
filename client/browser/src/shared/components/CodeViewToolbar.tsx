@@ -39,7 +39,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+    extends PlatformContextProps<'settings' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         TelemetryProps,
         CodeViewToolbarClassProps {
@@ -59,9 +59,9 @@ export interface CodeViewToolbarProps
     hideActions?: boolean
 }
 
-export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
+export const CodeViewToolbar: React.FunctionComponent<React.PropsWithChildren<CodeViewToolbarProps>> = props => (
     <ul className={classNames(styles.codeViewToolbar, props.className)} data-testid="code-view-toolbar">
-        {!props.hideActions && (
+        {!props.hideActions && props.extensionsController !== null && (
             <ActionsNavItems
                 {...props}
                 listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}

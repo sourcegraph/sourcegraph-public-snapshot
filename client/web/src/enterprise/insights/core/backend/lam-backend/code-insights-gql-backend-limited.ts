@@ -1,8 +1,8 @@
 import { ApolloClient } from '@apollo/client'
 import { map } from 'rxjs/operators'
 
-import { UiFeaturesConfig } from '../code-insights-backend'
-import { CodeInsightsGqlBackend } from '../gql-backend/code-insights-gql-backend'
+import { UiFeaturesConfig } from '../code-insights-backend-types'
+import { CodeInsightsGqlBackend } from '../gql-backend'
 
 export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
     public readonly UIFeatures: UiFeaturesConfig = {

@@ -37,7 +37,7 @@ type gqlDocPageResponse struct {
 			}
 		}
 	}
-	Errors []interface{}
+	Errors []any
 }
 
 // DocumentationNodeChild represents a child of a node.

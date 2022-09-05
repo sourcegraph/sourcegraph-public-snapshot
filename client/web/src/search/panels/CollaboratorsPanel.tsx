@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiEmailCheck, mdiEmail, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
-import EmailIcon from 'mdi-react/EmailIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -31,7 +29,7 @@ interface Props extends TelemetryProps {
 
 const emailEnabled = window.context?.emailEnabled ?? false
 
-export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
+export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     authenticatedUser,
     collaboratorsFragment,
@@ -120,7 +118,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                                         </span>
                                     ) : successfulInvites.has(person.email) ? (
                                         <span className="text-success ml-auto mr-3">
-                                            <Icon className="mr-1" as={EmailCheckIcon} />
+                                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiEmailCheck} />
                                             Invited
                                         </span>
                                     ) : (
@@ -129,7 +127,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                                                 {person.email}
                                             </div>
                                             <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
-                                                <Icon className="mr-1" as={EmailIcon} />
+                                                <Icon aria-hidden={true} className="mr-1" svgPath={mdiEmail} />
                                                 Invite to Sourcegraph
                                             </div>
                                         </>
@@ -154,10 +152,9 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
-    username,
-    isSiteAdmin,
-}) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<
+    React.PropsWithChildren<{ username: string; isSiteAdmin: boolean }>
+> = ({ username, isSiteAdmin }) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -200,7 +197,9 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; i
     )
 }
 
-const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> = ({ isSiteAdmin }) => {
+const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ isSiteAdmin: boolean }>> = ({
+    isSiteAdmin,
+}) => {
     const [infoShown, setInfoShown] = useState<boolean>(false)
 
     if (infoShown) {
@@ -209,10 +208,10 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                 <Card>
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
-                            <h2 className={classNames(styles.infoBox, 'mb-0')}>
-                                <Icon className="mr-2 text-muted" as={InformationOutlineIcon} />
+                            <H2 className={classNames(styles.infoBox, 'mb-0')}>
+                                <Icon aria-hidden={true} className="mr-2 text-muted" svgPath={mdiInformationOutline} />
                                 What is this?
-                            </h2>
+                            </H2>
                             <div className="flex-grow-1" />
                             <Button
                                 variant="icon"
@@ -225,21 +224,21 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                         </div>
                         {isSiteAdmin ? (
                             <>
-                                <p className={styles.infoBox}>
+                                <Text className={styles.infoBox}>
                                     This feature enables Sourcegraph users to invite collaborators we discover through
                                     your Git repository commit history. The invitee will receive a link to Sourcegraph,
                                     but no special permissions are granted.
-                                </p>
-                                <p className={classNames(styles.infoBox, 'mb-0')}>
+                                </Text>
+                                <Text className={classNames(styles.infoBox, 'mb-0')}>
                                     If you wish to disable this feature, see{' '}
                                     <Link to="/help/admin/config/user_invitations">this documentation</Link>.
-                                </p>
+                                </Text>
                             </>
                         ) : (
-                            <p className={classNames(styles.infoBox, 'mb-0')}>
+                            <Text className={classNames(styles.infoBox, 'mb-0')}>
                                 These collaborators were found via your repositories Git commit history. The invitee
                                 will receive a link to Sourcegraph, but no special permissions are granted.
-                            </p>
+                            </Text>
                         )}
                     </CardBody>
                 </Card>
@@ -251,7 +250,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
             <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
             <div className="flex-grow-1" />
             <div>
-                <Icon className="mr-1 text-muted" as={InformationOutlineIcon} />
+                <Icon aria-hidden={true} className="mr-1 text-muted" svgPath={mdiInformationOutline} />
                 <Button
                     variant="link"
                     className={classNames(styles.info, 'p-0')}

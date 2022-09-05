@@ -2,7 +2,7 @@ import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, p
 import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 
-import { hasProperty } from '@sourcegraph/common'
+import { hasProperty, AbortError } from '@sourcegraph/common'
 
 import { ProxySubscribable } from './extension/api/common'
 
@@ -45,7 +45,9 @@ export const syncRemoteSubscription = (
     new Subscription(async () => {
         const subscriptionProxy = await subscriptionPromise
         await subscriptionProxy.unsubscribe()
-        subscriptionProxy[releaseProxy]()
+        if (typeof subscriptionProxy[releaseProxy] === 'function') {
+            subscriptionProxy[releaseProxy]()
+        }
     })
 
 /**
@@ -123,18 +125,12 @@ export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Obse
         }
     })
 
-export class AbortError extends Error {
-    public readonly name = 'AbortError'
-    public readonly message = 'Aborted'
-}
-
 /**
  * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided
  * NOTE: it does not handle ProxyMethods and callbacks yet
  * NOTE2: for testing purposes only!!
  */
 export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     (new Proxy(object, {
         get: (a, property) => {
             if (property === 'then') {

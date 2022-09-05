@@ -3,7 +3,11 @@ import { StylesConfig } from 'react-select'
 export const STYLES: StylesConfig = {
     clearIndicator: provided => ({
         ...provided,
-        padding: '0 0.125rem',
+        padding: '0.125rem 0',
+        borderRadius: 'var(--border-radius)',
+        '&:hover': {
+            background: 'var(--secondary-3)',
+        },
     }),
     control: (provided, state) => ({
         ...provided,
@@ -24,13 +28,18 @@ export const STYLES: StylesConfig = {
                 ? 'var(--input-focus-box-shadow-invalid)'
                 : 'var(--input-focus-box-shadow)'
             : undefined,
+        cursor: 'pointer',
         '&:hover': {
             borderColor: undefined,
         },
     }),
     dropdownIndicator: provided => ({
         ...provided,
-        padding: '0 0.125rem',
+        padding: '0.125rem 0',
+        borderRadius: 'var(--border-radius)',
+        '&:hover': {
+            background: 'var(--secondary-3)',
+        },
     }),
     indicatorSeparator: (provided, state) => ({
         ...provided,
@@ -45,21 +54,40 @@ export const STYLES: StylesConfig = {
     menu: provided => ({
         ...provided,
         background: 'var(--dropdown-bg)',
-        padding: '0.25rem 0',
+        padding: 0,
         margin: '0.125rem 0 0',
         dropShadow: 'var(--dropdown-shadow)',
+        // This is to prevent item edges from sticking out of the rounded dropdown container
+        overflow: 'hidden',
     }),
     menuList: provided => ({
         ...provided,
         padding: 0,
     }),
+    multiValue: (provided, state) => ({
+        display: 'flex',
+        maxWidth: '100%',
+        alignItems: 'center',
+        padding: '0 0 0 0.5rem',
+        margin: '0.125rem',
+        background: state.isFocused ? 'var(--secondary-3)' : 'var(--secondary)',
+        borderStyle: 'solid',
+        borderWidth: '1px',
+        borderColor: state.isFocused ? 'var(--select-button-border-color)' : 'transparent',
+        '&:hover': {
+            background: 'var(--secondary-3)',
+            borderColor: 'var(--select-button-border-color)',
+        },
+    }),
     multiValueRemove: (provided, state) => ({
         ...provided,
-        backgroundColor: 'transparent',
-        boxShadow: state.isFocused ? 'var(--input-focus-box-shadow)' : undefined,
+        padding: '4px',
+        marginLeft: '0.25rem',
+        borderRadius: '0 var(--border-radius) var(--border-radius) 0',
+        background: state.isFocused ? 'var(--secondary-3)' : undefined,
         ':hover': {
             ...provided[':hover'],
-            backgroundColor: 'transparent',
+            background: 'var(--secondary-3)',
             color: undefined,
         },
     }),

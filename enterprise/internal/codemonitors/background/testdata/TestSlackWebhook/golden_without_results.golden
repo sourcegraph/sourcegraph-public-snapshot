@@ -1,0 +1,25 @@
+{
+  "blocks": [
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "Camden Cheek's Sourcegraph Code monitor, *My test monitor*, detected *3* new matches."
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "\u003chttps://sourcegraph.com/search?q=repo%3Acamdentest+-file%3Aid_rsa.pub+BEGIN\u0026utm_source=|View results\u003e"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "If you are Camden Cheek, you can \u003chttps://sourcegraph.com/code-monitoring/Q29kZU1vbml0b3I6MA==?utm_source=|edit your code monitor\u003e"
+    }
+   }
+  ]
+ }

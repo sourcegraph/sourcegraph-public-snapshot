@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './LineDecorator.module.scss'
 
@@ -27,7 +28,7 @@ export interface LineDecoratorProps extends ThemeProps {
 /**
  * Component that decorates lines of code and appends line attachments set by extensions
  */
-export const LineDecorator = React.memo<LineDecoratorProps>(
+const LineDecorator = React.memo<LineDecoratorProps>(
     ({ getCodeElementFromLineNumber, line, decorations, portalID, isLightTheme, codeViewElements }) => {
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
 
@@ -58,26 +59,32 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     // Apply line decoration styles
                     if (row) {
                         for (const decoration of decorations) {
-                            let decorated = false
                             const style = decorationStyleForTheme(decoration, isLightTheme)
-                            if (style.backgroundColor) {
-                                row.style.backgroundColor = style.backgroundColor
-                                decorated = true
-                            }
-                            if (style.border) {
-                                row.style.border = style.border
-                                decorated = true
-                            }
-                            if (style.borderColor) {
-                                row.style.borderColor = style.borderColor
-                                decorated = true
-                            }
-                            if (style.borderWidth) {
-                                row.style.borderWidth = style.borderWidth
-                                decorated = true
-                            }
-                            if (decorated) {
-                                decoratedElements.push(row)
+                            let decorated = false
+
+                            const codeCell = row.querySelector<HTMLTableCellElement>('td.code')
+                            if (codeCell) {
+                                for (const property of [
+                                    'backgroundColor',
+                                    'border',
+                                    'borderColor',
+                                    'borderWidth',
+                                ] as const) {
+                                    const value = style[property]
+                                    if (value) {
+                                        /**
+                                         * Highlight only the cell with code, but not the one with line number:
+                                         * git blame cell may be rendered between the line cell and the code cell and
+                                         * we don't want to style it as well.
+                                         */
+                                        codeCell.style[property] = value
+                                        decorated = true
+                                    }
+
+                                    if (decorated) {
+                                        decoratedElements.push(codeCell)
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -91,12 +98,13 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     innerPortalNode.id = portalID
                     innerPortalNode.dataset.testid = 'line-decoration'
                     innerPortalNode.dataset.lineDecorationAttachmentPortal = 'true'
-                    codeCell?.append(innerPortalNode)
+                    codeCell?.insertBefore(innerPortalNode, codeCell?.querySelector('.bottom-spacer'))
                     setPortalNode(innerPortalNode)
                 } else {
                     // code view ref passed `null`, so element is leaving DOM
                     innerPortalNode?.remove()
                     for (const element of decoratedElements) {
+                        // TODO: return the previous value of the property instead of resetting it
                         element.style.backgroundColor = ''
                         element.style.border = ''
                         element.style.borderColor = ''
@@ -123,18 +131,32 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Render decoration attachments into portal
         return ReactDOM.createPortal(
-            decorations?.filter(property('after', isDefined)).map((decoration, index) => {
-                const attachment = decoration.after
-                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+            <LineDecoratorContents decorations={decorations} isLightTheme={isLightTheme} />,
+            portalNode
+        )
+    }
+)
 
-                return (
+export const LineDecoratorContents: React.FunctionComponent<{
+    decorations: TextDocumentDecoration[] | undefined
+    isLightTheme: boolean
+    portalRoot?: HTMLElement
+}> = ({ decorations, isLightTheme }) => (
+    <>
+        {decorations?.filter(property('after', isDefined)).map((decoration, index) => {
+            const attachment = decoration.after
+            const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+
+            return (
+                <Tooltip
+                    content={attachment.hoverMessage}
+                    // Key by content, use index to remove possibility of duplicate keys
+                    key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
+                >
                     <LinkOrSpan
-                        // Key by content, use index to remove possibility of duplicate keys
-                        key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
                         className={styles.lineDecorationAttachment}
                         data-line-decoration-attachment={true}
                         to={attachment.linkURL}
-                        data-tooltip={attachment.hoverMessage}
                         // Use target to open external URLs
                         target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
                         // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
@@ -151,9 +173,12 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                             data-contents={attachment.contentText || ''}
                         />
                     </LinkOrSpan>
-                )
-            }),
-            portalNode
-        )
-    }
+                </Tooltip>
+            )
+        })}
+    </>
 )
+
+LineDecorator.displayName = 'LineDecorator'
+
+export { LineDecorator }

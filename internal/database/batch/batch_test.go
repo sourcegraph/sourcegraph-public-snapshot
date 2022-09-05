@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -16,7 +18,8 @@ func init() {
 }
 
 func TestBatchInserter(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupTestTable(t, db)
 
 	expectedValues := makeTestValues(2, 0)
@@ -28,7 +31,7 @@ func TestBatchInserter(t *testing.T) {
 	}
 	defer rows.Close()
 
-	var values [][]interface{}
+	var values [][]any
 	for rows.Next() {
 		var v1, v2, v3, v4 int
 		var v5 string
@@ -36,7 +39,7 @@ func TestBatchInserter(t *testing.T) {
 			t.Fatalf("unexpected error scanning data: %s", err)
 		}
 
-		values = append(values, []interface{}{v1, v2, v3, v4, v5})
+		values = append(values, []any{v1, v2, v3, v4, v5})
 	}
 
 	if diff := cmp.Diff(expectedValues, values); diff != "" {
@@ -45,7 +48,8 @@ func TestBatchInserter(t *testing.T) {
 }
 
 func TestBatchInserterWithReturn(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -63,7 +67,8 @@ func TestBatchInserterWithReturn(t *testing.T) {
 }
 
 func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -82,7 +87,8 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 }
 
 func BenchmarkBatchInserter(b *testing.B) {
-	db := dbtest.NewDB(b)
+	logger := logtest.Scoped(b)
+	db := dbtest.NewDB(logger, b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
@@ -95,7 +101,8 @@ func BenchmarkBatchInserter(b *testing.B) {
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	db := dbtest.NewDB(b)
+	logger := logtest.Scoped(b)
+	db := dbtest.NewDB(logger, b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 
@@ -123,10 +130,10 @@ func setupTestTable(t testing.TB, db *sql.DB) {
 	}
 }
 
-func makeTestValues(tableSizeFactor, payloadSize int) [][]interface{} {
-	var expectedValues [][]interface{}
+func makeTestValues(tableSizeFactor, payloadSize int) [][]any {
+	var expectedValues [][]any
 	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
-		expectedValues = append(expectedValues, []interface{}{
+		expectedValues = append(expectedValues, []any{
 			i,
 			i + 1,
 			i + 2,
@@ -147,7 +154,7 @@ func makePayload(size int) string {
 	return string(s)
 }
 
-func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
+func testInsert(t testing.TB, db *sql.DB, expectedValues [][]any) {
 	ctx := context.Background()
 
 	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
@@ -162,7 +169,7 @@ func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
 	}
 }
 
-func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface{}) (insertedIDs []int) {
+func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]any) (insertedIDs []int) {
 	ctx := context.Background()
 
 	inserter := NewInserterWithReturn(
@@ -197,7 +204,7 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 	return insertedIDs
 }
 
-func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][]interface{}) (insertedIDs []int) {
+func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][]any) (insertedIDs []int) {
 	ctx := context.Background()
 
 	inserter := NewInserterWithReturn(
@@ -221,7 +228,7 @@ func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expected
 
 	for i := 0; i < n; i++ {
 		for j, values := range expectedValues {
-			if err := inserter.Insert(ctx, append([]interface{}{j + 1}, values...)...); err != nil {
+			if err := inserter.Insert(ctx, append([]any{j + 1}, values...)...); err != nil {
 				t.Fatalf("unexpected error inserting values: %s", err)
 			}
 		}

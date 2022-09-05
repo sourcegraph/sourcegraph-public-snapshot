@@ -12,6 +12,7 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CollaboratorsFragment, HomePanelsQueryResult, HomePanelsQueryVariables } from '../../graphql-operations'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { CollaboratorsPanel } from './CollaboratorsPanel'
@@ -73,7 +74,7 @@ export const HOME_PANELS_QUERY = gql`
     ${collaboratorsFragment}
 `
 
-export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
+export const HomePanels: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const userId = props.authenticatedUser?.id || ''
     const showCollaborators = props.showCollaborators
     const showSavedSearches = !props.isSourcegraphDotCom
@@ -127,6 +128,15 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
     return (
         <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
             <div className="row">
+                <GettingStartedTour
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={true}
+                    className="w-100"
+                    variant="horizontal"
+                />
+            </div>
+            <div className="row">
                 <RepositoriesPanel
                     {...props}
                     className={classNames('col-lg-4', styles.panel)}
@@ -169,7 +179,7 @@ interface CollaboratorsTabPanelProps extends Props {
     collaboratorsFragment: null | CollaboratorsFragment
 }
 
-const CollaboratorsTabPanel: React.FunctionComponent<CollaboratorsTabPanelProps> = ({
+const CollaboratorsTabPanel: React.FunctionComponent<React.PropsWithChildren<CollaboratorsTabPanelProps>> = ({
     data,
     collaboratorsFragment,
     ...props

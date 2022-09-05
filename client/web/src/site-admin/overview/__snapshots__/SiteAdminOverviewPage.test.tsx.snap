@@ -12,19 +12,19 @@ exports[`SiteAdminOverviewPage < 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
@@ -46,37 +46,37 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/users"
       >
         10 users
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/organizations"
       >
         5 organizations
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/surveys"
       >
         100 user survey responses
@@ -88,7 +88,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           class="d-flex justify-content-between align-items-center position-relative"
         >
           <span
-            class="h5 mb-0 font-weight-normal p-2"
+            class="mb-0 font-weight-normal p-2 adminOverviewMenuText"
           >
             10 active users last week
           </span>
@@ -98,10 +98,11 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             type="button"
           >
             <svg
-              aria-label="Close section"
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -115,19 +116,25 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           <div
             class="site-admin-overview-page__detail-header"
           >
-            <h2>
+            <h2
+              class="h2"
+            >
               Weekly unique users
             </h2>
-            <h3>
+            <h3
+              class="h3"
+            >
               <a
                 class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
                 View all usage statistics 
                 <svg
+                  aria-hidden="true"
                   class="mdi-icon iconInline"
                   fill="currentColor"
                   height="24"
+                  role="img"
                   viewBox="0 0 24 24"
                   width="24"
                 >
@@ -152,16 +159,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
@@ -172,16 +179,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"
@@ -289,7 +296,8 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
       class="pt-3 mb-4"
     >
       <div
-        class="p-0 list-group-item font-weight-normal test-site-admin-overview-menu"
+        class="p-0 list-group-item font-weight-normal"
+        data-testid="site-admin-overview-menu"
       >
         <div
           class="d-flex justify-content-between align-items-center position-relative mb-0 py-3 px-3"
@@ -298,7 +306,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
             class="d-flex flex-column"
           >
             <span
-              class="h5 mb-0 font-weight-bold"
+              class="mb-0 font-weight-bold adminOverviewMenuText"
             >
               <div
                 class="p-2"
@@ -307,7 +315,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               </div>
             </span>
             <div
-              class="h5 mb-0 font-weight-normal"
+              class="mb-0 font-weight-normal adminOverviewMenuText"
             >
               Complete the steps below to finish onboarding to Sourcegraph
             </div>
@@ -318,10 +326,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
             type="button"
           >
             <svg
-              aria-label="Close section"
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -351,18 +360,20 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 id="button--1--0"
               >
                 <div
-                  class="d-flex justify-content-between activationChecklistItem h5 mb-0 font-weight-normal"
+                  class="d-flex justify-content-between activationChecklistItem mb-0 font-weight-normal adminOverviewMenuText"
                 >
                   <div
                     class="d-flex align-items-center"
                   >
                     <span
-                      class="iconInline iconContainer iconDown"
+                      class="iconContainer"
                     >
                       <svg
-                        class="mdi-icon icon"
+                        aria-hidden="true"
+                        class="mdi-icon iconInline icon iconDown"
                         fill="currentColor"
                         height="24"
+                        role="img"
                         viewBox="0 0 24 24"
                         width="24"
                       >
@@ -370,14 +381,12 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                           d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                         />
                       </svg>
-                    </span>
-                    <span
-                      class="iconInline iconContainer iconRight"
-                    >
                       <svg
-                        class="mdi-icon icon"
+                        aria-hidden="true"
+                        class="mdi-icon iconInline icon iconRight"
                         fill="currentColor"
                         height="24"
+                        role="img"
                         viewBox="0 0 24 24"
                         width="24"
                       >
@@ -392,9 +401,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </div>
                   <div>
                     <svg
+                      aria-label="Not completed"
                       class="mdi-icon iconInline text-muted"
                       fill="currentColor"
                       height="24"
+                      role="img"
                       viewBox="0 0 24 24"
                       width="24"
                     >
@@ -429,19 +440,19 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         0 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed

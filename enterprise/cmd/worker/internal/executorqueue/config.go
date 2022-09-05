@@ -15,10 +15,10 @@ import (
 // and Validate to forward errors produced in this config.
 func InitMetricsConfig() *Config {
 	res, _ := initMetricsConfig.Init()
-	return res.(*Config)
+	return res
 }
 
-var initMetricsConfig = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initMetricsConfig = memo.NewMemoizedConstructor(func() (*Config, error) {
 	return &Config{}, nil
 })
 

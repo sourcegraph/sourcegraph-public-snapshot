@@ -20,9 +20,10 @@ export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef'
      */
     handleClassName?: string
     className?: string
+    ariaLabel: string
 }
 
-export const Panel: React.FunctionComponent<PanelProps> = ({
+export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>> = ({
     children,
     className,
     defaultSize = 200,
@@ -32,6 +33,7 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
     handleClassName,
     minSize,
     maxSize,
+    ariaLabel,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -57,6 +59,8 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
                 getDisplayStyle({ isFloating })
             )}
             ref={panelReference}
+            role="region"
+            aria-label={ariaLabel}
         >
             <div
                 ref={handleReference}

@@ -44,7 +44,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -167,6 +167,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     }
 
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
+
         if (this.state.error) {
             return (
                 <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
@@ -212,10 +214,11 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                         <Route key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 )}
-                {this.state.hoverOverlayProps && (
+                {this.state.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        extensionsController={extensionsController}
                         nav={url => this.props.history.push(url)}
                         hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}

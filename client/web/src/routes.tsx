@@ -10,15 +10,11 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
-import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
-import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
+import { BlobProps } from './repo/blob/Blob'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -26,8 +22,18 @@ const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage
 const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+const CreateNotebookPage = lazyComponent(
+    () => import('./notebooks/createPage/CreateNotebookPage'),
+    'CreateNotebookPage'
+)
+const NotebooksListPage = lazyComponent(() => import('./notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const InstallGitHubAppSuccessPage = lazyComponent(
+    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
+    'InstallGitHubAppSuccessPage'
+)
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -36,10 +42,9 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -69,10 +74,15 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
+export const routes: readonly LayoutRouteProps<any>[] = ([
     {
         path: PageRoutes.Index,
-        render: () => <Redirect to={PageRoutes.Search} />,
+        render: props =>
+            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
+                <Redirect to="https://about.sourcegraph.com" />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
         exact: true,
     },
     {
@@ -83,13 +93,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+            const { showMultilineSearchConsole } = getExperimentalFeatures()
 
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },
@@ -142,6 +148,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
+        path: PageRoutes.UnlockAccount,
+        render: props => <UnlockAccountPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
         path: PageRoutes.Welcome,
         render: props =>
             /**
@@ -162,7 +173,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
@@ -219,12 +229,14 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
+        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: PageRoutes.Extensions,
+              render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+          }
+        : undefined,
     {
         path: PageRoutes.Help,
         render: passThroughToServer,
@@ -238,4 +250,4 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
-]
+] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]

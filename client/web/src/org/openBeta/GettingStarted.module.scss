@@ -1,15 +1,23 @@
+.heading-title {
+    h2 {
+        justify-content: center;
+    }
+}
 .entry-items {
     width: 100%;
     padding: 0 !important;
     margin: 0 !important;
     li {
         display: flex;
-        gap: 1rem;
+        gap: 0.563rem;
+        align-items: center;
+        height: 2.922rem;
+        padding: 1rem;
         &:first-child {
             border-top: unset;
         }
         list-style: none;
-        padding: 0.8rem 1.5rem;
+
         border-top: 1px solid var(--border-color-2);
 
         h3 {
@@ -18,12 +26,35 @@
     }
 }
 
+.entry-item-link {
+    display: flex;
+    width: 100%;
+    height: 3rem;
+    gap: 0.563rem;
+    align-items: center;
+    color: inherit !important;
+    text-decoration: none;
+    &:hover {
+        text-decoration: none !important;
+    }
+}
+
 .entry-item {
     width: 100%;
+    height: 3rem;
 }
 
 .box-container {
     padding: 0 !important;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    background-color: var(--color-bg-1);
+    width: 32.5rem;
+}
+
+.box-container-wrapper {
+    border-radius: 5px;
+    margin-bottom: 1rem;
 }
 
 .icon-muted {
@@ -32,7 +63,8 @@
 }
 
 .icon-container {
-    width: 1rem;
+    display: flex;
+    align-items: center;
 }
 
 .step-text {
@@ -41,6 +73,11 @@
 
 .link-container {
     width: 1rem;
+    color: var(--link-color);
+    svg {
+        width: 1rem;
+        height: 1.25rem;
+    }
 }
 
 .members-list {
@@ -51,8 +88,8 @@
 }
 
 .avatar-container {
-    width: 2rem;
-    height: 2rem;
+    width: 2.25rem;
+    height: 2.25rem;
     display: flex;
     justify-content: flex-start;
     gap: 1rem;
@@ -65,8 +102,8 @@
 }
 
 .total-count {
-    width: 2rem;
-    height: 2rem;
+    width: 2.25rem;
+    height: 2.25rem;
     display: flex;
     border-radius: 50%;
     justify-content: center;
@@ -78,8 +115,8 @@
 }
 
 .avatar-ellipse {
-    width: 2rem;
-    height: 2rem;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 50%;
     background-color: var(--body-bg);
     position: absolute;
@@ -95,4 +132,16 @@
     position: absolute;
     left: 1.5rem;
     z-index: 1;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.empty-circle {
+    width: 0.875rem;
+    height: 0.875rem;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 1px dashed var(--border-color-2);
 }

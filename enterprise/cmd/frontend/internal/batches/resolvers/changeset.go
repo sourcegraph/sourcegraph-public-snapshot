@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -286,17 +285,17 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if spec.Spec.IsImportingExisting() {
+	if spec.Type == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 
-	return spec.Spec, nil
+	return spec, nil
 }
 
 func (r *changesetResolver) PublicationState() string {
@@ -315,41 +314,8 @@ func (r *changesetResolver) ExternalState() *string {
 	return &state
 }
 
-func (r *changesetResolver) State() (string, error) {
-	// Note that there's an inverse version of this function in
-	// getRewirerMappingCurrentState(): if one changes, so should the other.
-
-	switch r.changeset.ReconcilerState {
-	case btypes.ReconcilerStateErrored:
-		return string(btypes.ChangesetStateRetrying), nil
-	case btypes.ReconcilerStateFailed:
-		return string(btypes.ChangesetStateFailed), nil
-	case btypes.ReconcilerStateScheduled:
-		return string(btypes.ChangesetStateScheduled), nil
-	default:
-		if r.changeset.ReconcilerState != btypes.ReconcilerStateCompleted {
-			return string(btypes.ChangesetStateProcessing), nil
-		}
-	}
-
-	if r.changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
-		return string(btypes.ChangesetStateUnpublished), nil
-	}
-
-	switch r.changeset.ExternalState {
-	case btypes.ChangesetExternalStateDraft:
-		return string(btypes.ChangesetStateDraft), nil
-	case btypes.ChangesetExternalStateOpen:
-		return string(btypes.ChangesetStateOpen), nil
-	case btypes.ChangesetExternalStateClosed:
-		return string(btypes.ChangesetStateClosed), nil
-	case btypes.ChangesetExternalStateMerged:
-		return string(btypes.ChangesetStateMerged), nil
-	case btypes.ChangesetExternalStateDeleted:
-		return string(btypes.ChangesetStateDeleted), nil
-	default:
-		return "", errors.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
-	}
+func (r *changesetResolver) State() string {
+	return string(r.changeset.State)
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -494,17 +460,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			return nil, err
 		}
 
-		diff, err := desc.Diff()
-		if err != nil {
-			return nil, errors.New("ChangesetSpec has no diff")
-		}
-
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
 			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
-			diff,
+			string(desc.Diff),
 		)
 	}
 

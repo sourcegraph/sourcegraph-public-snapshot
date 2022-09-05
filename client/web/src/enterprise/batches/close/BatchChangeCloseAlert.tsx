@@ -4,8 +4,9 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, LoadingSpinner, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'
 
 import { closeBatchChange as _closeBatchChange } from './backend'
@@ -23,7 +24,7 @@ export interface BatchChangeCloseAlertProps {
     closeBatchChange?: typeof _closeBatchChange
 }
 
-export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAlertProps> = ({
+export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChildren<BatchChangeCloseAlertProps>> = ({
     batchChangeID,
     batchChangeURL,
     closeChangesets,
@@ -56,33 +57,33 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
         <>
             <Card className="mb-3">
                 <CardBody>
-                    <p>
+                    <Text>
                         <strong>
                             After closing this batch change, it will be read-only and no new batch specs can be applied.
                         </strong>
-                    </p>
+                    </Text>
                     {totalCount > 0 && (
                         <>
-                            <p>By default, all changesets remain untouched.</p>
-                            <div className="form-check mb-3">
-                                <input
-                                    id="closeChangesets"
-                                    type="checkbox"
-                                    checked={closeChangesets}
-                                    onChange={onChangeCloseChangesets}
-                                    className="test-batches-close-changesets-checkbox form-check-input"
-                                    disabled={isClosing === true || !viewerCanAdminister}
-                                />
-                                <label className="form-check-label" htmlFor="closeChangesets">
-                                    Also close {pluralize('the', totalCount, 'all')} {totalCount}{' '}
-                                    {pluralize(
-                                        'open changeset on the code host',
-                                        totalCount,
-                                        'open changesets on the code hosts'
-                                    )}
-                                    .
-                                </label>
-                            </div>
+                            <Text>By default, all changesets remain untouched.</Text>
+                            <Checkbox
+                                wrapperClassName="mb-3"
+                                id="closeChangesets"
+                                checked={closeChangesets}
+                                onChange={onChangeCloseChangesets}
+                                className="test-batches-close-changesets-checkbox"
+                                disabled={isClosing === true || !viewerCanAdminister}
+                                label={
+                                    <>
+                                        Also close {pluralize('the', totalCount, 'all')} {totalCount}{' '}
+                                        {pluralize(
+                                            'open changeset on the code host',
+                                            totalCount,
+                                            'open changesets on the code hosts'
+                                        )}
+                                        .
+                                    </>
+                                }
+                            />
                         </>
                     )}
                     {!viewerCanAdminister && (
@@ -103,14 +104,15 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                         >
                             Cancel
                         </Button>
-                        <Button
+                        <LoaderButton
                             className="test-batches-confirm-close-btn"
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                             variant="danger"
-                        >
-                            {isClosing === true && <LoadingSpinner />} Close batch change
-                        </Button>
+                            loading={isClosing === true}
+                            label="Close batch change"
+                            alwaysShowLabel={true}
+                        />
                     </div>
                 </CardBody>
             </Card>

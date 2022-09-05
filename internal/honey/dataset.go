@@ -19,7 +19,7 @@ func (d *Dataset) Event() Event {
 	return event
 }
 
-func (d *Dataset) EventWithFields(fields map[string]interface{}) Event {
+func (d *Dataset) EventWithFields(fields map[string]any) Event {
 	event := NewEventWithFields(d.Name, fields)
 	if d.SampleRate > 1 {
 		event.SetSampleRate(d.SampleRate)

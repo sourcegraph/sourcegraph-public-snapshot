@@ -3,16 +3,12 @@ package ci
 import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
 func withYarnCache() buildkite.StepOpt {
-	if !buildkite.FeatureFlags.StatelessBuild {
-		return buildkite.RawCmd(`echo "skipping yarn cache, not a stateless agent"`)
-	}
-
 	return buildkite.Cache(&buildkite.CacheOptions{
-		ID:          "node_modules",
-		Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
-		RestoreKeys: []string{"cache-node_modules-{{ checksum 'yarn.lock' }}"},
-		Paths:       []string{"node_modules", "client/extension-api/node_modules", "client/eslint-plugin-sourcegraph/node_modules"},
-		// TODO: @jhchabran, check the numbers, but in my last run it seemed to be clear that compression is really slow (+3/4m IIRC)
+		ID:          "node_modules_yarn_v3",
+		Key:         "cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}",
+		RestoreKeys: []string{"cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}"},
+		Paths:       []string{"node_modules", ".yarn/cache"},
+		// Compressing really slows down the process, as the node modules folder is huge. It's faster to just DL it.
 		Compress: false,
 	})
 }

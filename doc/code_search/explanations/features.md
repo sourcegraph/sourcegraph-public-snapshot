@@ -16,7 +16,7 @@ See the [structural search](../reference/structural.md) documentation for a deta
 
 Search over commit diffs using `type:diff` to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging.
 
-You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude commits reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
+You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude a commit reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
 
 See the [query syntax](../reference/queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
@@ -28,7 +28,7 @@ See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) do
 
 ## Symbol search
 
-Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit it uses Zoekt, otherwise it uses the [symbols service](../../code_intelligence/explanations/features.md#symbol-search)
+Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit, it uses Zoekt. Otherwise it uses the [symbols service](../../code_navigation/explanations/features.md#symbol-search)
 
 ## Saved searches
 
@@ -48,10 +48,10 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-**Sourcegraph Cloud** currently supports two pre-set search contexts: 
+**Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all) that include:
 
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph.com.
+- Search contexts for various software communities like [CNCF](https://sourcegraph.com/search?q=context:CNCF), [crates.io](https://sourcegraph.com/search?q=context:crates.io), [JVM](https://sourcegraph.com/search?q=context:JVM), and more.  
 
 If no search context is specified, `context:global` is used.
 
@@ -76,7 +76,7 @@ Your site admin can enable search contexts on your private instance in **global 
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
 
-The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
+The most common branch to search is your default branch. To speed up this common operation, Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches, Sourcegraph can be configured to index up to 64 branches per repository.
 
 Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
 
@@ -89,13 +89,13 @@ Your site admin can configure indexed branches in site configuration under the `
 }
 ```
 
-Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/deploy/resource_estimator.md) to estimate whether additional resources are required.
 
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
 
-**Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
+**Note**: While version contexts are located in the site configuration, search contexts are located in the global settings.
 
 Reload the page after saving changes to see search contexts enabled.
 

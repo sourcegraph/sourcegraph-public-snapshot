@@ -17,15 +17,15 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 
 - Sourcegraph supports [searching any revision](../../code_search/explanations/features.md) (not just specific branches) and does not require waiting for periodic reindexing.
 - Sourcegraph's [query syntax](../../code_search/reference/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
-- Sourcegraph's [code intelligence](../../code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
+- Sourcegraph's [code navigation](../../code_navigation/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
-- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/kubernetes/index.md)).
+- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../deploy/kubernetes/index.md)).
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
 Oracle releases OpenGrok under the open-source CDDL license and does not (currently) have any monetization plans for it. Sourcegraph is a commercial product, with a free tier and [paid premium features](https://about.sourcegraph.com/pricing) available.
 
-Every organization's needs are different. [Install and use Sourcegraph for free](../install/index.md) to see if it's right for your organization.
+Every organization's needs are different. [Try Sourcegraph for free](../deploy/index.md) to see if it's right for your organization.
 
 For more information about Sourcegraph, see:
 
@@ -99,8 +99,8 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
   > Post feedback at https://github.com/sourcegraph/sourcegraph [change if needed]
 
 - Create an internal document based on the [Sourcegraph tour](../../getting-started/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
-- Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code intelligence and search in your organization's existing code host.
-- Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/google_workspace.md) to everyone in your organization.
+- Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code navigation and search in your organization's existing code host.
+- Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/browser_extension/how-tos/google_workspace.md) to everyone in your organization.
 - Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../code_search/reference/queries.md) differs from OpenGrok's.)
 - Monitor your Sourcegraph instance's site admin "Analytics" page to see who's using it. Ask them for specific feedback. Also seek feedback from the most frequent users of OpenGrok.
 

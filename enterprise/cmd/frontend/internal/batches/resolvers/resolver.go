@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,7 +79,7 @@ func checkLicense() error {
 // maxUnlicensedChangesets is the maximum number of changesets that can be
 // attached to a batch change when Sourcegraph is unlicensed or the Batch
 // Changes feature is disabled.
-const maxUnlicensedChangesets = 5
+const maxUnlicensedChangesets = 10
 
 type batchSpecCreatedArg struct {
 	ChangesetSpecsCount int `json:"changeset_specs_count"`
@@ -87,7 +89,7 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
-func logBackendEvent(ctx context.Context, db database.DB, name string, args interface{}, publicArgs interface{}) error {
+func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
 	actor := actor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {
@@ -98,8 +100,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args inte
 		return err
 	}
 
-	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureFlags, nil)
+	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -208,6 +209,39 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) ([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	// Parse the batch spec.
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec))
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the user is authenticated.
+	act := actor.FromContext(ctx)
+	if !act.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
+	}
+
+	// Run the resolution.
+	resolver := service.NewWorkspaceResolver(r.store)
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform the result into resolvers.
+	resolvers := make([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, 0, len(workspaces))
+	for _, w := range workspaces {
+		resolvers = append(resolvers, &resolvedBatchSpecWorkspaceResolver{store: r.store, workspace: w})
+	}
+
+	return resolvers, nil
+}
+
 func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -222,12 +256,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
-	}
-
-	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -235,6 +264,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
+	// Everyone can see batch specs, if they have the ID.
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
@@ -264,7 +294,12 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
-func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
+type batchChangesCredentialResolver interface {
+	graphqlbackend.BatchChangesCredentialResolver
+	authenticator(ctx context.Context) (auth.Authenticator, error)
+}
+
+func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (batchChangesCredentialResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
@@ -285,10 +320,10 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 	return r.batchChangesUserCredentialByID(ctx, dbID)
 }
 
-func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	cred, err := r.store.UserCredentials().GetByID(ctx, id)
 	if err != nil {
-		if errcode.IsNotFound(err) {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -301,7 +336,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -373,21 +408,12 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
-	//
-	// TODO: Once we introduce finer-grained permissions, this needs to be
-	// changed to check for namespace access and then check repository
-	// permissions and return hidden/visible workspaces accordingly.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
-		return nil, err
-	}
-
 	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex, batchSpec: spec.Spec}, nil
+	return newBatchSpecWorkspaceResolver(ctx, r.store, w, ex, spec.Spec)
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -474,6 +500,26 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 
 	if opts.BatchSpecRandID == "" {
 		return nil, ErrIDIsZero{}
+	}
+
+	if licenseErr := checkLicense(); licenseErr != nil {
+		if licensing.IsFeatureNotActivated(licenseErr) {
+			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+				RandID: opts.BatchSpecRandID,
+			})
+			if err != nil {
+				return nil, err
+			}
+			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+			if err != nil {
+				return nil, err
+			}
+			if count > maxUnlicensedChangesets {
+				return nil, ErrBatchChangesUnlicensed{licenseErr}
+			}
+		} else {
+			return nil, licenseErr
+		}
 	}
 
 	if args.EnsureBatchChange != nil {
@@ -833,13 +879,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 			return opts, false, errors.New("invalid combination of state and onlyClosable")
 		}
 
-		publicationState := btypes.ChangesetPublicationStatePublished
-		opts.ExternalStates = []btypes.ChangesetExternalState{
-			btypes.ChangesetExternalStateDraft,
-			btypes.ChangesetExternalStateOpen,
-		}
-		opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-		opts.PublicationState = &publicationState
+		opts.States = []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateDraft}
 	}
 
 	if args.State != nil {
@@ -848,52 +888,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 			return opts, false, errors.New("changeset state not valid")
 		}
 
-		switch state {
-		case btypes.ChangesetStateOpen:
-			externalState := btypes.ChangesetExternalStateOpen
-			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateDraft:
-			externalState := btypes.ChangesetExternalStateDraft
-			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateClosed:
-			externalState := btypes.ChangesetExternalStateClosed
-			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateMerged:
-			externalState := btypes.ChangesetExternalStateMerged
-			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateDeleted:
-			externalState := btypes.ChangesetExternalStateDeleted
-			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateUnpublished:
-			publicationState := btypes.ChangesetPublicationStateUnpublished
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
-			opts.PublicationState = &publicationState
-		case btypes.ChangesetStateProcessing:
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateQueued, btypes.ReconcilerStateProcessing}
-		case btypes.ChangesetStateRetrying:
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateErrored}
-		case btypes.ChangesetStateFailed:
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateFailed}
-		case btypes.ChangesetStateScheduled:
-			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateScheduled}
-		default:
-			return opts, false, errors.Errorf("changeset state %q not supported in filtering", state)
-		}
+		opts.States = []btypes.ChangesetState{state}
 	}
 
 	if args.ReviewState != nil {
@@ -941,7 +936,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		if err != nil {
 			return opts, false, errors.Wrap(err, "unmarshalling repo id")
 		}
-		opts.RepoID = repoID
+		opts.RepoIDs = []api.RepoID{repoID}
 	}
 
 	return opts, safe, nil
@@ -1072,13 +1067,13 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	}
 
 	if userID != 0 {
-		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential)
+		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
 	}
 
-	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
+	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
 }
 
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
 		return nil, err
@@ -1099,7 +1094,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
 	if err != nil {
 		return nil, err
 	}
@@ -1111,7 +1106,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
@@ -1130,7 +1125,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
 	if err != nil {
 		return nil, err
 	}
@@ -1145,7 +1140,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string) (auth.Authenticator, error) {
+func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (auth.Authenticator, error) {
 	svc := service.New(r.store)
 
 	var a auth.Authenticator
@@ -1164,6 +1159,13 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 		}
 		a = &auth.BasicAuthWithSSH{
 			BasicAuth:  auth.BasicAuth{Username: username, Password: credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if externalServiceType == extsvc.TypeBitbucketCloud {
+		a = &auth.BasicAuthWithSSH{
+			BasicAuth:  auth.BasicAuth{Username: *username, Password: credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
@@ -1463,7 +1465,6 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 	}
 
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
-
 }
 
 func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
@@ -1486,6 +1487,10 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 			Limit: int(args.First),
 		},
 		NewestFirst: true,
+	}
+
+	if args.IncludeLocallyExecutedSpecs != nil {
+		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include
@@ -1536,6 +1541,36 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
+func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlbackend.UpsertEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpsertEmptyBatchChange", fmt.Sprintf("Namespace: %s", args.Namespace))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	batchChange, err := svc.UpsertEmptyBatchChange(ctx, service.UpsertEmptyBatchChangeOpts{
+		NamespaceUserID: uid,
+		NamespaceOrgID:  oid,
+		Name:            args.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+}
+
 func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecFromRaw", fmt.Sprintf("Namespace: %+v", args.Namespace))
 	defer func() {
@@ -1554,6 +1589,11 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
+	bid, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
 	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
 		NamespaceUserID:  uid,
 		NamespaceOrgID:   oid,
@@ -1561,6 +1601,7 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 		NoCache:          args.NoCache,
+		BatchChange:      bid,
 	})
 	if err != nil {
 		return nil, err
@@ -1821,6 +1862,81 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.AvailableBulkOperations", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if len(args.Changesets) == 0 {
+		return nil, errors.New("no changesets provided")
+	}
+
+	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	changesetIDs := make([]int64, 0, len(args.Changesets))
+	for _, changesetID := range args.Changesets {
+		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
+		if err != nil {
+			return nil, err
+		}
+
+		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+	}
+
+	svc := service.New(r.store)
+	availableBulkOperations, err = svc.GetAvailableBulkOperations(ctx, service.GetAvailableBulkOperationsOpts{
+		BatchChange: unmarshalledBatchChangeID,
+		Changesets:  changesetIDs,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return availableBulkOperations, nil
+}
+
+func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphqlbackend.CheckBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CheckBatchChangesCredential", fmt.Sprintf("Credential: %q", args.BatchChangesCredential))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	cred, err := r.batchChangesCredentialByID(ctx, args.BatchChangesCredential)
+	if err != nil {
+		return nil, err
+	}
+	if cred == nil {
+		return nil, ErrIDIsZero{}
+	}
+
+	a, err := cred.authenticator(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
+		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
+	return maxUnlicensedChangesets
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

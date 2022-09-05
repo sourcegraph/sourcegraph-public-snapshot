@@ -9,6 +9,8 @@ import (
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -17,7 +19,7 @@ func TestEstimateQueryCost(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		query     string
-		variables map[string]interface{}
+		variables map[string]any
 		want      QueryCost
 	}{
 		{
@@ -87,7 +89,7 @@ query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     }
                 }
 `,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"first": 10,
 			},
 			want: QueryCost{
@@ -107,7 +109,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"first": 5,
 			},
 			want: QueryCost{
@@ -127,7 +129,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{},
+			variables: map[string]any{},
 			want: QueryCost{
 				FieldCount: 21,
 				MaxDepth:   3,
@@ -354,7 +356,7 @@ fragment FileDiffFields on FileDiff {
 				FieldCount: 7,
 				MaxDepth:   5,
 			},
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"base": "a46cf4a8b6dc42ea7b7b716e53c49dd3508a8678",
 				"head": "0fd3fb1f4e41ae1f95970beeec1c1f7b2d8a7d06",
 				"repo": "github.com/presslabs/mysql-operator",
@@ -556,11 +558,12 @@ func TestRatelimitFromConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rlw := &RateLimitWatcher{
-				store: store,
-			}
 
-			rlw.updateFromConfig(tc.config)
+			logger := logtest.Scoped(t)
+
+			rlw := NewRateLimiteWatcher(logger, store)
+
+			rlw.updateFromConfig(logger, tc.config)
 			rl, enabled := rlw.Get()
 
 			if tc.enabled != enabled {
@@ -612,8 +615,11 @@ func TestBasicLimiterEnabled(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			bl := BasicLimitWatcher{store: store}
-			bl.updateFromConfig(tt.limit)
+
+			logger := logtest.Scoped(t)
+
+			bl := NewBasicLimitWatcher(logger, store)
+			bl.updateFromConfig(logger, tt.limit)
 
 			_, enabled := bl.Get()
 
@@ -629,8 +635,11 @@ func TestBasicLimiter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bl := BasicLimitWatcher{store: store}
-	bl.updateFromConfig(1)
+
+	logger := logtest.Scoped(t)
+
+	bl := NewBasicLimitWatcher(logger, store)
+	bl.updateFromConfig(logger, 1)
 
 	limiter, enabled := bl.Get()
 	if !enabled {

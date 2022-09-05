@@ -41,7 +41,7 @@ type FeatureFlagBooleanResolver struct {
 func (f *FeatureFlagBooleanResolver) Name() string { return f.inner.Name }
 func (f *FeatureFlagBooleanResolver) Value() bool  { return f.inner.Bool.Value }
 func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
+	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ type FeatureFlagRolloutResolver struct {
 func (f *FeatureFlagRolloutResolver) Name() string              { return f.inner.Name }
 func (f *FeatureFlagRolloutResolver) RolloutBasisPoints() int32 { return f.inner.Rollout.Rollout }
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
+	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +127,18 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
-func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
+func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) *bool {
+	flagSet := featureflag.FromContext(ctx)
+	if v, ok := flagSet.GetBool(args.FlagName); ok {
+		return &v
+	}
+	return nil
+}
+
+func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
+	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
@@ -175,6 +184,21 @@ func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) (
 	return overridesToResolvers(r.db, flags), nil
 }
 
+func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
+	Name string
+}) (*FeatureFlagResolver, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, args.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FeatureFlagResolver{r.db, ff}, nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -203,7 +227,7 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	ff := database.FeatureFlags(r.db)
+	ff := r.db.FeatureFlags()
 
 	var res *featureflag.FeatureFlag
 	var err error
@@ -224,7 +248,7 @@ func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteFeatureFlag(ctx, args.Name)
+	return &EmptyResponse{}, r.db.FeatureFlags().DeleteFeatureFlag(ctx, args.Name)
 }
 
 func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
@@ -244,7 +268,7 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 		return nil, errors.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
 	}
 
-	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)
+	res, err := r.db.FeatureFlags().UpdateFeatureFlag(ctx, ff)
 	return &FeatureFlagResolver{r.db, res}, err
 }
 
@@ -272,7 +296,7 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	} else if oid != 0 {
 		fo.OrgID = &oid
 	}
-	res, err := database.FeatureFlags(r.db).CreateOverride(ctx, fo)
+	res, err := r.db.FeatureFlags().CreateOverride(ctx, fo)
 	return &FeatureFlagOverrideResolver{r.db, res}, err
 }
 
@@ -286,7 +310,7 @@ func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args str
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
-	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
+	return &EmptyResponse{}, r.db.FeatureFlags().DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
 }
 
 func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args struct {
@@ -301,6 +325,6 @@ func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args str
 		return nil, err
 	}
 
-	res, err := database.FeatureFlags(r.db).UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
+	res, err := r.db.FeatureFlags().UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
 	return &FeatureFlagOverrideResolver{r.db, res}, err
 }

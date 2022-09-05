@@ -1,8 +1,7 @@
-import React from 'react'
-
 import { RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
@@ -37,11 +36,6 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
-// const UserSettingsPrivacyPage = lazyComponent(
-//     () => import('./privacy/UserSettingsPrivacyPage'),
-//     'UserSettingsPrivacyPage'
-// )
-
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -66,7 +60,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                                     Viewing settings for <strong>{props.user.username}</strong>
                                 </SiteAdminAlert>
                             )}
-                            <p>User settings override global and organization settings.</p>
+                            <Text>User settings override global and organization settings.</Text>
                         </>
                     }
                 />
@@ -102,11 +96,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: showAccountSecurityPage,
     },
     {
-        path: '/privacy',
-        exact: true,
-        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
-    },
-    {
         path: '/repositories',
         render: props => (
             <SettingsRepositoriesPage
@@ -117,12 +106,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         ),
         exact: true,
         condition: userExternalServicesEnabled,
-    },
-    {
-        path: '/organizations',
-        render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
-        exact: true,
-        condition: context => !!context.featureFlags.get('open-beta-enabled'),
     },
     {
         path: '/repositories/manage',
@@ -143,7 +126,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
-                onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                 telemetryService={props.telemetryService}
             />
         ),

@@ -536,7 +536,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 					ExpectedResult: "null",
 					ExpectedErrors: []*gqlerrors.QueryError{
 						{
-							Path:          []interface{}{"resendVerificationEmail"},
+							Path:          []any{"resendVerificationEmail"},
 							Message:       "oh no!",
 							ResolverError: errors.New("oh no!"),
 						},
@@ -566,7 +566,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 					ExpectedErrors: []*gqlerrors.QueryError{
 						{
 							Message:       "Last verification email sent too recently",
-							Path:          []interface{}{"resendVerificationEmail"},
+							Path:          []any{"resendVerificationEmail"},
 							ResolverError: errors.New("Last verification email sent too recently"),
 						},
 					},

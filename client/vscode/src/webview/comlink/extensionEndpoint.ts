@@ -3,7 +3,14 @@ import vscode from 'vscode'
 
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
-import { generateUUID, isNestedConnection, isProxyMarked, NestedConnectionData, RelationshipType } from '.'
+import {
+    generateUUID,
+    isNestedConnection,
+    isProxyMarked,
+    isUnsubscribable,
+    NestedConnectionData,
+    RelationshipType,
+} from '.'
 
 // Used to scope message to panel (and `connectionId` further scopes to function call).
 let nextPanelId = 1
@@ -44,6 +51,10 @@ export function createEndpointsForWebview(
     nextPanelId++
     let disposed = false
 
+    // Keep track of proxied unsubscribables to clean up when a webview is closed. In that case,
+    // the webview will likely be unable to send an unsubscribe message.
+    const proxiedUnsubscribables = new Set<{ unsubscribe: () => unknown }>()
+
     /**
      * Handles values sent to webviews that are marked to be proxied.
      */
@@ -52,6 +63,11 @@ export function createEndpointsForWebview(
         // The proxyMarkedValue is probably not cloneable, so don't
         // send it "over the wire"
         delete value.proxyMarkedValue
+
+        if (isUnsubscribable(proxyMarkedValue)) {
+            proxiedUnsubscribables.add(proxyMarkedValue)
+            // Debt: ideally remove unsubscribable from set when we receive a unsubscribe message.
+        }
 
         const endpoint = createEndpoint(value.nestedConnectionId)
         Comlink.expose(proxyMarkedValue, endpoint)
@@ -114,6 +130,10 @@ export function createEndpointsForWebview(
     panel.onDidDispose(() => {
         disposed = true
         endpointFactories.delete(panelId)
+
+        for (const unsubscribable of proxiedUnsubscribables) {
+            unsubscribable.unsubscribe()
+        }
     })
 
     const webviewEndpoint = createEndpoint('webview')

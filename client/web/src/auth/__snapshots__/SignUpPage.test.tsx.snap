@@ -29,7 +29,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           src="/img/sourcegraph-logo-light.svg"
         />
         <h2
-          class="d-flex align-items-center mb-4 mt-1 pageHeading"
+          class="h2 d-flex align-items-center mb-4 mt-1 pageHeading"
         >
           Easily search the code you care about.
         </h2>
@@ -43,6 +43,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
             >
               <span
                 class="badge info productStatusBadge text-uppercase mr-1"
+                data-state="closed"
                 status="beta"
               >
                 beta
@@ -74,7 +75,9 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       <div
         class="leftOrRight signUpWrapper"
       >
-        <h2>
+        <h2
+          class="h2"
+        >
           Create a free account
         </h2>
         <div
@@ -83,7 +86,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           Or, 
           <a
             class="anchorLink"
-            href="/?showEmail=true"
+            href="/sign-up?showEmail=true"
           >
             continue with email
           </a>
@@ -138,11 +141,14 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
+          role="img"
           viewBox="0 0 52 52"
           width="65"
           xmlns="http://www.w3.org/2000/svg"
@@ -161,11 +167,11 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
           />
         </svg>
       </div>
-      <div
-        class="title"
+      <h1
+        class="h1 title"
       >
         Sign up for Sourcegraph Server
-      </div>
+      </h1>
       <div
         class="pb-5 signupPageContainer"
       >
@@ -177,7 +183,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="email"
             >
               Email
@@ -185,24 +191,29 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocomplete="email"
-                class="form-control"
-                id="email"
-                name="email"
-                placeholder=" "
-                required=""
-                spellcheck="false"
-                type="email"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="email-input-invalid-feedback"
+                  autocomplete="email"
+                  class="form-control with-invalid-icon"
+                  id="email"
+                  name="email"
+                  placeholder=" "
+                  required=""
+                  spellcheck="false"
+                  type="email"
+                  value=""
+                />
+              </div>
             </div>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="username"
             >
               Username
@@ -210,27 +221,32 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username"
-                maxlength="255"
-                name="username"
-                pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
-                placeholder=" "
-                required=""
-                spellcheck="false"
-                type="text"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="username-input-invalid-feedback"
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username"
+                  maxlength="255"
+                  name="username"
+                  pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                  placeholder=" "
+                  required=""
+                  spellcheck="false"
+                  type="text"
+                  value=""
+                />
+              </div>
             </div>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="password"
             >
               Password
@@ -238,21 +254,27 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocomplete="new-password"
-                class="form-control"
-                formnovalidate=""
-                id="password"
-                minlength="12"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="password-input-invalid-feedback password-requirements"
+                  autocomplete="new-password"
+                  class="form-control with-invalid-icon"
+                  formnovalidate=""
+                  id="password"
+                  minlength="12"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
             </div>
             <small
-              class="form-text text-muted"
+              class="form-help text-muted"
+              id="password-requirements"
             >
               At least 12 characters
             </small>
@@ -261,7 +283,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             class="form-group mb-0"
           >
             <button
-              class="btn btnPrimary btn-block d-flex justify-content-center align-items-center"
+              class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
               disabled=""
               type="submit"
             >

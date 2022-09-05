@@ -3,8 +3,8 @@ package main
 import "time"
 
 type rawResult struct {
-	Data   result        `json:"data,omitempty"`
-	Errors []interface{} `json:"errors,omitempty"`
+	Data   result `json:"data,omitempty"`
+	Errors []any  `json:"errors,omitempty"`
 }
 
 type result struct {
@@ -18,9 +18,9 @@ type result struct {
 
 // searchResults represents the data we get back from the GraphQL search request.
 type searchResults struct {
-	Results                    []map[string]interface{}
+	Results                    []map[string]any
 	LimitHit                   bool
-	Cloning, Missing, Timedout []map[string]interface{}
+	Cloning, Missing, Timedout []map[string]any
 	MatchCount                 int
 	ElapsedMilliseconds        int
 	Alert                      searchResultsAlert

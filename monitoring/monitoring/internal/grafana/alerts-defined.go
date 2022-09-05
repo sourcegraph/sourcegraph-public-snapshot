@@ -8,7 +8,7 @@ func NewContainerAlertsDefinedTable(target sdk.Target) *sdk.Panel {
 
 	var panelTemplateLink = "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"
 	alertsDefined.CustomPanel = &sdk.CustomPanel{
-		"fieldConfig": map[string]interface{}{
+		"fieldConfig": map[string]any{
 			"overrides": []*Override{
 				{
 					Matcher: matcherByName("level"),
@@ -41,16 +41,16 @@ func NewContainerAlertsDefinedTable(target sdk.Target) *sdk.Panel {
 				},
 			},
 		},
-		"options": map[string]interface{}{
+		"options": map[string]any{
 			"showHeader": true,
-			"sortBy": []map[string]interface{}{{
+			"sortBy": []map[string]any{{
 				"desc":        true,
 				"displayName": "firing?",
 			}},
 		},
-		"transformations": []map[string]interface{}{{
+		"transformations": []map[string]any{{
 			"id": "organize",
-			"options": map[string]map[string]interface{}{
+			"options": map[string]map[string]any{
 				"excludeByName": {
 					"Time": true,
 				},
@@ -78,9 +78,9 @@ func alertsFiringOverride() *Override {
 			{ID: "unit", Value: "short"},
 			{
 				ID: "thresholds",
-				Value: map[string]interface{}{
+				Value: map[string]any{
 					"mode": "absolute",
-					"steps": []map[string]interface{}{{
+					"steps": []map[string]any{{
 						"color": "rgba(50, 172, 45, 0.97)",
 						"value": nil,
 					}, {
@@ -91,7 +91,7 @@ func alertsFiringOverride() *Override {
 			},
 			{
 				ID: "mappings",
-				Value: []map[string]interface{}{{
+				Value: []map[string]any{{
 					"from":  "",
 					"id":    1,
 					"text":  "false",

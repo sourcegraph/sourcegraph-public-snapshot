@@ -1,8 +1,8 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -91,7 +91,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
+export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadsPageProps>> = ({
     repo,
     queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
@@ -102,6 +102,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryLsifUploads = useCallback(
@@ -124,22 +125,22 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
 
     const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })
     useEffect(() => {
-        if (history.location.state) {
+        if (location.state) {
             setDeleteStatus({
                 isDeleting: true,
-                message: history.location.state.message,
-                state: history.location.state.modal,
+                message: location.state.message,
+                state: location.state.modal,
             })
         }
-    }, [history.location.state])
+    }, [location.state])
 
     return (
         <div className="code-intel-uploads">
-            <PageTitle title="Precise code intelligence uploads" />
+            <PageTitle title="Code graph data uploads" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Precise code intelligence uploads' }]}
-                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                path={[{ text: 'Code graph data uploads' }]}
+                description={`Indexes uploaded to Sourcegraph from CI or from auto-indexing ${
                     repo ? 'for this repository' : 'over all repositories'
                 }.`}
                 className="mb-3"
@@ -152,14 +153,14 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             )}
 
             {repo && commitGraphMetadata && (
-                <Container className="mb-2">
+                <div className="mb-3">
                     <CommitGraphMetadata
                         stale={commitGraphMetadata.stale}
                         updatedAt={commitGraphMetadata.updatedAt}
                         className="mb-0"
                         now={now}
                     />
-                </Container>
+                </div>
             )}
 
             <Container>
@@ -167,6 +168,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
                         listClassName={classNames(styles.grid, 'mb-3')}
+                        inputClassName="flex-1"
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}

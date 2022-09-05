@@ -1,21 +1,18 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import { Collapse, FormGroup, Input, Label } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { renderMarkdown } from '@sourcegraph/common'
+import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4, Text, H3 } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
+import { limitHit } from './StreamingProgressCount'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
 
@@ -37,11 +34,10 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
-    const [isOpen, setIsOpen] = useState(startOpen)
-
-    const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
-
+const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped: Skipped; startOpen: boolean }>> = ({
+    skipped,
+    startOpen,
+}) => {
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
     // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
@@ -59,47 +55,57 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                 skipped.severity !== 'info' && styles.streamingSkippedItemWarn
             )}
         >
-            <Button
-                className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
-                onClick={toggleIsOpen}
-                onKeyDown={onKeyDown}
-                disabled={!skipped.message}
-                outline={true}
-                variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
-            >
-                <h4 className="d-flex align-items-center mb-0 w-100">
-                    <Icon
-                        className={classNames(styles.icon, 'flex-shrink-0')}
-                        as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
-                    />
+            <Collapse openByDefault={startOpen}>
+                {({ isOpen }) => (
+                    <>
+                        <CollapseHeader
+                            className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
+                            onKeyDown={onKeyDown}
+                            disabled={!skipped.message}
+                            as={Button}
+                            outline={true}
+                            variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
+                        >
+                            <H4 className="d-flex align-items-center mb-0 w-100">
+                                <Icon
+                                    aria-label={skipped.severity === 'info' ? 'Information' : 'Alert'}
+                                    className={classNames(styles.icon, 'flex-shrink-0')}
+                                    svgPath={skipped.severity === 'info' ? mdiInformationOutline : mdiAlertCircle}
+                                />
 
-                    <span className="flex-grow-1 text-left">{skipped.title}</span>
+                                <span className="flex-grow-1 text-left">{skipped.title}</span>
 
-                    {skipped.message && (
-                        <Icon
-                            className={classNames('flex-shrink-0', styles.chevron)}
-                            as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
-                        />
-                    )}
-                </h4>
-            </Button>
+                                {skipped.message && (
+                                    <Icon
+                                        aria-hidden={true}
+                                        className={classNames('flex-shrink-0', styles.chevron)}
+                                        svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                    />
+                                )}
+                            </H4>
+                        </CollapseHeader>
 
-            {skipped.message && (
-                <Collapse isOpen={isOpen}>
-                    <Markdown
-                        className={classNames(styles.message, styles.markdown, 'text-left py-1')}
-                        dangerousInnerHTML={renderMarkdown(skipped.message)}
-                    />
-                </Collapse>
-            )}
+                        {skipped.message && (
+                            <CollapsePanel>
+                                <Markdown
+                                    className={classNames(styles.message, styles.markdown, 'text-left py-1')}
+                                    dangerousInnerHTML={renderMarkdown(skipped.message)}
+                                />
+                            </CollapsePanel>
+                        )}
+                    </>
+                )}
+            </Collapse>
             <div className={classNames(styles.bottomBorderSpacer, 'mt-2')} />
         </div>
     )
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -126,6 +132,24 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
 
     return (
         <>
+            {coreWorkflowImprovementsEnabled && (
+                <Text className="mx-3 mt-3">
+                    Found {limitHit(progress) ? 'more than ' : ''}
+                    {progress.matchCount} {pluralize('result', progress.matchCount)}
+                    {progress.repositoriesCount !== undefined
+                        ? ` from ${progress.repositoriesCount} ${pluralize(
+                              'repository',
+                              progress.repositoriesCount,
+                              'repositories'
+                          )}`
+                        : ''}
+                    .
+                </Text>
+            )}
+
+            {coreWorkflowImprovementsEnabled && sortedSkippedItems.length > 0 && (
+                <H3 className="mx-3">Some results skipped:</H3>
+            )}
             {sortedSkippedItems.map((skipped, index) => (
                 <SkippedMessage
                     key={skipped.reason}
@@ -137,27 +161,30 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
-                    <FormGroup check={true}>
+                    <div className="form-check">
                         {sortedSkippedItems.map(
-                            skipped =>
+                            (skipped, index) =>
                                 skipped.suggested && (
-                                    <Label
-                                        check={true}
-                                        className="mb-1 d-block"
+                                    <Checkbox
                                         key={skipped.suggested.queryExpression}
-                                    >
-                                        <Input
-                                            type="checkbox"
-                                            value={skipped.suggested.queryExpression}
-                                            onChange={checkboxHandler}
-                                            data-testid="streaming-progress-skipped-suggest-check"
-                                        />{' '}
-                                        {skipped.suggested.title} (
-                                        <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
-                                    </Label>
+                                        value={skipped.suggested.queryExpression}
+                                        onChange={checkboxHandler}
+                                        data-testid={`streaming-progress-skipped-suggest-check-${index}`}
+                                        id={`streaming-progress-skipped-suggest-check-${index}`}
+                                        wrapperClassName="mb-1 d-block"
+                                        label={
+                                            <>
+                                                {skipped.suggested.title} (
+                                                <SyntaxHighlightedSearchQuery
+                                                    query={skipped.suggested.queryExpression}
+                                                />
+                                                )
+                                            </>
+                                        }
+                                    />
                                 )
                         )}
-                    </FormGroup>
+                    </div>
 
                     <Button
                         type="submit"
@@ -166,7 +193,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <Icon className="mr-1" as={SearchIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
                         Search again
                     </Button>
                 </Form>

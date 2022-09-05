@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { drop } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { useLocation } from 'react-router'
 
 import { Alert, Button, Icon } from '@sourcegraph/wildcard'
@@ -52,15 +52,15 @@ interface MembersNotificationProps {
     className?: string
 }
 
-export const OrgMemberNotification: React.FunctionComponent<MembersNotificationProps> = ({
+export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChildren<MembersNotificationProps>> = ({
     className,
     message,
     onDismiss,
 }) => (
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+        <Button title="Dismiss" onClick={onDismiss}>
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )

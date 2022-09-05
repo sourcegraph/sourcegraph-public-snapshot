@@ -108,16 +108,16 @@ type StepContext struct {
 	// BatchChange are the attributes in the BatchSpec that are set on the BatchChange.
 	BatchChange BatchChangeAttributes
 	// Outputs are the outputs set by the current and all previous steps.
-	Outputs map[string]interface{}
+	Outputs map[string]any
 	// Step is the result of the current step. Empty when evaluating the "run" field
 	// but filled when evaluating the "outputs" field.
-	Step execution.StepResult
+	Step execution.AfterStepResult
 	// Steps contains the path in which the steps are being executed and the
 	// changes made by all steps that were executed up until the current step.
 	Steps StepsContext
 	// PreviousStep is the result of the previous step. Empty when there is no
 	// previous step.
-	PreviousStep execution.StepResult
+	PreviousStep execution.AfterStepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
 	Repository Repository
 }
@@ -125,8 +125,8 @@ type StepContext struct {
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
 // text/template.
 func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
-	newStepResult := func(res *execution.StepResult) map[string]interface{} {
-		m := map[string]interface{}{
+	newStepResult := func(res *execution.AfterStepResult) map[string]any {
+		m := map[string]any{
 			"modified_files": "",
 			"added_files":    "",
 			"deleted_files":  "",
@@ -138,46 +138,40 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return m
 		}
 
-		m["modified_files"] = res.ModifiedFiles()
-		m["added_files"] = res.AddedFiles()
-		m["deleted_files"] = res.DeletedFiles()
-		m["renamed_files"] = res.RenamedFiles()
-
-		if res.Stdout != nil {
-			m["stdout"] = res.Stdout.String()
-		}
-
-		if res.Stderr != nil {
-			m["stderr"] = res.Stderr.String()
-		}
+		m["modified_files"] = res.ChangedFiles.Modified
+		m["added_files"] = res.ChangedFiles.Added
+		m["deleted_files"] = res.ChangedFiles.Deleted
+		m["renamed_files"] = res.ChangedFiles.Renamed
+		m["stdout"] = res.Stdout
+		m["stderr"] = res.Stderr
 
 		return m
 	}
 
 	return template.FuncMap{
-		"previous_step": func() map[string]interface{} {
+		"previous_step": func() map[string]any {
 			return newStepResult(&stepCtx.PreviousStep)
 		},
-		"step": func() map[string]interface{} {
+		"step": func() map[string]any {
 			return newStepResult(&stepCtx.Step)
 		},
-		"steps": func() map[string]interface{} {
-			res := newStepResult(&execution.StepResult{Files: stepCtx.Steps.Changes})
+		"steps": func() map[string]any {
+			res := newStepResult(&execution.AfterStepResult{ChangedFiles: stepCtx.Steps.Changes})
 			res["path"] = stepCtx.Steps.Path
 			return res
 		},
-		"outputs": func() map[string]interface{} {
+		"outputs": func() map[string]any {
 			return stepCtx.Outputs
 		},
-		"repository": func() map[string]interface{} {
-			return map[string]interface{}{
+		"repository": func() map[string]any {
+			return map[string]any{
 				"search_result_paths": stepCtx.Repository.SearchResultPaths(),
 				"name":                stepCtx.Repository.Name,
 				"branch":              stepCtx.Repository.Branch,
 			}
 		},
-		"batch_change": func() map[string]interface{} {
-			return map[string]interface{}{
+		"batch_change": func() map[string]any {
+			return map[string]any{
 				"name":        stepCtx.BatchChange.Name,
 				"description": stepCtx.BatchChange.Description,
 			}
@@ -187,7 +181,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 
 type StepsContext struct {
 	// Changes that have been made by executing all steps.
-	Changes *git.Changes
+	Changes git.Changes
 	// Path is the relative-to-root directory in which the steps have been
 	// executed. Default is "". No leading "/".
 	Path string
@@ -204,7 +198,7 @@ type ChangesetTemplateContext struct {
 	Steps StepsContext
 
 	// Outputs are the outputs defined and initialized by the steps.
-	Outputs map[string]interface{}
+	Outputs map[string]any
 
 	// Repository is the repository in which the steps were executed.
 	Repository Repository
@@ -214,34 +208,34 @@ type ChangesetTemplateContext struct {
 // text/template.
 func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"repository": func() map[string]interface{} {
-			return map[string]interface{}{
+		"repository": func() map[string]any {
+			return map[string]any{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
 				"name":                tmplCtx.Repository.Name,
 				"branch":              tmplCtx.Repository.Branch,
 			}
 		},
-		"batch_change": func() map[string]interface{} {
-			return map[string]interface{}{
+		"batch_change": func() map[string]any {
+			return map[string]any{
 				"name":        tmplCtx.BatchChangeAttributes.Name,
 				"description": tmplCtx.BatchChangeAttributes.Description,
 			}
 		},
-		"outputs": func() map[string]interface{} {
+		"outputs": func() map[string]any {
 			return tmplCtx.Outputs
 		},
-		"steps": func() map[string]interface{} {
-			// Wrap the *StepChanges in a execution.StepResult so we can use nil-safe
-			// methods.
-			res := execution.StepResult{Files: tmplCtx.Steps.Changes}
-
-			return map[string]interface{}{
-				"modified_files": res.ModifiedFiles(),
-				"added_files":    res.AddedFiles(),
-				"deleted_files":  res.DeletedFiles(),
-				"renamed_files":  res.RenamedFiles(),
+		"steps": func() map[string]any {
+			return map[string]any{
+				"modified_files": tmplCtx.Steps.Changes.Modified,
+				"added_files":    tmplCtx.Steps.Changes.Added,
+				"deleted_files":  tmplCtx.Steps.Changes.Deleted,
+				"renamed_files":  tmplCtx.Steps.Changes.Renamed,
 				"path":           tmplCtx.Steps.Path,
 			}
+		},
+		// Leave batch_change_link alone; it will be rendered during the reconciler phase instead.
+		"batch_change_link": func() string {
+			return "${{ batch_change_link }}"
 		},
 	}
 }

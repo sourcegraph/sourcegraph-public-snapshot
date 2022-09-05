@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 import { Button, Link } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../components/LoaderButton'
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
 
@@ -11,7 +11,7 @@ interface Props {
     isSkippable?: boolean
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }) => {
+export const Footer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ onFinish, isSkippable }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (

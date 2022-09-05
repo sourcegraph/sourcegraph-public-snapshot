@@ -4,11 +4,13 @@ import classNames from 'classnames'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterLink, RevisionsProps, SyntaxHighlightedSearchQuery, TabIndex } from '@sourcegraph/search-ui'
-import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSection.module.scss'
+// eslint-disable-next-line no-restricted-imports
+import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchFilterSection.module.scss'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -16,6 +18,8 @@ import {
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
+
+import revisionStyles from './Revisions.module.scss'
 
 const DEFAULT_FIRST = 10
 export const GIT_REVS_QUERY = gql`
@@ -56,13 +60,15 @@ interface RevisionListProps {
     query: string
 }
 
-const RevisionList: React.FunctionComponent<RevisionListProps> = ({
+const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionListProps>> = ({
     repoName,
     type,
     onFilterClick,
     pluralNoun,
     query,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
@@ -94,19 +100,19 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
 
     if (error || !connection || connection.error) {
         return (
-            <p className={classNames('text-muted', styles.sidebarSectionNoResults)}>
+            <Text className={classNames('text-muted', styles.sidebarSectionNoResults)}>
                 <span className="text-muted">Unable to fetch repository revisions.</span>
-            </p>
+            </Text>
         )
     }
 
     if (connection.nodes.length === 0) {
         return (
-            <p className={classNames('text-muted', styles.sidebarSectionNoResults)}>
+            <Text className={classNames('text-muted', styles.sidebarSectionNoResults)}>
                 {query
                     ? `None of the ${pluralNoun} in this repository match this filter.`
                     : `This repository doesn't have any ${pluralNoun}.`}
-            </p>
+            </Text>
         )
     }
 
@@ -118,13 +124,13 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
                         key={node.name}
                         label={node.displayName}
                         value={node.name}
-                        labelConverter={revisionLabel}
+                        labelConverter={coreWorkflowImprovementsEnabled ? undefined : revisionLabel}
                         onFilterChosen={onFilterClick}
                     />
                 ))}
             </ul>
             {(connection.totalCount ?? 0) > DEFAULT_FIRST ? (
-                <p className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
+                <Text className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
                     <small className="flex-1" data-testid="summary">
                         {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
                     </small>
@@ -133,13 +139,13 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
                             Show more
                         </Button>
                     ) : null}
-                </p>
+                </Text>
             ) : null}
         </>
     )
 }
 
-export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
+export const Revisions: React.FunctionComponent<React.PropsWithChildren<RevisionsProps>> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
         const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting('search.sidebar.revisions.tab')
         const onRevisionFilterClick = (value: string): void =>
@@ -148,7 +154,11 @@ export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs defaultIndex={_initialTab ?? persistedTabIndex ?? 0} onChange={setPersistedTabIndex}>
+            <Tabs
+                defaultIndex={_initialTab ?? persistedTabIndex ?? 0}
+                onChange={setPersistedTabIndex}
+                className={revisionStyles.tabs}
+            >
                 <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>
@@ -177,7 +187,10 @@ export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
         )
     }
 )
+Revisions.displayName = 'Revisions'
 
-export const getRevisions = (props: Omit<RevisionsProps, 'query'>) => (query: string) => (
-    <Revisions {...props} query={query} />
-)
+export const getRevisions = (props: Omit<RevisionsProps, 'query'>) =>
+    function RevisionsSection(query: string) {
+        // eslint-disable-next-line no-restricted-syntax
+        return <Revisions {...props} query={query} />
+    }

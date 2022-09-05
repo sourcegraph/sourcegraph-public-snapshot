@@ -28,12 +28,14 @@ export const CREATE_BATCH_CHANGES_CREDENTIAL = gql`
     mutation CreateBatchChangesCredential(
         $user: ID
         $credential: String!
+        $username: String
         $externalServiceKind: ExternalServiceKind!
         $externalServiceURL: String!
     ) {
         createBatchChangesCredential(
             user: $user
             credential: $credential
+            username: $username
             externalServiceKind: $externalServiceKind
             externalServiceURL: $externalServiceURL
         ) {
@@ -78,6 +80,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceKind
         externalServiceURL
         requiresSSH
+        requiresUsername
         credential {
             ...BatchChangesCredentialFields
         }
@@ -155,3 +158,11 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<B
             return batchChangesCodeHosts
         },
     })
+
+export const CHECK_BATCH_CHANGES_CREDENTIAL = gql`
+    query CheckBatchChangesCredential($id: ID!) {
+        checkBatchChangesCredential(batchChangesCredential: $id) {
+            alwaysNil
+        }
+    }
+`

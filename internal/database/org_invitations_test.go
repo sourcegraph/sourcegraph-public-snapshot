@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -18,7 +20,8 @@ func TestOrgInvitations(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	sender, err := db.Users().Create(ctx, NewUser{
@@ -324,7 +327,7 @@ func TestOrgInvitations(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		toRevokeInvite, err := OrgInvitations(db).Create(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		toRevokeInvite, err := db.OrgInvitations().Create(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -347,7 +350,7 @@ func TestOrgInvitations(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		toUpdateInvite, err := OrgInvitations(db).Create(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		toUpdateInvite, err := db.OrgInvitations().Create(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -358,7 +361,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 
 		// After updating, the new expiry time on invite should be the same as we expect
-		updatedInvite, err := OrgInvitations(db).GetByID(ctx, toUpdateInvite.ID)
+		updatedInvite, err := db.OrgInvitations().GetByID(ctx, toUpdateInvite.ID)
 		if err != nil {
 			t.Fatalf("cannot get invite by id %d", toUpdateInvite.ID)
 		}

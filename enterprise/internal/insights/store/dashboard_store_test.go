@@ -8,18 +8,21 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/log/logtest"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := timescale.Exec(`
+	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
-		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3');`)
+		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashbord for org 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,33 +30,45 @@ func TestGetDashboard(t *testing.T) {
 	ctx := context.Background()
 
 	// assign some global grants just so the test can immediately fetch the created dashboard
-	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, global)
-									VALUES (1, true)`)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (dashboard_id, global) VALUES (1, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// assign a private grant
-	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id)
-									VALUES (2, 3)`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// assign some global grants just so the test can immediately fetch the created dashboard
-	_, err = timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
-									VALUES (1, 'my view', 'my description', 'unique1234')`)
+	// assign a private user grant
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (dashboard_id, user_id) VALUES (2, 3)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// assign some global grants just so the test can immediately fetch the created dashboard
-	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
-									VALUES (1, 1)`)
+	// assign a private org grant
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (dashboard_id, org_id) VALUES (3, 1)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store := NewDashboardStore(timescale)
+	// create some views to assign to the dashboards
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES
+										(1, 'my view', 'my description', 'unique1234'),
+										(2, 'private view', 'private description', 'private1234'),
+										(3, 'shared view', 'shared description', 'shared1234')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assign views to dashboards
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+									VALUES
+										(1, 1),
+										(1, 3),
+										(2, 2),
+										(2, 3),
+										(3, 3)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
@@ -67,7 +82,7 @@ func TestGetDashboard(t *testing.T) {
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 
-	t.Run("test user 3 can see both dashboards", func(t *testing.T) {
+	t.Run("test user 3 can see global and user private dashboards", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}})
 		if err != nil {
 			t.Fatal(err)
@@ -91,14 +106,67 @@ func TestGetDashboard(t *testing.T) {
 
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
+	t.Run("test user 4 in org 1 can see both global and org private dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 4 in org 1 can see both dashboards with view", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 4 can not see dashboards with private view", func(t *testing.T) {
+		viewId := "private1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view limit 1", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, Limit: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view after 1", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, After: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
 }
 
 func TestCreateDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
@@ -143,16 +211,16 @@ func TestCreateDashboard(t *testing.T) {
 }
 
 func TestUpdateDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
 
-	_, err := timescale.Exec(`
+	_, err := insightsDB.ExecContext(context.Background(), `
 	INSERT INTO dashboard (id, title)
 	VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
 	INSERT INTO dashboard_grants (dashboard_id, global)
@@ -215,12 +283,12 @@ func TestUpdateDashboard(t *testing.T) {
 }
 
 func TestDeleteDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
-	_, err := timescale.Exec(`
+	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
 		VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
 		INSERT INTO dashboard_grants (dashboard_id, global)
@@ -229,7 +297,7 @@ func TestDeleteDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
@@ -274,13 +342,75 @@ func TestDeleteDashboard(t *testing.T) {
 	})
 }
 
-func TestAddViewsToDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+func TestRestoreDashboard(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
-	_, err := timescale.Exec(`
+	_, err := insightsDB.ExecContext(context.Background(), `
+		INSERT INTO dashboard (id, title, deleted_at)
+		VALUES (1, 'test dashboard 1', NULL), (2, 'test dashboard 2', NOW());
+		INSERT INTO dashboard_grants (dashboard_id, global)
+		VALUES (1, true), (2, true);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewDashboardStore(insightsDB)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test restore dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeRestore", []*types.Dashboard{
+			{
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
+
+		err = store.RestoreDashboard(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterRestore", []*types.Dashboard{
+			{
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+			{
+				ID:           2,
+				Title:        "test dashboard 2",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
+	})
+}
+
+func TestAddViewsToDashboard(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
 		VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
 		INSERT INTO dashboard_grants (dashboard_id, global)
@@ -289,13 +419,13 @@ func TestAddViewsToDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
 
 	t.Run("create and add view to dashboard", func(t *testing.T) {
-		insightStore := NewInsightStore(timescale)
+		insightStore := NewInsightStore(insightsDB)
 		view1, err := insightStore.CreateView(ctx, types.InsightView{
 			Title:            "great view",
 			Description:      "my view",
@@ -315,7 +445,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard before adding insight")
 		}
@@ -328,7 +458,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}
-		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
@@ -338,17 +468,17 @@ func TestAddViewsToDashboard(t *testing.T) {
 }
 
 func TestRemoveViewsFromDashboard(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}
 
-	insightStore := NewInsightStore(timescale)
+	insightStore := NewInsightStore(insightsDB)
 
 	view, err := insightStore.CreateView(ctx, types.InsightView{
 		Title:            "view1",
@@ -430,11 +560,11 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 }
 
 func TestHasDashboardPermission(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
-	store := NewDashboardStore(timescale)
+	store := NewDashboardStore(insightsDB)
 	store.Now = func() time.Time {
 		return now
 	}

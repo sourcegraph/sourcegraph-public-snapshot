@@ -88,8 +88,9 @@ const queryCommit = memoizeObservable(
                 }
                 if (!data.node.commit) {
                     // Filter out any revision not found errors, they usually come in multiples when searching for a commit, we want to replace all of them with 1 "Commit not found" error
+                    // TODO: Figuring why should we use `errors` here since it is `undefined` in this place
                     const errorsWithoutRevisionError = errors?.filter(
-                        error => !error.message.includes('revision not found')
+                        (error: { message: string | string[] }) => !error.message.includes('revision not found')
                     )
 
                     const revisionErrorsFiltered =
@@ -257,8 +258,14 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
+
         return (
-            <div className={classNames('p-3', styles.repositoryCommitPage)} ref={this.nextRepositoryCommitPageElement}>
+            <div
+                data-testid="repository-commit-page"
+                className={classNames('p-3', styles.repositoryCommitPage)}
+                ref={this.nextRepositoryCommitPageElement}
+            >
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -292,22 +299,25 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             nodeComponent={FileDiffNode}
                             nodeComponentProps={{
                                 ...this.props,
-                                extensionInfo: {
-                                    base: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        revision: commitParentOrEmpty(this.state.commitOrError),
-                                        commitID: commitParentOrEmpty(this.state.commitOrError),
-                                    },
-                                    head: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        revision: this.state.commitOrError.oid,
-                                        commitID: this.state.commitOrError.oid,
-                                    },
-                                    hoverifier: this.hoverifier,
-                                    extensionsController: this.props.extensionsController,
-                                },
+                                extensionInfo:
+                                    extensionsController !== null
+                                        ? {
+                                              base: {
+                                                  repoName: this.props.repo.name,
+                                                  repoID: this.props.repo.id,
+                                                  revision: commitParentOrEmpty(this.state.commitOrError),
+                                                  commitID: commitParentOrEmpty(this.state.commitOrError),
+                                              },
+                                              head: {
+                                                  repoName: this.props.repo.name,
+                                                  repoID: this.props.repo.id,
+                                                  revision: this.state.commitOrError.oid,
+                                                  commitID: this.state.commitOrError.oid,
+                                              },
+                                              hoverifier: this.hoverifier,
+                                              extensionsController,
+                                          }
+                                        : undefined,
                                 lineNumbers: true,
                                 diffMode: this.state.diffMode,
                             }}
@@ -321,9 +331,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                         />
                     </>
                 )}
-                {this.state.hoverOverlayProps && (
+                {this.state.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...this.props}
+                        extensionsController={extensionsController}
                         {...this.state.hoverOverlayProps}
                         nav={url => this.props.history.push(url)}
                         hoveredTokenElement={this.state.hoveredTokenElement}

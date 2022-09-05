@@ -40,11 +40,12 @@ body.theme-dark .markdown-body ul li:before {
 
 <p class="lead">Code Insights reveals high-level information about your codebase, based on both how your code changes over time and its current state.</p>
 
-Code Insights is based on our universal code search, making it precise and configurable. Track anything that can be expressed with a Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories.
+Code Insights is based on our universal code search, making it precise and configurable. Track anything that can be expressed with a Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories. Code Insights will backfill years of historical data from your version control, so you can immediately reveal current trends and baselines. 
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="language_insight_quickstart">Language Insight Quickstart</a>
+<a class="btn" href="references/requirements">Requirements</a>
 </div>
 
 ## [Explanations](explanations/index.md)
@@ -53,6 +54,7 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Automatically generated data series for version or pattern tracking](explanations/automatically_generated_data_series.md)
 - [Code Insights filters](explanations/code_insights_filters.md)
 - [Current limitations of Code Insights](explanations/current_limitations_of_code_insights.md)
+- [Search-screen search results aggregations](explanations/search_results_aggregations.md)
 - [Viewing code insights](explanations/viewing_code_insights.md)
 
 ## [How-tos](how-tos/index.md)
@@ -67,3 +69,5 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
+- [Requirements](references/requirements.md)
+

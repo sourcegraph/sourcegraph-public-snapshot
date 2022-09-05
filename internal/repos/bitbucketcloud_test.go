@@ -10,10 +10,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -48,7 +50,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 			},
 			err: "<nil>",
@@ -62,7 +64,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				"/sourcegraph-testing/sourcegraph",
 			}),
 			conf: &schema.BitbucketCloudConnection{
-				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{
 					"sglocal",
@@ -79,15 +81,12 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindBitbucketCloud,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
-			bbcSrc, err := newBitbucketCloudSource(svc, tc.conf, cf)
+			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -115,22 +114,26 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketCloud,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
-		schmea *schema.BitbucketCloudConnection
+		schema *schema.BitbucketCloudConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
 				Username:    "alice",
 				AppPassword: "secret",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
 				Username:    "alice",
 				AppPassword: "secret",
@@ -138,7 +141,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.BitbucketCloudConnection{
+			schema: &schema.BitbucketCloudConnection{
 				Url:                   "https://bitbucket.org",
 				Username:              "alice",
 				AppPassword:           "secret",
@@ -149,7 +152,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "BitbucketCloudSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, test.schmea, nil)
+			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -216,11 +219,15 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketCloud,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, config, nil)
+			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

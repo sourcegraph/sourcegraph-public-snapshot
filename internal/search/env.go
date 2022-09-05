@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -70,9 +70,11 @@ func IndexedEndpoints() *endpoint.Map {
 	return indexedEndpoints
 }
 
+var ErrIndexDisabled = errors.New("indexed search has been disabled")
+
 func Indexed() zoekt.Streamer {
 	if !conf.SearchIndexEnabled() {
-		return nil
+		return &backend.FakeSearcher{SearchError: ErrIndexDisabled, ListError: ErrIndexDisabled}
 	}
 
 	indexedSearchOnce.Do(func() {

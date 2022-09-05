@@ -6,31 +6,32 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type SymbolSearcher struct {
+type SymbolSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 	Limit       int
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -43,15 +44,15 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 		if ctx.Err() != nil {
 			break
 		}
-		if len(repoRevs.RevSpecs()) == 0 {
+		if len(repoRevs.Revs) == 0 {
 			continue
 		}
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, db, repoRevs, s.PatternInfo, s.Limit)
-			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
+			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
+			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
@@ -60,7 +61,7 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 				},
 			})
 			if err != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+				tr.LogFields(log.String("repo", string(repoRevs.Repo.Name)), log.Error(err))
 				// Only record error if we haven't timed out.
 				if ctx.Err() == nil {
 					cancel()
@@ -73,28 +74,45 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 	return nil, run.Wait()
 }
 
-func (s *SymbolSearcher) Name() string {
-	return "SymbolSearcher"
+func (s *SymbolSearchJob) Name() string {
+	return "SearcherSymbolSearchJob"
 }
+
+func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			log.Int("numRepos", len(s.Repos)),
+			log.Int("limit", s.Limit),
+		)
+	}
+	return res
+}
+
+func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
+func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
 	span.SetTag("repo", string(repoRevs.Repo.Name))
 
-	inputRev := repoRevs.RevSpecs()[0]
+	inputRev := repoRevs.Revs[0]
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, db, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
+	commitID, err := gitserver.NewClient(db).ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,9 @@ import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './Extens
 
 import styles from './ExtensionsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRouteContext> {}
 
@@ -50,7 +52,7 @@ interface ExtensionsAreaProps
         PlatformContextProps,
         ThemeProps,
         TelemetryProps {
-    routes: readonly ExtensionsAreaRoute[]
+    routes?: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -59,7 +61,7 @@ interface ExtensionsAreaProps
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     isSourcegraphDotCom: boolean
 }
@@ -67,7 +69,7 @@ interface ExtensionsAreaProps
 /**
  * The extensions area.
  */
-export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = props => {
+export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<ExtensionsAreaProps>> = props => {
     const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
 
     const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(
@@ -89,24 +91,28 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
 
     return (
         <Page className={styles.extensionsArea}>
-            <ExtensionsAreaHeader
-                {...props}
-                {...context}
-                actionButtons={props.extensionsAreaHeaderActionButtons}
-                isPrimaryHeader={props.location.pathname === props.match.path}
-            />
+            {props.extensionsAreaHeaderActionButtons ? (
+                <ExtensionsAreaHeader
+                    {...props}
+                    {...context}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
+                />
+            ) : null}
             <Switch>
-                {props.routes.map(
-                    ({ path, exact, condition = () => true, render }) =>
-                        condition(context) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={props.match.url + path}
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
+                {props.routes
+                    ? props.routes.map(
+                          ({ path, exact, condition = () => true, render }) =>
+                              condition(context) && (
+                                  <Route
+                                      key="hardcoded-key"
+                                      path={props.match.url + path}
+                                      exact={exact}
+                                      render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                  />
+                              )
+                      )
+                    : null}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </Page>

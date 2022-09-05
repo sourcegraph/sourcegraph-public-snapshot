@@ -1,12 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiStar, mdiStarOutline, mdiLock, mdiDotsHorizontal, mdiWeb, mdiDomain } from '@mdi/js'
 import classNames from 'classnames'
-import DomainIcon from 'mdi-react/DomainIcon'
-import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import StarIcon from 'mdi-react/StarIcon'
-import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
-import WebIcon from 'mdi-react/WebIcon'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -54,7 +49,9 @@ export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-export const NotebookPageHeaderActions: React.FunctionComponent<NotebookPageHeaderActionsProps> = ({
+export const NotebookPageHeaderActions: React.FunctionComponent<
+    React.PropsWithChildren<NotebookPageHeaderActionsProps>
+> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
@@ -87,11 +84,24 @@ export const NotebookPageHeaderActions: React.FunctionComponent<NotebookPageHead
             return <></>
         }
         if (selectedShareOption.namespaceType === 'User') {
-            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
             return selectedShareOption.isPublic ? (
-                <PublicIcon className="mr-1" size="1.15rem" />
+                <Icon
+                    className="mr-1"
+                    svgPath={isSourcegraphDotCom ? mdiWeb : mdiDomain}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             ) : (
-                <LockIcon className="mr-1" size="1.15rem" />
+                <Icon
+                    className="mr-1"
+                    svgPath={mdiLock}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             )
         }
         return (
@@ -148,7 +158,7 @@ interface NotebookSettingsDropdownProps extends TelemetryProps {
     deleteNotebook: typeof _deleteNotebook
 }
 
-const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdownProps> = ({
+const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<NotebookSettingsDropdownProps>> = ({
     notebookId,
     deleteNotebook,
     telemetryService,
@@ -159,8 +169,8 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <Menu>
-                <MenuButton outline={true}>
-                    <DotsHorizontalIcon />
+                <MenuButton outline={true} aria-label="Notebook action">
+                    <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
                     <MenuHeader>Settings</MenuHeader>
@@ -195,7 +205,7 @@ interface NotebookStarsButtonProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = ({
+const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<NotebookStarsButtonProps>> = ({
     notebookId,
     disabled,
     starsCount: initialStarsCount,
@@ -244,15 +254,20 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
 
     return (
         <Button
-            className="d-flex align-items-center"
+            className="d-flex align-items-center pl-0"
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}
+            aria-label={viewerHasStarred ? 'Unstar notebook' : 'Star notebook'}
         >
             {viewerHasStarred ? (
-                <Icon className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} as={StarIcon} />
+                <Icon
+                    aria-hidden={true}
+                    className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
+                    svgPath={mdiStar}
+                />
             ) : (
-                <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                <Icon aria-hidden={true} className={styles.notebookStarIcon} svgPath={mdiStarOutline} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

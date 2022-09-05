@@ -1,0 +1,21 @@
+[
+  {
+   "links": {
+    "commit": {
+     "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/dfc25177e43229dc6cd39c6eeb3800257696547a"
+    },
+    "self": {
+     "href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/dfc25177e43229dc6cd39c6eeb3800257696547a/statuses/build/715267314"
+    }
+   },
+   "uuid": "",
+   "key": "715267314",
+   "refname": "pipeline-test-pr",
+   "url": "https://bitbucket.org/sourcegraph-testing/src-cli/addon/pipelines/home#!/results/2",
+   "state": "SUCCESSFUL",
+   "name": "Pipeline #2 for pipeline-test-pr",
+   "description": "",
+   "created_on": "2022-04-14T20:50:05.708892Z",
+   "updated_on": "2022-04-14T20:50:14.138747Z"
+  }
+ ]

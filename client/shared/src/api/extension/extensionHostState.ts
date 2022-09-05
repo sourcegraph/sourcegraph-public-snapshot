@@ -1,5 +1,5 @@
 import * as comlink from 'comlink'
-import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
@@ -26,9 +26,16 @@ import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
-    mainAPI: comlink.Remote<MainThreadAPI>
+    mainAPI: comlink.Remote<MainThreadAPI> | null,
+    mainThreadAPIInitializations: Observable<boolean> | null
 ): ExtensionHostState {
-    const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI)
+    // We make the mainAPI nullable in which case no extension will ever be activated. This is
+    // used only for the noop controller.
+    let activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
+    let activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]> = of([])
+    if (mainAPI !== null && mainThreadAPIInitializations !== null) {
+        ;({ activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations))
+    }
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),

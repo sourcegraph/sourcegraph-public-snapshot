@@ -47,7 +47,9 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 /**
  * The area for a single batch change.
  */
-export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
+export const BatchChangeDetailsPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeDetailsPageProps>
+> = props => {
     const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
 
     useEffect(() => {
@@ -108,14 +110,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 </Alert>
             )}
             <PageHeader
-                path={[
-                    {
-                        icon: BatchChangesIcon,
-                        to: '/batch-changes',
-                    },
-                    { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
-                    { text: batchChange.name },
-                ]}
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
@@ -136,7 +130,15 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     />
                 }
                 className="test-batch-change-details-page mb-3"
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={BatchChangesIcon} to="/batch-changes" aria-label="Batch Changes" />
+                    <PageHeader.Breadcrumb to={`${batchChange.namespace.url}/batch-changes`}>
+                        {batchChange.namespace.namespaceName}
+                    </PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>{batchChange.name}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ActiveExecutionNotice
@@ -152,12 +154,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <ChangesetsArchivedNotice history={history} location={location} />
             <WebhookAlert batchChange={batchChange} />
-            <BatchChangeStatsCard
-                closedAt={batchChange.closedAt}
-                stats={batchChange.changesetsStats}
-                diff={batchChange.diffStat}
-                className="mb-3"
-            />
+            <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>

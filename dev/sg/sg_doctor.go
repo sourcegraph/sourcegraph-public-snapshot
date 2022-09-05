@@ -1,23 +1,16 @@
 package main
 
 import (
-	"context"
-	"flag"
+	"github.com/urfave/cli/v2"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	doctorFlagSet = flag.NewFlagSet("sg doctor", flag.ExitOnError)
-	doctorCommand = &ffcli.Command{
-		Name:       "doctor",
-		ShortUsage: "sg doctor",
-		ShortHelp:  "Runs checks to test whether system is in correct state to run Sourcegraph.",
-		FlagSet:    doctorFlagSet,
-		Exec:       doctorExec,
-	}
-)
-
-func doctorExec(ctx context.Context, args []string) error {
-	return runChecks(ctx, checks)
+var doctorCommand = &cli.Command{
+	Name:     "doctor",
+	Usage:    "DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph",
+	Category: CategoryEnv,
+	Action: func(ctx *cli.Context) error {
+		return errors.New("DEPRECATED: use 'sg setup -check' instead")
+	},
 }

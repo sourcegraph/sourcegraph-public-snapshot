@@ -1,0 +1,86 @@
+[
+  {
+    "or": [
+      {
+        "and": [
+          {
+            "field": "repo",
+            "value": "primary",
+            "negated": false,
+            "labels": [
+              "None"
+            ],
+            "range": {
+              "start": {
+                "line": 0,
+                "column": 0
+              },
+              "end": {
+                "line": 0,
+                "column": 12
+              }
+            }
+          },
+          {
+            "field": "repo",
+            "value": "contains.path(gordo)",
+            "negated": false,
+            "labels": [
+              "IsPredicate"
+            ],
+            "range": {
+              "start": {
+                "line": 0,
+                "column": 14
+              },
+              "end": {
+                "line": 0,
+                "column": 39
+              }
+            }
+          }
+        ]
+      },
+      {
+        "and": [
+          {
+            "field": "repo",
+            "value": "secondary",
+            "negated": false,
+            "labels": [
+              "None"
+            ],
+            "range": {
+              "start": {
+                "line": 0,
+                "column": 16
+              },
+              "end": {
+                "line": 0,
+                "column": 30
+              }
+            }
+          },
+          {
+            "field": "repo",
+            "value": "contains.path(gordo)",
+            "negated": false,
+            "labels": [
+              "IsPredicate"
+            ],
+            "range": {
+              "start": {
+                "line": 0,
+                "column": 14
+              },
+              "end": {
+                "line": 0,
+                "column": 39
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

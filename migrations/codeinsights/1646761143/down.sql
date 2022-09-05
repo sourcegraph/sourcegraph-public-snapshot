@@ -1,1 +1,0 @@
-ALTER TABLE IF EXISTS insight_view DROP COLUMN IF EXISTS is_frozen;

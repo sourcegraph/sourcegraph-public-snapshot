@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -13,9 +14,10 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,24 +41,28 @@ var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-index
 // in the parent package.
 type Resolver struct {
 	db                 database.DB
-	gitserver          policies.GitserverClient
+	gitserver          GitserverClient
 	resolver           resolvers.Resolver
 	locationResolver   *CachedLocationResolver
 	observationContext *operations
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
-	return &Resolver{
+func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,
 		resolver:           resolver,
 		locationResolver:   NewCachedLocationResolver(db),
 		observationContext: newOperations(observationContext),
 	}
+
+	return &frankenResolver{
+		Resolver: baseResolver,
+	}
 }
 
-func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
+func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.LSIFUploadByID(ctx, id)
@@ -72,6 +78,18 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 
 func (r *Resolver) ExecutorResolver() executor.Resolver {
 	return r.resolver.ExecutorResolver()
+}
+
+func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
+	return r.resolver.CodeNavResolver()
+}
+
+func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
+	return r.resolver.PoliciesResolver()
+}
+
+func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
+	return r.resolver.AutoIndexingResolver()
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
@@ -100,7 +118,7 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSI
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	// ctx, endObservation := r.observationContext.lsifUploads.With(ctx, &err, observation.Args{})
+	// ctx, _, endObservation := r.observationContext.lsifUploads.With(ctx, &err, observation.Args{})
 	// endObservation.EndOnCancel(ctx, 1, observation.Args{})
 
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
@@ -128,7 +146,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.deleteLsifUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.deleteLsifUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadID", string(args.ID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
@@ -185,7 +203,7 @@ func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryAr
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	ctx, endObservation := r.observationContext.lsifIndexes.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.observationContext.lsifIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	// Delegate behavior to LSIFIndexesByRepo with no specified repository identifier
@@ -212,12 +230,16 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	// Create a new indexConnectionResolver here as we only want to index records in
+	// the same graphQL request, not across different request.
+	indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
+
+	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, indexConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.deleteLsifIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.deleteLsifIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -234,7 +256,8 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +266,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
@@ -285,7 +308,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 		configuration = *args.Configuration
 	}
 
-	indexes, err := r.resolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
+	autoindexingResolver := r.resolver.AutoIndexingResolver()
+	indexes, err := autoindexingResolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +320,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
+		index := convertSharedIndexToDBStoreIndex(indexes[i])
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs))
 	}
 	return resolvers, nil
 }
@@ -306,19 +331,41 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	resolver, err := r.resolver.QueryResolver(ctx, args)
-	if err != nil || resolver == nil {
+	codenav := r.resolver.CodeNavResolver()
+	gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
+	if err != nil || gitBlobResolver == nil {
 		return nil, err
 	}
 
-	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
+	return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitBlobCodeIntelInfoArgs) (_ gql.CodeIntelSupportResolver, err error) {
+func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	return NewCodeIntelSupportResolver(r.resolver, args, errTracer), nil
+	return NewCodeIntelSupportResolver(r.resolver, args.Repo.Name, args.Path, errTracer), nil
+}
+
+func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (resolver gql.GitTreeCodeIntelSupportResolver, err error) {
+	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(args.Repo.ID)),
+		log.String("path", args.Path),
+		log.String("commit", args.Commit),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	filesRegex, err := regexp.Compile("^" + regexp.QuoteMeta(args.Path) + "[^.]{1}[^/]*$")
+	if err != nil {
+		return nil, errors.Wrapf(err, "path '%s' caused invalid regex", args.Path)
+	}
+
+	files, err := r.gitserver.ListFiles(ctx, int(args.Repo.ID), args.Commit, filesRegex)
+	if err != nil {
+		return nil, errors.Wrapf(err, "gitserver.ListFiles: error listing files at %s for repo %d", args.Path, args.Repo.ID)
+	}
+
+	return NewCodeIntelTreeInfoResolver(r.resolver, args.Repo, args.Commit, args.Path, files, errTracer), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID
@@ -333,12 +380,17 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
-	configurationPolicy, exists, err := r.resolver.GetConfigurationPolicyByID(ctx, int(configurationPolicyID))
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	configurationPolicy, exists, err := policyResolver.GetConfigurationPolicyByID(ctx, int(configurationPolicyID))
 	if err != nil || !exists {
 		return nil, err
 	}
+	cp := sharedConfigurationPoliciesToStoreConfigurationPolicies(configurationPolicy)
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
+	return NewConfigurationPolicyResolver(r.db, cp, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
@@ -360,7 +412,7 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		pageSize = int(*args.First)
 	}
 
-	opts := store.GetConfigurationPoliciesOptions{
+	opts := shared.GetConfigurationPoliciesOptions{
 		Limit:  pageSize,
 		Offset: offset,
 	}
@@ -381,12 +433,17 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, totalCount, err := r.resolver.GetConfigurationPolicies(ctx, opts)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	policies, totalCount, err := policyResolver.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, policies, totalCount, traceErrs), nil
+	p := sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies)
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, p, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -413,11 +470,16 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		repositoryID = &id
 	}
 
-	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      store.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -425,17 +487,19 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-	})
+	}
+	configurationPolicy, err := policyResolver.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
+	cp := sharedConfigurationPoliciesToStoreConfigurationPolicies(configurationPolicy)
+	return NewConfigurationPolicyResolver(r.db, cp, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -453,11 +517,15 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	opts := shared.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      store.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -465,7 +533,8 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-	}); err != nil {
+	}
+	if err := policyResolver.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
 	}
 
@@ -474,7 +543,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(args.Policy)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
@@ -488,11 +557,46 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteConfigurationPolicyByID(ctx, int(id)); err != nil {
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := policyResolver.DeleteConfigurationPolicyByID(ctx, int(id)); err != nil {
 		return nil, err
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ gql.CodeIntelRepositorySummaryResolver, err error) {
+	ctx, errTracer, endObservation := r.observationContext.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(id)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	repositoryID, err := gql.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := NewPrefetcher(r.resolver)
+
+	summary, err := r.resolver.RepositorySummary(ctx, int(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewRepositorySummaryResolver(
+		r.db,
+		r.resolver,
+		r.gitserver,
+		summary,
+		prefetcher,
+		r.locationResolver,
+		errTracer,
+	), nil
 }
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
@@ -516,7 +620,7 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ gql
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (_ *gql.EmptyResponse, err error) {
-	ctx, endObservation := r.observationContext.updateIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.observationContext.updateIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.Repository)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -532,8 +636,8 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-
-	if err := r.resolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
 		return nil, err
 	}
 
@@ -541,7 +645,7 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 }
 
 func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) (_ gql.RepositoryFilterPreviewResolver, err error) {
-	ctx, endObservation := r.observationContext.previewRepoFilter.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.observationContext.previewRepoFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
@@ -554,19 +658,24 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 		pageSize = int(*args.First)
 	}
 
-	ids, totalCount, repositoryMatchLimit, err := r.resolver.PreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
+	ids, totalCount, repositoryMatchLimit, err := policyResolver.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	resv := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(r.locationResolver.logger, r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(r.db, repo))
+		resv = append(resv, gql.NewRepositoryResolver(r.db, repo))
 	}
 
 	limitedCount := totalCount
@@ -575,7 +684,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 	}
 
 	return &repositoryFilterPreviewResolver{
-		repositoryResolvers: resolvers,
+		repositoryResolvers: resv,
 		totalCount:          limitedCount,
 		offset:              offset,
 		totalMatches:        totalCount,
@@ -584,7 +693,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) (_ []gql.GitObjectFilterPreviewResolver, err error) {
-	ctx, endObservation := r.observationContext.previewGitObjectFilter.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.observationContext.previewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	repositoryID, err := unmarshalLSIFIndexGQLID(id)
@@ -592,7 +701,12 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 		return nil, err
 	}
 
-	namesByRev, err := r.resolver.PreviewGitObjectFilter(ctx, int(repositoryID), store.GitObjectType(args.Type), args.Pattern)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByRev, err := policyResolver.GetPreviewGitObjectFilter(ctx, int(repositoryID), shared.GitObjectType(args.Type), args.Pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -644,32 +758,33 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 	}
 
 	return store.GetUploadsOptions{
-		RepositoryID: repositoryID,
-		State:        strings.ToLower(derefString(args.State, "")),
-		Term:         derefString(args.Query, ""),
-		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
-		DependencyOf: int(dependencyOf),
-		DependentOf:  int(dependentOf),
-		Limit:        derefInt32(args.First, DefaultUploadPageSize),
-		Offset:       offset,
-		AllowExpired: true,
+		RepositoryID:       repositoryID,
+		State:              strings.ToLower(derefString(args.State, "")),
+		Term:               derefString(args.Query, ""),
+		VisibleAtTip:       derefBool(args.IsLatestForRepo, false),
+		DependencyOf:       int(dependencyOf),
+		DependentOf:        int(dependentOf),
+		Limit:              derefInt32(args.First, DefaultUploadPageSize),
+		Offset:             offset,
+		AllowExpired:       true,
+		AllowDeletedUpload: derefBool(args.IncludeDeleted, false),
 	}, nil
 }
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (autoindexingShared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
-	return store.GetIndexesOptions{
+	return autoindexingShared.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),

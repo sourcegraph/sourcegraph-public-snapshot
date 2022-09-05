@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -323,19 +325,19 @@ func TestMarkFailed(t *testing.T) {
 	})
 }
 
-func TestCanceled(t *testing.T) {
+func TestCanceledJobs(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/canceled",
+		expectedPath:     "/.executors/queue/test_queue/canceledJobs",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef","knownJobIds":[1]}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `[1]`,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if ids, err := client.Canceled(context.Background(), "test_queue"); err != nil {
+		if ids, err := client.CanceledJobs(context.Background(), "test_queue", []int{1}); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
 			t.Fatalf("unexpected set of IDs returned: %s", diff)
@@ -359,7 +361,9 @@ func TestHeartbeat(t *testing.T) {
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
 			"igniteVersion": "test-ignite-version",
-			"srcCliVersion": "test-src-cli-version"
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusOK,
 		responsePayload: `[1]`,
@@ -393,7 +397,9 @@ func TestHeartbeatBadResponse(t *testing.T) {
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
 			"igniteVersion": "test-ignite-version",
-			"srcCliVersion": "test-src-cli-version"
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusInternalServerError,
 		responsePayload: ``,
@@ -438,7 +444,8 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	f(New(options, &observation.TestContext))
+	client := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	f(client)
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {
@@ -473,7 +480,7 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 }
 
 func normalizeJSON(v []byte) string {
-	temp := map[string]interface{}{}
+	temp := map[string]any{}
 	_ = json.Unmarshal(v, &temp)
 	v, _ = json.Marshal(temp)
 	return string(v)

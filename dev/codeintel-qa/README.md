@@ -19,7 +19,7 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
 
 ## Testing
 
-1. Ensure these repositories exist on your instance (in `Site Admin` -> `Manage repositories` -> `GitHub`):
+1. Ensure these repositories exist on your instance (in `Site Admin` -> `Manage code hosts` -> `GitHub`):
 
 ```
   "repos": [
@@ -42,16 +42,22 @@ Alternatively, generate them by running the following command (this takes much l
 ./scripts/clone-and-index.sh
 ```
 
-Upload the indexes to your the target instance by running the following command:
+If there is previous upload or index state on the target instance, they can be cleared by running the following command:
 
 ```
-go build ./cmd/upload && ./upload
+go run ./cmd/clear
+```
+
+Upload the indexes to the target instance by running the following command:
+
+```
+go run ./cmd/upload
 ```
 
 Then run test queries against the target instance by running the following command:
 
 ```
-go build ./cmd/query && ./query
+go run ./cmd/query
 ```
 
 ## Refreshing indexes

@@ -1,0 +1,16 @@
+DROP TRIGGER IF EXISTS trigger_configuration_policies_update ON lsif_configuration_policies;
+DROP TRIGGER IF EXISTS trigger_configuration_policies_delete ON lsif_configuration_policies;
+DROP TRIGGER IF EXISTS trigger_configuration_policies_insert ON lsif_configuration_policies;
+
+DROP FUNCTION IF EXISTS func_configuration_policies_update;
+DROP FUNCTION IF EXISTS func_configuration_policies_delete;
+DROP FUNCTION IF EXISTS func_configuration_policies_insert;
+DROP FUNCTION IF EXISTS func_configuration_policies_transition_columns_diff;
+DROP FUNCTION IF EXISTS func_row_to_configuration_policies_transition_columns;
+
+DROP TABLE IF EXISTS configuration_policies_audit_logs;
+
+DROP INDEX IF EXISTS configuration_policies_audit_logs_upload_id;
+DROP INDEX IF EXISTS configuration_policies_audit_logs_timestamp;
+
+DROP TYPE IF EXISTS configuration_policies_transition_columns;

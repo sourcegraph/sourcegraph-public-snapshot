@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { of } from 'rxjs'
@@ -13,11 +14,6 @@ import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -27,13 +23,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import {
-    ProductStatusBadge,
     useObservable,
     Button,
     Link,
     FeedbackPrompt,
     ButtonLink,
     PopoverTrigger,
+    useWindowSize,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -43,6 +39,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -56,7 +53,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
@@ -66,17 +63,15 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean
@@ -100,9 +95,59 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
+    showKeyboardShortcutsHelp: () => void
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const GlobalNavbar: React.FunctionComponent<Props> = ({
+/**
+ * Calculates NavLink variant based whether current content fits into container or not.
+ *
+ * @param containerReference a reference to navbar container
+ */
+function useCalculatedNavLinkVariant(
+    containerReference: React.MutableRefObject<HTMLDivElement | null>,
+    activation: Props['activation'],
+    authenticatedUser: Props['authenticatedUser']
+): 'compact' | undefined {
+    const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
+    const { width } = useWindowSize()
+    const [savedWindowWidth, setSavedWindowWidth] = useState<number>()
+
+    useLayoutEffect(() => {
+        const container = containerReference.current
+        if (!container) {
+            return
+        }
+        if (container.offsetWidth < container.scrollWidth) {
+            setNavLinkVariant('compact')
+            setSavedWindowWidth(width)
+        } else if (savedWindowWidth && width > savedWindowWidth) {
+            setNavLinkVariant(undefined)
+        }
+        // Listen for change in `authenticatedUser` and `activation` to re-calculate with new dimensions,
+        // based on change in navbar's content.
+    }, [containerReference, savedWindowWidth, width, authenticatedUser, activation])
+
+    return navLinkVariant
+}
+
+const AnalyticsNavItem: React.FunctionComponent = () => {
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
+
+    if (isAdminAnalyticsDisabled) {
+        return null
+    }
+
+    return (
+        <NavAction className="d-none d-sm-flex">
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
+                Analytics
+            </Link>
+        </NavAction>
+    )
+}
+
+export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authRequired,
     showSearchBox,
     variant,
@@ -187,6 +232,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         showSearchContext,
     ])
 
+    const navbarReference = useRef<HTMLDivElement | null>(null)
+    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
+
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
@@ -207,21 +255,16 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         const items: (NavDropdownItem | false)[] = [
             searchContextsEnabled &&
                 !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            !!showSearchNotebook && {
-                path: PageRoutes.Notebooks,
-                content: (
-                    <>
-                        Notebooks <ProductStatusBadge className="ml-1" status="beta" />
-                    </>
-                ),
-            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
+    }, [searchContextsEnabled, showSearchContext])
+
+    const { extensionsController } = props
 
     return (
         <>
             <NavBar
+                ref={navbarReference}
                 logo={
                     <BrandLogo
                         branding={branding}
@@ -233,27 +276,51 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        toggleItem={{
+                            path: PageRoutes.Search,
+                            altPath: PageRoutes.RepoContainer,
+                            icon: MagnifyIcon,
+                            content: 'Code Search',
+                            variant: navLinkVariant,
+                        }}
+                        routeMatch={routeMatch}
                         mobileHomeItem={{ content: 'Search home' }}
                         items={searchNavBarItems}
                     />
+                    {showSearchNotebook && (
+                        <NavItem icon={BookOutlineIcon}>
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
+                                Notebooks
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
+                                Monitoring
+                            </NavLink>
                         </NavItem>
                     )}
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
+                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                        <BatchChangesNavItem variant={navLinkVariant} />
+                    )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
+                            <NavLink variant={navLinkVariant} to="/insights">
+                                Insights
+                            </NavLink>
                         </NavItem>
                     )}
-                    <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink to="/extensions">Extensions</NavLink>
-                    </NavItem>
+                    {window.context.enableLegacyExtensions && (
+                        <NavItem icon={PuzzleOutlineIcon}>
+                            <NavLink variant={navLinkVariant} to="/extensions">
+                                Extensions
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {props.activation && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
@@ -282,6 +349,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             )}
                         </>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
@@ -298,30 +366,21 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && (
+                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
+                                extensionsController={extensionsController}
                                 location={location}
                                 menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
                         </NavAction>
                     )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <NavAction>
+                            <StatusMessagesNavItem />
+                        </NavAction>
+                    )}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>
@@ -355,7 +414,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                             />
                         </NavAction>
                     )}

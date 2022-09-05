@@ -6,8 +6,8 @@ import { Redirect } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../core/constants'
+import { PageTitle } from '../../../../../components/PageTitle'
+import { CodeInsightsBackendContext, ALL_INSIGHTS_DASHBOARD } from '../../../core'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -21,7 +21,9 @@ export interface DashboardsContentPageProps extends TelemetryProps {
     dashboardID?: string
 }
 
-export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPageProps> = props => {
+export const DashboardsContentPage: React.FunctionComponent<
+    React.PropsWithChildren<DashboardsContentPageProps>
+> = props => {
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
@@ -42,5 +44,12 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
         )
     }
 
-    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
+
+    return (
+        <>
+            <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
+            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+        </>
+    )
 }

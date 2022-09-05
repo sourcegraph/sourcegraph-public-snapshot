@@ -70,7 +70,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
         HasAvailableCodeInsight: () => ({
             insightViews: {
                 __typename: 'InsightViewConnection',
-                nodes: [{ id: '001' }],
+                nodes: [{ id: '001', isFrozen: false }],
             },
         }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
@@ -122,6 +122,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
                 searchable: true,
+                emails: [],
             },
         }),
         ...overrides,

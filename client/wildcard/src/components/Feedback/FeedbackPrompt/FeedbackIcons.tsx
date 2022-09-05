@@ -1,7 +1,7 @@
 import React from 'react'
 
-export const VerySad: React.FunctionComponent = () => (
-    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+export const VerySad: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden={true}>
         <path
             d="M20 10C20 15.5228 15.5228 20 10 20C4.47778 20 0 15.5228 0 10C0 4.47778 4.47778 0 10 0C15.5228 0 20 4.47778 20 10Z"
             fill="#FFCC4D"
@@ -13,8 +13,8 @@ export const VerySad: React.FunctionComponent = () => (
     </svg>
 )
 
-export const Sad: React.FunctionComponent = () => (
-    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+export const Sad: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden={true}>
         <path
             d="M20 10C20 15.5228 15.5228 20 10 20C4.47778 20 0 15.5228 0 10C0 4.47778 4.47778 0 10 0C15.5228 0 20 4.47778 20 10Z"
             fill="#FFCC4D"
@@ -34,8 +34,8 @@ export const Sad: React.FunctionComponent = () => (
     </svg>
 )
 
-export const Happy: React.FunctionComponent = () => (
-    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+export const Happy: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden={true}>
         <path
             d="M10 20C15.5228 20 20 15.5228 20 10C20 4.47715 15.5228 0 10 0C4.47715 0 0 4.47715 0 10C0 15.5228 4.47715 20 10 20Z"
             fill="#FFCC4D"
@@ -55,8 +55,8 @@ export const Happy: React.FunctionComponent = () => (
     </svg>
 )
 
-export const VeryHappy: React.FunctionComponent = () => (
-    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+export const VeryHappy: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden={true}>
         <path
             d="M20 10C20 15.5228 15.5228 20 10 20C4.47778 20 0 15.5228 0 10C0 4.47778 4.47778 0 10 0C15.5228 0 20 4.47778 20 10Z"
             fill="#FFCC4D"

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -14,43 +16,24 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
+func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
+	return newTestClientWithAuthenticator(t, nil, cli)
+}
 
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
+func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
+	rcache.SetupForTest(t)
 
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -275,7 +258,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -452,230 +435,122 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
+func TestGetRepository(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	cli, save := newV3TestClient(t, "GetRepository")
+	defer save()
+
+	t.Run("cached-response", func(t *testing.T) {
+		var remaining int
+
+		t.Run("first run", func(t *testing.T) {
+			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if repo == nil {
+				t.Fatal("expected repo, but got nil")
+			}
+
+			want := "sourcegraph/sourcegraph"
+			if repo.NameWithOwner != want {
+				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			}
+
+			remaining, _, _, _ = cli.RateLimitMonitor().Get()
+		})
+
+		t.Run("second run", func(t *testing.T) {
+			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if repo == nil {
+				t.Fatal("expected repo, but got nil")
+			}
+
+			want := "sourcegraph/sourcegraph"
+			if repo.NameWithOwner != want {
+				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			}
+
+			remaining2, _, _, _ := cli.RateLimitMonitor().Get()
+			if remaining2 < remaining {
+				t.Fatalf("expected cached repsonse, but API quota used")
+			}
+
+		})
+	})
+
+	t.Run("repo not found", func(t *testing.T) {
+		repo, err := cli.GetRepository(context.Background(), "owner", "repo")
+		if !IsNotFound(err) {
+			t.Errorf("got err == %v, want IsNotFound(err) == true", err)
+		}
+		if err != ErrRepoNotFound {
+			t.Errorf("got err == %q, want ErrNotFound", err)
+		}
+		if repo != nil {
+			t.Error("repo != nil")
+		}
+	})
+
+}
+
 // ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
 // ghe.sgdev.org.  To update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org)
 // with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
 // and is also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	t.Run("enterprise-integration-without-cache", func(t *testing.T) {
+	// Note: Testing against enterprise does not return the x-rate-remaining header at the moment,
+	// as a result it is not possible to assert the remaining API calls after each APi request the
+	// way we do in TestGetRepository.
+	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
 
-		// Simplest way to initialise a client with no cache.
-		cli.orgsCache = nil
-
-		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if orgs == nil {
-			t.Fatal("expected orgs but got nil")
-		}
-
-		if len(orgs) != 100 {
-			t.Fatalf("expected 100 orgs but got %d", len(orgs))
-		}
-
-		if nextSince < 1 {
-			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
-		}
-	})
-
-	t.Run("enterprise-integration-with-cache", func(t *testing.T) {
-		rcache.SetupForTest(t)
-		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
-		defer save()
-
-		if cli.orgsCache == nil {
-			t.Fatal("expected orgsCache to be initialised but is nil")
-		}
-
-		hash := cli.auth.Hash()
-		expectedEtagKey := hash + "-orgs-etag-0"
-		expectedOrgsKey := hash + "-orgs-0"
-
-		// When starting from scratch, the cache should be empty.
-		if val, ok := cli.orgsCache.Get(expectedEtagKey); ok {
-			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedEtagKey, val)
-		}
-
-		if val, ok := cli.orgsCache.Get(expectedOrgsKey); ok {
-			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedOrgsKey, val)
-		}
-
-		// Make the API call. This should also populate the cache.
-		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if orgs == nil {
-			t.Fatal("expected orgs but got nil")
-		}
-
-		if len(orgs) != 100 {
-			t.Fatalf("expected 100 orgs but got %d", len(orgs))
-		}
-
-		if nextSince < 1 {
-			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
-		}
-
-		rawEtag, ok := cli.orgsCache.Get(expectedEtagKey)
-		if !ok {
-			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedEtagKey)
-		}
-
-		// Get the orgs stored in cache.
-		rawOrgs, ok := cli.orgsCache.Get(expectedOrgsKey)
-		if !ok {
-			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedOrgsKey)
-		}
-
-		// Expected orgs.
-		expectedOrgs, err := json.Marshal(orgs)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Verify that the value of orgs returned from the call to cli.ListOrganizations is the same
-		// as the one stored in the cache.
-		if diff := cmp.Diff(expectedOrgs, rawOrgs); diff != "" {
-			t.Fatalf("mismatch in cached orgs and orgs returned from API: (-want +got):\n%s", diff)
-		}
-
-		// Make another API call. This should read from the cache since the resource has not been
-		// modified upstream.
-		refetchedOrgs, refetchedNextSince, err := cli.ListOrganizations(context.Background(), 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(orgs, refetchedOrgs); diff != "" {
-			t.Fatalf("mismatch in refetched orgs: (-want +got):\n%s", diff)
-		}
-
-		if nextSince != refetchedNextSince {
-			t.Fatalf("expected refetched nextSince: %d, but got %d", nextSince, refetchedNextSince)
-		}
-
-		// We want to verify that for a cached request, the correct header name and its value is
-		// used. Using an httptest.NewServer helps us accomplish this. We don't care about
-		// replicating the server's response here because we've already tested for that prior to
-		// reacing this point.
-		//
-		// If the testServer exits with the fatal error, this test will panic, which is acceptable.
-		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if got := r.Header.Get(headerIfNoneMatch); got != string(rawEtag) {
-				t.Fatalf("expected request header %q to be set to %q but found %q", headerIfNoneMatch, string(rawEtag), got)
-			}
-
-			w.WriteHeader(304)
-		}))
-
-		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
-		testCli.ListOrganizations(context.Background(), 0)
-	})
-
-	t.Run("enterprise-cache-behaviour", func(t *testing.T) {
-		rcache.SetupForTest(t)
-
-		// Marshal a list of orgs.
-
-		// Existing list of orgs.
-		mockOldOrgs, err := json.Marshal([]*Org{
-			{
-				ID:    1,
-				Login: "foo",
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Updated list of orgs after an initial request is already made, used to verify that the
-		// cache was updated correctly.
-		//
-		// We simulate an existing org being deleted and a new one being created. So the list still
-		// contains one item, but the ID has increased. Using the older value of ID in the "since"
-		// argument should still work.
-		mockNewOrgs, err := json.Marshal([]*Org{
-			{
-				ID:    2,
-				Login: "bar",
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		testMockOldOrgs := true
-		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Pretend like this is a request where the existing resource has not been modified yet.
-			if testMockOldOrgs {
-				testMockOldOrgs = false
-				w.Write(mockOldOrgs)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				w.WriteHeader(304)
-				return
-			}
-
-			// Pretend like this is a request where the existing request has been modified and will
-			// require a cache invalidation on the client.
-			_, err := w.Write(mockNewOrgs)
-			if err != nil {
-				t.Fatal(err)
-			}
-			w.WriteHeader(200)
-		}))
-
-		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
-
-		runTest := func(since int, expectedOrgs []byte) {
-			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
+		t.Run("first run", func(t *testing.T) {
+			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			// nextSince must always be greater than "since" which was passed as the argument to ListOrganizations.
-			if nextSince <= since {
-				t.Fatalf("expected nextSince greater than since (%d), but got %d", since, nextSince)
+			if orgs == nil {
+				t.Fatal("expected orgs but got nil")
 			}
 
-			gotOrgs, err := json.Marshal(orgs)
+			if len(orgs) != 100 {
+				t.Fatalf("expected 100 orgs but got %d", len(orgs))
+			}
+
+			if nextSince < 1 {
+				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+			}
+		})
+
+		t.Run("second run", func(t *testing.T) {
+			// Make the same API call again. This should hit the cache.
+			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(expectedOrgs, gotOrgs); diff != "" {
-				t.Fatalf("mismatch in expected orgs and orgs returned from API: (-want +got):\n%s", diff)
+			if orgs == nil {
+				t.Fatal("expected orgs but got nil")
 			}
 
-			key := fmt.Sprintf("%s-orgs-%d", testCli.auth.Hash(), since)
-			gotCachedOrgs, ok := testCli.orgsCache.Get(key)
-			if !ok {
-				t.Fatal(err)
+			if len(orgs) != 100 {
+				t.Fatalf("expected 100 orgs but got %d", len(orgs))
 			}
 
-			if diff := cmp.Diff(expectedOrgs, gotCachedOrgs); diff != "" {
-				t.Fatalf("mismatch in expected orgs and orgs cached in the client: (-want +got):\n%s", diff)
+			if nextSince < 1 {
+				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
 			}
-		}
-
-		// Initial request.
-		t.Run("initial orgs list", func(t *testing.T) {
-			runTest(0, mockOldOrgs)
-		})
-
-		t.Run("modified orgs list", func(t *testing.T) {
-			// New request but with orgs modified.
-			runTest(1, mockNewOrgs)
 		})
 	})
 
@@ -720,7 +595,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -810,6 +685,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	old := &V3Client{
+		log:    logtest.Scoped(t),
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
@@ -854,7 +730,7 @@ func TestV3Client_Fork(t *testing.T) {
 					assert.Equal(t, *org, owner)
 				}
 
-				testutil.AssertGolden(t, testName, update(testName), fork)
+				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 			})
 		}
 	})
@@ -870,7 +746,7 @@ func TestV3Client_Fork(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Nil(t, fork)
 
-		testutil.AssertGolden(t, testName, update(testName), fork)
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 	})
 }
 
@@ -888,7 +764,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, vcrToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -905,7 +781,164 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, gheToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }
+
+func TestClient_ListRepositoriesForSearch(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
+	defer save()
+
+	rcache.SetupForTest(t)
+	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if reposPage.Repos == nil {
+		t.Fatal("expected repos but got nil")
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListRepositoriesForSearch",
+		update("ListRepositoriesForSearch"),
+		reposPage.Repos,
+	)
+
+}
+
+func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "total_count": 2,
+  "incomplete_results": true,
+  "items": [
+    {
+      "node_id": "i",
+      "full_name": "o/r",
+      "description": "d",
+      "html_url": "https://github.example.com/o/r",
+      "fork": true
+    },
+    {
+      "node_id": "j",
+      "full_name": "a/b",
+      "description": "c",
+      "html_url": "https://github.example.com/a/b",
+      "fork": false
+    }
+  ]
+}
+`,
+	}
+	c := newTestClient(t, &mock)
+
+	// If we have incomplete results we want to fail. Our syncer requires all
+	// repositories to be returned, otherwise it will delete the missing
+	// repositories.
+	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+
+	if have, want := err, ErrIncompleteResults; want != have {
+		t.Errorf("\nhave: %s\nwant: %s", have, want)
+	}
+}
+
+type testCase struct {
+	repoName    string
+	expectedUrl string
+}
+
+var testCases = map[string]testCase{
+	"github.com": {
+		repoName:    "github.com/sd9/sourcegraph",
+		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+	},
+	"enterprise": {
+		repoName:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+	},
+}
+
+func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	defer save()
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+
+			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
+			}
+
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !deleted {
+				t.Fatal("Could not delete created repo")
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilder(tc.repoName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
+	type testCaseWithID struct {
+		repoName    string
+		id          int
+		expectedUrl string
+	}
+
+	testCases := map[string]testCaseWithID{
+		"github.com": {
+			repoName:    "github.com/sd9/sourcegraph",
+			id:          42,
+			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
+		},
+		"enterprise": {
+			repoName:    "ghe.sgdev.org/milton/test",
+			id:          69,
+			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/69",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}

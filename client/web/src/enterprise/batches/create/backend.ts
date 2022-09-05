@@ -1,5 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
+import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
+
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
@@ -18,20 +20,29 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             ... on User {
                 username
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
             ... on Org {
                 name
                 displayName
+                namespaceName
                 viewerCanAdminister
+                url
             }
         }
         description
+
+        viewerCanAdminister
 
         currentSpec {
             id
             originalInput
             createdAt
+            startedAt
+            state
+            applyURL
         }
 
         batchSpecs(first: 1) {
@@ -39,6 +50,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
                 id
                 originalInput
                 createdAt
+                startedAt
+                state
+                applyURL
             }
         }
 
@@ -49,15 +63,11 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
 export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
-            id
-            description {
-                name
-            }
-            namespace {
-                url
-            }
+            ...BatchSpecExecutionFields
         }
     }
+
+    ${batchSpecExecutionFieldsFragment}
 `
 
 // This mutation is used to create a new batch change. It creates the batch change and an
@@ -74,8 +84,8 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
 // This mutation is used to create a new batch spec when the existing batch spec attached
 // to a batch change has already been applied.
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!) {
-        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace) {
+    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!, $batchChange: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace, batchChange: $batchChange) {
             id
             createdAt
         }
@@ -122,7 +132,13 @@ export const WORKSPACES = gql`
                             endCursor
                         }
                         nodes {
-                            ...PreviewBatchSpecWorkspaceFields
+                            __typename
+                            ... on HiddenBatchSpecWorkspace {
+                                ...PreviewHiddenBatchSpecWorkspaceFields
+                            }
+                            ... on VisibleBatchSpecWorkspace {
+                                ...PreviewVisibleBatchSpecWorkspaceFields
+                            }
                         }
                     }
                 }
@@ -132,18 +148,25 @@ export const WORKSPACES = gql`
 
     fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
         __typename
+        id
+        ignored
+        unsupported
+        cachedResultFound
+        stepCacheResultCount
+    }
+
+    fragment PreviewVisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
+        __typename
+        ...PreviewBatchSpecWorkspaceFields
         repository {
             __typename
             id
             name
             url
         }
-        ignored
-        unsupported
         branch {
             __typename
             id
-            abbrevName
             displayName
             target {
                 __typename
@@ -153,7 +176,11 @@ export const WORKSPACES = gql`
         }
         path
         searchResultPaths
-        cachedResultFound
+    }
+
+    fragment PreviewHiddenBatchSpecWorkspaceFields on HiddenBatchSpecWorkspace {
+        __typename
+        ...PreviewBatchSpecWorkspaceFields
     }
 `
 
@@ -201,5 +228,11 @@ export const IMPORTING_CHANGESETS = gql`
     fragment PreviewBatchSpecImportingHiddenChangesetFields on HiddenChangesetSpec {
         __typename
         id
+    }
+`
+
+export const EXECUTORS = gql`
+    query CheckExecutorsAccessToken {
+        areExecutorsConfigured
     }
 `

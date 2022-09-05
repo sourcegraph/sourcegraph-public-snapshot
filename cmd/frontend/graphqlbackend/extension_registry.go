@@ -99,7 +99,7 @@ type ExtensionRegistryMutationResult interface {
 
 // NodeToRegistryExtension is called to convert GraphQL node values to values of type
 // RegistryExtension. It is assigned at init time.
-var NodeToRegistryExtension func(interface{}) (RegistryExtension, bool)
+var NodeToRegistryExtension func(any) (RegistryExtension, bool)
 
 // RegistryExtensionByID is called to look up values of GraphQL type RegistryExtension. It is
 // assigned at init time.

@@ -68,7 +68,7 @@ func (e *Environment) UnmarshalJSON(data []byte) error {
 
 // UnmarshalYAML unmarshals an environment from one of the two supported YAML
 // forms: an array, or a string→string object.
-func (e *Environment) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (e *Environment) UnmarshalYAML(unmarshal func(any) error) error {
 	// data is either an array or object. (Or invalid.) Let's start by trying to
 	// unmarshal it as an array.
 	if err := unmarshal(&e.vars); err == nil {

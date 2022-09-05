@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"hash/crc32"
+	"io/fs"
 	"log"
+	"math"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -14,19 +17,39 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Options are configurables for Combine.
 type Options struct {
 	Logger *log.Logger
+
+	// LimitRemote is the maximum number of commits we import from each remote. The
+	// memory usage of Combine is based on the number of unseen commits per
+	// remote. LimitRemote is useful to specify when importing a large new upstream.
+	LimitRemote int
+
+	// GCRatio defines a 1/n chance that we run 'git gc --aggressive' before a
+	// a git-combine pass while in daemon mode. If GCRatio is 0, we'll never run 'git gc --aggressive'.
+	//
+	// 'git combine --aggressive' should be used to maintain repository health with large repos, as the
+	// normal 'git gc' was found to be insufficient.
+	GCRatio uint
 }
 
 func (o *Options) SetDefaults() {
+	if o.LimitRemote == 0 {
+		o.LimitRemote = math.MaxInt
+	}
+
 	if o.Logger == nil {
 		o.Logger = log.Default()
 	}
@@ -87,7 +110,7 @@ func Combine(path string, opt Options) error {
 			continue
 		}
 
-		for depth := 0; ; depth++ {
+		for depth := 0; depth < opt.LimitRemote; depth++ {
 			if time.Since(lastLog) > time.Second {
 				log.Printf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth)
 				lastLog = time.Now()
@@ -322,16 +345,17 @@ func getGitDir() (string, error) {
 	return dir, nil
 }
 
-func runGit(dir string, args ...string) error {
-	cmd := exec.Command("git", args...)
+func runCommand(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	start := time.Now()
-	log.Printf("starting git %s", strings.Join(args, " "))
+	log.Printf("starting %q %s", command, strings.Join(args, " "))
 	err := cmd.Run()
-	log.Printf("finished git in %s", time.Since(start))
+	log.Printf("finished %q in %s", command, time.Since(start))
+
 	return err
 }
 
@@ -347,6 +371,16 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 	opt.SetDefaults()
 
+	err := cleanupStaleLockFiles(dir, opt.Logger)
+	if err != nil {
+		return errors.Wrap(err, "removing stale git lock files")
+	}
+
+	err = trackDefaultBranches(dir)
+	if err != nil {
+		return errors.Wrap(err, "ensuring that remote refspecs point to default branches")
+	}
+
 	for {
 		// convenient way to stop the daemon to do manual operations like add
 		// more upstreams.
@@ -360,7 +394,14 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			continue
 		}
 
-		if err := runGit(dir, "fetch", "--all", "--no-tags"); err != nil {
+		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
+			opt.Logger.Printf("running garbage collection to maintain optimum repository health")
+			if err := runCommand(dir, "git", "gc", "--aggressive"); err != nil {
+				return err
+			}
+		}
+
+		if err := runCommand(dir, "git", "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}
 
@@ -380,7 +421,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			return err
 		} else if !hasOrigin {
 			opt.Logger.Printf("skipping push since remote origin is missing")
-		} else if err := runGit(dir, "push", "origin"); err != nil {
+		} else if err := runCommand(dir, "git", "push", "origin"); err != nil {
 			return err
 		}
 
@@ -394,10 +435,15 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
+	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	gcRatio := flag.Uint("gc-ratio", 24*60*3, "(only in daemon mode) 1/n chance of running an aggressive garbage collection job before a git-combine job. If 0, aggressive garbage collection is disabled. Defaults to running aggressive garbage collection once every 3 days.")
 
 	flag.Parse()
 
-	opt := Options{}
+	opt := Options{
+		LimitRemote: *limitRemote,
+		GCRatio:     *gcRatio,
+	}
 
 	gitDir, err := getGitDir()
 	if err != nil {
@@ -427,6 +473,69 @@ func main() {
 	}
 }
 
+// cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
+// by a crashed git-combine process.
+func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
+	if logger == nil {
+		logger = log.Default()
+	}
+
+	var lockFiles []string
+
+	// add "well-known" lock files
+	for _, f := range []string{
+		"gc.pid.lock", // created when git starts a garbage collection run
+		"index.lock",  // created when running "git add" / "git commit"
+
+		// from cmd/gitserver/server/cleanup.go, see
+		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+		"config.lock",
+		"packed-refs.lock",
+	} {
+		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
+	}
+
+	// from cmd/gitserver/server/cleanup.go, see
+	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+	lockFiles = append(lockFiles, filepath.Join(gitDir, "objects", "info", "commit-graph.lock"))
+
+	refsDir := filepath.Join(gitDir, "refs")
+
+	// discover lock files that look like refs/remotes/origin/main.lock
+	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
+			return nil
+		}
+
+		lockFiles = append(lockFiles, path)
+		return nil
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
+	}
+
+	// remove all stale lock files
+	for _, f := range lockFiles {
+		err := os.Remove(f)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+
+			return errors.Wrapf(err, "removing stale lock file %q", f)
+		}
+
+		logger.Printf("removed stale lock file %q", f)
+	}
+
+	return nil
+}
+
 // remoteHead returns the HEAD commit for the given remote.
 func remoteHead(r *git.Repository, remote string) (*object.Commit, error) {
 	// We don't know what the remote HEAD is, so we hardcode the usual options and test if they exist.
@@ -440,4 +549,36 @@ func remoteHead(r *git.Repository, remote string) (*object.Commit, error) {
 
 	log.Printf("ignoring remote %q because it doesn't have any of the common default branches %v", remote, commonDefaultBranches)
 	return nil, nil
+}
+
+//go:embed default-branch.sh
+var defaultBranchScript string
+
+// trackDefaultBranches ensures that the refspec for each remote points to
+// the current default branch.
+func trackDefaultBranches(dir string) error {
+	f, err := os.CreateTemp("", "default-branch-*.sh")
+	if err != nil {
+		return errors.Wrap(err, "creating temp file")
+	}
+
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	_, err = f.WriteString(defaultBranchScript)
+	if err != nil {
+		return errors.Wrap(err, "writing default branch script")
+	}
+
+	err = f.Close()
+	if err != nil {
+		return errors.Wrap(err, "closing temp file")
+	}
+
+	err = runCommand(dir, "bash", f.Name())
+	if err != nil {
+		return errors.Wrap(err, "while running bash script")
+	}
+
+	return nil
 }

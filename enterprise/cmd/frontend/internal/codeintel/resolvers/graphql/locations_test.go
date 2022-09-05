@@ -13,21 +13,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const numRoutines = 5
-const numRepositories = 10
-const numCommits = 10 // per repo
-const numPaths = 10   // per commit
+const (
+	numRoutines     = 5
+	numRepositories = 10
+	numCommits      = 10 // per repo
+	numPaths        = 10 // per commit
+)
 
 func TestCachedLocationResolver(t *testing.T) {
 	repos := database.NewStrictMockRepoStore()
@@ -39,16 +40,16 @@ func TestCachedLocationResolver(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Cleanup(func() {
-		git.Mocks.ResolveRevision = nil
+		gitserver.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
 
 	var commitCalls uint32
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
+	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
 		return &gitdomain.Commit{ID: commitID}, nil
 	}
@@ -202,10 +203,10 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return "", &gitdomain.RevisionNotFoundError{}
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
@@ -236,11 +237,11 @@ func TestResolveLocations(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Cleanup(func() {
-		git.Mocks.ResolveRevision = nil
+		gitserver.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}
@@ -256,7 +257,7 @@ func TestResolveLocations(t *testing.T) {
 	r3 := lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}}
 	r4 := lsifstore.Range{Start: lsifstore.Position{Line: 41, Character: 42}, End: lsifstore.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []resolvers.AdjustedLocation{
+	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []AdjustedLocation{
 		{Dump: store.Dump{RepositoryID: 50}, AdjustedCommit: "deadbeef1", AdjustedRange: r1, Path: "p1"},
 		{Dump: store.Dump{RepositoryID: 51}, AdjustedCommit: "deadbeef2", AdjustedRange: r2, Path: "p2"},
 		{Dump: store.Dump{RepositoryID: 52}, AdjustedCommit: "deadbeef3", AdjustedRange: r3, Path: "p3"},

@@ -2,9 +2,10 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { MinimalCaptureGroupInsightData } from '../../../../../core/backend/code-insights-backend-types'
-import { InsightExecutionType, InsightType } from '../../../../../core/types'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
+import { getSanitizedRepositories } from '../../../../../components'
+import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CaptureGroupFormFields } from '../types'
 
 export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
@@ -18,8 +19,17 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         filters: {
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
-            repositories: [],
+            context: '',
+            seriesDisplayOptions: {
+                limit: `${MAX_NUMBER_OF_SERIES}`,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
         },
+        dashboards: [],
+        seriesDisplayOptions: {},
     }
 }
 

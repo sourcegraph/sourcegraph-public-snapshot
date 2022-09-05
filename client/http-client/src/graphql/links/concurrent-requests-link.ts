@@ -1,4 +1,12 @@
-import { ApolloLink, FetchResult, NextLink, Operation, Observable, Observer } from '@apollo/client'
+import {
+    ApolloLink,
+    FetchResult,
+    NextLink,
+    Operation,
+    Observable,
+    Observer,
+    ObservableSubscription,
+} from '@apollo/client'
 
 import { ApolloContext } from '../types'
 
@@ -11,7 +19,7 @@ interface OperationQueueEntry {
     limit: number
     observable: Observable<FetchResult>
     observers: Observer<unknown>[]
-    currentSubscription?: ZenObservable.Subscription
+    currentSubscription?: ObservableSubscription
 }
 
 interface RequestGroupQueues {

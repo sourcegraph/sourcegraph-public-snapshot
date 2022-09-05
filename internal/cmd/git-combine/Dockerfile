@@ -1,15 +1,22 @@
-FROM golang:1.17.6-alpine AS builder
+FROM golang:1.18.1-alpine@sha256:42d35674864fbb577594b60b84ddfba1be52b4d4298c961b46ba95e9fb4712e8 AS builder
 
 WORKDIR /go/src/app
 
 ENV CGO_ENABLE=0
 
-# We only have one dependency. When building we just use the latest version of
-# it rather than maintaining our own go.mod just in this directory.
+# We only have two dependencies. When building we just use the latest version of
+# them rather than maintaining our own go.mod just in this directory.
 RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine \
-    && go get github.com/go-git/go-git/v5
+    && go get github.com/go-git/go-git/v5 \
+    && go get github.com/sourcegraph/sourcegraph/lib/errors
+
 
 COPY git-combine.go .
+COPY default-branch.sh .
+
+RUN go mod download \
+    && go mod tidy
+
 RUN go build .
 
 # Does not need to use sourcegraph-alpine since this is only deployed for
@@ -17,7 +24,12 @@ RUN go build .
 # alpine_base CHECK:ALPINE_OK
 FROM alpine:3.15 as alpine_base
 
-RUN apk add --no-cache git ca-certificates tini
+RUN apk add --no-cache\
+    bash \
+    ca-certificates \
+    git \
+    parallel \
+    tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/
 

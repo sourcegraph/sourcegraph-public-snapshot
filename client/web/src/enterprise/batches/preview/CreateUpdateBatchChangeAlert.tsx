@@ -6,12 +6,13 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
-import { createBatchChange, applyBatchChange } from './backend'
+import { applyBatchChange, createBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
@@ -24,16 +25,13 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     history: H.History
 }
 
-export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateBatchChangeAlertProps> = ({
-    specID,
-    toBeArchived,
-    batchChange,
-    viewerCanAdminister,
-    history,
-    telemetryService,
-}) => {
+export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
+    React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
     const { selected } = useContext(MultiSelectContext)
 
@@ -92,24 +90,32 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     ) : (
                         'Review the proposed changesets below.'
                     )}{' '}
-                    Click 'Apply' or run <code>src batch apply</code> against your batch spec to{' '}
+                    Click 'Apply' or run <Code>src batch apply</Code> against your batch spec to{' '}
                     {batchChange ? 'update' : 'create'} the batch change and perform the indicated action on each
                     changeset. Select a changeset and modify the action to customize the publication state of each or
                     all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <Button
-                        variant="primary"
-                        className={classNames(
-                            'test-batches-confirm-apply-btn text-nowrap',
-                            isLoading === true || (!viewerCanAdminister && 'disabled')
-                        )}
-                        onClick={onApply}
-                        disabled={!canApply}
-                        data-tooltip={disabledTooltip()}
-                    >
-                        Apply
-                    </Button>
+                    <Tooltip content={disabledTooltip()}>
+                        <Button
+                            variant="primary"
+                            className={classNames(
+                                'test-batches-confirm-apply-btn text-nowrap',
+                                isLoading === true || (!viewerCanAdminister && 'disabled')
+                            )}
+                            onClick={() => {
+                                if (batchChange) {
+                                    eventLogger.log('batch_change_execution_preview:apply_update:clicked')
+                                } else {
+                                    eventLogger.log('batch_change_execution_preview:apply:clicked')
+                                }
+                                return onApply()
+                            }}
+                            disabled={!canApply}
+                        >
+                            Apply
+                        </Button>
+                    </Tooltip>
                 </div>
             </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}

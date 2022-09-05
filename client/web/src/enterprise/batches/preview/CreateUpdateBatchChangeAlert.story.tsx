@@ -1,22 +1,31 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 
-const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/CreateUpdateBatchChangeAlert',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
+}
 
-add('Create', () => (
+export default config
+
+export const Create: Story = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -24,12 +33,13 @@ add('Create', () => (
                 specID="123"
                 toBeArchived={18}
                 batchChange={null}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                viewerCanAdminister={args.viewerCanAdminister}
             />
         )}
     </WebStory>
-))
-add('Update', () => (
+)
+
+export const Update: Story = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -37,12 +47,13 @@ add('Update', () => (
                 specID="123"
                 toBeArchived={199}
                 batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                viewerCanAdminister={args.viewerCanAdminister}
             />
         )}
     </WebStory>
-))
-add('Disabled', () => (
+)
+
+export const Disabled: Story = args => (
     <WebStory>
         {props => (
             <MultiSelectContextProvider initialSelected={['id1', 'id2']}>
@@ -51,9 +62,9 @@ add('Disabled', () => (
                     specID="123"
                     toBeArchived={199}
                     batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                 />
             </MultiSelectContextProvider>
         )}
     </WebStory>
-))
+)

@@ -6,33 +6,73 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Runner struct {
-	storeFactories map[string]StoreFactory
-	schemas        []*schemas.Schema
+	logger             log.Logger
+	storeFactoryCaches map[string]*storeFactoryCache
+	schemas            []*schemas.Schema
 }
 
 type StoreFactory func(ctx context.Context) (Store, error)
 
-func NewRunner(storeFactories map[string]StoreFactory) *Runner {
-	return NewRunnerWithSchemas(storeFactories, schemas.Schemas)
+func NewRunner(logger log.Logger, storeFactories map[string]StoreFactory) *Runner {
+	return NewRunnerWithSchemas(logger, storeFactories, schemas.Schemas)
 }
 
-func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
+func NewRunnerWithSchemas(logger log.Logger, storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
+	storeFactoryCaches := make(map[string]*storeFactoryCache, len(storeFactories))
+	for name, factory := range storeFactories {
+		storeFactoryCaches[name] = &storeFactoryCache{factory: factory}
+	}
+
 	return &Runner{
-		storeFactories: storeFactories,
-		schemas:        schemas,
+		logger:             logger,
+		storeFactoryCaches: storeFactoryCaches,
+		schemas:            schemas,
 	}
 }
 
+type storeFactoryCache struct {
+	sync.Mutex
+	factory StoreFactory
+	store   Store
+}
+
+func (fc *storeFactoryCache) get(ctx context.Context) (Store, error) {
+	fc.Lock()
+	defer fc.Unlock()
+
+	if fc.store != nil {
+		return fc.store, nil
+	}
+
+	store, err := fc.factory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fc.store = store
+	return store, nil
+}
+
+// Store returns the store associated with the given schema.
+func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
+	if factoryCache, ok := r.storeFactoryCaches[schemaName]; ok {
+		return factoryCache.get(ctx)
+	}
+
+	return nil, errors.Newf("unknown schema %q", schemaName)
+}
+
 type schemaContext struct {
+	logger               log.Logger
 	schema               *schemas.Schema
 	store                Store
 	initialSchemaVersion schemaVersion
@@ -45,16 +85,6 @@ type schemaVersion struct {
 }
 
 type visitFunc func(ctx context.Context, schemaContext schemaContext) error
-
-// Store returns the store associated with the given schema.
-func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
-	if factory, ok := r.storeFactories[schemaName]; ok {
-		return factory(ctx)
-
-	}
-
-	return nil, errors.Newf("unknown store %q", schemaName)
-}
 
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
@@ -89,6 +119,7 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 			defer wg.Done()
 
 			errorCh <- visitor(ctx, schemaContext{
+				logger:               r.logger,
 				schema:               schemaMap[schemaName],
 				store:                storeMap[schemaName],
 				initialSchemaVersion: versionMap[schemaName],
@@ -135,12 +166,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	storeMap := make(map[string]Store, len(schemaNames))
 
 	for _, schemaName := range schemaNames {
-		storeFactory, ok := r.storeFactories[schemaName]
-		if !ok {
-			return nil, errors.Newf("unknown schema %q", schemaName)
-		}
-
-		store, err := storeFactory(ctx)
+		store, err := r.Store(ctx, schemaName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to establish database connection for schema %q", schemaName)
 		}
@@ -196,12 +222,18 @@ type unlockFunc func(err error) error
 // the given schema context. This is meant to enable a short development loop where the user can
 // re-apply the `up` command without having to create a dummy migration log to proceed.
 //
+// If the ignoreSinglePendingLog flag is set to true, then the callback will be invoked if there is
+// a single pending migration log, and it's the next migration that would be applied with respect to
+// the given schema context. This is meant to be used in the upgrade process, where an interrupted
+// migrator command will appear as a concurrent upgrade attempt.
+//
 // This method returns a true-valued flag if it should be re-invoked by the caller.
 func (r *Runner) withLockedSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 	f lockedVersionCallback,
 ) (retry bool, _ error) {
 	// Take an advisory lock to determine if there are any migrator instances currently
@@ -224,17 +256,24 @@ func (r *Runner) withLockedSchemaState(
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaVersion, definitions)
 
-	logger.Info(
+	r.logger.Info(
 		"Checked current schema state",
-		"schema", schemaContext.schema.Name,
-		"appliedVersions", extractIDs(byState.applied),
-		"pendingVersions", extractIDs(byState.pending),
-		"failedVersions", extractIDs(byState.failed),
+		log.String("schema", schemaContext.schema.Name),
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
 
 	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
 	// instances to finish their current work.
-	if retry, err := validateSchemaState(ctx, schemaContext, definitions, byState, ignoreSingleDirtyLog); err != nil {
+	if retry, err := validateSchemaState(
+		ctx,
+		schemaContext,
+		definitions,
+		byState,
+		ignoreSingleDirtyLog,
+		ignoreSinglePendingLog,
+	); err != nil {
 		return false, err
 	} else if retry {
 		// An index is currently being created. We return true here to flag to the caller that
@@ -255,24 +294,19 @@ const lockPollLogRatio = 5
 // of the lock.
 func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unlock func(err error) error, _ error) {
 	numWaits := 0
+	logger := r.logger.With(log.String("schema", schemaContext.schema.Name))
 
 	for {
 		if acquired, unlock, err := schemaContext.store.TryLock(ctx); err != nil {
 			return nil, err
 		} else if acquired {
-			logger.Info(
-				"Acquired schema migration lock",
-				"schema", schemaContext.schema.Name,
-			)
+			logger.Info("Acquired schema migration lock")
 
 			var logOnce sync.Once
 
 			loggedUnlock := func(err error) error {
 				logOnce.Do(func() {
-					logger.Info(
-						"Released schema migration lock",
-						"schema", schemaContext.schema.Name,
-					)
+					logger.Info("Released schema migration lock")
 				})
 
 				return unlock(err)
@@ -282,10 +316,7 @@ func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unl
 		}
 
 		if numWaits%lockPollLogRatio == 0 {
-			logger.Info(
-				"Schema migration lock is currently held - will re-attempt to acquire lock",
-				"schema", schemaContext.schema.Name,
-			)
+			logger.Info("Schema migration lock is currently held - will re-attempt to acquire lock")
 		}
 
 		if err := wait(ctx, lockPollInterval); err != nil {
@@ -334,6 +365,7 @@ func validateSchemaState(
 	definitions []definition.Definition,
 	byState definitionsByState,
 	ignoreSingleDirtyLog bool,
+	ignoreSinglePendingLog bool,
 ) (retry bool, _ error) {
 	if ignoreSingleDirtyLog && len(byState.failed) == 1 {
 		appliedVersionMap := intSet(extractIDs(byState.applied))
@@ -343,10 +375,15 @@ func validateSchemaState(
 			}
 
 			if byState.failed[0].ID == definition.ID {
-				log15.Warn("Attempting to re-try migration that previously failed")
+				schemaContext.logger.Warn("Attempting to re-try migration that previously failed")
 				return false, nil
 			}
 		}
+	}
+
+	if ignoreSinglePendingLog && len(byState.pending) == 1 {
+		schemaContext.logger.Warn("Ignoring a pending migration")
+		return false, nil
 	}
 
 	if len(byState.failed) > 0 {
@@ -384,7 +421,7 @@ func validateSchemaState(
 
 type definitionWithStatus struct {
 	definition  definition.Definition
-	indexStatus storetypes.IndexStatus
+	indexStatus shared.IndexStatus
 }
 
 // partitionPendingMigrations partitions the given migrations into two sets: the set of pending
@@ -419,10 +456,10 @@ func partitionPendingMigrations(
 
 // getAndLogIndexStatus calls IndexStatus on the given store and returns the results. The result
 // is logged to the package-level logger.
-func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tableName, indexName string) (storetypes.IndexStatus, bool, error) {
+func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tableName, indexName string) (shared.IndexStatus, bool, error) {
 	indexStatus, exists, err := schemaContext.store.IndexStatus(ctx, tableName, indexName)
 	if err != nil {
-		return storetypes.IndexStatus{}, false, errors.Wrap(err, "failed to query state of index")
+		return shared.IndexStatus{}, false, errors.Wrap(err, "failed to query state of index")
 	}
 
 	logIndexStatus(schemaContext, tableName, indexName, indexStatus, exists)
@@ -430,19 +467,17 @@ func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tabl
 }
 
 // logIndexStatus logs the result of IndexStatus to the package-level logger.
-func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus storetypes.IndexStatus, exists bool) {
-	logger.Info(
+func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus shared.IndexStatus, exists bool) {
+	schemaContext.logger.Info(
 		"Checked progress of index creation",
-		append(
-			[]interface{}{
-				"schema", schemaContext.schema.Name,
-				"tableName", tableName,
-				"indexName", indexName,
-				"exists", exists,
-				"isValid", indexStatus.IsValid,
-			},
-			renderIndexStatus(indexStatus)...,
-		)...,
+		log.Object("result",
+			log.String("schema", schemaContext.schema.Name),
+			log.String("tableName", tableName),
+			log.String("indexName", indexName),
+			log.Bool("exists", exists),
+			log.Bool("isValid", indexStatus.IsValid),
+			renderIndexStatus(indexStatus),
+		),
 	)
 
 }
@@ -450,27 +485,26 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
 // call to logger. If the index is currently being created, the progress of the create operation will be
 // summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
+func renderIndexStatus(progress shared.IndexStatus) log.Field {
 	if progress.Phase == nil {
-		return []interface{}{
-			"in-progress", false,
-		}
+		return log.Object("index status", log.Bool("in-progress", false))
 	}
 
 	index := -1
-	for i, phase := range storetypes.CreateIndexConcurrentlyPhases {
+	for i, phase := range shared.CreateIndexConcurrentlyPhases {
 		if phase == *progress.Phase {
 			index = i
 			break
 		}
 	}
 
-	return []interface{}{
-		"in-progress", true,
-		"phase", *progress.Phase,
-		"phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases)),
-		"lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal),
-		"blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal),
-		"tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal),
-	}
+	return log.Object(
+		"index status",
+		log.Bool("in-progress", true),
+		log.String("phase", *progress.Phase),
+		log.String("phases", fmt.Sprintf("%d of %d", index, len(shared.CreateIndexConcurrentlyPhases))),
+		log.String("lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal)),
+		log.String("blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal)),
+		log.String("tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal)),
+	)
 }

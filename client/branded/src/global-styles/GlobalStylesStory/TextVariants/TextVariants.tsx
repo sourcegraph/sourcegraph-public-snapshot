@@ -2,6 +2,8 @@ import React, { ElementType } from 'react'
 
 import classNames from 'classnames'
 
+import { Code, Text } from '@sourcegraph/wildcard'
+
 import styles from './TextVariants.module.scss'
 
 const SIZE_VARIANTS = ['Base', 'Small'] as const
@@ -17,7 +19,7 @@ interface TextLabelProps {
     className?: string
 }
 
-const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
+const TextLabel: React.FunctionComponent<React.PropsWithChildren<TextLabelProps>> = props => {
     const { size, weight, name, className } = props
     const label = `This is ${name} / ${size} / ${weight}`
 
@@ -39,7 +41,7 @@ interface TextVariantsProps {
     className?: string
 }
 
-const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
+const TextVariations: React.FunctionComponent<React.PropsWithChildren<TextVariantsProps>> = props => {
     const { component: Component, name, weights = ['Regular'], className } = props
 
     const textVariations = SIZE_VARIANTS.flatMap(size =>
@@ -59,19 +61,19 @@ const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
     return <>{textVariations}</>
 }
 
-export const TextVariants: React.FunctionComponent = () => (
+export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <table className="table">
         <tbody>
             <tr>
                 <td>Body Text</td>
                 <td>
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p key={`Base/${weight}`} className={styles.textVariant}>
+                        <Text key={`Base/${weight}`} className={styles.textVariant}>
                             <TextLabel size="Base" name="Body" weight={weight} />
-                        </p>
+                        </Text>
                     ))}
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p key={`Small/${weight}`} className={styles.textVariant}>
+                        <Text key={`Small/${weight}`} className={styles.textVariant}>
                             <small>
                                 <TextLabel
                                     size="Small"
@@ -80,13 +82,13 @@ export const TextVariants: React.FunctionComponent = () => (
                                     className={classNames({ 'font-weight-bold': weight === 'Strong' })}
                                 />
                             </small>
-                        </p>
+                        </Text>
                     ))}
                 </td>
             </tr>
             <tr>
                 <td>
-                    <code>{'<label>'}</code>
+                    <Code>{'<label>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="label" name="Label" />
@@ -95,7 +97,7 @@ export const TextVariants: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<input class="form-control">'}</code>
+                    <Code>{'<input class="form-control">'}</Code>
                 </td>
                 <td>
                     <span className={classNames('form-control', styles.inputVariant, styles.textVariant)}>
@@ -110,7 +112,7 @@ export const TextVariants: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<code>'}</code>
+                    <Code>{'<code>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="code" name="Code" weights={['Regular', 'Strong']} />

@@ -9,10 +9,10 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
 import { DashboardPermissions } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'
@@ -43,7 +43,7 @@ const Story: Meta = {
 
 export default Story
 
-export const GaConfirmationModalExample: React.FunctionComponent = () => {
+export const GaConfirmationModalExample: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const settingsStorage = new TemporarySettingsStorage(settingsClient, true)
 
     settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend({}))
@@ -52,7 +52,7 @@ export const GaConfirmationModalExample: React.FunctionComponent = () => {
         <CodeInsightsBackendContext.Provider value={api}>
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
-                    <h2>Some content</h2>
+                    <H2>Some content</H2>
                     <GaConfirmationModal />
                 </div>
             </TemporarySettingsContext.Provider>

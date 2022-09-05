@@ -1,17 +1,16 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
 import * as H from 'history'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import { deleteBatchChange as _deleteBatchChange } from './backend'
 
@@ -26,7 +25,9 @@ export interface BatchChangeDetailsActionSectionProps extends SettingsCascadePro
     deleteBatchChange?: typeof _deleteBatchChange
 }
 
-export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChangeDetailsActionSectionProps> = ({
+export const BatchChangeDetailsActionSection: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeDetailsActionSectionProps>
+> = ({
     batchChangeID,
     batchChangeClosed,
     batchChangeNamespaceURL,
@@ -52,36 +53,53 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
-            <Button
-                className="test-batches-delete-btn"
-                onClick={onDeleteBatchChange}
-                data-tooltip="Deleting this batch change is a final action."
-                disabled={isDeleting === true}
-                outline={true}
-                variant="danger"
-            >
-                {isErrorLike(isDeleting) && <Icon data-tooltip={isDeleting} as={InformationIcon} />}
-                <Icon as={DeleteIcon} /> Delete
-            </Button>
+            <Tooltip content="Deleting this batch change is a final action." placement="left">
+                <Button
+                    className="test-batches-delete-btn"
+                    onClick={onDeleteBatchChange}
+                    disabled={isDeleting === true}
+                    outline={true}
+                    variant="danger"
+                >
+                    {isErrorLike(isDeleting) && (
+                        <Tooltip content={isDeleting.message} placement="left">
+                            <Icon aria-label={isDeleting.message} svgPath={mdiInformation} />
+                        </Tooltip>
+                    )}
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
+                </Button>
+            </Tooltip>
         )
     }
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
-                    <Icon as={PencilIcon} /> Edit
+                <Button
+                    to={`${batchChangeURL}/edit`}
+                    className="mr-2"
+                    variant="secondary"
+                    as={Link}
+                    onClick={() => {
+                        eventLogger.log('batch_change_details:edit:clicked')
+                    }}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
                 </Button>
             )}
-            <Button
-                to={`${batchChangeURL}/close`}
-                className="test-batches-close-btn"
-                data-tooltip="View a preview of all changes that will happen when you close this batch change."
-                variant="danger"
-                outline={true}
-                as={Link}
-            >
-                <Icon as={DeleteIcon} /> Close
-            </Button>
+            <Tooltip content="View a preview of all changes that will happen when you close this batch change.">
+                <Button
+                    to={`${batchChangeURL}/close`}
+                    className="test-batches-close-btn"
+                    variant="danger"
+                    outline={true}
+                    as={Link}
+                    onClick={() => {
+                        eventLogger.log('batch_change_details:close:clicked')
+                    }}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiClose} /> Close
+                </Button>
+            </Tooltip>
         </div>
     )
 }

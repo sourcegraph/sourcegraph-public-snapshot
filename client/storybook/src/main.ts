@@ -1,55 +1,53 @@
 import path from 'path'
 
-import { Options } from '@storybook/core-common'
+import { Options, StorybookConfig } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 import {
-    NODE_MODULES_PATH,
-    ROOT_PATH,
+    getBabelLoader,
+    getBasicCSSLoader,
+    getCacheConfig,
     getCSSLoaders,
     getCSSModulesLoader,
-    getCacheConfig,
     getMonacoCSSRule,
     getMonacoTTFRule,
     getMonacoWebpackPlugin,
     getProvidePlugin,
-    getTerserPlugin,
-    getBabelLoader,
-    getBasicCSSLoader,
     getStatoscopePlugin,
+    getTerserPlugin,
+    NODE_MODULES_PATH,
+    ROOT_PATH,
+    STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
-import { environment } from './environment-config'
+import { ENVIRONMENT_CONFIG } from './environment-config'
 import {
-    monacoEditorPath,
-    dllPluginConfig,
     dllBundleManifestPath,
+    dllPluginConfig,
+    monacoEditorPath,
     readJsonFile,
     storybookWorkspacePath,
 } from './webpack.config.common'
 
 const getStoriesGlob = (): string[] => {
-    if (process.env.STORIES_GLOB) {
-        return [path.resolve(ROOT_PATH, process.env.STORIES_GLOB)]
+    if (ENVIRONMENT_CONFIG.STORIES_GLOB) {
+        return [path.resolve(ROOT_PATH, ENVIRONMENT_CONFIG.STORIES_GLOB)]
     }
-
-    // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-    const chromaticStoriesGlob = path.resolve(ROOT_PATH, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
 
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
+    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
-    return [...storiesGlobs, chromaticStoriesGlob]
+    return [...storiesGlobs]
 }
 
 const getDllScriptTag = (): string => {
@@ -64,25 +62,59 @@ const getDllScriptTag = (): string => {
     `
 }
 
-const config = {
+const isStoryshotsEnvironment = globalThis.navigator?.userAgent?.match?.('jsdom')
+
+interface Config extends StorybookConfig {
+    // Custom extension until `StorybookConfig` is fixed by adding this field.
+    previewHead: (head: string) => string
+}
+
+const config: Config = {
+    framework: '@storybook/react',
+    staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
     addons: [
-        '@storybook/addon-knobs',
         '@storybook/addon-actions',
         'storybook-addon-designs',
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
+        '@storybook/addon-docs',
+        '@storybook/addon-controls',
+        {
+            name: '@storybook/addon-storysource',
+            options: {
+                rule: {
+                    test: /\.story\.tsx?$/,
+                },
+                sourceLoaderOptions: {
+                    injectStoryParameters: false,
+                    prettierConfig: { printWidth: 80, singleQuote: false },
+                },
+            },
+        },
     ],
 
     core: {
-        builder: 'webpack5',
+        disableTelemetry: true,
+        builder: {
+            name: 'webpack5',
+            options: {
+                fsCache: true,
+                // Disabled because fast clicking through stories causes unexpected errors.
+                lazyCompilation: false,
+            },
+        },
     },
 
     features: {
         // Explicitly disable the deprecated, not used postCSS support,
         // so no warning is rendered on each start of storybook.
         postcss: false,
+        // Storyshots is not currently compatible with the v7 store.
+        // https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storyshots-compatibility-in-the-v7-store
+        storyStoreV7: !isStoryshotsEnvironment,
+        babelModeV7: !isStoryshotsEnvironment,
     },
 
     typescript: {
@@ -93,12 +125,12 @@ const config = {
     // Include DLL bundle script tag into preview-head.html if DLLPlugin is enabled.
     previewHead: (head: string) => `
         ${head}
-        ${environment.isDLLPluginEnabled ? getDllScriptTag() : ''}
+        ${ENVIRONMENT_CONFIG.WEBPACK_DLL_PLUGIN ? getDllScriptTag() : ''}
     `,
 
     webpackFinal: (config: Configuration, options: Options) => {
         config.stats = 'errors-warnings'
-        config.mode = environment.shouldMinify ? 'production' : 'development'
+        config.mode = ENVIRONMENT_CONFIG.MINIFY ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
         if (!config.module?.rules || !config.plugins) {
@@ -111,11 +143,12 @@ const config = {
             new DefinePlugin({
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
+                'process.env.CHROMATIC': JSON.stringify(ENVIRONMENT_CONFIG.CHROMATIC),
             }),
             getProvidePlugin()
         )
 
-        if (environment.shouldMinify) {
+        if (ENVIRONMENT_CONFIG.MINIFY) {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
@@ -155,7 +188,7 @@ const config = {
             exclude: storybookPath,
             use: getCSSLoaders(
                 'style-loader',
-                getCSSModulesLoader({ sourceMap: !environment.shouldMinify, url: false })
+                getCSSModulesLoader({ sourceMap: !ENVIRONMENT_CONFIG.MINIFY, url: false })
             ),
         })
 
@@ -187,9 +220,26 @@ const config = {
             use: {
                 loader: 'elm-webpack-loader',
                 options: {
-                    cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+                    cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
                     report: 'json',
                     pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+                },
+            },
+        })
+
+        // Node.js polyfills for JetBrains plugin
+        config.module.rules.push({
+            test: /(?:client\/(?:shared|jetbrains)|node_modules\/https-browserify)\/.*\.(ts|tsx|js|jsx)$/,
+            resolve: {
+                alias: {
+                    path: require.resolve('path-browserify'),
+                },
+                fallback: {
+                    path: require.resolve('path-browserify'),
+                    process: require.resolve('process/browser'),
+                    util: require.resolve('util'),
+                    http: require.resolve('stream-http'),
+                    https: require.resolve('https-browserify'),
                 },
             },
         })
@@ -200,11 +250,11 @@ const config = {
 
         // Disable `ProgressPlugin` by default to speed up development build.
         // Can be re-enabled by setting `WEBPACK_PROGRESS_PLUGIN` env variable.
-        if (!environment.isProgressPluginEnabled) {
+        if (!ENVIRONMENT_CONFIG.WEBPACK_PROGRESS_PLUGIN) {
             remove(config.plugins, plugin => plugin instanceof ProgressPlugin)
         }
 
-        if (environment.isDLLPluginEnabled && !options.webpackStatsJson) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_DLL_PLUGIN && !options.webpackStatsJson) {
             config.plugins.unshift(
                 new DllReferencePlugin({
                     context: dllPluginConfig.context,
@@ -216,11 +266,11 @@ const config = {
             config.module.rules.push(getMonacoCSSRule(), getMonacoTTFRule())
         }
 
-        if (environment.isBundleAnalyzerEnabled) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_BUNDLE_ANALYZER) {
             config.plugins.push(getStatoscopePlugin())
         }
 
-        if (environment.isSpeedAnalyzerEnabled) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_SPEED_ANALYZER) {
             const speedMeasurePlugin = new SpeedMeasurePlugin({
                 outputFormat: 'human',
             })

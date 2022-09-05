@@ -1,10 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
+import { mdiAlertCircle, mdiDownload } from '@mdi/js'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { getChangesetDiff } from '../backend'
 
@@ -19,7 +18,9 @@ enum DownloadState {
 
 type State = DownloadState | Error
 
-export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps> = ({ changesetID }) => {
+export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren<DownloadDiffButtonProps>> = ({
+    changesetID,
+}) => {
     const [state, setState] = useState<State>(DownloadState.READY)
 
     const loadDiff = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -61,26 +62,30 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
 
     let icon: JSX.Element
     if (isErrorLike(state)) {
-        icon = <Icon className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
+        icon = (
+            <Tooltip content={state?.message}>
+                <Icon aria-label={state?.message} className="icon" svgPath={mdiAlertCircle} />
+            </Tooltip>
+        )
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
-        icon = <Icon as={DownloadIcon} />
+        icon = <Icon aria-hidden={true} svgPath={mdiDownload} />
     }
 
     return (
-        <Button
-            className="mb-1"
-            aria-label="Download generated diff"
-            data-tooltip="This is the changeset diff created when src batch preview|apply executed the batch change"
-            onClick={loadDiff}
-            disabled={state === DownloadState.LOADING}
-            outline={true}
-            variant="secondary"
-            size="sm"
-        >
-            {icon}
-            <span className="pl-1">Download generated diff</span>
-        </Button>
+        <Tooltip content="This is the changeset diff created when src batch preview|apply executed the batch change">
+            <Button
+                className="mb-1"
+                onClick={loadDiff}
+                disabled={state === DownloadState.LOADING}
+                outline={true}
+                variant="secondary"
+                size="sm"
+            >
+                {icon}
+                <span className="pl-1">Download generated diff</span>
+            </Button>
+        </Tooltip>
     )
 }

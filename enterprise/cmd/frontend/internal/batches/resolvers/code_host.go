@@ -29,6 +29,10 @@ func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }
 
+func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
+	return c.codeHost.ExternalServiceType == extsvc.TypeBitbucketCloud
+}
+
 func (c *batchChangesCodeHostResolver) HasWebhooks() bool {
 	return c.codeHost.HasWebhooks
 }

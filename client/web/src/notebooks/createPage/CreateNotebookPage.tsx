@@ -14,10 +14,9 @@ import { createNotebook } from '../backend'
 
 const LOADING = 'loading' as const
 
-export const CreateNotebookPage: React.FunctionComponent<TelemetryProps & { authenticatedUser: AuthenticatedUser }> = ({
-    telemetryService,
-    authenticatedUser,
-}) => {
+export const CreateNotebookPage: React.FunctionComponent<
+    React.PropsWithChildren<TelemetryProps & { authenticatedUser: AuthenticatedUser }>
+> = ({ telemetryService, authenticatedUser }) => {
     const notebookOrError = useObservable(
         useMemo(
             () =>

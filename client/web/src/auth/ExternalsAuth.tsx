@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
-import GithubIcon from 'mdi-react/GithubIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
@@ -19,7 +19,7 @@ interface ExternalsAuthProps {
     withCenteredText?: boolean
 }
 
-const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         className={className}
         width="24"
@@ -50,7 +50,7 @@ const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ clas
     </svg>
 )
 
-const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
+const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
     context,
     githubLabel,
     gitlabLabel,
@@ -82,7 +82,7 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
                     )}
                     onClick={() => onClick('github')}
                 >
-                    <GithubIcon className="mr-3" /> {githubLabel}
+                    <Icon className="mr-3" svgPath={mdiGithub} inline={false} aria-hidden={true} /> {githubLabel}
                 </Link>
             )}
 

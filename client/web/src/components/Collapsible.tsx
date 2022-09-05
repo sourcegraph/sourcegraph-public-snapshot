@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -17,13 +16,13 @@ interface Props {
     /**
      * Sub-content always visible in the title bar.
      */
-    detail?: string
+    detail?: string | React.ReactElement
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,
      * a button that expands or collapses the children will be shown.
      */
-    children?: React.ReactFragment
+    children?: React.ReactNode
 
     /**
      * Whether the children are expanded and visible by default.
@@ -63,6 +62,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     buttonClassName = '',
     expandedButtonClassName = '',
     wholeTitleClickable = true,
+    ...rest
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -83,7 +83,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={className}>
+        <div className={className} {...rest}>
             <div
                 className={classNames(
                     'd-flex justify-content-between align-items-center position-relative',
@@ -98,11 +98,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    {isExpanded ? (
-                        <Icon aria-label="Close section" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                    )}
+                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
                 </Button>
                 {!titleAtStart && titleNode}
             </div>

@@ -6,12 +6,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type repositoryContributorsArgs struct {
 	RevisionRange *string
-	After         *string
+	AfterDate     *string
 	Path          *string
 }
 
@@ -36,23 +37,24 @@ type repositoryContributorConnectionResolver struct {
 
 	// cache result because it is used by multiple fields
 	once    sync.Once
-	results []*git.PersonCount
+	results []*gitdomain.ContributorCount
 	err     error
 }
 
-func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*git.PersonCount, error) {
+func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	r.once.Do(func() {
-		var opt git.ShortLogOptions
+		client := gitserver.NewClient(r.db)
+		var opt gitserver.ContributorOptions
 		if r.args.RevisionRange != nil {
 			opt.Range = *r.args.RevisionRange
 		}
 		if r.args.Path != nil {
 			opt.Path = *r.args.Path
 		}
-		if r.args.After != nil {
-			opt.After = *r.args.After
+		if r.args.AfterDate != nil {
+			opt.After = *r.args.AfterDate
 		}
-		r.results, r.err = git.ShortLog(ctx, r.db, r.repo.RepoName(), opt)
+		r.results, r.err = client.ContributorCount(ctx, r.repo.RepoName(), opt)
 	})
 	return r.results, r.err
 }

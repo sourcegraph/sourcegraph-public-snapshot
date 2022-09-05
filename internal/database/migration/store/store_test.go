@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,16 +13,19 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestEnsureSchemaTable(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -45,8 +49,140 @@ func TestEnsureSchemaTable(t *testing.T) {
 	}
 }
 
+func TestBackfillSchemaVersions(t *testing.T) {
+	t.Run("frontend", func(t *testing.T) {
+		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395684, 1528395840)) // non-squashed migration
+	})
+
+	t.Run("codeintel", func(t *testing.T) {
+		testViaMigrationLogs(t, "codeintel", 1000000015, backfillRange(1000000000, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000015, backfillRange(1000000000, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000020, backfillRange(1000000000, 1000000020)) // non-squashed migration
+	})
+
+	t.Run("codeinsights", func(t *testing.T) {
+		testViaMigrationLogs(t, "codeinsights", 1000000020, backfillRange(1000000000, 1000000020)) // squashed root
+		testViaGolangMigrate(t, "codeinsights", 1000000020, backfillRange(1000000000, 1000000020)) // squashed root
+		testViaGolangMigrate(t, "codeinsights", 1000000027, backfillRange(1000000000, 1000000027)) // non-squashed migration
+	})
+}
+
+// testViaGolangMigrate asserts the given expected versions are backfilled on a new store instance, given
+// the .*schema_migrations table has an entry with the given initial version.
+func testViaGolangMigrate(t *testing.T, schemaName string, version int, expectedVersions []int) {
+	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
+		if err := setupGolangMigrateTest(ctx, store, schemaName, version); err != nil {
+			t.Fatalf("unexpected error preparing .*schema_migrations tests: %s", err)
+		}
+	})
+}
+
+// setupGolangMigrateTest creates and populates the .*schema_migrations table with the given version.
+func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string, version int) error {
+	tableName := quote(schemaName)
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`CREATE TABLE %s (version text, dirty bool)`, tableName)); err != nil {
+		return err
+	}
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (%s, false)`, tableName, strconv.Itoa(version))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// testViaMigrationLogs asserts the given expected versions are backfilled on a new store instance, given
+// the migration_logs table has an entry with the given initial version.
+func testViaMigrationLogs(t *testing.T, schemaName string, initialVersion int, expectedVersions []int) {
+	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
+		if err := setupMigrationLogsTest(ctx, store, schemaName, initialVersion); err != nil {
+			t.Fatalf("unexpected error preparing migration_logs tests: %s", err)
+		}
+	})
+}
+
+// setupMigrationLogsTest populates the migration_logs table with the given version.
+func setupMigrationLogsTest(ctx context.Context, store *Store, schemaName string, version int) error {
+	return store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO migration_logs (
+			migration_logs_schema_version,
+			schema,
+			version,
+			up,
+			started_at,
+			finished_at,
+			success
+		) VALUES (%s, %s, %s, true, NOW(), NOW(), true)
+	`,
+		currentMigrationLogSchemaVersion,
+		schemaName,
+		version,
+	))
+}
+
+// testBackfillSchemaVersion runs the given setup function prior to backfilling a test
+// migration store. The versions available post-backfill are checked against the given
+// expected versions.
+func testBackfillSchemaVersion(
+	t *testing.T,
+	schemaName string,
+	expectedVersions []int,
+	setup func(ctx context.Context, store *Store),
+) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
+	store := testStoreWithName(db, schemaName)
+	ctx := context.Background()
+
+	if err := store.EnsureSchemaTable(ctx); err != nil {
+		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
+	}
+
+	setup(ctx, store)
+
+	if err := store.BackfillSchemaVersions(ctx); err != nil {
+		t.Fatalf("unexpected error backfilling schema table: %s", err)
+	}
+
+	appliedVersions, _, _, err := store.Versions(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error querying versions: %s", err)
+	}
+	if diff := cmp.Diff(expectedVersions, appliedVersions); diff != "" {
+		t.Errorf("unexpected applied migrations (-want +got):\n%s", diff)
+	}
+}
+
+// backfillRange creates an integer slice of the shape `[-lo, lo, lo+1, ..., hi-1, hi]`.
+// This is used to represent a linear range of migration identifiers from a historic
+// squashed migration to a future migration (prior to non-lienar migration identifeirs).
+func backfillRange(lo, hi int) []int {
+	vs := make([]int, 0, hi-lo+2)
+	vs = append(vs, -lo)
+	for i := lo; i <= hi; i++ {
+		vs = append(vs, i)
+	}
+	return vs
+}
+
+func TestHumanizeSchemaName(t *testing.T) {
+	for input, expected := range map[string]string{
+		"schema_migrations":              "frontend",
+		"codeintel_schema_migrations":    "codeintel",
+		"codeinsights_schema_migrations": "codeinsights",
+		"test_schema_migrations":         "test",
+	} {
+		if output := humanizeSchemaName(input); output != expected {
+			t.Errorf("unexpected output. want=%q have=%q", expected, output)
+		}
+	}
+}
+
 func TestVersions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 	if err := store.EnsureSchemaTable(ctx); err != nil {
@@ -123,7 +259,8 @@ func TestVersions(t *testing.T) {
 }
 
 func TestTryLock(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -168,7 +305,8 @@ func TestTryLock(t *testing.T) {
 }
 
 func TestWrappedUp(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -283,7 +421,8 @@ func TestWrappedUp(t *testing.T) {
 }
 
 func TestWrappedDown(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -410,7 +549,8 @@ func TestWrappedDown(t *testing.T) {
 }
 
 func TestIndexStatus(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -495,17 +635,12 @@ func TestIndexStatus(t *testing.T) {
 		return err
 	})
 
-	// Wait until we can see Session C's lock before querying index status
-	if err := whileEmpty(ctx, db, "SELECT 1 FROM pg_locks WHERE locktype = 'relation' AND mode = 'ShareUpdateExclusiveLock'"); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
 	// "waiting for old snapshots" will be the phase that is blocked by the concurrent
 	// sessions holding advisory locks. We may happen to hit one of the earlier phases
 	// if we're quick enough, so we'll keep polling progress until we hit the target.
 	blockingPhase := "waiting for old snapshots"
-	nonblockingPhasePrefixes := make([]string, 0, len(storetypes.CreateIndexConcurrentlyPhases))
-	for _, prefix := range storetypes.CreateIndexConcurrentlyPhases {
+	nonblockingPhasePrefixes := make([]string, 0, len(shared.CreateIndexConcurrentlyPhases))
+	for _, prefix := range shared.CreateIndexConcurrentlyPhases {
 		if prefix == blockingPhase {
 			break
 		}
@@ -516,12 +651,20 @@ func TestIndexStatus(t *testing.T) {
 		return value == prefix || strings.HasPrefix(value, prefix+":")
 	}
 
+	start := time.Now()
+	const missingIndexThreshold = time.Second * 10
+
 retryLoop:
 	for {
 		if status, ok, err := store.IndexStatus(ctx, "tbl", "idx"); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		} else if !ok {
-			t.Fatalf("expected index status")
+			// Give a small amount of time for Session C to begin creating the index. Signaling
+			// when Postgres has started to create the index is as difficult and expensive as
+			// querying the index the status, so we just poll here for a relatively short time.
+			if time.Since(start) >= missingIndexThreshold {
+				t.Fatalf("expected index status after %s", missingIndexThreshold)
+			}
 		} else if status.Phase == nil {
 			t.Fatalf("unexpected phase. want=%q have=nil", blockingPhase)
 		} else if *status.Phase == blockingPhase {
@@ -564,11 +707,11 @@ retryLoop:
 
 const defaultTestTableName = "test_migrations_table"
 
-func testStore(db dbutil.DB) *Store {
+func testStore(db *sql.DB) *Store {
 	return testStoreWithName(db, defaultTestTableName)
 }
 
-func testStoreWithName(db dbutil.DB, name string) *Store {
+func testStoreWithName(db *sql.DB, name string) *Store {
 	return NewWithDB(db, name, NewOperations(&observation.TestContext))
 }
 

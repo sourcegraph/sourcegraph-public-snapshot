@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type TriggerJob struct {
@@ -83,18 +82,6 @@ func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, trig
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, resultsJSON, triggerJobID))
 }
 
-const deleteObsoleteJobLogsFmtStr = `
-DELETE FROM cm_trigger_jobs
-WHERE jsonb_array_length(search_results) = 0
-AND state = 'completed'
-`
-
-// DeleteObsoleteTriggerJobs deletes all runs which are marked as completed and did
-// not return results.
-func (s *codeMonitorStore) DeleteObsoleteTriggerJobs(ctx context.Context) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
-}
-
 const deleteOldJobLogsFmtStr = `
 DELETE FROM cm_trigger_jobs
 WHERE finished_at < (NOW() - (%s * '1 day'::interval));
@@ -133,8 +120,7 @@ func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
 const getEventsForQueryIDInt64FmtStr = `
 SELECT %s
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
-AND %s
+WHERE %s
 ORDER BY id DESC
 LIMIT %s;
 `
@@ -171,21 +157,10 @@ func (s *codeMonitorStore) CountQueryTriggerJobs(ctx context.Context, queryID in
 	return count, err
 }
 
-func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	if err != nil {
-		return nil, false, err
-	}
-	records, err := scanTriggerJobs(rows)
-	if err != nil || len(records) == 0 {
-		return &TriggerJob{}, false, err
-	}
-	return records[0], true, nil
-}
-
 func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 	var js []*TriggerJob
 	for rows.Next() {
-		j, err := scanTriggerJob(rows)
+		j, err := ScanTriggerJob(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +169,7 @@ func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 	return js, rows.Err()
 }
 
-func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
+func ScanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 	var resultsJSON []byte
 	m := &TriggerJob{}
 	err := scanner.Scan(

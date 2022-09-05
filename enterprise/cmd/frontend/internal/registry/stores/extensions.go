@@ -56,7 +56,7 @@ type Extension struct {
 
 // ExtensionNotFoundError occurs when an extension is not found in the extension registry.
 type ExtensionNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -126,8 +126,8 @@ type extensionStore struct {
 var _ ExtensionStore = (*extensionStore)(nil)
 
 // Extensions instantiates and returns a new ExtensionsStore with prepared statements.
-func Extensions(db dbutil.DB) ExtensionStore {
-	return &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Extensions(db database.DB) ExtensionStore {
+	return &extensionStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // ExtensionsWith instantiates and returns a new ExtensionsStore using the other store handle.
@@ -187,7 +187,7 @@ func (s *extensionStore) GetByID(ctx context.Context, id int32) (*Extension, err
 	}
 
 	if len(results) == 0 {
-		return nil, ExtensionNotFoundError{[]interface{}{id}}
+		return nil, ExtensionNotFoundError{[]any{id}}
 	}
 
 	return results[0], nil
@@ -200,7 +200,7 @@ func (s *extensionStore) GetByUUID(ctx context.Context, uuid string) (*Extension
 	}
 
 	if len(results) == 0 {
-		return nil, ExtensionNotFoundError{[]interface{}{uuid}}
+		return nil, ExtensionNotFoundError{[]any{uuid}}
 	}
 
 	return results[0], nil
@@ -222,7 +222,7 @@ func (s *extensionStore) GetByExtensionID(ctx context.Context, extensionID strin
 	// (https://github.com/sourcegraph/sourcegraph/issues/12068).
 	parts := strings.SplitN(extensionID, "/", 2)
 	if len(parts) < 2 {
-		return nil, ExtensionNotFoundError{[]interface{}{fmt.Sprintf("extensionID %q", extensionID)}}
+		return nil, ExtensionNotFoundError{[]any{fmt.Sprintf("extensionID %q", extensionID)}}
 	}
 	publisherName := parts[0]
 	extensionName := parts[1]
@@ -236,7 +236,7 @@ func (s *extensionStore) GetByExtensionID(ctx context.Context, extensionID strin
 	}
 
 	if len(results) == 0 {
-		return nil, ExtensionNotFoundError{[]interface{}{fmt.Sprintf("extensionID %q", extensionID)}}
+		return nil, ExtensionNotFoundError{[]any{fmt.Sprintf("extensionID %q", extensionID)}}
 	}
 
 	return results[0], nil
@@ -411,7 +411,7 @@ ORDER BY %s,
 	for rows.Next() {
 		var t Extension
 		var publisherUserID, publisherOrgID sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName, &t.NonCanonicalIsWorkInProgress); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &dbutil.NullString{S: &t.Publisher.NonCanonicalName}, &t.NonCanonicalIsWorkInProgress); err != nil {
 			return nil, err
 		}
 		t.Publisher.UserID = int32(publisherUserID.Int64)
@@ -464,7 +464,7 @@ WHERE
 	}
 
 	if nrows == 0 {
-		return ExtensionNotFoundError{[]interface{}{id}}
+		return ExtensionNotFoundError{[]any{id}}
 	}
 
 	return nil
@@ -494,7 +494,7 @@ WHERE
 	}
 
 	if nrows == 0 {
-		return ExtensionNotFoundError{[]interface{}{id}}
+		return ExtensionNotFoundError{[]any{id}}
 	}
 
 	return nil

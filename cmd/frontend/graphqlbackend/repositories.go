@@ -5,13 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,6 +25,7 @@ type repositoryArgs struct {
 	Query       *string
 	Names       *[]string
 	Cloned      bool
+	CloneStatus *string
 	NotCloned   bool
 	Indexed     bool
 	NotIndexed  bool
@@ -64,11 +68,16 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		opt.Cursors = append(opt.Cursors, &cursor)
 	}
 
+	if args.CloneStatus != nil {
+		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
+	}
+
 	opt.FailedFetch = args.FailedFetch
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	return &repositoryConnectionResolver{
 		db:          r.db,
+		logger:      r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
 		opt:         opt,
 		cloned:      args.Cloned,
 		notCloned:   args.NotCloned,
@@ -89,6 +98,7 @@ type RepositoryConnectionResolver interface {
 }
 
 func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
+	// TODO(burmudar): This is ununsed ?
 	return &repositoryConnectionResolver{
 		db:         db,
 		opt:        opt,
@@ -102,6 +112,7 @@ func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptio
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
+	logger      log.Logger
 	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
@@ -130,7 +141,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed *zoekt.RepoList
-		searchIndexEnabled := search.Indexed() != nil
+		searchIndexEnabled := conf.SearchIndexEnabled()
 		isIndexed := func(id api.RepoID) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -171,7 +182,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.db).List(ctx, opt2)
+			repos, err := backend.NewRepos(r.logger, r.db).List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -247,7 +258,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		return &v
 	}
 
-	if !r.cloned || !r.notCloned {
+	if !r.cloned || !r.notCloned || r.opt.CloneStatus != types.CloneStatusUnknown {
 		// Don't support counting if filtering by clone status.
 		return nil, nil
 	}

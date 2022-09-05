@@ -30,10 +30,10 @@ import {
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
+import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
 import { FlatExtensionHostAPI } from '../contract'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'

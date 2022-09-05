@@ -6,11 +6,12 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -25,19 +26,26 @@ type BitbucketCloudSource struct {
 	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
-	client  *bitbucketcloud.Client
+	client  bitbucketcloud.Client
+	logger  log.Logger
 }
+
+var _ UserSource = &BitbucketCloudSource{}
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
-func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
-	var c schema.BitbucketCloudConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+func NewBitbucketCloudSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketCloudSource(svc, &c, cf)
+	var c schema.BitbucketCloudConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketCloudSource(logger, svc, &c, cf)
 }
 
-func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -58,7 +66,7 @@ func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketClou
 		return nil, err
 	}
 
-	client, err := bitbucketcloud.NewClient(c, cli)
+	client, err := bitbucketcloud.NewClient(svc.URN(), c, cli)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +76,7 @@ func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketClou
 		config:  c,
 		exclude: exclude,
 		client:  client,
+		logger:  logger,
 	}, nil
 }
 
@@ -137,7 +146,7 @@ func (s *BitbucketCloudSource) remoteURL(repo *bitbucketcloud.Repo) string {
 
 	httpsURL, err := repo.Links.Clone.HTTPS()
 	if err != nil {
-		log15.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", "url", repo.Links.Clone, "error", err)
+		s.logger.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", log.String("url", fmt.Sprintf("%v", repo.Links.Clone)), log.Error(err))
 		return fallbackURL
 	}
 	return httpsURL
@@ -219,4 +228,32 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			}
 		}
 	}
+}
+
+// WithAuthenticator returns a copy of the original Source configured to use
+// the given authenticator, provided that authenticator type is supported by
+// the code host.
+func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case
+		*auth.BasicAuth,
+		*auth.BasicAuthWithSSH:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketCloudSource", a)
+	}
+
+	sc := *s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+
+}
+
+// ValidateAuthenticator validates the currently set authenticator is usable.
+// Returns an error, when validating the Authenticator yielded an error.
+func (s *BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.CurrentUser(ctx)
+	return err
 }

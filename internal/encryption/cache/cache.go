@@ -11,7 +11,7 @@ import (
 
 // New returns a cache.Key with an LRU cache of `size` values, wrapping the passed key.
 func New(k encryption.Key, size int) (*Key, error) {
-	c, err := lru.NewWithEvict(size, func(key, value interface{}) { evictTotal.WithLabelValues().Inc() })
+	c, err := lru.NewWithEvict(size, func(key, value any) { evictTotal.WithLabelValues().Inc() })
 	if err != nil {
 		return nil, err
 	}

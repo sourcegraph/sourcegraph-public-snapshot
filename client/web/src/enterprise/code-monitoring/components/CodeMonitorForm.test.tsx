@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
@@ -22,6 +20,16 @@ const PROPS: CodeMonitorFormProps = {
 }
 
 describe('CodeMonitorForm', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     test('Uses trigger query when present', () => {
         renderWithBrandedContext(
             <MockedTestProvider>

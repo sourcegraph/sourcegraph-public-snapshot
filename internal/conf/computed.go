@@ -155,6 +155,15 @@ func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
 
+func ExecutorsFrontendURL() string {
+	current := Get()
+	if current.ExecutorsFrontendURL != "" {
+		return current.ExecutorsFrontendURL
+	}
+
+	return current.ExternalURL
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
@@ -236,24 +245,8 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
-func APIDocsSearchIndexingEnabled() bool {
-	val := ExperimentalFeatures().ApidocsSearchIndexing
-	if val == "" {
-		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
-	}
-	return val == "enabled"
-}
-
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
-func DependeciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
 	if val == "" {
 		return true
 	}
@@ -268,6 +261,14 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 	return *val
 }
 
+func Tracer() string {
+	ot := Get().ObservabilityTracing
+	if ot == nil {
+		return ""
+	}
+	return ot.Type
+}
+
 // AuthMinPasswordLength returns the value of minimum password length requirement.
 // If not set, it returns the default value 12.
 func AuthMinPasswordLength() int {
@@ -276,6 +277,53 @@ func AuthMinPasswordLength() int {
 		return 12
 	}
 	return val
+}
+
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+	ml := Get().AuthMinPasswordLength
+
+	if p := Get().AuthPasswordPolicy; p != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+		}
+	}
+
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.
@@ -287,6 +335,30 @@ func AuthPasswordResetLinkExpiry() int {
 	val := Get().AuthPasswordResetLinkExpiry
 	if val <= 0 {
 		return defaultPasswordLinkExpiry
+	}
+	return val
+}
+
+// AuthLockout populates and returns the *schema.AuthLockout with default values
+// for fields that are not initialized.
+func AuthLockout() *schema.AuthLockout {
+	val := Get().AuthLockout
+	if val == nil {
+		return &schema.AuthLockout{
+			ConsecutivePeriod:      3600,
+			FailedAttemptThreshold: 5,
+			LockoutPeriod:          1800,
+		}
+	}
+
+	if val.ConsecutivePeriod <= 0 {
+		val.ConsecutivePeriod = 3600
+	}
+	if val.FailedAttemptThreshold <= 0 {
+		val.FailedAttemptThreshold = 5
+	}
+	if val.LockoutPeriod <= 0 {
+		val.LockoutPeriod = 1800
 	}
 	return val
 }

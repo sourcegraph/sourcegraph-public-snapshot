@@ -1,12 +1,13 @@
 package reposource
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseNpmDependency(t *testing.T) {
+func TestParseNpmPackageVersion(t *testing.T) {
 	table := []struct {
 		testName string
 		expect   bool
@@ -29,7 +30,7 @@ func TestParseNpmDependency(t *testing.T) {
 		{"@A.B-C.D-E/F.G--H.IJK-L@0.1-ABC", true},
 	}
 	for _, entry := range table {
-		dep, err := ParseNpmDependency(entry.testName)
+		dep, err := ParseNpmVersionedPackage(entry.testName)
 		if entry.expect && (err != nil) {
 			t.Errorf("expected success but got error '%s' when parsing %s",
 				err.Error(), entry.testName)
@@ -39,8 +40,8 @@ func TestParseNpmDependency(t *testing.T) {
 	}
 }
 
-func TestSortNpmDependencies(t *testing.T) {
-	dependencies := []*NpmDependency{
+func TestNpmDependency_Less(t *testing.T) {
+	dependencies := []*NpmVersionedPackage{
 		parseNpmDependencyOrPanic(t, "ac@1.2.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.2.0.Final"),
 		parseNpmDependencyOrPanic(t, "aa@1.2.0"),
@@ -52,7 +53,7 @@ func TestSortNpmDependencies(t *testing.T) {
 		parseNpmDependencyOrPanic(t, "ab@1.2.0-RC1"),
 		parseNpmDependencyOrPanic(t, "ab@1.1.0"),
 	}
-	expected := []*NpmDependency{
+	expected := []*NpmVersionedPackage{
 		parseNpmDependencyOrPanic(t, "ac@1.2.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.11.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.2.0"),
@@ -64,12 +65,16 @@ func TestSortNpmDependencies(t *testing.T) {
 		parseNpmDependencyOrPanic(t, "ab@1.1.0"),
 		parseNpmDependencyOrPanic(t, "aa@1.2.0"),
 	}
-	SortNpmDependencies(dependencies)
+
+	sort.Slice(dependencies, func(i, j int) bool {
+		return dependencies[i].Less(dependencies[j])
+	})
+
 	assert.Equal(t, expected, dependencies)
 }
 
-func parseNpmDependencyOrPanic(t *testing.T, value string) *NpmDependency {
-	dependency, err := ParseNpmDependency(value)
+func parseNpmDependencyOrPanic(t *testing.T, value string) *NpmVersionedPackage {
+	dependency, err := ParseNpmVersionedPackage(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}

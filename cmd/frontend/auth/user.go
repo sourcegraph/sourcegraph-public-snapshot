@@ -124,7 +124,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		}
 
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignupSucceded", "error", logErr)
 		}
 
@@ -132,7 +132,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 	}()
 	if err != nil {
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignUpFailed", "error", logErr)
 		}
 		return 0, safeErrMsg, err

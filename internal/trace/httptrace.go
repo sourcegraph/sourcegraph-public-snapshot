@@ -9,21 +9,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-
+	"github.com/cockroachdb/redact"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type key int
@@ -136,15 +137,17 @@ var (
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	logger = logger.Scoped("http", "http tracing middleware")
+	return loggingRecoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// extract propagated span
 		wireContext, err := ot.GetTracer(ctx).Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			log15.Error("extracting parent span failed", "error", err)
+			logger.Warn("extracting parent span failed", log.Error(err))
 		}
 
 		// start new span
@@ -154,12 +157,18 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
 
-		traceID := IDFromSpan(span)
-		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL)
+		// get trace ID
+		trace := Context(ctx)
+		var traceURL string
+		if trace.TraceID != "" {
+			traceURL = URL(trace.TraceID, siteConfig)
+			rw.Header().Set("X-Trace", traceURL)
+			logger = logger.WithTrace(trace)
+		}
 
-		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
+		// route name is only known after the request has been handled
 		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
@@ -175,8 +184,10 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		}
 		ctx = WithRequestOrigin(ctx, origin)
 
+		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
+		// get route name, which is set after request is handled
 		if routeName == "graphql" {
 			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
 			if r.URL.RawQuery != "" {
@@ -185,10 +196,9 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 				routeName = "graphql: unknown"
 			}
 		}
-
-		// route name is only known after the request has been handled
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
+
 		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
 		labels := prometheus.Labels{
@@ -214,29 +224,26 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			minDuration = customDuration
 		}
 
-		if m.Duration >= minDuration || m.Code >= minCode {
-			kvs := make([]interface{}, 0, 20)
-			kvs = append(kvs,
-				"method", r.Method,
-				"url", truncate(r.URL.String(), 100),
-				"code", m.Code,
-				"duration", m.Duration,
+		if m.Code >= minCode || m.Duration >= minDuration {
+			fields := make([]log.Field, 0, 10)
+			fields = append(fields,
+				log.String("route_name", routeName),
+				log.String("method", r.Method),
+				log.String("url", truncate(r.URL.String(), 100)),
+				log.Int("code", m.Code),
+				log.Duration("duration", m.Duration),
 			)
 
-			if traceID != "" {
-				kvs = append(kvs, "traceID", traceID)
-			}
-
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {
-				kvs = append(kvs, "x_forwarded_for", v)
+				fields = append(fields, log.String("x_forwarded_for", v))
 			}
 
 			if userID != 0 {
-				kvs = append(kvs, "user", userID)
+				fields = append(fields, log.Int("user", int(userID)))
 			}
 
 			if gqlErr {
-				kvs = append(kvs, "graphql_error", gqlErr)
+				fields = append(fields, log.Bool("graphql_error", gqlErr))
 			}
 			var parts []string
 			if m.Duration >= minDuration {
@@ -245,7 +252,25 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			if m.Code >= minCode {
 				parts = append(parts, "unexpected status code")
 			}
-			log15.Warn(strings.Join(parts, ", "), kvs...)
+
+			msg := strings.Join(parts, ", ")
+			switch {
+			case m.Code == http.StatusNotFound:
+				logger.Info(msg, fields...)
+			case m.Code == http.StatusUnauthorized:
+				logger.Warn(msg, fields...)
+			case m.Code >= http.StatusInternalServerError && requestErrorCause != nil:
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+				fields = append(fields, log.Error(requestErrorCause))
+				logger.Error(msg, fields...)
+			case m.Duration >= minDuration:
+				logger.Warn(msg, fields...)
+			default:
+				logger.Error(msg, fields...)
+			}
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
@@ -257,22 +282,27 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 				// https://github.com/sourcegraph/sourcegraph/pull/29312.
 				return
 			}
-
-			sentry.CaptureError(requestErrorCause, map[string]string{
-				"code":            strconv.Itoa(m.Code),
-				"method":          r.Method,
-				"url":             r.URL.String(),
-				"route_name":      routeName,
-				"user_agent":      r.UserAgent(),
-				"user":            strconv.FormatInt(int64(userID), 10),
-				"x_forwarded_for": r.Header.Get("X-Forwarded-For"),
-				"written":         strconv.FormatInt(m.Written, 10),
-				"duration":        m.Duration.String(),
-				"graphql_error":   strconv.FormatBool(gqlErr),
-				"trace":           traceURL,
-			})
 		}
 	}))
+}
+
+// Recoverer is a recovery handler to wrap the stdlib net/http Mux.
+// Example:
+//  mux := http.NewServeMux
+//  ...
+//	http.Handle("/", sentry.Recoverer(mux))
+func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				err := errors.Errorf("handler panic: %v", redact.Safe(r))
+				logger.Error("handler panic", log.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
+
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func truncate(s string, n int) string {
@@ -313,5 +343,12 @@ func SetRequestErrorCause(ctx context.Context, err error) {
 func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
+	}
+}
+
+func WithRouteName(name string, next http.HandlerFunc) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		SetRouteName(r, name)
+		next(rw, r)
 	}
 }

@@ -1,0 +1,118 @@
+[
+  {
+   "ID": 0,
+   "Name": "npm/fastq",
+   "URI": "npm/fastq",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/fastq",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/fastq"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "",
+     "Name": "fastq"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/sourcegraph/prettierrc",
+   "URI": "npm/sourcegraph/prettierrc",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/sourcegraph/prettierrc",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/sourcegraph/prettierrc"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "sourcegraph",
+     "Name": "prettierrc"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/sourcegraph/sourcegraph.proposed",
+   "URI": "npm/sourcegraph/sourcegraph.proposed",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/sourcegraph/sourcegraph.proposed",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/sourcegraph/sourcegraph.proposed"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "sourcegraph",
+     "Name": "sourcegraph.proposed"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/sourcegraph/web-ext",
+   "URI": "npm/sourcegraph/web-ext",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/sourcegraph/web-ext",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/sourcegraph/web-ext"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "sourcegraph",
+     "Name": "web-ext"
+    }
+   }
+  }
+ ]

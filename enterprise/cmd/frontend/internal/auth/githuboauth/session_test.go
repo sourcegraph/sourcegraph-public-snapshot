@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -49,10 +50,13 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		ghUser          *github.User
 		ghUserEmails    []*githubsvc.UserEmail
 		ghUserOrgs      []*githubsvc.Org
+		ghUserTeams     []*githubsvc.Team
 		ghUserEmailsErr error
 		ghUserOrgsErr   error
+		ghUserTeamsErr  error
 		allowSignup     bool
 		allowOrgs       []string
+		allowOrgsMap    map[string][]string
 	}
 	cases := []struct {
 		inputs        []input
@@ -193,6 +197,67 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
+		{
+			inputs: []input{{
+				description:  "ghUser, verified email, team name matches, org name doesn't match -> no session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "team1", Organization: &githubsvc.Org{Login: "org2"}},
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description:  "ghUser, verified email, team name doesn't match, org name matches -> no session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "team2", Organization: &githubsvc.Org{Login: "org1"}},
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description:  "ghUser, verified email, in allowed org > teams -> session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "team1", Organization: &githubsvc.Org{Login: "org1"}},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:       u("alice", "alice@example.com", true),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, ci := range c.inputs {
@@ -201,8 +266,11 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
 					return ci.ghUserEmails, ci.ghUserEmailsErr
 				}
-				githubsvc.MockGetAuthenticatedUserOrgs = func(ctx context.Context) ([]*githubsvc.Org, error) {
-					return ci.ghUserOrgs, ci.ghUserOrgsErr
+				githubsvc.MockGetAuthenticatedUserOrgs.FnMock = func(ctx context.Context) ([]*githubsvc.Org, bool, int, error) {
+					return ci.ghUserOrgs, false, 1, ci.ghUserOrgsErr
+				}
+				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context, page int) ([]*githubsvc.Team, bool, int, error) {
+					return ci.ghUserTeams, false, 0, ci.ghUserTeamsErr
 				}
 				var gotAuthUserOp *auth.GetAndSaveUserOp
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
@@ -220,21 +288,25 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				defer func() {
 					auth.MockGetAndSaveUser = nil
 					githubsvc.MockGetAuthenticatedUserEmails = nil
-					githubsvc.MockGetAuthenticatedUserOrgs = nil
+					githubsvc.MockGetAuthenticatedUserTeams = nil
+					githubsvc.MockGetAuthenticatedUserOrgs.FnMock = nil
 				}()
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
 				s := &sessionIssuerHelper{
-					CodeHost:    codeHost,
-					clientID:    clientID,
-					allowSignup: ci.allowSignup,
-					allowOrgs:   ci.allowOrgs,
+					CodeHost:     codeHost,
+					clientID:     clientID,
+					allowSignup:  ci.allowSignup,
+					allowOrgs:    ci.allowOrgs,
+					allowOrgsMap: ci.allowOrgsMap,
 				}
+
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
 				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
+
 				if c.expErr && err == nil {
 					t.Errorf("expected err %v, but was nil", c.expErr)
 				} else if !c.expErr && err != nil {
@@ -311,6 +383,44 @@ func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *t
 	createCodeHostConnectionHelper(t, true)
 }
 
+func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
+	// mock calls to get user orgs
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = make(map[int][]*githubsvc.Org, 2)
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[1] = generate100Orgs(1)
+	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[2] = generate100Orgs(101)
+
+	defer func() {
+		githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = nil
+	}()
+
+	s := &sessionIssuerHelper{
+		CodeHost:     nil,
+		clientID:     "clientID",
+		allowSignup:  true,
+		allowOrgs:    []string{"1337"},
+		allowOrgsMap: nil,
+	}
+
+	allowed := s.verifyUserOrgs(context.Background(), nil)
+	if allowed {
+		t.Fatal("User doesn't have an org he is allowed into, but verifyUserOrgs returned true")
+	}
+
+	s.allowOrgs = append(s.allowOrgs, "123")
+
+	allowed = s.verifyUserOrgs(context.Background(), nil)
+	if !allowed {
+		t.Fatal("User has an org he is allowed into, but verifyUserOrgs returned false")
+	}
+}
+
+func generate100Orgs(startIdx int) (orgs []*githubsvc.Org) {
+	for i := startIdx; i < startIdx+100; i++ {
+		orgs = append(orgs, &githubsvc.Org{Login: strconv.Itoa(i)})
+	}
+	return
+}
+
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
@@ -318,7 +428,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	db := database.NewMockDB()
 	s := &sessionIssuerHelper{db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
-		_, err := s.CreateCodeHostConnection(ctx, nil, "")
+		_, _, err := s.CreateCodeHostConnection(ctx, nil, "")
 		assert.Error(t, err)
 	})
 
@@ -350,13 +460,13 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 			{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-				Config: fmt.Sprintf(`
+				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, mockGitHubCom.ServiceID, "a-token-that-should-be-replaced"),
+`, mockGitHubCom.ServiceID, "a-token-that-should-be-replaced")),
 				NamespaceUserID: act.UID,
 				CreatedAt:       now,
 				UpdatedAt:       now,
@@ -375,24 +485,25 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	})
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	_, err := s.CreateCodeHostConnection(ctx, tok, mockGitHubCom.ConfigID().ID)
+	fromCreation, _, err := s.CreateCodeHostConnection(ctx, tok, mockGitHubCom.ConfigID().ID)
 	require.NoError(t, err)
 
 	want := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-		Config: fmt.Sprintf(`
+		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, mockGitHubCom.ServiceID, tok.AccessToken),
+`, mockGitHubCom.ServiceID, tok.AccessToken)),
 		NamespaceUserID: act.UID,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
 	assert.Equal(t, want, got)
+	assert.Equal(t, want, fromCreation)
 }
 
 func u(username, email string, emailIsVerified bool) database.NewUser {

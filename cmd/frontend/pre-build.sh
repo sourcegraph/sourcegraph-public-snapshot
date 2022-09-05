@@ -6,9 +6,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 echo "--- yarn"
 # mutex is necessary since CI runs various yarn installs in parallel
 if [[ -z "${CI}" ]]; then
-  yarn --mutex network
+  yarn
 else
-  yarn --mutex network --frozen-lockfile --network-timeout 60000
+  ./dev/ci/yarn-install-with-retry.sh
 fi
 
 echo "--- yarn run build-web"

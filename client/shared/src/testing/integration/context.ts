@@ -13,10 +13,13 @@ import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+// eslint-disable-next-line no-restricted-imports
 import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
+import { getConfig } from '../config'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
 import { readEnvironmentString } from '../utils'
@@ -29,8 +32,6 @@ util.inspect.defaultOptions.maxStringLength = 80
 
 Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
-
-const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
 const checkPollyMode = (mode: string): MODE => {
     if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
@@ -52,7 +53,6 @@ export interface IntegrationTestContext<
     TGraphQlOperations extends Record<TGraphQlOperationNames, (variables: any) => any>,
     TGraphQlOperationNames extends string
 > {
-    driver: Driver
     server: PollyServer
 
     /**
@@ -82,7 +82,7 @@ export interface IntegrationTestOptions {
     /**
      * The test driver created in a `before()` hook.
      */
-    driver: Driver
+    driver: Pick<Driver, 'newPage' | 'browser' | 'sourcegraphBaseUrl' | 'page'>
 
     /**
      * The value of `this.currentTest` in the `beforeEach()` hook.
@@ -104,6 +104,9 @@ export interface IntegrationTestOptions {
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
 
+// Used in `suppressPollyErrors.js` to suppress error logging.
+const POLLY_RECORDING_PREFIX = '[SG_POLLY] '
+
 /**
  * Should be called in a `beforeEach()` and saved into a local variable.
  */
@@ -115,6 +118,7 @@ export const createSharedIntegrationTestContext = async <
     currentTest,
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
+    const config = getConfig('keepBrowser', 'disableAppAssetsMocking')
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (pollyMode === 'record') {
@@ -124,7 +128,8 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest.title), {
+
+    const polly = new Polly(POLLY_RECORDING_PREFIX + snakeCase(currentTest.title), {
         adapters: [CdpAdapter.id],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
@@ -154,7 +159,17 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe(error => {
-            currentTest.emit('error', error)
+            /**
+             * Do not emit errors on completed tests.
+             *
+             * This can happen when GraphQL is not mocked and we throw an error about that but
+             * this mock is not required for test completion and test passes before we throw the error.
+             *
+             * These types of errors are irrelevant to the test output.
+             */
+            if (currentTest.isPending()) {
+                currentTest.emit('error', error)
+            }
         })
     )
 
@@ -173,30 +188,32 @@ export const createSharedIntegrationTestContext = async <
             .send('')
     })
 
-    // Serve assets from disk
-    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
-        const asset = request.params.path
-        // Cache all responses for the entire lifetime of the test run
-        response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-        try {
-            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
-                // Polly doesn't support Buffers or streams at the moment
-                encoding: 'utf-8',
-            })
-            const contentType = mime.contentType(path.basename(asset))
-            if (contentType) {
-                response.type(contentType)
+    if (!config.disableAppAssetsMocking) {
+        // Serve assets from disk
+        server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
+            const asset = request.params.path
+            // Cache all responses for the entire lifetime of the test run
+            response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+            try {
+                const content = await readFile(path.join(STATIC_ASSETS_PATH, asset), {
+                    // Polly doesn't support Buffers or streams at the moment
+                    encoding: 'utf-8',
+                })
+                const contentType = mime.contentType(path.basename(asset))
+                if (contentType) {
+                    response.type(contentType)
+                }
+                response.send(content)
+            } catch (error) {
+                if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
+                    response.sendStatus(404)
+                } else {
+                    console.error(error)
+                    response.status(500).send(asError(error).message)
+                }
             }
-            response.send(content)
-        } catch (error) {
-            if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
-                response.sendStatus(404)
-            } else {
-                console.error(error)
-                response.status(500).send(asError(error).message)
-            }
-        }
-    })
+        })
+    }
 
     // GraphQL requests are not handled by HARs, but configured per-test.
     interface GraphQLRequestEvent<O extends TGraphQlOperationNames> {
@@ -206,6 +223,8 @@ export const createSharedIntegrationTestContext = async <
     let graphQlOverrides: Partial<TGraphQlOperations> = {}
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
     server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+        response.setHeader('Access-Control-Allow-Origin', '*')
+
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
         const { variables, query } = request.jsonBody() as {
             query: string
@@ -243,6 +262,14 @@ export const createSharedIntegrationTestContext = async <
         }
     })
 
+    // Handle preflight requests.
+    server.options(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+        response
+            .setHeader('Access-Control-Allow-Origin', '*')
+            .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            .send(200)
+    })
+
     // Filter out 'server' header filled in by Caddy before persisting responses,
     // otherwise tests will hang when replayed from recordings.
     server
@@ -252,7 +279,6 @@ export const createSharedIntegrationTestContext = async <
         })
 
     return {
-        driver,
         server,
         overrideGraphQL: overrides => {
             graphQlOverrides = { ...graphQlOverrides, ...overrides }
@@ -275,6 +301,10 @@ export const createSharedIntegrationTestContext = async <
             return variables
         },
         dispose: async () => {
+            if (config.keepBrowser) {
+                return
+            }
+
             subscriptions.unsubscribe()
             await pTimeout(
                 recordCoverage(driver.browser),

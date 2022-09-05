@@ -1,6 +1,8 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent, useState } from 'react'
 
 import classNames from 'classnames'
+
+import { Button } from '@sourcegraph/wildcard'
 
 import { RepositoryPreview } from './RepositoryPreview'
 import { ReposMatchingPattern } from './ReposMatchingPattern'
@@ -13,13 +15,24 @@ export interface ReposMatchingPatternListProps {
     disabled: boolean
 }
 
-export const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps> = ({
+export const ReposMatchingPatternList: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternListProps>> = ({
     repositoryPatterns,
     setRepositoryPatterns,
     disabled,
 }) => {
-    const addRepositoryPattern = (): void =>
+    const [autoFocusIndex, setAutoFocusIndex] = useState(-1)
+
+    const addRepositoryPattern = (): void => {
         setRepositoryPatterns(repositoryPatterns => (repositoryPatterns || []).concat(['']))
+        setAutoFocusIndex(repositoryPatterns?.length ?? -1)
+    }
+
+    const handleDelete = (index: number): void => {
+        setRepositoryPatterns(repositoryPatterns =>
+            (repositoryPatterns || []).filter((___, index_) => index !== index_)
+        )
+        setAutoFocusIndex(-1)
+    }
 
     return (
         <div className="mb-2">
@@ -29,13 +42,13 @@ export const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternLis
                     {!disabled && (
                         <>
                             To restrict the set of repositories to which this configuration applies,{' '}
-                            <span
+                            <Button
+                                variant="link"
                                 className={styles.addRepositoryPattern}
                                 onClick={addRepositoryPattern}
-                                aria-hidden="true"
                             >
                                 add a repository pattern
-                            </span>
+                            </Button>
                             .
                         </>
                     )}
@@ -47,6 +60,7 @@ export const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternLis
                             <ReposMatchingPattern
                                 key={index}
                                 index={index}
+                                autoFocus={index === autoFocusIndex}
                                 pattern={repositoryPattern}
                                 setPattern={value =>
                                     setRepositoryPatterns(repositoryPatterns =>
@@ -55,11 +69,7 @@ export const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternLis
                                         )
                                     )
                                 }
-                                onDelete={() =>
-                                    setRepositoryPatterns(repositoryPatterns =>
-                                        (repositoryPatterns || []).filter((___, index_) => index !== index_)
-                                    )
-                                }
+                                onDelete={() => handleDelete(index)}
                                 disabled={disabled}
                             />
                         ))}
@@ -68,13 +78,13 @@ export const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternLis
                     {!disabled && (
                         <>
                             <div className="py-3">
-                                <span
+                                <Button
+                                    variant="link"
                                     className={classNames(styles.addRepositoryPattern)}
                                     onClick={addRepositoryPattern}
-                                    aria-hidden="true"
                                 >
                                     Add a repository pattern
-                                </span>
+                                </Button>
                             </div>
                         </>
                     )}

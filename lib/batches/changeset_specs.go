@@ -32,21 +32,17 @@ type ChangesetSpecInput struct {
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
 	TransformChanges      *TransformChanges               `json:"-"`
+	Path                  string
 
-	Result execution.Result
+	Result execution.AfterStepResult
 }
 
-type ChangesetSpecFeatureFlags struct {
-	IncludeAutoAuthorDetails bool
-	AllowOptionalPublished   bool
-}
-
-func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatureFlags) ([]*ChangesetSpec, error) {
+func BuildChangesetSpecs(input *ChangesetSpecInput) ([]*ChangesetSpec, error) {
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
 			Changes: input.Result.ChangedFiles,
-			Path:    input.Result.Path,
+			Path:    input.Path,
 		},
 		Outputs: input.Result.Outputs,
 		Repository: template.Repository{
@@ -60,11 +56,9 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 	var authorEmail string
 
 	if input.Template.Commit.Author == nil {
-		if features.IncludeAutoAuthorDetails {
-			// user did not provide author info, so use defaults
-			authorName = "Sourcegraph"
-			authorEmail = "batch-changes@sourcegraph.com"
-		}
+		// user did not provide author info, so use defaults
+		authorName = "Sourcegraph"
+		authorEmail = "batch-changes@sourcegraph.com"
 	} else {
 		var err error
 		authorName, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
@@ -101,18 +95,9 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 	}
 
 	newSpec := func(branch, diff string) (*ChangesetSpec, error) {
-		var published interface{} = nil
+		var published any = nil
 		if input.Template.Published != nil {
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
-
-			// Backward compatibility: before optional published fields were
-			// allowed, ValueWithSuffix() would fall back to false, not nil. We
-			// need to replicate this behaviour here.
-			if published == nil && !features.AllowOptionalPublished {
-				published = false
-			}
-		} else if !features.AllowOptionalPublished {
-			return nil, errOptionalPublishedUnsupported
 		}
 
 		return &ChangesetSpec{

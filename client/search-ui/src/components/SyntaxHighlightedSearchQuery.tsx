@@ -2,43 +2,34 @@ import React, { Fragment, useMemo } from 'react'
 
 import classNames from 'classnames'
 
+import { SearchPatternType } from '@sourcegraph/search'
+import { decorate, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 interface SyntaxHighlightedSearchQueryProps extends React.HTMLAttributes<HTMLSpanElement> {
     query: string
+    searchPatternType?: SearchPatternType
 }
 
 // A read-only syntax highlighted search query
-export const SyntaxHighlightedSearchQuery: React.FunctionComponent<SyntaxHighlightedSearchQueryProps> = ({
-    query,
-    ...otherProps
-}) => {
+export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
+    React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
+> = ({ query, searchPatternType, ...otherProps }) => {
     const tokens = useMemo(() => {
-        const scannedQuery = scanSearchQuery(query)
-        return scannedQuery.type === 'success'
-            ? scannedQuery.term.map(token => {
-                  if (token.type === 'filter') {
+        const tokens = searchPatternType ? scanSearchQuery(query, false, searchPatternType) : scanSearchQuery(query)
+        return tokens.type === 'success'
+            ? tokens.term.flatMap(token =>
+                  decorate(token).map(token => {
+                      const { value, key, className } = toDecoration(query, token)
                       return (
-                          <Fragment key={token.range.start}>
-                              <span className="search-filter-keyword">
-                                  {query.slice(token.field.range.start, token.field.range.end)}
-                              </span>
-                              <span className="search-filter-separator">:</span>
-                              {token.value ? <>{query.slice(token.value.range.start, token.value.range.end)}</> : null}
-                          </Fragment>
-                      )
-                  }
-                  if (token.type === 'keyword') {
-                      return (
-                          <span className="search-keyword" key={token.range.start}>
-                              {query.slice(token.range.start, token.range.end)}
+                          <span className={className} key={key}>
+                              {value}
                           </span>
                       )
-                  }
-                  return <Fragment key={token.range.start}>{query.slice(token.range.start, token.range.end)}</Fragment>
-              })
+                  })
+              )
             : [<Fragment key="0">{query}</Fragment>]
-    }, [query])
+    }, [query, searchPatternType])
 
     return (
         <span {...otherProps} className={classNames('text-monospace search-query-link', otherProps.className)}>

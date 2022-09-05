@@ -5,7 +5,8 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 ## Admin articles
 
 ### General
-- [Resource estimator](../admin/install/index.md)
+- [Deployment overview](../admin/deploy/index.md)
+- [Resource estimator](../admin/deploy/resource_estimator.md)
 - [SAML config](../admin/auth/saml/index.md)
 - [Configuring authorization and authentication](../admin/config/authorization_and_authentication.md) - We recommend starting here for access and permissions configuration before moving on to the more specific pages on these topics.
 - [Built-in password authentication](../admin/auth/index.md#builtin-password-authentication)
@@ -20,21 +21,17 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) to track releases and updates
 
 ### Docker-compose
-- [Basic installation guide](../admin/install/docker-compose/index.md)
-- [AWS installation](../admin/install/docker-compose/aws.md)
-- [Digital Ocean installation](../admin/install/docker-compose/digitalocean.md)
-- [Google Cloud installlation](../admin/install/docker-compose/google_cloud.md)
+- [Basic installation guide](../admin/deploy/docker-compose/index.md)
+- [AWS installation](../admin/deploy/docker-compose/aws.md)
+- [Digital Ocean installation](../admin/deploy/docker-compose/digitalocean.md)
+- [Google Cloud installlation](../admin/deploy/docker-compose/google_cloud.md)
 
 ### Kubernetes admin
-- [Basic installation guide](../admin/install/kubernetes/index.md)
-- [Provisioning a Kubernetes cluster](../admin/install/kubernetes/configure.md#configuring-sourcegraph)
-- [Amazon EKS](../admin/install/kubernetes/eks.md)
-- [Amazon EC2](https://kubernetes.io/docs/setup/)
-- [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/docs/quickstart)
-- [Azure](../admin/install/kubernetes/azure.md)
-- [Scaling](../admin/install/kubernetes/scale.md#improving-performance-with-a-large-number-of-repositories) 
-- [Ingress controller](../admin/install/kubernetes/configure.md#ingress-controller-recommended)
-- [Common configuration](../admin/install/kubernetes/configure.md#common-configuration)
+- [All Kubernetes with Helm guidance](../admin/deploy/kubernetes/helm.md)
+- [Amazon EKS](../admin/deploy/kubernetes/helm.md#configure-sourcegraph-on-elastic-kubernetes-service-eks)
+- [Google GKE](../admin/deploy/kubernetes/helm.md#configure-sourcegraph-on-google-kubernetes-engine-gke)
+- [Azure](../admin/deploy/kubernetes/helm.md#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
+- [Configure Sourcegraph on other Cloud providers or on-prem](../admin/deploy/kubernetes/helm.md#configure-sourcegraph-on-other-cloud-providers-or-on-prem)
 
 ## User articles
 - [Search syntax](../code_search/reference/queries.md)

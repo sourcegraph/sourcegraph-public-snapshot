@@ -161,38 +161,6 @@ func TestIsCaseSensitive(t *testing.T) {
 	}
 }
 
-func TestRegexpPatterns(t *testing.T) {
-	type want struct {
-		values        []string
-		negatedValues []string
-	}
-	c := struct {
-		query string
-		field string
-		want
-	}{
-		query: "r:a r:b -r:c",
-		field: "repo",
-		want: want{
-			values:        []string{"a", "b"},
-			negatedValues: []string{"c"},
-		},
-	}
-	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ParseRegexp(c.query)
-		if err != nil {
-			t.Fatal(err)
-		}
-		gotValues, gotNegatedValues := query.RegexpPatterns(c.field)
-		if diff := cmp.Diff(c.want.values, gotValues); diff != "" {
-			t.Error(diff)
-		}
-		if diff := cmp.Diff(c.want.negatedValues, gotNegatedValues); diff != "" {
-			t.Error(diff)
-		}
-	})
-}
-
 func TestPartitionSearchPattern(t *testing.T) {
 	cases := []struct {
 		input string
@@ -273,7 +241,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 				}
 				return
 			}
-			result := ToNodes(scopeParameters)
+			result := toNodes(scopeParameters)
 			if pattern != nil {
 				result = append(result, pattern)
 			}
@@ -346,7 +314,7 @@ func TestContainsRefGlobs(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, err := Run(sequence(
+			query, err := Run(Sequence(
 				Init(c.input, SearchTypeLiteral),
 				Globbing,
 			))

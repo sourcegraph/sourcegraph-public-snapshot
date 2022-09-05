@@ -1,7 +1,5 @@
-import React from 'react'
-
 import { useMemo } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { addSeconds, isBefore } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -10,11 +8,15 @@ import { ChangesetCountsOverTimeFields } from '../../../graphql-operations'
 
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 
-const { add } = storiesOf('web/batches/BurndownChart', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const config: Meta = {
+    title: 'web/batches/BurndownChart',
+    decorators: [decorator],
+}
 
-add('All states', () => {
+export default config
+
+export const AllStates: Story = () => {
     const changesetCounts = useMemo<ChangesetCountsOverTimeFields[]>(() => {
         const timeMarks = [
             {
@@ -177,4 +179,6 @@ add('All states', () => {
             )}
         </WebStory>
     )
-})
+}
+
+AllStates.storyName = 'All states'

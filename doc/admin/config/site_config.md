@@ -40,8 +40,8 @@ If you are having trouble accessing the web UI, you can make edits to your site 
 
 Set `FRONTEND_CONTAINER` to:
 
-- [Docker Compose](../install/docker-compose/index.md): the `sourcegraph-frontend` container
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../deploy/docker-compose/index.md): the `sourcegraph-frontend` container
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 ```sh
 docker exec -it --user=root $FRONTEND_CONTAINER sh -c 'apk add --no-cache && nano /home/sourcegraph/site-config.json'
@@ -55,7 +55,7 @@ docker exec -it $FRONTEND_CONTAINER sh -c 'vi ~/site-config.json'
 
 ### Sourcegraph with Kubernetes
 
-For [Kubernetes](../install/kubernetes/index.md) deployments:
+For [Kubernetes](../deploy/kubernetes/index.md) deployments:
 
 ```sh
 kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano ~/site-config.json'

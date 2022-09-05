@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -39,12 +37,14 @@ describe('SlackWebhookAction', () => {
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
 
+        userEvent.click(getByTestId('include-results-toggle-slack-webhook'))
+
         userEvent.click(getByTestId('submit-action-slack-webhook'))
 
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorSlackWebhook',
             enabled: true,
-            includeResults: false,
+            includeResults: true,
             id: '',
             url: SLACK_URL,
         })
@@ -199,7 +199,7 @@ describe('SlackWebhookAction', () => {
             url: SLACK_URL,
         }
 
-        const mockedVars: SendTestSlackWebhookVariables = {
+        const mockedVariables: SendTestSlackWebhookVariables = {
             namespace: props.authenticatedUser.id,
             description: props.monitorName,
             slackWebhook: {
@@ -235,7 +235,7 @@ describe('SlackWebhookAction', () => {
             const mockedResponse: MockedResponse<SendTestSlackWebhookResult> = {
                 request: {
                     query: SEND_TEST_SLACK_WEBHOOK,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 result: { data: { triggerTestSlackWebhookAction: { alwaysNil: null } } },
             }
@@ -265,7 +265,7 @@ describe('SlackWebhookAction', () => {
             const mockedResponse: MockedResponse<SendTestSlackWebhookResult> = {
                 request: {
                     query: SEND_TEST_SLACK_WEBHOOK,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 error: new Error('An error occurred'),
             }

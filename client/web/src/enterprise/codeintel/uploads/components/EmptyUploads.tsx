@@ -1,21 +1,17 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text, Icon } from '@sourcegraph/wildcard'
 
-export const EmptyUploads: React.FunctionComponent = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
+export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
-        No uploads yet. Enable precise code intelligence by{' '}
-        <Link
-            to="/help/code_intelligence/explanations/precise_code_intelligence"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
+        No uploads yet. Enable precise code navigation by{' '}
+        <Link to="/help/code_navigation/explanations/precise_code_navigation" target="_blank" rel="noreferrer noopener">
             uploading LSIF data
         </Link>
         .
-    </p>
+    </Text>
 )

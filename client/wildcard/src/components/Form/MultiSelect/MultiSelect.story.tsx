@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2 } from '../..'
 import { Grid } from '../../Grid/Grid'
 
 import { MultiSelect, MultiSelectProps, MultiSelectState, MultiSelectOption } from '.'
@@ -48,27 +49,47 @@ const BaseSelect = (props: Partial<Pick<MultiSelectProps, 'isValid' | 'isDisable
     )
 }
 
+const SelectWithValues = () => {
+    const [selectedOptions, setSelectedOptions] = useState<MultiSelectState<OptionValue>>([OPTIONS[5], OPTIONS[1]])
+
+    return (
+        <MultiSelect
+            options={OPTIONS}
+            defaultValue={selectedOptions}
+            onChange={setSelectedOptions}
+            message="I am a message"
+            label="Select your favorite ice cream flavors."
+            aria-label="Select your favorite ice cream flavors."
+        />
+    )
+}
+
 export const MultiSelectExamples: Story = () => (
     <>
-        <h1>Multi Select</h1>
+        <H1>Multi Select</H1>
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <H2>Standard</H2>
                 <BaseSelect />
             </div>
             <div>
-                <h2>Valid</h2>
+                <H2>Valid</H2>
                 <BaseSelect isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <H2>Invalid</H2>
                 <BaseSelect isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <H2>Disabled</H2>
                 <BaseSelect isDisabled={true} />
             </div>
         </Grid>
+
+        <H2>Pre-selected values (300px wide container)</H2>
+        <div style={{ width: '300px ' }}>
+            <SelectWithValues />
+        </div>
     </>
 )
 

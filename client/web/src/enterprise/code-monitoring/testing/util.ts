@@ -26,6 +26,7 @@ export const mockUser: AuthenticatedUser = {
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,
+    emails: [],
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {
@@ -467,7 +468,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     __typename: 'MonitorTriggerEvent',
                                     id: 'd',
                                     status: EventStatus.ERROR,
-                                    message: 'Search failed',
+                                    message:
+                                        'Search failed. This is a very long error that should wrap. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
                                     timestamp: '2022-02-14T12:29:21Z',
                                     query: '',
                                     resultCount: 0,
@@ -546,6 +548,58 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                 events: {
                                                     __typename: 'MonitorActionEventConnection',
                                                     nodes: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
+                {
+                    __typename: 'Monitor',
+                    description: 'Fifth test code monitor (only pending events)',
+                    id: '131415',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'f',
+                                    status: EventStatus.PENDING,
+                                    message: null,
+                                    timestamp: '2022-02-14T16:20:16Z',
+                                    query: '',
+                                    resultCount: 0,
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            id: 'af',
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.PENDING,
+                                                            message: null,
+                                                            timestamp: '2022-02-14T16:20:16Z',
+                                                        },
+                                                    ],
                                                 },
                                             },
                                         ],

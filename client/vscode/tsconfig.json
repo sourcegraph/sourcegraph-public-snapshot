@@ -13,7 +13,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
   },
   "references": [
     { "path": "../shared" },
@@ -22,6 +22,6 @@
     { "path": "../search" },
     { "path": "../search-ui" },
   ],
-  "include": ["**/*", ".*", "**/*.d.ts"],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }

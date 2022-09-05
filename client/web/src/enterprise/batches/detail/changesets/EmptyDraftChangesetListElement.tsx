@@ -2,18 +2,20 @@ import React from 'react'
 
 import { useLocation } from 'react-router'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H3, Text } from '@sourcegraph/wildcard'
 
 import styles from './EmptyDraftChangesetListElement.module.scss'
 
-export const EmptyDraftChangesetListElement: React.FunctionComponent<{}> = () => {
+export const EmptyDraftChangesetListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const location = useLocation()
     return (
         <div className={styles.emptyDraftChangesetListElementBody}>
-            <h3 className={styles.emptyDraftChangesetListElementHeader}>No changesets exist</h3>
+            <H3>No changesets exist</H3>
             <div className={styles.emptyDraftChangesetListElementContent}>
-                <span>This batch change is a draft. A batch spec must be executed to create changesets.</span>
-                <Link to={`${location.pathname}/edit`}>View the most recent spec.</Link>
+                <Text className="mt-2">
+                    This batch change is a draft. A batch spec must be executed and applied to create changesets.
+                </Text>
+                <Link to={`${location.pathname}/edit`}>Edit the most recent spec.</Link>
             </div>
         </div>
     )

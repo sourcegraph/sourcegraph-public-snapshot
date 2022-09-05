@@ -1,10 +1,12 @@
 # File decorations tutorial
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
+
 ![File decorations](img/file-decorations.png)
 
 Extensions can decorate files in the file tree and/or directory page with text content and/or a `<meter/>` element. In this tutorial, you'll build an extension that decorates directories with the length of their names.
 
-> Note: This feature was introduced in Sourcegraph version 3.23. Extensions should check if `sourcegraph.app.registerFileDecorationProvider` is defined to prevent errors on older versions of Sourcegraph. 
+> Note: This feature was introduced in Sourcegraph version 3.23. Extensions should check if `sourcegraph.app.registerFileDecorationProvider` is defined to prevent errors on older versions of Sourcegraph.
 > Currently, file decorations are only displayed on Sourcegraph, not on code hosts.
 
 ## Prerequisites
@@ -13,7 +15,7 @@ This tutorial presumes you have created and published an extension. If not, comp
 
 ## Register a file decoration provider
 
-On [activation](../activation.md), register a [file decoration provider](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecorationprovider.html): 
+On [activation](../activation.md), register a [file decoration provider](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecorationprovider.html):
 
 ```ts
 import * as sourcegraph from 'sourcegraph'
@@ -66,7 +68,7 @@ Read through the [Codecov Sourcegraph extension](https://sourcegraph.com/github.
 
 ### Asynchronous or streaming file decorations
 
-File decoration providers don't have to synchronously return an array of file decorations. 
+File decoration providers don't have to synchronously return an array of file decorations.
 
 **If you need to perform asynchronous operations before resolving your file decorations:**
 
@@ -107,8 +109,8 @@ export function activate(context: sourcegraph.ExtensionContext): void {
   context.subscriptions.add(
     sourcegraph.app.registerFileDecorationProvider({
       async *provideFileDecorations({ files }) {
-                // The file decorations will be re-rendered each time `yield` keyword is called 
-                // with an array of file decorations 
+                // The file decorations will be re-rendered each time `yield` keyword is called
+                // with an array of file decorations
                 yield files.map(file => ({ uri: file.uri, after: { contentText: getDescription(file.path) } }))
                 // `getMeters` returns a Promise for an object of meter objects keyed by file path
                 const meters = await getMeters(files)
@@ -137,7 +139,7 @@ export function activate(context: sourcegraph.ExtensionContext): void {
     context.subscriptions.add(
         sourcegraph.app.registerFileDecorationProvider({
           // The file decorations will be re-rendered each time the `Subscribable`
-          // emits an array of file decorations 
+          // emits an array of file decorations
             provideFileDecorations: ({ files }) =>
                 concat(
                     of(files.map(file => ({ uri: file.uri, contentText: getDescription(file.path) }))),

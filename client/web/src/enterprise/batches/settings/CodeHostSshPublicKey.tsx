@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, TextArea, Link, Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -16,13 +16,17 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
         'https://confluence.atlassian.com/bitbucketserver/ssh-user-keys-for-personal-use-776639793.html',
     [ExternalServiceKind.AWSCODECOMMIT]: 'unsupported',
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
+    [ExternalServiceKind.GERRIT]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
+    [ExternalServiceKind.GOMODULES]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
     [ExternalServiceKind.NPMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
+    [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
+    [ExternalServiceKind.RUSTPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {
@@ -33,7 +37,7 @@ export interface CodeHostSshPublicKeyProps {
     showCopyButton?: boolean
 }
 
-export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyProps> = ({
+export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildren<CodeHostSshPublicKeyProps>> = ({
     externalServiceKind,
     sshPublicKey,
     showInstructionsLink = true,
@@ -48,10 +52,10 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-2">
-                <label htmlFor={LABEL_ID}>{label}</label>
+                <Label htmlFor={LABEL_ID}>{label}</Label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <Icon as={ContentCopyIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}
@@ -65,11 +69,11 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                 onChange={noop}
             />
             {showInstructionsLink && (
-                <p>
+                <Text>
                     <Link to={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
                         Configuration instructions
                     </Link>
-                </p>
+                </Text>
             )}
         </>
     )

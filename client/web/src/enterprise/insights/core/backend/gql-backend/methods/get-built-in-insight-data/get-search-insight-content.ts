@@ -1,11 +1,10 @@
-import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
+import { Duration, formatISO, isAfter, startOfDay, sub } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
-import type { LineChartContent } from 'sourcegraph'
 
-import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
-import { SearchInsightSettings } from '../../../code-insights-backend-types'
+import { InsightContentType } from '../../../../types/insight/common'
+import { GetSearchInsightContentInput, InsightSeriesContent } from '../../../code-insights-backend-types'
 
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from './utils/fetch-search-insight'
 import { queryHasCountFilter } from './utils/query-has-count-filter'
@@ -21,41 +20,24 @@ interface InsightSeriesData {
     [seriesName: string]: number
 }
 
-export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
-    return getInsightContent({ insight, repos: insight.repositories })
+export async function getSearchInsightContent(
+    input: GetSearchInsightContentInput
+): Promise<InsightSeriesContent<InsightSeriesData>> {
+    return getInsightContent(input)
 }
 
-interface GetInsightContentInput {
-    insight: SearchInsightSettings
-    repos: string[]
-    path?: string
-}
+export async function getInsightContent(
+    inputs: GetSearchInsightContentInput
+): Promise<InsightSeriesContent<InsightSeriesData>> {
+    const { series, step, repositories } = inputs
+    const dates = getDaysToQuery(step, 7)
 
-export async function getInsightContent(inputs: GetInsightContentInput): Promise<LineChartContent<any, string>> {
-    const { insight, repos, path } = inputs
-    const step = insight.step || { days: 1 }
-    const pathRegexp = path ? `^${escapeRegExp(path)}/` : undefined
-
-    const dates = getDaysToQuery(step)
-
-    // -------- Initialize data ---------
-    const data: InsightSeriesData[] = []
-
-    for (const date of dates) {
-        const dataIndex = dates.indexOf(date)
-
-        // Initialize data series object by all dates.
-        data[dataIndex] = {
-            date: date.getTime(),
-            // Initialize all series with EMPTY_DATA_POINT_VALUE
-            ...Object.fromEntries(insight.series.map(series => [series.name, EMPTY_DATA_POINT_VALUE])),
-        }
-    }
-
-    // Get commits to search for each day.
+    // Get commits to search for each day for each repository.
     const repoCommits = (
         await Promise.all(
-            repos.map(async repo => (await determineCommitsToSearch(dates, repo)).map(commit => ({ repo, ...commit })))
+            repositories.map(async repo =>
+                (await determineCommitsToSearch(dates, repo)).map(commit => ({ repo, ...commit }))
+            )
         )
     )
         .flat()
@@ -63,19 +45,14 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
         // Instead of it we will use just EMPTY_DATA_POINT_VALUE
         .filter(commitData => commitData.commit !== null) as RepoCommit[]
 
-    const searchQueries = insight.series.flatMap(({ query, name }) =>
+    const searchQueries = series.flatMap(({ query, name, id }) =>
         repoCommits.map(({ date, repo, commit }) => ({
+            seriesId: id,
             name,
             date,
             repo,
             commit,
-            query: [
-                `repo:^${escapeRegExp(repo)}$@${commit}`,
-                pathRegexp && ` file:${pathRegexp}`,
-                `${getQueryWithCount(query)}`,
-            ]
-                .filter(Boolean)
-                .join(' '),
+            query: [`repo:^${escapeRegExp(repo)}$@${commit}`, `${getQueryWithCount(query)}`].filter(Boolean).join(' '),
         }))
     )
 
@@ -84,7 +61,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
     }
 
     const rawSearchResults = await defer(() => fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
-        // The bulk search may timeout, but a retry is then likely faster
+        // The bulk search may time out, but a retry is then likely faster
         // because caches are warm
         .pipe(retry(3))
         .toPromise()
@@ -96,33 +73,33 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
         return { ...query, result }
     })
 
-    // Merge initial data and search API data
-    for (const { name, date, result } of searchResults) {
-        const dataKey = name
-        const dataIndex = dates.indexOf(date)
-        const object = data[dataIndex]
+    // Generate series map with points map for each series. All points initially
+    // have null value
+    const seriesData = generateInitialDataSeries(series, dates)
 
-        const countForRepo = result?.results.matchCount
+    for (const { seriesId, date, result } of searchResults) {
+        const countForRepo = result.results.matchCount
+        const point = seriesData[seriesId][date.getTime()]
 
-        // If we got some data that means for this data points we got
-        // a valid commit in a git history therefore we need to write
-        // some data to this series.
-        if (object[dataKey] === EMPTY_DATA_POINT_VALUE) {
-            object[dataKey] = countForRepo ?? 0
+        if (point.value === null) {
+            point.value = countForRepo
         } else {
-            object[dataKey] += countForRepo ?? 0
+            point.value += countForRepo
         }
     }
 
     return {
-        chart: 'line' as const,
-        data,
-        series: insight.series.map(series => ({
-            dataKey: series.name,
-            name: series.name,
-            stroke: series.stroke,
-            linkURLs: Object.fromEntries(
-                dates.map(date => {
+        type: InsightContentType.Series,
+        content: {
+            series: series.map(series => ({
+                id: series.id,
+                name: series.name,
+                color: series.stroke,
+                data: Object.values(seriesData[series.id]),
+                getXValue: datum => new Date(datum.date),
+                getYValue: datum => datum.value,
+                getLinkURL: datum => {
+                    const date = datum.date
                     // Link to diff search that explains what new cases were added between two data points
                     const url = new URL('/search', window.location.origin)
                     // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
@@ -130,19 +107,14 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
                     // easier to read (else the date component may be off by one day)
                     const after = formatISO(sub(date, step))
                     const before = formatISO(date)
-                    const repoFilter = `repo:^(${repos.map(escapeRegExp).join('|')})$`
+                    const repoFilter = `repo:^(${repositories.map(escapeRegExp).join('|')})$`
                     const diffQuery = `${repoFilter} type:diff after:${after} before:${before} ${series.query}`
 
                     url.searchParams.set('q', diffQuery)
 
-                    return [date.getTime(), url.href]
-                })
-            ),
-        })),
-        xAxis: {
-            dataKey: 'date' as const,
-            type: 'number' as const,
-            scale: 'time' as const,
+                    return url.href
+                },
+            })),
         },
     }
 }
@@ -196,15 +168,13 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
     })
 }
 
-const NUMBER_OF_CHART_POINTS = 7
-
-function getDaysToQuery(step: Duration): Date[] {
+function getDaysToQuery(step: Duration, numberOfPoints: number): Date[] {
     // Date.now used here for testing purpose we can mock now
     // method in test and avoid flaky test by that.
     const now = startOfDay(new Date(Date.now()))
     const dates: Date[] = []
 
-    for (let index = 0, date = now; index < NUMBER_OF_CHART_POINTS; index++) {
+    for (let index = 0, date = now; index < numberOfPoints; index++) {
         dates.unshift(date)
         date = sub(date, step)
     }
@@ -217,4 +187,38 @@ function getQueryWithCount(query: string): string {
         ? query
         : // Increase the number to the maximum value to get all the data we can have
           `${query} count:99999`
+}
+
+type SeriesId = string
+
+interface SeriesData {
+    [dateTime: number]: {
+        date: Date
+        value: number | null
+    }
+}
+
+interface InitialSeriesData {
+    [id: SeriesId]: SeriesData
+}
+
+/**
+ * Generates initial series points values for each X (time) point in the dataset.
+ * So
+ */
+function generateInitialDataSeries(series: { id: string }[], dates: Date[]): InitialSeriesData {
+    const store: Record<SeriesId, SeriesData> = {}
+
+    for (const line of series) {
+        const { id: seriesId } = line
+        const seriesData: SeriesData = {}
+
+        for (const date of dates) {
+            seriesData[date.getTime()] = { date, value: null }
+        }
+
+        store[seriesId] = seriesData
+    }
+
+    return store
 }

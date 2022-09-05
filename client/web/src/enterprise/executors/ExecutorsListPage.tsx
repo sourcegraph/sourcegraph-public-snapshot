@@ -1,21 +1,20 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
+
+import { Collapsible } from '../../components/Collapsible'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
-
+} from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
+import { Timestamp } from '../../components/time/Timestamp'
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -47,7 +46,7 @@ export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
+export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
@@ -78,22 +77,22 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
             />
 
             <Container className="mb-3">
-                <h3>Setting up executors</h3>
-                <p className="mb-0">
+                <H3>Setting up executors</H3>
+                <Text className="mb-0">
                     Executors enable{' '}
-                    <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
-                        auto-indexing for Code Intelligence
+                    <Link to="/help/code_navigation/explanations/auto_indexing" rel="noopener">
+                        auto-indexing for code navigation
                     </Link>{' '}
                     and{' '}
                     <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
-                        server-side Batch Changes
+                        running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
                     <Link to="/help/admin/deploy_executors" rel="noopener">
                         set them up
                     </Link>
                     .
-                </p>
+                </Text>
             </Container>
             <Container>
                 <FilteredConnection<ExecutorFields, {}>
@@ -121,7 +120,7 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
-export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => (
     <li className="list-group-item">
         <Collapsible
             wholeTitleClickable={false}
@@ -129,15 +128,21 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <h4 className="mb-0">
+                        <H4 className="mb-0">
                             {node.active ? (
-                                <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
-                            ) : (
                                 <Icon
-                                    className="text-warning mr-2"
-                                    data-tooltip="This executor missed at least three heartbeats."
-                                    as={CheckboxBlankCircleIcon}
+                                    aria-hidden={true}
+                                    className="text-success mr-2"
+                                    svgPath={mdiCheckboxBlankCircle}
                                 />
+                            ) : (
+                                <Tooltip content="This executor missed at least three heartbeats.">
+                                    <Icon
+                                        aria-label="This executor missed at least three heartbeats."
+                                        className="text-warning mr-2"
+                                        svgPath={mdiCheckboxBlankCircle}
+                                    />
+                                </Tooltip>
                             )}
                             {node.hostname}{' '}
                             <Badge
@@ -146,7 +151,7 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                             >
                                 {node.queueName}
                             </Badge>
-                        </h4>
+                        </H4>
                     </div>
                     <span>
                         last seen <Timestamp date={node.lastSeenAt} />
@@ -204,15 +209,15 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
     </li>
 )
 
-export const NoExecutors: React.FunctionComponent = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
+export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
         No executors found.
-    </p>
+    </Text>
 )
 
-const TelemetryData: React.FunctionComponent<{ data: string }> = ({ data }) => {
+const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: string }>> = ({ data }) => {
     if (data) {
         return <>{data}</>
     }

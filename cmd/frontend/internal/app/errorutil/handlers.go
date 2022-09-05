@@ -27,8 +27,8 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 				if span := opentracing.SpanFromContext(req.Context()); span != nil {
 					ext.Error.Set(span, true)
 					span.SetTag("err", err)
-					traceID = trace.IDFromSpan(span)
-					traceURL = trace.URL(traceID, conf.ExternalURL())
+					traceID = trace.ID(req.Context())
+					traceURL = trace.URL(traceID, conf.DefaultClient())
 				}
 				log15.Error(
 					"App HTTP handler error response",

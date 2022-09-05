@@ -2,7 +2,7 @@
 
 > NOTE: The `migrator` service is only available in versions `3.37` and later.
 
-The `migrator` is a service that runs as an initial step of the upgrade process for [Kubernetes](../install/kubernetes/update.md#database-migrations) and [Docker-compose](../install/docker-compose/operations.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
+The `migrator` is a service that runs as an initial step of the upgrade process for [Kubernetes](../deploy/kubernetes/update.md#database-migrations) and [Docker-compose](../deploy/docker-compose/index.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
 
 The [commands](#commands) section below details the legal commands with which the `migrator` service can be invoked. The [environments](#environments) section below details how to supply those commands to a `migrator` instance that has access to your Sourcegraph database.
 
@@ -28,7 +28,7 @@ The `upto` command ensures a given migration has been applied, and may apply dep
 
 Usage: **`downto -db=<schema> -target=<target>,<target>,...`**
 
-The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version. The `-db` flag signifies the target schema to modify. The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
+The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version. The `-db` flag signifies the target schema to modify. The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
 
 ### validate
 
@@ -107,7 +107,7 @@ Run the following commands on your Docker host.
 ```bash
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
 
-docker run
+docker run \
   --rm \
   --name migrator_$MIGRATOR_SOURCEGRAPH_VERSION \
   -e PGHOST='pgsql' \

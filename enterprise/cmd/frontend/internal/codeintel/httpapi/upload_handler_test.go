@@ -13,14 +13,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,7 +37,7 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -44,6 +47,7 @@ const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
 func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
+	logger := logtest.Scoped(t)
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -72,15 +76,15 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "21")
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -106,6 +110,9 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
 		}
+		if *call.Arg1.UncompressedSize != 21 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
+		}
 	}
 
 	if len(mockUploadStore.UploadFunc.History()) != 1 {
@@ -130,6 +137,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
+	logger := logtest.Scoped(t)
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -166,13 +174,12 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -201,6 +208,8 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	setupRepoMocks(t)
 
+	logger := logtest.Scoped(t)
+
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -226,15 +235,15 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "50")
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -260,12 +269,16 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
 		}
+		if *call.Arg1.UncompressedSize != 50 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
+		}
 	}
 }
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	setupRepoMocks(t)
 
+	logger := logtest.Scoped(t)
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -300,13 +313,12 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -347,6 +359,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	setupRepoMocks(t)
 
+	logger := logtest.Scoped(t)
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -375,13 +388,12 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -448,6 +460,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
+		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
 
@@ -459,7 +472,8 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -545,7 +559,6 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			false,
 			authValidators,
 			NewOperations(&observation.TestContext),
-			nil,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

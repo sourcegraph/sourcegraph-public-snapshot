@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -14,18 +15,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: db}
+func NewResolver(logger log.Logger, db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
-	db edb.EnterpriseDB
+	logger log.Logger
+	db     edb.EnterpriseDB
 }
 
 func (r *Resolver) Now() time.Time {
@@ -113,7 +116,7 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	}, nil
 }
 
-func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (_ graphqlbackend.MonitorResolver, err error) {
 	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
 		return nil, err
 	}
@@ -147,7 +150,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
 		if err != nil {
 			return nil, err
@@ -155,7 +158,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 
 		// Snapshot the state of the searched repos when the monitor is created so that
 		// we can distinguish new repos.
-		err = codemonitors.Snapshot(ctx, tx.db, args.Trigger.Query, m.ID, settings)
+		err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID, settings)
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +375,7 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 	}
 
 	for _, recipient := range args.Email.Recipients {
-		if err := sendTestEmail(ctx, recipient, args.Description); err != nil {
+		if err := sendTestEmail(ctx, r.db, recipient, args.Description); err != nil {
 			return nil, err
 		}
 	}
@@ -406,7 +409,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
+func sendTestEmail(ctx context.Context, db database.DB, recipient graphql.ID, description string) error {
 	var (
 		userID int32
 		orgID  int32
@@ -419,8 +422,8 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	if orgID != 0 {
 		return nil
 	}
-	data := background.NewTestTemplateDataForNewSearchResults(ctx, description)
-	return background.SendEmailForNewSearchResult(ctx, userID, data)
+	data := background.NewTestTemplateDataForNewSearchResults(description)
+	return background.SendEmailForNewSearchResult(ctx, db, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
@@ -528,7 +531,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
 		if err != nil {
 			return nil, err
@@ -544,7 +547,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.db, args.Trigger.Update.Query, monitorID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID, settings)
 			if err != nil {
 				return nil, err
 			}
@@ -638,7 +641,8 @@ func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
 		return nil, err
 	}
 	return &Resolver{
-		db: edb.NewEnterpriseDB(tx),
+		logger: r.logger,
+		db:     edb.NewEnterpriseDB(tx),
 	}, nil
 }
 

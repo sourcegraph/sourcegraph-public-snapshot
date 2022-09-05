@@ -14,12 +14,12 @@ export const julia: CommunitySearchContextMetadata = {
         {
             title: "List all TODO's in Julia code",
             query: 'lang:Julia TODO case:yes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
         {
             title: 'Browse diffs for recent code changes',
             query: 'type:diff after:"1 week ago"',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
         },
     ],
     homepageDescription: 'Search within the Julia community.',
@@ -27,5 +27,5 @@ export const julia: CommunitySearchContextMetadata = {
 }
 
 export const JuliaCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={julia} />

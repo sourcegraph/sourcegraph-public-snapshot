@@ -60,5 +60,4 @@ export interface MatchGroupMatch {
     line: number
     character: number
     highlightLength: number
-    isInContext: boolean
 }

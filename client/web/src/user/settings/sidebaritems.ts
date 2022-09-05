@@ -54,11 +54,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         exact: true,
     },
     {
-        label: 'Privacy',
-        to: '/privacy',
-        exact: true,
-    },
-    {
         label: 'Product research',
         to: '/product-research',
         condition: () => window.context.productResearchPageEnabled,

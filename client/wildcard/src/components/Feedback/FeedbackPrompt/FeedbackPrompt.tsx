@@ -1,13 +1,13 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
-import TickIcon from 'mdi-react/TickIcon'
+import { mdiClose, mdiCheck } from '@mdi/js'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 
-import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
+import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
+import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
@@ -54,7 +54,7 @@ interface FeedbackPromptContentProps {
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps> = ({
+const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptContentProps>> = ({
     onClose,
     productResearchEnabled,
     onSubmit,
@@ -105,13 +105,13 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
     return (
         <>
             <Button className={styles.close} onClick={onClose}>
-                <CloseIcon className={styles.icon} />
+                <Icon inline={false} svgPath={mdiClose} className={styles.icon} aria-label="Close" />
             </Button>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
-                    <TickIcon className={styles.successTick} />
-                    <h3>We‘ve received your feedback!</h3>
-                    <p className="d-inline">
+                    <Icon inline={false} svgPath={mdiCheck} className={styles.successTick} aria-label="Success" />
+                    <H3>We‘ve received your feedback!</H3>
+                    <Text className="d-inline">
                         Thank you for your help.
                         {productResearchEnabled && (
                             <>
@@ -123,13 +123,16 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                                 and share your feedback on our latest features and ideas.
                             </>
                         )}
-                    </p>
+                    </Text>
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <h3 className="mb-3">What’s on your mind?</h3>
+                    <H3 className="mb-3" id="feedback-prompt-question">
+                        What’s on your mind?
+                    </H3>
 
                     <FlexTextArea
+                        aria-labelledby="feedback-prompt-question"
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
@@ -187,7 +190,7 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     position?: Position
     modal?: boolean
     modalLabelId?: string
-    children: React.FunctionComponent<FeedbackPromptTriggerProps> | ReactNode
+    children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
 }
 
 export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({

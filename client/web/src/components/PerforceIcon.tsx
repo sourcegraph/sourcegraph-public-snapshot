@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import type { MdiReactIconProps } from 'mdi-react'
 
-export const PerforceIcon: React.FunctionComponent<MdiReactIconProps> = ({
+export const PerforceIcon: React.FunctionComponent<React.PropsWithChildren<MdiReactIconProps>> = ({
     color = 'currentColor',
     size = 24,
     className = '',

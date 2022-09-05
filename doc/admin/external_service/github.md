@@ -5,11 +5,24 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 To connect GitHub to Sourcegraph:
 
 1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
-    1. *User*: Go to **Settings > Manage repositories**.
+    1. *Site admin*: Go to **Site admin > Manage code hosts**
+    1. *User*: Go to **Settings > Manage code hosts**.
 1. Select **GitHub**.
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
+
+In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
+
+```
+{
+  "url": "https://github.com",
+  "token": "<access token>",
+  "orgs": [],
+  "repos": [
+    "kubernetes/kubernetes"
+  ]
+}
+```
 
 > NOTE: Adding code hosts as a user is currently in private beta.
 
@@ -22,10 +35,10 @@ To connect GitHub to Sourcegraph:
 
 There are four fields for configuring which repositories are mirrored/synchronized:
 
-- [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
-- [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
-- [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
+- [`repos`](github.md#repos)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
+- [`orgs`](github.md#orgs)<br>A list of organizations (every repository belonging to the organization will be cloned).
+- [`repositoryQuery`](github.md#repositoryQuery)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`exclude`](github.md#exclude)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ### Private repositories
 
@@ -68,6 +81,18 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
+## GitHub Enterprise Server rate limits
+
+Rate limiting may not be enabled by default. To check and verify the current rate limit settings, you may make a request to the `/rate_limit` endpoint like this:
+
+```
+$ curl -s https://<github-enterprise-url>/api/v3/rate_limit -H "Authorization: Bearer <token>"
+{
+  "message": "Rate limiting is not enabled.",
+  "documentation_url": "https://docs.github.com/enterprise/3.3/rest/reference/rate-limit#get-rate-limit-status-for-the-authenticated-user"
+}
+```
+
 ### Internal rate limits
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
@@ -103,7 +128,7 @@ Using webhooks is highly recommended when using [batch changes](../../batch_chan
 
 To set up webhooks:
 
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitHub configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.
@@ -128,7 +153,7 @@ Done! Sourcegraph will now receive webhook events from GitHub and use them to sy
 
 ## Configuration
 
-GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
+GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 

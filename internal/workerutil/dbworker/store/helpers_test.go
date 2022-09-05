@@ -9,14 +9,15 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func testStore(db dbutil.DB, options Options) *store {
+func testStore(db *sql.DB, options Options) *store {
 	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
 
@@ -30,22 +31,9 @@ func (v TestRecord) RecordID() int {
 	return v.ID
 }
 
-func testScanFirstRecord(rows *sql.Rows, queryErr error) (v workerutil.Record, _ bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var record TestRecord
-		if err := rows.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs)); err != nil {
-			return nil, false, err
-		}
-
-		return record, true, nil
-	}
-
-	return nil, false, nil
+func testScanRecord(sc dbutil.Scanner) (*TestRecord, error) {
+	var record TestRecord
+	return &record, sc.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs))
 }
 
 type TestRecordView struct {
@@ -58,22 +46,9 @@ func (v TestRecordView) RecordID() int {
 	return v.ID
 }
 
-func testScanFirstRecordView(rows *sql.Rows, queryErr error) (v workerutil.Record, exists bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var record TestRecordView
-		if err := rows.Scan(&record.ID, &record.State, &record.NewField); err != nil {
-			return nil, false, err
-		}
-
-		return record, true, nil
-	}
-
-	return nil, false, nil
+func testScanRecordView(sc dbutil.Scanner) (*TestRecordView, error) {
+	var record TestRecordView
+	return &record, sc.Scan(&record.ID, &record.State, &record.NewField)
 }
 
 type TestRecordRetry struct {
@@ -86,26 +61,14 @@ func (v TestRecordRetry) RecordID() int {
 	return v.ID
 }
 
-func testScanFirstRecordRetry(rows *sql.Rows, queryErr error) (v workerutil.Record, exists bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var record TestRecordRetry
-		if err := rows.Scan(&record.ID, &record.State, &record.NumResets); err != nil {
-			return nil, false, err
-		}
-
-		return record, true, nil
-	}
-
-	return nil, false, nil
+func testScanRecordRetry(sc dbutil.Scanner) (*TestRecordRetry, error) {
+	var record TestRecordRetry
+	return &record, sc.Scan(&record.ID, &record.State, &record.NumResets)
 }
 
-func setupStoreTest(t *testing.T) dbutil.DB {
-	db := dbtest.NewDB(t)
+func setupStoreTest(t *testing.T) *sql.DB {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
@@ -120,7 +83,8 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 			num_failures      integer NOT NULL default 0,
 			created_at        timestamp with time zone NOT NULL default NOW(),
 			execution_logs    json[],
-			worker_hostname   text NOT NULL default ''
+			worker_hostname   text NOT NULL default '',
+			cancel            boolean NOT NULL default false
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -139,13 +103,13 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 func defaultTestStoreOptions(clock glock.Clock) Options {
 	return Options{
 		Name:              "test",
-		TableName:         "workerutil_test w",
-		Scan:              testScanFirstRecord,
-		OrderByExpression: sqlf.Sprintf("w.created_at"),
+		TableName:         "workerutil_test",
+		Scan:              BuildWorkerScan(testScanRecord),
+		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
 		ColumnExpressions: []*sqlf.Query{
-			sqlf.Sprintf("w.id"),
-			sqlf.Sprintf("w.state"),
-			sqlf.Sprintf("w.execution_logs"),
+			sqlf.Sprintf("workerutil_test.id"),
+			sqlf.Sprintf("workerutil_test.state"),
+			sqlf.Sprintf("workerutil_test.execution_logs"),
 		},
 		AlternateColumnNames: map[string]string{
 			"queued_at": "created_at",
@@ -157,7 +121,7 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, ok bool, err error) {
+func assertDequeueRecordResult(t *testing.T, expectedID int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -165,21 +129,21 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 		t.Fatalf("expected a dequeueable record")
 	}
 
-	if val := record.(TestRecord).ID; val != expectedID {
+	if val := record.(*TestRecord).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
 	}
-	if val := record.(TestRecord).State; val != "processing" {
+	if val := record.(*TestRecord).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
 	}
 }
 
-func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record interface{}) {
-	if val := len(record.(TestRecord).ExecutionLogs); val != expectedLogCount {
+func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record any) {
+	if val := len(record.(*TestRecord).ExecutionLogs); val != expectedLogCount {
 		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, ok bool, err error) {
+func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -187,18 +151,18 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 		t.Fatalf("expected a dequeueable record")
 	}
 
-	if val := record.(TestRecordView).ID; val != expectedID {
+	if val := record.(*TestRecordView).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
 	}
-	if val := record.(TestRecordView).State; val != "processing" {
+	if val := record.(*TestRecordView).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
 	}
-	if val := record.(TestRecordView).NewField; val != expectedNewField {
+	if val := record.(*TestRecordView).NewField; val != expectedNewField {
 		t.Errorf("unexpected new field. want=%d have=%d", expectedNewField, val)
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -206,10 +170,10 @@ func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}
 		t.Fatalf("expected a dequeueable record")
 	}
 
-	if val := record.(TestRecordRetry).ID; val != expectedID {
+	if val := record.(*TestRecordRetry).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
 	}
-	if val := record.(TestRecordRetry).State; val != "processing" {
+	if val := record.(*TestRecordRetry).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
 	}
 }

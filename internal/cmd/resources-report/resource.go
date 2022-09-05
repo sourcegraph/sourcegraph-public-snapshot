@@ -23,7 +23,7 @@ type Resource struct {
 	Location   string
 	Owner      string
 	Created    time.Time
-	Meta       map[string]interface{}
+	Meta       map[string]any
 
 	Allowed bool
 }

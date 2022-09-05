@@ -9,6 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -22,10 +24,11 @@ var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).
 func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveRepoLanding", "redirects the old (sourcegraph.com/<repo>/-/info) repo landing page")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		legacyRepoLandingCounter.Inc()
 
-		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), db, mux.Vars(r))
+		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
 		if err != nil {
 			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}

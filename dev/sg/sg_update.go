@@ -2,98 +2,151 @@ package main
 
 import (
 	"context"
-	"flag"
-	"os/exec"
+	"fmt"
+	"net/http"
+	"os"
+	"runtime"
+	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	updateFlags   = flag.NewFlagSet("sg update", flag.ExitOnError)
-	updateToLocal = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
-)
+var updateCommand = &cli.Command{
+	Name:  "update",
+	Usage: "Update local sg installation",
+	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
-var updateCommand = &ffcli.Command{
-	Name:       "update",
-	FlagSet:    updateFlags,
-	ShortUsage: "sg update",
-	ShortHelp:  "Update sg.",
-	LongHelp: `Update local sg installation with the latest changes. To see what's new, run:
-
-  sg version changelog -next
-
-Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Exec: func(ctx context.Context, args []string) error {
-		if *updateToLocal {
-			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StylePending, "Upgrading to local copy of 'dev/sg'..."))
-		} else {
-			// Update from remote
-			if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
-				return err
-			}
-
-			// Make sure to switch back to previous working state
-			var restoreFuncs []func() error
-			defer func() {
-				stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StyleSuggestion, "Restoring workspace..."))
-				var failed bool
-				for i := len(restoreFuncs) - 1; i >= 0; i-- {
-					if restoreErr := restoreFuncs[i](); restoreErr != nil {
-						failed = true
-						writeWarningLinef(restoreErr.Error())
-					}
-				}
-				if !failed {
-					stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Workspace restored!"))
-				} else {
-					writeFailureLinef("Failed to restore workspace")
-				}
-			}()
-
-			// Stash workspace if dirty
-			changes, err := run.TrimResult(run.GitCmd("status", "--porcelain"))
-			if err != nil {
-				return err
-			}
-			if len(changes) > 0 {
-				stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StyleSuggestion, "Stashing workspace..."))
-				if _, err := run.GitCmd("stash", "--include-untracked"); err != nil {
-					return err
-				}
-				restoreFuncs = append(restoreFuncs, func() (restoreErr error) {
-					_, restoreErr = run.GitCmd("stash", "pop")
-					return
-				})
-			}
-
-			// Checkout main, which we will install from
-			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StyleSuggestion, "Setting workspace up for update..."))
-			if _, err := run.GitCmd("checkout", "origin/main"); err != nil {
-				return err
-			}
-			restoreFuncs = append(restoreFuncs, func() (restoreErr error) {
-				_, restoreErr = run.GitCmd("switch", "-")
-				return
-			})
-
-			// For info, show what sg revision we are upgrading to
-			commit, err := run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
-			if err != nil {
-				return err
-			}
-			stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, output.StylePending, "Updating to sg@%s...", commit))
-		}
-
-		// Run installation script
-		cmd := exec.CommandContext(ctx, "./dev/sg/install.sh")
-		if err := run.InteractiveInRoot(cmd); err != nil {
+    sg version changelog -next`,
+	Category: CategoryUtil,
+	Action: func(cmd *cli.Context) error {
+		p := std.Out.Pending(output.Styled(output.StylePending, "Downloading latest sg release..."))
+		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			p.Destroy()
 			return err
 		}
-		writeSuccessLinef("Update succeeded!")
+		p.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "sg has been updated!"))
+
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
+}
+
+// updateToPrebuiltSG downloads the latest release of sg prebuilt binaries and install it.
+func updateToPrebuiltSG(ctx context.Context) (bool, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com/sourcegraph/sg/releases/latest", nil)
+	if err != nil {
+		return false, err
+	}
+	// We use the RountTripper to make an HTTP request without having to deal
+	// with redirections.
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		return false, errors.Wrap(err, "GitHub latest release")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return false, errors.Newf("GitHub latest release: unexpected status code %d", resp.StatusCode)
+	}
+
+	location := resp.Header.Get("location")
+	if location == "" {
+		return false, errors.New("GitHub latest release: empty location")
+	}
+	location = strings.ReplaceAll(location, "/tag/", "/download/")
+	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
+
+	currentExecPath, err := os.Executable()
+	if err != nil {
+		return false, err
+	}
+	return download.Executable(ctx, downloadURL, currentExecPath)
+}
+
+func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {
+	ctx, span := analytics.StartSpan(ctx, "auto_update", "background",
+		trace.WithAttributes(attribute.Bool("skipUpdate", skipUpdate)))
+	defer span.End()
+
+	if BuildCommit == "dev" {
+		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
+		// and we don't need to display this message.
+		out.Verbose("Skipping update check on dev build")
+		span.Skipped()
+		return nil
+	}
+
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		span.Skipped()
+		return nil
+	}
+
+	rev := strings.TrimPrefix(BuildCommit, "dev-")
+
+	// If the revision of sg is not found locally, the user has likely not run 'git fetch'
+	// recently, and we can skip the version check for now.
+	if !repo.HasCommit(ctx, rev) {
+		out.VerboseLine(output.Styledf(output.StyleWarning,
+			"current sg version %s not found locally - you may want to run 'git fetch origin main'.", rev))
+		span.Skipped()
+		return nil
+	}
+
+	// Check for new commits since the current build of 'sg'
+	revList, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
+	if err != nil {
+		// Unexpected error occured
+		span.RecordError("check_error", err)
+		return err
+	}
+	revList = strings.TrimSpace(revList)
+	if revList == "" {
+		// No newer commits found. sg is up to date.
+		span.AddEvent("already_up_to_date")
+		span.Skipped()
+		return nil
+	}
+	span.SetAttributes(attribute.String("rev-list", revList))
+
+	if skipUpdate {
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+
+		span.Skipped()
+		return nil
+	}
+
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	updated, err := updateToPrebuiltSG(ctx)
+	if err != nil {
+		span.RecordError("failed", err)
+		return errors.Newf("failed to install update: %s", err)
+	}
+	if !updated {
+		span.Skipped("not_updated")
+		return nil
+	}
+
+	out.WriteSuccessf("sg has been updated!")
+	out.Write("To see what's new, run 'sg version changelog'.")
+	span.Succeeded()
+	return nil
 }

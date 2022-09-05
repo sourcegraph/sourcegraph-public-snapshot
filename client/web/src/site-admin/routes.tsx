@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -79,7 +77,10 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         exact: true,
-        render: lazyComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage'),
+        render: lazyComponent(
+            () => import('./SiteAdminAllUsersPage/FeatureFlaggedUsersPage'),
+            'FeatureFlaggedUsersPage'
+        ),
     },
     {
         path: '/users/new',

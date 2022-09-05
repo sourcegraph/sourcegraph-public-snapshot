@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,11 +16,12 @@ import (
 )
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := database.Users(db).Create(ctx, database.NewUser{
+	user, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -30,23 +33,23 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	code := "verify-code"
 
 	// Add and verify the second email
-	err = database.UserEmails(db).Add(ctx, user.ID, "alice2@example.com", &code)
+	err = db.UserEmails().Add(ctx, user.ID, "alice2@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = database.UserEmails(db).SetVerified(ctx, user.ID, "alice2@example.com", true)
+	err = db.UserEmails().SetVerified(ctx, user.ID, "alice2@example.com", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add third email and leave as unverified
-	err = database.UserEmails(db).Add(ctx, user.ID, "alice3@example.com", &code)
+	err = db.UserEmails().Add(ctx, user.ID, "alice3@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add two external accounts
-	err = database.ExternalAccounts(db).AssociateUserAndSave(ctx, user.ID,
+	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "gitlab",
 			ServiceID:   "https://gitlab.com/",
@@ -57,7 +60,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = database.ExternalAccounts(db).AssociateUserAndSave(ctx, user.ID,
+	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
@@ -69,7 +72,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	// Each update corresponds to a SetRepoPendingPermssions call
 	type update struct {
@@ -200,7 +203,6 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-
 			err := s.GrantPendingPermissions(ctx, test.args)
 			if err != nil {
 				t.Fatal(err)
@@ -216,20 +218,21 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			equal(t, "p.IDs", test.expectRepoIDs, bitmapToArray(p.IDs))
+			equal(t, "p.IDs", test.expectRepoIDs, mapsetToArray(p.IDs))
 		})
 	}
 }
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	type update struct {
 		repoID  int32
-		userIDs []uint32
+		userIDs []int32
 	}
 	tests := []struct {
 		name        string
@@ -256,13 +259,13 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  2,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  3,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{
@@ -284,7 +287,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{},
@@ -298,7 +301,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(update.userIDs...),
+					UserIDs: toMapset(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -316,16 +319,17 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 }
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	s := NewAuthzStore(db, clock).(*authzStore)
+	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	// Set both effective and pending permissions for a user
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  1,
 		Perm:    authz.Read,
-		UserIDs: toBitmap(1),
+		UserIDs: toMapset(1),
 	}); err != nil {
 		t.Fatal(err)
 	}

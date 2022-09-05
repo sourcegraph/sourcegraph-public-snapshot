@@ -26,7 +26,7 @@ var commandCheckApkAdd = commandCheck{
 	check: func(c instructions.Command) error {
 		if runCmd, okay := c.(*instructions.RunCommand); okay {
 			run := runCmd.String()
-			if strings.Contains(run, "apk add") {
+			if strings.Contains(run, "apk") && strings.Contains(run, "add") {
 				matches := illegalApkAddRegexp.FindAllString(run, -1)
 				if len(matches) == 0 {
 					return nil

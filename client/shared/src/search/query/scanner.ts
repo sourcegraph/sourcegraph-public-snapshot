@@ -279,7 +279,7 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
 }
 
 /**
- * Scan predicate syntax like repo:contains(file:README.md). Predicate scanning
+ * Scan predicate syntax like repo:contains.file(path:README.md). Predicate scanning
  * takes precedence over other value scanners like scanBalancedLiteral.
  */
 export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
@@ -412,13 +412,19 @@ const filter: Scanner<Filter> = (input, start) => {
     }
 }
 
-const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
+const createPattern = (
+    value: string,
+    range: CharacterRange,
+    kind: PatternKind,
+    delimited?: boolean
+): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
         type: 'pattern',
         range,
         kind,
         value,
+        delimited,
     },
 })
 
@@ -431,10 +437,13 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param scanner The literal scanner.
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
-export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> => (input, start) => {
+export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> => (
+    input,
+    start
+) => {
     const result = scanner(input, start)
     if (result.type === 'success') {
-        return createPattern(result.term.value, result.term.range, kind)
+        return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
     }
     return result
 }
@@ -470,6 +479,45 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     )
 }
 
+const scanStandard = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
+function detectPatternType(query: string): SearchPatternType | undefined {
+    const result = scanStandard(query)
+    const tokens =
+        result.type === 'success'
+            ? result.term.filter(
+                  token => !!(token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype')
+              )
+            : undefined
+    if (tokens && tokens.length > 0) {
+        return (tokens[0] as Filter).value?.value as SearchPatternType
+    }
+    return undefined
+}
+
 /**
  * Scans a search query string.
  */
@@ -478,8 +526,13 @@ export const scanSearchQuery = (
     interpretComments?: boolean,
     searchPatternType = SearchPatternType.literal
 ): ScanResult<Token[]> => {
+    const patternType = detectPatternType(query) || searchPatternType
     let patternKind
-    switch (searchPatternType) {
+    switch (patternType) {
+        case SearchPatternType.standard:
+        case SearchPatternType.lucky:
+        case SearchPatternType.keyword:
+            return scanStandard(query)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal
             break

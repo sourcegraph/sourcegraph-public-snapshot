@@ -47,23 +47,44 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 // dismissed.
 // See: https://github.com/sourcegraph/sourcegraph/pull/9461
 var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
-	btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
+	// Undraft.
 	btypes.ChangesetEventKindGitHubReadyForReview,
-	btypes.ChangesetEventKindGitLabMarkWorkInProgress,
+	btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
+
+	// Draft.
 	btypes.ChangesetEventKindGitHubConvertToDraft,
-	btypes.ChangesetEventKindGitHubClosed,
+	btypes.ChangesetEventKindGitLabMarkWorkInProgress,
+
+	// Closed, unmerged.
+	btypes.ChangesetEventKindBitbucketCloudPullRequestRejected,
 	btypes.ChangesetEventKindBitbucketServerDeclined,
+	btypes.ChangesetEventKindGitHubClosed,
 	btypes.ChangesetEventKindGitLabClosed,
-	btypes.ChangesetEventKindGitHubMerged,
+
+	// Closed, merged.
+	btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled,
 	btypes.ChangesetEventKindBitbucketServerMerged,
+	btypes.ChangesetEventKindGitHubMerged,
 	btypes.ChangesetEventKindGitLabMerged,
-	btypes.ChangesetEventKindGitHubReopened,
+
+	// Reopened
 	btypes.ChangesetEventKindBitbucketServerReopened,
+	btypes.ChangesetEventKindGitHubReopened,
 	btypes.ChangesetEventKindGitLabReopened,
+
+	// Reviewed, indeterminate status.
 	btypes.ChangesetEventKindGitHubReviewed,
+
+	// Reviewed, approved.
+	btypes.ChangesetEventKindBitbucketCloudApproved,
+	btypes.ChangesetEventKindBitbucketCloudPullRequestApproved,
 	btypes.ChangesetEventKindBitbucketServerApproved,
 	btypes.ChangesetEventKindBitbucketServerReviewed,
 	btypes.ChangesetEventKindGitLabApproved,
+
+	// Reviewed, not approved.
+	btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
+	btypes.ChangesetEventKindBitbucketCloudPullRequestUnapproved,
 	btypes.ChangesetEventKindBitbucketServerUnapproved,
 	btypes.ChangesetEventKindBitbucketServerDismissed,
 	btypes.ChangesetEventKindGitLabUnapproved,
@@ -121,16 +142,19 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 		switch e.Kind {
 		case btypes.ChangesetEventKindGitHubClosed,
 			btypes.ChangesetEventKindBitbucketServerDeclined,
-			btypes.ChangesetEventKindGitLabClosed:
-			// Merged is a final state. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged {
+			btypes.ChangesetEventKindGitLabClosed,
+			btypes.ChangesetEventKindBitbucketCloudPullRequestRejected:
+			// Merged and ReadOnly are final states. We can ignore everything after.
+			if currentExtState != btypes.ChangesetExternalStateMerged &&
+				currentExtState != btypes.ChangesetExternalStateReadOnly {
 				currentExtState = btypes.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
 		case btypes.ChangesetEventKindGitHubMerged,
 			btypes.ChangesetEventKindBitbucketServerMerged,
-			btypes.ChangesetEventKindGitLabMerged:
+			btypes.ChangesetEventKindGitLabMerged,
+			btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled:
 			currentExtState = btypes.ChangesetExternalStateMerged
 			pushStates(et)
 
@@ -144,8 +168,9 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 
 		case btypes.ChangesetEventKindGitHubConvertToDraft:
 			isDraft = true
-			// Merged is a final state. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged {
+			// Merged and ReadOnly are final states. We can ignore everything after.
+			if currentExtState != btypes.ChangesetExternalStateMerged &&
+				currentExtState != btypes.ChangesetExternalStateReadOnly {
 				currentExtState = btypes.ChangesetExternalStateDraft
 				pushStates(et)
 			}
@@ -162,8 +187,9 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 		case btypes.ChangesetEventKindGitHubReopened,
 			btypes.ChangesetEventKindBitbucketServerReopened,
 			btypes.ChangesetEventKindGitLabReopened:
-			// Merged is a final state. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged {
+			// Merged and ReadOnly are final states. We can ignore everything after.
+			if currentExtState != btypes.ChangesetExternalStateMerged &&
+				currentExtState != btypes.ChangesetExternalStateReadOnly {
 				if isDraft {
 					currentExtState = btypes.ChangesetExternalStateDraft
 				} else {
@@ -175,8 +201,9 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 		case btypes.ChangesetEventKindGitHubReviewed,
 			btypes.ChangesetEventKindBitbucketServerApproved,
 			btypes.ChangesetEventKindBitbucketServerReviewed,
-			btypes.ChangesetEventKindGitLabApproved:
-
+			btypes.ChangesetEventKindGitLabApproved,
+			btypes.ChangesetEventKindBitbucketCloudApproved,
+			btypes.ChangesetEventKindBitbucketCloudPullRequestApproved:
 			s, err := e.ReviewState()
 			if err != nil {
 				return nil, err
@@ -217,7 +244,9 @@ func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory,
 
 		case btypes.ChangesetEventKindBitbucketServerUnapproved,
 			btypes.ChangesetEventKindBitbucketServerDismissed,
-			btypes.ChangesetEventKindGitLabUnapproved:
+			btypes.ChangesetEventKindGitLabUnapproved,
+			btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
+			btypes.ChangesetEventKindBitbucketCloudPullRequestUnapproved:
 			author := e.ReviewAuthor()
 			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
 			if author == "" {

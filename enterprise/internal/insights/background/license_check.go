@@ -6,15 +6,16 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewLicenseCheckJob will periodically check for the existence of a Code Insights license and ensure the correct set of insights is frozen.
-func NewLicenseCheckJob(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB) goroutine.BackgroundRoutine {
+func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 15
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
@@ -23,17 +24,19 @@ func NewLicenseCheckJob(ctx context.Context, postgres dbutil.DB, insightsdb dbut
 		}))
 }
 
-func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err error) {
+func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
-	tx, err := insightStore.Transact(ctx)
+	dashboardStore := store.NewDashboardStore(insightsdb)
+	insightTx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	dashboardTx := dashboardStore.With(insightTx)
+	defer func() { err = insightTx.Done(err) }()
 
 	licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError == nil {
-		err := tx.UnfreezeAllInsights(ctx)
+		err := insightTx.UnfreezeAllInsights(ctx)
 		if err != nil {
 			return errors.Wrap(err, "UnfreezeAllInsights")
 		}
@@ -42,7 +45,7 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 
 	log15.Info("No license found for Code Insights. Freezing insights for limited access mode", "error", licenseError.Error())
 
-	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := tx.GetUnfrozenInsightCount(ctx)
+	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := insightTx.GetUnfrozenInsightCount(ctx)
 	if err != nil {
 		return errors.Wrap(err, "GetUnfrozenInsightCount")
 	}
@@ -51,13 +54,27 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 	// - any other insights are unfrozen
 	shouldFreeze := globalUnfrozenInsightCount > 2 || totalUnfrozenInsightCount != globalUnfrozenInsightCount
 	if shouldFreeze {
-		err = tx.FreezeAllInsights(ctx)
+		err = insightTx.FreezeAllInsights(ctx)
 		if err != nil {
 			return errors.Wrap(err, "FreezeAllInsights")
 		}
-		err = tx.UnfreezeGlobalInsights(ctx, 2)
+		err = insightTx.UnfreezeGlobalInsights(ctx, 2)
 		if err != nil {
 			return errors.Wrap(err, "UnfreezeGlobalInsights")
+		}
+
+		// Attach the unfrozen insights to the limited access mode dashboard
+		dashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		insightUniqueIds, err := insightTx.GetUnfrozenInsightUniqueIds(ctx)
+		if err != nil {
+			return errors.Wrap(err, "GetUnfrozenInsightIds")
+		}
+		err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, insightUniqueIds)
+		if err != nil {
+			return errors.Wrap(err, "AddViewsToDashboard")
 		}
 	}
 

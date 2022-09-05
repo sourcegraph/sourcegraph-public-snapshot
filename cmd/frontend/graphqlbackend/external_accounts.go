@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -121,7 +122,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	account, err := database.ExternalAccounts(r.db).Get(ctx, id)
+	account, err := r.db.UserExternalAccounts().Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +132,29 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	if err := database.ExternalAccounts(r.db).Delete(ctx, account.ID); err != nil {
+	if account.ServiceType == extsvc.TypeGitHub {
+		opts := database.ExternalAccountsListOptions{
+			ServiceType:   extsvc.TypeGitHubApp,
+			AccountIDLike: fmt.Sprintf("%%/%s", account.AccountID),
+		}
+		accts, err := r.db.UserExternalAccounts().List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(accts) > 0 {
+			acctList := []int32{}
+			for _, acct := range accts {
+				acctList = append(acctList, acct.ID)
+			}
+
+			if err := r.db.UserExternalAccounts().Delete(ctx, acctList...); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if err := r.db.UserExternalAccounts().Delete(ctx, account.ID); err != nil {
 		return nil, err
 	}
 

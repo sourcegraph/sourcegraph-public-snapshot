@@ -18,7 +18,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users
@@ -26,56 +26,50 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="123"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="123"
+                />
+              </div>
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol
+            value="p"
+          />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
         >
           <h3
-            class="mt-2 mb-0"
+            class="h3 mt-2 mb-0"
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              <div
-                class="iconInline loadingSpinner"
-              />
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection
+            accountid="a"
+            productsubscription="[object Object]"
+            subscriptionid="s"
+          />
           <div
             class="payment-token-form-control"
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div
@@ -114,7 +108,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users
@@ -122,48 +116,38 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="25"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="25"
+                />
+              </div>
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
         >
           <h3
-            class="mt-2 mb-0"
+            class="h3 mt-2 mb-0"
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              —
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection />
           <div
             class="form-group mt-3"
           >
@@ -192,7 +176,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div
@@ -231,7 +215,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users
@@ -239,54 +223,46 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="25"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="25"
+                />
+              </div>
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
         >
           <h3
-            class="mt-2 mb-0"
+            class="h3 mt-2 mb-0"
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              —
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection
+            accountid="a"
+          />
           <div
             class="payment-token-form-control"
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div

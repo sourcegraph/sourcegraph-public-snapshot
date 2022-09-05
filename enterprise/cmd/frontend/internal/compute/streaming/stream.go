@@ -7,10 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,21 +25,26 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(db database.DB) http.Handler {
+func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	return &streamHandler{
+		logger:              logger,
 		db:                  db,
 		flushTickerInternal: 100 * time.Millisecond,
+		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
+	logger              log.Logger
 	db                  database.DB
 	flushTickerInternal time.Duration
+	pingTickerInterval  time.Duration
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 	defer cancel()
+	start := time.Now()
 
 	args, err := parseURLQuery(r.URL.Query())
 	if err != nil {
@@ -56,14 +64,36 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	computeQuery, err := compute.Parse(args.Query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	searchQuery, err := computeQuery.ToSearchQuery()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	progress := &streamclient.ProgressAggregator{
+		Start:     start,
+		RepoNamer: streamclient.RepoNamer(ctx, h.db),
+		Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+	}
+
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Current())
+	}
+
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, getErr := NewComputeStream(ctx, h.db, args.Query)
+	events, getResults := NewComputeStream(ctx, h.logger, h.db, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -77,23 +107,31 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+
+		if progress.Dirty {
+			sendProgress()
+		}
 	}
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
+	pingTicker := time.NewTicker(h.pingTickerInterval)
+	defer pingTicker.Stop()
+
 	first := true
 	handleEvent := func(event Event) {
+		progress.Dirty = true
+		progress.Stats.Update(&event.Stats)
+
 		for _, result := range event.Results {
 			_ = matchesBuf.Append(result)
 		}
 
 		// Instantly send results if we have not sent any yet.
 		if first && matchesBuf.Len() > 0 {
-			log15.Info("flushing first now")
 			first = false
 			matchesFlush()
 		}
-
 	}
 
 LOOP:
@@ -106,22 +144,41 @@ LOOP:
 			handleEvent(event)
 		case <-flushTicker.C:
 			matchesFlush()
+		case <-pingTicker.C:
+			sendProgress()
 		}
 	}
 
 	matchesFlush()
 
-	if err = getErr(); err != nil {
+	alert, err := getResults()
+	if err != nil {
 		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return
 	}
 
 	if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:       "Heads up",
-			Description: "This data is incomplete! We ran this query for 1 minute and we'll need more time to compute all the results. Ask in #compute for more Compute Credits™",
+			Title:       "Incomplete data",
+			Description: "This data is incomplete! We ran this query for 1 minute and we'd need more time to compute all the results. This isn't supported yet, so please reach out to support@sourcegraph.com if you're interested in running longer queries.",
 		})
 	}
+	if alert != nil {
+		var pqs []streamhttp.QueryDescription
+		for _, pq := range alert.ProposedQueries {
+			pqs = append(pqs, streamhttp.QueryDescription{
+				Description: pq.Description,
+				Query:       pq.QueryString(),
+			})
+		}
+		_ = eventWriter.Event("alert", streamhttp.EventAlert{
+			Title:           alert.Title,
+			Description:     alert.Description,
+			ProposedQueries: pqs,
+		})
+	}
+
+	_ = eventWriter.Event("progress", progress.Final())
 }
 
 type args struct {

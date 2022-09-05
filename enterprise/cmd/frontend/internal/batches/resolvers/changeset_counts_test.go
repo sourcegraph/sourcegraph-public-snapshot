@@ -9,13 +9,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -70,17 +71,18 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	rcache.SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	repoStore := database.Repos(db)
-	esStore := database.ExternalServices(db)
+	repoStore := db.Repos()
+	esStore := db.ExternalServices()
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
 	if gitHubToken == "" {
@@ -89,11 +91,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
+		})),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
@@ -101,7 +103,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(ctx, logger, db.ExternalServices(), githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -116,20 +118,20 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
+	mockState := bt.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +145,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		BatchSpecID:     spec.ID,
 	}
 
-	err = cstore.CreateBatchChange(ctx, batchChange)
+	err = bstore.CreateBatchChange(ctx, batchChange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,20 +168,20 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	for _, c := range changesets {
-		if err = cstore.CreateChangeset(ctx, c); err != nil {
+		if err = bstore.CreateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
+		src, err := sourcer.ForRepo(ctx, bstore, githubRepo)
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, New(bstore))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +208,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	// End time is when PR1 was merged
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 		"from":        start,
 		"to":          end,

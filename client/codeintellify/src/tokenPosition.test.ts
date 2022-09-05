@@ -316,13 +316,13 @@ describe('token_positions', () => {
             it("doesn't wrap tokens that span multiple elements more than once", () => {
                 const codeView = dom.createElementFromString('<div> To<span>ken </span></div>')
 
-                const domFn = {
+                const domFunc = {
                     getCodeElementFromLineNumber: (code: HTMLElement) => code.children.item(0) as HTMLElement,
                 }
                 const position = { line: 1, character: 2 }
 
-                const token1 = getTokenAtPositionOrRange(codeView, position, domFn)
-                const token2 = getTokenAtPositionOrRange(codeView, position, domFn)
+                const token1 = getTokenAtPositionOrRange(codeView, position, domFunc)
+                const token2 = getTokenAtPositionOrRange(codeView, position, domFunc)
 
                 // If this fails then getTokenAtPositionOrRange is wrapping tokens more than once
                 expect(token1).toEqual(token2)

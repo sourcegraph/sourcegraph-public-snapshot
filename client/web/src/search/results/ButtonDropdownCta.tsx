@@ -22,7 +22,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     className?: string
 }
 
-export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> = ({
+export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<ButtonDropdownCtaProps>> = ({
     button,
     icon,
     title,

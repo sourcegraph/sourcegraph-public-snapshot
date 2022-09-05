@@ -81,7 +81,7 @@ func (s *gcsStore) Init(ctx context.Context) error {
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -95,7 +95,7 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -121,7 +121,7 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 }
 
 func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("destination", destination),
 		log.String("sources", strings.Join(sources, ", ")),
 	}})
@@ -152,7 +152,7 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 }
 
 func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
-	ctx, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})

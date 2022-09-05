@@ -1,25 +1,27 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
+import { EditorView } from '@codemirror/view'
+import { mdiPlayCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import * as Monaco from 'monaco-editor'
-import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
-import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
+import {
+    StreamingSearchResultsList,
+    FetchFileParameters,
+    CodeMirrorQueryInput,
+    changeListener,
+    createDefaultSuggestions,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -29,15 +31,12 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { useExperimentalFeatures } from '../../../stores'
-import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
-import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookQueryBlock.module.scss'
 
 interface NotebookQueryBlockProps
@@ -46,137 +45,179 @@ interface NotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+    globbing: boolean
     isSourcegraphDotCom: boolean
-    sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
-export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps> = ({
-    id,
-    input,
-    output,
-    isLightTheme,
-    telemetryService,
-    settingsCascade,
-    isSelected,
-    isOtherBlockSelected,
-    sourcegraphSearchLanguageId,
-    hoverifier,
-    onBlockInputChange,
-    fetchHighlightedFileLineRanges,
-    onRunBlock,
-    ...props
-}) => {
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
-    const searchResults = useObservable(output ?? of(undefined))
-    const location = useLocation()
+// Defines the max height for the CodeMirror editor
+const maxEditorHeight = editorHeight({ maxHeight: '300px' })
+const editorAttributes = [
+    EditorView.editorAttributes.of({
+        'data-testid': 'notebook-query-block-input',
+    }),
+    EditorView.contentAttributes.of({
+        'aria-label': 'Search query input',
+    }),
+]
 
-    const onInputChange = useCallback((query: string) => onBlockInputChange(id, { type: 'query', input: { query } }), [
+export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren<NotebookQueryBlockProps>> = React.memo(
+    ({
         id,
+        input,
+        output,
+        isLightTheme,
+        telemetryService,
+        settingsCascade,
+        isSelected,
+        isOtherBlockSelected,
+        hoverifier,
         onBlockInputChange,
-    ])
-
-    useMonacoBlockInput({
-        editor,
-        id,
+        fetchHighlightedFileLineRanges,
         onRunBlock,
-        onInputChange,
-        ...props,
-    })
+        globbing,
+        isSourcegraphDotCom,
+        ...props
+    }) => {
+        const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+        const [editor, setEditor] = useState<EditorView>()
+        const searchResults = useObservable(output ?? of(undefined))
+        const [executedQuery, setExecutedQuery] = useState<string>(input.query)
 
-    const modifierKeyLabel = useModifierKeyLabel()
-    const mainMenuAction: BlockMenuAction = useMemo(() => {
-        const isLoading = searchResults && searchResults.state === 'loading'
-        return {
-            type: 'button',
-            label: isLoading ? 'Searching...' : 'Run search',
-            isDisabled: isLoading ?? false,
-            icon: <Icon as={PlayCircleOutlineIcon} />,
-            onClick: onRunBlock,
-            keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
-        }
-    }, [onRunBlock, isSelected, modifierKeyLabel, searchResults])
+        const onInputChange = useCallback(
+            (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
+            [id, onBlockInputChange]
+        )
 
-    const linkMenuActions: BlockMenuAction[] = useMemo(
-        () => [
-            {
-                type: 'link',
-                label: 'Open in new tab',
-                icon: <Icon as={OpenInNewIcon} />,
-                url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
-            },
-        ],
-        [input]
-    )
+        const runBlock = useCallback(() => onRunBlock(id), [id, onRunBlock])
 
-    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))
+        useEffect(() => {
+            setExecutedQuery(input.query)
+            // We intentionally want to track the input query state at the time
+            // of search submission, not on input change.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [output])
 
-    useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
+        const modifierKeyLabel = useModifierKeyLabel()
+        const mainMenuAction: BlockMenuAction = useMemo(() => {
+            const isLoading = searchResults && searchResults.state === 'loading'
+            return {
+                type: 'button',
+                label: isLoading ? 'Searching...' : 'Run search',
+                isDisabled: isLoading ?? false,
+                icon: <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />,
+                onClick: onRunBlock,
+                keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
+            }
+        }, [onRunBlock, isSelected, modifierKeyLabel, searchResults])
 
-    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+        const linkMenuActions: BlockMenuAction[] = useMemo(
+            () => [
+                {
+                    type: 'link',
+                    label: 'Open in new tab',
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
+                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.standard, false)}`,
+                },
+            ],
+            [input]
+        )
 
-    useFocusMonacoEditorOnMount({ editor, isEditing: input.initialFocusInput })
+        const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))
 
-    return (
-        <NotebookBlock
-            className={styles.block}
-            id={id}
-            aria-label="Notebook query block"
-            isSelected={isSelected}
-            isOtherBlockSelected={isOtherBlockSelected}
-            isInputVisible={true}
-            focusInput={focusInput}
-            mainAction={mainMenuAction}
-            actions={isSelected ? commonMenuActions : linkMenuActions}
-            {...props}
-        >
-            <div className="mb-1 text-muted">Search query</div>
-            <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
-                <MonacoEditor
-                    language={sourcegraphSearchLanguageId}
-                    value={input.query}
-                    height="auto"
-                    isLightTheme={isLightTheme}
-                    editorWillMount={noop}
-                    onEditorCreated={setEditor}
-                    options={MONACO_BLOCK_INPUT_OPTIONS}
-                    border={false}
-                />
-            </div>
+        const focusInput = useCallback(() => {
+            if (editor) {
+                focusCodeMirrorInput(editor)
+            }
+        }, [editor])
 
-            {searchResults && searchResults.state === 'loading' && (
-                <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
-                    <LoadingSpinner />
+        const queryCompletion = useMemo(
+            () =>
+                createDefaultSuggestions({
+                    isSourcegraphDotCom,
+                    globbing,
+                    fetchSuggestions: fetchStreamSuggestions,
+                }),
+            [isSourcegraphDotCom, globbing]
+        )
+
+        // Focus editor on component creation if necessary
+        useEffect(() => {
+            if (editor && input.initialFocusInput) {
+                focusCodeMirrorInput(editor)
+            }
+        }, [input.initialFocusInput, editor])
+
+        return (
+            <NotebookBlock
+                className={styles.block}
+                id={id}
+                aria-label="Notebook query block"
+                isSelected={isSelected}
+                isOtherBlockSelected={isOtherBlockSelected}
+                isInputVisible={true}
+                focusInput={focusInput}
+                mainAction={mainMenuAction}
+                actions={isSelected ? commonMenuActions : linkMenuActions}
+                {...props}
+            >
+                <div className={styles.content}>
+                    <div className="mb-1 text-muted">Search query</div>
+                    <div className={styles.queryInputWrapper}>
+                        <CodeMirrorQueryInput
+                            value={input.query}
+                            patternType={SearchPatternType.standard}
+                            interpretComments={true}
+                            isLightTheme={isLightTheme}
+                            onEditorCreated={setEditor}
+                            extensions={useMemo(
+                                () => [
+                                    EditorView.lineWrapping,
+                                    queryCompletion,
+                                    changeListener(onInputChange),
+                                    blockKeymap({ runBlock }),
+                                    maxEditorHeight,
+                                    editorAttributes,
+                                ],
+                                [queryCompletion, runBlock, onInputChange]
+                            )}
+                        />
+                    </div>
+
+                    {searchResults && searchResults.state === 'loading' && (
+                        <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
+                            <LoadingSpinner />
+                        </div>
+                    )}
+                    {searchResults && searchResults.state !== 'loading' && (
+                        <div className={styles.results}>
+                            <StreamingSearchResultsList
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                searchContextsEnabled={props.searchContextsEnabled}
+                                allExpanded={false}
+                                results={searchResults}
+                                isLightTheme={isLightTheme}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                telemetryService={telemetryService}
+                                settingsCascade={settingsCascade}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={window.context?.assetsRoot || ''}
+                                platformContext={props.platformContext}
+                                extensionsController={props.extensionsController}
+                                hoverifier={hoverifier}
+                                openMatchesInNewTab={true}
+                                executedQuery={executedQuery}
+                            />
+                        </div>
+                    )}
                 </div>
-            )}
-            {searchResults && searchResults.state !== 'loading' && (
-                <div className={styles.results}>
-                    <StreamingSearchResultsList
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        searchContextsEnabled={props.searchContextsEnabled}
-                        location={location}
-                        allExpanded={false}
-                        results={searchResults}
-                        isLightTheme={isLightTheme}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                        telemetryService={telemetryService}
-                        settingsCascade={settingsCascade}
-                        authenticatedUser={props.authenticatedUser}
-                        showSearchContext={showSearchContext}
-                        assetsRoot={window.context?.assetsRoot || ''}
-                        renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
-                        platformContext={props.platformContext}
-                        extensionsController={props.extensionsController}
-                        hoverifier={hoverifier}
-                        openMatchesInNewTab={true}
-                    />
-                </div>
-            )}
-        </NotebookBlock>
-    )
-}
+            </NotebookBlock>
+        )
+    }
+)
+
+NotebookQueryBlock.displayName = 'NotebookQueryBlock'

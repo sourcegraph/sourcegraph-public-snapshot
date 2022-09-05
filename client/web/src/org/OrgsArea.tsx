@@ -14,16 +14,13 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
-import { JoinOpenBetaPage } from './openBeta/JoinOpenBetaPage'
-import { NewOrgOpenBetaPage } from './openBeta/NewOrganizationPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -36,7 +33,6 @@ export interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
-        FeatureFlagProps,
         ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
@@ -52,24 +48,10 @@ export interface Props
 /**
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
-const AuthenticatedOrgsArea: React.FunctionComponent<Props> = props => (
+const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <Switch>
         {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
             <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-        )}
-        {props.featureFlags.get('open-beta-enabled') && (
-            <Route
-                path={`${props.match.url}/joinopenbeta`}
-                exact={true}
-                render={routeComponentProps => <JoinOpenBetaPage {...props} {...routeComponentProps} />}
-            />
-        )}
-        {props.featureFlags.get('open-beta-enabled') && (
-            <Route
-                path={`${props.match.url}/joinopenbeta/neworg/:openBetaId`}
-                exact={true}
-                render={routeComponentProps => <NewOrgOpenBetaPage {...props} {...routeComponentProps} />}
-            />
         )}
         <Route
             path={`${props.match.url}/invitation/:token`}

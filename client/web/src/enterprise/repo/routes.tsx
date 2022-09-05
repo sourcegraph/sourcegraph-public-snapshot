@@ -1,4 +1,4 @@
-import React from 'react'
+import { Redirect } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -26,6 +26,11 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
 
     {
         path: '/-/code-intelligence',
+        exact: false,
+        render: props => <Redirect to={props.location.pathname.replace('/code-intelligence', '/code-graph')} />,
+    },
+    {
+        path: '/-/code-graph',
         exact: false,
         render: context => (
             <RepositoryGitDataContainer {...context} repoName={context.repo.name}>

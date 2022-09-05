@@ -7,21 +7,35 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func TestIdentifyError(t *testing.T) {
+	errs := []error{gosyntect.ErrPanic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLarge}
+	for _, err := range errs {
+		wrappedErr := errors.Wrap(err, "some other information")
+		known, problem := identifyError(wrappedErr)
+		require.True(t, known)
+		require.NotEqual(t, "", problem)
+	}
+}
+
 func TestDeserialize(t *testing.T) {
-	original := new(lsiftyped.Document)
-	original.Occurrences = append(original.Occurrences, &lsiftyped.Occurrence{
-		SyntaxKind: lsiftyped.SyntaxKind_IdentifierAttribute,
+	original := new(scip.Document)
+	original.Occurrences = append(original.Occurrences, &scip.Occurrence{
+		SyntaxKind: scip.SyntaxKind_IdentifierAttribute,
 	})
 
 	marshaled, _ := proto.Marshal(original)
 	data, _ := base64.StdEncoding.DecodeString(base64.StdEncoding.EncodeToString(marshaled))
 
-	roundtrip := new(lsiftyped.Document)
+	roundtrip := new(scip.Document)
 	err := proto.Unmarshal(data, roundtrip)
 
 	if err != nil {

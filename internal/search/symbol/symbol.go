@@ -6,21 +6,19 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,10 +29,10 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	z := search.Indexed()
-	if z == nil {
+	if !conf.SearchIndexEnabled() {
 		return ""
 	}
+	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
@@ -55,6 +53,25 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 	}
 
 	return ""
+}
+
+func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return results, nil
+	}
+	// Filter out results from files we don't have access to:
+	act := actor.FromContext(ctx)
+	filtered := results[:0]
+	for i, r := range results {
+		ok, err := authz.FilterActorPath(ctx, checker, act, repo, r.File.Path)
+		if err != nil {
+			return nil, errors.Wrap(err, "checking permissions")
+		}
+		if ok {
+			filtered = append(filtered, results[i])
+		}
+	}
+	return filtered, nil
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
@@ -100,13 +117,14 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  ot.ShouldTrace(ctx),
+		Trace:                  policy.ShouldTrace(ctx),
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     match * 25,
 		TotalMaxMatchCount:     match * 25,
 		ShardMaxImportantMatch: match * 25,
 		TotalMaxImportantMatch: match * 25,
 		MaxDocDisplayCount:     match,
+		ChunkMatches:           true,
 	})
 	if err != nil {
 		return nil, err
@@ -144,22 +162,58 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 				))
 			}
 		}
+
+		for _, cm := range file.ChunkMatches {
+			if cm.FileName || len(cm.SymbolInfo) == 0 {
+				continue
+			}
+
+			for i, r := range cm.Ranges {
+				si := cm.SymbolInfo[i]
+				if si == nil {
+					continue
+				}
+
+				res = append(res, result.NewSymbolMatch(
+					newFile,
+					int(r.Start.LineNumber),
+					int(r.Start.Column),
+					si.Sym,
+					si.Kind,
+					si.Parent,
+					si.ParentKind,
+					file.Language,
+					"", // unused when column is set
+					false,
+				))
+			}
+		}
 	}
 	return
 }
 
-func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
-		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		results, err := searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		if err != nil {
+			return nil, errors.Wrap(err, "zoekt symbol search")
+		}
+		results, err = filterZoektResults(ctx, checker, repoName.Name, results)
+		if err != nil {
+			return nil, errors.Wrap(err, "checking permissions")
+		}
+		return results, nil
 	}
+	serverTimeout := 5 * time.Second
+	clientTimeout := 2 * serverTimeout
 
-	ctx, done := context.WithTimeout(ctx, 5*time.Second)
+	ctx, done := context.WithTimeout(ctx, clientTimeout)
 	defer done()
 	defer func() {
 		if ctx.Err() != nil && len(res) == 0 {
-			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
+			err = errors.Newf("The symbols service appears unresponsive, check the logs for errors.")
 		}
 	}()
 	var includePatternsSlice []string
@@ -172,6 +226,7 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
+		Timeout:         int(serverTimeout.Seconds()),
 	}
 	if query != nil {
 		searchArgs.Query = *query
@@ -203,12 +258,12 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, checker, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 	if err != nil {
 		return nil, err
 	}
@@ -229,38 +284,4 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
-}
-
-type RepoUniverseSymbolSearch struct {
-	GlobalZoektQuery *zoektutil.GlobalZoektQuery
-	ZoektArgs        *search.ZoektParameters
-	PatternInfo      *search.TextPatternInfo
-	Limit            int
-
-	RepoOptions search.RepoOptions
-}
-
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
-
-	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
-	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
-
-	// always search for symbols in indexed repositories when searching the repo universe.
-	err = zoektutil.DoZoektSearchGlobal(ctx, s.ZoektArgs, stream)
-	if err != nil {
-		tr.LogFields(otlog.Error(err))
-		// Only record error if we haven't timed out.
-		if ctx.Err() == nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
-}
-
-func (*RepoUniverseSymbolSearch) Name() string {
-	return "RepoUniverseSymbolSearch"
 }

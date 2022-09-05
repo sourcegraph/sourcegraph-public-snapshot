@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -58,13 +60,17 @@ func (r *schemaResolver) User(
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
-	db   database.DB
-	user *types.User
+	logger log.Logger
+	db     database.DB
+	user   *types.User
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{db: db, user: user}
+	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
+		log.Object("repo",
+			log.String("user", user.Username))),
+	}
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
@@ -115,7 +121,7 @@ func (r *UserResolver) Email(ctx context.Context) (string, error) {
 		}
 	}
 
-	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
+	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}
@@ -357,7 +363,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -365,12 +371,12 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.Users(r.db).UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := r.db.Users().UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "updated the password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password update", "error", err)
 		}
 	}
@@ -381,7 +387,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -389,12 +395,12 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+	if err := r.db.Users().CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "created a password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "created a password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
@@ -410,7 +416,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 			return nil, err
 		}
 	} else {
-		user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +434,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 		TosAccepted: &tosAccepted,
 	}
 
-	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
 		return nil, err
 	}
 
@@ -436,7 +442,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 }
 
 func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +455,7 @@ func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Search
 		Searchable: &searchable,
 	}
 
-	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
+	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
@@ -574,13 +580,14 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	repos, err := database.UserPublicRepos(r.db).ListByUser(ctx, r.user.ID)
+	repos, err := r.db.UserPublicRepos().ListByUser(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
 	var out []*RepositoryResolver
 	for _, repo := range repos {
 		out = append(out, &RepositoryResolver{
+			logger: r.logger,
 			RepoMatch: result.RepoMatch{
 				ID:   repo.RepoID,
 				Name: api.RepoName(repo.RepoURI),

@@ -1,0 +1,19 @@
+.divider {
+    border-right: 1px solid var(--border-color-2);
+    height: 1rem;
+    margin: 0 0.5rem;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.commit-oid {
+    display: inline-block;
+    padding: 0.25rem;
+    color: var(--jb-secondary-info-text-color);
+}
+
+.timestamp {
+    color: var(--jb-secondary-info-text-color);
+}

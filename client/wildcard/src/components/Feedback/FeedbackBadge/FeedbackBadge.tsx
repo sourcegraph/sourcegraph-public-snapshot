@@ -2,8 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
-import type { BaseProductStatusBadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
+import { ProductStatusBadge, BaseProductStatusBadgeProps } from '../../Badge'
+import { Link } from '../../Link'
 
 import styles from './FeedbackBadge.module.scss'
 
@@ -20,7 +20,7 @@ interface FeedbackBadgeProps extends BaseProductStatusBadgeProps {
 /**
  * An abstract UI component which renders a badge with specific status for feedback.
  */
-export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = ({
+export const FeedbackBadge: React.FunctionComponent<React.PropsWithChildren<FeedbackBadgeProps>> = ({
     className,
     status,
     tooltip,

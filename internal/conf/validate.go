@@ -49,7 +49,7 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"useAlertManager":       {},
 }
 
-const RedactedSecret = "REDACTED"
+const redactedSecret = "REDACTED"
 
 // problemKind represents the kind of a configuration problem.
 type problemKind string
@@ -69,14 +69,6 @@ type Problem struct {
 func NewSiteProblem(msg string) *Problem {
 	return &Problem{
 		kind:        problemSite,
-		description: msg,
-	}
-}
-
-// NewExternalServiceProblem creates a new external service config problem with given message.
-func NewExternalServiceProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemExternalService,
 		description: msg,
 	}
 }
@@ -217,6 +209,9 @@ var siteConfigSecrets = []struct {
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+	{readPath: `gitHubApp.privateKey`, editPaths: []string{"gitHubApp", "privateKey"}},
+	{readPath: `gitHubApp.clientSecret`, editPaths: []string{"gitHubApp", "clientSecret"}},
+	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
@@ -249,13 +244,13 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		return input, errors.Wrap(err, "parse new config")
 	}
 	for _, ap := range newCfg.AuthProviders {
-		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == RedactedSecret {
+		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == redactedSecret {
 			ap.Openidconnect.ClientSecret = oldSecrets[ap.Openidconnect.ClientID]
 		}
-		if ap.Github != nil && ap.Github.ClientSecret == RedactedSecret {
+		if ap.Github != nil && ap.Github.ClientSecret == redactedSecret {
 			ap.Github.ClientSecret = oldSecrets[ap.Github.ClientID]
 		}
-		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == RedactedSecret {
+		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == redactedSecret {
 			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
 		}
 	}
@@ -266,7 +261,7 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 
 	for _, secret := range siteConfigSecrets {
 		v := gjson.Get(unredactedSite, secret.readPath).String()
-		if v != RedactedSecret {
+		if v != redactedSecret {
 			continue
 		}
 
@@ -275,7 +270,13 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
-	return unredactedSite, err
+
+	formattedSite, err := jsonc.Format(unredactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return input, errors.Wrapf(err, "JSON formatting")
+	}
+
+	return formattedSite, err
 }
 
 // RedactSecrets redacts defined list of secrets from the given configuration. It
@@ -291,18 +292,21 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 
 	for _, ap := range cfg.AuthProviders {
 		if ap.Openidconnect != nil {
-			ap.Openidconnect.ClientSecret = RedactedSecret
+			ap.Openidconnect.ClientSecret = redactedSecret
 		}
 		if ap.Github != nil {
-			ap.Github.ClientSecret = RedactedSecret
+			ap.Github.ClientSecret = redactedSecret
 		}
 		if ap.Gitlab != nil {
-			ap.Gitlab.ClientSecret = RedactedSecret
+			ap.Gitlab.ClientSecret = redactedSecret
 		}
 	}
-	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
-	if err != nil {
-		return empty, errors.Wrap(err, `redact "auth.providers"`)
+	redactedSite := raw.Site
+	if len(cfg.AuthProviders) > 0 {
+		redactedSite, err = jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+		if err != nil {
+			return empty, errors.Wrap(err, `redact "auth.providers"`)
+		}
 	}
 
 	for _, secret := range siteConfigSecrets {
@@ -311,14 +315,19 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 			continue
 		}
 
-		redactedSite, err = jsonc.Edit(redactedSite, RedactedSecret, secret.editPaths...)
+		redactedSite, err = jsonc.Edit(redactedSite, redactedSecret, secret.editPaths...)
 		if err != nil {
 			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
 
+	formattedSite, err := jsonc.Format(redactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return empty, errors.Wrapf(err, "JSON formatting")
+	}
+
 	return conftypes.RawUnified{
-		Site: redactedSite,
+		Site: formattedSite,
 	}, err
 }
 

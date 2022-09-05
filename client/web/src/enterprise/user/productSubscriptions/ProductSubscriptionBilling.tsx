@@ -5,9 +5,11 @@ import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
-export const ProductSubscriptionBilling: React.FunctionComponent<{
-    productSubscription: GQL.IProductSubscription
-}> = ({ productSubscription }) => (
+export const ProductSubscriptionBilling: React.FunctionComponent<
+    React.PropsWithChildren<{
+        productSubscription: GQL.IProductSubscription
+    }>
+> = ({ productSubscription }) => (
     <table className="table mb-0">
         <tbody>
             <tr>

@@ -1,25 +1,34 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { SearchPatternType } from '@sourcegraph/search'
+import { Text } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
-const { add } = storiesOf('search-ui/SyntaxHighlightedSearchQuery', module).addParameters({
-    chromatic: { viewports: [480] },
-})
+const config: Meta = {
+    title: 'search-ui/SyntaxHighlightedSearchQuery',
+    parameters: {
+        chromatic: { viewports: [480] },
+    },
+}
 
-add('SyntaxHighlightedSearchQuery', () => (
+export default config
+
+export const SyntaxHighlightedSearchQueryStory: Story = () => (
     <BrandedStory>
         {() => (
-            <p>
+            <Text>
                 <SyntaxHighlightedSearchQuery query="test AND spec" />
                 <br />
                 <SyntaxHighlightedSearchQuery query="test or spec repo:sourcegraph" />
                 <br />
                 <SyntaxHighlightedSearchQuery query="test -lang:ts" />
-            </p>
+                <br />
+                <SyntaxHighlightedSearchQuery query="/func.*parse/" searchPatternType={SearchPatternType.standard} />
+            </Text>
         )}
     </BrandedStory>
-))
+)
+
+SyntaxHighlightedSearchQueryStory.storyName = 'SyntaxHighlightedSearchQuery'

@@ -55,7 +55,7 @@ func (r *Cache) GetMulti(keys ...string) [][]byte {
 	if len(keys) == 0 {
 		return nil
 	}
-	rkeys := make([]interface{}, len(keys))
+	rkeys := make([]any, len(keys))
 	for i, key := range keys {
 		rkeys[i] = r.rkeyPrefix() + key
 	}
@@ -146,6 +146,27 @@ func (r *Cache) Set(key string, b []byte) {
 	}
 }
 
+func (r *Cache) Increase(key string) {
+	c := pool.Get()
+	defer func() { _ = c.Close() }()
+
+	_, err := c.Do("INCR", r.rkeyPrefix()+key)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
+		return
+	}
+
+	if r.ttlSeconds <= 0 {
+		return
+	}
+
+	_, err = c.Do("EXPIRE", r.rkeyPrefix()+key, r.ttlSeconds)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "EXPIRE", "error", err)
+		return
+	}
+}
+
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
 	c := pool.Get()
@@ -165,7 +186,7 @@ func (r *Cache) rkeyPrefix() string {
 // TB is a subset of testing.TB
 type TB interface {
 	Name() string
-	Skip(args ...interface{})
+	Skip(args ...any)
 	Helper()
 }
 

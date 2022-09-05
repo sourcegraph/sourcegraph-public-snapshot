@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,16 +51,17 @@ type prometheusTracer struct {
 	tracer trace.OpenTracingTracer
 }
 
-func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
-	if ot.ShouldTrace(ctx) {
+	if policy.ShouldTrace(ctx) {
 		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -82,8 +85,12 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	if !disableLog {
 		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" {
-			log.Printf(`logging complete query for unnamed GraphQL request above name=%s userID=%d source=%s:
+		if requestName == "unknown" || logAllRequests {
+			reason := ""
+			if requestName == "unknown" {
+				reason = "for unnamed GraphQL request above "
+			}
+			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
 QUERY
 -----
 %s
@@ -92,7 +99,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserID, requestSource, queryString, variables)
+`, reason, requestName, currentUserID, requestSource, queryString, variables)
 		}
 	}
 
@@ -120,7 +127,7 @@ VARIABLES
 	}
 }
 
-func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -143,7 +150,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
-	if ot.ShouldTrace(ctx) {
+	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
 	}
 	return func(queryErrors []*gqlerrors.QueryError) {
@@ -352,9 +359,9 @@ func NewSchema(
 	license LicenseResolver,
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
-	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	insightsAggregation InsightsAggregationResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -428,12 +435,6 @@ func NewSchema(
 		}
 	}
 
-	if orgRepositoryResolver != nil {
-		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
-		resolver.OrgRepositoryResolver = orgRepositoryResolver
-		schemas = append(schemas, orgSchema)
-	}
-
 	if notebooks != nil {
 		EnterpriseResolvers.notebooksResolver = notebooks
 		resolver.NotebooksResolver = notebooks
@@ -450,6 +451,12 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if insightsAggregation != nil {
+		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
+		resolver.InsightsAggregationResolver = insightsAggregation
+		schemas = append(schemas, insightsAggregationsSchema)
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -461,7 +468,16 @@ func NewSchema(
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
+//
+// schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
+	logger            sglog.Logger
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+	nodeByIDFns       map[string]NodeByIDFunc
+
+	// SubResolvers are assigned using the Schema constructor.
+
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
@@ -471,17 +487,15 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
-	OrgRepositoryResolver
 	NotebooksResolver
-
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
+	InsightsAggregationResolver
 }
 
-// newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
+// newSchemaResolver will return a new, safely instantiated schemaResolver with some
+// defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
+		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
@@ -532,6 +546,9 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id, r)
 		},
+		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalServiceSyncJobByID(ctx, db, id)
+		},
 	}
 	return r
 }
@@ -539,22 +556,22 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver      CodeIntelResolver
-	computeResolver        ComputeResolver
-	insightsResolver       InsightsResolver
-	authzResolver          AuthzResolver
-	batchChangesResolver   BatchChangesResolver
-	codeMonitorsResolver   CodeMonitorsResolver
-	licenseResolver        LicenseResolver
-	dotcomResolver         DotcomRootResolver
-	searchContextsResolver SearchContextsResolver
-	orgRepositoryResolver  OrgRepositoryResolver
-	notebooksResolver      NotebooksResolver
+	codeIntelResolver           CodeIntelResolver
+	computeResolver             ComputeResolver
+	insightsResolver            InsightsResolver
+	authzResolver               AuthzResolver
+	batchChangesResolver        BatchChangesResolver
+	codeMonitorsResolver        CodeMonitorsResolver
+	licenseResolver             LicenseResolver
+	dotcomResolver              DotcomRootResolver
+	searchContextsResolver      SearchContextsResolver
+	notebooksResolver           NotebooksResolver
+	InsightsAggregationResolver InsightsAggregationResolver
 }{}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return &schemaResolver{db: r.db}
+	return newSchemaResolver(r.db)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
@@ -644,7 +661,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.db).GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.logger, r.db).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -667,7 +684,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := r.db.Phabricator().GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -738,5 +755,5 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 		}
 		ids[i] = id
 	}
-	return database.ExternalServices(r.db).SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }

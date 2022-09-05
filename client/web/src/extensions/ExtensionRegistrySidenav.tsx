@@ -1,15 +1,14 @@
 import React from 'react'
 
+import { mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
-import { extensionBannerIconURL } from './icons'
 
 import styles from './ExtensionRegistrySidenav.module.scss'
 
@@ -36,7 +35,7 @@ interface ExtensionsEnablementDropdownProps {
  * Includes category filter buttons and enablement filter dropdown.
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
-    ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
+    React.PropsWithChildren<ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps>
 > = ({
     selectedCategory,
     onSelectCategory,
@@ -70,7 +69,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} />
+                    {enablementFilterToLabel[enablementFilter]} <Icon aria-hidden={true} svgPath={mdiMenuDown} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>
@@ -85,48 +84,15 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
                     <MenuDivider />
 
-                    <MenuItem
-                        // Hack: clicking <label> inside <MenuItem> doesn't affect checked state,
-                        // so use a <span> for which click events are handled by <MenuItem>.
-                        onSelect={toggleExperimentalExtensions}
-                    >
-                        <div className="d-flex align-items-center">
-                            <input
-                                type="checkbox"
-                                checked={showExperimentalExtensions}
-                                onChange={toggleExperimentalExtensions}
-                                className=""
-                                aria-labelledby="show-experimental-extensions"
-                            />
-                            <span className="m-0 pl-2" id="show-experimental-extensions">
-                                Show experimental extensions
-                            </span>
-                        </div>
+                    <MenuItem onSelect={toggleExperimentalExtensions}>
+                        <Checkbox
+                            id="show-experimental-extensions"
+                            checked={showExperimentalExtensions}
+                            label="Show experimental extensions"
+                        />
                     </MenuItem>
                 </MenuList>
             </Menu>
-
-            <ExtensionSidenavBanner />
         </div>
     )
 }
-
-const ExtensionSidenavBanner: React.FunctionComponent = () => (
-    <div className={classNames(styles.banner, 'mx-2')}>
-        <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
-        {/* Override h4 font-weight */}
-        <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
-        <small>
-            You can improve your workflow by creating custom extensions. See{' '}
-            <Link
-                to="https://docs.sourcegraph.com/extensions/authoring"
-                // eslint-disable-next-line react/jsx-no-target-blank
-                target="_blank"
-                rel="noreferrer"
-            >
-                Sourcegraph Docs
-            </Link>{' '}
-            for details about writing and publishing.
-        </small>
-    </div>
-)

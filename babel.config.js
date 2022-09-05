@@ -1,7 +1,8 @@
 // @ts-check
+const path = require('path')
+
 const logger = require('gulplog')
 const semver = require('semver')
-const path = require('path')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
@@ -38,19 +39,39 @@ module.exports = api => {
             'web.immediate',
             // Always define Symbol.observable before libraries are loaded, ensuring interopability between different libraries.
             'esnext.symbol.observable',
-            // Webpack v4 chokes on optional chaining and nullish coalescing syntax, fix will be released with webpack v5.
-            '@babel/plugin-proposal-optional-chaining',
-            '@babel/plugin-proposal-nullish-coalescing-operator',
           ],
           // See https://github.com/zloirock/core-js#babelpreset-env
           corejs: semver.minVersion(require('./package.json').dependencies['core-js']),
         },
       ],
       '@babel/preset-typescript',
-      '@babel/preset-react',
+      [
+        '@babel/preset-react',
+        {
+          runtime: 'automatic',
+        },
+      ],
     ],
-    plugins: [['@babel/plugin-transform-typescript', { isTSX: true }], 'babel-plugin-lodash'],
-    // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038
-    ignore: [new RegExp('d3-array/src/cumsum.js')],
+    plugins: [
+      ['@babel/plugin-transform-typescript', { isTSX: true }],
+      'babel-plugin-lodash',
+      [
+        'webpack-chunkname',
+        {
+          /**
+           * Autogenerate `webpackChunkName` for dynamic imports.
+           *
+           * import('./pages/Home') -> import(/* webpackChunkName: 'sg_pages_Home' *\/'./pages/Home')
+           */
+          getChunkName: (/** @type string */ importPath) => {
+            const chunkName = importPath
+              .replace(/[./]+/g, '_') // replace "." and "/" with "_".
+              .replace(/(^_+)/g, '') // remove all leading "_".
+
+            return `sg_${chunkName}`
+          },
+        },
+      ],
+    ],
   }
 }

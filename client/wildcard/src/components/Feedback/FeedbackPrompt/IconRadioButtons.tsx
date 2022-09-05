@@ -2,12 +2,14 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import { Label } from '../..'
+
 import styles from './IconRadioButtons.module.scss'
 
 interface Icon {
     name: string
     value: number
-    icon: React.ComponentType
+    icon: React.ComponentType<React.PropsWithChildren<unknown>>
 }
 
 interface Props {
@@ -22,7 +24,7 @@ interface Props {
 /**
  * Used to render a list of icons with <input type="radio" />
  */
-export const IconRadioButtons: React.FunctionComponent<Props> = ({
+export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     name,
     icons,
     selected,
@@ -39,7 +41,8 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
         <ul className={classNames(className, styles.buttons)}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <label className={styles.label}>
+                    <Label className={styles.label}>
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             disabled={disabled}
                             type="radio"
@@ -65,7 +68,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
                         >
                             <Icon />
                         </span>
-                    </label>
+                    </Label>
                 </li>
             ))}
         </ul>

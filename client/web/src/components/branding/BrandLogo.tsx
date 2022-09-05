@@ -26,7 +26,7 @@ interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageEle
  * The Sourcegraph logo image. If a custom logo specified in the `branding` site configuration
  * property, it is used instead.
  */
-export const BrandLogo: React.FunctionComponent<Props> = ({
+export const BrandLogo: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     branding,
     assetsRoot,

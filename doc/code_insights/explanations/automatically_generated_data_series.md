@@ -8,7 +8,7 @@ Code Insights with automatically generated data series allow you to "detect and 
 
 Match patterns can be returned with a regular expression containing a capture group, or a pattern within parentheses. 
 
-For example, `file:\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
+For example, `file:pom\.xml|\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
 
 ```
 <java.version>1.5</java.version>
@@ -30,15 +30,15 @@ This feature has some yet-released limitations. In rough order, with limitations
 
 ### Limited to 20 matches
 
-Capture groups will only display 20 returned match values to prevent extremely large result sets from being rendered. If there are more than 20 matches, **a non-deterministic 20 series will be rendered on every reload**. Until we add controls to make this deterministic and configurable, for now we strongly recommend you refine your regular expression so that there are no more than 20 different values returned. 
+Capture groups will only display 20 returned match values to prevent extremely large result sets from being rendered. As of version 3.41.0 controls are available to make this deterministic and configurable.
 
 ### No capture groups in filter strings 
 
 This type of Code Insight only supports capture groups in the main query string. You cannot use a capture group in a filter keywork, like a `repo:` or `file:` filter. 
 
-### No multiline matches
+### No multiline matches (<3.43)
 
-You can only use a single-line regular expression. This means that `^` and `$` characters are still valid but needing to match on a `\n` is not. As a potential workaround to get more granularity, you can still use `file:contains()` and other [search predicates](https://docs.sourcegraph.com/code_search/reference/language#built-in-file-predicate). 
+On Sourcegraph instances on earlier versions than 3.43, you can only use a single-line regular expression. This means that `^` and `$` characters are still valid but needing to match on a `\n` is not. As a potential workaround to get more granularity, you can still use `file:has.content()` and other [search predicates](https://docs.sourcegraph.com/code_search/reference/language#built-in-file-predicate). 
 
 ### No combinations of capture groups 
 

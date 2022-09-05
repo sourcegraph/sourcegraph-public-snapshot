@@ -6,7 +6,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection } from '../site-admin/backend'
@@ -105,19 +105,19 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                         {(this.state.canAddOrError === false ||
                                             isErrorLike(this.state.canAddOrError)) && (
                                             <>
-                                                <p>
+                                                <Text>
                                                     If this is a private repository, check that this site is configured
                                                     with a token that has access to this repository.
-                                                </p>
+                                                </Text>
 
-                                                <p>
+                                                <Text>
                                                     If this is a public repository, check that this repository is
                                                     explicitly listed in an{' '}
                                                     <Link to="/site-admin/external-services">
                                                         external service configuration
                                                     </Link>
                                                     .
-                                                </p>
+                                                </Text>
                                             </>
                                         )}
                                         {this.state.canAddOrError === true && (
@@ -134,7 +134,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                 </div>
                             </div>
                         )}
-                        {!this.state.showAdd && <p>To access this repository, contact the Sourcegraph admin.</p>}
+                        {!this.state.showAdd && <Text>To access this repository, contact the Sourcegraph admin.</Text>}
                     </div>
                 }
             />

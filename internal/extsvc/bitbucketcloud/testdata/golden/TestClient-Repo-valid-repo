@@ -1,0 +1,26 @@
+{
+  "slug": "sourcegraph",
+  "name": "sourcegraph",
+  "full_name": "sourcegraph-testing/sourcegraph",
+  "uuid": "{f46afc56-15a7-4579-9429-1b9329ad4c09}",
+  "scm": "git",
+  "description": "",
+  "parent": null,
+  "is_private": true,
+  "links": {
+   "clone": [
+    {
+     "href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/sourcegraph.git",
+     "name": "https"
+    },
+    {
+     "href": "git@bitbucket.org:sourcegraph-testing/sourcegraph.git",
+     "name": "ssh"
+    }
+   ],
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/sourcegraph"
+   }
+  },
+  "fork_policy": "no_public_forks"
+ }

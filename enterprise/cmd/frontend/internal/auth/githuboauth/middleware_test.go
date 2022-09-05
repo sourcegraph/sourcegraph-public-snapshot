@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -26,10 +28,11 @@ import (
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	const mockUserID = 123
 
@@ -288,7 +291,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		ClientID:     clientID,
 		AllowOrgs:    []string{"myorg"},
 	}}
-	mp.Provider, problems = parseProvider(cfg.Github, db, cfg)
+	mp.Provider, problems = parseProvider(logtest.Scoped(t), cfg.Github, db, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

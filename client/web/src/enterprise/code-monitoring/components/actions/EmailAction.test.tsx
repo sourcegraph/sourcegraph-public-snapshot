@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -14,6 +12,16 @@ import { ActionProps } from '../FormActionArea'
 import { EmailAction, SEND_TEST_EMAIL } from './EmailAction'
 
 describe('EmailAction', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const props: ActionProps = {
         action: undefined,
         setAction: sinon.stub(),
@@ -37,6 +45,27 @@ describe('EmailAction', () => {
             __typename: 'MonitorEmail',
             enabled: true,
             includeResults: false,
+            id: '',
+            recipients: { nodes: [{ id: 'userID' }] },
+        })
+    })
+
+    test('enable include results', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <EmailAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-email'))
+        userEvent.click(getByTestId('include-results-toggle-email'))
+        userEvent.click(getByTestId('submit-action-email'))
+
+        sinon.assert.calledOnceWithExactly(setActionSpy, {
+            __typename: 'MonitorEmail',
+            enabled: true,
+            includeResults: true,
             id: '',
             recipients: { nodes: [{ id: 'userID' }] },
         })
@@ -141,7 +170,7 @@ describe('EmailAction', () => {
     })
 
     describe('Send test email', () => {
-        const mockedVars: SendTestEmailVariables = {
+        const mockedVariables: SendTestEmailVariables = {
             namespace: props.authenticatedUser.id,
             description: props.monitorName,
             email: {
@@ -168,7 +197,7 @@ describe('EmailAction', () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 result: { data: { triggerTestEmailAction: { alwaysNil: null } } },
             }
@@ -198,7 +227,7 @@ describe('EmailAction', () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 error: new Error('An error occurred'),
             }

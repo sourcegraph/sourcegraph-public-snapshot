@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -34,8 +34,7 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 		})
 	}
 
-	frontendURL := conf.Get().ExternalURL
-
+	frontendURL := conf.ExecutorsFrontendURL()
 	authorizationHeader := makeAuthHeaderValue(accessToken)
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 
@@ -53,6 +52,7 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 		ID:             index.ID,
 		Commit:         index.Commit,
 		RepositoryName: index.RepositoryName,
+		FetchTags:      true,
 		DockerSteps:    dockerSteps,
 		CliSteps: []apiclient.CliStep{
 			{

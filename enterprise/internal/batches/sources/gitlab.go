@@ -4,16 +4,17 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -28,9 +29,13 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitLabSource(svc.URN(), &c, cf)
@@ -65,7 +70,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 		}
 	}
 
-	provider := gitlab.NewClientProvider(urn, baseURL, cli)
+	provider := gitlab.NewClientProvider(urn, baseURL, cli, nil)
 	return &GitLabSource{
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),
@@ -73,7 +78,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 }
 
 func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	return GitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -103,8 +108,8 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	remoteProject := c.RemoteRepo.Metadata.(*gitlab.Project)
 	targetProject := c.TargetRepo.Metadata.(*gitlab.Project)
 	exists := false
-	source := git.AbbreviateRef(c.HeadRef)
-	target := git.AbbreviateRef(c.BaseRef)
+	source := gitdomain.AbbreviateRef(c.HeadRef)
+	target := gitdomain.AbbreviateRef(c.BaseRef)
 	targetProjectID := 0
 	if c.RemoteRepo != c.TargetRepo {
 		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
@@ -427,7 +432,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        title,
 		Description:  c.Body,
-		TargetBranch: git.AbbreviateRef(c.BaseRef),
+		TargetBranch: gitdomain.AbbreviateRef(c.BaseRef),
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
@@ -516,4 +521,8 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 	remoteRepo.Metadata = fork
 
 	return &remoteRepo, nil
+}
+
+func (*GitLabSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
 }

@@ -7,8 +7,12 @@ set -eu
 
 echo "~~~ Setting up Honeycomb tracing for the build"
 
+envsubst <./enterprise/dev/ci/scripts/buildevent_file >.buildevent_file
+BUILDEVENT_FILE="$(pwd)/.buildevent_file"
+export BUILDEVENT_FILE
+
 # Record start time if we need to exit
-BUILD_START_TIME=$(curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
+BUILD_START_TIME=$(curl --retry 10 --retry-delay 2 -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
 
 # Convert to UTC & Epoch
 BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
@@ -23,4 +27,14 @@ mkdir -p ./annotations/
 
 # asdf setup
 # ----------
-./dev/ci/asdf-install.sh
+echo "~~~ Preparing asdf dependencies"
+
+if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
+  echo "pipeline-gen step: running go install only"
+  asdf install golang
+elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
+  echo "pipeline-upload step: skipping asdf install"
+else
+  echo "running normal install"
+  ./dev/ci/asdf-install.sh
+fi

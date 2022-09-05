@@ -206,7 +206,7 @@ type mergeRequestEventObjectAttributes struct {
 	Action string `json:"action"`
 }
 
-func (mre *mergeRequestEvent) downcast() (interface{}, error) {
+func (mre *mergeRequestEvent) downcast() (any, error) {
 	e := MergeRequestEventCommon{
 		EventCommon:  mre.EventCommon,
 		MergeRequest: mre.ObjectAttributes.MergeRequest,

@@ -48,7 +48,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
                 const partScore = fzy.score(queryPart, value.text)
                 score += partScore
             }
-            const isAcceptableScore = !isNaN(score) && isFinite(score) && score > 0.2
+            const isAcceptableScore = !isNaN(score) && score > 0.2
             if (isEmptyQuery || isAcceptableScore) {
                 candidates.push({
                     score,

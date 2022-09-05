@@ -1,5 +1,0 @@
-# Test cyclic references between files.
-definition hello().
-reference hello().
-reference hello2().
-

@@ -1,7 +1,8 @@
-import { ApolloClient, createHttpLink, from, NormalizedCacheObject } from '@apollo/client'
+import { ApolloClient, createHttpLink, from, HttpOptions, NormalizedCacheObject } from '@apollo/client'
 import { LocalStorageWrapper, CachePersistor } from 'apollo3-cache-persist'
 import { once } from 'lodash'
 
+import { checkOk } from '../../http-status-error'
 import { buildGraphQLUrl } from '../graphql'
 import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
@@ -12,6 +13,7 @@ interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
     isAuthenticated: boolean
     baseUrl?: string
+    credentials?: 'include' | 'omit' | 'same-origin'
 }
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
@@ -25,7 +27,7 @@ const getApolloPersistCacheKey = (isAuthenticated: boolean): string =>
 
 export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-        const { headers, baseUrl, isAuthenticated } = options
+        const { headers, baseUrl, isAuthenticated, credentials } = options
         const uri = buildGraphQLUrl({ baseUrl })
 
         const persistor = new CachePersistor({
@@ -72,6 +74,8 @@ export const getGraphQLClient = once(
                 createHttpLink({
                     uri: ({ operationName }) => `${uri}?${operationName}`,
                     headers,
+                    credentials,
+                    fetch: customFetch,
                 }),
             ]),
         })
@@ -79,3 +83,5 @@ export const getGraphQLClient = once(
         return Promise.resolve(apolloClient)
     }
 )
+
+const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).then(checkOk)

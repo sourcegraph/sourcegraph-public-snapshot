@@ -1,8 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
@@ -10,12 +8,14 @@ import { EventStatus } from '../../../../graphql-operations'
 
 import styles from './CollapsibleDetailsWithStatus.module.scss'
 
-export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
-    title: string
-    status: EventStatus | 'skipped'
-    message: string
-    startOpen?: boolean
-}> = ({ title, status, message, startOpen = false }) => {
+export const CollapsibleDetailsWithStatus: React.FunctionComponent<
+    React.PropsWithChildren<{
+        title: string
+        status: EventStatus | 'skipped'
+        message: string
+        startOpen?: boolean
+    }>
+> = ({ title, status, message, startOpen = false }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -47,16 +47,24 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
     }, [status])
 
     return (
-        <div className={styles.wrapper}>
-            <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+        <li className={styles.wrapper}>
+            <Button onClick={toggleExpanded} className={styles.expandButton}>
+                {expanded ? (
+                    <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse details." />
+                ) : (
+                    <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand details." />
+                )}
                 <span>{title}</span>
-                <Badge variant={statusBadge} className="ml-2 text-uppercase">
+                <Badge
+                    variant={statusBadge}
+                    className="ml-2 text-uppercase"
+                    aria-label={`, Monitor state: ${statusText}`}
+                >
                     {statusText}
                 </Badge>
             </Button>
 
             {expanded && <pre className={styles.message}>{message}</pre>}
-        </div>
+        </li>
     )
 }

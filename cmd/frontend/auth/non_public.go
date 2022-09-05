@@ -68,12 +68,14 @@ var (
 		router.SiteInit:           {},
 		router.SignIn:             {},
 		router.SignOut:            {},
+		router.UnlockAccount:      {},
 		router.ResetPasswordInit:  {},
 		router.ResetPasswordCode:  {},
 		router.CheckUsernameTaken: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
 		uirouter.RouteSignIn:             {},
+		uirouter.RouteUnlockAccount:      {},
 		uirouter.RouteSignUp:             {},
 		uirouter.RoutePasswordReset:      {},
 		uirouter.RoutePingFromSelfHosted: {},
@@ -125,6 +127,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		"/.api/github-webhooks",
 		"/.api/gitlab-webhooks",
 		"/.api/bitbucket-server-webhooks",
+		"/.api/bitbucket-cloud-webhooks",
 	} {
 		if strings.HasPrefix(req.URL.Path, prefix) {
 			return true

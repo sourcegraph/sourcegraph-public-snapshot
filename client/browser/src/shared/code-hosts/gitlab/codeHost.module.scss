@@ -7,6 +7,15 @@
     z-index: 1001 !important;
 }
 
+:global(.show) > .command-list-popover {
+    display: block;
+}
+
+.command-palette-button > span {
+    display: flex;
+    align-items: center;
+}
+
 .btn-icon {
     img {
         // Gitlab applies this to svgs,
@@ -34,6 +43,8 @@
         background: none;
         color: inherit;
     }
+
+    margin-bottom: 0;
 
     // highlight.js styles
 

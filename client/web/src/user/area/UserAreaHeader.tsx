@@ -26,36 +26,43 @@ export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAre
 /**
  * Header for the user area.
  */
-export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, className = '', ...props }) => {
+export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    url,
+    navItems,
+    className = '',
+    ...props
+}) => {
     /*
      * The path segment would always be recreated on rerenders, thus invalidating the loop over it in PageHeader.
      * As a result, the UserAvatar was always reinstanciated and rendered again, whenever the header rerenders
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () => [
-            {
-                text: (
-                    <span className="align-middle">
-                        {props.user.displayName ? (
-                            <>
-                                {props.user.displayName} ({props.user.username})
-                            </>
-                        ) : (
-                            props.user.username
-                        )}
-                    </span>
-                ),
-                icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-            },
-        ],
+        () => ({
+            text: (
+                <span className="align-middle">
+                    {props.user.displayName ? (
+                        <>
+                            {props.user.displayName} ({props.user.username})
+                        </>
+                    ) : (
+                        props.user.username
+                    )}
+                </span>
+            ),
+            icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+        }),
         [props.user]
     )
 
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader path={path} className="mb-3" />
+                <PageHeader className="mb-3">
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 <div className="d-flex align-items-end justify-content-between">
                     <ul className="nav nav-tabs w-100">
                         {navItems.map(
@@ -69,7 +76,7 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                             exact={exact}
                                         >
                                             <span>
-                                                {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                 <span className="text-content" data-tab-content={label}>
                                                     {label}
                                                 </span>

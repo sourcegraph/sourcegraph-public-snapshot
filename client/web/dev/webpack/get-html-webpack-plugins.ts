@@ -2,11 +2,14 @@ import path from 'path'
 
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin'
 import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plugin'
+import signale from 'signale'
 import { WebpackPluginInstance } from 'webpack'
 
-import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
-const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
+import { createJsContext, ENVIRONMENT_CONFIG } from '../utils'
+
+const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = ENVIRONMENT_CONFIG
 
 export interface WebpackManifest {
     /** Main app entry JS bundle */
@@ -17,6 +20,8 @@ export interface WebpackManifest {
     'runtime.js'?: string
     /** React entry bundle, only used in production mode */
     'react.js'?: string
+    /** Opentelemetry entry bundle, only used in production mode */
+    'opentelemetry.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
 }
@@ -33,6 +38,7 @@ export const getHTMLPage = ({
     'app.css': cssBundle,
     'runtime.js': runtimeBundle,
     'react.js': reactBundle,
+    'opentelemetry.js': oTelBundle,
     isModule,
 }: WebpackManifest): string => `
 <!DOCTYPE html>
@@ -45,7 +51,7 @@ export const getHTMLPage = ({
         <meta name="color-scheme" content="light dark"/>
         ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
         ${
-            environmentConfig.SOURCEGRAPHDOTCOM_MODE
+            ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE
                 ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
                 : ''
         }
@@ -64,6 +70,7 @@ export const getHTMLPage = ({
 
         ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
         ${reactBundle ? `<script src="${reactBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
+        ${oTelBundle ? `<script src="${oTelBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
         <script src="${appBundle}" ${isModule ? 'type="module"' : ''}></script>
     </body>
 </html>
@@ -77,6 +84,8 @@ const getBundleFromPath = (files: string[], filePrefix: string): string | undefi
     files.find(file => file.startsWith(`/.assets/${filePrefix}`))
 
 export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
+    signale.info('Serving `index.html` with `HTMLWebpackPlugin`.')
+
     const htmlWebpackPlugin = new HtmlWebpackPlugin({
         // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
         templateContent: (({ htmlWebpackPlugin }: TemplateParameter): string => {
@@ -93,6 +102,7 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
                 'app.css': getBundleFromPath(files.css, 'styles/app'),
                 'runtime.js': getBundleFromPath(files.js, 'scripts/runtime'),
                 'react.js': getBundleFromPath(files.js, 'scripts/react'),
+                'opentelemetry.js': getBundleFromPath(files.js, 'scripts/opentelemetry'),
             })
         }) as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),

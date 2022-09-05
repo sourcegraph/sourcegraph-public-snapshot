@@ -138,7 +138,7 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 				conf.NewSiteProblem("`observability`: unable to reach Alertmanager - please refer to the Prometheus logs for more details"))
 		}
 
-		b, err := json.Marshal(map[string]interface{}{
+		b, err := json.Marshal(map[string]any{
 			"problems": problems,
 		})
 		if err != nil {
@@ -152,7 +152,11 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 }
 
 func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
+	// Initialize conf package
+	conf.Init()
+
 	// Load initial alerts configuration
+	c.log.Debug("making initial site config load")
 	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
 	diffs := siteConfig.Diff(c.config)
 	if len(diffs) > 0 {

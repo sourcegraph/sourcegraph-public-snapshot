@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -23,22 +25,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -247,16 +247,16 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	}()
 
 	// Blame the first line match.
-	if len(fm.LineMatches) == 0 {
+	if len(fm.ChunkMatches) == 0 {
 		// No line match
 		return time.Time{}, nil
 	}
-	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	hm := fm.ChunkMatches[0]
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    int(lm.LineNumber),
-		EndLine:      int(lm.LineNumber),
-	}, authz.DefaultSubRepoPermsChecker)
+		StartLine:    hm.Ranges[0].Start.Line,
+		EndLine:      hm.Ranges[0].Start.Line,
+	})
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -357,7 +357,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *search.Inputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -371,12 +371,16 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "file")
 		case "file":
 			switch {
+			case si.PatternType == query.SearchTypeStandard:
+				types = append(types, "standard")
 			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
 			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
+			case si.PatternType == query.SearchTypeLucky:
+				types = append(types, "lucky")
 			}
 		}
 	}
@@ -407,7 +411,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			types = append(types, "regexp")
 		} else if q.IsStructural() {
 			types = append(types, "structural")
-		} else if len(si.Query.Fields()["file"]) > 0 {
+		} else if si.Query.Exists(query.FieldFile) {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -424,25 +428,11 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			featureFlags := featureflag.FromContext(ctx)
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
-				if err != nil {
-					log15.Warn("Could not log search latency", "err", err)
-				}
-			}()
+			err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
+			if err != nil {
+				log15.Warn("Could not log search latency", "err", err)
+			}
 		}
-	}
-}
-
-// JobArgs converts the parts of search resolver state to values needed to create search jobs.
-func (r *searchResolver) JobArgs() *job.Args {
-	return &job.Args{
-		SearchInputs: r.SearchInputs,
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
 	}
 }
 
@@ -462,10 +452,14 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
+func logBatch(ctx context.Context, db database.DB, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
-	LogSearchLatency(ctx, db, &wg, searchInputs, srr.ElapsedMilliseconds())
 	defer wg.Wait()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		LogSearchLatency(ctx, db, searchInputs, srr.ElapsedMilliseconds())
+	}()
 
 	var status, alertType string
 	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
@@ -496,7 +490,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 		_ = ev.Send()
 
 		if isSlow {
-			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+			log15.Warn("slow search request", "query", searchInputs.OriginalQuery, "type", requestName, "source", requestSource, "status", status, "alertType", alertType, "durationMs", srr.elapsed.Milliseconds(), "resultSize", n, "error", err)
 		}
 	}
 }
@@ -504,7 +498,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
+	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)
@@ -540,6 +534,7 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 }
 
 type searchResultsStats struct {
+	logger                  log.Logger
 	JApproximateResultCount string
 	JSparkline              []int32
 
@@ -591,16 +586,18 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	attempts := 0
 	var v *SearchResultsResolver
 
-	args := r.JobArgs()
 	for {
 		// Query search results.
-		var err error
-		j, err := job.ToSearchJob(args, r.SearchInputs.Query, r.db)
+		b, err := query.ToBasicQuery(r.SearchInputs.Query)
+		if err != nil {
+			return nil, err
+		}
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, r.client.JobClients(), agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -639,6 +636,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		return nil, err // sparkline generation failed, so don't cache.
 	}
 	stats = &searchResultsStats{
+		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,
@@ -657,12 +655,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-// isContextError returns true if ctx.Err() is not nil or if err
-// is an error caused by context cancelation or timeout.
-func isContextError(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
-}
-
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
 //
 // Supported types:
@@ -676,6 +668,4 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
-
-	ResultCount() int32
 }

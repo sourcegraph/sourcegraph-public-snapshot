@@ -1,4 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -18,6 +18,7 @@ export type FlexTextAreaProps = {
     maxRows?: number
     className?: string
     containerClassName?: string
+    label?: React.ReactNode
 } & InputHTMLAttributes<HTMLInputElement>
 
 /**

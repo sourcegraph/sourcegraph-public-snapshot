@@ -27,7 +27,11 @@ export interface StepsProps {
     totalSteps: number
 }
 
-export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, totalSteps, children }) => {
+export const Steps: React.FunctionComponent<React.PropsWithChildren<StepsProps>> = ({
+    initialStep = 1,
+    totalSteps,
+    children,
+}) => {
     const [state, dispatch] = useReducer(reducer, initialState(initialStep, totalSteps))
 
     if (!children) {
@@ -43,7 +47,7 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, to
     return <StepsContext.Provider value={contextValue}>{children}</StepsContext.Provider>
 }
 
-export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor }) => {
+export const Step: React.FunctionComponent<React.PropsWithChildren<StepProps>> = ({ children, borderColor }) => {
     const { state } = useStepsContext()
     const { setCurrent, stepIndex } = useStepListContext()
     const { current, steps } = state
@@ -78,7 +82,11 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
     )
 }
 
-export const StepList: React.FunctionComponent<StepListProps> = ({ children, numeric, className }) => {
+export const StepList: React.FunctionComponent<React.PropsWithChildren<StepListProps>> = ({
+    children,
+    numeric,
+    className,
+}) => {
     const { state, dispatch } = useStepsContext()
 
     const { initialStep } = state
@@ -126,7 +134,7 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
     )
 }
 
-export const StepPanels: React.FunctionComponent = ({ children }) => {
+export const StepPanels: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const { state } = useStepsContext()
     const { current } = state
 
@@ -150,4 +158,4 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
     return <div className="mt-4 pb-3">{childrenArray[indexArray]}</div>
 }
 
-export const StepPanel: React.FunctionComponent = ({ children }) => <>{children}</>
+export const StepPanel: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => <>{children}</>

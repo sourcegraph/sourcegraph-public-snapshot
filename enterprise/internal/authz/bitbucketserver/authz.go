@@ -1,8 +1,10 @@
 package bitbucketserver
 
 import (
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,19 +22,20 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
-) (ps []authz.Provider, problems []string, warnings []string) {
+) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
 		p, err := newAuthzProvider(c, pluginPerm)
 		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketServer)
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
 		}
 	}
 
-	return ps, problems, warnings
+	return ps, problems, warnings, invalidConnections
 }
 
 func newAuthzProvider(
@@ -43,9 +46,13 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
+	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+		return nil, errLicense
+	}
+
 	var errs error
 
-	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
+	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
 	if err != nil {
 		errs = errors.Append(errs, err)
 		return nil, errs

@@ -8,24 +8,25 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexConnectionResolver struct {
 	db               database.DB
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	resolver         resolvers.Resolver
-	indexesResolver  *resolvers.IndexesResolver
+	indexesResolver  *autoindexinggraphql.IndexesResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, indexesResolver *autoindexinggraphql.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
+		gitserver:        gitserver,
 		resolver:         resolver,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,
@@ -41,7 +42,8 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFIndexRes
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver, r.errTracer))
+		index := convertSharedIndexToDBStoreIndex(r.indexesResolver.Indexes[i])
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, index, r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }

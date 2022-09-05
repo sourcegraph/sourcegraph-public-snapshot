@@ -89,7 +89,7 @@ func TestUser(t *testing.T) {
 						ExpectedResult: `{"user": null}`,
 						ExpectedErrors: []*gqlerrors.QueryError{
 							{
-								Path:          []interface{}{"user"},
+								Path:          []any{"user"},
 								Message:       wantErr,
 								ResolverError: errors.New(wantErr),
 							},
@@ -604,7 +604,7 @@ func TestUser_Organizations(t *testing.T) {
 				ExpectedResult: `{"user": null}`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []interface{}{"user", "organizations"},
+						Path:          []any{"user", "organizations"},
 						Message:       wantErr,
 						ResolverError: errors.New(wantErr),
 					},

@@ -63,6 +63,7 @@ Benefits:
 
 - To the extent that fewer systems are under test compared to e2e tests, they are faster to run, easier to debug, have clearer ownership, and less vulnerable to [flakiness](#flaky-tests).
 - They only need to run on changes that touch code which could make the test fail, which makes CI faster and minimizes the impact of any [flakiness](#flaky-tests).
+- For UI behavior, they run in an actual browser - rather than a JSDOM environment.
 
 Tradeoffs:
 
@@ -72,11 +73,15 @@ Tradeoffs:
 Examples:
 
 - Tests that call our search API to test the behavior of our entire search system.
+- Tests that validate UI styles, through [visual testing](#visual-testing).
 - Tests that validate UI behavior in the browser while mocking out all network requests so no backend is required.
+  - Note: We still typically prefer unit tests here, only fall back to integration tests if you need to test some very specific behavior that cannot be covered in a unit test.
 
 #### End-to-end tests (e2e)
 
 E2e tests test our entire product from the perspective of a user. We try to use them sparingly. Instead, we prefer to get as much confidence as possible from our [unit tests](#unit-tests) and [integration tests](#integration-tests).
+
+> WARNING: You should generally avoid writing e2e tests. If required, they should be as simple as possible and only aim for basic tests on core behavior (e.g. check homepage loads, check sign-in works).
 
 Benefits:
 
@@ -105,10 +110,11 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 
 - Targeted [code reviews](pull_request_reviews.md) can help ensure changes are appropriately tested.
   - If a change contains changes pertaining to the processing or storing of credentials or tokens, authorization, and authentication methods, the `security` label should be added and a review should be requested from members of the [Sourcegraph Security team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security)
-  - If a change requires changes to self-managed, managed, or Sourcegraph Cloud deployment methods, reviews from members of the relevant [Sourcegraph DevOps teams](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops) should be requested
+  - If a change requires changes to self-managed deployment method, get a review from the [Delivery team](https://handbook.sourcegraph.com/departments/engineering/teams/delivery/).
+  - If a change requires changes to Cloud (managed instances), get a review from the [Cloud team](https://handbook.sourcegraph.com/departments/cloud/).
   - Performance-sensitive changes should undergo reviews from other engineers to assess potential performance implications.
 - Deployment considerations can help test things live, detect when things have gone wrong, and limit the scope of risks.
-  - For high-risk changes, consider using [feature flags](../how-to/use_feature_flags.md), such as by rolling a change out to just Sourcegraph teammates and/or to a subset of production customers before rolling it out to all customers in Sourcegraph Cloud or a full release.
+  - For high-risk changes, consider using [feature flags](../how-to/use_feature_flags.md), such as by rolling a change out to just Sourcegraph teammates and/or to a subset of production customers before rolling it out to all customers on Sourcegraph Cloud managed instances or a full release.
   - Introduce adequate [observability measures](observability/index.md) so that issues can easily be detected and monitored.
 - Documentation can help ensure that changes are easy to understand if anything goes wrong, and should be added to [sources of truth](https://handbook.sourcegraph.com/company-info-and-process/communication#sources-of-truth).
   - If the documentation will be published to docs.sourcegraph.com, it can be tested by running `sg run docsite` and navigating to the corrected page.
@@ -151,6 +157,8 @@ No review required: deploys tested changes.
 **We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./ci/index.md) should immediately [disable the flaky test](ci/index.md#flaky-tests).
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
+
+When fixing a flaky test, make sure to re-run the test in a loop to assess whether the fix actually worked. ([Go example](languages/testing_go_code.md#verifying-fixes-to-flaky-tests))
 
 Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
 

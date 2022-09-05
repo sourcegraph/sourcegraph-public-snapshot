@@ -29,7 +29,7 @@ const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Param
     error: NotificationType.Error,
 }
 
-export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
+export const HoverOverlayAlerts: React.FunctionComponent<React.PropsWithChildren<HoverOverlayAlertsProps>> = props => {
     const { hoverAlerts, onAlertDismissed, getAlertClassName, getAlertVariant } = props
 
     const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {

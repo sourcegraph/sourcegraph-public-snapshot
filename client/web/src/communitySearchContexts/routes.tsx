@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteProps } from '../routes'

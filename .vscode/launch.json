@@ -15,6 +15,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview",
+        "--disable-extension=sourcegraph.sourcegraph",
       ],
       "stopOnEntry": false,
       "sourceMaps": true,
@@ -28,9 +29,11 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview",
+        "--disable-extension=sourcegraph.sourcegraph",
         "--extensionDevelopmentKind=web",
         "--disable-web-security",
       ],
+      "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"],
     },
     {
@@ -67,15 +70,6 @@
         // "**/node_modules/rxjs",
       ],
       "smartStep": false,
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "TS-Morph",
-      "program": "${workspaceFolder}/dev/ts-morph/out/main.js",
-      "sourceMaps": true,
-      "skipFiles": ["<node_internals>/**"],
-      "console": "internalConsole",
     },
     {
       "type": "node",

@@ -5,8 +5,9 @@ import * as H from 'history'
 
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Link } from '@sourcegraph/wildcard'
+
+import { Timestamp } from '../../components/time/Timestamp'
 
 import styles from './SearchContextNode.module.scss'
 
@@ -16,10 +17,10 @@ export interface SearchContextNodeProps {
     history: H.History
 }
 
-export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
+export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
 }: SearchContextNodeProps) => (
-    <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
+    <li className={classNames('py-3', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
                 <Link to={`/contexts/${node.spec}`}>
@@ -49,5 +50,5 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                 Updated <Timestamp date={node.updatedAt} noAbout={true} />
             </div>
         </div>
-    </div>
+    </li>
 )

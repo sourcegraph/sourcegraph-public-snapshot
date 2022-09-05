@@ -6,18 +6,19 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import {
+    CodeInsightsBackend,
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
-} from '../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
+    ALL_INSIGHTS_DASHBOARD,
+} from '../core'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -41,11 +42,15 @@ jest.mock('react-router', () => ({
 const mockTelemetryService = {
     log: sinon.spy(),
     logViewEvent: sinon.spy(),
+    logPageView: sinon.spy(),
 }
 
 const fakeApi = new FakeDefaultCodeInsightsBackend()
 
-const Wrapper: React.FunctionComponent<{ api: Partial<CodeInsightsBackend> }> = ({ children, api = {} }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<{ api: Partial<CodeInsightsBackend> }>> = ({
+    children,
+    api = {},
+}) => {
     const extendedApi: CodeInsightsBackend = {
         ...fakeApi,
         ...api,
@@ -63,15 +68,17 @@ const renderWithBrandedContext = (component: React.ReactElement, { route = '/', 
             <MockedTestProvider>
                 <Wrapper api={api}>
                     <MemoryRouter initialEntries={[route]}>
-                        {component}
-                        <Route
-                            path="*"
-                            render={({ history, location }) => {
-                                routerSettings.testHistory = history
-                                routerSettings.testLocation = location
-                                return null
-                            }}
-                        />
+                        <CompatRouter>
+                            {component}
+                            <Route
+                                path="*"
+                                render={({ history, location }) => {
+                                    routerSettings.testHistory = history
+                                    routerSettings.testLocation = location
+                                    return null
+                                }}
+                            />
+                        </CompatRouter>
                     </MemoryRouter>
                 </Wrapper>
             </MockedTestProvider>

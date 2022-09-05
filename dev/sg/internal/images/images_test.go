@@ -3,25 +3,33 @@ package images
 import (
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 )
 
+func mustTime() time.Time {
+	t, err := time.Parse("2006-01-02", "2006-01-02")
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 func TestParseTag(t *testing.T) {
-	stdout.Out.SetVerbose()
 	tests := []struct {
 		name    string
 		tag     string
-		want    *SgImageTag
+		want    *ParsedMainBranchImageTag
 		wantErr bool
 	}{
 		{
 			"base",
 			"12345_2021-01-02_abcdefghijkl",
-			&SgImageTag{
-				buildNum:  12345,
-				date:      "2021-01-02",
-				shortSHA1: "abcdefghijkl",
+			&ParsedMainBranchImageTag{
+				Build:       12345,
+				Date:        "2021-01-02",
+				ShortCommit: "abcdefghijkl",
 			},
 			false,
 		},
@@ -31,10 +39,20 @@ func TestParseTag(t *testing.T) {
 			nil,
 			true,
 		},
+		{
+			"from constructor",
+			images.MainBranchImageTag(mustTime(), "abcde", 1234),
+			&ParsedMainBranchImageTag{
+				Build:       1234,
+				Date:        "2006-01-02",
+				ShortCommit: "abcde",
+			},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseTag(tt.tag)
+			got, err := ParseMainBranchImageTag(tt.tag)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseTag() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -48,8 +66,6 @@ func TestParseTag(t *testing.T) {
 }
 
 func Test_findLatestTag(t *testing.T) {
-	stdout.Out.SetVerbose()
-
 	tests := []struct {
 		name string
 		tags []string
@@ -68,7 +84,7 @@ func Test_findLatestTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := findLatestTag(tt.tags); got != tt.want {
+			if got, _ := findLatestMainTag(tt.tags); got != tt.want {
 				t.Errorf("findLatestTag() = %v, want %v", got, tt.want)
 			}
 		})
@@ -76,8 +92,6 @@ func Test_findLatestTag(t *testing.T) {
 }
 
 func TestParseRawImgString(t *testing.T) {
-	stdout.Out.SetVerbose()
-
 	tests := []struct {
 		name string
 		tag  string

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/goware/urlx"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -27,17 +27,22 @@ type PhabricatorSource struct {
 	conn *schema.PhabricatorConnection
 	cf   *httpcli.Factory
 
-	mu  sync.Mutex
-	cli *phabricator.Client
+	mu     sync.Mutex
+	cli    *phabricator.Client
+	logger log.Logger
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.PhabricatorConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
-	return &PhabricatorSource{svc: svc, conn: &c, cf: cf}, nil
+	return &PhabricatorSource{logger: logger, svc: svc, conn: &c, cf: cf}, nil
 }
 
 // ListRepos returns all Phabricator repositories accessible to all connections configured
@@ -122,7 +127,7 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error
 	}
 
 	if cloneURL == "" {
-		log15.Warn("unable to construct clone URL for repo", "name", name, "phabricator_id", repo.PHID)
+		s.logger.Warn("unable to construct clone URL for repo", log.String("name", name), log.String("phabricator_id", repo.PHID))
 	}
 
 	if name == "" {
@@ -180,39 +185,41 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, s *Store) {
-	cf := httpcli.ExternalClientFactory
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger, s Store) {
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(logger),
+	)
 
 	for {
-		phabs, err := s.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
+		phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {
-			log15.Error("unable to fetch Phabricator connections", "err", err)
+			logger.Error("unable to fetch Phabricator connections", log.Error(err))
 		}
 
 		for _, phab := range phabs {
-			src, err := NewPhabricatorSource(phab, cf)
+			src, err := NewPhabricatorSource(ctx, logger, phab, cf)
 			if err != nil {
-				log15.Error("failed to instantiate PhabricatorSource", "err", err)
+				logger.Error("failed to instantiate PhabricatorSource", log.Error(err))
 				continue
 			}
 
 			repos, err := listAll(ctx, src)
 			if err != nil {
-				log15.Error("Error fetching Phabricator repos", "err", err)
+				logger.Error("Error fetching Phabricator repos", log.Error(err))
 				continue
 			}
 
-			err = updatePhabRepos(ctx, repos)
+			err = updatePhabRepos(ctx, db, repos)
 			if err != nil {
-				log15.Error("Error updating Phabricator repos", "err", err)
+				logger.Error("Error updating Phabricator repos", log.Error(err))
 				continue
 			}
 
-			cfg, err := phab.Configuration()
+			cfg, err := phab.Configuration(ctx)
 			if err != nil {
-				log15.Error("failed to parse Phabricator config", "err", err)
+				logger.Error("failed to parse Phabricator config", log.Error(err))
 				continue
 			}
 
@@ -226,15 +233,10 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s *Store) {
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
+func updatePhabRepos(ctx context.Context, db database.DB, repos []*types.Repo) error {
 	for _, r := range repos {
 		repo := r.Metadata.(*phabricator.Repo)
-		err := internalapi.Client.PhabricatorRepoCreate(
-			ctx,
-			r.Name,
-			repo.Callsign,
-			r.ExternalRepo.ServiceID,
-		)
+		_, err := db.Phabricator().CreateOrUpdate(ctx, repo.Callsign, r.Name, r.ExternalRepo.ServiceID)
 		if err != nil {
 			return err
 		}

@@ -37,7 +37,7 @@ describe('Backend insight drill down filters', () => {
     afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('should update user settings if drill-down filters have been persisted', async () => {
+    it('should update the insight configuration if drill-down filters have been persisted', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
@@ -59,6 +59,24 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                }),
+
+                GetSearchContextByName: () => ({
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph' }],
+                    },
+                }),
+
                 UpdateLineChartSearchInsight: () => ({
                     __typename: 'Mutation',
                     updateLineChartSearchInsight: {
@@ -70,11 +88,20 @@ describe('Backend insight drill down filters', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
+
+        // fill in the excludeRepoRegexp filter
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+
+        // fill in the search context filter regexp
+        await driver.page.click('button[aria-label="search context filter section"]')
+        await driver.page.type('[name="context"]', '@sourcegraph/sourcegraph')
+
+        // Wait until async validation of the search context field is passed
+        await delay(1000)
 
         // Close the drill-down filter panel
         await driver.page.keyboard.press(Key.Escape)
@@ -85,14 +112,25 @@ describe('Backend insight drill down filters', () => {
         // In this time we should see active button state (filter dot should appear if we've got some filters)
         await driver.page.click('button[aria-label="Active filters"]')
 
+        // Wait until async validation of the search context field is passed
+        await delay(500)
+
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
         }, 'UpdateLineChartSearchInsight')
 
         assert.deepStrictEqual(variables.input.viewControls, {
             filters: {
+                searchContexts: ['@sourcegraph/sourcegraph'],
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+            },
+            seriesDisplayOptions: {
+                limit: 20,
+                sortOptions: {
+                    direction: 'DESC',
+                    mode: 'RESULT_COUNT',
+                },
             },
         })
     })
@@ -102,6 +140,7 @@ describe('Backend insight drill down filters', () => {
             ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
             appliedFilters: {
                 __typename: 'InsightViewFilters',
+                searchContexts: [],
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
@@ -128,6 +167,17 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                }),
+
                 FirstStepCreateSearchBasedInsight: () => ({
                     __typename: 'Mutation',
                     createLineChartSearchInsight: {
@@ -147,10 +197,15 @@ describe('Backend insight drill down filters', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
+
+        await driver.page.type('[name="includeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+
+        // Wait until async validation of the search context field is passed
+        await delay(500)
 
         await driver.page.click(
             '[role="dialog"][aria-label="Drill-down filters panel"] button[data-testid="save-as-new-view-button"]'
@@ -175,7 +230,7 @@ describe('Backend insight drill down filters', () => {
                         lineColor: 'var(--oc-red-7)',
                     },
                     repositoryScope: {
-                        repositories: [],
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
                     timeScope: {
                         stepInterval: {
@@ -192,7 +247,7 @@ describe('Backend insight drill down filters', () => {
                         lineColor: 'var(--oc-blue-7)',
                     },
                     repositoryScope: {
-                        repositories: [],
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
                     timeScope: {
                         stepInterval: {
@@ -207,8 +262,16 @@ describe('Backend insight drill down filters', () => {
             },
             viewControls: {
                 filters: {
-                    includeRepoRegex: '',
+                    searchContexts: [],
+                    includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+                },
+                seriesDisplayOptions: {
+                    limit: 20,
+                    sortOptions: {
+                        direction: 'DESC',
+                        mode: 'RESULT_COUNT',
+                    },
                 },
             },
         })

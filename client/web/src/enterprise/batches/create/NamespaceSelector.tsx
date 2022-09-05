@@ -1,9 +1,15 @@
 import React, { useCallback } from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Select } from '@sourcegraph/wildcard'
+import { mdiInformationOutline } from '@mdi/js'
 
-const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { Icon, Select, Tooltip } from '@sourcegraph/wildcard'
+
+type PartialNamespace =
+    | Pick<SettingsUserSubject, '__typename' | 'id' | 'username' | 'displayName'>
+    | Pick<SettingsOrgSubject, '__typename' | 'id' | 'name' | 'displayName'>
+
+const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
         case 'User':
             return namespace.displayName ?? namespace.username
@@ -14,14 +20,12 @@ const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSub
 
 const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 
-interface NamespaceSelectorProps {
-    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
+type NamespaceSelectorProps = {
+    namespaces: PartialNamespace[]
     selectedNamespace: string
-    disabled?: boolean
-    onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
-}
+} & ({ disabled: true; onSelect?: undefined } | { disabled?: false; onSelect: (namespace: PartialNamespace) => void }) // Either the selector is disabled and there's on onSelect, or the selector is enabled and there is one.
 
-export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
+export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
     disabled,
     selectedNamespace,
@@ -29,19 +33,30 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
 }) => {
     const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
+            if (disabled) {
+                return
+            }
+
             const selectedNamespace = namespaces.find(
                 (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
                     namespace.id === event.target.value
             )
             onSelect(selectedNamespace || namespaces[0])
         },
-        [onSelect, namespaces]
+        [disabled, onSelect, namespaces]
     )
 
     return (
         <Select
-            label={<strong className="text-nowrap mb-2">Namespace</strong>}
-            selectClassName="form-control"
+            label={
+                <>
+                    <strong className="text-nowrap mb-2">Namespace</strong>
+                    <Tooltip content="Coming soon">
+                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                    </Tooltip>
+                </>
+            }
+            isCustomStyle={true}
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}
             onChange={onSelectNamespace}

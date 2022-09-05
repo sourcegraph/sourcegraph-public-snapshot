@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { snakeCase } from 'lodash'
@@ -25,6 +25,7 @@ interface ViewOnSourcegraphButtonProps
         Pick<ConfigureSourcegraphButtonProps, 'codeHostType' | 'onConfigureSourcegraphClick'> {
     context: CodeHostContext
     sourcegraphURL: string
+    userSettingsURL?: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
     showSignInButton?: boolean
@@ -34,14 +35,15 @@ interface ViewOnSourcegraphButtonProps
      * This does not guarantee the sign in was successful.
      */
     onSignInClose?: () => void
-
-    onPrivateCloudError: (hasError: boolean) => void
 }
 
-export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
+export const ViewOnSourcegraphButton: React.FunctionComponent<
+    React.PropsWithChildren<ViewOnSourcegraphButtonProps>
+> = ({
     codeHostType,
     repoExistsOrError,
     sourcegraphURL,
+    userSettingsURL,
     context,
     minimalUI,
     onConfigureSourcegraphClick,
@@ -49,7 +51,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     onSignInClose,
     className,
     iconClassName,
-    onPrivateCloudError,
 }) => {
     className = classNames('open-on-sourcegraph', className)
     const mutedIconClassName = classNames(styles.iconMuted, iconClassName)
@@ -59,17 +60,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     }
 
     const { rawRepoName, revision, privateRepository } = context
-
-    const isPrivateCloudError =
-        isDefaultSourcegraphUrl(sourcegraphURL) && repoExistsOrError === false && privateRepository
-
-    useEffect(() => {
-        onPrivateCloudError(isPrivateCloudError)
-
-        return () => {
-            onPrivateCloudError(false)
-        }
-    }, [isPrivateCloudError, onPrivateCloudError])
 
     // Show nothing while loading
     if (repoExistsOrError === undefined) {
@@ -116,18 +106,12 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         )
     }
 
-    if (isPrivateCloudError) {
-        return (
-            <ConfigureSourcegraphButton
-                codeHostType={codeHostType}
-                onConfigureSourcegraphClick={onConfigureSourcegraphClick}
-                {...commonProps}
-            />
-        )
-    }
-
-    // If the repository does not exist, communicate that to explain why e.g. code intelligence does not work
+    // If the repository does not exist, communicate that to explain why e.g. code navigation does not work
     if (!repoExistsOrError) {
+        if (isDefaultSourcegraphUrl(sourcegraphURL) && privateRepository && userSettingsURL) {
+            return <ConfigureSourcegraphButton {...commonProps} codeHostType={codeHostType} href={userSettingsURL} />
+        }
+
         return (
             <SourcegraphIconButton
                 {...commonProps}
@@ -160,17 +144,15 @@ interface ConfigureSourcegraphButtonProps extends Partial<SourcegraphIconButtonP
     onConfigureSourcegraphClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-export const ConfigureSourcegraphButton: React.FunctionComponent<ConfigureSourcegraphButtonProps> = ({
-    onConfigureSourcegraphClick,
-    codeHostType,
-    ...commonProps
-}) => (
+export const ConfigureSourcegraphButton: React.FunctionComponent<
+    React.PropsWithChildren<ConfigureSourcegraphButtonProps>
+> = ({ onConfigureSourcegraphClick, codeHostType, ...commonProps }) => (
     <SourcegraphIconButton
         {...commonProps}
         href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
         onClick={onConfigureSourcegraphClick}
         label="Configure Sourcegraph"
-        title="Set up Sourcegraph for search and code intelligence on private repositories"
-        ariaLabel="Set up Sourcegraph for search and code intelligence on private repositories"
+        title="Set up Sourcegraph for search and code navigation on private repositories"
+        ariaLabel="Set up Sourcegraph for search and code navigation on private repositories"
     />
 )

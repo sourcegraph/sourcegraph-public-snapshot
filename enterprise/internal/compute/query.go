@@ -12,7 +12,7 @@ import (
 
 type Query struct {
 	Command    Command
-	Parameters []query.Parameter
+	Parameters []query.Node
 }
 
 func (q Query) String() string {
@@ -21,16 +21,18 @@ func (q Query) String() string {
 	}
 	return fmt.Sprintf("Command: `%s`, Parameters: `%s`",
 		q.Command.String(),
-		query.Q(query.ToNodes(q.Parameters)).String())
+		query.StringHuman(q.Parameters))
 }
 
 func (q Query) ToSearchQuery() (string, error) {
 	pattern := q.Command.ToSearchPattern()
-	basic := query.Basic{
-		Parameters: q.Parameters,
-		Pattern:    query.Pattern{Value: pattern},
+	expression := []query.Node{
+		query.Operator{
+			Kind:     query.And,
+			Operands: append(q.Parameters, query.Pattern{Value: pattern}),
+		},
 	}
-	return basic.StringHuman(), nil
+	return query.StringHuman(expression), nil
 }
 
 type MatchPattern interface {
@@ -101,6 +103,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"output":             func() query.Predicate { return query.EmptyPredicate{} },
 		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
 		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
+		"output.extra":       func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -178,7 +181,7 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 
 	var matchPattern MatchPattern
 	switch name {
-	case "output", "output.regexp":
+	case "output", "output.regexp", "output.extra":
 		var err error
 		matchPattern, err = toRegexpPattern(left)
 		if err != nil {
@@ -187,13 +190,31 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 	case "output.structural":
 		// structural search doesn't do any match pattern validation
 		matchPattern = &Comby{Value: left}
+
 	default:
 		// unrecognized name
 		return nil, false, nil
 	}
 
+	var typeValue string
+	query.VisitField(q.ToParseTree(), query.FieldType, func(value string, _ bool, _ query.Annotation) {
+		typeValue = value
+	})
+
+	var selector string
+	query.VisitField(q.ToParseTree(), query.FieldSelect, func(value string, _ bool, _ query.Annotation) {
+		selector = value
+	})
+
 	// The default separator is newline and cannot be changed currently.
-	return &Output{SearchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
+	return &Output{
+		SearchPattern: matchPattern,
+		OutputPattern: right,
+		Separator:     "\n",
+		TypeValue:     typeValue,
+		Selector:      selector,
+		Kind:          name,
+	}, true, nil
 }
 
 func parseMatchOnly(q *query.Basic) (Command, bool, error) {
@@ -243,20 +264,39 @@ var parseCommand = first(
 )
 
 func toComputeQuery(plan query.Plan) (*Query, error) {
-	if len(plan) != 1 {
-		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+	if len(plan) < 1 {
+		return nil, errors.New("compute endpoint can't do anything with empty query")
 	}
+
 	command, _, err := parseCommand(&plan[0])
 	if err != nil {
 		return nil, err
 	}
+
+	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
+		// remove the pattern node.
+		return nil
+	})
 	return &Query{
-		Parameters: plan[0].Parameters,
+		Parameters: parameters,
 		Command:    command,
 	}, nil
 }
 
 func Parse(q string) (*Query, error) {
+	parseTree, err := query.ParseRegexp(q)
+	if err != nil {
+		return nil, err
+	}
+	seenPatterns := 0
+	query.VisitPattern(parseTree, func(_ string, _ bool, _ query.Annotation) {
+		seenPatterns += 1
+	})
+
+	if seenPatterns > 1 {
+		return nil, errors.New("compute endpoint cannot currently support expressions in patterns containing 'and', 'or', 'not' (or negation) right now!")
+	}
+
 	plan, err := query.Pipeline(query.InitRegexp(q))
 	if err != nil {
 		return nil, err

@@ -14,7 +14,6 @@ type Range struct {
 	ReferenceResultID      int
 	ImplementationResultID int
 	HoverResultID          int
-	DocumentationResultID  int
 }
 
 // Note [Assignment to fields of structs in maps]
@@ -38,7 +37,6 @@ func (r Range) SetDefinitionResultID(id int) Range {
 		ReferenceResultID:      r.ReferenceResultID,
 		ImplementationResultID: r.ImplementationResultID,
 		HoverResultID:          r.HoverResultID,
-		DocumentationResultID:  r.DocumentationResultID,
 	}
 }
 
@@ -52,7 +50,6 @@ func (r Range) SetReferenceResultID(id int) Range {
 		ReferenceResultID:      id,
 		ImplementationResultID: r.ImplementationResultID,
 		HoverResultID:          r.HoverResultID,
-		DocumentationResultID:  r.DocumentationResultID,
 	}
 }
 
@@ -66,7 +63,6 @@ func (r Range) SetImplementationResultID(id int) Range {
 		ReferenceResultID:      r.ReferenceResultID,
 		ImplementationResultID: id,
 		HoverResultID:          r.HoverResultID,
-		DocumentationResultID:  r.DocumentationResultID,
 	}
 }
 
@@ -80,21 +76,6 @@ func (r Range) SetHoverResultID(id int) Range {
 		ReferenceResultID:      r.ReferenceResultID,
 		ImplementationResultID: r.ImplementationResultID,
 		HoverResultID:          id,
-		DocumentationResultID:  r.DocumentationResultID,
-	}
-}
-
-// Convenience function for setting the field within a map.
-//
-// See Note [Assignment to fields of structs in maps]
-func (r Range) SetDocumentationResultID(id int) Range {
-	return Range{
-		Range:                  r.Range,
-		DefinitionResultID:     r.DefinitionResultID,
-		ReferenceResultID:      r.ReferenceResultID,
-		ImplementationResultID: r.ImplementationResultID,
-		HoverResultID:          r.HoverResultID,
-		DocumentationResultID:  id,
 	}
 }
 
@@ -104,7 +85,6 @@ type ResultSet struct {
 	ReferenceResultID      int
 	ImplementationResultID int
 	HoverResultID          int
-	DocumentationResultID  int
 }
 
 // Convenience function for setting the field within a map.
@@ -117,7 +97,6 @@ func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 		ReferenceResultID:      rs.ReferenceResultID,
 		ImplementationResultID: rs.ImplementationResultID,
 		HoverResultID:          rs.HoverResultID,
-		DocumentationResultID:  rs.DocumentationResultID,
 	}
 }
 
@@ -131,7 +110,6 @@ func (rs ResultSet) SetReferenceResultID(id int) ResultSet {
 		ReferenceResultID:      id,
 		ImplementationResultID: rs.ImplementationResultID,
 		HoverResultID:          rs.HoverResultID,
-		DocumentationResultID:  rs.DocumentationResultID,
 	}
 }
 
@@ -145,7 +123,6 @@ func (rs ResultSet) SetImplementationResultID(id int) ResultSet {
 		ReferenceResultID:      rs.ReferenceResultID,
 		ImplementationResultID: id,
 		HoverResultID:          rs.HoverResultID,
-		DocumentationResultID:  rs.DocumentationResultID,
 	}
 }
 
@@ -159,21 +136,6 @@ func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 		ReferenceResultID:      rs.ReferenceResultID,
 		ImplementationResultID: rs.ImplementationResultID,
 		HoverResultID:          id,
-		DocumentationResultID:  rs.DocumentationResultID,
-	}
-}
-
-// Convenience function for setting the field within a map.
-//
-// See Note [Assignment to fields of structs in maps]
-func (rs ResultSet) SetDocumentationResultID(id int) ResultSet {
-	return ResultSet{
-		ResultSet:              rs.ResultSet,
-		DefinitionResultID:     rs.DefinitionResultID,
-		ReferenceResultID:      rs.ReferenceResultID,
-		ImplementationResultID: rs.ImplementationResultID,
-		HoverResultID:          rs.HoverResultID,
-		DocumentationResultID:  id,
 	}
 }
 

@@ -1,9 +1,5 @@
-import React from 'react'
-
+import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import PlusIcon from 'mdi-react/PlusIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -29,10 +25,10 @@ export default config
 
 export const BasicHeader: Story = () => (
     <PageHeader
-        path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
+        path={[{ icon: mdiPuzzleOutline, text: 'Header' }]}
         actions={
             <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <Icon as={SearchIcon} /> Button with icon
+                <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
             </Button>
         }
     />
@@ -52,7 +48,6 @@ BasicHeader.parameters = {
 export const ComplexHeader: Story = () => (
     <PageHeader
         annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-        path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
         byline={
             <>
                 Created by <Link to="/page">user</Link> 3 months ago
@@ -65,11 +60,20 @@ export const ComplexHeader: Story = () => (
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">
-                    <Icon as={PlusIcon} /> Create
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create
                 </Button>
             </div>
         }
-    />
+    >
+        <PageHeader.Heading as="h2" styleAs="h1">
+            <PageHeader.Breadcrumb to="/level-0" icon={mdiPuzzleOutline} />
+            <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 3</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 4</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 5</PageHeader.Breadcrumb>
+        </PageHeader.Heading>
+    </PageHeader>
 )
 
 ComplexHeader.storyName = 'Complex header'

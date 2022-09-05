@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
+import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -18,6 +18,9 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
+    Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -40,7 +43,9 @@ import { getPaginatedItems, OrgMemberNotification } from './utils'
 
 import styles from './OrgMembersListPage.module.scss'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+interface Props
+    extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        RouteComponentProps {
     onOrgGetStartedRefresh: () => void
 }
 export interface Member {
@@ -64,10 +69,10 @@ interface MemberItemProps {
     isSelf: boolean
     onlyMember: boolean
     orgId: string
-    onMemberRemoved: (username: string) => void
+    onMemberRemoved: (username: string, isSelf: boolean) => void
 }
 
-const MemberItem: React.FunctionComponent<MemberItemProps> = ({
+const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProps>> = ({
     member,
     orgId,
     viewerCanAdminister,
@@ -85,7 +90,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
             eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId }, { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
-            onMemberRemoved(member.username)
+            onMemberRemoved(member.username, isSelf)
         } else {
             eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
@@ -101,12 +106,9 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                     )}
                 >
                     <div className={styles.avatarContainer}>
-                        <UserAvatar
-                            size={36}
-                            className={styles.avatar}
-                            user={member}
-                            data-tooltip={member.displayName || member.username}
-                        />
+                        <Tooltip content={member.displayName || member.username}>
+                            <UserAvatar size={36} className={styles.avatar} user={member} />
+                        </Tooltip>
                     </div>
 
                     <div className="d-flex flex-column">
@@ -131,10 +133,14 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                                 className={styles.memberMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    height={15}
+                                    width={15}
+                                    aria-hidden={true}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>
@@ -156,7 +162,10 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     )
 }
 
-const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: string }> = ({ total, orgName }) => (
+const MembersResultHeader: React.FunctionComponent<React.PropsWithChildren<{ total: number; orgName: string }>> = ({
+    total,
+    orgName,
+}) => (
     <li data-test-membersheader="memberslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -176,10 +185,11 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({
+export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,
+    history,
 }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
@@ -200,7 +210,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationMembers', { organizationId: org.id })
+        eventLogger.logPageView('OrganizationMembers', { organizationId: org.id })
     }, [org.id])
 
     const isSelf = (userId: string): boolean => authenticatedUser !== null && userId === authenticatedUser.id
@@ -231,13 +241,17 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     )
 
     const onMemberRemoved = useCallback(
-        async (username: string) => {
-            setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
-            setPage(1)
-            await onShouldRefetch()
-            onOrgGetStartedRefresh()
+        async (username: string, isSelf: boolean) => {
+            if (isSelf) {
+                history.push(userURL(authenticatedUser.username))
+            } else {
+                setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
+                setPage(1)
+                await onShouldRefetch()
+                onOrgGetStartedRefresh()
+            }
         },
-        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
+        [org.name, onShouldRefetch, onOrgGetStartedRefresh, history, authenticatedUser.username]
     )
 
     const onNotificationDismiss = useCallback(() => {
@@ -316,7 +330,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                 {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
                     <Container className={styles.onlyYouContainer}>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>Looks like it’s just you!</h3>
+                            <H3>Looks like it’s just you!</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}
@@ -325,7 +339,6 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     size="lg"
                                     variant="link"
                                 />

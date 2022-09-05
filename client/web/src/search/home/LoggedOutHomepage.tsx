@@ -1,77 +1,35 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 
-import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
+import { ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
-import { SearchExample, exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
+import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
 import { SelfHostInstructions } from './SelfHostInstructions'
+import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './LoggedOutHomepage.module.scss'
 
-export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
+export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
 
-interface TipsAndTricksProps extends TelemetryProps {
-    title: string
-    examples: SearchExample[]
-    moreLink: {
-        href: string
-        label: string
-    }
-}
-const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
-    title,
-    moreLink,
-    telemetryService,
-    examples,
-}) => {
-    const searchExampleClicked = useCallback(
-        (trackEventName: string) => (): void => telemetryService.log(trackEventName),
-        [telemetryService]
-    )
-    return (
-        <div className={classNames(styles.tipsAndTricks)}>
-            <div className={classNames('mb-2', styles.title)}>{title}</div>
-            <div className={styles.tipsAndTricksExamples}>
-                {examples.map(example => (
-                    <div key={example.query} className={styles.tipsAndTricksExample}>
-                        {example.label}
-                        <Card
-                            as={Link}
-                            to={example.to}
-                            className={styles.tipsAndTricksCard}
-                            onClick={searchExampleClicked(example.trackEventName)}
-                        >
-                            <SyntaxHighlightedSearchQuery query={example.query} />
-                        </Card>
-                    </div>
-                ))}
-            </div>
-            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
-                {moreLink.label}
-            </Link>
-        </div>
-    )
-}
-
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
+export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<LoggedOutHomepageProps>> = props => (
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
                 <GettingStartedTour
-                    isFixedHeight={true}
-                    className={styles.gettingStartedTour}
+                    height={8}
+                    className={classNames(styles.gettingStartedTour, 'h-100')}
                     telemetryService={props.telemetryService}
+                    isSourcegraphDotCom={true}
                 />
                 <div className={styles.videoCard}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
@@ -99,6 +57,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     moreLink={{
                         label: 'More search features',
                         href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                        trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
                     }}
                     {...props}
                 />

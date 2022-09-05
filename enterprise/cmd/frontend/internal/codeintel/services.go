@@ -2,74 +2,95 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
-	"log"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 type Services struct {
-	dbStore     *store.Store
-	lsifStore   *lsifstore.Store
-	repoStore   database.RepoStore
-	uploadStore uploadstore.Store
+	dbStore   *store.Store
+	lsifStore *lsifstore.Store
 
-	// shared with executorqueue
+	// shared with executor queue
 	InternalUploadHandler http.Handler
 	ExternalUploadHandler http.Handler
 
-	locker          *locker.Locker
 	gitserverClient *gitserver.Client
-	indexEnqueuer   *enqueuer.IndexEnqueuer
-	hub             *sentry.Hub
+
+	// used by resolvers
+	AutoIndexingSvc *autoindexing.Service
+	UploadsSvc      *uploads.Service
+	CodeNavSvc      *codenav.Service
+	PoliciesSvc     *policies.Service
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
 	// Initialize tracing/metrics
+	logger := log.Scoped("codeintel", "codeintel services")
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Logger:     logger,
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	// Initialize sentry hub
-	hub := mustInitializeSentryHub(siteConfig)
-
-	// Connect to database
-	codeIntelDB := mustInitializeCodeIntelDB()
-
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
-	locker := locker.NewWithDB(db, "codeintel")
-	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
+
+	// Connect to the separate LSIF database
+	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
+
+	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
+	lsifStore := lsifstore.NewStore(codeIntelDBConnection, siteConfig, observationContext)
+	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
-		log.Fatalf("Failed to initialize upload store: %s", err)
+		logger.Fatal("Failed to initialize upload store", log.Error(err))
 	}
+
+	// Initialize gitserver client & repoupdater
+	gitserverClient := gitserver.New(db, dbStore, observationContext)
+	repoUpdaterClient := repoupdater.New(observationContext)
+
+	// Initialize services
+	uploadSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
+	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
 	newUploadHandler := func(internal bool) http.Handler {
+		if false {
+			// Until this handler has been implemented, we retain the origial
+			// LSIF update handler.
+			//
+			// See https://github.com/sourcegraph/sourcegraph/issues/33375
+
+			return uploadshttp.GetHandler(uploadSvc)
+		}
+
 		return httpapi.NewUploadHandler(
 			db,
 			&httpapi.DBStoreShim{Store: dbStore},
@@ -77,57 +98,34 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			internal,
 			httpapi.DefaultValidatorByCodeHost,
 			operations,
-			hub,
 		)
 	}
 	internalUploadHandler := newUploadHandler(true)
 	externalUploadHandler := newUploadHandler(false)
 
-	// Initialize gitserver client
-	gitserverClient := gitserver.New(db, dbStore, observationContext)
-	repoUpdaterClient := repoupdater.New(observationContext)
-
-	// Initialize the index enqueuer
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient, config.AutoIndexEnqueuerConfig, observationContext)
-
 	return &Services{
-		dbStore:     dbStore,
-		lsifStore:   lsifStore,
-		repoStore:   database.ReposWith(dbStore.Store),
-		uploadStore: uploadStore,
+		dbStore:   dbStore,
+		lsifStore: lsifStore,
 
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,
 
-		locker:          locker,
 		gitserverClient: gitserverClient,
-		indexEnqueuer:   indexEnqueuer,
-		hub:             hub,
+
+		AutoIndexingSvc: autoindexingSvc,
+		UploadsSvc:      uploadSvc,
+		CodeNavSvc:      codenavSvc,
+		PoliciesSvc:     policySvc,
 	}, nil
 }
 
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
-	return db
-}
-
-func mustInitializeSentryHub(c conftypes.WatchableSiteConfig) *sentry.Hub {
-	getDsn := func(c conftypes.SiteConfigQuerier) string {
-		if c.SiteConfig().Log != nil && c.SiteConfig().Log.Sentry != nil {
-			return c.SiteConfig().Log.Sentry.CodeIntelDSN
-		}
-		return ""
-	}
-
-	hub, err := sentry.NewWithDsn(getDsn(c), c, getDsn)
-	if err != nil {
-		log.Fatalf("Failed to initialize sentry hub: %s", err)
-	}
-	return hub
+	return stores.NewCodeIntelDB(db)
 }

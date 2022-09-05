@@ -16,12 +16,14 @@ export interface LoadingSpinnerProps {
     inline?: boolean
 }
 
-export const LoadingSpinner: React.FunctionComponent<LoadingSpinnerProps> = ({ inline = true, className }) => {
+export const LoadingSpinner: React.FunctionComponent<React.PropsWithChildren<LoadingSpinnerProps>> = ({
+    inline = true,
+    className,
+    ...props
+}) => {
     const finalClassName = classNames(styles.loadingSpinner, className)
 
-    if (inline) {
-        return <Icon className={finalClassName} as="div" />
-    }
-
-    return <div className={finalClassName} />
+    return (
+        <Icon inline={inline} aria-label="Loading" aria-live="polite" className={finalClassName} as="div" {...props} />
+    )
 }

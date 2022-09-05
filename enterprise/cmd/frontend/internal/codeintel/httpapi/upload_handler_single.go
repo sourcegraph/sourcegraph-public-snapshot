@@ -7,17 +7,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
 // with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
-func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState, body io.Reader) (_ interface{}, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.handleEnqueueSinglePayload.WithAndLogger(ctx, &err, observation.Args{})
+func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState, body io.Reader) (_ any, statusCode int, err error) {
+	ctx, trace, endObservation := h.operations.handleEnqueueSinglePayload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("statusCode", statusCode),
@@ -40,6 +41,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 		State:             "uploading",
 		NumParts:          1,
 		UploadedParts:     []int{0},
+		UncompressedSize:  uploadState.uncompressedSize,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -56,11 +58,11 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 		return nil, http.StatusInternalServerError, err
 	}
 
-	log15.Info(
+	h.logger.Info(
 		"codeintel.httpapi: enqueued upload",
-		"id", id,
-		"repository_id", uploadState.repositoryID,
-		"commit", uploadState.commit,
+		sglog.Int("id", id),
+		sglog.Int("repository_id", uploadState.repositoryID),
+		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string

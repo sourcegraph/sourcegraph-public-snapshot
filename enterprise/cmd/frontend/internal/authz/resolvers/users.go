@@ -4,13 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -19,7 +17,7 @@ var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 
 // userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
-	ids *roaring.Bitmap
+	ids []int32 // Sorted slice in ascending order of user IDs.
 	db  database.DB
 
 	first int32
@@ -35,39 +33,59 @@ type userConnectionResolver struct {
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
 // is the site admin because this method computes data from all available information in
 // the database.
+// This function takes returns a pagination of the user IDs
+// 	r.ids - the full slice of sorted user IDs
+// 	r.after - (optional) the user ID to start the paging after (does not include the after ID itself)
+// 	r.first - the # of user IDs to return
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
-		// Create the bitmap iterator and advance to the next value of r.after.
-		var afterID api.RepoID
-		if r.after != nil {
-			afterID, r.err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
-			if r.err != nil {
+		var idSubset []int32
+		if r.after == nil {
+			idSubset = r.ids
+		} else {
+			afterID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
+			if err != nil {
+				r.err = err
+				return
+			}
+			for idx, id := range r.ids {
+				if id == int32(afterID) {
+					if idx < len(r.ids)-1 {
+						idSubset = r.ids[idx+1:]
+					}
+					break
+				} else if id > int32(afterID) {
+					if idx < len(r.ids)-1 {
+						idSubset = r.ids[idx:]
+					}
+					break
+				}
+			}
+			if len(idSubset) == 0 {
+				// r.after is set, but there are no elements larger than it, so return empty slice.
+				r.users = []*types.User{}
+				r.pageInfo = graphqlutil.HasNextPage(false)
 				return
 			}
 		}
-		iter := r.ids.Iterator()
-		iter.AdvanceIfNeeded(uint32(afterID) + 1) // Plus 1 since r.after should be excluded.
-
-		userIDs := make([]int32, 0, r.first)
-		for iter.HasNext() {
-			userIDs = append(userIDs, int32(iter.Next()))
-			if len(userIDs) >= int(r.first) {
-				break
-			}
+		// If we have more ids than we need, trim them
+		if int32(len(idSubset)) > r.first {
+			idSubset = idSubset[:r.first]
 		}
 
 		r.users, r.err = r.db.Users().List(ctx, &database.UsersListOptions{
-			UserIDs: userIDs,
+			UserIDs: idSubset,
 		})
 		if r.err != nil {
 			return
 		}
 
-		if iter.HasNext() {
-			endCursor := string(graphqlbackend.MarshalUserID(userIDs[len(userIDs)-1]))
-			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
-		} else {
+		// No more user IDs to paginate through.
+		if idSubset[len(idSubset)-1] == r.ids[len(r.ids)-1] {
 			r.pageInfo = graphqlutil.HasNextPage(false)
+		} else { // Additional user IDs to paginate through.
+			endCursor := string(graphqlbackend.MarshalUserID(idSubset[len(idSubset)-1]))
+			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
 		}
 	})
 	return r.users, r.pageInfo, r.err
@@ -96,7 +114,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 		return -1, err
 	}
 
-	return int32(r.ids.GetCardinality()), nil
+	return int32(len(r.ids)), nil
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

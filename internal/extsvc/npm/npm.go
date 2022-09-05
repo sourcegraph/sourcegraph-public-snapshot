@@ -8,25 +8,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
-	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Client interface {
@@ -34,80 +26,46 @@ type Client interface {
 	//
 	// It is preferable to use this method instead of calling GetDependencyInfo for
 	// multiple versions of a package in a loop.
-	GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackage) (*PackageInfo, error)
+	GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (*PackageInfo, error)
 
 	// GetDependencyInfo gets a dependency's data from the registry.
-	GetDependencyInfo(ctx context.Context, dep *reposource.NpmDependency) (*DependencyInfo, error)
+	GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error)
 
 	// FetchTarball fetches the sources in .tar.gz format for a dependency.
 	//
 	// The caller should close the returned reader after reading.
-	FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error)
+	FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error)
 }
 
-var (
-	observationContext *observation.Context
-	operations         *Operations
-)
-
 func init() {
-	observationContext = &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations = NewOperations(observationContext)
-
 	// The HTTP client will transparently handle caching,
 	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmDependency) (tarball io.ReadCloser, err error) {
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageManagerSyntax()),
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (tarball io.ReadCloser, err error) {
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	return client.FetchTarball(ctx, dependency)
 }
 
-func Exists(ctx context.Context, client Client, dependency *reposource.NpmDependency) (exists bool, err error) {
-	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Bool("exists", exists),
-		otlog.String("dependency", dependency.PackageManagerSyntax()),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if _, err = client.GetDependencyInfo(ctx, dependency); err != nil {
-		if errors.HasType(err, npmError{}) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
 type HTTPClient struct {
 	registryURL string
 	doer        httpcli.Doer
-	limiter     *rate.Limiter
+	limiter     *ratelimit.InstrumentedLimiter
 	credentials string
 }
 
-func NewHTTPClient(registryURL string, rateLimit *schema.NpmRateLimit, credentials string) *HTTPClient {
-	var requestsPerHour float64
-	if rateLimit == nil || !rateLimit.Enabled {
-		requestsPerHour = math.Inf(1)
-	} else {
-		requestsPerHour = rateLimit.RequestsPerHour
-	}
-	defaultLimiter := rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100)
-	cachedLimiter := ratelimit.DefaultRegistry.GetOrSet(registryURL, defaultLimiter)
+func NewHTTPClient(urn string, registryURL string, credentials string, doer httpcli.Doer) *HTTPClient {
 	return &HTTPClient{
-		registryURL,
-		httpcli.ExternalDoer,
-		cachedLimiter,
-		credentials,
+		registryURL: registryURL,
+		doer:        doer,
+		limiter:     ratelimit.DefaultRegistry.Get(urn),
+		credentials: credentials,
 	}
 }
 
@@ -116,7 +74,7 @@ type PackageInfo struct {
 	Versions    map[string]*DependencyInfo `json:"versions"`
 }
 
-func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackage) (info *PackageInfo, err error) {
+func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (info *PackageInfo, err error) {
 	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
 	body, err := client.makeGetRequest(ctx, url)
 	if err != nil {
@@ -133,7 +91,8 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.Np
 }
 
 type DependencyInfo struct {
-	Dist DependencyInfoDist `json:"dist"`
+	Description string             `json:"description"`
+	Dist        DependencyInfoDist `json:"dist"`
 }
 
 type DependencyInfoDist struct {
@@ -154,12 +113,8 @@ func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Resp
 		nethttp.OperationName("npm"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
-	startWait := time.Now()
 	if err := client.limiter.Wait(ctx); err != nil {
 		return nil, err
-	}
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("npm self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 	return client.doer.Do(req)
 }
@@ -174,6 +129,10 @@ func (n npmError) Error() string {
 		return fmt.Sprintf("npm HTTP response %d: %s", n.statusCode, n.err.Error())
 	}
 	return n.err.Error()
+}
+
+func (n npmError) NotFound() bool {
+	return n.statusCode == http.StatusNotFound
 }
 
 func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.ReadCloser, error) {
@@ -203,8 +162,8 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 	return io.NopCloser(&bodyBuffer), nil
 }
 
-func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmDependency) (*DependencyInfo, error) {
-	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
+func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error) {
+	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getVersionedPackage
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	body, err := client.makeGetRequest(ctx, url)
 	if err != nil {
@@ -217,12 +176,11 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 	return &info, nil
 }
 
-func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error) {
-	info, err := client.GetDependencyInfo(ctx, dep)
-	if err != nil {
-		return nil, err
+func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error) {
+	if dep.TarballURL == "" {
+		return nil, errors.New("empty TarballURL")
 	}
-	return client.makeGetRequest(ctx, info.Dist.TarballURL)
+	return client.makeGetRequest(ctx, dep.TarballURL)
 }
 
 var _ Client = &HTTPClient{}

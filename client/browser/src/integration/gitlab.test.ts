@@ -4,7 +4,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
@@ -39,6 +39,10 @@ describe('GitLab', () => {
 
         testContext.server.any('https://gitlab.com/api/v4/projects/*').intercept((request, response) => {
             response.sendStatus(200).send(JSON.stringify({ visibility: 'public' }))
+        })
+
+        testContext.server.any('https://sentry.gitlab.net/*').intercept((request, response) => {
+            response.sendStatus(200)
         })
 
         testContext.overrideGraphQL({
@@ -76,6 +80,18 @@ describe('GitLab', () => {
                     },
                 },
             }),
+            SiteProductVersion: () => ({
+                site: {
+                    productVersion: '129819_2022-02-08_baac612f829f',
+                    buildVersion: '129819_2022-02-08_baac612f829f',
+                    hasCodeIntelligence: true,
+                },
+            }),
+            EnableLegacyExtensions: () => ({
+                site: {
+                    enableLegacyExtensions: true,
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
@@ -85,6 +101,19 @@ describe('GitLab', () => {
     afterEach(() => testContext?.dispose())
 
     it('adds "view on Sourcegraph" buttons to files', async () => {
+        if (readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'replay') {
+            // mock Sourcegraph icon and bootstrap.js loaded by the extension
+            // TODO: double-check it after we update tests snapshots
+            for (const url of [
+                'https://gitlab.com/uploads/-/system/group/avatar/*',
+                'https://gitlab.com/assets/webpack/164.0d16728f.chunk.js',
+            ]) {
+                testContext.server.get(url).intercept((request, response) => {
+                    response.sendStatus(200)
+                })
+            }
+        }
+
         const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
 
         const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
@@ -159,21 +188,19 @@ describe('GitLab', () => {
         )
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
-        // Pause to give codeintellify time to register listeners for
-        // tokenization (only necessary in CI, not sure why).
-        await driver.page.waitForTimeout(1000)
-
-        const lineSelector = '.line'
-
         // Trigger tokenization of the line.
         const lineNumber = 16
-        const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+        const line = await driver.page.waitForSelector(`#LC${lineNumber}`, {
             timeout: 10000,
         })
 
         if (!line) {
             throw new Error(`Found no line with number ${lineNumber}`)
         }
+
+        // Hover line to give codeintellify time to register listeners for
+        // tokenization (only necessary in CI, not sure why).
+        await line.hover()
 
         const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
@@ -184,5 +211,8 @@ describe('GitLab', () => {
                 timeout: 6000,
             },
         })
+
+        // disable flaky snapshot
+        // await percySnapshot(driver.page, 'Browser extension: GitLab - blob view with code intel popup')
     })
 })

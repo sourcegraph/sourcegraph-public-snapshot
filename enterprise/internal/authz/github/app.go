@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -37,20 +39,26 @@ func newAppProvider(
 	}
 
 	apiURL, _ := github.APIRoot(baseURL)
-	appClient := github.NewV3Client(svc.URN(), apiURL, auther, cli)
+	appClient := github.NewV3Client(
+		log.Scoped("app", "github client for github app").
+			With(log.String("appID", appID)),
+		urn, apiURL, auther, cli)
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
 		client: func() (client, error) {
-			token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, appClient, installationID)
+			token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServicesStore, svc, appClient, installationID)
 			if err != nil {
 				return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 			}
 
-			auther = &auth.OAuthBearerToken{Token: token}
+			logger := log.Scoped("installation", "github client for installation").
+				With(log.String("appID", appID), log.Int64("installationID", installationID))
+
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(svc.URN(), apiURL, auther, cli),
+				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli),
 			}, nil
 		},
+		InstallationID: &installationID,
 	}, nil
 }

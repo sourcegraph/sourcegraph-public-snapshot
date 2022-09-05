@@ -1,20 +1,38 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
+import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Select,
+    useObservable,
+    Icon,
+    Modal,
+    Input,
+    Code,
+    Label,
+    H3,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
+import { LoaderButton } from '../components/LoaderButton'
+import { PageTitle } from '../components/PageTitle'
+import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
@@ -26,11 +44,9 @@ export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentPr
     productVersion?: string
 }
 
-export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminFeatureFlagConfigurationProps> = ({
-    match: { params },
-    fetchFeatureFlags = defaultFetchFeatureFlags,
-    productVersion = window.context.version,
-}) => {
+export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
+    React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
+> = ({ match: { params }, fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
     const history = useHistory()
     const productGitVersion = parseProductReference(productVersion)
     const isCreateFeatureFlag = params.name === 'new'
@@ -69,6 +85,13 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
             setOverrides(featureFlagOrError.overrides)
         }
     }, [featureFlagOrError])
+
+    const onOverridesUpdate = useCallback(
+        (overrides: FeatureFlagOverride[]) => {
+            setOverrides(overrides)
+        },
+        [setOverrides]
+    )
 
     // Set up mutations for creation or management of this feature flag.
     const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
@@ -131,6 +154,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                 type={flagType}
                 value={flagValue}
                 overrides={flagOverrides}
+                onOverridesUpdate={onOverridesUpdate}
                 setFlagValue={setFlagValue}
             />
         )
@@ -179,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                         </>
                     ) : (
                         <>
-                            <Icon as={DeleteIcon} /> Delete
+                            <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
                         </>
                     )}
                 </Button>
@@ -230,6 +254,12 @@ interface FeatureFlagOverride {
     value: boolean
 }
 
+interface FeaturefFlagOverrideParsedID {
+    OrgID: number
+    UserID: number
+    FlagName: string
+}
+
 interface FeatureFlagBooleanValue {
     value: boolean
 }
@@ -238,88 +268,372 @@ interface FeatureFlagRolloutValue {
     rolloutBasisPoints: number
 }
 
+interface CreateFeatureFlagOverrideResult {
+    createFeatureFlagOverride: FeatureFlagOverride
+}
+interface CreateFeatureFlagOverrideVariables {
+    namespace: string
+    flagName: string
+    value: boolean
+}
+
 type FeatureFlagValue = FeatureFlagBooleanValue | FeatureFlagRolloutValue
+type FeatureFlagOverrideType = 'User' | 'Org'
+
+const AddFeatureFlagOverride: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        value: boolean
+        onOverrideAdded: (override: FeatureFlagOverride) => void
+    }>
+> = ({ name, value, onOverrideAdded }) => {
+    const [showAddOverride, setShowAddOverride] = useState<boolean>(false)
+    const [overrideValue, setOverrideValue] = useState<boolean>(!value)
+    const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
+    const [namespaceID, setNamespaceID] = useState<number | string>('')
+
+    const getBase64Namespace = useCallback((): string => btoa(`${overrideType}:${namespaceID}`), [
+        namespaceID,
+        overrideType,
+    ])
+
+    const [addOverride, { loading, error, reset }] = useMutation<
+        CreateFeatureFlagOverrideResult,
+        CreateFeatureFlagOverrideVariables
+    >(CREATE_FEATURE_FLAG_OVERRIDE_MUTATION, {
+        variables: {
+            namespace: getBase64Namespace(),
+            flagName: name,
+            value: overrideValue,
+        },
+        onCompleted: data => {
+            onOverrideAdded(data.createFeatureFlagOverride)
+            closeModal()
+        },
+    })
+
+    const closeModal = useCallback(() => {
+        setShowAddOverride(false)
+        setOverrideType('User')
+        setNamespaceID('')
+        setOverrideValue(!value)
+        reset()
+    }, [setShowAddOverride, setOverrideType, setNamespaceID, setOverrideValue, value, reset])
+
+    const openModal = useCallback(
+        (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation()
+            setShowAddOverride(true)
+        },
+        [setShowAddOverride]
+    )
+
+    const setInputValue = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const stringValue = event.target.value.trim()
+            if (stringValue !== '') {
+                setNamespaceID(Number(stringValue))
+            } else {
+                setNamespaceID('')
+            }
+        },
+        [setNamespaceID]
+    )
+
+    return (
+        <div>
+            <Modal isOpen={showAddOverride} onDismiss={closeModal} aria-label="Add Feature Flag Override Modal">
+                <H3>Add feature flag override for {name}</H3>
+                <Form>
+                    <Label className="w-100 mt-4">
+                        Override type
+                        <RadioButtons
+                            nodes={[
+                                {
+                                    id: 'User',
+                                    label: 'User',
+                                },
+                                {
+                                    id: 'Org',
+                                    label: 'Organization',
+                                },
+                            ]}
+                            name="toggle-retention"
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                setOverrideType(event.target.value as FeatureFlagOverrideType)
+                            }
+                            selected={overrideType}
+                        />
+                    </Label>
+                    <Input
+                        inputClassName="mt-2"
+                        label={`${overrideType} ID`}
+                        type="number"
+                        value={namespaceID}
+                        onChange={setInputValue}
+                    />
+                    <Label className="w-100">
+                        <div className="mb-2 mt-2">Value</div>
+                        <Toggle
+                            title="Value"
+                            value={overrideValue}
+                            disabled={false}
+                            onToggle={() => setOverrideValue(!overrideValue)}
+                            aria-describedby="add-feature-flag-override-value-toggle-description"
+                        />
+                        <span className="ml-1 text-capitalize">{Boolean(overrideValue).toString()}</span>
+                    </Label>
+                    {error && <ErrorAlert prefix="Error adding override" error={error} />}
+                    <div className="d-flex justify-content-end">
+                        <Button onClick={closeModal} variant="secondary" className="mr-2">
+                            Cancel
+                        </Button>
+                        <LoaderButton
+                            type="submit"
+                            variant="primary"
+                            disabled={loading || namespaceID === ''}
+                            onClick={() => addOverride()}
+                            label="Add override"
+                            loading={loading}
+                        />
+                    </div>
+                </Form>
+            </Modal>
+            <Button variant="primary" size="sm" className="mt-1 mb-2" onClick={openModal}>
+                Add override
+            </Button>
+        </div>
+    )
+}
+
+const FeatureFlagOverridesHeader: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        type: FeatureFlagType
+        value: FeatureFlagValue
+        overrides: FeatureFlagOverride[]
+        onOverrideAdded: (flag: FeatureFlagOverride) => void
+    }>
+> = ({ name, type, value, overrides, onOverrideAdded }) => {
+    const count = `${overrides.length} override${overrides.length === 1 ? '' : 's'}`
+
+    return (
+        <>
+            <AddFeatureFlagOverride
+                name={name}
+                value={type === 'FeatureFlagBoolean' ? (value as FeatureFlagBooleanValue).value : false}
+                onOverrideAdded={onOverrideAdded}
+            />
+            <div className="mr-auto">{count}</div>
+        </>
+    )
+}
+
+interface UpdateFeatureFlagOverrideResult {
+    updateFeatureFlagOverride: FeatureFlagOverride
+}
+
+const FeatureFlagOverrideItem: FunctionComponent<
+    React.PropsWithChildren<{
+        override: FeatureFlagOverride
+        onUpdate: (value: boolean) => void
+        onDelete: () => void
+    }>
+> = ({ override, onUpdate, onDelete }) => {
+    const { id, value } = override
+
+    const [error, setError] = useState<Error>()
+
+    const { OrgID: orgID, UserID: userID } = JSON.parse(
+        atob(id).replace('FeatureFlagOverride:{', '{')
+    ) as FeaturefFlagOverrideParsedID
+    const nsLabel = orgID > 0 ? 'OrgID' : 'UserID'
+    const nsValue = orgID > 0 ? orgID : userID
+
+    const onError = useCallback(
+        (error: Error) => {
+            setError(error)
+        },
+        [setError]
+    )
+
+    const [deleteFeatureFlagOverride, { loading: deleteOverrideLoading }] = useMutation(
+        DELETE_FEATURE_FLAG_OVERRIDE_MUTATION,
+        {
+            variables: { id },
+            onCompleted: () => {
+                onDelete()
+                setError(undefined)
+            },
+            onError,
+        }
+    )
+
+    const [updateFeatureFlagOverride, { loading: updateOverrideLoading }] = useMutation<
+        UpdateFeatureFlagOverrideResult,
+        FeatureFlagOverride
+    >(UPDATE_FEATURE_FLAG_OVERRIDE_MUTATION, {
+        variables: {
+            id,
+            value: !value,
+        },
+        onCompleted: data => {
+            onUpdate(data.updateFeatureFlagOverride.value)
+            setError(undefined)
+        },
+        onError,
+    })
+
+    return (
+        <li className="d-flex align-items-center p-2">
+            {updateOverrideLoading && <LoadingSpinner />}
+            {error && <ErrorAlert prefix="Error modifying override" error={error} />}
+            <Toggle
+                title="Value"
+                value={value}
+                disabled={updateOverrideLoading}
+                onToggle={() => updateFeatureFlagOverride()}
+                className="mr-1"
+                aria-describedby="feature-flag-override-toggle-description"
+            />
+            <span className="text-capitalize">{Boolean(value).toString()}</span>
+            {/*
+                TODO: querying for namespace of orgId does not work on Cloud,
+                so just present the decoded contents of the ID for now.
+                https://github.com/sourcegraph/sourcegraph/issues/32238
+            */}
+            <strong className="ml-4">{nsLabel}:</strong>
+            <span className="pl-1 mr-auto">{nsValue}</span>
+            <LoaderButton
+                variant="danger"
+                outline={true}
+                className="align-self-end"
+                size="sm"
+                onClick={() => deleteFeatureFlagOverride()}
+                label="Delete Override"
+                loading={deleteOverrideLoading}
+                alwaysShowLabel={true}
+            />
+        </li>
+    )
+}
 
 /**
  * Component with form fields for managing an existing feature flag.
  */
-const ManageFeatureFlag: FunctionComponent<{
-    name: string
-    type: FeatureFlagType
-    value: FeatureFlagValue
-    overrides?: FeatureFlagOverride[]
-    setFlagValue: (flag: FeatureFlagValue) => void
-}> = ({ name, type, value, overrides, setFlagValue }) => (
-    <>
-        <h3>Name</h3>
-        <p>{name}</p>
+const ManageFeatureFlag: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        type: FeatureFlagType
+        value: FeatureFlagValue
+        overrides?: FeatureFlagOverride[]
+        onOverridesUpdate: (overrides: FeatureFlagOverride[]) => void
+        setFlagValue: (flag: FeatureFlagValue) => void
+    }>
+> = ({ name, type, value, overrides, onOverridesUpdate, setFlagValue }) => {
+    const addOverride = useCallback(
+        (override: FeatureFlagOverride): void => {
+            const newOverrides = overrides?.slice() || []
+            newOverrides.push(override)
+            onOverridesUpdate(newOverrides)
+        },
+        [overrides, onOverridesUpdate]
+    )
 
-        <h3>Type</h3>
-        <p>{type.slice('FeatureFlag'.length)}</p>
+    const updateOverride = useCallback(
+        (index: number, value: boolean): void => {
+            if ((overrides?.length || -1) > index) {
+                const newOverrides = overrides?.slice() || []
+                newOverrides[index].value = value
+                onOverridesUpdate(newOverrides)
+            }
+        },
+        [overrides, onOverridesUpdate]
+    )
 
-        <FeatureFlagValueSettings type={type} value={value} setFlagValue={setFlagValue} />
+    const deleteOverride = useCallback(
+        (index: number): void => {
+            if ((overrides?.length || -1) > index) {
+                const newOverrides = overrides?.slice() || []
+                newOverrides?.splice(index, 1)
+                onOverridesUpdate(newOverrides)
+            }
+        },
+        [overrides, onOverridesUpdate]
+    )
 
-        <Collapsible
-            title={<h3>Overrides</h3>}
-            detail={`${overrides?.length || 0} ${overrides?.length !== 1 ? 'overrides' : 'override'}`}
-            className="p-0 font-weight-normal"
-            buttonClassName="mb-0"
-            titleAtStart={true}
-            defaultExpanded={false}
-        >
-            <div className={classNames('pt-2', styles.nodeGrid)}>
-                {overrides?.map(override => (
-                    <React.Fragment key={override.id}>
-                        <div className="py-1 pr-2">
-                            <code>{JSON.stringify(override.value)}</code>
-                        </div>
+    return (
+        <>
+            <H3>Name</H3>
+            <Text>{name}</Text>
 
-                        <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                            {/*
-                                TODO: querying for namespace connection seems to
-                                error out often, so just present the ID for now.
-                                https://github.com/sourcegraph/sourcegraph/issues/32238
-                            */}
-                            <code>{override.id}</code>
-                        </span>
-                    </React.Fragment>
-                ))}
-            </div>
-        </Collapsible>
-    </>
-)
+            <H3>Type</H3>
+            <Text>{type.slice('FeatureFlag'.length)}</Text>
+
+            <FeatureFlagValueSettings type={type} value={value} setFlagValue={setFlagValue} />
+
+            <Collapsible
+                title={<H3>Overrides</H3>}
+                detail={
+                    <FeatureFlagOverridesHeader
+                        overrides={overrides || []}
+                        name={name}
+                        type={type}
+                        value={value}
+                        onOverrideAdded={addOverride}
+                    />
+                }
+                className="p-0 font-weight-normal"
+                buttonClassName="mb-0"
+                titleAtStart={true}
+                defaultExpanded={false}
+                wholeTitleClickable={false}
+            >
+                <Container className={classNames('mb-2 mt-2', styles.featureFlagOverrideList)}>
+                    <ul>
+                        {overrides?.map((override, index) => (
+                            <FeatureFlagOverrideItem
+                                key={override.id}
+                                override={override}
+                                onUpdate={(newValue: boolean) => updateOverride(index, newValue)}
+                                onDelete={() => deleteOverride(index)}
+                            />
+                        ))}
+                    </ul>
+                </Container>
+            </Collapsible>
+        </>
+    )
+}
 
 /**
  * Component with form fields for creating a feature flag.
  */
-const CreateFeatureFlag: React.FunctionComponent<{
-    name?: string
-    setFlagName: (s: string) => void
-    type?: FeatureFlagType
-    setFlagType: (t: FeatureFlagType) => void
-    value?: FeatureFlagValue
-    setFlagValue: (v: FeatureFlagValue) => void
-}> = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
+const CreateFeatureFlag: React.FunctionComponent<
+    React.PropsWithChildren<{
+        name?: string
+        setFlagName: (s: string) => void
+        type?: FeatureFlagType
+        setFlagType: (t: FeatureFlagType) => void
+        value?: FeatureFlagValue
+        setFlagValue: (v: FeatureFlagValue) => void
+    }>
+> = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
     <>
-        <div className="form-group d-flex flex-column">
-            <label htmlFor="name">
-                <h3>Name</h3>
-            </label>
-            <input
-                id="name"
-                type="text"
-                className="form-control"
-                value={name}
-                onChange={({ target: { value } }) => {
-                    setFlagName(value)
-                }}
-            />
-            <small className="form-text text-muted">Required.</small>
-        </div>
+        <Input
+            id="name"
+            value={name}
+            onChange={({ target: { value } }) => {
+                setFlagName(value)
+            }}
+            className="form-group"
+            label={<H3>Name</H3>}
+            message="Required."
+        />
 
         <Select
             id="type"
-            label={<h3>Type</h3>}
+            label={<H3>Type</H3>}
             value={type}
             onChange={({ target: { value } }) => setFlagType(value as FeatureFlagType)}
             message="Required."
@@ -337,11 +651,13 @@ const CreateFeatureFlag: React.FunctionComponent<{
  * Displays a modal for configuring the flag value as a certain type. Can be provided an
  * undefined value to instantiate it based on type.
  */
-const FeatureFlagValueSettings: React.FunctionComponent<{
-    type: FeatureFlagType
-    value?: FeatureFlagValue
-    setFlagValue: (next: FeatureFlagValue) => void
-}> = ({ type, value, setFlagValue }) => {
+const FeatureFlagValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        type: FeatureFlagType
+        value?: FeatureFlagValue
+        setFlagValue: (next: FeatureFlagValue) => void
+    }>
+> = ({ type, value, setFlagValue }) => {
     if (type === 'FeatureFlagRollout') {
         if (!value || !('rolloutBasisPoints' in value)) {
             value = { rolloutBasisPoints: 0 }
@@ -377,22 +693,23 @@ const FeatureFlagValueSettings: React.FunctionComponent<{
     )
 }
 
-const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
-    value: FeatureFlagRolloutValue
-    update: (next: FeatureFlagRolloutValue) => void
-}> = ({ value, update }) => (
-    <div className="form-group d-flex flex-column">
-        <label htmlFor="rollout-value">
-            <h3>Value</h3>
-        </label>
-        <input
+const FeatureFlagRolloutValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        value: FeatureFlagRolloutValue
+        update: (next: FeatureFlagRolloutValue) => void
+    }>
+> = ({ value, update }) => (
+    <div className="form-group d-flex flex-column align-content-start">
+        <Input
             type="range"
             id="rollout-value"
             name="rollout-value"
             step="10"
             min="0"
             max="10000"
-            className="w-25"
+            className="mb-0"
+            label={<H3>Value</H3>}
+            inputClassName="p-0 w-25"
             value={value.rolloutBasisPoints}
             onChange={({ target }) => {
                 update({ rolloutBasisPoints: parseInt(target.value, 10) })
@@ -408,14 +725,16 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
     </div>
 )
 
-const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
-    value: FeatureFlagBooleanValue
-    update: (next: FeatureFlagBooleanValue) => void
-}> = ({ value, update }) => (
+const FeatureFlagBooleanValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        value: FeatureFlagBooleanValue
+        update: (next: FeatureFlagBooleanValue) => void
+    }>
+> = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <label htmlFor="bool-value">
-            <h3>Value</h3>
-        </label>
+        <Label htmlFor="bool-value">
+            <H3>Value</H3>
+        </Label>
         <div className="d-flex">
             <div>
                 <Toggle
@@ -444,10 +763,12 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
  * been implemented yet, or if this Sourcegraph instance does not have a copy of the
  * Sourcegraph repository.
  */
-const ReferencesCollapsible: React.FunctionComponent<{
-    flagName: string | undefined
-    productGitVersion: string
-}> = ({ flagName, productGitVersion }) => {
+const ReferencesCollapsible: React.FunctionComponent<
+    React.PropsWithChildren<{
+        flagName: string | undefined
+        productGitVersion: string
+    }>
+> = ({ flagName, productGitVersion }) => {
     const references = useObservable(
         useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
             flagName,
@@ -459,7 +780,7 @@ const ReferencesCollapsible: React.FunctionComponent<{
     }
     return (
         <Collapsible
-            title={<h3>References</h3>}
+            title={<H3>References</H3>}
             detail={`${references.length} potential feature flag ${pluralize(
                 'reference',
                 references.length
@@ -473,7 +794,7 @@ const ReferencesCollapsible: React.FunctionComponent<{
                 {references.map(reference => (
                     <div key={(flagName || '') + reference.file}>
                         <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
-                            <code>{reference.file}</code>
+                            <Code>{reference.file}</Code>
                         </Link>
                     </div>
                 ))}
@@ -501,6 +822,32 @@ const UPDATE_FEATURE_FLAG_MUTATION = gql`
 const DELETE_FEATURE_FLAG_MUTATION = gql`
     mutation delete($name: String!) {
         deleteFeatureFlag(name: $name) {
+            alwaysNil
+        }
+    }
+`
+
+const CREATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
+    mutation createFeatureFlagOverride($namespace: ID!, $flagName: String!, $value: Boolean!) {
+        createFeatureFlagOverride(namespace: $namespace, flagName: $flagName, value: $value) {
+            id
+            value
+        }
+    }
+`
+
+const UPDATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
+    mutation updateFeatureFlagOverride($id: ID!, $value: Boolean!) {
+        updateFeatureFlagOverride(id: $id, value: $value) {
+            id
+            value
+        }
+    }
+`
+
+const DELETE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
+    mutation deleteFeatureFlagOverride($id: ID!) {
+        deleteFeatureFlagOverride(id: $id) {
             alwaysNil
         }
     }

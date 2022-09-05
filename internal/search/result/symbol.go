@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-lsp"
 )
 
@@ -37,8 +36,8 @@ func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, p
 		character = strings.Index(line, name)
 
 		if character == -1 {
-			// We couldn't find the symbol in the line, so set the column to 0.
-			log15.Warn("Could not infer symbol column", "file", file.Path, "line", lineNumber, "name", name)
+			// We couldn't find the symbol in the line, so set the column to 0. ctags doesn't always
+			// return the right line.
 			character = 0
 		}
 	}

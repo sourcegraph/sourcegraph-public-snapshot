@@ -6,9 +6,12 @@ import { MatchGroup, MatchItem, RankingResult, PerFileResultRanking } from './Pe
  * LineRanking orders hunks purely by line number, disregarding the relevance ranking provided by Zoekt.
  */
 export class LineRanking implements PerFileResultRanking {
+    constructor(private maxMatches: number) {}
+
     public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return calculateMatchGroupsSorted(matches, 10, context)
+        return calculateMatchGroupsSorted(matches, this.maxMatches, context)
     }
+
     public expandedResults(matches: MatchItem[], context: number): RankingResult {
         return calculateMatchGroupsSorted(matches, 0, context)
     }
@@ -44,7 +47,6 @@ const calculateGroupPositions = (
         line: number
         character: number
         highlightLength: number
-        isInContext: boolean
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
@@ -147,7 +149,6 @@ export const calculateMatchGroupsSorted = (
                 line: match.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
-                isInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
             }))
         )
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))

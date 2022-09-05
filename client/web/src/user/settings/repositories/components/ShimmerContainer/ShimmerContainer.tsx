@@ -6,7 +6,7 @@ import styles from './ShimmerContainer.module.scss'
 
 type ShimmerContainerProps = HTMLAttributes<HTMLElement> & { circle?: boolean }
 
-export const ShimmerContainer: React.FunctionComponent<ShimmerContainerProps> = ({
+export const ShimmerContainer: React.FunctionComponent<React.PropsWithChildren<ShimmerContainerProps>> = ({
     children,
     circle,
     className,

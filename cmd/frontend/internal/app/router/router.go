@@ -24,6 +24,7 @@ const (
 	SignIn             = "sign-in"
 	SignOut            = "sign-out"
 	SignUp             = "sign-up"
+	UnlockAccount      = "unlock-account"
 	Welcome            = "welcome"
 	SiteInit           = "site-init"
 	VerifyEmail        = "verify-email"
@@ -35,9 +36,12 @@ const (
 
 	UsageStatsDownload = "usage-stats.download"
 
+	OneClickExportArchive = "one-click-export.archive"
+
 	LatestPing = "pings.latest"
 
 	SetupGitHubAppCloud = "setup.github.app.cloud"
+	SetupGitHubApp      = "setup.github.app"
 
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -75,6 +79,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
 	base.Path("/-/sign-in").Methods("POST").Name(SignIn)
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
+	base.Path("/-/unlock-account").Methods("POST").Name(UnlockAccount)
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
 	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
 
@@ -94,9 +99,12 @@ func newRouter() *mux.Router {
 
 	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
 
+	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
+
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
 	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
+	base.Path("/setup/github/app").Methods("GET").Name(SetupGitHubApp)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

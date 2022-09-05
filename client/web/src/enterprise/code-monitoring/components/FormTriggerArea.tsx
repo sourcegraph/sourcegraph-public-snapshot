@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import CheckIcon from 'mdi-react/CheckIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
 import { QueryState } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -34,44 +33,60 @@ interface TriggerAreaProps extends ThemeProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{
-    checked: boolean
-    hint?: string
-    className?: string
-    dataTestid?: string
-}> = ({ checked, children, hint, className, dataTestid }) => (
-    <label className={classNames('d-flex align-items-center mb-1 text-muted', className)}>
-        <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
-
-        {checked ? (
-            <Icon className={classNames('text-success', styles.checklistCheckbox)} aria-hidden={true} as={CheckIcon} />
-        ) : (
-            <Icon
-                className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
-                aria-hidden={true}
-                as={RadioboxBlankIcon}
-            />
-        )}
-
-        <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
-
-        {hint && (
-            <>
-                <span className="sr-only"> {hint}</span>
-
-                <span data-tooltip={hint} data-placement="bottom" className="d-flex">
+const ValidQueryChecklistItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        checked: boolean
+        hint?: string
+        className?: string
+        dataTestid?: string
+    }>
+> = ({ checked, children, hint, className, dataTestid }) => (
+    <Checkbox
+        wrapperClassName={classNames('d-flex align-items-center text-muted pl-0', className)}
+        className="sr-only"
+        disabled={true}
+        checked={checked}
+        data-testid={dataTestid}
+        id={dataTestid || 'ValidQueryCheckListInput'}
+        label={
+            <div className="d-flex align-items-center mb-1">
+                {checked ? (
                     <Icon
-                        className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                        className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
-                        as={HelpCircleIcon}
+                        svgPath={mdiCheck}
                     />
-                </span>
-            </>
-        )}
-    </label>
+                ) : (
+                    <Icon
+                        className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+                        aria-hidden={true}
+                        svgPath={mdiRadioboxBlank}
+                    />
+                )}
+
+                <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
+
+                {hint && (
+                    <>
+                        <span className="sr-only"> {hint}</span>
+
+                        <Tooltip content={hint} placement="bottom">
+                            <span className="d-inline-flex">
+                                <Icon
+                                    className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                                    aria-hidden={true}
+                                    svgPath={mdiHelpCircle}
+                                />
+                            </span>
+                        </Tooltip>
+                    </>
+                )}
+            </div>
+        }
+    />
 )
 
-export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
+export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<TriggerAreaProps>> = ({
     query,
     onQueryChange,
     triggerCompleted,
@@ -83,10 +98,18 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     isLightTheme,
     isSourcegraphDotCom,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
-    const toggleQueryForm: React.FormEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowQueryForm(show => !show)
+    const [expanded, setExpanded] = useState(startExpanded)
+
+    // Focus card when collapsing
+    const collapsedCard = useRef<HTMLButtonElement>(null)
+    const closeCard = useCallback((): void => {
+        setExpanded(false)
+
+        // Use timeout to wait for render to complete after calling setExpanded
+        // so that collapsedCard is rendered and can be focused.
+        setTimeout(() => {
+            collapsedCard.current?.focus()
+        }, 0)
     }, [])
 
     const [isValidQuery, setIsValidQuery] = useState(false)
@@ -95,13 +118,21 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
+        () =>
+            isValidQuery &&
+            hasTypeDiffOrCommitFilter &&
+            (!isSourcegraphDotCom || hasRepoFilter) &&
+            hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
 
     useEffect(() => {
         const value = queryState.query
@@ -162,20 +193,20 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setTriggerCompleted(true)
             onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowQueryForm(false)
+            closeCard()
             setQueryState({ query })
         },
-        [setShowQueryForm, query]
+        [closeCard, query]
     )
 
     const derivedInputClassName = useMemo(() => {
@@ -190,8 +221,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
     return (
         <>
-            <h3>Trigger</h3>
-            {showQueryForm && (
+            <H3>Trigger</H3>
+            {expanded && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
@@ -204,30 +235,30 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 className={classNames(
                                     'form-control',
                                     styles.queryInputField,
-                                    'test-trigger-input',
                                     `test-${derivedInputClassName}`
                                 )}
                                 data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
+                                    className="test-trigger-input"
                                     editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
-                                    patternType={SearchPatternType.literal}
+                                    patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    onSubmit={() => {}}
                                     globbing={false}
-                                    preventNewLine={false}
+                                    preventNewLine={true}
                                     autoFocus={true}
+                                    applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.query,
-                                        SearchPatternType.literal,
+                                        SearchPatternType.standard,
                                         false
                                     )}`}
                                     target="_blank"
@@ -236,8 +267,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 >
                                     Preview results{' '}
                                     <Icon
+                                        aria-label="Open in new window"
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
-                                        as={OpenInNewIcon}
+                                        svgPath={mdiOpenInNew}
                                     />
                                 </Link>
                             </div>
@@ -250,7 +282,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                    Is <Code>patternType:literal</Code> or <Code>patternType:regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -259,18 +291,21 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                     dataTestid="type-checkbox"
                                 >
-                                    Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                    Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
-                            <li>
-                                <ValidQueryChecklistItem
-                                    checked={hasRepoFilter}
-                                    hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                    dataTestid="repo-checkbox"
-                                >
-                                    Contains a <code>repo:</code> filter
-                                </ValidQueryChecklistItem>
-                            </li>
+                            {/* Enforce repo filter on sourcegraph.com because otherwise it's too easy to generate a lot of load */}
+                            {isSourcegraphDotCom && (
+                                <li>
+                                    <ValidQueryChecklistItem
+                                        checked={hasRepoFilter}
+                                        hint="The repo: filter is required to narrow down your search."
+                                        dataTestid="repo-checkbox"
+                                    >
+                                        Contains a <Code>repo:</Code> filter
+                                    </ValidQueryChecklistItem>
+                                </li>
+                            )}
                             <li>
                                 <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                     Is a valid search query
@@ -295,16 +330,17 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     </div>
                 </Card>
             )}
-            {!showQueryForm && (
+            {!expanded && (
                 <Card
                     data-testid="trigger-button"
                     as={Button}
                     className={classNames('test-trigger-button', cardBtnClassName)}
-                    aria-label="Edit trigger: When there are new search results"
-                    onClick={toggleQueryForm}
+                    onClick={() => setExpanded(true)}
+                    ref={collapsedCard}
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
                         <div>
+                            <VisuallyHidden>Edit trigger: </VisuallyHidden>
                             <div
                                 className={classNames(
                                     'font-weight-bold',
@@ -316,12 +352,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
-                                <code
+                                <Code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
-                                </code>
+                                </Code>
                             ) : (
                                 <span className="text-muted">
                                     This trigger will fire when new search results are found for a given search query.
@@ -329,7 +365,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             )}
                         </div>
                         {triggerCompleted && (
-                            <Button variant="link" as="div">
+                            <Button variant="link" as="div" className="p-0">
                                 Edit
                             </Button>
                         )}

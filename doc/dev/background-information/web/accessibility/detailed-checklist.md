@@ -31,8 +31,9 @@
 
 **Tips:**
 
-- If we have to use a `<h2>` but need the styles of a `<h3>`, we can easily select the correct styles using the [Wildcard `<Heading />` components](https://storybook.sgdev.org/?path=/story/wildcard-typography-all--simple).
-  - Example: `<H3 as={H2}>Hello</H3>`
+- If we have to use an `<h2>` but need the styles of an `<h3>`, we can easily cross styles with the [Wildcard `<Heading />` components](https://storybook.sgdev.org/?path=/story/wildcard-typography--crossing-styles). For example:
+  - `<H3 as={H2}>Hello</H3>` will _downscale_ a style, rendering an `<h2>` with the styles of an `<h3>`
+  - `<Heading as="h2" styleAs="h1">Hello</Heading>` will _upscale_ a style, rendering an `<h2>` with the styles of an `<h1>`
 - If you are still unsure about something, consult the [W3 guide on headings](https://www.w3.org/WAI/tutorials/page-structure/headings/).
 </details>
 
@@ -154,6 +155,7 @@
   - Tip: Use `aria-describedby` to quickly link any relevant labels to the input.
 - It is possible to identify error, warning and success states of the form through text.
   - We cannot assume that a user can identify these through color alone.
+  - Note: Sometimes certain states can be implied (like seeing your form submission appear on the page). We still need to support users who won't be able to identify this. In this case, we should use `screenReaderAnnounce` to communicate messages to screen readers.
 
 **Note:** Forms can be complex! We heavily encourage you to to seek further information using the [W3 forms guide](https://www.w3.org/WAI/tutorials/forms/). Accessibility guidelines can differ depending on the type of form.
 

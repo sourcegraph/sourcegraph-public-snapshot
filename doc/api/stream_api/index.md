@@ -30,7 +30,7 @@ curl --header "Accept: text/event-stream" \
 | parameter | description |
 | --- | --- |
 | access token | [Sourcegraph access token](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) |
-| Sourcegraph URL | The URL of your instance of Sourcegraph or https://sourcegraph.com for Sourcegraph's Cloud instance. |
+| Sourcegraph URL | The URL of your Sourcegraph instance, or https://sourcegraph.com. |
 | query | A Sourcegraph query string, see our [search query syntax](../../code_search/reference/queries.md) |
 | display-limit | The maximum number of matches the backend returns. Defaults to -1 (no limit). If the backend finds more then display-limit results, it will keep searching and aggregating statistics, but the matches will not be returned anymore. Note that the display-limit is different from the query filter `count:` which causes the search to stop and return once we found `count:` matches. |
 
@@ -76,7 +76,7 @@ Refer to the [interface definitions of our typescript client](https://sourcegrap
 
 ## Example (curl) 
 
-On Sourcegraph Cloud we can run queries without authentication.
+On Sourcegraph.com we can run queries without authentication.
 
 ```shellsession
 $ curl --header "Accept: text/event-stream" \
@@ -115,3 +115,7 @@ If you don't want to write your own client, you can also use Sourcegraph's [src-
 ```bash
 src search -stream "secret count:all"
 ```
+
+### Q: Are there plans for supporting a streaming client or interface with more functionality (e.g., parallelizing multiple streaming requests or aggregating results from multiple streams)?
+
+There are currently no plans to support additional client-side functionality to interact with a streaming endpoint. We recommend users write their own scripts or client wrappers that handle, e.g., firing multiple requests, accepting and aggregating the return values, and additional result formatting or processing.

@@ -9,10 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
-
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -20,31 +16,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
-
 // Client access a Pagure via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// Config is the code host connection config for this client
 	Config *schema.PagureConnection
 
 	// URL is the base URL of Pagure.
 	URL *url.URL
 
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
 	// RateLimit is the self-imposed rate limiter (since Pagure does not have a concept
 	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Pagure API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -54,17 +45,11 @@ func NewClient(config *schema.PagureConnection, httpClient httpcli.Doer) (*Clien
 		httpClient = httpcli.ExternalDoer
 	}
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Pagure.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
-		httpClient: httpClient,
 		Config:     config,
 		URL:        u,
-		RateLimit:  l,
+		httpClient: httpClient,
+		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 	}, nil
 }
 
@@ -122,7 +107,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*List
 	return &resp, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" && req.Method != "GET" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -132,13 +117,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		req.Header.Add("Authorization", "token "+c.Config.Token)
 	}
 
-	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Pagure self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)

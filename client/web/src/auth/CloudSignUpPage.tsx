@@ -1,16 +1,15 @@
 import React from 'react'
 
+import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
@@ -21,12 +20,15 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
+    >
 }
 
 const SourceToTitleMap = {
@@ -46,14 +48,13 @@ export const ShowEmailFormQueryParameter = 'showEmail'
 /**
  * Sign up page specifically for Sourcegraph.com
  */
-export const CloudSignUpPage: React.FunctionComponent<Props> = ({
+export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     source,
     showEmailForm,
     onSignUp,
     context,
     telemetryService,
-    featureFlags,
 }) => {
     const location = useLocation()
 
@@ -83,12 +84,16 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     const signUpForm = (
         <SignUpForm
-            featureFlags={featureFlags}
             onSignUp={args => {
                 logEvent('builtin')
                 return onSignUp(args)
             }}
-            context={{ authProviders: [], sourcegraphDotComMode: true }}
+            context={{
+                authProviders: [],
+                authMinPasswordLength: context.authMinPasswordLength,
+                sourcegraphDotComMode: true,
+                experimentalFeatures: context.experimentalFeatures,
+            }}
             buttonLabel="Sign up"
             experimental={true}
             className="my-3"
@@ -117,7 +122,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} aria-hidden={true} svgPath={mdiChevronLeft} />
                     Go back
                 </Link>
             </small>
@@ -137,7 +142,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <h2
+                    <H2
                         className={classNames(
                             'd-flex',
                             'align-items-center',
@@ -158,7 +163,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         ) : (
                             title
                         )}
-                    </h2>
+                    </H2>
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
@@ -183,7 +188,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                 </div>
 
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
-                    <h2>Create a free account</h2>
+                    <H2>Create a free account</H2>
                     {renderAuthMethod()}
 
                     <small className="text-muted">

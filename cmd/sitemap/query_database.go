@@ -11,7 +11,7 @@ import (
 
 type requestKey struct {
 	RequestName string
-	Vars        interface{}
+	Vars        any
 }
 
 type requestValue struct {

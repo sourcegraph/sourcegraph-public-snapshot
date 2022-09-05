@@ -5,24 +5,24 @@ import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
+import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
+
 import {
     PROXY_ROUTES,
     getAPIProxySettings,
-    environmentConfig,
-    STATIC_ASSETS_PATH,
-    STATIC_INDEX_PATH,
+    ENVIRONMENT_CONFIG,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 function startProductionServer(): void {
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('production.server.ts only supports *web-standalone* usage')
     }
 
-    signale.await('Production server', { ...environmentConfig })
+    signale.await('Starting production server', ENVIRONMENT_CONFIG)
 
     const app = express()
 
@@ -30,7 +30,6 @@ function startProductionServer(): void {
     app.use(historyApiFallback() as RequestHandler)
 
     // Serve build artifacts.
-
     app.use(
         '/.assets',
         expressStaticGzip(STATIC_ASSETS_PATH, {
@@ -53,7 +52,7 @@ function startProductionServer(): void {
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
 
-    app.listen(CLIENT_PROXY_DEVELOPMENT_PORT, () => {
+    app.listen(SOURCEGRAPH_HTTP_PORT, () => {
         signale.info(`Production HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
         signale.success(`Production HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     })

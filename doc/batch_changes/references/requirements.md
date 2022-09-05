@@ -14,6 +14,7 @@ Batch Changes is compatible with the following code hosts:
 * Github Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later, Bitbucket Data Center 7.6 and later
+* Bitbucket Cloud (bitbucket.org)
 
 In order for Sourcegraph to interface with these, admins and users must first [configure credentials](../how-tos/configuring_credentials.md) for each relevant code host.
 

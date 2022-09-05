@@ -1,0 +1,102 @@
+.outline {
+    flex: 1;
+    padding: 0.5rem 1rem 1rem 0.5rem;
+    width: 100%;
+    max-width: 20rem;
+    background-color: var(--subtle-bg-2);
+    border-right: 1px solid var(--border-color);
+
+    // Percentage height doesn't work here due to the sticky parent,
+    // so we need to calculate it based on full height without the navbar.
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+.outline-closed {
+    max-width: 2.5rem;
+    padding-right: 0.5rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+.toggle-outline-button {
+    padding: 0;
+    font-size: 1.25rem;
+}
+
+.scrollable-container {
+    overflow: hidden;
+    margin: 0;
+    flex: 1;
+
+    &:hover {
+        overflow: auto;
+    }
+}
+
+.heading {
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.heading-1 {
+    font-weight: 500;
+    padding-left: 0.5rem;
+
+    &:not(:first-child) {
+        padding-top: 0.5rem;
+    }
+
+    .highlight-dot {
+        left: -0.5rem;
+    }
+}
+
+.heading-2 {
+    font-weight: 400;
+    padding: 0.5rem 0 0 1.25rem;
+
+    .highlight-dot {
+        left: -1.25rem;
+    }
+}
+
+.heading-link {
+    display: block;
+    position: relative;
+    color: inherit;
+
+    &:hover {
+        color: inherit;
+    }
+}
+
+// Together display: block, width: and max-width: have the effect of properly
+// positioning the tooltip text to right (or top) of the _visible_ text.
+.heading-link__text {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.highlight {
+    color: var(--body-color);
+}
+
+.highlight-dot {
+    position: absolute;
+    font-weight: 500;
+}

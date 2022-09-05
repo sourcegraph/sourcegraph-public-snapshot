@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
@@ -9,11 +7,11 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 
-import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
+import { getRandomLangStatsMock } from './components/live-preview-chart/constants'
 import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/LangStatsInsightCreationPage',
+    title: 'web/insights/creation-ui/lang-stats/LangStatsInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {

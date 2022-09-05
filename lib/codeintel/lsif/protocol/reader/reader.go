@@ -45,7 +45,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
 	// Pool of buffers used to transfer copies of the scanner slice to unmarshal workers
-	pool := sync.Pool{New: func() interface{} { return new(bytes.Buffer) }}
+	pool := sync.Pool{New: func() any { return new(bytes.Buffer) }}
 
 	// Read the document in a separate go-routine.
 	lineCh := make(chan *bytes.Buffer, ChannelBufferSize)

@@ -24,7 +24,7 @@ exports[`ExtensionCard renders 1`] = `
           class="mb-2"
         >
           <h3
-            class="mb-0 mr-1 text-truncate flex-1"
+            class="h3 mb-0 mr-1 text-truncate flex-1"
           >
             <a
               class=""

@@ -10,7 +10,7 @@ import (
 
 // parseConfigData parses the provided config string into the given cfg struct
 // pointer.
-func parseConfigData(data string, cfg interface{}) error {
+func parseConfigData(data string, cfg any) error {
 	if data != "" {
 		data, err := jsonc.Parse(data)
 		if err != nil {
@@ -25,6 +25,11 @@ func parseConfigData(data string, cfg interface{}) error {
 		// For convenience, make sure this is not nil.
 		if v.ExperimentalFeatures == nil {
 			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+
+		if v.ExperimentalFeatures.EnableLegacyExtensions == nil {
+			// `true` is the default value before the Sourcegraph 4.0 release (should be switched to `false` after the release).
+			v.ExperimentalFeatures.EnableLegacyExtensions = func() *bool { b := true; return &b }()
 		}
 	}
 	return nil
@@ -60,11 +65,13 @@ var requireRestart = []string{
 	"insights.query.worker.concurrency",
 	"insights.commit.indexer.interval",
 	"codeIntelAutoIndexing.enabled",
+	"permissions.syncUsersMaxConcurrency",
+	"gitHubApp",
 }
 
-// NeedRestartToApply determines if a restart is needed to apply the changes
+// needRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *Unified) bool {
+func needRestartToApply(before, after *Unified) bool {
 	// Check every option that changed to determine whether or not a server
 	// restart is required.
 	for option := range diff(before, after) {

@@ -9,7 +9,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -23,12 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type RepositoryResolver struct {
+	logger    log.Logger
 	hydration sync.Once
 	err       error
 
@@ -65,6 +66,10 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 			Name: name,
 			ID:   id,
 		},
+		logger: log.Scoped("repositoryResolver", "resolve a specific repository").
+			With(log.Object("repo",
+				log.String("name", string(name)),
+				log.Int32("id", int32(id)))),
 	}
 }
 
@@ -141,6 +146,17 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+			return nil, nil // not an error
+		}
+		return nil, err
+	}
+	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
+	return &BigInt{Int: repo.RepoSizeBytes}, err
+}
+
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Repo = &id
@@ -172,7 +188,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -195,7 +211,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := git.GetDefaultBranch(ctx, r.db, r.RepoName())
+		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -220,13 +236,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -295,10 +311,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) ResultCount() int32 {
-	return 1
-}
-
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }
@@ -311,6 +323,19 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	kvps := make([]KeyValuePair, 0, len(repo.KeyValuePairs))
+	for k, v := range repo.KeyValuePairs {
+		kvps = append(kvps, KeyValuePair{key: k, value: v})
+	}
+	return kvps, nil
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
@@ -319,7 +344,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 			return
 		}
 
-		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
+		r.logger.Debug("RepositoryResolver.hydrate", log.String("repo.ID", string(r.IDInt32())))
 
 		var repo *types.Repo
 		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
@@ -351,6 +376,10 @@ func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfi
 
 func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
+}
+
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
 func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
@@ -391,9 +420,9 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	_, err := database.Phabricator(r.db).CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
+	_, err := r.db.Phabricator().CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
-		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
+		r.logger.Error("adding phabricator repo", log.String("callsign", args.Callsign), log.Stringp("name", args.URI), log.String("url", args.URL))
 	}
 	return nil, err
 }
@@ -414,12 +443,13 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
+	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = git.ResolveRevision(ctx, db, repo.Name, targetRef, git.ResolveRevisionOptions{
+		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
@@ -435,7 +465,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	origin := ""
-	if phabRepo, err := database.Phabricator(db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := db.Phabricator().GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 
@@ -443,7 +473,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(ctx, db, origin)
+	client, clientErr := makePhabClientForOrigin(ctx, r.logger, db, origin)
 
 	patch := ""
 	if args.Patch != nil {
@@ -491,7 +521,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserver.NewClient(db).CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
@@ -510,7 +540,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -528,7 +558,7 @@ func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string)
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
 				return nil, errors.Wrap(err, "parse config")
 			}
@@ -538,7 +568,8 @@ func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string)
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				log15.Error("makePhabClientForOrigin", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				err := errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)
+				logger.Error("makePhabClientForOrigin", log.Error(err))
 				continue
 			}
 
@@ -559,4 +590,68 @@ func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string)
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
+}
+
+type KeyValuePair struct {
+	key   string
+	value *string
+}
+
+func (k KeyValuePair) Key() string {
+	return k.key
+}
+
+func (k KeyValuePair) Value() *string {
+	return k.value
+}
+
+func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+}
+
+func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	return &EmptyResponse{}, err
+}
+
+func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+}) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }

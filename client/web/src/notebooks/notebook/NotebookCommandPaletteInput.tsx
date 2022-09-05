@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Button, useOnClickOutside } from '@sourcegraph/wildcard'
+import { Button, useOnClickOutside, Input } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
 
@@ -130,13 +130,15 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
         return (
             <div className={styles.root} ref={rootReference} data-testid="notebook-command-palette">
                 <div className={styles.inputRow}>
-                    <input
+                    <Input
                         ref={mergedInputReference}
-                        className={styles.input}
+                        className="w-100"
+                        inputClassName={styles.input}
                         value={input}
                         onKeyDown={onKeyDown}
                         onChange={event => setInput(event.target.value)}
                         placeholder="Type something to get started, paste a file URL, or use / to open the command palette"
+                        aria-label="Type something to get started, paste a file URL, or use / to open the command palette"
                         onFocus={openCommandPalette}
                         data-testid="command-palette-input"
                     />

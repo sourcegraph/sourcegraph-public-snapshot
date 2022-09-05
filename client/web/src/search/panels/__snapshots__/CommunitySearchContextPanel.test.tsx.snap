@@ -8,11 +8,11 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Community search contexts
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"

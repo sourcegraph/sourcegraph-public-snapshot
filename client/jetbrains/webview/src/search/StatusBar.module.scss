@@ -1,0 +1,21 @@
+.status-bar {
+    display: flex;
+    flex-direction: row;
+    height: 2rem;
+    background-color: var(--subtle-bg);
+    align-items: center;
+    flex-shrink: 0;
+    cursor: default;
+
+    border-bottom: 1px solid var(--jb-border-color);
+    border-top: 1px solid var(--jb-border-color);
+}
+
+.progress-count {
+    margin-left: 0;
+    background-color: inherit;
+}
+
+.spacer {
+    flex-grow: 1;
+}

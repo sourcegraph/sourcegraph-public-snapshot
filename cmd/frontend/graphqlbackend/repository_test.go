@@ -3,9 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,12 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -152,6 +157,7 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
+			logger: logtest.Scoped(t),
 			RepoMatch: result.RepoMatch{
 				Name: api.RepoName(name),
 				ID:   api.RepoID(0),
@@ -168,58 +174,40 @@ func TestRepositoryLabel(t *testing.T) {
 func TestRepository_DefaultBranch(t *testing.T) {
 	ctx := context.Background()
 	ts := []struct {
-		name                string
-		symbolicRef         string
-		symbolicRefExitCode int
-		symbolicRefErr      error
-		resolveRevisionErr  error
-		wantBranch          *GitRefResolver
-		wantErr             error
+		name                    string
+		getDefaultBranchRefName string
+		getDefaultBranchErr     error
+		wantBranch              *GitRefResolver
+		wantErr                 error
 	}{
 		{
-			name:        "ref exists",
-			symbolicRef: "refs/heads/main",
-			wantBranch:  &GitRefResolver{name: "refs/heads/main"},
+			name:                    "ref exists",
+			getDefaultBranchRefName: "refs/heads/main",
+			wantBranch:              &GitRefResolver{name: "refs/heads/main"},
 		},
 		{
-			name:           "clone in progress",
-			symbolicRefErr: &gitdomain.RepoNotExistError{CloneInProgress: true},
+			// When clone is in progress GetDefaultBranch returns "", nil
+			name: "clone in progress",
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,
 		},
 		{
 			name:                "symbolic ref fails",
-			symbolicRefExitCode: 1,
-			symbolicRefErr:      errors.New("bad git error"),
+			getDefaultBranchErr: errors.New("bad git error"),
 			wantErr:             errors.New("bad git error"),
-		},
-		{
-			name:               "default branch doesn't exist",
-			symbolicRef:        "refs/heads/main",
-			resolveRevisionErr: &gitdomain.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
-			// Expect it to not fail and not return a resolver.
-			wantBranch: nil,
-			wantErr:    nil,
 		},
 	}
 	for _, tt := range ts {
 		t.Run(tt.name, func(t *testing.T) {
-			git.Mocks.ExecSafe = func(params []string) (stdout []byte, stderr []byte, exitCode int, err error) {
-				return []byte(tt.symbolicRef), nil, tt.symbolicRefExitCode, tt.symbolicRefErr
+			gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+				return tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr
 			}
 			t.Cleanup(func() {
-				git.Mocks.ExecSafe = nil
+				gitserver.Mocks.ResolveRevision = nil
 			})
 
-			git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-				return "", tt.resolveRevisionErr
-			}
-			t.Cleanup(func() {
-				git.Mocks.ResolveRevision = nil
-			})
-
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}}
+			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t)}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {
@@ -239,4 +227,135 @@ func TestRepository_DefaultBranch(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRepository_KVPs(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	db.UsersFunc.SetDefaultReturn(users)
+
+	err := db.Repos().Create(ctx, &types.Repo{
+		Name: "testrepo",
+	})
+	require.NoError(t, err)
+	repo, err := db.Repos().GetByName(ctx, "testrepo")
+	require.NoError(t, err)
+
+	schema := newSchemaResolver(db)
+	gqlID := MarshalRepositoryID(repo.ID)
+
+	strPtr := func(s string) *string { return &s }
+
+	t.Run("add", func(t *testing.T) {
+		_, err = schema.AddRepoKeyValuePair(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val1"),
+		})
+		require.NoError(t, err)
+
+		_, err = schema.AddRepoKeyValuePair(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "tag1",
+			Value: nil,
+		})
+		require.NoError(t, err)
+
+		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		require.NoError(t, err)
+
+		kvps, err := repoResolver.KeyValuePairs(ctx)
+		require.NoError(t, err)
+		sort.Slice(kvps, func(i, j int) bool {
+			return kvps[i].key < kvps[j].key
+		})
+		require.Equal(t, []KeyValuePair{{
+			key:   "key1",
+			value: strPtr("val1"),
+		}, {
+			key:   "tag1",
+			value: nil,
+		}}, kvps)
+	})
+
+	t.Run("update", func(t *testing.T) {
+		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val2"),
+		})
+		require.NoError(t, err)
+
+		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "tag1",
+			Value: strPtr("val3"),
+		})
+		require.NoError(t, err)
+
+		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		require.NoError(t, err)
+
+		kvps, err := repoResolver.KeyValuePairs(ctx)
+		require.NoError(t, err)
+		sort.Slice(kvps, func(i, j int) bool {
+			return kvps[i].key < kvps[j].key
+		})
+		require.Equal(t, []KeyValuePair{{
+			key:   "key1",
+			value: strPtr("val2"),
+		}, {
+			key:   "tag1",
+			value: strPtr("val3"),
+		}}, kvps)
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
+			Repo graphql.ID
+			Key  string
+		}{
+			Repo: gqlID,
+			Key:  "key1",
+		})
+		require.NoError(t, err)
+
+		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
+			Repo graphql.ID
+			Key  string
+		}{
+			Repo: gqlID,
+			Key:  "tag1",
+		})
+		require.NoError(t, err)
+
+		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		require.NoError(t, err)
+
+		kvps, err := repoResolver.KeyValuePairs(ctx)
+		require.NoError(t, err)
+		sort.Slice(kvps, func(i, j int) bool {
+			return kvps[i].key < kvps[j].key
+		})
+		require.Empty(t, kvps)
+	})
 }

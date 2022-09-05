@@ -4,6 +4,9 @@ type WebpackManifest struct {
 	// ReactJSBundlePath contains the file name of the ReactJS
 	// dependency bundle, that is required by our main app bundle.
 	ReactJSBundlePath string `json:"react.js"`
+	// OpenTelemetryJSBundlePath contains the file name of the OpenTelemetry
+	// dependency bundle, that is required by our main app bundle.
+	OpenTelemetryJSBundlePath string `json:"opentelemetry.js"`
 	// AppJSBundlePath contains the file name of the main
 	// Webpack bundle that serves as the entrypoint
 	// for the webapp code.

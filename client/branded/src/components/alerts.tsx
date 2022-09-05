@@ -12,9 +12,10 @@ export const renderError = (error: unknown): string =>
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')
 
-export const ErrorMessage: React.FunctionComponent<{ className?: string; error: unknown }> = ({ className, error }) => (
-    <Markdown className={className} wrapper="span" dangerousInnerHTML={renderError(error)} />
-)
+export const ErrorMessage: React.FunctionComponent<React.PropsWithChildren<{ className?: string; error: unknown }>> = ({
+    className,
+    error,
+}) => <Markdown className={className} wrapper="span" dangerousInnerHTML={renderError(error)} />
 
 export type ErrorAlertProps = {
     /**
@@ -50,7 +51,7 @@ export type ErrorAlertProps = {
  * bullet points, respect line breaks, code and bolded elements.
  * Made to work with Go `multierror`.
  */
-export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
+export const ErrorAlert: React.FunctionComponent<React.PropsWithChildren<ErrorAlertProps>> = ({
     error,
     className,
     icon = true,

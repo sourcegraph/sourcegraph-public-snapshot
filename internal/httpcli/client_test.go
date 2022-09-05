@@ -23,7 +23,11 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -178,7 +182,7 @@ func TestNewCertPool(t *testing.T) {
 			name:  "fails if transport isn't an http.Transport",
 			cli:   &http.Client{Transport: bogusTransport{}},
 			certs: []string{cert},
-			err:   "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
@@ -216,6 +220,11 @@ func TestNewCertPool(t *testing.T) {
 
 func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	timeout := 33 * time.Second
+
+	// originalRoundtripper must only be used in one test, set at this scope for
+	// convenience.
+	originalRoundtripper := &http.Transport{}
+
 	for _, tc := range []struct {
 		name    string
 		cli     *http.Client
@@ -235,7 +244,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",
@@ -246,6 +255,28 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 				if want := timeout; !reflect.DeepEqual(have, want) {
 					t.Fatal(cmp.Diff(have, want))
 				}
+			},
+		},
+		{
+			name: "IdleConnTimeout is set to what is given on a wrapped transport",
+			cli: func() *http.Client {
+				return &http.Client{Transport: &wrappedTransport{
+					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
+					Wrapped:      originalRoundtripper,
+				}}
+			}(),
+			timeout: timeout,
+			assert: func(t testing.TB, cli *http.Client) {
+				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
+				have := (*unwrapped).(*http.Transport).IdleConnTimeout
+
+				// Timeout is set on the underlying transport
+				if want := timeout; !reflect.DeepEqual(have, want) {
+					t.Fatal(cmp.Diff(have, want))
+				}
+
+				// Original roundtripper unchanged!
+				assert.Equal(t, time.Duration(0), originalRoundtripper.IdleConnTimeout)
 			},
 		},
 	} {
@@ -401,6 +432,103 @@ func TestErrorResilience(t *testing.T) {
 		if want := 3; retries != want {
 			t.Fatalf("expected %d retries, got %d", want, retries)
 		}
+	})
+}
+
+func TestLoggingMiddleware(t *testing.T) {
+	failures := int64(3)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := 0
+		switch n := atomic.AddInt64(&failures, -1); n {
+		case 2:
+			status = 500
+		case 1:
+			status = 302
+			w.Header().Set("Location", "/")
+		case 0:
+			status = 404 // last
+		}
+		w.WriteHeader(status)
+	}))
+
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest("GET", srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("log on error", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			func(c *http.Client) error {
+				c.Transport = &notFoundTransport{} // returns an error
+				return nil
+			},
+		).Doer()
+
+		resp, err := cli.Do(req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
+		entry := logEntries[1]
+		assert.Contains(t, entry.Scope, "httpcli")
+		assert.NotEmpty(t, entry.Fields["error"])
+	})
+
+	t.Run("log NewRetryPolicy", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var attemptsLogged int
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for retry log fields
+			retry := entry.Fields["retry"]
+			if retry != nil {
+				// Non-zero number of attempts only
+				retryFields := retry.(map[string]any)
+				assert.NotZero(t, retryFields["attempts"])
+
+				// We must find at least some desired log entries
+				attemptsLogged += 1
+			}
+		}
+		assert.NotZero(t, attemptsLogged)
 	})
 }
 

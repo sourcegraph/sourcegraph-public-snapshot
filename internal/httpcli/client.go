@@ -17,18 +17,20 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -81,6 +83,14 @@ type Factory struct {
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
 
+// CachedTransportOpt is the default transport cache - it will return values from
+// the cache where possible (avoiding a network request) and will additionally add
+// validators (etag/if-modified-since) to repeated requests allowing servers to
+// return 304 / Not Modified.
+//
+// Responses load from cache will have the 'X-From-Cache' header set.
+var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
+
 // ExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
 var ExternalClientFactory = NewExternalClientFactory()
@@ -93,13 +103,19 @@ var (
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-func NewExternalClientFactory() *Factory {
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -110,7 +126,7 @@ func NewExternalClientFactory() *Factory {
 			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
-		NewCachedTransportOpt(redisCache, true),
+		CachedTransportOpt,
 	)
 }
 
@@ -134,12 +150,18 @@ var (
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-func NewInternalClientFactory(subsystem string) *Factory {
+// and middleware pre-set for communicating with internal services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+	}
+	if len(middleware) > 0 {
+		mw = append(mw, middleware...)
+	}
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
@@ -148,6 +170,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
+		RequestClientTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -253,6 +276,73 @@ func GitHubProxyRedirectMiddleware(cli Doer) Doer {
 	})
 }
 
+// GerritUnauthenticateMiddleware rewrites requests to Gerrit code host to
+// make them unauthenticated, used for testing against a non-Authed gerrit instance
+func GerritUnauthenticateMiddleware(cli Doer) Doer {
+	return DoerFunc(func(req *http.Request) (*http.Response, error) {
+		req.URL.Path = strings.ReplaceAll(req.URL.Path, "/a/", "/")
+		req.Header.Del("Authorization")
+		return cli.Do(req)
+	})
+}
+
+// requestContextKey is used to denote keys to fields that should be logged by the logging
+// middleware. They should be set to the request context associated with a response.
+type requestContextKey int
+
+const (
+	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// a request undergoes retries via NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iota
+)
+
+// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// debug level. The provided logger is given the 'httpcli' subscope.
+//
+// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
+func NewLoggingMiddleware(logger log.Logger) Middleware {
+	logger = logger.Scoped("httpcli", "http client")
+
+	return func(d Doer) Doer {
+		return DoerFunc(func(r *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := d.Do(r)
+
+			// Gather fields about this request.
+			fields := append(make([]log.Field, 0, 5), // preallocate some space
+				log.String("host", r.URL.Host),
+				log.String("path", r.URL.Path),
+				log.Duration("duration", time.Since(start)))
+			if err != nil {
+				fields = append(fields, log.Error(err))
+			}
+			// Check incoming request context, unless a response is available, in which
+			// case we check the request associated with the response in case it is not
+			// the same as the original request (e.g. due to retries)
+			ctx := r.Context()
+			if resp != nil {
+				ctx = resp.Request.Context()
+				fields = append(fields, log.Int("code", resp.StatusCode))
+			}
+			// Gather fields from request context. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+				// Get fields from NewRetryPolicy
+				fields = append(fields, log.Object("retry",
+					log.Int("attempts", attempt.Index),
+					log.Error(attempt.Error)))
+			}
+
+			// Log results with link to trace if present
+			trace.Logger(ctx, logger).
+				Debug("request", fields...)
+
+			return resp, err
+		})
+	}
+}
+
 //
 // Common Opts
 //
@@ -263,25 +353,11 @@ func GitHubProxyRedirectMiddleware(cli Doer) Doer {
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
-		// TODO(keegancsmith) for now we don't support unwrappable
-		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
-		// https://github.com/sourcegraph/sourcegraph/pull/71
-		if isUnwrappableTransport(cli) {
-			return nil
-		}
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
 	cli.Transport = &externalTransport{base: tr}
 	return nil
-}
-
-func isUnwrappableTransport(cli *http.Client) bool {
-	if cli.Transport == nil {
-		return false
-	}
-	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
-	return ok
 }
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
@@ -316,6 +392,9 @@ func NewCertPoolOpt(certs ...string) Opt {
 
 // NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
 // of an http.Client with caching using the given Cache.
+//
+// If markCachedResponses, responses returned from the cache will be given an extra header,
+// X-From-Cache.
 func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 	return func(cli *http.Client) error {
 		if cli.Transport == nil {
@@ -339,7 +418,7 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &ot.Transport{RoundTripper: cli.Transport}
+	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
 	return nil
 }
 
@@ -418,6 +497,12 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				span.LogFields(fields...)
 			}
 
+			// Update request context with latest retry for logging middleware
+			if shouldTraceLog {
+				*a.Request = *a.Request.WithContext(
+					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
+			}
+
 			if retry {
 				metricRetry.Inc()
 			}
@@ -426,14 +511,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				return
 			}
 
-			log15.Error(
-				"retrying HTTP request failed",
-				"attempt", a.Index,
-				"method", a.Request.Method,
-				"url", a.Request.URL,
-				"status", status,
-				"err", a.Error,
-			)
 		}()
 
 		if a.Response != nil {
@@ -587,15 +664,30 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		cli.Transport = http.DefaultTransport
 	}
 
-	tr, ok := cli.Transport.(*http.Transport)
-	if !ok {
-		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
+	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
+	// replace it.
+	var transport *http.Transport
+	switch v := cli.Transport.(type) {
+	case *http.Transport:
+		transport = v.Clone()
+		// Replace underlying implementation
+		cli.Transport = transport
+
+	case WrappedTransport:
+		wrapped := unwrapAll(v)
+		t, ok := (*wrapped).(*http.Transport)
+		if !ok {
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+		}
+		transport = t.Clone()
+		// Replace underlying implementation
+		*wrapped = transport
+
+	default:
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
 	}
 
-	tr = tr.Clone()
-	cli.Transport = tr
-
-	return tr, nil
+	return transport, nil
 }
 
 // ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
@@ -607,7 +699,27 @@ func ActorTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+// RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
+// the original client's IP from the context and add it to each request's HTTP headers.
+//
+// Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
+func RequestClientTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
 }

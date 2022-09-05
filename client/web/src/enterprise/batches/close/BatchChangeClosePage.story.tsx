@@ -1,11 +1,9 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../components/WebStory'
@@ -26,14 +24,20 @@ import {
 
 import { BatchChangeClosePage } from './BatchChangeClosePage'
 
-const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/close/BatchChangeClosePage',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const now = new Date()
 
@@ -58,6 +62,10 @@ const batchChangeDefaults: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/specid',
     namespace: {
+        __typename: 'User',
+        id: '1234',
+        displayName: null,
+        username: 'alice',
         namespaceName: 'alice',
         url: '/users/alice',
     },
@@ -76,6 +84,7 @@ const batchChangeDefaults: BatchChangeFields = {
         id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        source: BatchSpecSource.REMOTE,
         codeHostsWithoutWebhooks: {
             nodes: [],
             pageInfo: { hasNextPage: false },
@@ -84,6 +93,7 @@ const batchChangeDefaults: BatchChangeFields = {
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
+        pageInfo: { hasNextPage: false },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
@@ -243,8 +253,8 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-add('Overview', () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
+export const Overview: Story = args => {
+    const viewerCanAdminister = args.viewerCanAdminister
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...batchChangeDefaults,
@@ -270,9 +280,15 @@ add('Overview', () => {
             )}
         </WebStory>
     )
-})
+}
+Overview.argTypes = {
+    viewerCanAdminister: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+}
 
-add('No open changesets', () => {
+export const NoOpenChangesets: Story = () => {
     const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     const queryEmptyChangesets = useCallback(
@@ -305,4 +321,6 @@ add('No open changesets', () => {
             )}
         </WebStory>
     )
-})
+}
+
+NoOpenChangesets.storyName = 'No open changesets'

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { act } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
@@ -10,6 +8,21 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { UserSubscriptionsEditProductSubscriptionPage } from './UserSubscriptionsEditProductSubscriptionPage'
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
+
+jest.mock('../../dotcom/productSubscriptions/features', () => ({
+    billingPublishableKey: 'publishable-key',
+}))
+
+jest.mock('@stripe/stripe-js', () => ({
+    ...jest.requireActual('@stripe/stripe-js'),
+    loadStripe: () =>
+        Promise.resolve({
+            elements: () => {},
+            createToken: () => {},
+            createPaymentMethod: () => {},
+            confirmCardPayment: () => {},
+        }),
+}))
 
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')

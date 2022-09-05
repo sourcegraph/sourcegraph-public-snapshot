@@ -39,13 +39,8 @@
 .container {
     width: 37.25rem;
     max-width: calc(100vw - 2rem);
-}
 
-.progress {
-    width: 50.25rem;
-    max-width: 100%;
-
-    @media (--md-breakpoint-down) {
+    @media (--sm-breakpoint-down) {
         ol {
             flex-direction: column;
         }

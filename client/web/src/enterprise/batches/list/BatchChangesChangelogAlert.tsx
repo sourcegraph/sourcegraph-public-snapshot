@@ -2,21 +2,23 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { CardBody, Card, H3, H4 } from '@sourcegraph/wildcard'
+
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 import styles from './BatchChangesListIntro.module.scss'
 
-export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
+export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.37"
+        partialStorageKey="batch-changes-list-intro-changelog-3.42"
     >
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody>
-                <h4>Batch Changes updates in version 3.37</h4>
+                <H4 as={H3}>Batch Changes updates in version 3.42</H4>
                 <ul className="mb-0 pl-3">
-                    <li>Nothing noteworthy this time.</li>
+                    <li>Mounted files can be cached when executing a batch spec.</li>
+                    <li>Improved keyboard navigation for server-side execution flow.</li>
                 </ul>
             </CardBody>
         </Card>

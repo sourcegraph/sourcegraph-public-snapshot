@@ -1,17 +1,17 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
-import { useLocation } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { createPlatformContext } from '../../platform/context'
-import { fetchHighlightedFileLineRanges } from '../../repo/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
@@ -20,24 +20,28 @@ import { NotebookContent, NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
     extends Pick<
-        NotebookContentProps,
-        | 'isLightTheme'
-        | 'searchContextsEnabled'
-        | 'showSearchContext'
-        | 'isSourcegraphDotCom'
-        | 'authenticatedUser'
-        | 'settingsCascade'
-    > {
+            NotebookContentProps,
+            | 'isLightTheme'
+            | 'searchContextsEnabled'
+            | 'showSearchContext'
+            | 'isSourcegraphDotCom'
+            | 'authenticatedUser'
+            | 'settingsCascade'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     notebookId: string
 }
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageProps> = ({ notebookId, ...props }) => {
-    useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
-
-    const platformContext = useMemo(() => createPlatformContext(), [])
-    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
+    notebookId,
+    platformContext,
+    extensionsController,
+    ...props
+}) => {
+    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -50,7 +54,18 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
         )
     )
 
-    const location = useLocation()
+    const fetchHighlightedFileLineRanges = useCallback(
+        (parameters: FetchFileParameters, force?: boolean) =>
+            fetchHighlightedFileLineRangesShared(
+                {
+                    ...parameters,
+                    platformContext,
+                },
+                force
+            ),
+        [platformContext]
+    )
+
     return (
         <div className="p-3">
             {notebookOrError === LOADING && (
@@ -66,7 +81,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
             {notebookOrError && notebookOrError !== LOADING && !isErrorLike(notebookOrError) && (
                 <NotebookContent
                     {...props}
-                    location={location}
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}
                     viewerCanManage={false}

@@ -2,13 +2,15 @@ package reconciler
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -40,14 +42,15 @@ func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store)
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		tx, err := r.store.Transact(ctx)
 		if err != nil {
 			return err
 		}
 		defer func() { err = tx.Done(err) }()
 
-		return r.process(ctx, tx, record.(*btypes.Changeset))
+		ctx = metrics.ContextWithTask(ctx, "Batches.Reconciler")
+		return r.process(ctx, logger, tx, record.(*btypes.Changeset))
 	}
 }
 
@@ -65,7 +68,7 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *btypes.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) error {
 	// Reset the error message.
 	ch.FailureMessage = nil
 
@@ -74,15 +77,18 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *btypes.Ch
 		return nil
 	}
 
-	plan, err := DeterminePlan(prev, curr, ch)
+	// Pass nil since there is no "current" changeset. The changeset has already been updated in the DB to the wanted
+	// state. Current changeset is only (at the moment) used for previewing.
+	plan, err := DeterminePlan(prev, curr, nil, ch)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
+	logger.Info("Reconciler processing changeset", log.Int64("changeset", ch.ID), log.String("operations", fmt.Sprintf("%+v", plan.Ops)))
 
 	return executePlan(
 		ctx,
+		logger,
 		r.gitserverClient,
 		r.sourcer,
 		r.noSleepBeforeSync,

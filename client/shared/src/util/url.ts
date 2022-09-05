@@ -440,9 +440,10 @@ export function toPrettyBlobURL(
         toPositionOrRangeQueryParameter(target)
     )
     const searchQuery = [...searchParameters].length > 0 ? `?${formatSearchParameters(searchParameters)}` : ''
-    return `/${encodeRepoRevision({ repoName: target.repoName, revision: target.revision })}/-/blob/${
-        target.filePath
-    }${searchQuery}${toViewStateHash(target.viewState)}`
+    return `/${encodeRepoRevision({
+        repoName: target.repoName,
+        revision: target.revision,
+    })}/-/blob/${encodeURIPathComponent(target.filePath)}${searchQuery}${toViewStateHash(target.viewState)}`
 }
 
 /**
@@ -571,7 +572,7 @@ export function buildSearchURLQuery(
 }
 
 export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started')
+    const url = new URL('https://about.sourcegraph.com/get-started/self-hosted')
     url.searchParams.set('utm_medium', 'inproduct')
     url.searchParams.set('utm_source', source)
     url.searchParams.set('utm_campaign', 'inproduct-cta')
@@ -581,4 +582,33 @@ export function buildGetStartedURL(source: string, returnTo?: string): string {
     }
 
     return url.toString()
+}
+
+/** The results of parsing a repo-revision string like "my/repo@my/revision". */
+export interface ParsedRepoRevision {
+    repoName: string
+
+    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    revision?: string
+
+    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
+    rawRevision?: string
+}
+
+/**
+ * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
+ */
+export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
+    const firstAtSign = repoRevision.indexOf('@')
+    if (firstAtSign === -1) {
+        return { repoName: decodeURIComponent(repoRevision) }
+    }
+
+    const repository = repoRevision.slice(0, firstAtSign)
+    const revision = repoRevision.slice(firstAtSign + 1)
+    return {
+        repoName: decodeURIComponent(repository),
+        revision: revision && decodeURIComponent(revision),
+        rawRevision: revision,
+    }
 }

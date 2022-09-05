@@ -51,11 +51,6 @@ func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, a
 	return &batchSpecWorkspaceConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) Unsupported(ctx context.Context) graphqlbackend.RepositoryConnectionResolver {
-	// TODO(ssbc): not implemented
-	return nil
-}
-
 func (r *batchSpecWorkspaceResolutionResolver) RecentlyCompleted(ctx context.Context, args *graphqlbackend.ListRecentlyCompletedWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {
 	// TODO(ssbc): not implemented
 	return nil
@@ -91,7 +86,14 @@ func workspacesListArgsToDBOpts(args *graphqlbackend.ListWorkspacesArgs) (opts s
 		if *args.State == "COMPLETED" {
 			opts.OnlyCachedOrCompleted = true
 		} else if *args.State == "PENDING" {
-			opts.OnlyWithoutExecution = true
+			opts.OnlyWithoutExecutionAndNotCached = true
+		} else if *args.State == "CANCELING" {
+			t := true
+			opts.Cancel = &t
+			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+		} else if *args.State == "SKIPPED" {
+			t := true
+			opts.Skipped = &t
 		} else {
 			// Convert the GQL type into the DB type: we just need to lowercase it. Magic 🪄.
 			opts.State = btypes.BatchSpecWorkspaceExecutionJobState(strings.ToLower(*args.State))

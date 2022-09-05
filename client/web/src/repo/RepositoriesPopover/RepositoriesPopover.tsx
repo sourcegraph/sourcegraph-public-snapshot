@@ -4,16 +4,16 @@ import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { useDebounce } from '@sourcegraph/wildcard'
+
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionError,
     ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
-
+} from '../../components/FilteredConnection/ui'
 import {
     RepositoriesForPopoverResult,
     RepositoriesForPopoverVariables,
@@ -61,7 +61,7 @@ export const BATCH_COUNT = 10
 /**
  * A popover that displays a searchable list of repositories.
  */
-export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({
+export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildren<RepositoriesPopoverProps>> = ({
     currentRepo,
     telemetryService,
 }) => {

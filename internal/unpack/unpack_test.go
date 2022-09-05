@@ -2,6 +2,7 @@ package unpack
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,17 +47,22 @@ func TestUnpack(t *testing.T) {
 
 	type testCase struct {
 		packer
-		name string
-		opts Opts
-		in   []*fileInfo
-		out  []*fileInfo
-		err  string
+		name        string
+		opts        Opts
+		in          []*fileInfo
+		out         []*fileInfo
+		err         string
+		errContains string
 	}
 
 	var testCases []testCase
 	for _, p := range []packer{
 		{"tar", Tar, makeTar},
 		{"tgz", Tgz, makeTgz},
+		{"zip", func(r io.Reader, dir string, opts Opts) error {
+			br := r.(*bytes.Reader)
+			return Zip(br, int64(br.Len()), dir, opts)
+		}, makeZip},
 	} {
 		testCases = append(testCases, []testCase{
 			{
@@ -100,7 +107,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-absolute-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "/etc/passwd: illegal link path",
 			},
@@ -108,7 +115,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-relative-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "../../etc/passwd: illegal link path",
 			},
@@ -119,8 +126,8 @@ func TestUnpack(t *testing.T) {
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
 					{path: "../../etc/passwd", contents: "foo", mode: 0655},
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
@@ -131,11 +138,11 @@ func TestUnpack(t *testing.T) {
 				name:   "symbolic-link",
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink},
+					{path: "foo", contents: "bar", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink},
+					{path: "foo", contents: "bar", mode: fs.ModeSymlink, size: 3},
 				},
 			},
 			{
@@ -156,6 +163,30 @@ func TestUnpack(t *testing.T) {
 					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
 				},
 			},
+			{
+				packer: p,
+				name:   "duplicates",
+				in: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0655},
+				},
+				errContains: "/bar: file exists",
+				out: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655, size: 3},
+				},
+			},
+			{
+				packer: p,
+				name:   "skip-duplicates",
+				opts:   Opts{SkipDuplicates: true},
+				in: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0655},
+				},
+				out: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655, size: 3},
+				},
+			},
 		}...)
 	}
 
@@ -169,10 +200,40 @@ func TestUnpack(t *testing.T) {
 				tc.opts,
 			)
 
-			assertError(t, err, tc.err)
+			assertError(t, err, tc.err, tc.errContains)
 			assertUnpack(t, dir, tc.out)
 		})
 	}
+}
+
+func makeZip(t testing.TB, files ...*fileInfo) []byte {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	for _, f := range files {
+		h, err := zip.FileInfoHeader(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		h.Name = f.path
+		fw, err := zw.CreateHeader(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(f.contents) > 0 {
+			if _, err := fw.Write([]byte(f.contents)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	return buf.Bytes()
 }
 
 func makeTgz(t testing.TB, files ...*fileInfo) []byte {
@@ -200,7 +261,7 @@ func makeTar(t testing.TB, files ...*fileInfo) []byte {
 			t.Fatal(err)
 		}
 
-		if len(f.contents) > 0 {
+		if len(f.contents) > 0 && f.mode.IsRegular() {
 			if _, err := tw.Write([]byte(f.contents)); err != nil {
 				t.Fatal(err)
 			}
@@ -214,7 +275,15 @@ func makeTar(t testing.TB, files ...*fileInfo) []byte {
 	return buf.Bytes()
 }
 
-func assertError(t testing.TB, have error, want string) {
+func assertError(t testing.TB, have error, want string, wantContains string) {
+	if want == "" && wantContains != "" {
+		haveMessage := fmt.Sprint(have)
+		if !strings.Contains(haveMessage, wantContains) {
+			t.Fatalf("error should contain %q, but doesn't: %q", wantContains, haveMessage)
+		}
+		return
+	}
+
 	if want == "" {
 		want = "<nil>"
 	}
@@ -251,10 +320,16 @@ type tarFile struct {
 func makeTarFiles(t testing.TB, fs ...*fileInfo) []*tarFile {
 	tfs := make([]*tarFile, 0, len(fs))
 	for _, f := range fs {
-		header, err := tar.FileInfoHeader(f, f.link)
+		link := ""
+		if f.mode&os.ModeSymlink != 0 {
+			link = f.contents
+		}
+
+		header, err := tar.FileInfoHeader(f, link)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		header.Name = f.path
 		tfs = append(tfs, &tarFile{Header: header, fileInfo: f})
 	}
@@ -263,7 +338,6 @@ func makeTarFiles(t testing.TB, fs ...*fileInfo) []*tarFile {
 
 type fileInfo struct {
 	path     string
-	link     string
 	mode     fs.FileMode
 	modtime  time.Time
 	contents string
@@ -278,19 +352,19 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 
 	var (
 		contents []byte
-		link     string
+		mode     = info.Mode()
 	)
 
-	mode := info.Mode()
 	if !d.IsDir() {
 		name := filepath.Join(dir, path)
 		if mode&fs.ModeSymlink != 0 {
-			link, err = os.Readlink(name)
+			link, err := os.Readlink(name)
 			if err != nil {
 				t.Fatal(err)
 			}
 			// Different OSes set different permissions in a symlink so we ignore them.
 			mode = fs.ModeSymlink
+			contents = []byte(link)
 		} else if contents, err = os.ReadFile(name); err != nil {
 			t.Fatal(err)
 		}
@@ -298,7 +372,6 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 
 	return &fileInfo{
 		path:     path,
-		link:     link,
 		mode:     mode,
 		modtime:  info.ModTime(),
 		contents: string(contents),
@@ -318,4 +391,4 @@ func (f *fileInfo) Size() int64 {
 func (f *fileInfo) Mode() fs.FileMode  { return f.mode }
 func (f *fileInfo) ModTime() time.Time { return f.modtime }
 func (f *fileInfo) IsDir() bool        { return f.mode.IsDir() }
-func (f *fileInfo) Sys() interface{}   { return nil }
+func (f *fileInfo) Sys() any           { return nil }

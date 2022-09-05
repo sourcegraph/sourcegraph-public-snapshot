@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -34,17 +35,12 @@ func TestExternalService(t *testing.T) {
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
 			}),
 		})
-		// The repo-updater might not be up yet but it will eventually catch up for the external
+		// The repo-updater might not be up yet, but it will eventually catch up for the external
 		// service we just added, thus it is OK to ignore this transient error.
 		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
-		defer func() {
-			err := client.DeleteExternalService(esID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
+		removeExternalServiceAfterTest(t, esID)
 
 		err = client.WaitForReposToBeCloned(slug)
 		if err != nil {
@@ -93,17 +89,12 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 			},
 		}),
 	})
-	// The repo-updater might not be up yet but it will eventually catch up for the external
+	// The repo-updater might not be up yet, but it will eventually catch up for the external
 	// service we just added, thus it is OK to ignore this transient error.
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "aws/test"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -145,17 +136,12 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
 	})
-	// The repo-updater might not be up yet but it will eventually catch up for the external
+	// The repo-updater might not be up yet, but it will eventually catch up for the external
 	// service we just added, thus it is OK to ignore this transient error.
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -237,8 +223,62 @@ func createPerforceExternalService(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
+	removeExternalServiceAfterTest(t, esID)
+}
+
+func TestExternalService_AsyncDeletion(t *testing.T) {
+	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
+	}
+
+	// Set up external service
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "gqltest-bitbucket-server",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Username              string   `json:"username"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:                   *bbsURL,
+			Token:                 *bbsToken,
+			Username:              *bbsUsername,
+			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
+			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
+		}),
+	})
+	// The repo-updater might not be up yet, but it will eventually catch up for the external
+	// service we just added, thus it is OK to ignore this transient error.
+	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
+		t.Fatal(err)
+	}
+	err = client.DeleteExternalService(esID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This call should return not found error. Retrying for 5 seconds to wait for async deletion to finish
+	err = gqltestutil.Retry(5*time.Second, func() error {
+		_, err = client.UpdateExternalService(gqltestutil.UpdateExternalServiceInput{ID: esID})
+		if err == nil {
+			return gqltestutil.ErrContinueRetry
+		}
+		return err
+	})
+	if err == nil || err == gqltestutil.ErrContinueRetry {
+		t.Fatal("Deleted service should not be found")
+	}
+	if !strings.Contains(err.Error(), "external service not found") {
+		t.Fatalf("Not found error should be returned, got: %s", err.Error())
+	}
+}
+
+func removeExternalServiceAfterTest(t *testing.T, esID string) {
+	t.Helper()
 	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID)
+		err := client.DeleteExternalService(esID, true)
 		if err != nil {
 			t.Fatal(err)
 		}

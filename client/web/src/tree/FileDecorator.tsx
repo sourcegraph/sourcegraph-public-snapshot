@@ -1,9 +1,11 @@
 import React from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { FileDecoration } from 'sourcegraph'
 
 import { fileDecorationColorForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './FileDecorator.module.scss'
 
@@ -26,7 +28,7 @@ interface FileDecoratorProps {
 /**
  * Renders a list of file decorations from extensions
  */
-export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
+export const FileDecorator: React.FunctionComponent<React.PropsWithChildren<FileDecoratorProps>> = ({
     fileDecorations,
     isLightTheme,
     className,
@@ -53,41 +55,44 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                             key={fileDecoration.uri + String(index)}
                         >
                             {fileDecoration.after && (
-                                <small
-                                    // eslint-disable-next-line react/forbid-dom-props
-                                    style={{
-                                        color: fileDecorationColorForTheme(
-                                            fileDecoration.after,
-                                            isLightTheme,
-                                            isActive
-                                        ),
-                                    }}
-                                    data-tooltip={fileDecoration.after.hoverMessage}
-                                    data-placement="bottom"
-                                    className={classNames(
-                                        'text-monospace font-weight-normal test-file-decoration-text',
-                                        styles.after,
-                                        isActive && styles.afterActive
-                                    )}
-                                >
-                                    {fileDecoration.after.contentText}
-                                </small>
+                                <Tooltip content={fileDecoration.after.hoverMessage} placement="bottom">
+                                    <small
+                                        // eslint-disable-next-line react/forbid-dom-props
+                                        style={{
+                                            color: fileDecorationColorForTheme(
+                                                fileDecoration.after,
+                                                isLightTheme,
+                                                isActive
+                                            ),
+                                        }}
+                                        className={classNames(
+                                            'text-monospace font-weight-normal test-file-decoration-text',
+                                            styles.after,
+                                            isActive && styles.afterActive
+                                        )}
+                                    >
+                                        {fileDecoration.after.contentText}
+                                    </small>
+                                </Tooltip>
                             )}
                             {fileDecoration.meter && (
-                                <meter
-                                    className={classNames('test-file-decoration-meter', styles.meter, {
-                                        'ml-2': !!fileDecoration.after,
-                                    })}
-                                    min={fileDecoration.meter.min}
-                                    low={fileDecoration.meter.low}
-                                    high={fileDecoration.meter.high}
-                                    max={fileDecoration.meter.max}
-                                    optimum={fileDecoration.meter.optimum}
-                                    value={fileDecoration.meter.value}
-                                    data-tooltip={fileDecoration.meter.hoverMessage}
-                                    aria-label={fileDecoration.meter.hoverMessage}
-                                    data-placement="bottom"
-                                />
+                                <Tooltip content={fileDecoration.meter.hoverMessage} placement="bottom">
+                                    <div>
+                                        <VisuallyHidden>{fileDecoration.meter.hoverMessage}</VisuallyHidden>
+                                        <meter
+                                            className={classNames('test-file-decoration-meter', styles.meter, {
+                                                'ml-2': !!fileDecoration.after,
+                                            })}
+                                            min={fileDecoration.meter.min}
+                                            low={fileDecoration.meter.low}
+                                            high={fileDecoration.meter.high}
+                                            max={fileDecoration.meter.max}
+                                            optimum={fileDecoration.meter.optimum}
+                                            value={fileDecoration.meter.value}
+                                            aria-hidden={true}
+                                        />
+                                    </div>
+                                </Tooltip>
                             )}
                         </div>
                     )

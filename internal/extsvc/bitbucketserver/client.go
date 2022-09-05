@@ -14,14 +14,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -36,34 +34,8 @@ import (
 // The metric generated here will be named as "src_bitbucket_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
-// Server API and that a large customer had reported to us their Bitbucket instance receives
-// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
-//
-// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
-// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
-// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
-// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
-// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users, and requests for identifying which repositories a user has
-// access to (if authorization is in use) and requests for changeset synchronization if it is in use.
-//
-// These are our default values, they can be changed in configuration
-const (
-	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
-	defaultRateLimitBurst = 500
-)
-
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
-	httpClient httpcli.Doer
-
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
@@ -78,16 +50,20 @@ type Client struct {
 	//   This is generally set using SetOAuth.
 	Auth auth.Authenticator
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
+	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// in extsvc.GetLimitFromConfig
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	client, err := newClient(config, httpClient)
+func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(urn, config, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +90,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	return client, nil
 }
 
-func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -125,16 +101,11 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
-	// Normally our registry will return a default infinite limiter when nothing has been
-	// synced from config. However, we always want to ensure there is at least some form of rate
-	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
-
 	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		RateLimit:  l,
+		// Default limits are defined in extsvc.GetLimitFromConfig
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
 	}, nil
 }
 
@@ -145,7 +116,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		RateLimit:  c.RateLimit,
+		rateLimit:  c.rateLimit,
 		Auth:       a,
 	}
 }
@@ -819,6 +790,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -897,7 +889,7 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 	return &resp, err
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -915,7 +907,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -928,7 +920,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result any) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -950,7 +942,7 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -966,13 +958,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return nil, err
 	}
 
-	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -1566,7 +1553,7 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"text": body,
 	}
 

@@ -12,17 +12,9 @@ if [[ "${CTAGS_COMMAND}" != "cmd/symbols/universal-ctags-dev" ]]; then
   exit 0
 fi
 
-OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
-cleanup() {
-  rm -rf "$OUTPUT"
-}
-trap cleanup EXIT
-
-cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-
 # Build ctags docker image for universal-ctags-dev
 echo "Building ctags docker image"
-docker build -f cmd/symbols/Dockerfile -t ctags "$OUTPUT" \
+docker build -f cmd/symbols/Dockerfile -t ctags . \
   --target=ctags \
   --progress=plain \
   --quiet >/dev/null

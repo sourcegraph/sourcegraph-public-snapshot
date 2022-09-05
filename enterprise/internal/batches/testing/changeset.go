@@ -11,7 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type TestChangesetOpts struct {
@@ -49,7 +49,7 @@ type TestChangesetOpts struct {
 	IsArchived bool
 	Archive    bool
 
-	Metadata interface{}
+	Metadata any
 }
 
 type CreateChangeseter interface {
@@ -109,7 +109,7 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 	}
 
 	if opts.ExternalBranch != "" {
-		changeset.ExternalBranch = git.EnsureRefPrefix(opts.ExternalBranch)
+		changeset.ExternalBranch = gitdomain.EnsureRefPrefix(opts.ExternalBranch)
 	}
 
 	if opts.ExternalForkNamespace != "" {

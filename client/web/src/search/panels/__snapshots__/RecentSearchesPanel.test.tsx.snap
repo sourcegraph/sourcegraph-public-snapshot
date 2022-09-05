@@ -8,11 +8,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -51,7 +51,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -61,7 +65,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-08 5:36:52 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -91,7 +95,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -101,7 +109,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-04 6:44:39 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -113,7 +121,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
         class="text-center py-3"
       >
         <button
-          class="btn btnLink"
+          class="btn btnLink test-repositories-panel-show-more"
           type="button"
         >
           Show more
@@ -132,11 +140,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -175,7 +183,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -185,7 +197,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-08 5:36:52 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -215,7 +227,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -225,7 +241,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-04 6:44:39 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -233,11 +249,17 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
           </tr>
         </tbody>
       </table>
+      <span
+        aria-live="polite"
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        Loading more recent searches
+      </span>
       <div
         class="text-center py-3"
       >
         <button
-          class="btn btnLink"
+          class="btn btnLink test-repositories-panel-show-more"
           type="button"
         >
           Show more
@@ -256,11 +278,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -299,7 +321,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -309,7 +335,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-08 5:36:52 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -339,7 +365,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -349,7 +379,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-04 6:44:39 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -370,11 +400,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Recent searches
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -413,7 +443,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                   <span
                     class="text-monospace search-query-link"
                   >
-                    test
+                    <span
+                      class="search-query-text"
+                    >
+                      test
+                    </span>
                   </span>
                 </a>
               </small>
@@ -423,7 +457,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-08 5:36:52 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>
@@ -453,7 +487,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                     >
                       :
                     </span>
-                    sourcegraph
+                    <span
+                      class="search-query-text"
+                    >
+                      sourcegraph
+                    </span>
                   </span>
                 </a>
               </small>
@@ -463,7 +501,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-09-04 6:44:30 PM"
+                data-state="closed"
               >
                 in 15 years
               </span>

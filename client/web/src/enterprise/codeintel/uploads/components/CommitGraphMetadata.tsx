@@ -1,7 +1,8 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Alert } from '@sourcegraph/wildcard'
+
+import { Timestamp } from '../../../../components/time/Timestamp'
 
 export interface CommitGraphMetadataProps {
     stale: boolean
@@ -10,23 +11,25 @@ export interface CommitGraphMetadataProps {
     now?: () => Date
 }
 
-export const CommitGraphMetadata: FunctionComponent<CommitGraphMetadataProps> = ({
+export const CommitGraphMetadata: FunctionComponent<React.PropsWithChildren<CommitGraphMetadataProps>> = ({
     stale,
     updatedAt,
     className,
     now,
 }) => (
     <>
-        <Alert variant={stale ? 'primary' : 'success'} className={className}>
+        <Alert variant={stale ? 'primary' : 'success'} className={className} aria-live="off">
             {stale ? <StaleRepository /> : <FreshRepository />}{' '}
             {updatedAt && <LastUpdated updatedAt={updatedAt} now={now} />}
         </Alert>
     </>
 )
 
-const FreshRepository: FunctionComponent<{}> = () => <>Repository commit graph is currently up to date.</>
+const FreshRepository: FunctionComponent<React.PropsWithChildren<{}>> = () => (
+    <>Repository commit graph is currently up to date.</>
+)
 
-const StaleRepository: FunctionComponent<{}> = () => (
+const StaleRepository: FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         Repository commit graph is currently stale and is queued to be refreshed. Refreshing the commit graph updates
         which uploads are visible from which commits.
@@ -38,7 +41,7 @@ interface LastUpdatedProps {
     now?: () => Date
 }
 
-const LastUpdated: FunctionComponent<LastUpdatedProps> = ({ updatedAt, now }) => (
+const LastUpdated: FunctionComponent<React.PropsWithChildren<LastUpdatedProps>> = ({ updatedAt, now }) => (
     <>
         Last refreshed <Timestamp date={updatedAt} now={now} />.
     </>

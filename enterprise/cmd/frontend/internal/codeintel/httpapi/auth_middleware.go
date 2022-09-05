@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,9 +24,13 @@ type (
 
 var DefaultValidatorByCodeHost = AuthValidatorMap{
 	"github.com": enforceAuthViaGitHub,
+	"gitlab.com": enforceAuthViaGitLab,
 }
 
-var errVerificationNotSupported = errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")
+var errVerificationNotSupported = errors.New(strings.Join([]string{
+	"verification is supported for the following code hosts: github.com, gitlab.com",
+	"please request support for additional code host verification at https://github.com/sourcegraph/sourcegraph/issues/4967",
+}, " - "))
 
 // authMiddleware wraps the given upload handler with an authorization check. On each initial upload
 // request, the target repository is checked against the supplied auth validators. The matching validator
@@ -37,13 +41,13 @@ var errVerificationNotSupported = errors.New("verification not supported for cod
 func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
-			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
+			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, operation.Logger, db) || hasQuery(r, "uploadId") {
 				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
@@ -64,7 +68,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 		}()
 		if err != nil {
 			if statusCode >= 500 {
-				log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+				operation.Logger.Error("codeintel.httpapi: failed to authorize request", sglog.Error(err))
 			}
 
 			http.Error(w, fmt.Sprintf("failed to authorize request: %s", err.Error()), statusCode)
@@ -75,14 +79,14 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
-func isSiteAdmin(ctx context.Context, db database.DB) bool {
-	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+func isSiteAdmin(ctx context.Context, logger sglog.Logger, db database.DB) bool {
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false
 		}
 
-		log15.Error("codeintel.httpapi: failed to get up current user", "error", err)
+		logger.Error("codeintel.httpapi: failed to get up current user", sglog.Error(err))
 		return false
 	}
 

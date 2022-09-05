@@ -4,6 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExtractToken(t *testing.T) {
@@ -54,111 +58,98 @@ func TestExtractToken(t *testing.T) {
 
 func TestExtractRateLimitConfig(t *testing.T) {
 	for _, tc := range []struct {
-		name        string
-		config      string
-		kind        string
-		displayName string
-		want        RateLimitConfig
+		name   string
+		config string
+		kind   string
+		want   rate.Limit
 	}{
 		{
-			name:        "GitLab default",
-			config:      `{"url": "https://example.com/"}`,
-			kind:        KindGitLab,
-			displayName: "GitLab 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "GitLab 1",
-				Limit:       10.0,
-				IsDefault:   true,
-			},
+			name:   "GitLab default",
+			config: `{"url": "https://example.com/"}`,
+			kind:   KindGitLab,
+			want:   10.0,
 		},
 		{
-			name:        "GitHub default",
-			config:      `{"url": "https://example.com/"}`,
-			kind:        KindGitHub,
-			displayName: "GitHub 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "GitHub 1",
-				Limit:       1.3888888888888888,
-				IsDefault:   true,
-			},
+			name:   "GitHub default",
+			config: `{"url": "https://example.com/"}`,
+			kind:   KindGitHub,
+			want:   1.3888888888888888,
 		},
 		{
-			name:        "Bitbucket Server default",
-			config:      `{"url": "https://example.com/"}`,
-			kind:        KindBitbucketServer,
-			displayName: "BitbucketServer 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "BitbucketServer 1",
-				Limit:       8.0,
-				IsDefault:   true,
-			},
+			name:   "Bitbucket Server default",
+			config: `{"url": "https://example.com/"}`,
+			kind:   KindBitbucketServer,
+			want:   8.0,
 		},
 		{
-			name:        "Bitbucket Cloud default",
-			config:      `{"url": "https://example.com/"}`,
-			kind:        KindBitbucketCloud,
-			displayName: "BitbucketCloud 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "BitbucketCloud 1",
-				Limit:       2.0,
-				IsDefault:   true,
-			},
+			name:   "Bitbucket Cloud default",
+			config: `{"url": "https://example.com/"}`,
+			kind:   KindBitbucketCloud,
+			want:   2.0,
 		},
 		{
-			name:        "GitLab non-default",
-			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        KindGitLab,
-			displayName: "GitLab 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "GitLab 1",
-				Limit:       1.0,
-				IsDefault:   false,
-			},
+			name:   "GitLab non-default",
+			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindGitLab,
+			want:   1.0,
 		},
 		{
-			name:        "GitHub default",
-			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        KindGitHub,
-			displayName: "GitHub 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "GitHub 1",
-				Limit:       1.0,
-				IsDefault:   false,
-			},
+			name:   "GitHub non-default",
+			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindGitHub,
+			want:   1.0,
 		},
 		{
-			name:        "Bitbucket Server default",
-			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        KindBitbucketServer,
-			displayName: "BitbucketServer 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "BitbucketServer 1",
-				Limit:       1.0,
-				IsDefault:   false,
-			},
+			name:   "Bitbucket Server non-default",
+			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindBitbucketServer,
+			want:   1.0,
 		},
 		{
-			name:        "Bitbucket Cloud default",
-			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        KindBitbucketCloud,
-			displayName: "BitbucketCloud 1",
-			want: RateLimitConfig{
-				BaseURL:     "https://example.com/",
-				DisplayName: "BitbucketCloud 1",
-				Limit:       1.0,
-				IsDefault:   false,
-			},
+			name:   "Bitbucket Cloud non-default",
+			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindBitbucketCloud,
+			want:   1.0,
+		},
+		{
+			name:   "NPM default",
+			config: `{"registry": "https://registry.npmjs.org"}`,
+			kind:   KindNpmPackages,
+			want:   6000.0 / 3600.0,
+		},
+		{
+			name:   "NPM non-default",
+			config: `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindNpmPackages,
+			want:   1.0,
+		},
+		{
+			name:   "Go mod default",
+			config: `{"urls": ["https://example.com"]}`,
+			kind:   KindGoPackages,
+			want:   57600.0 / 3600.0,
+		},
+		{
+			name:   "Go mod non-default",
+			config: `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindNpmPackages,
+			want:   1.0,
+		},
+		{
+			name:   "No trailing slash",
+			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:   KindBitbucketCloud,
+			want:   1.0,
+		},
+		{
+			name:   "Empty JVM config",
+			config: "",
+			kind:   KindJVMPackages,
+			want:   2.0,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			rlc, err := ExtractRateLimitConfig(tc.config, tc.kind, tc.displayName)
+			rlc, err := ExtractRateLimit(tc.config, tc.kind)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -293,6 +284,11 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 			want: "eu-west-1:accesskey",
 		},
 		{
+			kind:   KindGerrit,
+			config: `{"url": "https://example.com"}`,
+			want:   "https://example.com/",
+		},
+		{
 			kind:   KindBitbucketServer,
 			config: `{"url": "https://bitbucket.sgdev.org/"}`,
 			want:   "https://bitbucket.sgdev.org/",
@@ -340,4 +336,57 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWebhookURL(t *testing.T) {
+	const externalServiceID = 42
+	const externalURL = "https://sourcegraph.com"
+
+	t.Run("unknown kind", func(t *testing.T) {
+		u, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
+		assert.Nil(t, err)
+		assert.Equal(t, u, "")
+	})
+
+	t.Run("basic kinds", func(t *testing.T) {
+		for kind, want := range map[string]string{
+			KindGitHub:          externalURL + "/.api/github-webhooks?externalServiceID=42",
+			KindBitbucketServer: externalURL + "/.api/bitbucket-server-webhooks?externalServiceID=42",
+			KindGitLab:          externalURL + "/.api/gitlab-webhooks?externalServiceID=42",
+		} {
+			t.Run(kind, func(t *testing.T) {
+				// Note the use of a nil configuration here: these kinds do not
+				// depend on the configuration being passed in or valid.
+				have, err := WebhookURL(kind, externalServiceID, nil, externalURL)
+				assert.Nil(t, err)
+				assert.Equal(t, want, have)
+			})
+		}
+	})
+
+	t.Run("Bitbucket Cloud", func(t *testing.T) {
+		t.Run("invalid configurations", func(t *testing.T) {
+			for name, cfg := range map[string]any{
+				"nil":               nil,
+				"GitHub connection": &schema.GitHubConnection{},
+			} {
+				t.Run(name, func(t *testing.T) {
+					_, err := WebhookURL(KindBitbucketCloud, externalServiceID, cfg, externalURL)
+					assert.NotNil(t, err)
+				})
+			}
+		})
+
+		t.Run("valid configuration", func(t *testing.T) {
+			have, err := WebhookURL(
+				KindBitbucketCloud, externalServiceID,
+				&schema.BitbucketCloudConnection{
+					WebhookSecret: "foo bar",
+				},
+				externalURL,
+			)
+			assert.Nil(t, err)
+			assert.Equal(t, externalURL+"/.api/bitbucket-cloud-webhooks?externalServiceID=42&secret=foo+bar", have)
+		})
+	})
 }

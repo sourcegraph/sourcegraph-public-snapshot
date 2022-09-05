@@ -1,6 +1,4 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -11,9 +9,14 @@ import { WebStory } from '../WebStory'
 import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServicesPage } from './ExternalServicesPage'
 
-const { add } = storiesOf('web/External services/ExternalServicesPage', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/External services/ExternalServicesPage',
+    decorators: [decorator],
+}
+
+export default config
 
 const queryExternalServices: typeof _queryExternalServices = () =>
     of({
@@ -60,7 +63,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
         ],
     })
 
-add('List of external services', () => (
+export const ListOfExternalServices: Story = () => (
     <WebStory>
         {webProps => (
             <ExternalServicesPage
@@ -73,4 +76,6 @@ add('List of external services', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ListOfExternalServices.storyName = 'List of external services'

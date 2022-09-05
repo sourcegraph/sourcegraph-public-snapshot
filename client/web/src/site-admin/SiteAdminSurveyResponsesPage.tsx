@@ -4,12 +4,25 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
-import { Badge, Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
-import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
+import {
+    Badge,
+    BADGE_VARIANTS,
+    Button,
+    useLocalStorage,
+    Link,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    H2,
+    H3,
+    Text,
+    Card,
+} from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { SingleValueCard } from '../components/SingleValueCard'
 import { Timestamp } from '../components/time/Timestamp'
 import {
     SurveyResponseAggregateFields,
@@ -24,6 +37,7 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
+import { ValueLegendItem } from './analytics/components/ValueLegendList'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminSurveyResponsesPage.module.scss'
@@ -41,7 +55,7 @@ function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
-const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
+const ScoreBadge: React.FunctionComponent<React.PropsWithChildren<{ score: number }>> = props => (
     <Badge className="ml-4" pill={true} variant={scoreToClassSuffix(props.score)} tooltip={`${props.score} out of 10`}>
         Score: {props.score}
     </Badge>
@@ -92,7 +106,9 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
     }
 }
 
-const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: UserWithSurveyResponseFields[] }> = () => (
+const UserSurveyResponsesHeader: React.FunctionComponent<
+    React.PropsWithChildren<{ nodes: UserWithSurveyResponseFields[] }>
+> = () => (
     <thead>
         <tr>
             <th>User</th>
@@ -220,40 +236,41 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         } else if (this.state.summary.netPromoterScore < 0) {
             npsText = `${npsText}`
         }
-        const npsClass =
+        const npsColor =
             this.state.summary.netPromoterScore > 0
-                ? 'text-success'
+                ? 'var(--success)'
                 : this.state.summary.netPromoterScore < 0
-                ? 'text-danger'
-                : 'text-info'
+                ? 'var(--danger)'
+                : 'var(--info)'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
+        const avgColor = roundAvg > 8 ? 'var(--success)' : roundAvg > 6 ? 'var(--info)' : 'var(--danger)'
         return (
-            <div className="mb-2">
-                <h3>Summary</h3>
-                <div className={styles.container}>
-                    <SingleValueCard
-                        className={styles.item}
-                        value={this.state.summary.last30DaysCount}
-                        title="Number of submissions"
-                        subTitle="Last 30 days"
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? roundAvg : '-'}
-                        title="Average score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${roundAvg} out of 10`}
-                        valueClassName={anyResults ? `text-${scoreToClassSuffix(roundAvg)}` : ''}
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? npsText : '-'}
-                        title="Net promoter score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${npsText} (between -100 and +100)`}
-                        valueClassName={anyResults ? npsClass : ''}
-                    />
+            <div className="mb-3">
+                <div className="d-flex">
+                    <H3>Summary</H3>
+                    <Text className="ml-2 text-muted">(Last 30 days)</Text>
                 </div>
+                <Card className="d-flex justify-content-around flex-row p-5">
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={this.state.summary.last30DaysCount}
+                        description="Number of submissions"
+                    />
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={anyResults ? roundAvg : '-'}
+                        description="Average score"
+                        color={anyResults ? avgColor : undefined}
+                        tooltip={`${roundAvg} out of 10`}
+                    />
+                    <ValueLegendItem
+                        className="flex-1"
+                        value={anyResults ? npsText : '-'}
+                        description="Net promoter score"
+                        color={anyResults ? npsColor : undefined}
+                        tooltip={`${npsText} (between -100 and +100)`}
+                    />
+                </Card>
             </div>
         )
     }
@@ -269,7 +286,7 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
@@ -279,16 +296,16 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
     return (
         <div className="site-admin-survey-responses-page">
             <PageTitle title="User feedback survey - Admin" />
-            <h2>User feedback survey</h2>
-            <p>
+            <H2>User feedback survey</H2>
+            <Text>
                 After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it
                 that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some feedback.
                 Responses are visible below (and are also sent to Sourcegraph).
-            </p>
+            </Text>
 
             <SiteAdminSurveyResponsesSummary />
 
-            <h3>Responses</h3>
+            <H3>Responses</H3>
 
             <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                 <TabList>

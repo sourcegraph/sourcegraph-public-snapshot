@@ -94,7 +94,7 @@ type apiProperty struct {
 	Value    string `json:"value"`
 }
 
-func (h *apiProperties) set(property string, value interface{}) {
+func (h *apiProperties) set(property string, value any) {
 	if h.Properties == nil {
 		h.Properties = make([]*apiProperty, 0)
 	}

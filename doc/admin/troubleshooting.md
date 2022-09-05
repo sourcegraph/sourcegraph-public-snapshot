@@ -21,6 +21,8 @@ docker container run -e LOGO=false ... sourcegraph/server
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
 
+> WARNING: Running Sourcegraph on Docker Toolbox for Windows is not supported for production deployments.
+
 ### Submitting a metrics dump
 
 If you encounter performance or instability issues with Sourcegraph, we may ask you to submit a metrics dump to us. This allows us to inspect the performance and health of various parts of your Sourcegraph instance in the past and can often be the most effective way for us to identify the cause of your issue.
@@ -67,7 +69,7 @@ Please then upload the `sourcegraph-metrics-dump.tgz` file to Sourcegraph suppor
 
 #### Single-container Sourcegraph deployments
 
-To create a metrics dump from a [single-container `sourcegraph/server` deployment](install/docker/index.md), follow these steps:
+To create a metrics dump from a [single-container `sourcegraph/server` deployment](deploy/docker-single-container/index.md), follow these steps:
 
 * Open a shell to the running container:
     1. Run `docker ps` to get the name of the Sourcegraph server container.

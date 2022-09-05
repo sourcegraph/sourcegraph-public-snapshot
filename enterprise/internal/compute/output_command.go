@@ -7,17 +7,18 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type Output struct {
 	SearchPattern MatchPattern
 	OutputPattern string
 	Separator     string
+	Selector      string
+	TypeValue     string
+	Kind          string
 }
 
 func (c *Output) ToSearchPattern() string {
@@ -37,7 +38,7 @@ func substituteRegexp(content string, match *regexp.Regexp, replacePattern, sepa
 	return b.String()
 }
 
-func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (*Text, error) {
+func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (string, error) {
 	var newContent string
 	var err error
 	switch match := matchPattern.(type) {
@@ -53,21 +54,44 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 			NumWorkers:      0,
 		})
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 
 	}
-	return &Text{Value: newContent, Kind: "output"}, nil
+	return newContent, nil
 }
 
-func resultContent(ctx context.Context, db database.DB, r result.Match) (string, bool, error) {
+func resultChunks(r result.Match, kind string, onlyPath bool) []string {
 	switch m := r.(type) {
+	case *result.RepoMatch:
+		return []string{string(m.Name)}
 	case *result.FileMatch:
-		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
-		if err != nil {
-			return "", false, err
+		if onlyPath {
+			return []string{m.Path}
 		}
-		return string(contentBytes), true, nil
+
+		chunks := make([]string, 0, len(m.ChunkMatches))
+		for _, cm := range m.ChunkMatches {
+			for _, range_ := range cm.Ranges {
+				chunks = append(chunks, chunkContent(cm, range_))
+			}
+		}
+
+		if kind == "output.structural" {
+			// concatenate all chunk matches into one string so we
+			// don't invoke comby for every result.
+			return []string{strings.Join(chunks, "")}
+		}
+
+		return chunks
+	case *result.CommitDiffMatch:
+		var sb strings.Builder
+		for _, h := range m.Hunks {
+			for _, l := range h.Lines {
+				sb.WriteString(l)
+			}
+		}
+		return []string{sb.String()}
 	case *result.CommitMatch:
 		var content string
 		if m.DiffPreview != nil {
@@ -75,24 +99,53 @@ func resultContent(ctx context.Context, db database.DB, r result.Match) (string,
 		} else {
 			content = string(m.Commit.Message)
 		}
-		return content, true, nil
+		return []string{content}
 	default:
-		return "", false, nil
+		panic("unsupported result kind in compute output command")
 	}
 }
 
-func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
-	content, ok, err := resultContent(ctx, db, r)
-	if err != nil {
-		return nil, err
+func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (string, error) {
+	if selector != "" {
+		// Don't run the search pattern over the search result content
+		// when there's an explicit `select:` value.
+		return outputPattern, nil
 	}
-	if !ok {
-		return nil, nil
+
+	return output(ctx, content, matchPattern, outputPattern, separator)
+}
+
+func toTextExtraResult(content string, r result.Match) *TextExtra {
+	return &TextExtra{
+		Text:         Text{Value: content, Kind: "output"},
+		RepositoryID: int32(r.RepoName().ID),
+		Repository:   string(r.RepoName().Name),
 	}
-	env := NewMetaEnvironment(r, content)
-	outputPattern, err := substituteMetaVariables(c.OutputPattern, env)
-	if err != nil {
-		return nil, err
+}
+
+func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result, error) {
+	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
+	chunks := resultChunks(r, c.Kind, onlyPath)
+
+	var sb strings.Builder
+	for _, content := range chunks {
+		env := NewMetaEnvironment(r, content)
+		outputPattern, err := substituteMetaVariables(c.OutputPattern, env)
+		if err != nil {
+			return nil, err
+		}
+
+		result, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+		if err != nil {
+			return nil, err
+		}
+		sb.WriteString(result)
 	}
-	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
+
+	switch c.Kind {
+	case "output.extra":
+		return toTextExtraResult(sb.String(), r), nil
+	default:
+		return &Text{Value: sb.String(), Kind: "output"}, nil
+	}
 }

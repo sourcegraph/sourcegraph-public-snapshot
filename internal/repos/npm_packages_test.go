@@ -2,28 +2,27 @@ package repos
 
 import (
 	"context"
-	"database/sql"
-	"os"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
-
-	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
-	_, store, ctx, _ := setupDependenciesInDB(t)
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
 
 	type testCase struct {
 		pkgName string
@@ -38,9 +37,9 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme: dependenciesStore.NpmPackagesScheme,
-			Name:   testCase.pkgName,
+		deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+			Scheme: dependencies.NpmPackagesScheme,
+			Name:   reposource.PackageName(testCase.pkgName),
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
@@ -48,7 +47,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{pkg, dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: dep.Version}).VersionedPackageSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -60,9 +59,9 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 		depStrs := []string{}
 		lastID := 0
 		for i := 0; i < len(testCase.matches); i++ {
-			deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-				Scheme: dependenciesStore.NpmPackagesScheme,
-				Name:   testCase.pkgName,
+			deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+				Scheme: dependencies.NpmPackagesScheme,
+				Name:   reposource.PackageName(testCase.pkgName),
 				After:  lastID,
 				Limit:  1,
 			})
@@ -70,7 +69,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{pkg, deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: deps[0].Version}).VersionedPackageSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -79,101 +78,101 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func setupDependenciesInDB(t *testing.T) (*sql.DB, *dependenciesStore.Store, context.Context, []string) {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := dbtest.NewDB(t)
-	store := dependenciesStore.TestStore(database.NewDB(db))
-	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	depsSvc := livedependencies.TestService(db)
 
-	dependencies := []string{
-		"pkg1@1",
-		"pkg1@2",
-		"pkg2@1",
-		"@scope/pkg1@1",
-		"pkg1@3",
-		"pkg2@0.1-abc",
+	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-	insertDependencies(t, ctx, store, dependencies)
-	return db, store, ctx, dependencies
+
+	return depsSvc
 }
 
-func TestListRepos(t *testing.T) {
-	db, _, ctx, dependencies := setupDependenciesInDB(t)
-	sort.Strings(dependencies)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
-
-	svc := types.ExternalService{
-		Kind:   extsvc.KindNpmPackages,
-		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
-	}
-	packageSource, err := NewNpmPackagesSource(&svc)
-	require.Nil(t, err)
-	packageSource.SetDB(db)
-	packageSource.client = npmtest.NewMockClient(t, dependencies...)
-	results := make(chan SourceResult, 10)
-	go func() {
-		packageSource.ListRepos(ctx, results)
-		close(results)
-	}()
-
-	var have []*types.Repo
-	for r := range results {
-		if r.Err != nil {
-			t.Fatal(r.Err)
-		}
-		have = append(have, r.Repo)
-	}
-
-	sort.Sort(types.Repos(have))
-
-	var want []*types.Repo
-	for _, dep := range dependencies {
-		dep, err := reposource.ParseNpmDependency(dep)
+var testDependencies = []string{
+	"@scope/pkg1@1",
+	"pkg1@1",
+	"pkg1@2",
+	"pkg1@3",
+	"pkg2@0.1-abc",
+	"pkg2@1",
+}
+var testDependencyRepos = func() []dependencies.Repo {
+	dependencyRepos := []dependencies.Repo{}
+	for i, depStr := range testDependencies {
+		dep, err := reposource.ParseNpmVersionedPackage(depStr)
 		if err != nil {
-			t.Fatal(err)
+			panic(err.Error())
 		}
-		want = append(want, &types.Repo{
-			Name:        dep.RepoName(),
-			Description: dep.PackageSyntax() + " description",
-			URI:         string(dep.RepoName()),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          string(dep.RepoName()),
-				ServiceID:   extsvc.TypeNpmPackages,
-				ServiceType: extsvc.TypeNpmPackages,
-			},
-			Sources: map[string]*types.SourceInfo{
-				packageSource.svc.URN(): {
-					ID:       packageSource.svc.URN(),
-					CloneURL: dep.CloneURL(),
-				},
-			},
-			Metadata: &npmpackages.Metadata{
-				Package: dep.NpmPackage,
-			},
+
+		dependencyRepos = append(dependencyRepos, dependencies.Repo{
+			ID:      i + 1,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    dep.PackageSyntax(),
+			Version: dep.Version,
 		})
 	}
 
-	sort.Sort(types.Repos(want))
+	return dependencyRepos
+}()
 
-	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
-	require.Equal(t, want, have)
-}
+func TestNPMPackagesSource_ListRepos(t *testing.T) {
+	ctx := context.Background()
+	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+		{
+			ID:      1,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.0", // test deduplication with version from config
+		},
+		{
+			ID:      2,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.1", // test deduplication with version from config
+		},
+		{
+			ID:      3,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/web-ext",
+			Version: "3.0.0-fork.1",
+		},
+		{
+			ID:      4,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "fastq",
+			Version: "0.9.9", // test missing modules still create a repo.
+		},
+	})
 
-func insertDependencies(t *testing.T, ctx context.Context, s *dependenciesStore.Store, dependencies []string) {
-	for _, depStr := range dependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
-		require.Nil(t, err)
-		// See also: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertCloneableDependencyRepo
-		rows, err :=
-			s.Store.Query(ctx, sqlf.Sprintf(
-				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dependenciesStore.NpmPackagesScheme, dep.PackageSyntax(), dep.Version))
-		require.Nil(t, err)
-		for rows.Next() {
-		}
-		require.Nil(t, rows.Err())
+	svc := types.ExternalService{
+		Kind: extsvc.KindNpmPackages,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
+			Registry:     "https://registry.npmjs.org",
+			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+		})),
 	}
+
+	cf, save := newClientFactory(t, t.Name())
+	t.Cleanup(func() { save(t) })
+
+	src, err := NewNpmPackagesSource(ctx, &svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	src.SetDependenciesService(depsSvc)
+
+	repos, err := listAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
 }

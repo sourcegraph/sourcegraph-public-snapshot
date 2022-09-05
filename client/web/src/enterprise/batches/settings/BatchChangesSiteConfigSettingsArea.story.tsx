@@ -1,7 +1,5 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -16,9 +14,14 @@ import {
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
 
-const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsArea', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
 
 const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult>[] => [
     {
@@ -26,7 +29,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
             query: getDocumentNode(GLOBAL_CODE_HOSTS),
             variables: {
                 after: null,
-                first: 20,
+                first: 15,
             },
         },
         result: {
@@ -41,7 +44,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
     },
 ]
 
-add('Overview', () => (
+export const Overview: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -51,18 +54,28 @@ add('Overview', () => (
                         externalServiceKind: ExternalServiceKind.GITHUB,
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: null,
                         externalServiceKind: ExternalServiceKind.GITLAB,
                         externalServiceURL: 'https://gitlab.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: null,
                         externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                         externalServiceURL: 'https://bitbucket.sgdev.org/',
                         requiresSSH: true,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                        externalServiceURL: 'https://bitbucket.org/',
+                        requiresSSH: false,
+                        requiresUsername: true,
                     }
                 )}
             >
@@ -70,9 +83,9 @@ add('Overview', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('Config added', () => (
+export const ConfigAdded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -87,6 +100,7 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.GITHUB,
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: {
@@ -98,6 +112,7 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.GITLAB,
                         externalServiceURL: 'https://gitlab.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: {
@@ -109,6 +124,19 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                         externalServiceURL: 'https://bitbucket.sgdev.org/',
                         requiresSSH: true,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: {
+                            id: '123',
+                            isSiteCredential: true,
+                            sshPublicKey:
+                                'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                        },
+                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                        externalServiceURL: 'https://bitbucket.org/',
+                        requiresSSH: false,
+                        requiresUsername: true,
                     }
                 )}
             >
@@ -116,4 +144,6 @@ add('Config added', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ConfigAdded.storyName = 'Config added'

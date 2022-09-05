@@ -1,23 +1,40 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 
-import { number } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecState } from '../../../graphql-operations'
 
 import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 
-const { add } = storiesOf('web/batches/details', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const config: Meta = {
+    title: 'web/batches/details',
+    decorators: [decorator],
+    argTypes: {
+        numberActive: {
+            name: 'number of specs executing',
+            control: { type: 'number' },
+            defaultValue: 1,
+            min: 0,
+        },
+        numberComplete: {
+            name: 'number of specs completed',
+            control: { type: 'number' },
+            defaultValue: 1,
+            min: 0,
+        },
+    },
+}
+
+export default config
 
 const PROCESSING_BATCH_SPEC = { state: BatchSpecState.PROCESSING }
 const COMPLETE_BATCH_SPEC = { state: BatchSpecState.COMPLETED }
 
-add('ActiveExecutionNotice', () => {
-    const numberActive = number('number of specs executing', 1, { min: 0 })
-    const numberComplete = number('number of specs complete', 1, { min: 0 })
+export const ActiveExecutionNoticeStory: Story = args => {
+    const numberActive = args.numberActive
+    const numberComplete = args.numberComplete
 
     const specs = useMemo(
         () => [
@@ -28,4 +45,6 @@ add('ActiveExecutionNotice', () => {
     )
 
     return <WebStory>{() => <ActiveExecutionNotice batchSpecs={specs} batchChangeURL="lol.fake" />}</WebStory>
-})
+}
+
+ActiveExecutionNoticeStory.storyName = 'ActiveExecutionNotice'

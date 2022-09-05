@@ -1,9 +1,9 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields } from '../../../../graphql-operations'
@@ -17,7 +17,10 @@ export interface CodeIntelAssociatedUploadProps {
     now?: () => Date
 }
 
-export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUploadProps> = ({ node, now }) =>
+export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildren<CodeIntelAssociatedUploadProps>> = ({
+    node,
+    now,
+}) =>
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
@@ -26,10 +29,10 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
 
                     <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
-                            <h3 className="m-0 d-block d-md-inline">
-                                This job uploaded an index{' '}
+                            <H3 className="m-0 d-block d-md-inline">
+                                This job performed an upload{' '}
                                 <Timestamp date={node.associatedUpload.uploadedAt} now={now} />
-                            </h3>
+                            </H3>
                         </div>
 
                         <div>
@@ -50,9 +53,9 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/uploads/${node.associatedUpload.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-graph/uploads/${node.associatedUpload.id}`}
                         >
-                            <ChevronRightIcon />
+                            <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
                         </Link>
                     </span>
                 </div>

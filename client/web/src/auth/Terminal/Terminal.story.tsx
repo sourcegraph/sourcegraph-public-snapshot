@@ -4,6 +4,7 @@ import { Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { H3, Code } from '@sourcegraph/wildcard'
 
 import { LogoAscii } from '../LogoAscii'
 
@@ -30,18 +31,18 @@ const cloningStatusLines = [
     },
 ]
 
-export const InProgress: FunctionComponent = () => (
+export const InProgress: FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <div className="border overflow-hidden rounded">
             <header>
                 <div className="py-3 px-4">
-                    <h3 className="d-inline-block m-0">Activity log</h3>
+                    <H3 className="d-inline-block m-0">Activity log</H3>
                     <span className="float-right m-0">1/3 done</span>
                 </div>
             </header>
             <Terminal>
                 <TerminalLine>
-                    <code>Cloning Repositories...</code>
+                    <Code>Cloning Repositories...</Code>
                 </TerminalLine>
 
                 {cloningStatusLines?.map(({ id, title, details, progress }) => (
@@ -62,12 +63,12 @@ export const InProgress: FunctionComponent = () => (
     </>
 )
 
-export const Finished: FunctionComponent = () => (
+export const Finished: FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <div className="border overflow-hidden rounded">
             <header>
                 <div className="py-3 px-4">
-                    <h3 className="d-inline-block m-0">Activity log</h3>
+                    <H3 className="d-inline-block m-0">Activity log</H3>
                     <span className="float-right m-0">3/3 done</span>
                 </div>
             </header>

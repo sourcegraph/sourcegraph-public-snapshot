@@ -9,6 +9,7 @@ import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
@@ -32,6 +33,8 @@ interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, Tel
     activePathIsDir: boolean
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
+    repoID: Scalars['ID']
+    enableMergedFileSymbolSidebar: boolean
 }
 
 interface State {
@@ -213,7 +216,6 @@ export class Tree extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const parentPath = dotPathAsUndefined(props.activePathIsDir ? props.activePath : dirname(props.activePath))
         this.node = {
             index: 0,
             parent: null,
@@ -223,7 +225,7 @@ export class Tree extends React.PureComponent<Props, State> {
         }
 
         this.state = {
-            parentPath,
+            parentPath: dotPathAsUndefined(props.activePathIsDir ? props.activePath : dirname(props.activePath)),
             resolveTo: [],
             selectedNode: this.node,
             activeNode: this.node,
@@ -301,7 +303,7 @@ export class Tree extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         return (
             /**
              * TODO: Improve accessibility here.
@@ -325,6 +327,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     activePath={this.props.activePath}
                     depth={0}
                     location={this.props.location}
+                    repoID={this.props.repoID}
                     repoName={this.props.repoName}
                     revision={this.props.revision}
                     commitID={this.props.commitID}
@@ -344,6 +347,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     extensionsController={this.props.extensionsController}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
+                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
             </div>
         )

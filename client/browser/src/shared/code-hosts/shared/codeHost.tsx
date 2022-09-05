@@ -2,7 +2,9 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { render as reactDOMRender, Renderer } from 'react-dom'
+import { isEqual } from 'lodash'
+import { Renderer } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
     combineLatest,
@@ -55,6 +57,8 @@ import {
     property,
     registerHighlightContributions,
     isExternalLink,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -73,7 +77,7 @@ import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
-import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -136,10 +140,7 @@ import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 
-export interface OverlayPosition {
-    top: number
-    left: number
-}
+export type OverlayPosition = { left: number } & ({ top: number } | { bottom: number })
 
 export type ObserveMutations = (
     target: Node,
@@ -167,7 +168,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
-/** Information for adding code intelligence to code views on arbitrary code hosts. */
+/** Information for adding code navigation to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
@@ -239,13 +240,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     observeMutations?: ObserveMutations
 
-    /**
-     * Adjust the position of the hover overlay. Useful for fixed headers or other
-     * elements that throw off the position of the tooltip within the relative
-     * element.
-     */
-    adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
-
     // Extensions related input
 
     /**
@@ -274,6 +268,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         target: RepoSpec & RawRepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
         context: URLToFileContext
     ) => string
+
+    observeLineSelection?: Observable<LineOrPositionOrRange>
 
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
@@ -331,23 +327,22 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        | 'forceUpdateTooltip'
-        | 'urlToFile'
-        | 'sideloadedExtensionURL'
-        | 'requestGraphQL'
-        | 'settings'
-        | 'refreshSettings'
-        | 'sourcegraphURL'
+        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    container.append(mount)
+export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
+    let mount = container.querySelector<HTMLDivElement>(`.hover-overlay-mount.hover-overlay-mount__${codeHostName}`)
+
+    if (!mount) {
+        mount = document.createElement('div')
+        mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+        container.append(mount)
+    }
+
     return mount
 }
 
@@ -359,7 +354,7 @@ export const createGlobalDebugMount = (): HTMLElement => {
 }
 
 /**
- * Prepares the page for code intelligence. It creates the hoverifier, injects
+ * Prepares the page for code navigation. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
  */
 function initCodeIntelligence({
@@ -370,12 +365,12 @@ function initCodeIntelligence({
     render,
     telemetryService,
     hoverAlerts,
-    privateCloudErrors,
+    repoSyncErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: Renderer
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
-    privateCloudErrors: Observable<boolean>
+    repoSyncErrors: Observable<boolean>
 }): {
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
@@ -384,8 +379,6 @@ function initCodeIntelligence({
 
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
-
-    const relativeElement = document.body
 
     const containerComponentUpdates = new Subject<void>()
 
@@ -407,7 +400,7 @@ function initCodeIntelligence({
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
-            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement })),
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
@@ -415,10 +408,10 @@ function initCodeIntelligence({
                 [{ isLoading: true, result: null }],
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
-                        withLatestFrom(privateCloudErrors),
-                        switchMap(([extensionHost, hasPrivateCloudError]) =>
+                        withLatestFrom(repoSyncErrors),
+                        switchMap(([extensionHost, hasRepoSyncError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                            hasPrivateCloudError
+                            hasRepoSyncError
                                 ? of({ isLoading: true, result: null })
                                 : wrapRemoteObservable(
                                       extensionHost.getHover(
@@ -429,7 +422,7 @@ function initCodeIntelligence({
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        privateCloudErrors.pipe(
+                        repoSyncErrors.pipe(
                             distinctUntilChanged(),
                             map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
@@ -446,10 +439,10 @@ function initCodeIntelligence({
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
-                withLatestFrom(privateCloudErrors),
-                switchMap(([extensionHost, hasPrivateCloudError]) =>
+                withLatestFrom(repoSyncErrors),
+                switchMap(([extensionHost, hasRepoSyncError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                    hasPrivateCloudError
+                    hasRepoSyncError
                         ? of([])
                         : wrapRemoteObservable(
                               extensionHost.getDocumentHighlights(
@@ -460,10 +453,10 @@ function initCodeIntelligence({
             ),
         getActions: context =>
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-            privateCloudErrors.pipe(
+            repoSyncErrors.pipe(
                 take(1),
-                switchMap(hasPrivateCloudError =>
-                    hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
+                switchMap(hasRepoSyncError =>
+                    hasRepoSyncError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
         tokenize: codeHost.codeViewsRequireTokenization,
@@ -517,8 +510,8 @@ function initCodeIntelligence({
                                 return EMPTY
                             }
 
-                            const def = urlForClientCommandOpen(action.action, window.location.hash)
-                            if (!def) {
+                            const defer = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!defer) {
                                 return EMPTY
                             }
 
@@ -534,7 +527,7 @@ function initCodeIntelligence({
 
                                     const actionType = action === definitionAction ? 'definition' : 'reference'
                                     telemetryService.log(`${actionType}CodeHost.click`)
-                                    window.location.href = def
+                                    window.location.href = defer
                                 }),
                                 finalize(() => (token.style.cursor = oldCursor))
                             )
@@ -580,16 +573,14 @@ function initCodeIntelligence({
             event.preventDefault()
         }
         public render(): JSX.Element | null {
-            const hoverOverlayProps = this.getHoverOverlayProps()
-
-            if (!hoverOverlayProps) {
+            if (!this.state.hoverOverlayProps) {
                 return null
             }
 
             return (
                 <TrackAnchorClick onClick={this.handleHoverLinkClick}>
                     <HoverOverlay
-                        {...hoverOverlayProps}
+                        {...this.state.hoverOverlayProps}
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
@@ -604,24 +595,13 @@ function initCodeIntelligence({
                 </TrackAnchorClick>
             )
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
-            if (!this.state.hoverOverlayProps) {
-                return undefined
-            }
-            let { overlayPosition, ...rest } = this.state.hoverOverlayProps
-            // TODO: is adjustOverlayPosition needed or could it be solved with a better relativeElement?
-            if (overlayPosition && codeHost.adjustOverlayPosition) {
-                overlayPosition = codeHost.adjustOverlayPosition(overlayPosition)
-            }
-            return { ...rest, overlayPosition }
-        }
     }
 
     const { getHoverOverlayMountLocation } = codeHost
     if (!getHoverOverlayMountLocation) {
         // This renders to document.body, which we can assume is never removed,
         // so we don't need to subscribe to mutations.
-        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        const overlayMount = getExistingOrCreateOverlayMount(codeHost.type, document.body)
         render(<HoverOverlayContainer />, overlayMount)
     } else {
         let previousMount: HTMLElement | null = null
@@ -632,7 +612,7 @@ function initCodeIntelligence({
                 if (previousMount) {
                     previousMount.remove()
                 }
-                const mount = createOverlayMount(codeHost.type, mountLocation)
+                const mount = getExistingOrCreateOverlayMount(codeHost.type, mountLocation)
                 previousMount = mount
                 render(<HoverOverlayContainer />, mount)
             })
@@ -709,7 +689,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     render: Renderer
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyRepoSyncError' | 'openOptionsPage'>
 }
 
 /**
@@ -727,6 +707,22 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
     url.searchParams.set('filter', repoName)
     return url.href
 }
+
+const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query UserSettingsURL {
+                currentUser {
+                    settingsURL
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(({ data }) => data?.currentUser?.settingsURL),
+        filter(isDefined)
+    )
 
 /**
  * @returns boolean indicating whether it is safe to continue initialization
@@ -777,7 +773,7 @@ const isSafeToContinueCodeIntel = async ({
 
         if (isExtension) {
             // Notify to show extension alert-icon
-            background.notifyPrivateCloudError(true).catch(error => {
+            background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError: true }).catch(error => {
                 console.error('Error notifying background page of private cloud.', error)
             })
         }
@@ -798,19 +794,7 @@ const isSafeToContinueCodeIntel = async ({
             // Show "Configure Sourcegraph" button
             console.warn('Repository is not cloned.', error)
 
-            const settingsURL = await requestGraphQL<GQL.IQuery>({
-                request: gql`
-                    query UserSettingsURL {
-                        currentUser {
-                            settingsURL
-                        }
-                    }
-                `,
-                variables: {},
-                mightContainPrivateInfo: true,
-            })
-                .pipe(map(({ data }) => data?.currentUser?.settingsURL))
-                .toPromise()
+            const settingsURL = await observeUserSettingsURL(requestGraphQL).toPromise()
 
             if (rawRepoName && settingsURL) {
                 render(
@@ -872,27 +856,27 @@ export async function handleCodeHost({
     const hoverAlerts: Observable<HoverAlert>[] = []
 
     /**
-     * A stream that emits a boolean that signifies
-     * whether any request for the current repository has failed on the basis
-     * that it is a private repository that has not been added to Sourcegraph Cloud
-     * (only emits `true` when the Sourcegraph instance is Cloud).
+     * A stream that emits a boolean that signifies whether any request for
+     * the current repository has failed because one of the following reasons.
+     * 1. It is a private repository not synced with Sourcegraph Cloud and the latter is the
+     * active Sourcegraph URL.
+     * 2. It is a repository not added to the Sourcegraph instance (other than Cloud).
      * If the current state is `true`, we can short circuit subsequent requests.
      * */
-    const privateCloudErrors = new BehaviorSubject<boolean>(false)
+    const repoSyncErrors = new BehaviorSubject<boolean>(false)
     // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
-    const setPrivateCloudError = privateCloudErrors.next.bind(privateCloudErrors)
+    const setRepoSyncError = repoSyncErrors.next.bind(repoSyncErrors)
 
     /**
-     * Checks whether the error occured because the repository
-     * is a private repository that hasn't been added to Sourcegraph Cloud
-     * (no side effects, doesn't notify `privateCloudErrors`)
+     * Checks whether the error was caused by one of the following conditions:
+     * - repository is private and not synced with Sourcegraph Cloud
+     * - repository is not added to other than Cloud Sourcegraph instance.
+     *
+     * (no side effects, doesn't notify `repoSyncErrors`)
      * */
-    const checkPrivateCloudError = async (error: any): Promise<boolean> =>
-        !!(
-            isRepoNotFoundErrorLike(error) &&
-            isDefaultSourcegraphUrl(sourcegraphURL) &&
-            (await codeHost.getContext?.())?.privateRepository
-        )
+    const checkRepoSyncError = async (error: any): Promise<boolean> =>
+        isRepoNotFoundErrorLike(error) &&
+        (isDefaultSourcegraphUrl(sourcegraphURL) ? !!(await codeHost.getContext?.())?.privateRepository : true)
 
     if (isGithubCodeHost(codeHost)) {
         // TODO: add tests in codeHost.test.tsx
@@ -906,7 +890,7 @@ export async function handleCodeHost({
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
-        // Stop initializing code intelligence
+        // Stop initializing code navigation
         return subscriptions
     }
 
@@ -915,7 +899,7 @@ export async function handleCodeHost({
             mutations,
             nativeTooltipsEnabled,
             codeHost,
-            privateCloudErrors
+            repoSyncErrors
         )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
@@ -930,14 +914,14 @@ export async function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
-        privateCloudErrors,
+        repoSyncErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount && !minimalUI) {
+    if (codeHost.getCommandPaletteMount && !minimalUI && extensionsController !== null) {
         subscriptions.add(
             addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
                 renderCommandPalette({
@@ -956,7 +940,7 @@ export async function handleCodeHost({
     // Render extension debug menu
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    if (showGlobalDebug) {
+    if (showGlobalDebug && extensionsController !== null) {
         const mount = createGlobalDebugMount()
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
@@ -984,7 +968,7 @@ export async function handleCodeHost({
     const codeViewCount = new BehaviorSubject<number>(0)
 
     // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+    if (codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
@@ -1001,46 +985,57 @@ export async function handleCodeHost({
                     return [false]
                 }
                 return [asError(error)]
+            }),
+            tap(repoExistsOrErrors => {
+                if (typeof repoExistsOrErrors === 'boolean') {
+                    const hasRepoSyncError = repoExistsOrErrors === false
+                    setRepoSyncError(hasRepoSyncError)
+                    if (isExtension) {
+                        background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
+                            console.error('Error notifying background page of private cloud error:', error)
+                        })
+                    }
+                }
             })
         )
-        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
-            setPrivateCloudError(hasPrivateCloudError)
-            if (isExtension) {
-                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
-                    console.error('Error notifying background page of private cloud error:', error)
-                })
-            }
-        }
 
-        subscriptions.add(
-            combineLatest([
-                repoExistsOrErrors,
-                addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
-                // Only show sign in button when there is no other code view on the page that is displaying it
-                codeViewCount.pipe(
-                    map(count => count === 0),
-                    distinctUntilChanged()
-                ),
-                from(getContext()),
-            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context]) => {
-                render(
-                    <ViewOnSourcegraphButton
-                        {...viewOnSourcegraphButtonClassProps}
-                        codeHostType={codeHost.type}
-                        context={context}
-                        minimalUI={minimalUI}
-                        sourcegraphURL={sourcegraphURL}
-                        repoExistsOrError={repoExistsOrError}
-                        showSignInButton={showSignInButton}
-                        // The bound function is constant
-                        onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                        onPrivateCloudError={onPrivateCloudError}
-                    />,
-                    mount
-                )
-            })
-        )
+        if (codeHost.getViewContextOnSourcegraphMount) {
+            subscriptions.add(
+                combineLatest([
+                    repoExistsOrErrors,
+                    addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
+                    // Only show sign in button when there is no other code view on the page that is displaying it
+                    codeViewCount.pipe(
+                        map(count => count === 0),
+                        distinctUntilChanged()
+                    ),
+                    from(getContext()),
+                    observeUserSettingsURL(requestGraphQL).pipe(startWith(undefined)),
+                ]).subscribe(([repoExistsOrError, mount, showSignInButton, context, userSettingsURL]) => {
+                    render(
+                        <ViewOnSourcegraphButton
+                            {...viewOnSourcegraphButtonClassProps}
+                            codeHostType={codeHost.type}
+                            context={context}
+                            minimalUI={minimalUI}
+                            sourcegraphURL={sourcegraphURL}
+                            userSettingsURL={
+                                userSettingsURL &&
+                                buildManageRepositoriesURL(sourcegraphURL, userSettingsURL, context.rawRepoName)
+                            }
+                            repoExistsOrError={repoExistsOrError}
+                            showSignInButton={showSignInButton}
+                            // The bound function is constant
+                            onSignInClose={nextSignInClose}
+                            onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
+                        />,
+                        mount
+                    )
+                })
+            )
+        } else {
+            subscriptions.add(repoExistsOrErrors.subscribe())
+        }
     }
 
     /** A stream of added or removed code views with the resolved file info */
@@ -1060,14 +1055,14 @@ export async function handleCodeHost({
                 mergeMap(diffOrBlobInfo =>
                     resolveRepoNamesForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     )
                 ),
                 mergeMap(diffOrBlobInfo =>
                     fetchFileContentForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     ).pipe(
                         map(diffOrBlobInfo => ({
@@ -1078,8 +1073,8 @@ export async function handleCodeHost({
                 ),
                 catchError(error =>
                     // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
-                    from(checkPrivateCloudError(error)).pipe(hasPrivateCloudError => {
-                        if (hasPrivateCloudError) {
+                    from(checkRepoSyncError(error)).pipe(hasRepoSyncError => {
+                        if (hasRepoSyncError) {
                             return EMPTY
                         }
                         throw error
@@ -1224,6 +1219,29 @@ export async function handleCodeHost({
                         extensionHostAPI.addViewerIfNotExists(editorData),
                         addRootReference(rootURI, fileInfo.revision),
                     ])
+
+                    if (codeHost.observeLineSelection) {
+                        codeViewEvent.subscriptions.add(
+                            codeHost.observeLineSelection
+                                .pipe(
+                                    map(lprToSelectionsZeroIndexed),
+                                    distinctUntilChanged(isEqual),
+                                    tap(selections => {
+                                        extensionHostAPI
+                                            .setEditorSelections(viewerId, selections)
+                                            .catch(error =>
+                                                console.error(
+                                                    'Error updating editor selections on extension host',
+                                                    error
+                                                )
+                                            )
+                                    })
+                                )
+
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
+                                .subscribe()
+                        )
+                    }
 
                     // Subscribe for removal
                     codeViewEvent.subscriptions.add(() => {
@@ -1376,7 +1394,7 @@ export async function handleCodeHost({
                     }
                 }
 
-                // Add hover code intelligence
+                // Add hover code navigation
                 const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
                     part,
                 }) => {
@@ -1553,7 +1571,9 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    subscriptions.add(extensionsController)
+    if (extensionsController !== null) {
+        subscriptions.add(extensionsController)
+    }
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1584,8 +1604,14 @@ export function injectCodeIntelligenceToCodeHost(
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
 
-    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
-        reactDOMRender(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>, container)
+    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void => {
+        if (!container) {
+            return
+        }
+
+        const root = createRoot(container)
+        root.render(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>)
+    }
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
@@ -1596,7 +1622,7 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else {
+            } else if (extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

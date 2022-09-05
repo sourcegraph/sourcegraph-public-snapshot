@@ -7,8 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SettingsMigrationJob struct {
@@ -28,12 +28,8 @@ type DBSettingsMigrationJobsStore struct {
 	Now func() time.Time
 }
 
-func NewSettingsMigrationJobsStore(db dbutil.DB) *DBSettingsMigrationJobsStore {
-	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
-}
-
-func (s *DBSettingsMigrationJobsStore) Handle() *basestore.TransactableHandle {
-	return s.Store.Handle()
+func NewSettingsMigrationJobsStore(db database.DB) *DBSettingsMigrationJobsStore {
+	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
 func (s *DBSettingsMigrationJobsStore) With(other basestore.ShareableStore) *DBSettingsMigrationJobsStore {

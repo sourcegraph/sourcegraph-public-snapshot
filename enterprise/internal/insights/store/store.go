@@ -10,10 +10,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -49,22 +49,18 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-// New returns a new Store backed by the given Timescale db.
-func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
+// New returns a new Store backed by the given Postgres db.
+func New(db edb.InsightsDB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, permStore InsightPermissionStore, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, permStore: permStore}
+func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
@@ -107,8 +103,8 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
-	IncludeRepoRegex string
-	ExcludeRepoRegex string
+	IncludeRepoRegex []string
+	ExcludeRepoRegex []string
 
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
@@ -194,7 +190,7 @@ DELETE FROM series_points_snapshots where series_id = %s;
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
-	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata, capture
+	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
 	FROM (  select * from series_points
 			union
 			select * from series_points_snapshots
@@ -205,7 +201,7 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
 GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
-ORDER BY sub.series_id, sub.interval_time DESC
+ORDER BY sub.series_id, sub.interval_time ASC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
@@ -246,10 +242,20 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
-		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", opts.IncludeRepoRegex))
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
-		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", opts.ExcludeRepoRegex))
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
 	}
 
 	if len(preds) == 0 {
@@ -374,7 +380,7 @@ type RecordSeriesPointArgs struct {
 	//
 	// See the DB schema comments for intended use cases. This should generally be small,
 	// low-cardinality data to avoid inflating the table.
-	Metadata interface{}
+	Metadata any
 
 	PersistMode PersistMode
 }
@@ -524,7 +530,7 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 
 // scanner captures the Scan method of sql.Rows and sql.Row
 type scanner interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 }
 
 // a scanFunc scans one or more rows from a scanner, returning

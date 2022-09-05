@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper, mdiOpenInNew } from '@mdi/js'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
-import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable } from 'rxjs'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { IUser } from '@sourcegraph/shared/src/schema'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
+
+import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
@@ -42,10 +42,12 @@ export interface OptionsPageProps {
 
     initialShowAdvancedSettings?: boolean
     isFullPage: boolean
-    showPrivateRepositoryAlert?: boolean
     showSourcegraphCloudAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
+
+    hasRepoSyncError?: boolean
+    currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
 }
 
 // "Error code" constants for Sourcegraph URL validation
@@ -57,7 +59,7 @@ const NEW_TAB_LINK_PROPS: Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'r
     rel: 'noopener noreferrer',
 }
 
-export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
+export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<OptionsPageProps>> = ({
     version,
     sourcegraphUrl,
     validateSourcegraphUrl,
@@ -65,7 +67,6 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onToggleActivated,
     initialShowAdvancedSettings = false,
     isFullPage,
-    showPrivateRepositoryAlert,
     showSourcegraphCloudAlert,
     permissionAlert,
     requestPermissionsHandler,
@@ -73,6 +74,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onChangeOptionFlag,
     onChangeSourcegraphUrl,
     suggestedSourcegraphUrls,
+    hasRepoSyncError,
+    currentUser,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
 
@@ -98,7 +101,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 <div className={styles.version}>v{version}</div>
             </section>
             <section className={styles.section}>
-                Get code intelligence tooltips while browsing and reviewing code on your code host.{' '}
+                Get code navigation tooltips while browsing and reviewing code on your code host.{' '}
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
                 </Link>{' '}
@@ -111,9 +114,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     onChange={onChangeSourcegraphUrl}
                     validate={validateSourcegraphUrl}
                 />
-                <p className="mt-2 mb-0">
+                <Text className="mt-2 mb-0">
                     <small>Enter the URL of your Sourcegraph instance to use the extension on private code.</small>
-                </p>
+                </Text>
             </section>
 
             {permissionAlert && (
@@ -122,16 +125,27 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
+            {hasRepoSyncError && currentUser && (
+                <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
+            )}
+
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
                     {...NEW_TAB_LINK_PROPS}
                     className="d-block mb-1"
                 >
-                    <small>How do we keep your code private?</small> <OpenInNewIcon size="0.75rem" className="ml-2" />
+                    <small>How do we keep your code private?</small>{' '}
+                    <Icon
+                        className="ml-2"
+                        svgPath={mdiOpenInNew}
+                        inline={false}
+                        aria-hidden={true}
+                        height="0.75rem"
+                        width="0.75rem"
+                    />
                 </Link>
-                <p className="mb-0">
+                <Text className="mb-0">
                     <Button
                         className="p-0 shadow-none font-weight-normal test-toggle-advanced-settings-button"
                         onClick={toggleAdvancedSettings}
@@ -140,7 +154,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     >
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
                     </Button>
-                </p>
+                </Text>
                 {showAdvancedSettings && (
                     <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
                 )}
@@ -148,13 +162,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
-                        <Icon className="mr-2" as={EarthIcon} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiEarth} />
                         Sourcegraph Cloud
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
                     <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
-                        <Icon className="mr-2" as={BookOpenPageVariantIcon} />
+                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiBookOpenPageVariant} />
                         Documentation
                     </Link>
                 </div>
@@ -164,65 +178,98 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 }
 
 interface PermissionAlertProps {
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     name: string
     onClickGrantPermissions?: React.MouseEventHandler
 }
 
-const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
+const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<PermissionAlertProps>> = ({
     name,
     icon: AlertIcon,
     onClickGrantPermissions,
 }) => (
     <section className={classNames('bg-2', styles.section)}>
-        <h4>
-            {AlertIcon && <Icon className="mr-2" as={AlertIcon} />} <span>{name}</span>
-        </h4>
-        <p className={styles.permissionText}>
+        <H4>
+            {AlertIcon && <Icon className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
+        </H4>
+        <Text className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
-        </p>
+        </Text>
         <Button onClick={onClickGrantPermissions} variant="primary" size="sm">
             <small>Grant permissions</small>
         </Button>
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent = () => (
-    <section className={classNames('bg-2', styles.section)}>
-        <h4>
-            <Icon className="mr-2" as={LockIcon} />
-            Private repository
-        </h4>
-        <p>
-            To use the browser extension with your private repositories, you need to set up a{' '}
-            <strong>private Sourcegraph instance</strong> and connect the browser extension to it.
-        </p>
-        <ol>
-            <li className="mb-2">
-                <Link to="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
-                    Install and configure Sourcegraph
-                </Link>
-                . Skip this step if you already have a private Sourcegraph instance.
-            </li>
-            <li className="mb-2">Click the Sourcegraph icon in the browser toolbar to bring up this popup again.</li>
-            <li className="mb-2">
-                Enter the URL (including the protocol) of your Sourcegraph instance above, e.g.{' '}
-                <q>https://sourcegraph.example.com</q>.
-            </li>
-            <li>
-                Make sure that the status says <q>Looks good!</q>.
-            </li>
-        </ol>
-    </section>
-)
+const RepoSyncErrorAlert: React.FunctionComponent<
+    React.PropsWithChildren<{
+        sourcegraphUrl: OptionsPageProps['sourcegraphUrl']
+        currentUser: NonNullable<OptionsPageProps['currentUser']>
+    }>
+> = ({ sourcegraphUrl, currentUser }) => {
+    const isDefaultURL = isDefaultSourcegraphUrl(sourcegraphUrl)
 
-const SourcegraphCloudAlert: React.FunctionComponent = () => (
+    if (isDefaultURL && !currentUser.settingsURL) {
+        return null
+    }
+
+    return (
+        <section className={classNames('bg-2', styles.section)}>
+            <H4>
+                <Icon aria-hidden={true} className="mr-2" svgPath={isDefaultURL ? mdiLock : mdiBlockHelper} />
+                {isDefaultURL ? 'Private repository' : 'Repository not found'}
+            </H4>
+            <Text className="mb-0">
+                {isDefaultURL ? (
+                    <>
+                        <Link
+                            to={
+                                createURLWithUTM(
+                                    new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
+                                    {
+                                        utm_source: getPlatformName(),
+                                        utm_campaign: 'sync-private-repo-with-cloud',
+                                    }
+                                ).href
+                            }
+                            {...NEW_TAB_LINK_PROPS}
+                            className={styles.link}
+                        >
+                            Add your repository to Sourcegraph
+                        </Link>{' '}
+                        to use this extension for private repositories.
+                    </>
+                ) : currentUser.siteAdmin ? (
+                    <>
+                        <Link
+                            to={
+                                createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
+                                    utm_source: getPlatformName(),
+                                    utm_campaign: 'add-repo-to-instance',
+                                }).href
+                            }
+                            {...NEW_TAB_LINK_PROPS}
+                            className={styles.link}
+                        >
+                            Add your repository to Sourcegraph
+                        </Link>{' '}
+                        to use this extension.
+                    </>
+                ) : (
+                    <>Contact your admin to add this repository to Sourcegraph.</>
+                )}
+            </Text>
+        </section>
+    )
+}
+
+const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
-        <h4>
-            <Icon className="mr-2" as={CheckCircleOutlineIcon} />
+        <H4>
+            <Icon aria-hidden={true} className="mr-2" svgPath={mdiCheckCircleOutline} />
             You're on Sourcegraph Cloud
-        </h4>
-        <p>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</p>
+        </H4>
+        <Text>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</Text>
     </section>
 )
 
@@ -237,7 +284,7 @@ interface SourcegraphURLFormProps {
     suggestions: OptionsPageProps['sourcegraphUrl'][]
 }
 
-export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps> = ({
+export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren<SourcegraphURLFormProps>> = ({
     value,
     validate,
     suggestions,
@@ -288,7 +335,7 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
     return (
         // eslint-disable-next-line react/forbid-elements
         <form onSubmit={preventDefault} noValidate={true}>
-            <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
+            <Label htmlFor="sourcegraph-url">Sourcegraph URL</Label>
             <Combobox openOnFocus={true} onSelect={nextUrlFieldChange}>
                 <LoaderInput loading={urlState.kind === 'LOADING'} className={deriveInputClassName(urlState)}>
                     <ComboboxInput

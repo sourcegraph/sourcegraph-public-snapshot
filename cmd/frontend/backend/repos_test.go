@@ -12,12 +12,15 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
@@ -25,8 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -136,7 +137,7 @@ func (oid gitObjectInfo) OID() gitdomain.OID {
 }
 
 func TestReposGetInventory(t *testing.T) {
-	var s repos
+	var s repos = repos{logger: logtest.Scoped(t)}
 	ctx := testContext()
 
 	const (
@@ -151,29 +152,29 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserver.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
-		return &util.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
+		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+	gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		switch name {
 		case "":
 			return []fs.FileInfo{
-				&util.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
-				&util.FileInfo{Name_: "b.go", Size_: 12},
+				&fileutil.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
+				&fileutil.FileInfo{Name_: "b.go", Size_: 12},
 			}, nil
 		case "a":
-			return []fs.FileInfo{&util.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
+			return []fs.FileInfo{&fileutil.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
 		default:
 			panic("unhandled mock ReadDir " + name)
 		}
 	}
-	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -188,7 +189,10 @@ func TestReposGetInventory(t *testing.T) {
 		}
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
-	defer git.ResetMocks()
+	defer func() {
+		gitserver.ResetMocks()
+		gitserver.Mocks.ReadDir = nil
+	}()
 
 	tests := []struct {
 		useEnhancedLanguageDetection bool
@@ -234,7 +238,9 @@ func TestReposGetInventory(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
+	} else {
+		logtest.Init(m)
 	}
 	os.Exit(m.Run())
 }

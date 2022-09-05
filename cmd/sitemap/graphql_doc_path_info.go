@@ -30,7 +30,7 @@ type gqlDocPathInfoResponse struct {
 			}
 		}
 	}
-	Errors []interface{}
+	Errors []any
 }
 
 // DocumentationPathInfoResult describes a single documentation page path, what is located there

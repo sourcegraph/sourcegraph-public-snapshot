@@ -19,7 +19,7 @@ func LogSlowSearchesThreshold() time.Duration {
 }
 
 // MapToLog15Ctx translates a map to log15 context fields.
-func MapToLog15Ctx(m map[string]interface{}) []interface{} {
+func MapToLog15Ctx(m map[string]any) []any {
 	// sort so its stable
 	keys := make([]string, len(m))
 	i := 0
@@ -28,7 +28,7 @@ func MapToLog15Ctx(m map[string]interface{}) []interface{} {
 		i++
 	}
 	sort.Strings(keys)
-	ctx := make([]interface{}, len(m)*2)
+	ctx := make([]any, len(m)*2)
 	for i, k := range keys {
 		j := i * 2
 		ctx[j] = k

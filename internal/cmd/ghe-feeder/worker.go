@@ -16,8 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
-	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -101,7 +101,7 @@ type worker struct {
 	logger log15.Logger
 
 	// rate limiter for the GHE API calls
-	rateLimiter *rate.Limiter
+	rateLimiter *ratelimit.InstrumentedLimiter
 	// how many simultaneous `git push` operations to the GHE
 	pushSem chan struct{}
 	// how many simultaneous `git clone` operations from github.com

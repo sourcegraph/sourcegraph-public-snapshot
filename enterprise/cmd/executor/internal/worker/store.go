@@ -21,15 +21,16 @@ type QueueStore interface {
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error)
+	CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error)
 }
 
 var _ workerutil.Store = &storeShim{}
 
-func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
+func (s *storeShim) QueuedCount(ctx context.Context) (int, error) {
 	return 0, errors.New("unimplemented")
 }
 
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (workerutil.Record, bool, error) {
 	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {
@@ -61,4 +62,8 @@ func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string
 
 func (s *storeShim) MarkFailed(ctx context.Context, id int, errorMessage string) (bool, error) {
 	return true, s.queueStore.MarkFailed(ctx, s.queueName, id, errorMessage)
+}
+
+func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
+	return s.queueStore.CanceledJobs(ctx, s.queueName, knownIDs)
 }

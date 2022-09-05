@@ -21,3 +21,5 @@ npm-debug.log.*
 /.gtm/
 
 code-intel-extensions
+
+*.har

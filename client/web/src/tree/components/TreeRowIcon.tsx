@@ -4,11 +4,15 @@ import classNames from 'classnames'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import styles from './TreeRowIcon.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeRowIconProps = HTMLAttributes<HTMLSpanElement>
 
-export const TreeRowIcon: React.FunctionComponent<TreeRowIconProps> = ({ className, children, ...rest }) => (
+export const TreeRowIcon: React.FunctionComponent<React.PropsWithChildren<TreeRowIconProps>> = ({
+    className,
+    children,
+    ...rest
+}) => (
     <span className={classNames(className, styles.rowIcon)} data-testid="tree-row-icon" {...rest}>
         {children}
     </span>
@@ -16,7 +20,7 @@ export const TreeRowIcon: React.FunctionComponent<TreeRowIconProps> = ({ classNa
 
 type TreeRowIconLinkProps = AnchorHTMLAttributes<HTMLAnchorElement>
 
-export const TreeRowIconLink: React.FunctionComponent<TreeRowIconLinkProps> = ({
+export const TreeRowIconLink: React.FunctionComponent<React.PropsWithChildren<TreeRowIconLinkProps>> = ({
     className,
     children,
     href,

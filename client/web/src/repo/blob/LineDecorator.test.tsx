@@ -1,6 +1,4 @@
-import React from 'react'
-
-import { render, within } from '@testing-library/react'
+import { render, within, waitFor } from '@testing-library/react'
 import { ReplaySubject } from 'rxjs'
 import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 
@@ -10,11 +8,16 @@ import { LineDecorator, LineDecoratorProps } from './LineDecorator'
 
 describe('LineDecorator', () => {
     function createCodeElement() {
-        const codeElement = document.createElement('td')
-        codeElement.classList.add('code')
         const parentRow = document.createElement('tr')
-        parentRow.append(codeElement)
-        return { codeElement, parentRow }
+
+        const lineElement = parentRow.insertCell()
+        lineElement.classList.add('line')
+        lineElement.dataset.line = '1'
+
+        const codeElement = parentRow.insertCell()
+        codeElement.classList.add('code')
+
+        return { parentRow, lineElement, codeElement }
     }
 
     function createLineDecoratorProps(
@@ -55,7 +58,7 @@ describe('LineDecorator', () => {
         render(<LineDecorator {...props} />)
 
         const container = within(codeElement)
-        expect(container.getByTestId('line-decoration')).toBeVisible()
+        waitFor(() => expect(container.getByTestId('line-decoration')).toBeVisible())
         expect(codeElement).toMatchSnapshot()
     })
 
@@ -79,12 +82,12 @@ describe('LineDecorator', () => {
         render(<LineDecorator {...props} />)
 
         const container = within(codeElement)
-        expect(container.getByTestId('line-decoration')).toBeVisible()
+        waitFor(() => expect(container.getByTestId('line-decoration')).toBeVisible())
         expect(codeElement).toMatchSnapshot()
     })
 
     it('decorates line', () => {
-        const { codeElement, parentRow } = createCodeElement()
+        const { codeElement } = createCodeElement()
         const themeableDecorationStyle: ThemableDecorationStyle = {
             backgroundColor: 'black',
             borderColor: 'teal',
@@ -103,22 +106,22 @@ describe('LineDecorator', () => {
 
         const wrapper = render(<LineDecorator {...props} />)
 
-        // Code row should be styled after the decorator mounts
+        // Code element should be styled after the decorator mounts
         expect({
-            backgroundColor: parentRow.style.backgroundColor,
-            borderColor: parentRow.style.borderColor,
+            backgroundColor: codeElement.style.backgroundColor,
+            borderColor: codeElement.style.borderColor,
         }).toStrictEqual(themeableDecorationStyle)
 
-        // Code row should be unstyled after the decorator unmounts
+        // Code element should be unstyled after the decorator unmounts
         wrapper.unmount()
         expect({
-            backgroundColor: parentRow.style.backgroundColor,
-            borderColor: parentRow.style.borderColor,
+            backgroundColor: codeElement.style.backgroundColor,
+            borderColor: codeElement.style.borderColor,
         }).toStrictEqual({ backgroundColor: '', borderColor: '' })
     })
 
     it('updates decorations on theme change', () => {
-        const { codeElement, parentRow } = createCodeElement()
+        const { codeElement } = createCodeElement()
         const themeableDecorationStyleLight: ThemableDecorationStyle = {
             backgroundColor: 'black',
             borderColor: 'teal',
@@ -143,15 +146,15 @@ describe('LineDecorator', () => {
         const { rerender } = render(<LineDecorator {...props} isLightTheme={true} />)
 
         expect({
-            backgroundColor: parentRow.style.backgroundColor,
-            borderColor: parentRow.style.borderColor,
+            backgroundColor: codeElement.style.backgroundColor,
+            borderColor: codeElement.style.borderColor,
         }).toStrictEqual(themeableDecorationStyleLight)
 
         rerender(<LineDecorator {...props} isLightTheme={false} />)
 
         expect({
-            backgroundColor: parentRow.style.backgroundColor,
-            borderColor: parentRow.style.borderColor,
+            backgroundColor: codeElement.style.backgroundColor,
+            borderColor: codeElement.style.borderColor,
         }).toStrictEqual(themeableDecorationStyleDark)
     })
 })

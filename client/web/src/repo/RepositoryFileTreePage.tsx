@@ -2,17 +2,17 @@ import React from 'react'
 
 import { Redirect, RouteComponentProps } from 'react-router'
 
-import { appendLineRangeQueryParameter, isErrorLike } from '@sourcegraph/common'
+import { appendLineRangeQueryParameter } from '@sourcegraph/common'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GettingStartedTourInfo } from '../gettingStartedTour/GettingStartedTourInfo'
+import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
-import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
+import { BlobProps } from './blob/Blob'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -20,27 +20,30 @@ import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
 
 export interface RepositoryFileTreePageProps
-    extends FeatureFlagProps,
-        RepoRevisionContainerContext,
+    extends RepoRevisionContainerContext,
         RouteComponentProps<{
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
-        }> {}
+            spec: string
+        }>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
-export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = ({
-    repo,
-    resolvedRev: { commitID, defaultBranch },
-    match,
-    globbing,
-    featureFlags,
-    onExtensionAlertDismissed,
-    ...context
-}) => {
+export const RepositoryFileTreePage: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryFileTreePageProps>
+> = props => {
+    const {
+        repo,
+        resolvedRev: { commitID, defaultBranch },
+        match,
+        globbing,
+        ...context
+    } = props
+
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -51,10 +54,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
     }
 
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
-
     const mode = getModeFromPath(filePath)
-
-    const showGettingStartedTour = context.isSourcegraphDotCom && !context.authenticatedUser
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
     const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -90,11 +90,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
         globbing,
     }
 
-    const codeHostIntegrationMessaging: 'native-integration' | 'browser-extension' =
-        (!isErrorLike(context.settingsCascade.final) &&
-            context.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-        'browser-extension'
-
     return (
         <>
             <RepoRevisionSidebar
@@ -105,22 +100,15 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={defaultBranch || 'HEAD'}
-                showGettingStartedTour={showGettingStartedTour}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
                 // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                 <BlobStatusBarContainer>
-                    {showGettingStartedTour && <GettingStartedTourInfo className="mr-3 mb-3" />}
+                    <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
-                            <>
-                                <InstallIntegrationsAlert
-                                    codeHostIntegrationMessaging={codeHostIntegrationMessaging}
-                                    page="file"
-                                    externalURLs={repo.externalURLs}
-                                    onExtensionAlertDismissed={onExtensionAlertDismissed}
-                                />
+                            <TraceSpanProvider name="BlobPage">
                                 <BlobPage
                                     {...context}
                                     {...repoRevisionProps}
@@ -131,10 +119,18 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
+                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
-                            </>
+                            </TraceSpanProvider>
                         ) : (
-                            <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                            <TreePage
+                                {...props}
+                                {...repoRevisionProps}
+                                repo={repo}
+                                match={match}
+                                useActionItemsBar={context.useActionItemsBar}
+                                isSourcegraphDotCom={context.isSourcegraphDotCom}
+                            />
                         )}
                     </ErrorBoundary>
                 </BlobStatusBarContainer>

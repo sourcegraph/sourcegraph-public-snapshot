@@ -9,13 +9,14 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
+import { EditorActionsGroup } from './EditorActionsGroup'
+
 import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -59,7 +60,7 @@ interface State {
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
@@ -168,28 +169,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <SaveToolbar
-                    dirty={dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
-                />
-                <div className={adminConfigurationStyles.actionGroups}>
-                    <div className={adminConfigurationStyles.actions}>
-                        {settingsActions.map(({ id, label }) => (
-                            <Button
-                                key={id}
-                                className={adminConfigurationStyles.action}
-                                onClick={() => this.runAction(id)}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                {label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
+                <EditorActionsGroup actions={settingsActions} onClick={this.runAction.bind(this)} />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
@@ -201,6 +181,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         onDidSave={this.save}
                     />
                 </React.Suspense>
+                <SaveToolbar
+                    dirty={dirty}
+                    error={this.props.commitError}
+                    saving={this.state.saving}
+                    onSave={this.save}
+                    onDiscard={this.discard}
+                />
             </div>
         )
     }
@@ -209,14 +196,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.monaco = monacoValue
         if (this.monaco) {
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.editor = editor
                     })
                 )
             )
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.

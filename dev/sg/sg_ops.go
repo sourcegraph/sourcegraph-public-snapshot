@@ -1,96 +1,164 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"strconv"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/docker/docker-credential-helpers/credentials"
-	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
 var (
-	opsFlagSet = flag.NewFlagSet("sg ops", flag.ExitOnError)
-	opsCommand = &ffcli.Command{
-		Name:       "ops",
-		ShortUsage: "sg ops <sub-command>",
-		ShortHelp:  "Commands used by operations teams to perform common tasks",
-		LongHelp:   constructOpsCmdLongHelp(),
-		FlagSet:    opsFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
+	opsCommand = &cli.Command{
+		Name:        "ops",
+		Usage:       "Commands used by operations teams to perform common tasks",
+		Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
+		Category:    CategoryCompany,
+		Subcommands: []*cli.Command{
+			opsUpdateImagesCommand,
+			opsTagDetailsCommand,
 		},
-		Subcommands: []*ffcli.Command{opsUpdateImagesCommand},
 	}
-	opsUpdateImagesFlagSet                       = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
-	opsUpdateImagesDeploymentKindFlag            = opsUpdateImagesFlagSet.String("kind", string(images.DeploymentTypeK8S), "The kind of deployment (one of 'k8s', 'helm')")
-	opsUpdateImagesContainerRegistryUsernameFlag = opsUpdateImagesFlagSet.String("cr-username", "", "Username for the container registry")
-	opsUpdateImagesContainerRegistryPasswordFlag = opsUpdateImagesFlagSet.String("cr-password", "", "Password or access token for the container registry")
-	opsUpdateImagesPinTagFlag                    = opsUpdateImagesFlagSet.String("pin-tag", "", "Pin all images to a specific sourcegraph tag (e.g. 3.36.2, insiders)")
-	opsUpdateImagesCommand                       = &ffcli.Command{
+
+	opsUpdateImagesDeploymentKindFlag            string
+	opsUpdateImagesContainerRegistryUsernameFlag string
+	opsUpdateImagesContainerRegistryPasswordFlag string
+	opsUpdateImagesPinTagFlag                    string
+	opsUpdateImagesCommand                       = &cli.Command{
 		Name:        "update-images",
-		ShortUsage:  "sg ops update-images [flags] <dir>",
-		ShortHelp:   "Updates images in given directory to latest published image",
-		LongHelp:    "Updates images in given directory to latest published image.\nEx: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`",
-		UsageFunc:   nil,
-		FlagSet:     opsUpdateImagesFlagSet,
-		Options:     nil,
-		Subcommands: nil,
-		Exec:        opsUpdateImage,
+		ArgsUsage:   "<dir>",
+		Usage:       "Updates images in given directory to latest published image",
+		Description: "Updates images in given directory to latest published image.\nEx: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "kind",
+				Aliases:     []string{"k"},
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+				Value:       string(images.DeploymentTypeK8S),
+				Destination: &opsUpdateImagesDeploymentKindFlag,
+			},
+			&cli.StringFlag{
+				Name:        "pin-tag",
+				Aliases:     []string{"t"},
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
+				Destination: &opsUpdateImagesPinTagFlag,
+			},
+			&cli.StringFlag{
+				Name:        "cr-username",
+				Usage:       "`username` for the container registry",
+				Destination: &opsUpdateImagesContainerRegistryUsernameFlag,
+			},
+			&cli.StringFlag{
+				Name:        "cr-password",
+				Usage:       "`password` or access token for the container registry",
+				Destination: &opsUpdateImagesContainerRegistryPasswordFlag,
+			},
+		},
+		Action: opsUpdateImage,
+	}
+
+	opsTagDetailsCommand = &cli.Command{
+		Name:      "inspect-tag",
+		ArgsUsage: "<image|tag>",
+		Usage:     "Inspect main branch tag details from a image or tag",
+		UsageText: `
+# Inspect a full image
+sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+
+# Inspect just the tag
+sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+
+# Get the build number
+sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+`,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "property",
+				Aliases: []string{"p"},
+				Usage:   "only output a specific `property` (one of: 'build', 'date', 'commit')",
+			},
+		},
+		Action: func(cmd *cli.Context) error {
+			input := cmd.Args().First()
+			// trim out leading image
+			parts := strings.SplitN(input, ":", 2)
+			if len(parts) > 1 {
+				input = parts[1]
+			}
+			// trim out shasum
+			parts = strings.SplitN(input, "@sha256", 2)
+			if len(parts) > 1 {
+				input = parts[0]
+			}
+
+			std.Out.Verbosef("inspecting %q", input)
+
+			tag, err := images.ParseMainBranchImageTag(input)
+			if err != nil {
+				return errors.Wrap(err, "unable to understand tag")
+			}
+
+			selectProperty := cmd.String("property")
+			if len(selectProperty) == 0 {
+				std.Out.WriteMarkdown(fmt.Sprintf("# %s\n- Build: `%d`\n- Date: %s\n- Commit: `%s`", input, tag.Build, tag.Date, tag.ShortCommit))
+				return nil
+			}
+
+			properties := map[string]string{
+				"build":  strconv.Itoa(tag.Build),
+				"date":   tag.Date,
+				"commit": tag.ShortCommit,
+			}
+			v, exists := properties[selectProperty]
+			if !exists {
+				return errors.Newf("unknown property %q", selectProperty)
+			}
+			std.Out.Write(v)
+			return nil
+		},
 	}
 )
 
-func constructOpsCmdLongHelp() string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "Commands used by operations teams to perform common tasks")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Supported subcommands")
-	fmt.Fprintf(&out, "update-images -> Updates images when run from the root of a 'deploy-sourcegraph-*' repo")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Supports internal deploy Sourcegraph repos (non-customer facing)")
-
-	return out.String()
-}
-
-func opsUpdateImage(ctx context.Context, args []string) error {
+func opsUpdateImage(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No path provided"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
 	dockerCredentials := &credentials.Credentials{
 		ServerURL: "https://index.docker.io/v1/",
-		Username:  *opsUpdateImagesContainerRegistryUsernameFlag,
-		Secret:    *opsUpdateImagesContainerRegistryPasswordFlag,
+		Username:  opsUpdateImagesContainerRegistryUsernameFlag,
+		Secret:    opsUpdateImagesContainerRegistryPasswordFlag,
 	}
-	var err error
-	if *opsUpdateImagesContainerRegistryUsernameFlag == "" || *opsUpdateImagesContainerRegistryPasswordFlag == "" {
-		dockerCredentials, err = docker.GetCredentialsFromStore(dockerCredentials.ServerURL)
-		if err != nil {
+	if opsUpdateImagesContainerRegistryUsernameFlag == "" || opsUpdateImagesContainerRegistryPasswordFlag == "" {
+		if creds, err := docker.GetCredentialsFromStore(dockerCredentials.ServerURL); err != nil {
 			// We do not want any error handling here, just fallback to anonymous requests
-			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
-			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
+			std.Out.WriteWarningf("Registry credentials are not provided and could not be retrieved from docker config.")
+			std.Out.WriteWarningf("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
 			dockerCredentials.Username = ""
 			dockerCredentials.Secret = ""
 		} else {
-			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			std.Out.WriteSuccessf("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			dockerCredentials = creds
 		}
 	}
 
-	if *opsUpdateImagesPinTagFlag == "" {
-		writeWarningLinef("No pin tag is provided.")
-		writeWarningLinef("Falling back to the latest deveopment build available.")
+	if opsUpdateImagesPinTagFlag == "" {
+		std.Out.WriteWarningf("No pin tag (-t) is provided - will fall back to latest main branch tag available.")
 	}
 
-	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(*opsUpdateImagesDeploymentKindFlag), *opsUpdateImagesPinTagFlag)
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
 }

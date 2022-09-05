@@ -1,9 +1,9 @@
 import * as path from 'path'
 import * as readline from 'readline'
-import { URL } from 'url'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
+import fetch from 'node-fetch'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -60,18 +60,6 @@ export function getWeekNumber(date: Date): number {
     return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
 }
 
-export function hubSpotFeedbackFormStub(version: string): string {
-    const link = `[this feedback form](${hubSpotFeedbackFormURL(version)})`
-    return `*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out ${link}.*`
-}
-
-function hubSpotFeedbackFormURL(version: string): string {
-    const url = new URL('https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku')
-    url.searchParams.set('update_version', version)
-
-    return url.toString()
-}
-
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
     return execa('docker', ['version'], { stdout: 'ignore' })
 }
@@ -81,8 +69,40 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
+function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean {
+    const [behind, ahead] = execa
+        .sync('git', ['rev-list', '--left-right', '--count', targetBranch + '...' + baseBranch])
+        .stdout.split('\t')
+
+    if (behind === '0' && ahead === '0') {
+        return true
+    }
+
+    const countCommits = function (numberOfCommits: string, aheadOrBehind: string): string {
+        return numberOfCommits === '1'
+            ? numberOfCommits + ' commit ' + aheadOrBehind
+            : numberOfCommits + ' commits ' + aheadOrBehind
+    }
+
+    if (behind !== '0' && ahead !== '0') {
+        console.log(
+            `Your branch is ${countCommits(ahead, 'ahead')} and ${countCommits(
+                behind,
+                'behind'
+            )} the branch ${targetBranch}.`
+        )
+    } else if (behind !== '0') {
+        console.log(`Your branch is ${countCommits(behind, 'behind')} the branch ${targetBranch}.`)
+    } else if (ahead !== '0') {
+        console.log(`Your branch is ${countCommits(ahead, 'ahead')} the branch ${targetBranch}.`)
+    }
+
+    return false
+}
+
 export function ensureMainBranchUpToDate(): void {
     const mainBranch = 'main'
+    const remoteMainBranch = 'origin/main'
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     if (currentBranch !== mainBranch) {
         console.log(
@@ -91,17 +111,56 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
     execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
-    const { stdout } = execa.sync('git', ['status', '-uno'])
-    if (stdout.includes('Your branch is behind')) {
-        console.log(
-            `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
-        )
-        process.exit(1)
-    } else if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${mainBranch} branch.`)
+    if (!ensureBranchUpToDate(mainBranch, remoteMainBranch)) {
         process.exit(1)
     }
 }
+
+export function ensureReleaseBranchUpToDate(branch: string): void {
+    const remoteBranch = 'origin/' + branch
+    if (!ensureBranchUpToDate(branch, remoteBranch)) {
+        process.exit(1)
+    }
+}
+
+// eslint-disable-next-line unicorn/prevent-abbreviations
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json.tag_name)
+
+    let installedTag = execa.sync('src', ['version']).stdout.split('\n')
+    installedTag = installedTag[0].split(':')
+    const trimmedInstalledTag = installedTag[1].trim()
+
+    if (trimmedInstalledTag !== latestTag) {
+        try {
+            console.log('Uprading src-cli to the latest version.')
+            execa.sync('brew', ['upgrade', 'src-cli'])
+        } catch (error) {
+            console.log('Trouble upgrading src-cli:', error)
+            process.exit(1)
+        }
+    }
+}
+
+export async function getLatestTag(owner: string, repo: string): Promise<string> {
+    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json[0].name)
+    return latestTag
+}
+
 interface ContainerRegistryCredential {
     username: string
     password: string

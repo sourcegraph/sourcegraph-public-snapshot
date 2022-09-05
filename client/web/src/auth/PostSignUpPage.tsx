@@ -1,22 +1,21 @@
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
 import { getReturnTo } from './SignInSignUpCommon'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
@@ -24,7 +23,6 @@ import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
-import { TeamsBeta } from './welcome/TeamsBeta'
 
 import styles from './PostSignUpPage.module.scss'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -33,7 +31,6 @@ interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
-    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
     setSelectedSearchContextSpec: (spec: string) => void
 }
 
@@ -54,11 +51,10 @@ export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: 
 
 export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
-export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
+export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignUpPage>> = ({
     authenticatedUser: user,
     context,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
@@ -68,11 +64,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const debug = new URLSearchParams(location.search).get('debug')
 
-    const goToSearch = (): void => history.push(getReturnTo(location))
+    const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
@@ -137,23 +133,22 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
-                            <div className={styles.progress}>
+                            <div className={styles.container}>
                                 {hasErrors && (
                                     <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <h2>Get started with Sourcegraph</h2>
-                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
+                                <H2>Get started with Sourcegraph</H2>
+                                <Text className="text-muted pb-3">Follow these steps to set up your account</Text>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
-                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
-                                    <StepList numeric={true} className={styles.progress}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={3}>
+                                    <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Teams beta</Step>
-                                        <Step borderColor="green">Invite collaborators</Step>
+                                        <Step borderColor="orange">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -174,8 +169,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <h3>Add repositories</h3>
-                                                <p className="text-muted mb-4">
+                                                <H3>Add repositories</H3>
+                                                <Text className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code
                                                     all in one place.
@@ -187,7 +182,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                         {' '}
                                                         Learn more
                                                     </Link>
-                                                </p>
+                                                </Text>
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}
                                                     onRepoSelectionModeChange={setRepoSelectionMode}
@@ -199,20 +194,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <TeamsBeta
-                                                onFinish={finishWelcomeFlow}
-                                                onError={onError}
-                                                username={user.username}
-                                            />
-                                        </StepPanel>
-                                        <StepPanel>
                                             <InviteCollaborators
                                                 className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
-                                                onUserExternalServicesOrRepositoriesUpdate={
-                                                    onUserExternalServicesOrRepositoriesUpdate
-                                                }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
                                                 onFinish={finishWelcomeFlow}

@@ -1,14 +1,12 @@
-import React from 'react'
-
-import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import { render } from 'react-dom'
-import { defer, of } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { createRoot } from 'react-dom/client'
+import { defer, fromEvent, of } from 'rxjs'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { LineOrPositionOrRange } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -197,7 +195,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+        const repositoryContent = fileLineContainer.closest('#repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -237,7 +235,7 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
     },
     resolveView: (element: HTMLElement): CodeView | null => {
         if (element.querySelector('article.markdown-body')) {
-            // This code view is rendered markdown, we shouldn't add code intelligence
+            // This code view is rendered markdown, we shouldn't add code navigation
             return null
         }
 
@@ -379,39 +377,29 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 }
 
 /**
- * Checks whether repository is private or not using Github API + fallback to DOM element check
- *
- * @description See https://docs.github.com/en/rest/reference/repos#get-a-repository
- * @description see rate limit https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+ * Checks whether repository is private by querying its page on GitHub
+ * and either parsing the HTML response or falling back to DOM element check.
  */
-export const isPrivateRepository = (
+export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h1 span.Label'
+    fallbackSelector = '#repository-container-header h2 span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
-    return fetchCache<{ private?: boolean }>({
-        url: `https://api.github.com/repos/${repoName}`,
-        credentials: 'omit',
-        cacheMaxAge: 60 * 60 * 1000, // 1 hour
-    })
-        .then(response => {
-            const rateLimit = response.headers['x-ratelimit-remaining']
-            if (Number(rateLimit) <= 0) {
-                const rateLimitError = new Error('Github rate limit exceeded.')
-                Sentry.captureException(rateLimitError)
-                throw rateLimitError
-            }
-            return response
+    try {
+        const { status } = await fetchCache({
+            url: `https://github.com/${repoName}`,
+            credentials: 'omit',
+            cacheMaxAge: 60 * 60 * 1000, // 1 hour
         })
-        .then(({ data }) => typeof data.private !== 'boolean' || data.private)
-        .catch(error => {
-            // If network error or rate-limit exceeded fallback to DOM check
-            console.warn('Failed to fetch if the repository is private.', error)
-            return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
-        })
+        return status !== 200
+    } catch (error) {
+        // If network error
+        console.warn('Failed to fetch if the repository is private.', error)
+        return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
+    }
 }
 
 export interface GithubCodeHost extends CodeHost {
@@ -522,6 +510,24 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
     return element
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    const matches = hash.match(/(L\d+)/g)
+
+    if (!matches || matches.length > 2) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = matches.map(string => string.slice(1))
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
@@ -546,8 +552,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             utm_source: getPlatformName(),
             utm_campaign: utmCampaign,
         })
+        const root = createRoot(container)
 
-        render(
+        root.render(
             <SourcegraphIconButton
                 label="Search on Sourcegraph"
                 title="Search on Sourcegraph to get hover tooltips, go to definition and more"
@@ -564,8 +571,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                         searchQuery ? `&q=${searchQuery}` : ''
                     }`
                 }}
-            />,
-            container
+            />
         )
     }
 
@@ -713,9 +719,9 @@ export const githubCodeHost: GithubCodeHost = {
     notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: 'Box',
+        popoverClassName: classNames('Box', styles.commandPalettePopover),
         formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field',
+        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
         listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:
@@ -738,6 +744,7 @@ export const githubCodeHost: GithubCodeHost = {
         className: 'Box',
         actionItemClassName: 'btn btn-sm btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
@@ -799,5 +806,9 @@ export const githubCodeHost: GithubCodeHost = {
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
     codeViewsRequireTokenization: true,
 }

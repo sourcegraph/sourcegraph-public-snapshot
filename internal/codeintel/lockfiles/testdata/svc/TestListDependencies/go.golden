@@ -1,6 +1,0 @@
-[
-  "github.com/google/uuid@v1.0.0",
-  "github.com/pborman/uuid@v1.2.1",
-  "modernc.org/cc@v1.0.0",
-  "modernc.org/golex@v1.0.0"
-]

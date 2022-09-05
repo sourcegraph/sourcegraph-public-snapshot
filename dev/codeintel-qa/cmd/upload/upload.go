@@ -53,7 +53,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 					return
 				}
 
-				fmt.Printf("[%5s] %s Finished uploading index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, commit[:7])
+				fmt.Printf("[%5s] %s Finished uploading index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, graphqlID, repoName, commit[:7])
 
 				uploadCh <- uploadMeta{
 					id:       graphqlID,
@@ -82,7 +82,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 	return uploads, nil
 }
 
-// upload invokes `src lsif upload` on the host and returns the graphql identifier of
+// upload invokes `src code-intel upload` on the host and returns the graphql identifier of
 // the uploaded resource.
 func upload(ctx context.Context, repoName, commit, file string) (string, error) {
 	argMap := map[string]string{

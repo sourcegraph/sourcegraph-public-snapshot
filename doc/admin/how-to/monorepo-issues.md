@@ -18,7 +18,7 @@ The following bullets provide a general guidline to which service may require mo
 
 If you are regularly seeing the `Processing symbols is taking longer than expected. Try again in a while` warning in your sidebar, its likely that your symbols and/or gitserver services are underprovisioned and need more CPU/mem resources.
 
-The [symbols sidebar](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/repo/RepoRevisionSidebarSymbols.tsx?L42) is dependent on the symbols and gitserver services. Upon opening the symbols sidebar, a search query is made to the GraphQL API to retrieve the symbols associated with the current git commit. You can read more about the [symbol search behavior and performance](../../code_intelligence/explanations/features.md#symbol-search-behavior-and-performance).
+The [symbols sidebar](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/repo/RepoRevisionSidebarSymbols.tsx?L42) is dependent on the symbols and gitserver services. Upon opening the symbols sidebar, a search query is made to the GraphQL API to retrieve the symbols associated with the current git commit. You can read more about the [symbol search behavior and performance](../../code_navigation/explanations/features.md#symbol-search-behavior-and-performance).
 
 To address this concern, allocate more resources to the symbols service (to provide more processing power for indexing operations) and allocate more resources to the gitserver (to provide for the extra load associated with responding to fetch requests from symbols, and speed up sending the large repo).
 
@@ -44,11 +44,11 @@ Here's an example of a diff to improve symbols performance in a k8s deployment:
 +           memory: 8G
 ```
 
-_Learn more about managing resources in [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations) and [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations)_
+_Learn more about managing resources in [docker-compose](../deploy/docker-compose/index.md#operations) and [kubernetes](../deploy/kubernetes/operations.md)_
 
 ## Slow hover tooltip results
 
-Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has been indexed via LSIF, then Sourcegraph should respond with results quickly. However, if no LSIF index exists, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
+Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has precise code navigation, then Sourcegraph should respond with results quickly. Otherwise, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
 
 ## Slow history tab and git blame results
 
@@ -58,7 +58,7 @@ Selecting the Show History button while viewing a file initiates a request to [f
 
 ## Common alerts
 
-The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alert_solutions):
+The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alerts):
 
 - frontend: 20s+ 99th percentile code-intel successful search request duration over 5m
 - frontend: 15s+ 90th percentile code-intel successful search request duration over 5m

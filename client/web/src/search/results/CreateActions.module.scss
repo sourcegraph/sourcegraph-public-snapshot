@@ -1,0 +1,14 @@
+$collapse-breakpoint: 1400px;
+
+.button {
+    // Adapted from client/wildcard/src/global-styles/breakpoints.scss.
+    @media (max-width: #{$collapse-breakpoint - .02}) {
+        display: none;
+    }
+}
+
+.menu {
+    @media (min-width: $collapse-breakpoint) {
+        display: none;
+    }
+}

@@ -7,104 +7,24 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Schema struct {
-	Extensions []string   `json:"extensions"`
-	Enums      []Enum     `json:"enums"`
-	Functions  []Function `json:"functions"`
-	Sequences  []Sequence `json:"sequences"`
-	Tables     []Table    `json:"tables"`
-	Views      []View     `json:"views"`
-}
-
-type Enum struct {
-	Name   string   `json:"name"`
-	Labels []string `json:"labels"`
-}
-
-type Function struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
-}
-
-type Sequence struct {
-	Name         string `json:"name"`
-	TypeName     string `json:"typeName"`
-	StartValue   int    `json:"startValue"`
-	MinimumValue int    `json:"minimumValue"`
-	MaximumValue int    `json:"maximumValue"`
-	Increment    int    `json:"increment"`
-	CycleOption  string `json:"cycleOption"`
-}
-
-type Table struct {
-	Name        string       `json:"name"`
-	Comment     string       `json:"comment"`
-	Columns     []Column     `json:"columns"`
-	Indexes     []Index      `json:"indexes"`
-	Constraints []Constraint `json:"constraints"`
-	Triggers    []Trigger    `json:"triggers"`
-}
-
-type Column struct {
-	Name                   string `json:"name"`
-	Index                  int    `json:"index"`
-	TypeName               string `json:"typeName"`
-	IsNullable             bool   `json:"isNullable"`
-	Default                string `json:"default"`
-	CharacterMaximumLength int    `json:"characterMaximumLength"`
-	IsIdentity             bool   `json:"isIdentity"`
-	IdentityGeneration     string `json:"identityGeneration"`
-	IsGenerated            string `json:"isGenerated"`
-	GenerationExpression   string `json:"generationExpression"`
-	Comment                string `json:"comment"`
-}
-
-type Index struct {
-	Name                 string `json:"name"`
-	IsPrimaryKey         bool   `json:"isPrimaryKey"`
-	IsUnique             bool   `json:"isUnique"`
-	IsExclusion          bool   `json:"isExclusion"`
-	IsDeferrable         bool   `json:"isDeferrable"`
-	IndexDefinition      string `json:"indexDefinition"`
-	ConstraintType       string `json:"constraintType"`
-	ConstraintDefinition string `json:"constraintDefinition"`
-}
-
-type Constraint struct {
-	Name                 string `json:"name"`
-	ConstraintType       string `json:"constraintType"`
-	RefTableName         string `json:"refTableName"`
-	IsDeferrable         bool   `json:"isDeferrable"`
-	ConstraintDefinition string `json:"constraintDefinition"`
-}
-
-type Trigger struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
-}
-
-type View struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
-}
-
-func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
-	ctx, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
+func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescription, err error) {
+	ctx, _, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	schemas := map[string]Schema{}
-	updateSchema := func(schemaName string, f func(schema *Schema)) {
-		if _, ok := schemas[schemaName]; !ok {
-			schemas[schemaName] = Schema{}
+	descriptions := map[string]schemas.SchemaDescription{}
+	updateDescription := func(schemaName string, f func(description *schemas.SchemaDescription)) {
+		if _, ok := descriptions[schemaName]; !ok {
+			descriptions[schemaName] = schemas.SchemaDescription{}
 		}
 
-		schema := schemas[schemaName]
-		f(&schema)
-		schemas[schemaName] = schema
+		description := descriptions[schemaName]
+		f(&description)
+		descriptions[schemaName] = description
 	}
 
 	extensions, err := s.listExtensions(ctx)
@@ -112,8 +32,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listExtensions")
 	}
 	for _, extension := range extensions {
-		updateSchema(extension.SchemaName, func(schema *Schema) {
-			schema.Extensions = append(schema.Extensions, extension.ExtensionName)
+		updateDescription(extension.SchemaName, func(description *schemas.SchemaDescription) {
+			description.Extensions = append(description.Extensions, extension.ExtensionName)
 		})
 	}
 
@@ -122,17 +42,17 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listEnums")
 	}
 	for _, enum := range enums {
-		updateSchema(enum.SchemaName, func(schema *Schema) {
-			for i, e := range schema.Enums {
+		updateDescription(enum.SchemaName, func(description *schemas.SchemaDescription) {
+			for i, e := range description.Enums {
 				if e.Name != enum.TypeName {
 					continue
 				}
 
-				schema.Enums[i].Labels = append(schema.Enums[i].Labels, enum.Label)
+				description.Enums[i].Labels = append(description.Enums[i].Labels, enum.Label)
 				return
 			}
 
-			schema.Enums = append(schema.Enums, Enum{Name: enum.TypeName, Labels: []string{enum.Label}})
+			description.Enums = append(description.Enums, schemas.EnumDescription{Name: enum.TypeName, Labels: []string{enum.Label}})
 		})
 	}
 
@@ -141,8 +61,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listFunctions")
 	}
 	for _, function := range functions {
-		updateSchema(function.SchemaName, func(schema *Schema) {
-			schema.Functions = append(schema.Functions, Function{
+		updateDescription(function.SchemaName, func(description *schemas.SchemaDescription) {
+			description.Functions = append(description.Functions, schemas.FunctionDescription{
 				Name:       function.FunctionName,
 				Definition: function.Definition,
 			})
@@ -154,8 +74,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listSequences")
 	}
 	for _, sequence := range sequences {
-		updateSchema(sequence.SchemaName, func(schema *Schema) {
-			schema.Sequences = append(schema.Sequences, Sequence{
+		updateDescription(sequence.SchemaName, func(description *schemas.SchemaDescription) {
+			description.Sequences = append(description.Sequences, schemas.SequenceDescription{
 				Name:         sequence.SequenceName,
 				TypeName:     sequence.DataType,
 				StartValue:   sequence.StartValue,
@@ -167,17 +87,17 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		})
 	}
 
-	tableMap := map[string]map[string]Table{}
-	updateTableMap := func(schemaName, tableName string, f func(table *Table)) {
+	tableMap := map[string]map[string]schemas.TableDescription{}
+	updateTableMap := func(schemaName, tableName string, f func(table *schemas.TableDescription)) {
 		if _, ok := tableMap[schemaName]; !ok {
-			tableMap[schemaName] = map[string]Table{}
+			tableMap[schemaName] = map[string]schemas.TableDescription{}
 		}
 
 		if _, ok := tableMap[schemaName][tableName]; !ok {
-			tableMap[schemaName][tableName] = Table{
-				Columns:  []Column{},
-				Indexes:  []Index{},
-				Triggers: []Trigger{},
+			tableMap[schemaName][tableName] = schemas.TableDescription{
+				Columns:  []schemas.ColumnDescription{},
+				Indexes:  []schemas.IndexDescription{},
+				Triggers: []schemas.TriggerDescription{},
 			}
 		}
 
@@ -191,7 +111,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listTables")
 	}
 	for _, table := range tables {
-		updateTableMap(table.SchemaName, table.TableName, func(t *Table) {
+		updateTableMap(table.SchemaName, table.TableName, func(t *schemas.TableDescription) {
 			t.Name = table.TableName
 			t.Comment = table.Comment
 		})
@@ -202,8 +122,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listColumns")
 	}
 	for _, column := range columns {
-		updateTableMap(column.SchemaName, column.TableName, func(table *Table) {
-			table.Columns = append(table.Columns, Column{
+		updateTableMap(column.SchemaName, column.TableName, func(table *schemas.TableDescription) {
+			table.Columns = append(table.Columns, schemas.ColumnDescription{
 				Name:                   column.ColumnName,
 				Index:                  column.Index,
 				TypeName:               column.DataType,
@@ -224,8 +144,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listIndexes")
 	}
 	for _, index := range indexes {
-		updateTableMap(index.SchemaName, index.TableName, func(table *Table) {
-			table.Indexes = append(table.Indexes, Index{
+		updateTableMap(index.SchemaName, index.TableName, func(table *schemas.TableDescription) {
+			table.Indexes = append(table.Indexes, schemas.IndexDescription{
 				Name:                 index.IndexName,
 				IsPrimaryKey:         index.IsPrimaryKey,
 				IsUnique:             index.IsUnique,
@@ -243,8 +163,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listConstraints")
 	}
 	for _, constraint := range constraints {
-		updateTableMap(constraint.SchemaName, constraint.TableName, func(table *Table) {
-			table.Constraints = append(table.Constraints, Constraint{
+		updateTableMap(constraint.SchemaName, constraint.TableName, func(table *schemas.TableDescription) {
+			table.Constraints = append(table.Constraints, schemas.ConstraintDescription{
 				Name:                 constraint.ConstraintName,
 				ConstraintType:       constraint.ConstraintType,
 				IsDeferrable:         constraint.IsDeferrable,
@@ -259,8 +179,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listTriggers")
 	}
 	for _, trigger := range triggers {
-		updateTableMap(trigger.SchemaName, trigger.TableName, func(table *Table) {
-			table.Triggers = append(table.Triggers, Trigger{
+		updateTableMap(trigger.SchemaName, trigger.TableName, func(table *schemas.TableDescription) {
+			table.Triggers = append(table.Triggers, schemas.TriggerDescription{
 				Name:       trigger.TriggerName,
 				Definition: trigger.TriggerDefinition,
 			})
@@ -275,8 +195,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		sort.Strings(tableNames)
 
 		for _, tableName := range tableNames {
-			updateSchema(schemaName, func(schema *Schema) {
-				schema.Tables = append(schema.Tables, tables[tableName])
+			updateDescription(schemaName, func(description *schemas.SchemaDescription) {
+				description.Tables = append(description.Tables, tables[tableName])
 			})
 		}
 	}
@@ -286,15 +206,15 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listViews")
 	}
 	for _, view := range views {
-		updateSchema(view.SchemaName, func(schema *Schema) {
-			schema.Views = append(schema.Views, View{
+		updateDescription(view.SchemaName, func(description *schemas.SchemaDescription) {
+			description.Views = append(description.Views, schemas.ViewDescription{
 				Name:       view.ViewName,
 				Definition: view.Definition,
 			})
 		})
 	}
 
-	return schemas, nil
+	return descriptions, nil
 }
 
 func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {
@@ -310,6 +230,7 @@ FROM pg_catalog.pg_extension e
 JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -331,6 +252,7 @@ JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
 JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -341,6 +263,8 @@ ORDER BY
 func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
 	return scanFunctions(s.Query(ctx, sqlf.Sprintf(listFunctionsQuery)))
 }
+
+// TODO - not belonging to something else?
 
 const listFunctionsQuery = `
 -- source: internal/database/migration/store/store.go:listFunctions
@@ -353,12 +277,14 @@ SELECT
 FROM pg_catalog.pg_proc p
 JOIN pg_catalog.pg_type t ON t.oid = p.prorettype
 JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-JOIN pg_language l ON (
-	l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
-)
+JOIN pg_language l ON l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
+LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname != 'information_schema'
+	n.nspname NOT LIKE '_timescaledb_%%' AND
+	n.nspname != 'information_schema' AND
+	-- function is not defined in an extension
+	d.objid IS NULL
 ORDER BY
 	n.nspname,
 	p.proname
@@ -382,6 +308,7 @@ SELECT
 FROM information_schema.sequences s
 WHERE
 	s.sequence_schema NOT LIKE 'pg_%%' AND
+	s.sequence_schema NOT LIKE '_timescaledb_%%' AND
 	s.sequence_schema != 'information_schema'
 ORDER BY
 	s.sequence_schema,
@@ -402,6 +329,7 @@ FROM information_schema.tables t
 WHERE
 	t.table_type = 'BASE TABLE' AND
 	t.table_schema NOT LIKE 'pg_%%' AND
+	t.table_schema NOT LIKE '_timescaledb_%%' AND
 	t.table_schema != 'information_schema'
 ORDER BY
 	t.table_schema,
@@ -414,7 +342,8 @@ func (s *Store) listColumns(ctx context.Context) ([]column, error) {
 
 const listColumnsQuery = `
 -- source: internal/database/migration/store/store.go:listColumns
-WITH tables AS (
+WITH
+tables AS MATERIALIZED (
 	SELECT
 		t.table_schema,
 		t.table_name
@@ -422,7 +351,19 @@ WITH tables AS (
 	WHERE
 		t.table_type = 'BASE TABLE' AND
 		t.table_schema NOT LIKE 'pg_%%' AND
+		t.table_schema NOT LIKE '_timescaledb_%%' AND
 		t.table_schema != 'information_schema'
+),
+element_types AS MATERIALIZED (
+	SELECT
+		e.object_catalog,
+		e.object_schema,
+		e.object_name,
+		e.collection_type_identifier,
+		e.data_type
+	FROM information_schema.element_types e
+	WHERE
+		e.object_type = 'TABLE'
 )
 SELECT
 	c.table_schema AS schemaName,
@@ -444,10 +385,14 @@ SELECT
 	c.generation_expression AS generationExpression,
 	pg_catalog.col_description(c.table_name::regclass::oid, c.ordinal_position::int) AS comment
 FROM information_schema.columns c
-LEFT JOIN information_schema.element_types e ON
-	(c.table_catalog,  c.table_schema,  c.table_name, 'TABLE',        c.dtd_identifier) =
-	(e.object_catalog, e.object_schema, e.object_name, e.object_type, e.collection_type_identifier)
-WHERE (c.table_schema, c.table_name) IN (SELECT table_schema, table_name FROM tables)
+JOIN tables t ON
+	t.table_schema = c.table_schema AND
+	t.table_name = c.table_name
+LEFT JOIN element_types e ON
+	e.object_catalog = c.table_catalog AND
+	e.object_schema = c.table_schema AND
+	e.object_name = c.table_name AND
+	e.collection_type_identifier = c.dtd_identifier
 ORDER BY
 	c.table_schema,
 	c.table_name,
@@ -482,6 +427,7 @@ LEFT OUTER JOIN pg_catalog.pg_constraint con ON (
 )
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -509,6 +455,7 @@ JOIN pg_catalog.pg_namespace n ON n.oid = table_class.relnamespace
 LEFT OUTER JOIN pg_catalog.pg_class reftable_class ON reftable_class.oid = con.confrelid
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	con.contype IN ('c', 'f', 't')
 ORDER BY
@@ -533,6 +480,7 @@ JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	NOT t.tgisinternal
 ORDER BY
@@ -554,6 +502,7 @@ SELECT
 FROM pg_catalog.pg_views v
 WHERE
 	v.schemaname NOT LIKE 'pg_%%' AND
+	v.schemaname NOT LIKE '_timescaledb_%%' AND
 	v.schemaname != 'information_schema' AND
 	v.viewname NOT LIKE 'pg_stat_%%'
 ORDER BY

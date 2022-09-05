@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { mdiMagnify } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -16,12 +16,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -35,7 +35,9 @@ export interface EditSearchContextPageProps
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
+export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<EditSearchContextPageProps>
+> = props => {
     const LOADING = 'loading' as const
 
     const { match, updateSearchContext, fetchSearchContextBySpec, platformContext } = props
@@ -73,14 +75,15 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Edit context" />
                     <PageHeader
                         className="mb-3"
                         path={[
                             {
-                                icon: MagnifyIcon,
+                                icon: mdiMagnify,
                                 to: '/search',
+                                ariaLabel: 'Code Search',
                             },
                             {
                                 to: '/contexts',

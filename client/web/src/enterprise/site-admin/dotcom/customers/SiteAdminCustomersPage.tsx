@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -34,7 +35,10 @@ interface SiteAdminCustomerNodeProps {
 /**
  * Displays a customer in a connection in the site admin area.
  */
-const SiteAdminCustomerNode: React.FunctionComponent<SiteAdminCustomerNodeProps> = ({ node, onDidUpdate }) => (
+const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<SiteAdminCustomerNodeProps>> = ({
+    node,
+    onDidUpdate,
+}) => (
     <li className="list-group-item py-2">
         <div className="d-flex align-items-center justify-content-between">
             <span className="mr-3">
@@ -55,7 +59,7 @@ class FilteredSiteAdminCustomerConnection extends FilteredConnection<
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
  */
-export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductCustomers'), [])
 
     const updates = useMemo(() => new Subject<void>(), [])
@@ -68,9 +72,9 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
         <div className="site-admin-customers-page">
             <PageTitle title="Customers" />
             <div className="d-flex justify-content-between align-items-center mb-1">
-                <h2 className="mb-0">Customers</h2>
+                <H2 className="mb-0">Customers</H2>
             </div>
-            <p>User accounts may be linked to a customer on the billing system.</p>
+            <Text>User accounts may be linked to a customer on the billing system.</Text>
             <FilteredSiteAdminCustomerConnection
                 className="list-group list-group-flush mt-3"
                 noun="customer"

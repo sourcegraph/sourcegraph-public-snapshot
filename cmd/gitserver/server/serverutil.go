@@ -12,12 +12,11 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -103,9 +102,13 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached(func() interface{} {
+// getTlsExternalDoNotInvoke as the name suggests, exists as a function instead of being passed
+// directly to conf.Cached below just so that we can test it.
+func getTlsExternalDoNotInvoke() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
+
+	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
 
 	if c == nil {
 		return &tlsConfig{}
@@ -121,7 +124,7 @@ var tlsExternal = conf.Cached(func() interface{} {
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
 		} else {
 			sslCAInfo = p
 		}
@@ -131,14 +134,15 @@ var tlsExternal = conf.Cached(func() interface{} {
 		SSLNoVerify: c.InsecureSkipVerify,
 		SSLCAInfo:   sslCAInfo,
 	}
-})
-
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	return runWith(ctx, cmd, true, progress)
 }
 
-// runWithRemoteOpts runs the command after applying the remote options.
-// If progress is not nil, all output is written to it in a separate goroutine.
+// tlsExternal will create a new cache for this gitserer process and store the certificates set in
+// the site config.
+// This creates a long lived
+var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
+
+// runWith runs the command after applying the remote options. If progress is not
+// nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
@@ -146,12 +150,14 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+		configureRemoteGitCommand(cmd, tlsExternal())
 	}
 
 	var b interface {
 		Bytes() []byte
 	}
+
+	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
 
 	if progress != nil {
 		var pw progressWriter
@@ -162,7 +168,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		cmd.Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
-				log15.Error("error while copying progress", "error", err)
+				logger.Error("error while copying progress", log.Error(err))
 			}
 		}()
 		b = &pw
@@ -396,9 +402,11 @@ var logUnflushableResponseWriterOnce sync.Once
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
+	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
+			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
+				log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
@@ -532,95 +540,16 @@ func (w *progressWriter) Bytes() []byte {
 	return w.buf
 }
 
-// mapToLog15Ctx translates a map to log15 context fields.
-func mapToLog15Ctx(m map[string]interface{}) []interface{} {
-	// sort so its stable
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-	sort.Strings(keys)
-	ctx := make([]interface{}, len(m)*2)
-	for i, k := range keys {
-		j := i * 2
-		ctx[j] = k
-		ctx[j+1] = m[k]
-	}
-	return ctx
-}
+// mapToLoggerField translates a map to log context fields.
+func mapToLoggerField(m map[string]any) []log.Field {
+	LogFields := []log.Field{}
 
-// updateFileIfDifferent will atomically update the file if the contents are
-// different. If it does an update ok is true.
-func updateFileIfDifferent(path string, content []byte) (bool, error) {
-	current, err := os.ReadFile(path)
-	if err != nil && !os.IsNotExist(err) {
-		// If the file doesn't exist we write a new file.
-		return false, err
+	for i, v := range m {
+
+		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
 	}
 
-	if bytes.Equal(current, content) {
-		return false, nil
-	}
-
-	// We write to a tempfile first to do the atomic update (via rename)
-	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path))
-	if err != nil {
-		return false, err
-	}
-	// We always remove the tempfile. In the happy case it won't exist.
-	defer os.Remove(f.Name())
-
-	if n, err := f.Write(content); err != nil {
-		f.Close()
-		return false, err
-	} else if n != len(content) {
-		f.Close()
-		return false, io.ErrShortWrite
-	}
-
-	// fsync to ensure the disk contents are written. This is important, since
-	// we are not guaranteed that os.Rename is recorded to disk after f's
-	// contents.
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return false, err
-	}
-	if err := f.Close(); err != nil {
-		return false, err
-	}
-	return true, renameAndSync(f.Name(), path)
-}
-
-// renameAndSync will do an os.Rename followed by fsync to ensure the rename
-// is recorded
-func renameAndSync(oldpath, newpath string) error {
-	err := os.Rename(oldpath, newpath)
-	if err != nil {
-		return err
-	}
-
-	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
-	err = fsync(newparent)
-	if oldparent != newparent {
-		if err1 := fsync(oldparent); err == nil {
-			err = err1
-		}
-	}
-	return err
-}
-
-func fsync(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	err = f.Sync()
-	if err1 := f.Close(); err == nil {
-		err = err1
-	}
-	return err
+	return LogFields
 }
 
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
@@ -645,13 +574,14 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
+	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 
 		if msg, ok := isPaused(path); ok {
-			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
 			return filepath.SkipDir
 		}
 

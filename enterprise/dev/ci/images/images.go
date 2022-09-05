@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -56,7 +57,6 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
-	"alpine-3.12",
 	"alpine-3.14",
 	"cadvisor",
 	"codeinsights-db",
@@ -73,6 +73,7 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
+	"prometheus-gcp",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -83,12 +84,21 @@ var DeploySourcegraphDockerImages = []string{
 	"syntax-highlighter",
 	"worker",
 	"migrator",
+	"executor",
+	"executor-vm",
+	"opentelemetry-collector",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
 // Note that the availability of this image depends on whether a candidate gets built,
 // as determined in `addDockerImages()`.
-func CandidateImageTag(commit, buildNumber string) string {
-	return fmt.Sprintf("%s_%s_candidate", commit, buildNumber)
+func CandidateImageTag(commit string, buildNumber int) string {
+	return fmt.Sprintf("%s_%d_candidate", commit, buildNumber)
+}
+
+// MainBranchImageTag provides the tag for all commits built on main, which are used for
+// continuous deployment.
+func MainBranchImageTag(now time.Time, commit string, buildNumber int) string {
+	return fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
 }

@@ -1,12 +1,30 @@
 import { gql } from '@sourcegraph/http-client'
 
+export const lsifUploadAuditLogsFieldsFragment = gql`
+    fragment LsifUploadsAuditLogsFields on LSIFUploadAuditLog {
+        logTimestamp
+        reason
+        changedColumns {
+            column
+            old
+            new
+        }
+        operation
+    }
+`
+
 export const lsifUploadFieldsFragment = gql`
     fragment LsifUploadFields on LSIFUpload {
         __typename
         id
         inputCommit
+        tags
         inputRoot
         inputIndexer
+        indexer {
+            name
+            url
+        }
         projectRoot {
             url
             path
@@ -35,7 +53,12 @@ export const lsifUploadFieldsFragment = gql`
             finishedAt
             placeInQueue
         }
+        auditLogs {
+            ...LsifUploadsAuditLogsFields
+        }
     }
+
+    ${lsifUploadAuditLogsFieldsFragment}
 `
 
 export const lsifUploadConnectionFieldsFragment = gql`

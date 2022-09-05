@@ -20,7 +20,6 @@ export interface IClient {
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
-        enableFastResultLoading?: boolean
         batchChangesExecution?: boolean
         showSearchContext?: boolean
         showSearchContextManagement?: boolean
@@ -28,6 +27,15 @@ export interface Settings {
         fuzzyFinderCaseInsensitiveFileCountThreshold?: number
         clientSearchResultRanking?: string
         coolCodeIntel?: boolean
+        codeIntelRepositoryBadge?: {
+            enabled: boolean
+            forNerds?: boolean
+        }
+        extensionsAsCoreFeatures?: boolean
+        enableGoImportsSearchQueryTransform?: boolean
+        enableLegacyExtensions?: boolean
+        enableLazyFileResultSyntaxHighlighting?: boolean
+        enableMergedFileSymbolSidebar?: boolean
     }
     [key: string]: any
 

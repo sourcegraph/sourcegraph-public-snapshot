@@ -11,9 +11,10 @@ import (
 // It is modeled after the RED method, which defines three characteristics for
 // monitoring services:
 //
-//  - number (rate) of requests per second
-//  - number of errors/failed operations
-//  - amount of time per operation
+//   - number (rate) of requests per second
+//   - number of errors/failed operations
+//   - amount of time per operation
+//
 // https://thenewstack.io/monitoring-microservices-red-method/.
 type REDMetrics struct {
 	Count    *prometheus.CounterVec   // How many things were processed?
@@ -28,7 +29,8 @@ func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
 	}
 
 	if err != nil && *err != nil {
-		m.Errors.WithLabelValues(lvals...).Add(1)
+		m.Errors.WithLabelValues(lvals...).Inc()
+		m.Count.WithLabelValues(lvals...).Add(0)
 	} else {
 		m.Duration.WithLabelValues(lvals...).Observe(secs)
 		m.Count.WithLabelValues(lvals...).Add(count)
@@ -140,7 +142,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 	}
 }
 
-type SingletonREDnMetrics struct {
+type SingletonREDMetrics struct {
 	sync.Once
 	metrics *REDMetrics
 }
@@ -148,7 +150,7 @@ type SingletonREDnMetrics struct {
 // Get returns a RED metrics instance. If no instance has been
 // created yet, one is constructed with the given create function. This method is safe to
 // access concurrently.
-func (m *SingletonREDnMetrics) Get(create func() *REDMetrics) *REDMetrics {
+func (m *SingletonREDMetrics) Get(create func() *REDMetrics) *REDMetrics {
 	m.Do(func() {
 		m.metrics = create()
 	})

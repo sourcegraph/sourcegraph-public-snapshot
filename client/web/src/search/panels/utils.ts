@@ -27,6 +27,7 @@ export const authUser: AuthenticatedUser & { namespaceName: string } = {
     tosAccepted: true,
     searchable: true,
     namespaceName: 'alice',
+    emails: [],
 }
 
 export const org: IOrg = {
@@ -60,12 +61,6 @@ export const org: IOrg = {
     url: '/organizations/test-org',
     settingsURL: '/organizations/test-org/settings',
     namespaceName: 'test-org',
-    repositories: {
-        __typename: 'RepositoryConnection',
-        nodes: [],
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    },
     batchChanges: {
         __typename: 'BatchChangeConnection',
         nodes: [],

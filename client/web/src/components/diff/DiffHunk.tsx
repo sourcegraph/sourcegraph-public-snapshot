@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
@@ -12,7 +13,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { createLinkUrl, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -24,6 +25,11 @@ const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
     UNCHANGED: ' ',
     DELETED: '-',
+}
+const diffHunkTypeDescriptions: Record<DiffHunkLineType, string> = {
+    ADDED: 'added line',
+    UNCHANGED: 'unchanged line',
+    DELETED: 'deleted line',
 }
 interface DiffHunkProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -39,7 +45,7 @@ interface DiffHunkProps extends ThemeProps {
     persistLines?: boolean
 }
 
-export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
+export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
     decorations,
     hunk,
@@ -73,10 +79,16 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
                 return (
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast) for all changes in this file
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
                     <tr
                         key={index}
                         data-hunk-line-kind={line.kind}
                         className={classNames(
+                            'a11y-ignore',
                             line.kind === DiffHunkLineType.UNCHANGED && styles.lineBoth,
                             line.kind === DiffHunkLineType.DELETED && styles.lineDeletion,
                             line.kind === DiffHunkLineType.ADDED && styles.lineAddition,
@@ -96,7 +108,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: oldAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: oldAnchor })}>
                                                 {oldLine - 1}
                                             </Link>
                                         )}
@@ -114,7 +126,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: newAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: newAnchor })}>
                                                 {newLine - 1}
                                             </Link>
                                         )}
@@ -132,19 +144,18 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                             style={lineStyle}
                             data-diff-marker={diffHunkTypeIndicators[line.kind]}
                         >
+                            <VisuallyHidden>{diffHunkTypeDescriptions[line.kind]}</VisuallyHidden>
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (
                                     <React.Fragment key={index}>
                                         {' '}
-                                        <LinkOrSpan
-                                            to={decoration.after.linkURL}
-                                            data-tooltip={decoration.after.hoverMessage}
-                                            style={style}
-                                        >
-                                            {decoration.after.contentText}
-                                        </LinkOrSpan>
+                                        <Tooltip content={decoration.after.hoverMessage}>
+                                            <LinkOrSpan to={decoration.after.linkURL} style={style}>
+                                                {decoration.after.contentText}
+                                            </LinkOrSpan>
+                                        </Tooltip>
                                     </React.Fragment>
                                 )
                             })}

@@ -6,7 +6,7 @@ type Element struct {
 	ID      int
 	Type    string
 	Label   string
-	Payload interface{}
+	Payload any
 }
 
 type Edge struct {

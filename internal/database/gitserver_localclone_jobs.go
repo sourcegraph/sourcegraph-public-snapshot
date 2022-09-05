@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -20,14 +19,9 @@ type gitserverLocalCloneStore struct {
 	*basestore.Store
 }
 
-// GitserverLocalClone instantiates and returns a new gitserverRepoStore.
-func GitserverLocalClone(db DB) GitserverLocalCloneStore {
-	return &gitserverLocalCloneStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewGitserverLocalCloneStoreWith instantiates and returns a new gitserverLocalCloneStore using
+// GitserverLocalCloneStoreWith instantiates and returns a new gitserverLocalCloneStore using
 // the other store handle.
-func NewGitserverLocalCloneStoreWith(other basestore.ShareableStore) GitserverLocalCloneStore {
+func GitserverLocalCloneStoreWith(other basestore.ShareableStore) GitserverLocalCloneStore {
 	return &gitserverLocalCloneStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -46,7 +40,7 @@ func (s *gitserverLocalCloneStore) Enqueue(ctx context.Context, repoID int, sour
 	err := s.QueryRow(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_localclone_jobs.go:gitserverLocalCloneStore.Enqueue
 INSERT INTO
-	gitserver_localclone_jobs (repo_id, source_hostname, dest_hostname, delete_source)
+	gitserver_relocator_jobs (repo_id, source_hostname, dest_hostname, delete_source)
 VALUES (%s, %s, %s, %s) RETURNING id
 	`, repoID, sourceHostname, destHostname, deleteSource)).Scan(&jobId)
 	if err != nil {

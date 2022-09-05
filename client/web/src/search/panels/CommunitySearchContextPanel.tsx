@@ -18,7 +18,7 @@ interface Props extends TelemetryProps {
     insideTabPanel?: boolean
 }
 
-export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({
+export const CommunitySearchContextsPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
     insideTabPanel,

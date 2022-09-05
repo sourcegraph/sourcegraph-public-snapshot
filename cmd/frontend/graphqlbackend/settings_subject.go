@@ -170,7 +170,7 @@ func (s *settingsSubject) ConfigurationCascade() (*settingsCascade, error) {
 }
 
 // readSettings unmarshals s's latest settings into v.
-func (s *settingsSubject) readSettings(ctx context.Context, v interface{}) error {
+func (s *settingsSubject) readSettings(ctx context.Context, v any) error {
 	settings, err := s.LatestSettings(ctx)
 	if err != nil {
 		return err

@@ -1,12 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import { mdiPlus, mdiPencilOutline } from '@mdi/js'
 import classNames from 'classnames'
-import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonGroup, Link, Menu, MenuButton, MenuList, MenuItem, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    ButtonLink,
+    Link,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SavedSearchesPanelFragment } from '../../graphql-operations'
@@ -42,7 +51,7 @@ export const savedSearchesPanelFragment = gql`
     }
 `
 
-export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
+export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
     telemetryService,
@@ -74,68 +83,84 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Button
+                <ButtonLink
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
                     className="mt-2 align-self-center"
                     variant="secondary"
                     as={Link}
                 >
-                    <Icon as={PlusIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                     Create a saved search
-                </Button>
+                </ButtonLink>
             )}
         </EmptyPanelContainer>
     )
     const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
     const contentDisplay = (
-        <div className="d-flex flex-column h-100">
-            <div className="d-flex justify-content-between mb-1 mt-2">
-                <small>Search</small>
-                <small>Edit</small>
-            </div>
-            <dl className="list-group-flush flex-grow-1">
-                {savedSearches
-                    ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
-                    .map(search => (
-                        <dd key={search.id} className="text-monospace test-saved-search-entry">
-                            <div className="d-flex justify-content-between">
-                                <small>
-                                    <Link
-                                        to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
-                                        className=" p-0"
-                                        onClick={logEvent('SavedSearchesPanelSearchClicked')}
-                                    >
-                                        {search.description}
-                                    </Link>
-                                </small>
-                                {authenticatedUser &&
-                                    (search.namespace.__typename === 'User' ? (
+        <div className="d-flex flex-column h-100 justify-content-between">
+            <table className="w-100 mt-2">
+                <thead className="pb-1">
+                    <tr>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                        <th className="text-right">
+                            <small>Edit</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {savedSearches
+                        ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
+                        .map(search => (
+                            <tr key={search.id} className="text-monospace test-saved-search-entry">
+                                <td className="pb-2">
+                                    <small>
                                         <Link
-                                            to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
-                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
+                                            className="p-0"
+                                            onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                         >
-                                            <Icon as={PencilOutlineIcon} />
+                                            {search.description}
                                         </Link>
-                                    ) : (
-                                        <Link
-                                            to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
-                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
-                                        >
-                                            <Icon as={PencilOutlineIcon} />
-                                        </Link>
-                                    ))}
-                            </div>
-                        </dd>
-                    ))}
-            </dl>
+                                    </small>
+                                </td>
+                                <td className="text-right align-top pb-2">
+                                    {authenticatedUser &&
+                                        (search.namespace.__typename === 'User' ? (
+                                            <Link
+                                                to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
+                                                onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                                aria-label={`Edit saved search ${search.description}`}
+                                            >
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
+                                                onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                                aria-label={`Edit saved search ${search.description}`}
+                                            >
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
+                                            </Link>
+                                        ))}
+                                </td>
+                            </tr>
+                        ))}
+                </tbody>
+            </table>
             {authenticatedUser && (
-                <FooterPanel className="p-1">
+                <FooterPanel className="p-1 mt-3">
                     <small>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        */}
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
-                            className=" text-left"
+                            className="text-left a11y-ignore"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches
@@ -148,13 +173,15 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
 
     const actionButtons = (
         <>
-            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
+            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block" role="tablist">
                 <Button
                     onClick={() => setShowAllSearches(false)}
                     className="test-saved-search-panel-my-searches"
                     outline={showAllSearches}
+                    aria-selected={showAllSearches}
                     variant="secondary"
                     size="sm"
+                    role="tab"
                 >
                     My searches
                 </Button>
@@ -162,8 +189,10 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     onClick={() => setShowAllSearches(true)}
                     className="test-saved-search-panel-all-searches"
                     outline={!showAllSearches}
+                    aria-selected={!showAllSearches}
                     variant="secondary"
                     size="sm"
+                    role="tab"
                 >
                     All searches
                 </Button>

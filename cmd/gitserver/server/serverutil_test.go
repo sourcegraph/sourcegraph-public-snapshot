@@ -4,14 +4,53 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestGetTlsExternal(t *testing.T) {
+	t.Run("test multiple certs", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					TlsExternal: &schema.TlsExternal{
+						Certificates: []string{
+							"foo",
+							"bar",
+							"baz",
+						},
+					},
+				},
+			},
+		})
+
+		tls := getTlsExternalDoNotInvoke()
+
+		if tls.SSLNoVerify {
+			t.Error("expected SSLNoVerify to be false, but got true")
+		}
+
+		got, err := os.ReadFile(tls.SSLCAInfo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := `foo
+bar
+baz
+`
+
+		if diff := cmp.Diff(want, string(got)); diff != "" {
+			t.Errorf("mismatch in contenst of SSLCAInfo file (-want +got):\n%s", diff)
+		}
+	})
+}
 
 func TestConfigureRemoteGitCommand(t *testing.T) {
 	expectedEnv := []string{
@@ -231,73 +270,6 @@ func TestProgressWriter(t *testing.T) {
 				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)
 			}
 		})
-	}
-}
-
-func TestUpdateFileIfDifferent(t *testing.T) {
-	dir, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	target := filepath.Join(dir, "sg_refhash")
-
-	write := func(content string) {
-		err := os.WriteFile(target, []byte(content), 0600)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	read := func() string {
-		b, err := os.ReadFile(target)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(b)
-	}
-	update := func(content string) bool {
-		ok, err := updateFileIfDifferent(target, []byte(content))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return ok
-	}
-
-	// File doesn't exist so should do an update
-	if !update("foo") {
-		t.Fatal("expected update")
-	}
-	if read() != "foo" {
-		t.Fatal("file content changed")
-	}
-
-	// File does exist and already says foo. So should not update
-	if update("foo") {
-		t.Fatal("expected no update")
-	}
-	if read() != "foo" {
-		t.Fatal("file content changed")
-	}
-
-	// Content is different so should update
-	if !update("bar") {
-		t.Fatal("expected update to update file")
-	}
-	if read() != "bar" {
-		t.Fatal("file content did not change")
-	}
-
-	// Write something different
-	write("baz")
-	if update("baz") {
-		t.Fatal("expected update to not update file")
-	}
-	if read() != "baz" {
-		t.Fatal("file content did not change")
-	}
-	if update("baz") {
-		t.Fatal("expected update to not update file")
 	}
 }
 

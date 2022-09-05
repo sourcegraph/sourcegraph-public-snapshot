@@ -1,7 +1,4 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { Story, Meta, DecoratorFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
@@ -18,11 +15,24 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 
-const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
-))
+)
 
-add('All states', () => {
+const config: Meta = {
+    title: 'web/batches/ExternalChangesetNode',
+    decorators: [decorator],
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
+}
+
+export default config
+
+export const AllStates: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -88,7 +98,7 @@ add('All states', () => {
                                                 : { pushUser: false, namespace: null },
                                     },
                                 }}
-                                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                                viewerCanAdminister={args.viewerCanAdminister}
                                 queryExternalChangesetWithFileDiffs={() =>
                                     of({
                                         diff: {
@@ -110,9 +120,11 @@ add('All states', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Unpublished', () => {
+AllStates.storyName = 'All states'
+
+export const Unpublished: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -165,7 +177,7 @@ add('Unpublished', () => {
                             forkTarget: null,
                         },
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: {
@@ -185,9 +197,9 @@ add('Unpublished', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Importing', () => {
+export const Importing: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -227,7 +239,7 @@ add('Importing', () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: {
@@ -247,9 +259,9 @@ add('Importing', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Importing failed', () => {
+export const ImportingFailed: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -289,7 +301,7 @@ add('Importing failed', () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: null,
@@ -299,9 +311,11 @@ add('Importing failed', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Sync failed', () => {
+ImportingFailed.storyName = 'Importing failed'
+
+export const SyncFailed: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -341,7 +355,7 @@ add('Sync failed', () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: null,
@@ -351,4 +365,6 @@ add('Sync failed', () => {
             )}
         </WebStory>
     )
-})
+}
+
+SyncFailed.storyName = 'Sync failed'

@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -11,7 +12,7 @@ import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -88,15 +89,16 @@ describe('Organizations', () => {
             await driver.page.waitForSelector('.test-create-org-button')
 
             await percySnapshotWithVariants(driver.page, 'Site admin org page')
+            await accessibilityAudit(driver.page)
 
             await driver.page.click('.test-create-org-button')
 
             await driver.replaceText({
-                selector: '.test-new-org-name-input',
+                selector: '[data-testid="test-new-org-name-input"]',
                 newText: testOrg.name,
             })
             await driver.replaceText({
-                selector: '.test-new-org-display-name-input',
+                selector: '[data-testid="test-new-org-display-name-input"]',
                 newText: testOrg.displayName,
             })
 
@@ -152,15 +154,10 @@ describe('Organizations', () => {
                         extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
                     }),
                 })
-                await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
-                await driver.page.waitForSelector('.test-settings-file .monaco-editor')
-                await driver.replaceText({
-                    selector: '.test-settings-file .monaco-editor',
-                    newText: updatedSettings,
-                    selectMethod: 'keyboard',
-                    enterTextMethod: 'paste',
-                })
+                const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+                await editor.replace(updatedSettings, 'paste')
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
                     await driver.page.click('.test-save-toolbar-save')
@@ -173,6 +170,7 @@ describe('Organizations', () => {
                 })
 
                 await percySnapshotWithVariants(driver.page, 'Organization settings page')
+                await accessibilityAudit(driver.page)
             })
         })
         describe('Members tab', () => {
@@ -214,9 +212,7 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(
-                    testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members'
-                )
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members')
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 
@@ -229,6 +225,7 @@ describe('Organizations', () => {
                 )
 
                 await percySnapshotWithVariants(driver.page, 'Organization members list')
+                await accessibilityAudit(driver.page)
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

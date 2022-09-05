@@ -28,11 +28,11 @@
     line-height: 1.4285714286;
     border-radius: var(--border-radius);
     padding: 0.375rem 0.75rem;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out;
 
     &:disabled {
         cursor: not-allowed;
+        // This is needed to properly support Tooltip behavior on disabled buttons
+        pointer-events: none;
     }
 
     &:hover {
@@ -381,20 +381,19 @@
 
 .btn-group {
     // Prevent double borders when buttons are next to each other
-    > .btn:not(:first-child),
-    > .btn-group:not(:first-child) {
+    > *:not(:first-child) {
         margin-left: calc(-1 * var(--btn-border-width));
     }
 
     // Reset rounded corners
     > .btn:not(:last-child):not(:global(.dropdown-toggle)),
-    > .btn-group:not(:last-child) > .btn {
+    > *:not(:last-child) .btn {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
 
     > .btn:not(:first-child),
-    > .btn-group:not(:first-child) > .btn {
+    > *:not(:first-child) .btn {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
@@ -431,17 +430,4 @@
         border-top-left-radius: 0;
         border-top-right-radius: 0;
     }
-}
-
-.container {
-    display: inline-block;
-    position: relative;
-}
-
-.disabled-tooltip {
-    cursor: not-allowed;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    z-index: 999999;
 }

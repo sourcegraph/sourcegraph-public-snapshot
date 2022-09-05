@@ -16,6 +16,11 @@ export function useCaptureInsightInitialValues(): UseCaptureInsightInitialValues
     const { search } = useLocation()
 
     const urlValues = useMemo(() => decodeCaptureInsightURL(search), [search])
+
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
         'insights.capture-group-creation-ui',
         undefined

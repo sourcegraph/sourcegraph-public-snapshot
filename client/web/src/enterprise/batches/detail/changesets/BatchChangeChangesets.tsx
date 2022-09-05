@@ -16,7 +16,10 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { Container, useObservable } from '@sourcegraph/wildcard'
+
+import { getHover, getDocumentHighlights } from '../../../../backend/features'
+import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -25,10 +28,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container, useObservable } from '@sourcegraph/wildcard'
-
-import { getHover, getDocumentHighlights } from '../../../../backend/features'
+} from '../../../../components/FilteredConnection/ui'
 import { WebHoverOverlay } from '../../../../components/shared'
 import {
     ExternalChangesetFields,
@@ -85,7 +85,7 @@ interface Props
 /**
  * A list of a batch change's changesets.
  */
-export const BatchChangeChangesets: React.FunctionComponent<Props> = props => (
+export const BatchChangeChangesets: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <MultiSelectContextProvider>
         <BatchChangeChangesetsImpl {...props} />
     </MultiSelectContextProvider>
@@ -93,7 +93,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = props => (
 
 const BATCH_COUNT = 15
 
-const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
+const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
     history,
@@ -195,7 +195,10 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     useEffect(() => {
         if (connection?.nodes?.length) {
             // Available changesets are all changesets that the user can view.
-            setVisible(connection.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id))
+            setVisible(
+                true,
+                connection.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
+            )
         }
     }, [connection?.nodes, setVisible])
 
@@ -277,7 +280,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList className={styles.batchChangeChangesetsGrid}>
+                    <ConnectionList as="div" className={styles.batchChangeChangesetsGrid}>
                         {connection?.nodes?.length ? (
                             <BatchChangeChangesetsHeader
                                 allSelected={showSelectRow && areAllVisibleSelected()}
@@ -310,17 +313,18 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
                                 first={BATCH_COUNT}
+                                centered={true}
                                 connection={connection}
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
                                 emptyElement={emptyElement}
                             />
-                            {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>
-                {hoverState?.hoverOverlayProps && (
+                {hoverState?.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         nav={url => history.push(url)}

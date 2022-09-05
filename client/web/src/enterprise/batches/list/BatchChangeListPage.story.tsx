@@ -1,7 +1,4 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -19,14 +16,21 @@ import {
     NO_BATCH_CHANGES_RESULT,
 } from './testData'
 
-const { add } = storiesOf('web/batches/list/BatchChangeListPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/list/BatchChangeListPage',
+    decorators: [decorator],
+
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchChanges = true) =>
     new WildcardMockLink([
@@ -57,26 +61,31 @@ const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
     },
 ])
 
-add('List of batch changes', () => {
-    const canCreate = boolean('can create batch changes', true)
+export const ListOfBatchChanges: Story = args => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks()}>
+                <BatchChangeListPage
+                    {...props}
+                    headingElement="h1"
+                    canCreate={args.canCreate}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+ListOfBatchChanges.argTypes = {
+    canCreate: {
+        name: 'can create batch changes',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+}
 
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={buildMocks()}>
-                    <BatchChangeListPage
-                        {...props}
-                        headingElement="h1"
-                        canCreate={canCreate}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
-})
+ListOfBatchChanges.storyName = 'List of batch changes'
 
-add('List of batch changes, for a specific namespace', () => (
+export const ListOfBatchChangesSpecificNamespace: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS_FOR_NAMESPACE}>
@@ -90,9 +99,11 @@ add('List of batch changes, for a specific namespace', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('List of batch changes, server-side execution enabled', () => (
+ListOfBatchChangesSpecificNamespace.storyName = 'List of batch changes, for a specific namespace'
+
+export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
@@ -110,9 +121,11 @@ add('List of batch changes, server-side execution enabled', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('Licensing not enforced', () => (
+ListOfBatchChangesServerSideExecutionEnabled.storyName = 'List of batch changes, server-side execution enabled'
+
+export const LicensingNotEnforced: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks(false)}>
@@ -125,9 +138,11 @@ add('Licensing not enforced', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('No batch changes', () => (
+LicensingNotEnforced.storyName = 'Licensing not enforced'
+
+export const NoBatchChanges: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks(true, false)}>
@@ -140,9 +155,11 @@ add('No batch changes', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('All batch changes tab empty', () => (
+NoBatchChanges.storyName = 'No batch changes'
+
+export const AllBatchChangesTabEmpty: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks(true, true, false)}>
@@ -156,4 +173,6 @@ add('All batch changes tab empty', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+AllBatchChangesTabEmpty.storyName = 'All batch changes tab empty'

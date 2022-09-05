@@ -2,55 +2,51 @@ package cliutil
 
 import (
 	"context"
-	"flag"
 	"fmt"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Undo(commandName string, factory RunnerFactory, out *output.Output, development bool) *ffcli.Command {
-	var (
-		flagSet                  = flag.NewFlagSet(fmt.Sprintf("%s undo", commandName), flag.ExitOnError)
-		schemaNameFlag           = flagSet.String("db", "", `The target schema to modify.`)
-		ignoreSingleDirtyLogFlag = flagSet.Bool("ignore-single-dirty-log", development, `Ignore a previously failed attempt if it will be immediately retried by this operation.`)
-	)
+func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
+	schemaNameFlag := &cli.StringFlag{
+		Name:     "db",
+		Usage:    "The target `schema` to modify.",
+		Required: true,
+	}
 
-	exec := func(ctx context.Context, args []string) error {
-		if len(args) != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-			return flag.ErrHelp
+	makeOptions := func(cmd *cli.Context) runner.Options {
+		return runner.Options{
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName: schemaNameFlag.Get(cmd),
+					Type:       runner.MigrationOperationTypeRevert,
+				},
+			},
+			IgnoreSingleDirtyLog:   development,
+			IgnoreSinglePendingLog: development,
 		}
+	}
 
-		if *schemaNameFlag == "" {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
-		}
-
-		r, err := factory(ctx, []string{*schemaNameFlag})
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		r, err := setupRunner(ctx, factory, schemaNameFlag.Get(cmd))
 		if err != nil {
 			return err
 		}
 
-		return r.Run(ctx, runner.Options{
-			Operations: []runner.MigrationOperation{
-				{
-					SchemaName: *schemaNameFlag,
-					Type:       runner.MigrationOperationTypeRevert,
-				},
-			},
-			IgnoreSingleDirtyLog: *ignoreSingleDirtyLogFlag,
-		})
-	}
+		return r.Run(ctx, makeOptions(cmd))
+	})
 
-	return &ffcli.Command{
-		Name:       "undo",
-		ShortUsage: fmt.Sprintf("%s undo -db=<schema>", commandName),
-		ShortHelp:  `Revert the last migration applied - useful in local development`,
-		FlagSet:    flagSet,
-		Exec:       exec,
-		LongHelp:   ConstructLongHelp(),
+	return &cli.Command{
+		Name:        "undo",
+		UsageText:   fmt.Sprintf("%s undo -db=<schema>", commandName),
+		Usage:       `Revert the last migration applied - useful in local development`,
+		Description: ConstructLongHelp(),
+		Action:      action,
+		Flags: []cli.Flag{
+			schemaNameFlag,
+		},
 	}
 }

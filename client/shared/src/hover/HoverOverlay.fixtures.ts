@@ -14,8 +14,7 @@ import { HoverOverlayProps } from './HoverOverlay'
 
 const history = createMemoryHistory()
 const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
-const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'forceUpdateTooltip' | 'settings'> = {
-    forceUpdateTooltip: () => undefined,
+const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'settings'> = {
     settings: of({ final: {}, subjects: [] }),
 }
 
@@ -39,7 +38,7 @@ export const FIXTURE_CONTENT: Badged<MarkupContent> = {
 
 export const FIXTURE_SEMANTIC_BADGE: AggregableBadge = {
     text: 'semantic',
-    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
+    linkURL: 'https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation',
     hoverMessage: 'Sample hover message',
 }
 

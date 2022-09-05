@@ -13,7 +13,7 @@ interface SelfHostedCtaLinkProps extends TelemetryProps {
     page: string
 }
 
-export const SelfHostedCtaLink: React.FunctionComponent<SelfHostedCtaLinkProps> = ({
+export const SelfHostedCtaLink: React.FunctionComponent<React.PropsWithChildren<SelfHostedCtaLinkProps>> = ({
     className,
     contentClassName,
     telemetryService,

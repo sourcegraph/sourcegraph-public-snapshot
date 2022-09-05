@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -159,7 +157,7 @@ describe('StreamingProgressSkippedPopover', () => {
 
         renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
-        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
+        const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)
         userEvent.click(checkboxes[1])
 
@@ -210,7 +208,7 @@ describe('StreamingProgressSkippedPopover', () => {
 
         renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
-        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
+        const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)
         userEvent.click(checkboxes[1])
 
@@ -265,7 +263,7 @@ describe('StreamingProgressSkippedPopover', () => {
 
         renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
 
-        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
+        const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)
         const checkbox1 = checkboxes[1]
         userEvent.click(checkbox1)

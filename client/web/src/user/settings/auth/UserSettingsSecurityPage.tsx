@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -21,6 +21,7 @@ import {
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { getPasswordRequirements } from '../../../util/security'
 import { updatePassword, createPassword } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -242,12 +243,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {this.state.accounts.fetched?.length === 0 && (
                     <>
                         <hr className="my-4" />
-                        <h3 className="mb-3">Password</h3>
+                        <H3 className="mb-3">Password</H3>
                         <Container>
                             <Form onSubmit={this.handleSubmit}>
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"
@@ -256,7 +256,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 />
                                 {this.shouldShowOldPasswordInput() && (
                                     <div className="form-group">
-                                        <label htmlFor="oldPassword">Old password</label>
+                                        <Label htmlFor="oldPassword">Old password</Label>
                                         <PasswordInput
                                             value={this.state.oldPassword}
                                             onChange={this.onOldPasswordFieldChange}
@@ -271,7 +271,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 )}
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword">New password</label>
+                                    <Label htmlFor="newPassword">New password</Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -279,13 +279,16 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
+                                        minLength={window.context.authMinPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
-                                    <small className="form-help text-muted">At least 12 characters</small>
+                                    <small className="form-help text-muted">
+                                        {getPasswordRequirements(window.context)}
+                                    </small>
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}
@@ -294,6 +297,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
+                                        minLength={window.context.authMinPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />

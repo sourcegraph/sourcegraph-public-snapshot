@@ -1,8 +1,8 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -81,9 +81,9 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     now,
     telemetryService,
     history,
-    ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryIndexes = useCallback(
@@ -109,21 +109,20 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 className="mb-3"
             />
 
-            {repo && authenticatedUser?.siteAdmin && (
+            {!!repo && !!authenticatedUser?.siteAdmin && (
                 <Container className="mb-2">
                     <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>
             )}
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
-                <div className="list-group position-relative">
+                <div className="position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName={classNames(styles.grid, 'mb-3')}
+                        inputClassName="flex-1"
+                        listClassName={classNames('list-group', styles.grid, 'mb-3')}
                         noun="index"
                         pluralNoun="indexes"
                         querySubject={querySubject}
@@ -131,7 +130,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         nodeComponentProps={{ now }}
                         queryConnection={queryIndexes}
                         history={history}
-                        location={props.location}
+                        location={location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyAutoIndex />}

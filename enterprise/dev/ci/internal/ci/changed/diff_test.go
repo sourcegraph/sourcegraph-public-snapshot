@@ -43,6 +43,11 @@ func TestParseDiff(t *testing.T) {
 		wantAffects:      []Diff{Go},
 		doNotWantAffects: []Diff{Client, All},
 	}, {
+		name:             "go testdata",
+		files:            []string{"internal/cmd/search-blitz/queries.txt"},
+		wantAffects:      []Diff{Go},
+		doNotWantAffects: []Diff{Client, All},
+	}, {
 		name:             "DB schema implies Go and DB schema diff",
 		files:            []string{"migrations/file1", "migrations/file2"},
 		wantAffects:      []Diff{Go, DatabaseSchema},

@@ -8,7 +8,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount } from '../../../productSubscription/helpers'
@@ -62,7 +62,10 @@ interface Props {
 /**
  * A component displaying information about and the status of the product subscription.
  */
-export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus }) => {
+export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    showTrueUpStatus,
+}) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
         useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])
@@ -137,16 +140,17 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                         : ''}
                                 </div>
                                 <div className="text-nowrap flex-wrap-reverse">
-                                    <ButtonLink
-                                        to="http://about.sourcegraph.com/contact/sales"
-                                        target="_blank"
-                                        rel="noopener"
-                                        data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
-                                        variant="primary"
-                                        size="sm"
-                                    >
-                                        Get license
-                                    </ButtonLink>
+                                    <Tooltip content="Buy a Sourcegraph Enterprise subscription to get a license key">
+                                        <ButtonLink
+                                            to="http://about.sourcegraph.com/contact/sales"
+                                            target="_blank"
+                                            rel="noopener"
+                                            variant="primary"
+                                            size="sm"
+                                        >
+                                            Get license
+                                        </ButtonLink>
+                                    </Tooltip>
                                 </div>
                             </>
                         )}

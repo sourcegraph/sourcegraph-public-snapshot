@@ -1,0 +1,48 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: http://not-an-npm-registry.sourcegraph.com/left-pad/1.3.0
+    method: GET
+  response:
+    body: "<!doctype html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta
+      name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\">\n
+      \   <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\">\n    <title>Connection
+      Closed</title>\n    <style>\n      * { margin: 0; -webkit-font-smoothing: antialiased;
+      }\n      body { font-family: Helvetica, sans-serif; font-size: 14px; }\n      .header
+      {\n        background: #f7f7f7;\n        height: 100px;\n      }\n      .header-bottom
+      {\n        margin-top: -95px;\n        background-image: url(data:image/png;base64,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);\n
+      \       background-size: 100% 112px;\n        height: 112px;\n      }\n      h2
+      { padding-left: 40px; font-weight: lighter; margin: 0; line-height: 100px; font-size:
+      32px; color: #a6a6a6; text-transform: uppercase; }\n      .error-code { margin-right:
+      10px; color: #7b7b7b; }\n      .surge { background-image: url(data:image/png;base64,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);
+      }\n      .header .logo { float: right; margin-right: 40px; margin-top: 30px;
+      background-size: 40px 40px; width: 40px; height: 40px; }\n      .wrapper { max-width:
+      666px; margin: 60px auto 60px; padding: 0 20px; }\n      h1 { color: #5c5c5c;
+      font-size: 24px; text-align: center; }\n      .error-detail { margin-top: 60px;
+      font-family: Verdana, sans-serif; color: #5c5c5c; word-break: break-all; }\n
+      \     p { margin-bottom: 10px; }\n      a { color: #5c5c5c; }\n      .footer
+      { text-align: center; color: #e3e3e3; margin-bottom: 40px; }\n      .footer
+      .logo { margin: 0 auto 10px; opacity: 0.2; background-size: 32px 32px; width:
+      32px; height: 32px; -webkit-filter: grayscale(100%); filter: gray; filter: grayscale(100%);
+      }\n    </style>\n  </head>\n  <body>\n    <div class=\"header\">\n      <div
+      class=\"logo surge\"></div>\n      <h2>Error</h2>\n    </div>\n    <div class=\"header-bottom\"></div>\n
+      \   <div class=\"wrapper\">\n      <h1>Connection Closed</h1>\n      <div class=\"error-detail\"><p>The
+      requested URL could not be retrieved: <br /><b>http://not-an-npm-registry.sourcegraph.com/left-pad/1.3.0</b></p><p><br
+      /></p><p>Policy: \U0001F1ED\U0001F1F0 Hong Kong 21 [Premium]</p><p><br /></p><p>Error
+      descriptions:</p><li>Half-closed connection timeout</li></div>     \n    </div>\n
+      \   <div class=\"footer\">\n      <div class=\"logo surge\"></div>\n      SGErrorDomain
+      - 0<br />Generated 4/27/22, 2:48 PM by Surge Mac/4.5.1\n    </div>\n  </body>\n</html>"
+    headers:
+      Content-Length:
+      - "8533"
+      Content-Type:
+      - text/html;charset=utf-8
+      Proxy-Connection:
+      - close
+    status: 503 Service Unavailable
+    code: 503
+    duration: ""

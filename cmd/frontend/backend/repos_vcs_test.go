@@ -4,17 +4,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := testContext()
 
 	const wantRepo = "a"
@@ -32,14 +35,14 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
 	// (no rev/branch specified)
-	commitID, err := NewRepos(database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
+	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +59,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 
 func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	ctx := testContext()
+	logger := logtest.Scoped(t)
 
 	const wantRepo = "a"
 	want := strings.Repeat("a", 40)
@@ -72,13 +76,13 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
-	commitID, err := NewRepos(database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
+	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,6 +99,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	ctx := testContext()
+	logger := logtest.Scoped(t)
 
 	const wantRepo = "a"
 	want := strings.Repeat("a", 40)
@@ -111,13 +116,13 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
-	commitID, err := NewRepos(database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,6 +139,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 
 func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	ctx := testContext()
+	logger := logtest.Scoped(t)
 
 	const wantRepo = "a"
 	want := errors.New("x")
@@ -150,13 +156,13 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
-	_, err := NewRepos(database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	_, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !errors.Is(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -170,6 +176,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 
 func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	ctx := testContext()
+	logger := logtest.Scoped(t)
 
 	const wantRepo = "a"
 	want := api.CommitID(strings.Repeat("a", 40))
@@ -184,13 +191,13 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoGetCommit bool
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
+	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetMocks()
 
-	commit, err := NewRepos(database.NewMockDB()).GetCommit(ctx, &types.Repo{Name: "a"}, want)
+	commit, err := NewRepos(logger, database.NewMockDB()).GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {
 		t.Fatal(err)
 	}

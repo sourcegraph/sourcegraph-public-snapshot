@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -55,7 +53,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         expect(links).toHaveLength(2)
         expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
@@ -64,12 +62,12 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         expect(links).toHaveLength(2)
 
         const { asFragment } = renderWithBrandedContext(<>{links}</>)
-        expect(screen.getByTitle('github.com')).toBeInTheDocument()
-        expect(screen.getByTitle('gitlab.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('github.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('gitlab.com')).toBeInTheDocument()
         expect(asFragment()).toMatchSnapshot()
     })
 
@@ -77,7 +75,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [langFilter1, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         expect(links).toHaveLength(0)
     })
 
@@ -85,7 +83,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getDynamicFilterLinks(filters, onFilterChosen)
+        const links = getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)
         expect(links).toHaveLength(3)
         expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
@@ -94,7 +92,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, repoFilter2]
         const onFilterChosen = sinon.stub()
 
-        const links = getDynamicFilterLinks(filters, onFilterChosen)
+        const links = getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)
         expect(links).toHaveLength(0)
     })
 
@@ -124,10 +122,10 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1]
         const onFilterChosen = sinon.spy()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         renderWithBrandedContext(<>{links}</>)
         userEvent.click(screen.getByTestId('filter-link'))
 
-        sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value)
+        sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value, repoFilter1.kind)
     })
 })

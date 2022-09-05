@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -334,7 +333,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := r.db.Orgs().Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +359,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
+	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +367,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
-	if err := database.OrgMembers(r.db).Remove(ctx, orgID, userID); err != nil {
+	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
 
@@ -431,48 +430,4 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
-	Stats JSONCString
-}) (*graphql.ID, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-	if args == nil || !json.Valid([]byte(args.Stats)) {
-		return nil, errors.New("must supply valid json")
-	}
-
-	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
-	if err != nil {
-		return nil, err
-	}
-
-	graphqlID := graphql.ID(id)
-	return &graphqlID, nil
-}
-
-type ListOrgRepositoriesArgs struct {
-	First              *int32
-	Query              *string
-	After              *string
-	Cloned             bool
-	NotCloned          bool
-	Indexed            bool
-	NotIndexed         bool
-	ExternalServiceIDs *[]*graphql.ID
-	OrderBy            *string
-	Descending         bool
-}
-
-func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.orgRepositoryResolver == nil {
-		return nil, errors.New("listing organization repositories is not supported")
-	}
-	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
-}
-
-type OrgRepositoryResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }

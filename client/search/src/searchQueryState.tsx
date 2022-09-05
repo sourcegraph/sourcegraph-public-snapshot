@@ -9,7 +9,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 
 import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
 
-export type SearchQueryStateStore = UseBoundStore<SearchQueryState, StoreApi<SearchQueryState>>
+export type SearchQueryStateStore<T extends SearchQueryState = SearchQueryState> = UseBoundStore<T, StoreApi<T>>
 
 export const SearchQueryStateStoreContext = createContext<SearchQueryStateStore | null>(null)
 
@@ -21,9 +21,11 @@ export const SearchQueryStateStoreContext = createContext<SearchQueryStateStore 
  * Example: Both the VS Code extension and the web app render `<SearchSidebar>`, so it needs to
  * reference the appropriate zustand store through context (provided here).
  */
-export const SearchQueryStateStoreProvider: React.FunctionComponent<{
-    useSearchQueryState: SearchQueryStateStore
-}> = ({ children, useSearchQueryState }) => (
+export const SearchQueryStateStoreProvider: React.FunctionComponent<
+    React.PropsWithChildren<{
+        useSearchQueryState: SearchQueryStateStore
+    }>
+> = ({ children, useSearchQueryState }) => (
     <SearchQueryStateStoreContext.Provider value={useSearchQueryState}>
         {children}
     </SearchQueryStateStoreContext.Provider>
@@ -37,8 +39,28 @@ export const useSearchQueryStateStoreContext = (): SearchQueryStateStore => {
     return context
 }
 
+/**
+ * Describes where settings have been loaded from when the app loads. Higher
+ * values have higher precedence, i.e. if settings have been loaded from the
+ * URL, user settings should not overwrite them.
+ */
+export enum InitialParametersSource {
+    DEFAULT,
+    USER_SETTINGS,
+    URL,
+}
+
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
+    /**
+     * This is used to determine whether a source is allowed to overwrite
+     * parameters that have been loaded from another source. For example, user
+     * settings (e.g. default pattern type) are not allowed to overwrite the
+     * parameters if they have been loaded from a URL (because parameters loaded
+     * from a URL are more specific).
+     */
+    parametersSource: InitialParametersSource
+
     // DATA
     /**
      * The current seach query and auxiliary information needed by the
@@ -100,6 +122,10 @@ export type QueryUpdate =
           type: 'toggleSubquery'
           value: string
       }
+    | {
+          type: 'replaceQuery'
+          value: string
+      }
 
 export function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
@@ -113,6 +139,8 @@ export function updateQuery(query: string, updates: QueryUpdate[]): string {
                 return updateFilter(query, update.field, update.value)
             case 'toggleSubquery':
                 return toggleSubquery(query, update.value)
+            case 'replaceQuery':
+                return update.value
         }
         return query
     }, query)

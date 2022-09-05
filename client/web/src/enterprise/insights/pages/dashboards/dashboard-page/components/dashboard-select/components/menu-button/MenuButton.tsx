@@ -5,10 +5,10 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
-import { InsightDashboard, isCustomDashboard } from '../../../../../../../core/types'
+import { TruncatedText } from '../../../../../../../components'
+import { InsightDashboard, isCustomDashboard } from '../../../../../../../core'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
-import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './MenuButton.module.scss'
 
@@ -20,11 +20,11 @@ interface MenuButtonProps {
 /**
  * Renders ListBox menu button for dashboard select component.
  */
-export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
+export const MenuButton: React.FunctionComponent<React.PropsWithChildren<MenuButtonProps>> = props => {
     const { dashboards, className } = props
 
     return (
-        <ListboxButton className={classNames(styles.button, className)}>
+        <ListboxButton id="insight-dashboard-select-button" className={classNames(styles.button, className)}>
             {({ value, isExpanded }) => {
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
@@ -50,7 +50,7 @@ interface MenuButtonContentProps {
     badge?: string
 }
 
-const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props => {
+const MenuButtonContent: React.FunctionComponent<React.PropsWithChildren<MenuButtonContentProps>> = props => {
     const { title, isExpanded, badge } = props
     const ListboxButtonIcon = isExpanded ? ChevronUpIcon : ChevronDownIcon
 

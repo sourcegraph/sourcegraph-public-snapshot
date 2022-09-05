@@ -1,14 +1,9 @@
 import { Observable } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
 
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-
-import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
 import {
     AssignInsightsToDashboardInput,
-    BackendInsightData,
-    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -23,12 +18,13 @@ import {
     AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
+    CategoricalChartContent,
+    SeriesChartContent,
+    UiFeaturesConfig,
+    InsightContent,
+    InsightPreviewSettings,
+    BackendInsightDatum,
 } from './code-insights-backend-types'
-
-export interface UiFeaturesConfig {
-    licensed: boolean
-    insightsLimit: number | null
-}
 
 /**
  * The main interface for code insights backend. Each backend versions should
@@ -68,7 +64,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string; withCompute: boolean }) => Observable<Insight[]>
 
     getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 
@@ -82,6 +78,8 @@ export interface CodeInsightsBackend {
 
     hasInsights: (insightsCount: number) => Observable<boolean>
 
+    getActiveInsightsCount: (insightsCount: number) => Observable<number>
+
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>
@@ -91,27 +89,22 @@ export interface CodeInsightsBackend {
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
 
     /**
-     * Returns backend insight (via gql API handler)
-     */
-    getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
-
-    /**
      * Returns extension like built-in insight that is fetched via frontend
      * network utils to Sourcegraph search API.
      */
-    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<ViewProviderResult>
+    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
 
     /**
      * Returns content for the search based insight live preview chart.
      */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<LineChartContent<any, string>>
+    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<any>>
+    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
+    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

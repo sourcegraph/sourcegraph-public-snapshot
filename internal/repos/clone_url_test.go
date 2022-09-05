@@ -8,9 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -40,7 +43,7 @@ func TestAWSCodeCloneURLs(t *testing.T) {
 		},
 	}
 
-	got := awsCodeCloneURL(repo, &cfg)
+	got := awsCodeCloneURL(logtest.Scoped(t), repo, &cfg)
 	want := "https://username:password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -91,7 +94,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 		}
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://asdine:abc@bitbucket.example.com/scm/sg/sourcegraph.git"
+		want := "https://username:abc@bitbucket.example.com/scm/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 		}
@@ -102,7 +105,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 		cfg.Token = ""
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://asdine:password@bitbucket.example.com/scm/sg/sourcegraph.git"
+		want := "https://username:password@bitbucket.example.com/scm/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 		}
@@ -110,14 +113,12 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 }
 
 func TestBitbucketCloudCloneURLs(t *testing.T) {
+	logger := logtest.Scoped(t)
 	repo := &bitbucketcloud.Repo{
 		FullName: "sg/sourcegraph",
 	}
 
-	repo.Links.Clone = []struct {
-		Href string "json:\"href\""
-		Name string "json:\"name\""
-	}{
+	repo.Links.Clone = []bitbucketcloud.Link{
 		{Name: "https", Href: "https://asdine@bitbucket.org/sg/sourcegraph.git"},
 		{Name: "ssh", Href: "git@bitbucket.org/sg/sourcegraph.git"},
 	}
@@ -131,7 +132,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 	t.Run("ssh", func(t *testing.T) {
 		cfg.GitURLType = "ssh"
 
-		got := bitbucketCloudCloneURL(repo, &cfg)
+		got := bitbucketCloudCloneURL(logger, repo, &cfg)
 		want := "git@bitbucket.org:sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -141,7 +142,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 	t.Run("http", func(t *testing.T) {
 		cfg.GitURLType = "http"
 
-		got := bitbucketCloudCloneURL(repo, &cfg)
+		got := bitbucketCloudCloneURL(logger, repo, &cfg)
 		want := "https://username:password@bitbucket.org/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -150,8 +151,9 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 }
 
 func TestGitHubCloneURLs(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(&github.Repository{}, &schema.GitHubConnection{})
+		_, err := githubCloneURL(logger, &github.Repository{}, &schema.GitHubConnection{})
 		got := fmt.Sprintf("%v", err)
 		want := "empty repo.URL"
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -184,7 +186,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 
 			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(&repo, &cfg)
+			got, err := githubCloneURL(logger, &repo, &cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -226,11 +228,29 @@ func TestGitLabCloneURLs(t *testing.T) {
 				GitURLType: test.GitURLType,
 			}
 
-			got := gitlabCloneURL(repo, &cfg)
+			got := gitlabCloneURL(logtest.Scoped(t), repo, &cfg)
 			if got != test.Want {
 				t.Fatalf("wrong cloneURL, got: %q, want: %q", got, test.Want)
 			}
 		})
+	}
+}
+
+func TestGerritCloneURL(t *testing.T) {
+	cfg := schema.GerritConnection{
+		Url:      "https://gerrit.com",
+		Username: "admin",
+		Password: "pa$$word",
+	}
+
+	project := &gerrit.Project{
+		ID: "test-project",
+	}
+
+	got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
+	want := "https://admin:pa$$word@gerrit.com/test-project"
+	if got != want {
+		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}
 }
 
@@ -325,7 +345,7 @@ func TestPhabricatorCloneURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := phabricatorCloneURL(repo, nil)
+	got := phabricatorCloneURL(logtest.Scoped(t), repo, nil)
 	want := "ssh://git@phabricator.sgdev.org/diffusion/8/test.git"
 
 	if want != got {

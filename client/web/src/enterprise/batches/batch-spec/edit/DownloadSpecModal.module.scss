@@ -1,0 +1,42 @@
+.modal {
+    width: 45rem;
+}
+
+.left {
+    width: 70%;
+    padding-top: 1rem;
+    padding-right: 1rem;
+}
+
+.right {
+    width: 30%;
+    padding: 1rem;
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+}
+
+.close {
+    display: flex;
+    position: absolute;
+    padding: 0;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: transparent;
+}
+
+.icon {
+    height: 1.125rem;
+    width: 1.125rem;
+    color: var(--icon-color);
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+    padding-bottom: 2rem;
+}
+
+.code-snippet {
+    background-color: var(--color-bg-2);
+}

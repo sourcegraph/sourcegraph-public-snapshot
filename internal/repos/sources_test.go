@@ -17,7 +17,8 @@ import (
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -54,7 +55,7 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
@@ -72,11 +73,11 @@ func TestSources_ListRepos(t *testing.T) {
 						{Pattern: "^keegancsmith/.*"},
 						{Forks: true},
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url:   "https://gitlab.com",
 					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
@@ -87,11 +88,11 @@ func TestSources_ListRepos(t *testing.T) {
 						{Name: "gokulkarthick/gokulkarthick"},
 						{Id: 7789240},
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   "https://bitbucket.sgdev.org",
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					Repos: []string{
@@ -106,11 +107,11 @@ func TestSources_ListRepos(t *testing.T) {
 						{Id: 10067},                // sourcegraph repo id
 						{Pattern: ".*/automation"}, // only matches automation-testing repo
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
@@ -123,17 +124,17 @@ func TestSources_ListRepos(t *testing.T) {
 						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
 						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindGitolite,
-				Config: marshalJSON(t, &schema.GitoliteConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitoliteConnection{
 					Prefix: "gitolite.mycorp.com/",
 					Host:   "ssh://git@127.0.0.1:2222",
 					Exclude: []*schema.ExcludedGitoliteRepo{
 						{Name: "bar"},
 					},
-				}),
+				})),
 			},
 		}
 
@@ -147,7 +148,8 @@ func TestSources_ListRepos(t *testing.T) {
 					set := make(map[string]bool)
 					var patterns []*regexp.Regexp
 
-					c, err := s.Configuration()
+					ctx := context.Background()
+					c, err := s.Configuration(ctx)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -225,7 +227,7 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					Repos: []string{
@@ -233,11 +235,11 @@ func TestSources_ListRepos(t *testing.T) {
 						"tsenart/Vegeta",
 						"tsenart/vegeta-missing",
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url:          "https://gitlab.com",
 					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{"none"},
@@ -246,11 +248,11 @@ func TestSources_ListRepos(t *testing.T) {
 						{Name: "gnachman/iterm2-missing"},
 						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:             "https://bitbucket.sgdev.org",
 					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{"none"},
@@ -258,20 +260,20 @@ func TestSources_ListRepos(t *testing.T) {
 						"Sour/vegetA",
 						"sour/sourcegraph",
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindOther,
-				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.OtherExternalServiceConnection{
 					Url: "https://github.com",
 					Repos: []string{
 						"google/go-cmp",
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
@@ -279,7 +281,7 @@ func TestSources_ListRepos(t *testing.T) {
 						Username: "git-username",
 						Password: "git-password",
 					},
-				}),
+				})),
 			},
 		}
 
@@ -337,17 +339,17 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:                   "https://github.com",
 					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
 					RepositoryQuery:       []string{"none"},
 					Repos:                 []string{"tsenart/vegeta"},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url:                   "https://gitlab.com",
 					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
@@ -355,21 +357,21 @@ func TestSources_ListRepos(t *testing.T) {
 					Projects: []*schema.GitLabProject{
 						{Name: "gnachman/iterm2"},
 					},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:                   "https://bitbucket.sgdev.org",
 					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
 					RepositoryQuery:       []string{"none"},
 					Repos:                 []string{"sour/vegeta"},
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
@@ -378,15 +380,15 @@ func TestSources_ListRepos(t *testing.T) {
 						Password: "git-password",
 					},
 					RepositoryPathPattern: "a/b/c/{name}",
-				}),
+				})),
 			},
 			{
 				Kind: extsvc.KindGitolite,
-				Config: marshalJSON(t, &schema.GitoliteConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitoliteConnection{
 					// Prefix serves as a sort of repositoryPathPattern for Gitolite
 					Prefix: "gitolite.mycorp.com/",
 					Host:   "ssh://git@127.0.0.1:2222",
-				}),
+				})),
 			},
 		}
 
@@ -468,7 +470,7 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url:                   "https://gitlab.com",
 					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
 					RepositoryPathPattern: "{host}/{pathWithNamespace}",
@@ -487,7 +489,7 @@ func TestSources_ListRepos(t *testing.T) {
 							Replacement: "",
 						},
 					},
-				}),
+				})),
 			},
 		}
 
@@ -523,10 +525,10 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindPhabricator,
-				Config: marshalJSON(t, &schema.PhabricatorConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PhabricatorConnection{
 					Url:   "https://secure.phabricator.com",
 					Token: os.Getenv("PHABRICATOR_TOKEN"),
-				}),
+				})),
 			},
 		}
 
@@ -575,13 +577,13 @@ func TestSources_ListRepos(t *testing.T) {
 		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:                   "https://bitbucket.sgdev.org",
 					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryPathPattern: "{repositorySlug}",
 					RepositoryQuery:       []string{"none"},
 					Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
-				}),
+				})),
 			},
 		}
 
@@ -618,11 +620,9 @@ func TestSources_ListRepos(t *testing.T) {
 				cf, save := newClientFactory(t, name)
 				defer save(t)
 
-				lg := log15.New()
-				lg.SetHandler(log15.DiscardHandler())
-
-				obs := ObservedSource(lg, NewSourceMetrics())
-				src, err := NewSourcer(database.NewMockDB(), cf, obs)(svc)
+				logger := logtest.Scoped(t)
+				obs := ObservedSource(logger, NewSourceMetrics())
+				src, err := NewSourcer(logtest.Scoped(t), database.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -646,12 +646,23 @@ func TestSources_ListRepos(t *testing.T) {
 }
 
 func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
+	mw, rec := testClientFactorySetup(t, name, mws...)
+	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { save(t, rec) }
+}
+
+func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpcli.Factory, func(testing.TB)) {
+	mw, rec := testClientFactorySetup(t, name)
+	return httpcli.NewFactory(mw, opt, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { save(t, rec) }
+}
+
+func testClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, update(name))
 	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { save(t, rec) }
+	return mw, rec
 }
 
 func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
@@ -707,7 +718,7 @@ func save(t testing.TB, rec *recorder.Recorder) {
 	}
 }
 
-func marshalJSON(t testing.TB, v interface{}) string {
+func marshalJSON(t testing.TB, v any) string {
 	t.Helper()
 
 	bs, err := json.Marshal(v)

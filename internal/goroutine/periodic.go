@@ -136,7 +136,7 @@ func (r *PeriodicGoroutine) Stop() {
 
 func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {
 	if operation != nil {
-		tmpCtx, endObservation := operation.With(ctx, &err, observation.Args{})
+		tmpCtx, _, endObservation := operation.With(ctx, &err, observation.Args{})
 		defer endObservation(1, observation.Args{})
 		ctx = tmpCtx
 	}

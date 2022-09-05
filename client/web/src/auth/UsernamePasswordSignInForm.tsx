@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Label, Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,8 +13,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
-    location: H.Location
-    history: H.History
     onAuthError: (error: Error | null) => void
     noThirdPartyProviders?: boolean
     context: Pick<
@@ -26,12 +24,12 @@ interface Props {
 /**
  * The form for signing in with a username and password.
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
-    location,
+export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onAuthError,
     noThirdPartyProviders,
     context,
 }) => {
+    const location = useLocation()
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -76,6 +74,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         }
                     } else if (response.status === 401) {
                         throw new Error('User or password was incorrect')
+                    } else if (response.status === 422) {
+                        throw new Error('The account has been locked out')
                     } else {
                         throw new Error('Unknown Error')
                     }
@@ -92,35 +92,26 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
     return (
         <>
             <Form onSubmit={handleSubmit}>
-                <div className="form-group d-flex flex-column align-content-start">
-                    <label htmlFor="username-or-email" className="align-self-start">
-                        Username or email
-                    </label>
-                    <input
-                        id="username-or-email"
-                        className="form-control"
-                        type="text"
-                        onChange={onUsernameOrEmailFieldChange}
-                        required={true}
-                        value={usernameOrEmail}
-                        disabled={loading}
-                        autoCapitalize="off"
-                        autoFocus={true}
-                        // There is no well supported way to declare username OR email here.
-                        // Using username seems to be the best approach and should still support this behaviour.
-                        // See: https://github.com/whatwg/html/issues/4445
-                        autoComplete="username"
-                    />
-                </div>
-                <div className="form-group d-flex flex-column align-content-start">
-                    <div className="d-flex justify-content-between">
-                        <label htmlFor="password">Password</label>
-                        {context.resetPasswordEnabled && (
-                            <small className="form-text text-muted">
-                                <Link to="/password-reset">Forgot password?</Link>
-                            </small>
-                        )}
-                    </div>
+                <Input
+                    id="username-or-email"
+                    label={<Text alignment="left">Username or email</Text>}
+                    onChange={onUsernameOrEmailFieldChange}
+                    required={true}
+                    value={usernameOrEmail}
+                    disabled={loading}
+                    autoCapitalize="off"
+                    autoFocus={true}
+                    className="form-group"
+                    // There is no well supported way to declare username OR email here.
+                    // Using username seems to be the best approach and should still support this behaviour.
+                    // See: https://github.com/whatwg/html/issues/4445
+                    autoComplete="username"
+                />
+
+                <div className="form-group d-flex flex-column align-content-start position-relative">
+                    <Label htmlFor="password" className="align-self-start">
+                        Password
+                    </Label>
                     <PasswordInput
                         onChange={onPasswordFieldChange}
                         value={password}
@@ -129,13 +120,19 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         autoComplete="current-password"
                         placeholder=" "
                     />
+                    {context.resetPasswordEnabled && (
+                        <small className="form-text text-muted align-self-end position-absolute">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
                 </div>
+
                 <div
                     className={classNames('form-group', {
                         'mb-0': noThirdPartyProviders,
                     })}
                 >
-                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
+                    <Button display="block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
                     </Button>
                 </div>

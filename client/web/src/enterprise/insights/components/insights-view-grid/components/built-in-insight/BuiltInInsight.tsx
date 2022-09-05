@@ -2,24 +2,34 @@ import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link, useDeepMemo, ParentSize } from '@sourcegraph/wildcard'
 
-import * as View from '../../../../../../views'
-import { LineChartSettingsContext } from '../../../../../../views'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { LangStatsInsight } from '../../../../core/types'
-import { SearchRuntimeBasedInsight } from '../../../../core/types/insight/types/search-insight'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
-import { useDistinctValue } from '../../../../hooks/use-distinct-value'
-import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
-import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
+import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
+import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
+import { InsightContentType } from '../../../../core/types/insight/common'
+import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
+import {
+    CategoricalBasedChartTypes,
+    CategoricalChart,
+    InsightCard,
+    InsightCardBanner,
+    InsightCardHeader,
+    InsightCardLegend,
+    InsightCardLoading,
+    SeriesBasedChartTypes,
+    SeriesChart,
+} from '../../../views'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
+import { InsightContext } from '../InsightContext'
+
+import styles from './BuiltInInsight.module.scss'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
-    insight: SearchRuntimeBasedInsight | LangStatsInsight
+    insight: LangStatsInsight
     innerRef: Ref<HTMLElement>
     resizing: boolean
 }
@@ -35,22 +45,21 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
 export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
-    const { dashboard } = useContext(DashboardInsightsContext)
+    const { currentDashboard, dashboards } = useContext(InsightContext)
+    const seriesToggleState = useSeriesToggle()
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
 
-    const cachedInsight = useDistinctValue(insight)
+    const cachedInsight = useDeepMemo(insight)
 
-    const { data, loading, isVisible } = useInsightData(
+    const { state, isVisible } = useInsightData(
         useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight }), [getBuiltInInsightData, cachedInsight]),
         insightCardReference
     )
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
-    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
@@ -58,47 +67,79 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     })
 
     return (
-        <View.Root
+        <InsightCard
             {...otherProps}
-            innerRef={mergedInsightCardReference}
-            title={insight.title}
-            actions={
-                isVisible && (
-                    <InsightContextMenu
-                        insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
-                        zeroYAxisMin={zeroYAxisMin}
-                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
-                        onDelete={() => handleDelete(insight)}
-                    />
-                )
-            }
+            ref={mergedInsightCardReference}
             data-testid={`insight-card.${insight.id}`}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
+            <InsightCardHeader
+                title={
+                    <Link
+                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {insight.title}
+                    </Link>
+                }
+            >
+                {isVisible && (
+                    <InsightContextMenu
+                        insight={insight}
+                        currentDashboard={currentDashboard}
+                        dashboards={dashboards}
+                        zeroYAxisMin={zeroYAxisMin}
+                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                    />
+                )}
+            </InsightCardHeader>
             {resizing ? (
-                <View.Banner>Resizing</View.Banner>
-            ) : !data || loading || isDeleting || !isVisible ? (
-                <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
-            ) : isRemoving ? (
-                <View.LoadingContent text="Removing insight from the dashboard" />
-            ) : isErrorLike(data.view) ? (
-                <View.ErrorContent error={data.view} title={insight.id} />
+                <InsightCardBanner>Resizing</InsightCardBanner>
+            ) : state.status === LazyQueryStatus.Loading || !isVisible ? (
+                <InsightCardLoading>Loading code insight</InsightCardLoading>
+            ) : state.status === LazyQueryStatus.Error ? (
+                <ErrorAlert error={state.error} />
             ) : (
-                data.view && (
-                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <View.Content content={data.view.content} onDatumLinkClick={trackDatumClicks} />
-                    </LineChartSettingsContext.Provider>
-                )
+                <>
+                    <ParentSize className={styles.chartContainer}>
+                        {parent =>
+                            state.data.type === InsightContentType.Series ? (
+                                <SeriesChart
+                                    type={SeriesBasedChartTypes.Line}
+                                    width={parent.width}
+                                    height={parent.height}
+                                    zeroYAxisMin={zeroYAxisMin}
+                                    locked={insight.isFrozen}
+                                    className={styles.chart}
+                                    onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
+                                    {...state.data.content}
+                                />
+                            ) : (
+                                <CategoricalChart
+                                    type={CategoricalBasedChartTypes.Pie}
+                                    width={parent.width}
+                                    height={parent.height}
+                                    locked={insight.isFrozen}
+                                    className={styles.chart}
+                                    onDatumLinkClick={trackDatumClicks}
+                                    {...state.data.content}
+                                />
+                            )
+                        }
+                    </ParentSize>
+                    {state.data.type === InsightContentType.Series && (
+                        <InsightCardLegend series={state.data.content.series} className="mt-3" />
+                    )}
+                </>
             )}
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
                 isVisible && otherProps.children
             }
-        </View.Root>
+        </InsightCard>
     )
 }

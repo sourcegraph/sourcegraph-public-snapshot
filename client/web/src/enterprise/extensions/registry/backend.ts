@@ -62,7 +62,7 @@ export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublishe
             }
             return data.extensionRegistry.viewerPublishers.map(publisher => ({
                 ...publisher,
-                extensionIDPrefix: data.extensionRegistry.localExtensionIDPrefix || undefined,
+                extensionIDPrefix: data?.extensionRegistry?.localExtensionIDPrefix || undefined,
             }))
         })
     )

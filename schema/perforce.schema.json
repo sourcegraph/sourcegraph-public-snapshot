@@ -137,6 +137,11 @@
           "description": "Whether to include binary files",
           "type": "boolean",
           "default": false
+        },
+        "fsyncEnable": {
+          "description": " Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.",
+          "type": "boolean",
+          "default": false
         }
       }
     }

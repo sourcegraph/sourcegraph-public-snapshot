@@ -12,15 +12,14 @@ interface NotebookAddBlockButtonsProps {
     onAddBlock: (blockIndex: number, blockInput: BlockInput) => void
 }
 
-export const NotebookBlockSeparator: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
-    isReadOnly,
-    index,
-    onAddBlock,
-}) =>
+export const NotebookBlockSeparator: React.FunctionComponent<
+    React.PropsWithChildren<NotebookAddBlockButtonsProps>
+> = React.memo(({ isReadOnly, index, onAddBlock }) =>
     isReadOnly ? (
-        <div className="mb-2" />
+        <div className="mb-1" />
     ) : (
         <div className={styles.blockSeparator}>
             <NotebookAddBlockButtons index={index} onAddBlock={onAddBlock} />
         </div>
     )
+)

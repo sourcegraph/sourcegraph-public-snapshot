@@ -8,7 +8,7 @@ The **"Dependencies"** sections give a short, high-level overview of dependencie
 
 You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
 
-<!-- 
+<!--
 Auto-generated from ./doc/dev/background-information/architecture/architecture.dot
 Run cd ./doc/dev/background-information/architecture && ./generate.sh to update the .svg
 -->
@@ -60,26 +60,26 @@ If you want to learn more about search:
 - [Life of a search query](life-of-a-search-query.md)
 - [Indexed ranking](indexed-ranking.md)
 
-## Code intelligence
+## Code navigation
 
-Code intelligence surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
+Code navigation surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
 
-By default, Sourcegraph provides imprecise [search-based code intelligence](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
+By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_navigation/explanations/search_based_code_navigation.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
 
-With some setup, customers can enable [precise code intelligence](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code intel support for new languages is a non-trivial task.
+With some setup, customers can enable [precise code navigation](../../../code_navigation/explanations/precise_code_navigation.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
 
-If you want to learn more about code intelligence:
+If you want to learn more about code navigation:
 
-- [Code intelligence product documentation](../../../code_intelligence/index.md)
-- [Code intelligence developer documentation](../codeintel/index.md)
-- [Available indexers](../../../code_intelligence/references/indexers.md)
+- [Code navigation product documentation](../../../code_navigation/index.md)
+- [Code navigation developer documentation](../codeintel/index.md)
+- [Available indexers](../../../code_navigation/references/indexers.md)
 
 ### Dependencies
 
 <small>Last updated: 2021-07-05</small>
 
 - [Search](#search)
-  - Symbol search is used for basic code intel
+  - Symbol search is used for basic code navigation
 - [Sourcegraph extension API](#sourcegraph-extension-api)
   - Hover and definition providers
 - [Native integrations (for code hosts)](#native-integrations-for-code-hosts)
@@ -112,12 +112,10 @@ If you want to learn more about batch changes:
 ## Code insights
 
 Code insights surface higher-level, aggregated information to leaders in engineering organizations in dashboards.
-For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
+For example, code insights can track the number of matches of a search query over time, the number of code navigation diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
 Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
-Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
-
-Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../code_insights/references/code_insights_graphql_api.md).
+Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../api/graphql/managing-code-insights-with-api.md).
 
 Code Insights makes use of data from the `frontend` database for repository metadata, as well as repository permissions to filter time series data.
 
@@ -126,6 +124,7 @@ For code insights being run just-in-time in the client, the performance of code 
 These insights are relatively fast as long as the scope doesn't include many repositories (or large monorepos), but performance degrades when trying to include a lot of repositories. Insights
 that are processed in the background are rate limited and will perform approximately 28,000 queries per hour when fully saturated on default settings.
 
+There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights.
 
 If you want to learn more about code insights:
 
@@ -180,7 +179,7 @@ If you want to learn more about code monitoring:
 
 The Sourcegraph browser extensions bring the features of Sourcegraph directly into the UI of code hosts such as GitHub, GitLab and Bitbucket.
 
-With the Sourcegraph browser extension installed, users get Sourcegraph features (including code intelligence and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
+With the Sourcegraph browser extension installed, users get Sourcegraph features (including code navigation and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
 
 This lets users get value from Sourcegraph without leaving their existing workflows on their code host, while also giving them a convenient way to jump into Sourcegraph at any time (by using the `Open in Sourcegraph` button on any repository or file). The browser extension also adds an address bar search shortcut, allowing you to search on Sourcegraph directly from the browser address bar.
 
@@ -208,6 +207,8 @@ If you want to learn more about native integrations:
 
 ## Sourcegraph extension API
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
+
 The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
 
 Extensions that use the API can add elements and interactions to the Sourcegraph UI, such as:
@@ -217,7 +218,7 @@ Extensions that use the API can add elements and interactions to the Sourcegraph
 - contributing hover tooltip information on specific tokens in a file
 - decorating files in directory listings
 
-Some core features of Sourcegraph, like displaying code intelligence hover tooltips, are implemented using the extension API.
+Some core features of Sourcegraph, like displaying code navigation hover tooltips, are implemented using the extension API.
 
 If you want to learn more about our extension API:
 
@@ -256,7 +257,7 @@ If you want to learn more about src-cli:
 
 ## Editor extensions
 
-Sourcegraph editor extensions will bring Sourcegraph features like search, code intelligence, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
+Sourcegraph editor extensions will bring Sourcegraph features like search, code navigation, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
 
 The editor extension is still in the exploratory phase of determining priority and scope. For more information:
 
@@ -266,11 +267,11 @@ The editor extension is still in the exploratory phase of determining priority a
 
 Sourcegraph is deployable via three supported methods:
 
-- [Kubernetes](../../../admin/install/kubernetes/index.md) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required. This deployment method is developed in [`deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph).
-- [Docker-Compose](../../../admin/install/docker-compose/index.md) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. A variation on this is the [pure-Docker option](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md). Both of these deployment methods are developed in [`deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
-- [Server](../../../admin/install/docker/index.md) for small environments on a single server. Easiest and quickest to setup with a single command. Little infrastructure knowledge is required. This deployment method is developed in [`cmd/server`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server).
+- [Kubernetes](../../../admin/deploy/kubernetes/index.md) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required. This deployment method is developed in [`deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph).
+- [Docker Compose](../../../admin/deploy/docker-compose/index.md) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. A variation on this is the [pure-Docker option](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md). Both of these deployment methods are developed in [`deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
+- [Docker Single Container](../../../admin/deploy/docker-single-container/index.md) for small environments on a single server. Easiest and quickest to setup with a single command. Little infrastructure knowledge is required. This deployment method is developed in [`cmd/server`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server).
 
-The [resource estimator](https://docs.sourcegraph.com/admin/install/resource_estimator) can guide you on the requirements for each deployment type.
+The [resource estimator](https://docs.sourcegraph.com/admin/deploy/resource_estimator can guide you on the requirements for each deployment type.
 
 ## Observability
 

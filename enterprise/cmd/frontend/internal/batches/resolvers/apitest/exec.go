@@ -18,8 +18,8 @@ func MustExec(
 	ctx context.Context,
 	t testing.TB,
 	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
+	in map[string]any,
+	out any,
 	query string,
 ) {
 	t.Helper()
@@ -34,8 +34,8 @@ func Exec(
 	ctx context.Context,
 	t testing.TB,
 	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
+	in map[string]any,
+	out any,
 	query string,
 ) []*gqlerrors.QueryError {
 	t.Helper()
@@ -47,7 +47,7 @@ func Exec(
 		t.Fatalf("failed to marshal input: %s", err)
 	}
 
-	var anonInput map[string]interface{}
+	var anonInput map[string]any
 	err = json.Unmarshal(b, &anonInput)
 	if err != nil {
 		t.Fatalf("failed to unmarshal input back: %s", err)
@@ -71,7 +71,7 @@ func Exec(
 	return nil
 }
 
-func toJSON(t testing.TB, v interface{}) string {
+func toJSON(t testing.TB, v any) string {
 	data, err := json.Marshal(v)
 	if err != nil {
 		t.Fatal(err)

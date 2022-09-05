@@ -17,13 +17,14 @@ import {
     InsightsDashboardsResult,
     InsightSubjectsResult,
 } from '../../../../../graphql-operations'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-backend/gql/GetAccessibleInsightsList'
-import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetInsights'
-import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightsDashboards'
-import { GET_INSIGHTS_DASHBOARD_OWNERS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightSubjects'
+import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
+import {
+    GET_ACCESSIBLE_INSIGHTS_LIST,
+    GET_DASHBOARD_INSIGHTS_GQL,
+    GET_INSIGHTS_GQL,
+    GET_INSIGHTS_DASHBOARDS_GQL,
+    GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
+} from '../../../core/backend/gql-backend'
 
 import { DashboardsContentPage } from './DashboardsContentPage'
 
@@ -31,16 +32,17 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
+jest.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
 const mockTelemetryService = {
     log: sinon.spy(),
     logViewEvent: sinon.spy(),
+    logPageView: sinon.spy(),
 }
 
-const Wrapper: React.FunctionComponent = ({ children }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
 
@@ -161,17 +163,18 @@ const renderDashboardsContent = (
     ),
 })
 
-const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
+const triggerDashboardMenuItem = async (
+    screen: RenderWithBrandedContextResult & { user: UserEvent },
+    testId: string
+) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /Dashboard options/ }))
+    const dashboardMenu = await waitFor(() => screen.getByTestId('dashboard-context-menu'))
     user.click(dashboardMenu)
 
-    const dashboardMenuItem = screen.getByRole('menuitem', { name })
+    const dashboardMenuItem = screen.getByTestId(testId)
 
-    // We're simulating keyboard navigation here to circumvent a bug in ReachUI
-    // does not respond to programmatic click events on menu items
     dashboardMenuItem.focus()
-    user.keyboard(' ')
+    user.click(dashboardMenuItem)
 }
 
 beforeEach(() => {
@@ -216,14 +219,14 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /Configure dashboard/)
+        await triggerDashboardMenuItem(screen, 'configure-dashboard')
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
+        const addInsightsButton = await waitFor(() => screen.getByTestId('add-or-remove-insights'))
 
         userEvent.click(addInsightsButton)
 
@@ -236,7 +239,7 @@ describe('DashboardsContent', () => {
     it('opens delete dashboard modal', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Delete/)
+        await triggerDashboardMenuItem(screen, 'delete')
 
         const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
         expect(addInsightHeader).toBeInTheDocument()
@@ -246,7 +249,7 @@ describe('DashboardsContent', () => {
     it('copies dashboard url', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Copy link/)
+        await triggerDashboardMenuItem(screen, 'copy-link')
 
         sinon.assert.calledOnce(mockCopyURL)
     })

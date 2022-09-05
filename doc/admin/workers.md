@@ -10,21 +10,54 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
+#### `codeintel-upload-backfiller`
+
+This job periodically checks for records with NULL attributes that need to be backfilled. Often these are values that require data from Git that wasn't (yet) resolvable at the time of a user upload.
+
+#### `codeintel-upload-janitor`
+
+This job will eventually (and partially) replace `codeintel-janitor`.
+
+#### `codeintel-upload-expirer`
+
+This job will eventually (and partially) replace `codeintel-janitor`
+
+#### `codeintel-commitgraph-updater`
+
+This job will eventually replace `codeintel-commitgraph`.
+
+#### `codeintel-documents-indexer`
+
+This job periodically indexes file contents at a syntactic level to build an index of search-based code navigation.
+
+#### `codeintel-autoindexing-scheduler`
+
+This job will eventually replace `codeintel-auto-indexing`.
+
+#### `codeintel-policies-repository-matcher`
+
+This job periodically updates an index of policy repository patterns to matching repository names.
+
+#### `codeintel-crates-syncer`
+
+This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
+
 #### `codeintel-commitgraph`
 
-This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.
+This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
 
 **Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details
 
 #### `codeintel-janitor`
 
-This job periodically removes expired and unreachable code intelligence data and reconciles data between the frontend and codeintel-db database instances.
+This job periodically removes expired and unreachable code navigation data and reconciles data between the frontend and codeintel-db database instances.
 
 #### `codeintel-auto-indexing`
 
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
 #### `insights-job`
+
 This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
 1. Commit indexer
 2. Background query executor
@@ -41,14 +74,54 @@ This job periodically removes stale log entries for incoming webhooks.
 This job periodically removes old heartbeat records for inactive executor instances.
 
 #### `codemonitors-job`
+
 This job contains all the background processes for Code Monitors:
 1. Periodically execute searches
 2. Execute actions triggered by searches
 3. Cleanup of old execution logs
 
+#### `batches-janitor`
+
+This job runs the following cleanup tasks related to Batch Changes in the background:
+1. Metrics exporter for executors
+2. Changeset reconciler worker resetter
+3. Bulk operation worker resetter
+4. Batch spec workspace execution resetter
+5. Batch spec resolution worker resetter
+6. Changeset spec expirer
+7. Execution cache entry cleaner
+
+#### `batches-scheduler`
+
+This job runs the Batch Changes changeset scheduler for rollout windows.
+
+#### `batches-reconciler`
+
+This job runs the changeset reconciler that publishes, modifies and closes changesets on the code host.
+
+#### `batches-bulk-processor`
+
+This job executes the bulk operations in the background.
+
+#### `batches-workspace-resolver`
+
+This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
+
+#### `gitserver-metrics`
+
+This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
+#### `repo-statistics-compactor`
+
+This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
+
+#### `record-encrypter`
+
+This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
+
 ## Deploying workers
 
-By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
+By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.
 
 There are several strategies for improving throughput and stability of the `worker` service:
 

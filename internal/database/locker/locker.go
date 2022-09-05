@@ -2,14 +2,12 @@ package locker
 
 import (
 	"context"
-	"database/sql"
 	"math"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,10 +26,10 @@ type Locker struct {
 	namespace int32
 }
 
-// NewWithDB creates a new Locker with the given namespace and dbutil.DB.
-func NewWithDB(db dbutil.DB, namespace string) *Locker {
+// NewWith creates a new Locker with the given namespace and ShareableStore
+func NewWith(other basestore.ShareableStore, namespace string) *Locker {
 	return &Locker{
-		Store:     basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:     basestore.NewWithHandle(other.Handle()),
 		namespace: StringKey(namespace),
 	}
 }

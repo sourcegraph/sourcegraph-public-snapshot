@@ -2,7 +2,7 @@ package graphql
 
 import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )

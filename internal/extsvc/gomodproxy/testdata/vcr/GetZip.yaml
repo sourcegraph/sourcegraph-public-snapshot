@@ -1,0 +1,140 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://proxy.golang.org/github.com/dgryski/go-bloomf/@v/v0.0.0-20220209175004-758619da47c2.zip
+    method: GET
+  response:
+    body: !!binary |
+      UEsDBBQACAAIAAAAAAAAAAAAAAAAAAAAAABHAAAAZ2l0aHViLmNvbS9kZ3J5c2tpL2dvLW
+      Jsb29tZkB2MC4wLjAtMjAyMjAyMDkxNzUwMDQtNzU4NjE5ZGE0N2MyL0xJQ0VOU0VcUU+P
+      6yYcvPMpRnvalaxttceqqsraJEa1IcLkpTkSm8S0DkSGdJVvX+Fk39O+E+L3Z+Y3M3q0aL
+      lG43rro8Vzy/ULIWW43GZ3GhOe+xe8/fr2hsqcnfFYz7f4r8Pvw/L987R8X/tw/oOQjZ3P
+      LkYXPFzEaGd7uOE0G5/sUOA4W4twRD+a+WQLpADjb7jYOQaPcEjGeedPMOjD5UbCEWl0ET
+      Ec04eZLYwfYGIMvTPJDhhCfz1bn0zKfEc32YjnNFo8dY+Np5eFZLBmIs4j9z5b+HBpDNeE
+      2cY0uz5jFHC+n65DvuGzPbmzezDk9cWSSFLANdpiubPAOQzumF+7yLpcD5OLY4HBZejDNd
+      kCMRcXh4us45cwI9ppIn24OBuxaP1x3TKTT79kQ9PDopgrH2M4f1XiIjleZ+/iaJedISCG
+      hfEf26dcyePHME3hI0vrgx9cVhR/IyTHbw7hP7touSfuQ3L93e4lgMuPVB+tOJppwsE+DL
+      MDnCe59ClnzvQxGZ+cmXAJ88L3s8xXQnTN0MmV3lHFwDtslPzGK1bhiXbg3VOBHde13Grs
+      qFJU6D3kClTs8RcXVQH290axroNUhLebhrOqABdls624WON9qyGkRsNbrlkFLZEJH1CcdR
+      msZaqsqdD0nTdc7wuy4lpkzJVUoNhQpXm5bajCZqs2smOgooKQgouV4mLNWib0K7iAkGDf
+      mNDoato0mYrQra6lyvehlJu94utao5ZNxVSHd4aG0/eG3anEHmVDeVugoi1ds2VL6popks
+      fu12FXs1zKfFSAlppLkWWUUmhFS11AS6W/r+54xwpQxbtsyErJtiDZTrnKI1zkPcHuKNlq
+      fElEquW/7dh3QFSMNlysO3DxJb5X8n8AAAD//1BLBwjbFjOtlgIAAEwEAABQSwMEFAAIAA
+      gAAAAAAAAAAAAAAAAAAAAAAEkAAABnaXRodWIuY29tL2Rncnlza2kvZ28tYmxvb21mQHYw
+      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
+      nngHu7Y8SCms/opClDSS6ff3BShyfXCY7x+u9g//ONC5ZokajYZ8FPvB/hcAAP//UEsHCH
+      JHFnuWBgAAJRAAAFBLAwQUAAgACAAAAAAAAAAAAAAAAAAAAAAARgAAAGdpdGh1Yi5jb20v
+      ZGdyeXNraS9nby1ibG9vbWZAdjAuMC4wLTIwMjIwMjA5MTc1MDA0LTc1ODYxOWRhNDdjMi
+      9nby5tb2TKzU8pzUlVSM8syShN0kvOz9VPSS+qLM7O1E/P103Kyc/PTePiSs9XMNQzNOcC
+      BAAA//9QSwcIQNgMkTMAAAAtAAAAUEsBAhQAFAAIAAgAAAAAANsWM62WAgAATAQAAEcAAA
+      AAAAAAAAAAAAAAAAAAAGdpdGh1Yi5jb20vZGdyeXNraS9nby1ibG9vbWZAdjAuMC4wLTIw
+      MjIwMjA5MTc1MDA0LTc1ODYxOWRhNDdjMi9MSUNFTlNFUEsBAhQAFAAIAAgAAAAAAHJHFn
+      uWBgAAJRAAAEkAAAAAAAAAAAAAAAAACwMAAGdpdGh1Yi5jb20vZGdyeXNraS9nby1ibG9v
+      bWZAdjAuMC4wLTIwMjIwMjA5MTc1MDA0LTc1ODYxOWRhNDdjMi9ibG9vbWYuZ29QSwECFA
+      AUAAgACAAAAAAAQNgMkTMAAAAtAAAARgAAAAAAAAAAAAAAAAAYCgAAZ2l0aHViLmNvbS9k
+      Z3J5c2tpL2dvLWJsb29tZkB2MC4wLjAtMjAyMjAyMDkxNzUwMDQtNzU4NjE5ZGE0N2MyL2
+      dvLm1vZFBLBQYAAAAAAwADAGABAAC/CgAAAAA=
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "667"
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Cache-Control:
+      - public, max-age=10800
+      Content-Length:
+      - "3125"
+      Content-Type:
+      - application/zip
+      Date:
+      - Fri, 25 Mar 2022 15:45:38 GMT
+      Etag:
+      - '"d509aa4afb2da884a7a08feb43ce5d48c613f10d5b35e7d5e42c02571fc18510"'
+      Expires:
+      - Fri, 25 Mar 2022 18:45:38 GMT
+      Last-Modified:
+      - Wed, 09 Feb 2022 18:08:03 GMT
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://proxy.golang.org/github.com/%21nike-%21inc/cerberus-go-client/v3/@v/v3.0.1-%21a%21l%21p%21h%21a.zip
+    method: GET
+  response:
+    body: 'not found: github.com/Nike-Inc/cerberus-go-client/v3@v3.0.1-ALPHA: invalid
+      version: unknown revision v3.0.1-ALPHA'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "437"
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Cache-Control:
+      - public, max-age=626
+      Content-Length:
+      - "113"
+      Content-Type:
+      - text/plain; charset=UTF-8
+      Date:
+      - Fri, 25 Mar 2022 15:49:28 GMT
+      Expires:
+      - Fri, 25 Mar 2022 15:59:54 GMT
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 410 Gone
+    code: 410
+    duration: ""

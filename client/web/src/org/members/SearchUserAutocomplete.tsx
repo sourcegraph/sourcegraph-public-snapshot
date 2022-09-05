@@ -3,9 +3,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
+// eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Tooltip } from '@sourcegraph/wildcard'
 
 import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -29,12 +30,14 @@ interface AutocompleteSearchUsersProps {
     orgId: string
 }
 
-const UserResultItem: React.FunctionComponent<{
-    onSelectUser: (user: IUserItem) => void
-    onKeyDown: (key: string, index: number) => void
-    index: number
-    user: IUserItem
-}> = ({ user, onSelectUser, onKeyDown, index }) => {
+const UserResultItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        onSelectUser: (user: IUserItem) => void
+        onKeyDown: (key: string, index: number) => void
+        index: number
+        user: IUserItem
+    }>
+> = ({ user, onSelectUser, onKeyDown, index }) => {
     const selectUser = useCallback(() => {
         onSelectUser(user)
     }, [onSelectUser, user])
@@ -58,12 +61,13 @@ const UserResultItem: React.FunctionComponent<{
         >
             <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
                 <div className={styles.avatarContainer}>
-                    <UserAvatar
-                        size={24}
-                        className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
-                        user={user}
-                        data-tooltip={user.displayName || user.username}
-                    />
+                    <Tooltip content={user.displayName || user.username}>
+                        <UserAvatar
+                            size={24}
+                            className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
+                            user={user}
+                        />
+                    </Tooltip>
                 </div>
                 <div className="d-flex flex-column">
                     <div>
@@ -77,9 +81,11 @@ const UserResultItem: React.FunctionComponent<{
     )
 }
 
-const EmptyResultsItem: React.FunctionComponent<{
-    userNameOrEmail: string
-}> = ({ userNameOrEmail }) => (
+const EmptyResultsItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        userNameOrEmail: string
+    }>
+> = ({ userNameOrEmail }) => (
     <DropdownItem data-testid="search-context-menu-item" role="menuitem">
         <div className={classNames('d-flex', 'flex-column', styles.emptyResults)}>
             <span>
@@ -97,7 +103,9 @@ const EmptyResultsItem: React.FunctionComponent<{
 const getUserSearchResultItem = (userId: string): HTMLButtonElement | null =>
     document.querySelector(`[data-res-user-id="${userId}"]`)
 
-export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearchUsersProps> = props => {
+export const AutocompleteSearchUsers: React.FunctionComponent<
+    React.PropsWithChildren<AutocompleteSearchUsersProps>
+> = props => {
     const { disabled, onValueChanged, orgId } = props
     const MinSearchLength = 3
     const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
@@ -129,6 +137,7 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const searchUsers = useCallback(
         (query: string): void => {
             setOpenResults(true)
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             getUsers({ variables: { query, organization: orgId } })
         },
         [getUsers, orgId]

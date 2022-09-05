@@ -6,13 +6,14 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { validatePassword, getPasswordRequirements } from '../../../util/security'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
@@ -113,8 +114,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         <Form onSubmit={this.handleSubmit}>
                             <Container className="mb-3">
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"
@@ -122,7 +122,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                     hidden={true}
                                 />
                                 <div className="form-group">
-                                    <label htmlFor="oldPassword">Old password</label>
+                                    <Label htmlFor="oldPassword">Old password</Label>
                                     <PasswordInput
                                         value={this.state.oldPassword}
                                         onChange={this.onOldPasswordFieldChange}
@@ -137,7 +137,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword">New password</label>
+                                    <Label htmlFor="newPassword">New password</Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -145,15 +145,15 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
+                                        minLength={window.context.authMinPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
-                                        minLength={12}
                                         className={styles.userSettingsPasswordPageInput}
                                     />
-                                    <small className="form-help text-muted">At least 12 characters</small>
+                                    <small>{getPasswordRequirements(window.context)}</small>
                                 </div>
                                 <div className="form-group mb-0">
-                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}
@@ -162,6 +162,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
+                                        minLength={window.context.authMinPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
@@ -203,10 +204,20 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private validateForm(): void {
         if (this.newPasswordConfirmationField) {
             if (this.state.newPassword === this.state.newPasswordConfirmation) {
-                this.newPasswordConfirmationField.setCustomValidity('') // valid
+                this.validatePassword(this.state.newPassword)
             } else {
                 this.newPasswordConfirmationField.setCustomValidity("New passwords don't match.")
             }
+        }
+    }
+
+    private validatePassword(password: string): void {
+        const message = validatePassword(window.context, password)
+
+        if (message !== undefined) {
+            this.newPasswordConfirmationField?.setCustomValidity(message)
+        } else {
+            this.newPasswordConfirmationField?.setCustomValidity('')
         }
     }
 

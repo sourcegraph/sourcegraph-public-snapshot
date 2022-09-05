@@ -60,8 +60,8 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
-	c, err := extSvc.Configuration()
+func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (string, error) {
+	c, err := extSvc.Configuration(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
 	}
@@ -73,6 +73,8 @@ func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	case *schema.BitbucketServerConnection:
 		serviceID = c.Url
 	case *schema.GitLabConnection:
+		serviceID = c.Url
+	case *schema.BitbucketCloudConnection:
 		serviceID = c.Url
 	}
 	if serviceID == "" {
@@ -189,7 +191,7 @@ func (e httpError) Error() string {
 	return fmt.Sprintf("HTTP %d: %s", e.code, http.StatusText(e.code))
 }
 
-func respond(w http.ResponseWriter, code int, v interface{}) {
+func respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case nil:
 		w.WriteHeader(code)
