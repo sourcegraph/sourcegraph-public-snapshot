@@ -31,8 +31,6 @@ class SpecFileReporter extends mocha.reporters.Spec {
 
     if ('BUILDKITE_LABEL' in process.env) {
       this.title = process.env.BUILDKIATE_LABEL || 'placeholder'
-    } else {
-      console.table(process.env)
     }
 
     if (this.buildkite === true && typeof process.env.BUILDKITE_LABEL === undefined) {
@@ -56,6 +54,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
 
     // We only output the epilogue to a file when we're in BUILDKITE and there are failures
     if (this.buildkite === true) {
+      console.table(process.env)
       const file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title}`)
       const customConsole = new Console({
         stdout: file,
