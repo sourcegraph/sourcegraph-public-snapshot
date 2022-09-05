@@ -196,7 +196,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
                 : 0
 
         if (rotate) {
-            const xCoord = hideTicks ? props.x - fontSize / 2 : props.x
+            const xCoord = props.x
             const yCoord = hideTicks ? props.y - fontSize / 2 : props.y
 
             return {
