@@ -30,13 +30,11 @@ class SpecFileReporter extends mocha.reporters.Spec {
     }
 
     if ('BUILDKITE_LABEL' in process.env) {
-      this.title = process.env.BUILDKIATE_LABEL
+      this.title = process.env.BUILDKIATE_LABEL || 'placeholder'
     }
 
     if (this.buildkite === true && typeof process.env.BUILDKITE_LABEL === undefined) {
-      console.warn(
-        `In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title || 'placeholder'}'`
-      )
+      console.warn(`In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title}'`)
     }
   }
 
@@ -56,7 +54,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
 
     // We only output the epilogue to a file when we're in BUILDKITE and there are failures
     if (this.buildkite === true) {
-      const file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title || 'placeholder'}`)
+      const file = fs.createWriteStream(`${repoRoot}/annotations/mocha-test-output-${this.title}`)
       const customConsole = new Console({
         stdout: file,
       })
