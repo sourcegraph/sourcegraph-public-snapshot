@@ -87,9 +87,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService, onSearchSubmit]
     )
 
-    const handleAggregationBarLinkClick = (query: string): void => {
-        onSearchSubmit([{ type: 'replaceQuery', value: query }])
-    }
+    const handleAggregationBarLinkClick = useCallback(
+        (query: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        },
+        [onSearchSubmit]
+    )
 
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {

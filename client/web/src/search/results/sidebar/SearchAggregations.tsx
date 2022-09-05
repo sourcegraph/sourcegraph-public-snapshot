@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
@@ -44,7 +44,7 @@ interface SearchAggregationsProps extends TelemetryProps {
     onQuerySubmit: (newQuery: string) => void
 }
 
-export const SearchAggregations: FC<SearchAggregationsProps> = props => {
+export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
@@ -141,4 +141,4 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             )}
         </article>
     )
-}
+})
