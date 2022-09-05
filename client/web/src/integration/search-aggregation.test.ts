@@ -168,13 +168,25 @@ describe('Search aggregation', () => {
         beforeEach(() =>
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                EvaluateFeatureFlag: variables => {
-                    if (variables.flagName === 'search-aggregation-filters') {
-                        return { evaluateFeatureFlag: true }
-                    }
-
-                    return { evaluateFeatureFlag: false }
-                },
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { enableSearchResultsAggregations: true },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
             })
         )
 
