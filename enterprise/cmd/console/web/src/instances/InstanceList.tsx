@@ -1,11 +1,11 @@
-import './Instances.css'
+import './InstanceList.css'
 
 import React from 'react'
 
 import { InstanceData } from '../model'
 import { Instance } from './Instance'
 
-export const Instances: React.FunctionComponent<{
+export const InstanceList: React.FunctionComponent<{
     instances: InstanceData[]
     tag?: 'main'
     className?: string

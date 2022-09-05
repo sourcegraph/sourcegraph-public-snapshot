@@ -4,11 +4,12 @@ import { useObservable } from '@sourcegraph/wildcard'
 import React, { useMemo } from 'react'
 import { Link, Redirect, Route, Switch } from 'react-router-dom'
 
-import { Instances } from '../instances/Instances'
+import { InstanceList } from '../instances/InstanceList'
 import { SignupPage } from '../trialStartFlow/steps/1-signup/SignupPage'
 import { newAPIClient } from '../model/apiClient'
 import { NewInstancePage } from '../trialStartFlow/steps/2-instance/NewInstancePage'
 import { WaitForInstancePage } from '../trialStartFlow/steps/3-wait/WaitForInstancePage'
+import { ConsolePage } from '../console/ConsolePage'
 
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])
@@ -33,8 +34,8 @@ export const App: React.FunctionComponent = () => {
                     <Route path="/instances/wait">
                         <WaitForInstancePage />
                     </Route>
-                    <Route path="/instances">
-                        <Instances instances={data.instances} className="content" />
+                    <Route path="/">
+                        <ConsolePage data={data} />
                     </Route>
                 </Switch>
             )}
