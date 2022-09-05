@@ -309,6 +309,7 @@ export const mockWorkspace = (
         igniteVersion: '',
         lastSeenAt: subMinutes(now, 2).toISOString(),
         os: 'darwin',
+        isOutdated: false,
         queueName: 'batches',
         srcCliVersion: '3.38.0',
         __typename: 'Executor',
