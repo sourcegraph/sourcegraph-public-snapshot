@@ -76,21 +76,20 @@ func isExecutorOutdated(ev string, active bool) (bool, error) {
 		return et.Before(st), nil
 	}
 
-	// if we get here then we assume the versions are in semver format
-	// we use the sourcegraph version as a constraint and expect the executor version to be
-	// greater than the sourcegraph version, if not we return true to indicate the executor is
-	// outdated.
-	c, err := semver.NewConstraint("< " + sv)
+	s, err := semver.NewVersion(sv)
+	if err != nil {
+		return false, err
+	}
+
+	e, err := semver.NewVersion(ev)
 	if err != nil {
 		return true, err
 	}
 
-	v, err := semver.NewVersion(ev)
-	if err != nil {
-		return true, err
-	}
+	// it's okay for an executor to be one version behind the sourcegraph version.
+	iev := e.IncMinor()
 
-	return c.Check(v), nil
+	return s.GreaterThan(&iev), nil
 }
 
 // DateTime implements the DateTime GraphQL scalar type.

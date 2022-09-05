@@ -51,9 +51,18 @@ func TestExecutorResolver(t *testing.T) {
 				isActive:           true,
 				expected:           false,
 			},
-			// The executor is outdated if the sourcegraph version is greater than theexecutor version (SEMVER).
+			// The executor is not outdated if the sourcegraph version is one version
+			// greater than the executor version (SEMVER).
 			{
 				executorVersion:    "3.42.0",
+				sourcegraphVersion: "3.43.0",
+				isActive:           true,
+				expected:           false,
+			},
+			// The executor is outdated if the sourcegraph version is more than one version
+			// greater than the executor version (SEMVER).
+			{
+				executorVersion:    "3.40.0",
 				sourcegraphVersion: "3.43.0",
 				isActive:           true,
 				expected:           true,
@@ -86,7 +95,7 @@ func TestExecutorResolver(t *testing.T) {
 			want, err := isExecutorOutdated(tc.executorVersion, tc.isActive)
 
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expected, want, fmt.Sprintf("ev: %s - expected: %t, got: %t", tc.executorVersion, tc.expected, want))
+			assert.Equal(t, tc.expected, want, fmt.Sprintf("ev: %s, sv: %s - expected: %t, got: %t", tc.executorVersion, tc.sourcegraphVersion, tc.expected, want))
 		}
 	})
 }
