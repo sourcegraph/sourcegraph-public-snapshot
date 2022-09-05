@@ -79,10 +79,6 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    test('just here to trigger this suite on ci', () => {
-        console.log("we're literally doing nothing here")
-    })
-
     // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/29098
     test.skip('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
