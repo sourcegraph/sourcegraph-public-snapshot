@@ -5,7 +5,6 @@ import classNames from 'classnames'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
@@ -16,7 +15,6 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; file
     actionType,
     filePath,
 }) => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
     // Turn off visibility when the file path changes.
@@ -35,10 +33,6 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; file
             eventLogger.log('GitBlameEnabled')
         }
     }, [isBlameVisible, setIsBlameVisible])
-
-    if (!extensionsAsCoreFeatures) {
-        return null
-    }
 
     if (actionType === 'dropdown') {
         return (

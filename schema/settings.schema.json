@@ -325,14 +325,6 @@
             "pointer": true
           }
         },
-        "extensionsAsCoreFeatures": {
-          "description": "Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "enableGoImportsSearchQueryTransform": {
           "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
           "type": "boolean",
