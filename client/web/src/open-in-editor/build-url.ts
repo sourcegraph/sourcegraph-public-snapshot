@@ -74,7 +74,7 @@ export function getEditorSettingsErrorMessage(
     }
 
     if (editorSettings['vscode.useSSH'] && !editorSettings['vscode.remoteHostForSSH']) {
-        throw new TypeError('`vscode.useSSH` is set to "true" but `vscode.remoteHostForSSH` is not set.')
+        return '`vscode.useSSH` is set to "true" but `vscode.remoteHostForSSH` is not set.'
     }
 
     return undefined
