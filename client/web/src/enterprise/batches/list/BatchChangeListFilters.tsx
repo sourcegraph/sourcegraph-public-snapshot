@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H4, MultiSelect, MultiSelectOption, MultiSelectProps } from '@sourcegraph/wildcard'
+import { H3, H4, MultiSelect, MultiSelectOption, MultiSelectProps } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../../graphql-operations'
 
@@ -25,7 +25,9 @@ export const BatchChangeListFilters: React.FunctionComponent<React.PropsWithChil
 }) => (
     <>
         {/* TODO: This should be a proper label. MultiSelect currently doesn't support that being inline though, so this is for later. */}
-        <H4 className="mb-0 mr-2">Status</H4>
+        <H4 as={H3} className="mb-0 mr-2">
+            Status
+        </H4>
         <MultiSelect
             {...props}
             options={isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS}
