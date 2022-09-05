@@ -68,16 +68,37 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
+	maxReorderDuration := 0 * time.Millisecond
+	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil && siteConfig.ExperimentalFeatures.Ranking.MaxReorderDuration != nil {
+		maxReorderDuration = time.Duration(*siteConfig.ExperimentalFeatures.Ranking.MaxReorderDuration) * time.Millisecond
+	}
+
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
 		endpoints = append(endpoints, endpoint)
 	}
 
 	// resultQueue is used to re-order results by priority.
+	var mu sync.Mutex
 	resultQueue := newResultQueue(maxQueueDepth, endpoints)
 
+	// Flush the queue latest after maxReorderDuration.
+	if maxReorderDuration != 0 {
+		done := make(chan struct{}, 1)
+		defer close(done)
+
+		go func() {
+			select {
+			case <-done:
+			case <-time.After(maxReorderDuration):
+				mu.Lock()
+				resultQueue.FlushAll(streamer)
+				mu.Unlock()
+			}
+		}()
+	}
+
 	// During rebalancing a repository can appear on more than one replica.
-	var mu sync.Mutex
 	dedupper := dedupper{}
 
 	// GobCache exists so we only pay the cost of marshalling a query once
