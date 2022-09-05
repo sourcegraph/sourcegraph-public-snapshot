@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -114,8 +115,9 @@ func TestHTTPMiddleware(t *testing.T) {
 		wantActor: &Actor{AnonymousUID: "anonymousUID"},
 	}}
 	for _, tt := range tests {
+		logger := logtest.Scoped(t)
 		t.Run(tt.name, func(t *testing.T) {
-			handler := HTTPMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			handler := HTTPMiddleware(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 				got := FromContext(r.Context())
 				// Compare string representation
 				if diff := cmp.Diff(tt.wantActor.String(), got.String()); diff != "" {
