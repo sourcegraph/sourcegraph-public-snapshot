@@ -98,36 +98,36 @@ func (esbuildFS) Open(name string) (fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("XXX", resp.StatusCode)
-		return nil, fmt.Errorf("http status %d", resp.StatusCode)
+		resp.Body.Close()
+		var err error
+		if resp.StatusCode == http.StatusNotFound {
+			err = fs.ErrNotExist
+		} else {
+			err = fmt.Errorf("http status %d", resp.StatusCode)
+		}
+		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return esbuildFSFile{name: name, reader: bytes.NewReader(data)}, nil
+	return esbuildFSFile{name: name, Reader: bytes.NewReader(data)}, nil
 }
 
 type esbuildFSFile struct {
-	name   string
-	reader *bytes.Reader
+	name string
+	*bytes.Reader
 }
 
 func (f esbuildFSFile) Stat() (fs.FileInfo, error) {
 	return f, nil
 }
 
-func (f esbuildFSFile) Read(b []byte) (int, error) {
-	return f.reader.Read(b)
-}
-
 func (esbuildFSFile) Close() error { return nil }
 
 func (fi esbuildFSFile) Name() string { return "/" + fi.name }
-func (fi esbuildFSFile) Size() int64  { return fi.reader.Size() }
 func (fi esbuildFSFile) Mode() fs.FileMode {
 	if fi.name == "" {
 		return fs.ModeDir

@@ -15,7 +15,8 @@
     "jsx": "react"
   },
   "references": [
-    { "path": "../../../../client/web" }
+    { "path": "../../../../client/web" },
+    { "path": "../../../../client/wildcard" }
   ],
   "include": [
     "gulpfile.js",
