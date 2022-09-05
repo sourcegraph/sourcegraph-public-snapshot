@@ -17,6 +17,8 @@ First, [create a new Digital Ocean Droplet](https://cloud.digitalocean.com/dropl
 
 1. Select **Ubuntu 18.04** under *Distributions*
 
+![image](https://user-images.githubusercontent.com/68532117/188502550-bbab20a0-df2d-4e45-a484-628e022505c9.png)
+
 #### Choose a plan
 
 1. Select an appropriate droplet size
@@ -30,9 +32,13 @@ First, [create a new Digital Ocean Droplet](https://cloud.digitalocean.com/dropl
       * Allocating as much disk space as you can upfront minimize the need for switching to a droplet with a larger root disk later on
 3. Under **Choose configuration options**, select "Manually Format and Mount"
 
+![image](https://user-images.githubusercontent.com/68532117/188502606-66bc1301-edbb-493d-b64d-f4a3e6dd0487.png)
+
 #### Authentication
 
 1. **[RECOMMENDED]** Select **SSH keys** to create a **New SSH Key** for convenient access to the droplet
+
+![image](https://user-images.githubusercontent.com/68532117/188502682-37667333-75d0-4bd9-8fa8-3b92924c9755.png)
 
 #### Authentication > Enable backups
 
