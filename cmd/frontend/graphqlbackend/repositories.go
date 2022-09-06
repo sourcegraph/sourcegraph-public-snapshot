@@ -22,17 +22,20 @@ import (
 
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query       *string
-	Names       *[]string
-	Cloned      bool
+	Query *string
+	Names *[]string
+
+	Cloned     bool
+	NotCloned  bool
+	Indexed    bool
+	NotIndexed bool
+
 	CloneStatus *string
-	NotCloned   bool
-	Indexed     bool
-	NotIndexed  bool
 	FailedFetch bool
-	OrderBy     string
-	Descending  bool
-	After       *string
+
+	OrderBy    string
+	Descending bool
+	After      *string
 }
 
 func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
@@ -73,17 +76,24 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 	}
 
 	opt.FailedFetch = args.FailedFetch
+
+	if !args.Cloned {
+		opt.NoCloned = true
+	} else if !args.NotCloned {
+		// notCloned is true by default.
+		// this condition is valid only if it has been
+		// explicitly set to false by the client.
+		opt.OnlyCloned = true
+	}
+
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	return &repositoryConnectionResolver{
-		db:          r.db,
-		logger:      r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
-		opt:         opt,
-		cloned:      args.Cloned,
-		notCloned:   args.NotCloned,
-		indexed:     args.Indexed,
-		notIndexed:  args.NotIndexed,
-		failedFetch: args.FailedFetch,
+		db:         r.db,
+		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		opt:        opt,
+		indexed:    args.Indexed,
+		notIndexed: args.NotIndexed,
 	}, nil
 }
 
@@ -97,29 +107,14 @@ type RepositoryConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
-	// TODO(burmudar): This is ununsed ?
-	return &repositoryConnectionResolver{
-		db:         db,
-		opt:        opt,
-		cloned:     cloned,
-		notCloned:  notCloned,
-		indexed:    indexed,
-		notIndexed: notIndexed,
-	}
-}
-
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	logger      log.Logger
-	db          database.DB
-	opt         database.ReposListOptions
-	cloned      bool
-	notCloned   bool
-	indexed     bool
-	notIndexed  bool
-	failedFetch bool
+	logger     log.Logger
+	db         database.DB
+	opt        database.ReposListOptions
+	indexed    bool
+	notIndexed bool
 
 	// cache results because they are used by multiple fields
 	once  sync.Once
@@ -163,16 +158,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				opt2.LimitOffset.Limit = len(indexed.Minimal) * 2
 			}
 		}
-
-		if !r.cloned {
-			opt2.NoCloned = true
-		} else if !r.notCloned {
-			// notCloned is true by default.
-			// this condition is valid only if it has been
-			// explicitly set to false by the client.
-			opt2.OnlyCloned = true
-		}
-		opt2.FailedFetch = r.failedFetch
 
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
@@ -258,7 +243,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		return &v
 	}
 
-	if !r.cloned || !r.notCloned || r.opt.CloneStatus != types.CloneStatusUnknown {
+	if r.opt.NoCloned || r.opt.OnlyCloned || r.opt.CloneStatus != types.CloneStatusUnknown {
 		// Don't support counting if filtering by clone status.
 		return nil, nil
 	}
