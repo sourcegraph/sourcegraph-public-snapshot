@@ -143,11 +143,21 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 	}, nil
 }
 
-// subRepoPermsPermissionsDuration tracks the behaviour and performance of Permissions()
-var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "authz_sub_repo_perms_permissions_duration_seconds",
-	Help: "Time spent syncing",
-}, []string{"error"})
+var (
+	metricSubRepoPermsPermissionsDurationSuccess prometheus.Observer
+	metricSubRepoPermsPermissionsDurationError   prometheus.Observer
+)
+
+func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
+	metric := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "authz_sub_repo_perms_permissions_duration_seconds",
+		Help: "Time spent calculating permissions of a file for an actor.",
+	}, []string{"error"})
+	metricSubRepoPermsPermissionsDurationSuccess = metric.WithLabelValues("false")
+	metricSubRepoPermsPermissionsDurationError = metric.WithLabelValues("true")
+}
 
 var (
 	metricSubRepoPermCacheHit  prometheus.Counter
@@ -155,6 +165,8 @@ var (
 )
 
 func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
 	metric := promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "authz_sub_repo_perms_permissions_cache_count",
 		Help: "The number of sub-repo perms cache hits or misses",
@@ -175,7 +187,11 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	began := time.Now()
 	defer func() {
 		took := time.Since(began).Seconds()
-		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
+		if err == nil {
+			metricSubRepoPermsPermissionsDurationSuccess.Observe(took)
+		} else {
+			metricSubRepoPermsPermissionsDurationError.Observe(took)
+		}
 	}()
 
 	if s.permissionsGetter == nil {
