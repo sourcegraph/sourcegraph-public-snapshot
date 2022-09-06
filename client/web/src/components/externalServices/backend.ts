@@ -1,6 +1,6 @@
 import { MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
@@ -18,8 +18,6 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    SetExternalServiceReposVariables,
-    SetExternalServiceReposResult,
     AffiliatedRepositoriesVariables,
     AffiliatedRepositoriesResult,
     SyncExternalServiceResult,
@@ -106,21 +104,6 @@ export function updateExternalService(
             map(dataOrThrowErrors),
             map(data => data.updateExternalService)
         )
-        .toPromise()
-}
-
-export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<void> {
-    return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
-        gql`
-            mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
-                setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
-                    alwaysNil
-                }
-            }
-        `,
-        variables
-    )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
         .toPromise()
 }
 
