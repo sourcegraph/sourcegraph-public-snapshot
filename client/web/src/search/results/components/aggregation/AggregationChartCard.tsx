@@ -43,23 +43,23 @@ function getAggregationError(aggregation?: SearchAggregationResult): Error | und
     return
 }
 
-export function getAggregationData(aggregations: SearchAggregationResult): SearchAggregationDatum[] {
+export function getAggregationData(aggregations: SearchAggregationResult, limit: number): SearchAggregationDatum[] {
     switch (aggregations?.__typename) {
         case 'ExhaustiveSearchAggregationResult':
         case 'NonExhaustiveSearchAggregationResult':
-            return aggregations.groups
+            return aggregations.groups.slice(0, limit)
 
         default:
             return []
     }
 }
 
-export function getOtherGroupCount(aggregations: SearchAggregationResult): number {
+export function getOtherGroupCount(aggregations: SearchAggregationResult, limit: number): number {
     switch (aggregations?.__typename) {
         case 'ExhaustiveSearchAggregationResult':
-            return aggregations.otherGroupCount ?? 0
+            return (aggregations.otherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
         case 'NonExhaustiveSearchAggregationResult':
-            return aggregations.approximateOtherGroupCount ?? 0
+            return (aggregations.approximateOtherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
 
         default:
             return 0
@@ -121,7 +121,11 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         return null
     }
 
-    if (getAggregationData(data).length === 0) {
+    const maxBarsLimit = size === 'sm' ? 10 : 30
+    const aggregationData = getAggregationData(data, maxBarsLimit)
+    const missingCount = getOtherGroupCount(data, maxBarsLimit)
+
+    if (aggregationData.length === 0) {
         return (
             <AggregationErrorContainer size={size} className={className}>
                 No data to display
@@ -129,7 +133,6 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         )
     }
 
-    const missingCount = getOtherGroupCount(data)
     const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum, index: number): void => {
         event.preventDefault()
         onBarLinkClick?.(getLink(datum), index)
@@ -140,7 +143,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
             <Suspense>
                 <LazyAggregationChart
                     aria-label={ariaLabel}
-                    data={getAggregationData(data)}
+                    data={getAggregationData(data, maxBarsLimit)}
                     mode={mode}
                     minAngleXTick={size === 'md' ? 0 : MIN_X_TICK_ROTATION}
                     maxXLabelLength={size === 'md' ? MAX_LABEL_WIDTH : MAX_SHORT_LABEL_WIDTH}

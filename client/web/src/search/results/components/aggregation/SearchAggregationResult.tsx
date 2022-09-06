@@ -50,9 +50,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         query,
         patternType,
         aggregationMode,
-        limit: 30,
-        proactive: true,
         caseSensitive,
+        proactive: true,
     })
 
     const handleCollapseClick = (): void => {
@@ -141,7 +140,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
                 {data && (
                     <ul className={styles.listResult}>
-                        {getAggregationData(data.searchQueryAggregate.aggregations).map(datum => (
+                        {getAggregationData(data.searchQueryAggregate.aggregations, 30).map(datum => (
                             <li key={datum.label} className={styles.listResultItem}>
                                 <span>{datum.label}</span>
                                 <span>{datum.count}</span>

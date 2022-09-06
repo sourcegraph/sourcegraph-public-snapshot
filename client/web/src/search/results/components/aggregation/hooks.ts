@@ -205,9 +205,8 @@ interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
-    limit: number
-    proactive?: boolean
     caseSensitive: boolean
+    proactive?: boolean
 }
 
 interface AggregationState {
@@ -223,7 +222,7 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit, proactive, caseSensitive } = input
+    const { query, patternType, aggregationMode, proactive, caseSensitive } = input
 
     const [, setAggregationMode] = useAggregationSearchMode()
     const [state, setState] = useState<AggregationState>(INITIAL_STATE)
@@ -240,7 +239,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 query: aggregationQuery,
                 patternType,
                 mode: aggregationMode,
-                limit,
+                limit: 30,
                 skipAggregation: aggregationMode === null && !proactive,
             },
 
