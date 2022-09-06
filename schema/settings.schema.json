@@ -388,6 +388,22 @@
           "!go": {
             "pointer": true
           }
+        },
+        "enableSearchResultsAggregations": {
+          "description": "Display aggregations for your search results on the search screen.",
+          "type": "boolean",
+          "default": "false",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "disableProactiveSearchAggregations": {
+          "description": "Search results aggregations are not triggered automatically with a search.",
+          "type": "boolean",
+          "default": "false",
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
