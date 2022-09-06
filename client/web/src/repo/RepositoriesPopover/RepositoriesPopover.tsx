@@ -69,7 +69,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
     const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoriesPopover')
+        eventLogger.logPageView('RepositoriesPopover')
         telemetryService.log('RepositoriesPopover')
     }, [telemetryService])
 

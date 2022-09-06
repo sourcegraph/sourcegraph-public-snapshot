@@ -16,7 +16,7 @@ interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}>
 /** A page that shows all of a repository's branches. */
 export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryBranchesAll')
+        eventLogger.logPageView('RepositoryBranchesAll')
     }
 
     public render(): JSX.Element | null {

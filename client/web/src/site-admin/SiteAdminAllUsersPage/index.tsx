@@ -388,7 +388,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminAllUsers')
+        eventLogger.logPageView('SiteAdminAllUsers')
     }
 
     public componentWillUnmount(): void {

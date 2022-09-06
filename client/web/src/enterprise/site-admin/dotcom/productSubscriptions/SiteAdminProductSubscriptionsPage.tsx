@@ -35,7 +35,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
     history,
     location,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
+    useEffect(() => eventLogger.logPageView('SiteAdminProductSubscriptions'), [])
     return (
         <div className="site-admin-product-subscriptions-page">
             <PageTitle title="Product subscriptions" />

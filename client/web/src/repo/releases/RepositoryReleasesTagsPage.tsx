@@ -31,7 +31,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryReleasesTags')
+        eventLogger.logPageView('RepositoryReleasesTags')
     }, [])
 
     const queryTags = useCallback(

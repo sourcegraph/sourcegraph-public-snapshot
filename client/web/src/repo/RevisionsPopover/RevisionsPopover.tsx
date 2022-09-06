@@ -90,7 +90,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const { getPathFromRevision = replaceRevisionInURL } = props
 
     useEffect(() => {
-        eventLogger.logViewEvent('RevisionsPopover')
+        eventLogger.logPageView('RevisionsPopover')
     }, [])
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)

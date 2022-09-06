@@ -35,7 +35,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         )
     )
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminPings')
+        eventLogger.logPageView('SiteAdminPings')
     }, [])
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true

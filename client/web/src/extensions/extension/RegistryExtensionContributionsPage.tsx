@@ -151,7 +151,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
 /** A page that displays an extension's contributions. */
 export class RegistryExtensionContributionsPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionContributions')
+        eventLogger.logPageView('RegistryExtensionContributions')
     }
 
     public render(): JSX.Element | null {

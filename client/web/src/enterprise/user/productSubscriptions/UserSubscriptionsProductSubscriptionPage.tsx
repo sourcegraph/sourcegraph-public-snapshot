@@ -43,7 +43,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     },
     _queryProductSubscription = queryProductSubscription,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
+    useEffect(() => eventLogger.logPageView('UserSubscriptionsProductSubscription'), [])
 
     /**
      * The product subscription, or loading, or an error.

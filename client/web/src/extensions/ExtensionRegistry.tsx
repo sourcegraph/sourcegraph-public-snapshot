@@ -117,7 +117,7 @@ export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExte
 
 /** A page that displays overview information about the available extensions. */
 export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
+    useEffect(() => eventLogger.logPageView('ExtensionsOverview'), [])
 
     const { history, location, settingsCascade, platformContext, authenticatedUser } = props
 

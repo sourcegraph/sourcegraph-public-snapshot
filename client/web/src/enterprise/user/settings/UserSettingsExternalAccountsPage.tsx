@@ -38,7 +38,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsExternalAccounts')
+        eventLogger.logPageView('UserSettingsExternalAccounts')
     }
 
     public componentWillUnmount(): void {

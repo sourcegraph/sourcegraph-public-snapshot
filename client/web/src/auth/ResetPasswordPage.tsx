@@ -260,7 +260,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
     const location = useLocation()
 
     React.useEffect(() => {
-        eventLogger.logViewEvent('ResetPassword', false)
+        eventLogger.logPageView('ResetPassword', false)
     }, [])
 
     let body: JSX.Element

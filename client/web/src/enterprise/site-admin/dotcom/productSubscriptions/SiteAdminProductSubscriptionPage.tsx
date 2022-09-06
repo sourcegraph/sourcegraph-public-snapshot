@@ -71,7 +71,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
+    useEffect(() => eventLogger.logPageView('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
 

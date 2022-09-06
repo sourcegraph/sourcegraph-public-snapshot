@@ -48,7 +48,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsPassword')
+        eventLogger.logPageView('UserSettingsPassword')
         this.subscriptions.add(
             this.submits
                 .pipe(

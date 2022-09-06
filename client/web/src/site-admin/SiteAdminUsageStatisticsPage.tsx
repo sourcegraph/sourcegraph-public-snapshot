@@ -225,7 +225,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminUsageStatistics')
+        eventLogger.logPageView('SiteAdminUsageStatistics')
 
         this.subscriptions.add(
             fetchSiteUsageStatistics().subscribe(

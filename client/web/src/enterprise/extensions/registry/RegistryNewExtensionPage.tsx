@@ -57,7 +57,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
-            eventLogger.logViewEvent('ExtensionRegistryCreateExtension')
+            eventLogger.logPageView('ExtensionRegistryCreateExtension')
 
             this.subscriptions.add(
                 concat(

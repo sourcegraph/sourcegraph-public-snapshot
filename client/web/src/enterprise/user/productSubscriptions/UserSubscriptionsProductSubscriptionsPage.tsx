@@ -37,7 +37,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
     useEffect(() => {
-        eventLogger.logViewEvent('UserSubscriptionsProductSubscriptions')
+        eventLogger.logPageView('UserSubscriptionsProductSubscriptions')
     }, [])
 
     const queryLicenses = useCallback(

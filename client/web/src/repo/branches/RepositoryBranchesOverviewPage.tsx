@@ -88,7 +88,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryBranchesOverview')
+        eventLogger.logPageView('RepositoryBranchesOverview')
 
         this.subscriptions.add(
             this.componentUpdates

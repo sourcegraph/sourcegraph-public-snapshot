@@ -43,7 +43,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
     isLightTheme,
     _queryProductSubscription = queryProductSubscription,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('UserSubscriptionsEditProductSubscription'), [])
+    useEffect(() => eventLogger.logPageView('UserSubscriptionsEditProductSubscription'), [])
 
     /**
      * The product subscription, or loading, or an error.

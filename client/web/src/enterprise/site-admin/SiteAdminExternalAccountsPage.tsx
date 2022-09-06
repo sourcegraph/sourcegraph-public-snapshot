@@ -42,7 +42,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminExternalAccounts')
+        eventLogger.logPageView('SiteAdminExternalAccounts')
     }
 
     public componentWillUnmount(): void {

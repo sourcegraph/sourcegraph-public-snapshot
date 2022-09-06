@@ -34,7 +34,7 @@ export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWi
     history,
     location,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductLicenses'), [])
+    useEffect(() => eventLogger.logPageView('SiteAdminProductLicenses'), [])
 
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
         showSubscription: true,

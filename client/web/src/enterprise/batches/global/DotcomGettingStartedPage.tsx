@@ -20,7 +20,7 @@ export interface DotcomGettingStartedPageProps {
 export const DotcomGettingStartedPage: React.FunctionComponent<
     React.PropsWithChildren<DotcomGettingStartedPageProps>
 > = () => {
-    useEffect(() => eventLogger.logViewEvent('BatchChangesCloudLandingPage'), [])
+    useEffect(() => eventLogger.logPageView('BatchChangesCloudLandingPage'), [])
 
     return (
         <Page>

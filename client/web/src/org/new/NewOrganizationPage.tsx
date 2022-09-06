@@ -21,7 +21,7 @@ interface Props {
 
 export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ history }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('NewOrg')
+        eventLogger.logPageView('NewOrg')
     }, [])
     const [loading, setLoading] = useState<boolean | Error>(false)
     const [name, setName] = useState<string>('')

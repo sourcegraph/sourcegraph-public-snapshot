@@ -102,7 +102,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
 
         this.componentUpdates.next(this.props)
 
-        eventLogger.logViewEvent('UpdateSavedSearchPage')
+        eventLogger.logPageView('UpdateSavedSearchPage')
     }
 
     public render(): JSX.Element | null {

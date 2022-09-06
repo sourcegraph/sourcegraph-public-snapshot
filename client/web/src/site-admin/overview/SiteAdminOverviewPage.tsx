@@ -118,7 +118,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
     _fetchWeeklyActiveUsers = fetchWeeklyActiveUsers,
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminOverview')
+        eventLogger.logPageView('SiteAdminOverview')
     }, [])
 
     const info = useObservable(

@@ -68,7 +68,7 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                     }
                 })
         )
-        eventLogger.logViewEvent('NewSavedSearchPage')
+        eventLogger.logPageView('NewSavedSearchPage')
     }
 
     public render(): JSX.Element | null {

@@ -47,7 +47,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     const returnTo = getReturnTo(location)
 
     useEffect(() => {
-        eventLogger.logViewEvent('SignUp', null, false)
+        eventLogger.logPageView('SignUp', null, false)
 
         if (invitedBy !== null) {
             const parameters = {

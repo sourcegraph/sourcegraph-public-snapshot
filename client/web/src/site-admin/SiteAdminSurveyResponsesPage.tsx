@@ -290,7 +290,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminSurveyResponses')
+        eventLogger.logPageView('SiteAdminSurveyResponses')
     }, [])
 
     return (

@@ -231,7 +231,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminConfiguration')
+        eventLogger.logPageView('SiteAdminConfiguration')
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(

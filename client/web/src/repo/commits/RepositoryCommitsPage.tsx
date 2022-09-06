@@ -128,7 +128,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     ...props
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryCommits')
+        eventLogger.logPageView('RepositoryCommits')
     }, [])
 
     useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))

@@ -127,7 +127,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
+        eventLogger.logPageView('SiteAdminCreateProductSubscription')
     })
     return (
         <div className="site-admin-create-product-subscription-page">

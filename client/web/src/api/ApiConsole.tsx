@@ -88,7 +88,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('ApiConsole')
+        eventLogger.logPageView('ApiConsole')
 
         // Update the browser URL bar when query/variables/operation name are
         // changed so that the page can be easily shared.

@@ -48,7 +48,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettings')
+        eventLogger.logPageView('RepoSettings')
 
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(

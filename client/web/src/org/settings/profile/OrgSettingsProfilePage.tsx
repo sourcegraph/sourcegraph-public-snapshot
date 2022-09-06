@@ -22,7 +22,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
     onOrganizationUpdate,
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('OrgSettingsProfile')
+        eventLogger.logPageView('OrgSettingsProfile')
     }, [org.id])
 
     const [displayName, setDisplayName] = useState<string>(org.displayName ?? '')

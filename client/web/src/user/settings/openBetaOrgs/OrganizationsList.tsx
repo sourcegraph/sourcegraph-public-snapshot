@@ -73,9 +73,9 @@ const refreshOrganizationList = (): void => {
     refreshAuthenticatedUser()
         .toPromise()
         .then(() => {
-            eventLogger.logViewEvent('OrganizationsList')
+            eventLogger.logPageView('OrganizationsList')
         })
-        .catch(() => eventLogger.logViewEvent('ErrorOrgListLoading'))
+        .catch(() => eventLogger.logPageView('ErrorOrgListLoading'))
 }
 
 export const OrganizationsListPage: React.FunctionComponent<React.PropsWithChildren<OrganizationsListProps>> = ({

@@ -60,7 +60,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
     const flags = useObservable(siteFlags)
 
     useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsEmails')
+        eventLogger.logPageView('UserSettingsEmails')
     }, [])
 
     useEffect(() => {

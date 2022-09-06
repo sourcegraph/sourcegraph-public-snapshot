@@ -34,7 +34,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
     user,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
+    useEffect(() => eventLogger.logPageView('UserProfile'), [])
 
     return (
         <div>

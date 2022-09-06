@@ -85,7 +85,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
-            eventLogger.logViewEvent('RegistryExtensionManage')
+            eventLogger.logPageView('RegistryExtensionManage')
 
             this.subscriptions.add(
                 this.submits

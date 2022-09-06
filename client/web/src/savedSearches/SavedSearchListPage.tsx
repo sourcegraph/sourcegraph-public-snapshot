@@ -144,7 +144,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                 )
                 .subscribe(newState => this.setState(newState as State))
         )
-        eventLogger.logViewEvent('SavedSearchListPage')
+        eventLogger.logPageView('SavedSearchListPage')
     }
 
     public render(): JSX.Element | null {

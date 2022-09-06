@@ -13,7 +13,7 @@ import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<
     React.PropsWithChildren<RouteComponentProps>
 > = props => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
+    useEffect(() => eventLogger.logPageView('SiteAdminProductSubscription'), [])
 
     return (
         <div className="site-admin-product-subscription-page">

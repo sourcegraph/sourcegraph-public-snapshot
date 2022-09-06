@@ -83,7 +83,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
+        eventLogger.logPageView(`Settings${this.props.subject.__typename}`)
         // Load settings.
         this.subscriptions.add(
             combineLatest([

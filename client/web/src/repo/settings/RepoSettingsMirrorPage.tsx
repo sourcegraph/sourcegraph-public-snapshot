@@ -292,7 +292,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettingsMirror')
+        eventLogger.logPageView('RepoSettingsMirror')
 
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(

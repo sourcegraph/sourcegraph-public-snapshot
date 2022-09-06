@@ -106,7 +106,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryCompareOverview')
+        eventLogger.logPageView('RepositoryCompareOverview')
 
         this.subscriptions.add(
             this.componentUpdates

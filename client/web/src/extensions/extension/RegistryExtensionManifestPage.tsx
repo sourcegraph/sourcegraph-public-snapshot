@@ -66,7 +66,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
     public state: State = { viewMode: RegistryExtensionManifestPage.getViewMode() }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionManifest')
+        eventLogger.logPageView('RegistryExtensionManifest')
     }
 
     public render(): JSX.Element | null {

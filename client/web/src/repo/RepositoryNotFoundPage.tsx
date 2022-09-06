@@ -47,7 +47,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryError')
+        eventLogger.logPageView('RepositoryError')
 
         // Show/hide add.
         this.subscriptions.add(

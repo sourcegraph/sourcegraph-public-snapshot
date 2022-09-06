@@ -23,7 +23,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
         history: H.History
     }>
 > = ({ user, history }) => {
-    useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
+    useEffect(() => eventLogger.logPageView('UserSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
 
     if (permissionsInfo === undefined) {

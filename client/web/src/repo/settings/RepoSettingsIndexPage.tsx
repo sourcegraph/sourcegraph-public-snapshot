@@ -158,7 +158,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettingsIndex')
+        eventLogger.logPageView('RepoSettingsIndex')
 
         this.subscriptions.add(
             this.updates

@@ -50,7 +50,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+    useEffect(() => eventLogger.logPageView('ExecutorsList'))
 
     const history = useHistory()
 

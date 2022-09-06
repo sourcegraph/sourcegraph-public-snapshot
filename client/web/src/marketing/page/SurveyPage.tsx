@@ -31,7 +31,7 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
     const score = props.forceScore || matchParameters.score
 
     useEffect(() => {
-        eventLogger.logViewEvent('Survey')
+        eventLogger.logPageView('Survey')
     }, [])
 
     if (score === 'thanks') {

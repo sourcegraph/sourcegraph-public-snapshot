@@ -48,7 +48,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminCreateUser')
+        eventLogger.logPageView('SiteAdminCreateUser')
 
         this.subscriptions.add(
             this.submits

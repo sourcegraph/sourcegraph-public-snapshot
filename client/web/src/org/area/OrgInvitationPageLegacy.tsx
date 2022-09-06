@@ -54,7 +54,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
-            eventLogger.logViewEvent('OrgInvitation')
+            eventLogger.logPageView('OrgInvitation')
 
             const orgChanges = this.componentUpdates.pipe(
                 distinctUntilKeyChanged('org'),

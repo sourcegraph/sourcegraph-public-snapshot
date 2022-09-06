@@ -73,7 +73,7 @@ class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvide
  */
 export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminAuthentication')
+        eventLogger.logPageView('SiteAdminAuthentication')
     }
 
     public render(): JSX.Element | null {

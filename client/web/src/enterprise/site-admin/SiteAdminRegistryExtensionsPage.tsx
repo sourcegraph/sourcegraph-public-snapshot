@@ -175,7 +175,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
     private updates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminRegistryExtensions')
+        eventLogger.logPageView('SiteAdminRegistryExtensions')
     }
 
     public render(): JSX.Element | null {

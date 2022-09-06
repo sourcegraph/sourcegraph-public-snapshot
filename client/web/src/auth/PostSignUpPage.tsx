@@ -71,7 +71,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
     const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
-        eventLogger.logViewEvent(getPostSignUpEvent())
+        eventLogger.logPageView(getPostSignUpEvent())
     }, [])
 
     if (debug && !didUserFinishWelcomeFlow) {

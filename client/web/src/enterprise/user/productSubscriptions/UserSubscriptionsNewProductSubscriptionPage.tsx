@@ -45,7 +45,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
     history,
     isLightTheme,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('UserSubscriptionsNewProductSubscription'), [])
+    useEffect(() => eventLogger.logPageView('UserSubscriptionsNewProductSubscription'), [])
 
     /**
      * The result of creating the paid product subscription: undefined when complete or not started yet,

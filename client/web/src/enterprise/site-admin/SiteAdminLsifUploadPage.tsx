@@ -22,7 +22,7 @@ export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<
         params: { id },
     },
 }) => {
-    useEffect(() => eventLogger.logViewEvent('SiteAdminLsifUpload'))
+    useEffect(() => eventLogger.logPageView('SiteAdminLsifUpload'))
 
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
