@@ -193,7 +193,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
-	// We use the generic sourcer that doesnt have observability attached to it here because the way externalServiceValidate is set up,
+	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
 	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
 	var genericSourcer repos.Sourcer
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
@@ -250,7 +250,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
 }
 
-func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *types.ExternalService, src repos.Source) (statusCode int, response any) {
+func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *types.ExternalService, src repos.Source) (int, any) {
 	err := externalServiceValidate(ctx, es, src)
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))
@@ -258,10 +258,12 @@ func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *t
 			Error: err.Error(),
 		}
 		return http.StatusOK, syncResult
-	} else if ctx.Err() != nil {
+	}
+	if ctx.Err() != nil {
 		// client is gone
 		return 0, nil
-	} else if err != nil {
+	}
+	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		if errcode.IsUnauthorized(err) {
 			return http.StatusUnauthorized, err
