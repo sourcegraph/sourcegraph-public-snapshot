@@ -80,8 +80,7 @@ func newEventMatch(event result.Match) *eventMatch {
 	case *result.CommitMatch:
 		content := make([]string, 0, 1)
 		if match.DiffPreview != nil { // signals this is a Diff match
-			//TODO(insights): get the right content for diff capture group matching
-			content = append(content, "")
+			//TODO(insights): figure out extracting the right content for diff capture group matching
 		} else {
 			content = append(content, string(match.Commit.Message))
 		}

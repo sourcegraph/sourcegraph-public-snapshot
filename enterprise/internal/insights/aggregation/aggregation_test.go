@@ -557,6 +557,16 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`/sourcegraph-(\\w+)/ patterntype:standard`,
 			autogold.Want("capture groups against multiple match types", map[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notifications": 2, "alerts": 1}),
 		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					diffMatch("sourcegraph-repo1", "author-a", 1),
+				},
+			},
+			`/need(.)/ patterntype:standard`,
+			autogold.Want("capture groups ignores diff types", map[string]int{}),
+		},
 	}
 
 	for _, tc := range testCases {
