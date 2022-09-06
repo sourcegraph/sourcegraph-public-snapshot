@@ -226,7 +226,7 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit, proactive, caseSensitive, extendedTimeout, } = input
+    const { query, patternType, aggregationMode, limit, proactive, caseSensitive, extendedTimeout } = input
 
     const [, setAggregationMode] = useAggregationSearchMode()
     const [state, setState] = useState<AggregationState>(INITIAL_STATE)

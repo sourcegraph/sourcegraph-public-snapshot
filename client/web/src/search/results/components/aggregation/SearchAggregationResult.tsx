@@ -144,8 +144,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     className={styles.chartContainer}
                     onBarLinkClick={handleBarLinkClick}
                     onBarHover={handleBarHover}
-                onExtendTimeout={handleExtendTimeout}
-            />
+                    onExtendTimeout={handleExtendTimeout}
+                />
 
                 {data && (
                     <ul className={styles.listResult}>
