@@ -69,6 +69,7 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
 
             searchBasedReferences(options)
                 .then(references => {
+                    console.log({ references })
                     onReferences(references)
                     setLoadingReferences(false)
                 })

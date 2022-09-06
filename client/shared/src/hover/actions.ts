@@ -144,26 +144,9 @@ export function getHoverActionsContext(
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
         providersForDocument(parameters),
-
-        // showFindReferences:
-        // If there is no definition, delay showing "Find references" because it is likely that the token is
-        // punctuation or something else that has no meaningful references. This reduces UI jitter when it can be
-        // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
-        // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
-        merge(
-            [false],
-            of(true).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError.pipe(filter(({ result }) => result !== null)))
-            ),
-            definitionURLOrError.pipe(
-                filter(({ result }) => result !== null),
-                mapTo(true)
-            )
-        ),
     ]).pipe(
         map(
-            ([definitionURLOrError, providers, showFindReferences]): HoverActionsContext => {
+            ([definitionURLOrError, providers]): HoverActionsContext => {
                 const fileUrl =
                     definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
                         ? definitionURLOrError.url
@@ -199,12 +182,10 @@ export function getHoverActionsContext(
                     definitionFound,
                     'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
-                    'findReferences.url':
-                        providers.references && showFindReferences ? panelURL.replace(/panelID$/, 'references') : null,
-                    'findImplementations.url':
-                        providers.implementations && showFindReferences
-                            ? panelURL.replace(/panelID$/, `implementations_${providers.language}`)
-                            : null,
+                    'findReferences.url': providers.references ? panelURL.replace(/panelID$/, 'references') : null,
+                    'findImplementations.url': providers.implementations
+                        ? panelURL.replace(/panelID$/, `implementations_${providers.language}`)
+                        : null,
                     'panel.url': urlToFile(
                         { ...hoverContext, position: hoverContext, viewState: 'panelID' },
                         { part: hoverContext.part }
