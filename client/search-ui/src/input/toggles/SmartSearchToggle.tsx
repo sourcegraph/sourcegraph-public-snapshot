@@ -18,17 +18,17 @@ import {
 
 import { ToggleProps } from './QueryInputToggle'
 
-import luckyStyles from './LuckySearchToggle.module.scss'
+import smartStyles from './SmartSearchToggle.module.scss'
 import styles from './Toggles.module.scss'
 
-interface LuckySearchToggleProps extends Omit<ToggleProps, 'title' | 'iconSvgPath' | 'onToggle'> {
+interface SmartSearchToggleProps extends Omit<ToggleProps, 'title' | 'iconSvgPath' | 'onToggle'> {
     onSelect: (enabled: boolean) => void
 }
 
 /**
  * A toggle displayed in the QueryInput.
  */
-export const LuckySearchToggle: React.FunctionComponent<LuckySearchToggleProps> = ({
+export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> = ({
     onSelect,
     interactive = true,
     isActive,
@@ -65,13 +65,13 @@ export const LuckySearchToggle: React.FunctionComponent<LuckySearchToggleProps> 
                 </Tooltip>
             </PopoverTrigger>
 
-            <LuckySearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
+            <SmartSearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
         </Popover>
     )
 }
 
-const LuckySearchToggleMenu: React.FunctionComponent<
-    Pick<LuckySearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
+const SmartSearchToggleMenu: React.FunctionComponent<
+    Pick<SmartSearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
 > = ({ onSelect, isActive, closeMenu }) => {
     const onChange = useCallback(
         (value: boolean) => {
@@ -83,12 +83,12 @@ const LuckySearchToggleMenu: React.FunctionComponent<
 
     return (
         <PopoverContent
-            aria-labelledby="lucky-search-popover-header"
+            aria-labelledby="smart-search-popover-header"
             position={Position.bottomEnd}
-            className={luckyStyles.popoverWindow}
+            className={smartStyles.popoverWindow}
         >
             <div className="d-flex align-items-center px-3 py-2">
-                <H3 id="lucky-search-popover-header" className="m-0 flex-1">
+                <H3 id="smart-search-popover-header" className="m-0 flex-1">
                     Smart Search
                 </H3>
                 <Button onClick={() => closeMenu()} variant="icon" aria-label="Close">
@@ -120,11 +120,11 @@ const RadioItem: React.FunctionComponent<{
     header: string
     description: string
 }> = ({ value, isChecked, onSelect, header, description }) => (
-    <Label className={luckyStyles.label}>
+    <Label className={smartStyles.label}>
         <Input
             className="sr-only"
             type="radio"
-            name="luckySearch"
+            name="smartSearch"
             value={value.toString()}
             checked={isChecked}
             onChange={() => onSelect(value)}
@@ -132,13 +132,13 @@ const RadioItem: React.FunctionComponent<{
         <Icon
             svgPath={isChecked ? mdiRadioboxMarked : mdiRadioboxBlank}
             aria-hidden={true}
-            className={classNames(luckyStyles.radioIcon, isChecked && luckyStyles.radioIconActive)}
+            className={classNames(smartStyles.radioIcon, isChecked && smartStyles.radioIconActive)}
             inline={false}
         />
 
         <span className="d-flex flex-column">
-            <span className={luckyStyles.radioHeader}>{header}</span>
-            <span className={luckyStyles.radioDescription}>{description}</span>
+            <span className={smartStyles.radioHeader}>{header}</span>
+            <span className={smartStyles.radioDescription}>{description}</span>
         </span>
     </Label>
 )

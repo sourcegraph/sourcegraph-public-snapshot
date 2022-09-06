@@ -17,8 +17,8 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
-import { LuckySearchToggle } from './LuckySearchToggle'
 import { QueryInputToggle } from './QueryInputToggle'
+import { SmartSearchToggle } from './SmartSearchToggle'
 
 import styles from './Toggles.module.scss'
 
@@ -81,7 +81,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         [settingsCascade.final]
     )
 
-    const showLuckySearch = useMemo(() => defaultPatternTypeValue === SearchPatternType.lucky, [
+    const showSmartSearch = useMemo(() => defaultPatternTypeValue === SearchPatternType.lucky, [
         defaultPatternTypeValue,
     ])
 
@@ -121,7 +121,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
 
-    const onSelectLuckySearch = useCallback(
+    const onSelectSmartSearch = useCallback(
         (enabled: boolean): void => {
             const newPatternType: SearchPatternType = enabled ? SearchPatternType.lucky : SearchPatternType.standard
 
@@ -145,7 +145,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         <div className={classNames(className, styles.toggleContainer)}>
             <>
                 {/* Hide the other toggles if lucky search is enabled */}
-                {(!showLuckySearch || patternType !== SearchPatternType.lucky) && (
+                {(!showSmartSearch || patternType !== SearchPatternType.lucky) && (
                     <>
                         <QueryInputToggle
                             title="Case sensitivity"
@@ -210,11 +210,11 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         <div className={styles.separator} />
                     </>
                 )}
-                {showLuckySearch && (
-                    <LuckySearchToggle
+                {showSmartSearch && (
+                    <SmartSearchToggle
                         className="test-smart-search-toggle"
                         isActive={patternType === SearchPatternType.lucky}
-                        onSelect={onSelectLuckySearch}
+                        onSelect={onSelectSmartSearch}
                         interactive={props.interactive}
                         disableOn={[
                             {
