@@ -1084,8 +1084,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tr.AddEvent(
-		"LogFields",
+	tr.SetAttributes(
 		attribute.String("repo", string(args.Repo)),
 		attribute.Bool("include_diff", args.IncludeDiff),
 		attribute.String("query", args.Query.String()),
@@ -1106,7 +1105,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	var latencyOnce sync.Once
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		tr.AddEvent("LogFields", attribute.Int("flushing", len(data)))
+		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
 		latencyOnce.Do(func() {
 			searchLatency.Observe(time.Since(searchStart).Seconds())
 		})
@@ -1118,7 +1117,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
 		logger.Error("failed to send done event", log.Error(writeErr))
 	}
-	tr.AddEvent("LogFields", attribute.Bool("limit_hit", limitHit))
+	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
 	searchDuration.
 		WithLabelValues(strconv.FormatBool(searchErr != nil)).
@@ -1517,8 +1516,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
-		tr.AddEvent(
-			"LogFields",
+		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
 		)
@@ -1526,7 +1524,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
 			tr.AddEvent(
-				"LogFields",
+				"done",
 				attribute.String("status", status),
 				attribute.Int64("stdout", stdoutN),
 				attribute.Int64("stderr", stderrN),
@@ -1772,11 +1770,11 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
-		tr.AddEvent("LogFields", attribute.String("args", args))
+		tr.SetAttributes(attribute.String("args", args))
 
 		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
 		defer func() {
-			tr.AddEvent("LogFields",
+			tr.AddEvent("done",
 				attribute.String("status", status),
 				attribute.Int64("stdout", stdoutN),
 				attribute.Int64("stderr", stderrN),
