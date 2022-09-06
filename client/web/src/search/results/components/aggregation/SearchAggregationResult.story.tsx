@@ -15,6 +15,9 @@ import { SearchAggregationResult } from './SearchAggregationResult'
 
 const config: Meta = {
     title: 'web/search/results/SearchAggregationResult',
+    parameters: {
+        chromatic: { disableSnapshots: false },
+    },
 }
 
 export default config
@@ -25,8 +28,9 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
         variables: {
             query: '',
             patternType: 'literal',
-            mode: 'REPO',
+            mode: null,
             limit: 30,
+            skipAggregation: false,
         },
     },
     result: {
@@ -34,33 +38,73 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
             searchQueryAggregate: {
                 __typename: 'SearchQueryAggregate',
                 aggregations: {
-                    __typename: 'ExhaustiveSearchAggregationResult',
-                    mode: SearchAggregationMode.REPO,
-                    otherGroupCount: 100,
+                    __typename: 'NonExhaustiveSearchAggregationResult',
+                    mode: SearchAggregationMode.CAPTURE_GROUP,
+                    approximateOtherGroupCount: 776,
                     groups: [
                         {
                             __typename: 'AggregationGroup',
-                            label: 'sourcegraph/sourcegraph',
-                            count: 100,
-                            query: 'context:global insights repo:sourcegraph/sourcegraph',
+                            label: ': ',
+                            count: 232,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:: )string/',
                         },
                         {
                             __typename: 'AggregationGroup',
-                            label: 'sourcegraph/about',
-                            count: 80,
-                            query: 'context:global insights repo:sourecegraph/about',
+                            label: ' ',
+                            count: 215,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?: )string/',
                         },
                         {
                             __typename: 'AggregationGroup',
-                            label: 'sourcegraph/search-insight',
-                            count: 60,
-                            query: 'context:global insights repo:sourecegraph/search-insight',
+                            label: '',
+                            count: 68,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:)string/',
                         },
                         {
                             __typename: 'AggregationGroup',
-                            label: 'sourcegraph/lang-stats',
-                            count: 40,
-                            query: 'context:global insights repo:sourecegraph/lang-stats',
+                            label: '?: ',
+                            count: 43,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:\\?: )string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: 'ExampleFrom',
+                            count: 38,
+                            query:
+                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:ExampleFrom)string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: '       ',
+                            count: 26,
+                            query:
+                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:       )string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: ', summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []',
+                            count: 15,
+                            query:
+                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:, summaryQuery, err := makeEventLogsQueries\\(s\\.DateRange, s\\.Grouping, \\[\\])string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: '.',
+                            count: 11,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:\\.)string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: '  ',
+                            count: 10,
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:  )string/',
+                        },
+                        {
+                            __typename: 'AggregationGroup',
+                            label: 'Parameters: map[string][]',
+                            count: 8,
+                            query:
+                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:Parameters: map\\[string\\]\\[\\])string/',
                         },
                     ],
                 },
