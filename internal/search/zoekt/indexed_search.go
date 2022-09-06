@@ -240,7 +240,7 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, zoektQueryRegexps []*regexp.Regexp, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
@@ -262,7 +262,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 	}
 
 	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, zoektQueryRegexps, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
+		sendMatches(event, pathRegexps, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
@@ -273,7 +273,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, zoektQueryRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -311,7 +311,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, zo
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, zoektQueryRegexps, repos.getRepoInputRev, typ, selector, c)
+		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, selector, c)
 	}))
 	if err != nil {
 		return err
@@ -331,7 +331,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, zo
 	return nil
 }
 
-func sendMatches(event *zoekt.SearchResult, zoektQueryRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
+func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
 	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
@@ -372,7 +372,7 @@ func sendMatches(event *zoekt.SearchResult, zoektQueryRegexps []*regexp.Regexp, 
 			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
-		pathMatches := zoektFileMatchToPathMatchRanges(&file, zoektQueryRegexps)
+		pathMatches := zoektFileMatchToPathMatchRanges(&file, pathRegexps)
 
 		for _, inputRev := range inputRevs {
 			inputRev := inputRev // copy so we can take the pointer
@@ -477,8 +477,8 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 	return cms
 }
 
-func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, zoektQueryRegexps []*regexp.Regexp) (pathMatchRanges []result.Range) {
-	for _, re := range zoektQueryRegexps {
+func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, pathRegexps []*regexp.Regexp) (pathMatchRanges []result.Range) {
+	for _, re := range pathRegexps {
 		pathSubmatches := re.FindAllStringSubmatchIndex(file.FileName, -1)
 		for _, sm := range pathSubmatches {
 			pathMatchRanges = append(pathMatchRanges, result.Range{
