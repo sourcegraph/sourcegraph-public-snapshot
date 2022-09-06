@@ -1,6 +1,7 @@
 package aggregation
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -14,8 +15,9 @@ import (
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func newTestSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
+func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
 	return &searchAggregationResults{
+		ctx:       ctx,
 		tabulator: tabulator,
 		countFunc: countFunc,
 	}
@@ -23,10 +25,12 @@ func newTestSearchResultsAggregator(tabulator AggregationTabulator, countFunc Ag
 
 type testAggregator struct {
 	results map[string]int
+	errors  []error
 }
 
 func (r *testAggregator) AddResult(result *AggregationMatchResult, err error) {
 	if err != nil {
+		r.errors = append(r.errors, err)
 		return
 	}
 	current, _ := r.results[result.Key.Group]
@@ -225,7 +229,7 @@ func TestRepoAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -287,7 +291,7 @@ func TestAuthorAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -384,7 +388,7 @@ func TestPathAggregation(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -577,9 +581,51 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				t.Errorf("expected test not to error, got %v", err)
 				t.FailNow()
 			}
-			sra := newTestSearchResultsAggregator(aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
+		})
+	}
+}
+
+func TestAggregationCancelation(t *testing.T) {
+
+	testCases := []struct {
+		mode        types.SearchAggregationMode
+		searchEvent streaming.SearchEvent
+		query       string
+		want        autogold.Value
+	}{
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+				},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("aggregator stops counting if context canceled", map[string]int{"2.7": 2, "3.9": 2}),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			aggregator := testAggregator{results: make(map[string]int)}
+			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
+			if err != nil {
+				t.Errorf("expected test not to error, got %v", err)
+				t.FailNow()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			sra := newTestSearchResultsAggregator(ctx, aggregator.AddResult, countFunc)
+			sra.Send(tc.searchEvent)
+			cancel()
+			sra.Send(tc.searchEvent)
+			tc.want.Equal(t, aggregator.results)
+			if len(aggregator.errors) != 1 {
+				t.Errorf("context cancel should be captured as an error")
+			}
 		})
 	}
 }
