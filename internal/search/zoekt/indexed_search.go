@@ -620,7 +620,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 type RepoSubsetTextSearchJob struct {
 	Repos             *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query             zoektquery.Q
-	ZoektQueryRegexps []*regexp.Regexp
+	ZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
 	Typ               search.IndexedRequestType
 	FileMatchLimit    int32
 	Select            filter.SelectPath
@@ -682,7 +682,7 @@ type GlobalTextSearchJob struct {
 	GlobalZoektQuery        *GlobalZoektQuery
 	ZoektArgs               *search.ZoektParameters
 	RepoOpts                search.RepoOptions
-	GlobalZoektQueryRegexps []*regexp.Regexp
+	GlobalZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
 }
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {

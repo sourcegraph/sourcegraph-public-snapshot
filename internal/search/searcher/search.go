@@ -32,7 +32,7 @@ type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
-	PathRegexps []*regexp.Regexp
+	PathRegexps []*regexp.Regexp // used for getting file path match ranges
 
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these
