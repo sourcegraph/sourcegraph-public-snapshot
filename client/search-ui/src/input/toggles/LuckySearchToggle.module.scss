@@ -1,3 +1,9 @@
+.popover-window {
+    // Move the popover a bit so the close button aligns with the smart search icon
+    margin-top: 0.5rem;
+    margin-left: 0.875rem;
+}
+
 .label {
     max-width: 17rem;
     display: flex;
@@ -36,4 +42,5 @@
 .radio-description {
     font-size: 0.75rem;
     color: var(--text-muted);
+    font-weight: normal;
 }

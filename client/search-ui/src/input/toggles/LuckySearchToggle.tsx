@@ -82,8 +82,12 @@ const LuckySearchToggleMenu: React.FunctionComponent<
     )
 
     return (
-        <PopoverContent aria-labelledby="lucky-search-popover-header" position={Position.bottomEnd}>
-            <div className="d-flex align-items-baseline px-3 py-2">
+        <PopoverContent
+            aria-labelledby="lucky-search-popover-header"
+            position={Position.bottomEnd}
+            className={luckyStyles.popoverWindow}
+        >
+            <div className="d-flex align-items-center px-3 py-2">
                 <H3 id="lucky-search-popover-header" className="m-0 flex-1">
                     Smart Search
                 </H3>
@@ -93,7 +97,7 @@ const LuckySearchToggleMenu: React.FunctionComponent<
             </div>
             <RadioItem
                 value={true}
-                header="Enabled"
+                header="Enable"
                 description="Suggest variations of your query to find more results that may relate."
                 isChecked={isActive}
                 onSelect={onChange}
