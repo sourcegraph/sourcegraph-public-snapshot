@@ -9,12 +9,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useInviteEmailToSourcegraph } from '../../auth/welcome/InviteCollaborators/useInviteEmailToSourcegraph'
 import { CopyableText } from '../../components/CopyableText'
 import { CollaboratorsFragment, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
+import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 
