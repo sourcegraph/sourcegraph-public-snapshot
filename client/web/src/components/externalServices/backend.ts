@@ -197,36 +197,6 @@ export const listExternalServiceFragment = gql`
         grantedScopes
     }
 `
-export const listExternalServiceInvitableCollaboratorsFragment = gql`
-    fragment ListExternalServiceInvitableCollaboratorsFields on ExternalService {
-        invitableCollaborators {
-            email
-            displayName
-            name
-            avatarURL
-        }
-    }
-`
-
-export const EXTERNAL_SERVICES_WITH_COLLABORATORS = gql`
-    query ExternalServicesWithCollaborators($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
-            nodes {
-                ...ListExternalServiceFields
-                ...ListExternalServiceInvitableCollaboratorsFields
-            }
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
-        }
-    }
-
-    ${listExternalServiceFragment}
-    ${listExternalServiceInvitableCollaboratorsFragment}
-`
-
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String, $namespace: ID) {
         externalServices(first: $first, after: $after, namespace: $namespace) {

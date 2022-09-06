@@ -2,6 +2,7 @@ import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/sc
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
+
 import { InvitableCollaborator } from './CollaboratorsPanel'
 
 export const authUser: AuthenticatedUser & { namespaceName: string } = {
