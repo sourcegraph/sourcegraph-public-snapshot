@@ -41,7 +41,7 @@ At the moment all aggregations search queries are run with a 2-second timeout, e
 
 ### Count limits
 
-At the moment all aggregations search queries are run with count:all, even if your search specified a count. 
+At the moment all aggregations search queries are run with `count:all`, even if your search specified a count. 
 
 ### Best effort aggregation
 
@@ -63,7 +63,7 @@ Aggregations by capture group will match on the first capture group in the searc
 hello-(\w+)-(\w+)
 ```
 
-and a match like `hello-beautiful-world` only `beautiful` will be shown as a match.
+and a match like `hello-beautiful-world` only `beautiful` will be shown as a result.
 
 ### Saving aggregations to a code insights dashboard
 
@@ -71,7 +71,7 @@ Saving aggregations to a dashboard of code insights is not yet available.
 
 ### Slow diff and commit queries
 
-Running aggregations by author is only allowed for type:diff and type:commit queries, which are likely not to complete within a 2-second timeout.
+Running aggregations by author is only allowed for `type:diff` and `type:commit` queries, which are likely not to complete within a 2-second timeout.
 You can trigger an explicit search with an extended 1-minute timeout, or you can limit your query using a single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) combined with a `before` or `after` filter.
 
 ### Structural searches
