@@ -349,21 +349,17 @@ describe('Search aggregation', () => {
                 query: `${origQuery} case:yes`,
             })
 
-            const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
-            await driver.page.waitForSelector('.test-case-sensitivity-toggle')
-            await editor.focus()
-            await driver.page.keyboard.type('test')
-            await driver.page.click('.test-case-sensitivity-toggle')
-
-            const variablesWithoutCaseSensitivity = await testContext.waitForGraphQLRequest(() => {},
-            'GetSearchAggregation')
+            const variablesWithoutCaseSensitivity = await testContext.waitForGraphQLRequest(
+                async () => driver.page.click('.test-case-sensitivity-toggle'),
+                'GetSearchAggregation'
+            )
 
             expect(variablesWithoutCaseSensitivity).toStrictEqual({
                 mode: 'PATH',
                 limit: 10,
                 skipAggregation: false,
                 patternType: 'standard',
-                query: 'context:global insights(test',
+                query: origQuery,
             })
         })
     })
