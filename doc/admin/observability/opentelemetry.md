@@ -126,15 +126,15 @@ exporters:
 
 ### Jaeger
 
-Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.  
+Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.
 
-The example below describes how to connect to the bundled Jaeger backend, if it is enabled for your deployment. Connecting to your own Jaeger instance might require additional configuration.
+Most Sourcegraph deployment methods still ship with an opt-in Jaeger instance - to set this up, follow the relevant deployment guides, which will also set up the appropriate configuration for you:
 
-> NOTE: this requires the environment variable `$JAEGER_HOST` to be set on the Collector instance (i.e. the container in Kubernetes or Docker Compose).
+- [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment)
+- [Docker Compose](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
 
-<span class="virtual-br"></span>
-
-> NOTE: the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml). If this configuration serves your need, you do not have to provide a separate config. The Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/jaeger.yaml`. If you enable the bundled Jaeger instance in our deployment methods, this is preconfigured for you.
+If you wish to do additional configuration or connect to your own Jaeger instance, the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml).
+If this configuration serves your needs, you do not have to provide a separate config - the Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/jaeger.yaml`. Note that this requires the environment variable `$JAEGER_HOST` to be set on the Collector instance (i.e. the container in Kubernetes or Docker Compose):
 
 ```yaml
 exporters:
