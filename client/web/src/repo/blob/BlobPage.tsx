@@ -173,7 +173,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 reactManualTracer,
                 { name: 'formattedBlobInfoOrError', parentSpan: span },
                 fetchSpan =>
-                    fetchBlob({ repoName, commitID, filePath, format: HighlightResponseFormat.HTML_PLAINTEXT }).pipe(
+                    fetchBlob({
+                        repoName,
+                        revision: commitID,
+                        filePath,
+                        format: HighlightResponseFormat.HTML_PLAINTEXT,
+                    }).pipe(
                         map(blob => {
                             if (blob === null) {
                                 return blob
@@ -217,7 +222,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     switchMap(disableTimeout =>
                         fetchBlob({
                             repoName,
-                            commitID,
+                            revision: commitID,
                             filePath,
                             disableTimeout,
                             format: enableCodeMirror

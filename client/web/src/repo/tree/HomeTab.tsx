@@ -85,7 +85,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                     switchMap(disableTimeout =>
                         fetchBlob({
                             repoName: repo.name,
-                            commitID,
+                            revision: commitID,
                             filePath: `${filePath}/README.md`,
                             disableTimeout,
                         })
