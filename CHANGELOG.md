@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Experimental clientside OpenTelemetry can now be enabled with `"observability.client": { "openTelemetry": "/-/debug/otlp" }`, which sends OpenTelemetry to the new [bundled OpenTelemetry Collector](https://docs.sourcegraph.com/admin/observability/opentelemetry). [#37907](https://github.com/sourcegraph/sourcegraph/issues/37907)
 - File diff stats are now characterized by 2 figures: lines added and lines removed. Previously, a 3rd figure for lines modified was also used. This is represented by the fields on the `DiffStat` type on the GraphQL API. [#40454](https://github.com/sourcegraph/sourcegraph/pull/40454)
 - Display warning when executor is outdated. [#40916](https://github.com/sourcegraph/sourcegraph/pull/40916)
+- Outdated executors now show a warning from the admin page. [#40916](https://github.com/sourcegraph/sourcegraph/pull/40916)
 
 ### Changed
 
