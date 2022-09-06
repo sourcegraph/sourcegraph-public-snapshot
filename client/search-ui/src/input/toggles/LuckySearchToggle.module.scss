@@ -2,7 +2,7 @@
     max-width: 17rem;
     display: flex;
     cursor: pointer;
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 1rem;
     border-top: 1px solid var(--border-color);
     border-radius: var(--border-radius);
 
@@ -18,11 +18,14 @@
     height: 1.2rem;
     margin-right: 0.5rem;
     margin-top: 0.05rem; // Slight shifting for optical alignment of icon and text
-
     color: var(--text-muted);
 
     &--active {
         color: var(--primary);
+    }
+
+    .label:hover &:not(&--active) {
+        color: var(--body-color);
     }
 }
 
