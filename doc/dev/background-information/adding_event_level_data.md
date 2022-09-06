@@ -4,7 +4,7 @@ This document outlines the process for adding or changing the raw user event dat
 
 ### User event data philosophy
 
-[Raw user event data](https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline) is collected from logs in the event_logs table in the instance primary database and sent to Sourcegraph centralized analytics. These [events](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/database/event_logs.go+Event+type:symbol+select:symbol.struct&patternType=standard) are a product of events performed by users or the system and represent our customers’ most sensitive data. We must preserve and build trust through only careful additions and changes to events added to the egress pipeline.
+... is collected from logs in the `event_logs` table ...
 
 All user event data must be:
 
