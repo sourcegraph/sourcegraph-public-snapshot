@@ -41,7 +41,7 @@ func newSwitchableOtelTracerProvider(logger log.Logger) *switchableOtelTracerPro
 func (s *switchableOtelTracerProvider) Tracer(instrumentationName string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
 	val := s.v.Load().(*otelTracerProvider) // must be initialized
 	if val.debug {
-		s.logger.Info("Tracer",
+		s.logger.Debug("Tracer",
 			log.String("provider", fmt.Sprintf("%T", val.provider)))
 	}
 	return val.provider.Tracer(instrumentationName, opts...)

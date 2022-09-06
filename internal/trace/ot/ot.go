@@ -6,11 +6,18 @@ package ot
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
+
+var bridgeCtx atomic.Value
+
+func SetBridgeContext(ctx context.Context) {
+	bridgeCtx.Store(ctx)
+}
 
 // Deprecated: Use otel.Tracer(...) from go.opentelemetry.io/otel instead.
 //

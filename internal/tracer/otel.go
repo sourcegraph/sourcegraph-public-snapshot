@@ -48,7 +48,7 @@ func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, 
 	// Create the underlying trace provider
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(resource)),
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		oteltracesdk.WithSampler(&shouldTracePolicySampler{}),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
 

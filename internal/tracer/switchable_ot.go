@@ -38,7 +38,7 @@ func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.S
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		t.logger.Info("StartSpan",
+		t.logger.Debug("StartSpan",
 			log.String("operationName", operationName))
 	}
 	return t.tracer.StartSpan(operationName, opts...)
@@ -48,7 +48,7 @@ func (t *switchableTracer) Inject(sm opentracing.SpanContext, format any, carrie
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		t.logger.Info("Inject")
+		t.logger.Debug("Inject")
 	}
 	return t.tracer.Inject(sm, format, carrier)
 }
@@ -57,7 +57,7 @@ func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanCon
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
-		t.logger.Info("Extract")
+		t.logger.Debug("Extract")
 	}
 	return t.tracer.Extract(format, carrier)
 }
