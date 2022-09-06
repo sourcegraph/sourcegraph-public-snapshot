@@ -39,9 +39,12 @@ class SpecFileReporter extends mocha.reporters.Spec {
   }
 
   safeClose(stream) {
-    stream.close()
     return new Promise((resolve, reject) => {
-      stream.once('close', () => {
+      stream.close(error => {
+        if (error) {
+          reject(error)
+        }
+        
         resolve()
       })
     })
@@ -80,7 +83,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
         .finally(() => {
           console.warn('force exiting the process after writing report to file')
           // This performs the same function as passing --exit to the mocha test runner
-          // When the regression tests run, some recources are not properly cleaned up. Leading to
+          // When the regression tests run, some resources are not properly cleaned up. Leading to
           // the test runner just hanging since it is waiting on an open resource to exit.
           // TODO(burmudar): hunt this resource down
           process.exit(1)
