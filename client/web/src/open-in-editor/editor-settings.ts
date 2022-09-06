@@ -5,7 +5,7 @@ const jetBrainsApis = ['protocolHandler', 'builtInServer']
 export type EditorReplacements = Record<string, string>
 
 export interface EditorSettings {
-    editorId?: EditorId
+    editorIds?: EditorId[]
     'projectPaths.default'?: string
     'projectPaths.linux'?: string
     'projectPaths.mac'?: string

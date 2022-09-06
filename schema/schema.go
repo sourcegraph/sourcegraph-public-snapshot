@@ -1864,7 +1864,7 @@ type SettingsExperimentalFeatures struct {
 }
 
 type SettingsOpenInEditor struct {
-	EditorId                   string            `json:"editorId,omitempty"`
+	EditorId                   []string          `json:"editorIds,omitempty"`
 	ProjectPathsDefault        string            `json:"projectPaths.default,omitempty"`
 	ProjectPathsLinux          string            `json:"projectPaths.linux,omitempty"`
 	ProjectPathsMac            string            `json:"projectPaths.mac,omitempty"`

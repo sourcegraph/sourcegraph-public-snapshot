@@ -44,7 +44,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         props.platformContext.sourcegraphURL
     )
     const editor = !editorSettingsErrorMessage
-        ? getEditor((settings?.openInEditor as EditorSettings | undefined)?.editorId || '')
+        ? getEditor((settings?.openInEditor as EditorSettings | undefined)?.editorIds?.[0] || '')
         : undefined
 
     useEffect(() => {
@@ -92,12 +92,12 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                 throw new Error('No user settings. Not saving.')
             }
             await props.platformContext.updateSettings(userSettings.subject.id, {
-                path: ['openInEditor', 'editorId'],
-                value: selectedEditorId,
-            })
-            await props.platformContext.updateSettings(userSettings.subject.id, {
                 path: ['openInEditor', 'projectPaths.default'],
                 value: defaultProjectPath,
+            })
+            await props.platformContext.updateSettings(userSettings.subject.id, {
+                path: ['openInEditor', 'editorIds'],
+                value: [selectedEditorId],
             })
         },
         [props.platformContext, userSettings]

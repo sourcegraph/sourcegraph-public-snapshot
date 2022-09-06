@@ -1,10 +1,13 @@
+import { EditorSettings } from './editor-settings'
 import { migrateLegacySettings } from './migrate-legacy-settings'
 
 describe('migrate legacy editor settings tests', () => {
     it('migrates one legacy editor setting', () => {
         const editorId = 'vscode'
         const newSettings = migrateLegacySettings({ 'openineditor.editor': editorId })
-        expect(newSettings).toHaveProperty(['openInEditor', 'editorId'], editorId)
+        expect(newSettings).toHaveProperty(['openInEditor', 'editorIds'])
+        expect((newSettings.openInEditor as EditorSettings).editorIds).toHaveLength(1)
+        expect((newSettings.openInEditor as EditorSettings).editorIds?.[0]).toBe(editorId)
     })
 
     it('migrates all legacy editor settings', () => {
@@ -34,7 +37,7 @@ describe('migrate legacy editor settings tests', () => {
         const newSettings = migrateLegacySettings(settings)
 
         expect(newSettings).toHaveProperty('openInEditor')
-        expect(newSettings.openInEditor).toHaveProperty('editorId', editorId)
+        expect((newSettings.openInEditor as EditorSettings).editorIds?.[0]).toBe(editorId)
         expect(newSettings.openInEditor).toHaveProperty(['custom.urlPattern'], customUrlPattern)
         expect(newSettings.openInEditor).toHaveProperty(['vscode.useInsiders'], true)
         expect(newSettings.openInEditor).toHaveProperty(['vscode.remoteHostForSSH'], vscodeRemoteHost)

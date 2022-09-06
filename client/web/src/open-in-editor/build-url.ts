@@ -17,7 +17,7 @@ export function buildEditorUrl(
     }
 
     const projectPath = getProjectPath(editorSettings || {}) as string
-    const editor = getEditor(editorSettings?.editorId ?? 'vscode') as Editor
+    const editor = getEditor(editorSettings?.editorIds?.[0] ?? 'vscode') as Editor
     const urlPattern = getUrlPattern(editor, editorSettings || {})
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
@@ -57,19 +57,19 @@ export function getEditorSettingsErrorMessage(
         }).`
     }
 
-    if (typeof editorSettings.editorId !== 'string') {
-        return `Add \`editorId\` to your user settings to open files. [Learn more](${learnMoreURL})`
+    if (!editorSettings.editorIds || !editorSettings.editorIds.length) {
+        return `Add \`editorIds\` to your user settings to open files. [Learn more](${learnMoreURL})`
     }
-    const editor = getEditor(editorSettings.editorId)
+    const editor = getEditor(editorSettings.editorIds[0])
 
     if (!editor) {
         return (
-            `Setting \`editorId\` must be set to a valid value in your [user settings](${
+            `Setting \`editorIds\` must be set to a valid value in your [user settings](${
                 new URL('/user/settings', sourcegraphBaseUrl).href
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )
     }
-    if (editorSettings.editorId === 'custom' && typeof editorSettings['custom.urlPattern'] !== 'string') {
+    if (editorSettings.editorIds?.includes('custom') && typeof editorSettings['custom.urlPattern'] !== 'string') {
         return `Add \`custom.urlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMoreURL})`
     }
 

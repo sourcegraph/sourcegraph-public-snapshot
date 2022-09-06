@@ -51,7 +51,7 @@ export function migrateLegacySettings(settings: Settings): Settings {
 
 function convertLegacySettingsToNewFormat(legacySettings: LegacySettings): EditorSettings {
     return {
-        ...(legacySettings.editorId ? { editorId: legacySettings.editorId } : {}),
+        ...(legacySettings.editorId ? { editorIds: [legacySettings.editorId] } : {}),
         ...(legacySettings.basePath ? { 'projectPaths.default': legacySettings.basePath } : {}),
         ...(legacySettings.linuxBasePath ? { 'projectPaths.linux': legacySettings.linuxBasePath } : {}),
         ...(legacySettings.macBasePath ? { 'projectPaths.mac': legacySettings.macBasePath } : {}),

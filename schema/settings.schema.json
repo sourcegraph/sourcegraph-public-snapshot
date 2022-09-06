@@ -414,24 +414,27 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "editorId": {
+        "editorIds": {
           "description": "The editor to open files in. If set to this to \"custom\", you must also set \"custom.urlPattern\"",
-          "type": "string",
-          "enum": [
-            "appcode",
-            "atom",
-            "clion",
-            "goland",
-            "idea",
-            "phpstorm",
-            "pycharm",
-            "rider",
-            "rubymine",
-            "sublime",
-            "vscode",
-            "webstorm",
-            "custom"
-          ]
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "appcode",
+              "atom",
+              "clion",
+              "goland",
+              "idea",
+              "phpstorm",
+              "pycharm",
+              "rider",
+              "rubymine",
+              "sublime",
+              "vscode",
+              "webstorm",
+              "custom"
+            ]
+          }
         },
         "projectPaths.default": {
           "description": "The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. \"/Users/yourusername/src\" is a valid absolute path, \"~/src\" is not. Works both with and without a trailing slash.",
@@ -486,7 +489,7 @@
           "type": "string"
         },
         "custom.urlPattern": {
-          "description": "If you set openineditor.editorId to \"custom\", this must be set. Use the placeholders \"%file\", \"%line\", and \"%col\" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: \"idea://open?file=%file&line=%line&column=%col\"",
+          "description": "If you add \"custom\" to openineditor.editorIds, this must be set. Use the placeholders \"%file\", \"%line\", and \"%col\" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: \"idea://open?file=%file&line=%line&column=%col\"",
           "type": "string"
         }
       }

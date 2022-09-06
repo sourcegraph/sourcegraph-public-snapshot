@@ -29,7 +29,7 @@ export const OpenInEditorPopover: React.FunctionComponent<
 > = props => {
     const { editorSettings, togglePopover } = props
 
-    const [selectedEditorId, setSelectedEditorId] = React.useState<EditorId>(editorSettings?.editorId || '')
+    const [selectedEditorId, setSelectedEditorId] = React.useState<EditorId>(editorSettings?.editorIds?.[0] || '')
     const [defaultProjectPath, setDefaultProjectPath] = React.useState<string>(
         editorSettings?.['projectPaths.default'] || ''
     )
