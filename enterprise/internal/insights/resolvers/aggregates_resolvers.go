@@ -391,7 +391,7 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 
-	//Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
+	// Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
 	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
 	// At the moment we don't allow capture group aggregation for diff or symbol searches
 	notAllowedFieldTypeValues := map[string]struct{}{"diff": {}, "symbol": {}}
@@ -530,5 +530,6 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 	}
 
 	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
-	return string(newQuery), err
+	caseSensitive, err := querybuilder.SetCaseSensitivity(newQuery, true)
+	return string(caseSensitive), err
 }
