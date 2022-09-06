@@ -1,8 +1,10 @@
 # How to run `migrator` operations
 
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
+> NOTE: It is encouraged for users to always use a recent release of the `migrator`, even against older Sourcegraph instances. This is especially true for commands such as `downgrade`, `drift`, `run-out-of-band-migrations`, and `upgrade`, which all work against Sourcegraph versions as old as 3.20.
+>
+> The `up` command is a notable exception. See the command documentation for additional details.
 
-The `migrator` is a service that runs as an initial step of the upgrade process for [Kubernetes](../deploy/kubernetes/update.md#database-migrations) and [Docker-compose](../deploy/docker-compose/index.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
+The `migrator` is a service that runs as an initial step of the startup process for [Kubernetes](../deploy/kubernetes/update.md#database-migrations) and [Docker-compose](../deploy/docker-compose/index.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
 
 The [commands](#commands) section below details the legal commands with which the `migrator` service can be invoked. The [environments](#environments) section below details how to supply those commands to a `migrator` instance that has access to your Sourcegraph database.
 
@@ -10,19 +12,27 @@ The [commands](#commands) section below details the legal commands with which th
 
 The `migrator` service exposes the following commands:
 
-### up
+### add-log
 
-Usage: **`up [-db=all]`**
+Usage: **`add-log -db=<schema> -version=<version> [-up=true]`**
 
-The `up` command (the default behavior of the `migrator` service) applies all migrations. The `-db` flag signifies the target schema(s) to modify. Comma-separated values are accepted. Supply `all` (the default) to migrate all schemas.
+The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file. The `-db` flag specifies the target schema to modify. The `-version` flag specifies the migration version. The `-up` flag specifies the migration direction.
 
-> NOTE: These default behavior applies to all three databases. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the operation will fail. To work around this, explicitly supply database(s) via the `-db` flag (e.g., `-db=frontend,codeintel`).
+This command may be performed by a site-administrator as part of [repairing a dirty database](./dirty_database.md#3-add-a-migration-log-entry).
 
-### upto
+### downgrade
 
-Usage: **`upto -db=<schema> -target=<target>,<target>,...`**
+Usage: **`downgrade --from=<current version> --to=<target version> [--skip-version-check=false] [--dry-run=false]`**
 
-The `upto` command ensures a given migration has been applied, and may apply dependency migrations. The `-db` flag signifies the target schema to modify. The `-target` flag signifies the migration to apply. Comma-separated values are accepted.
+The `downgrade` command performs database schema migrations and (reverse-applied) out-of-band migrations to transform existing data into the shaped expected by an older Sourcegraph instance version. The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
+
+If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
+
+If the flag `--dry-run` is supplied, then the downgrade plan will be printed but not executed.
+
+The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+
+Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `downgrade` and `upgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
 
 ### downto
 
@@ -30,19 +40,81 @@ Usage: **`downto -db=<schema> -target=<target>,<target>,...`**
 
 The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version. The `-db` flag signifies the target schema to modify. The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
 
+The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+
+The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+
+### drift
+
+Usage: **`drift -db=<schema> [--version=<version>] [--file=<path to description file>]`**
+
+The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity.
+
+The `--version` flag is expected to be a Sourcegraph release version _including a patch_ (e.g., `v3.42.1`). If the flag `--file` is supplied, then the given filepath is read as the schema description file. This is useful for airgapped instances that do not have access to the public Sourcegraph GitHub repository or the public GCS bucket where old revisions have been backfilled. Exactly one of `--version` and `--file` must be supplied.
+
+### run-out-of-band-migrations
+
+Usage: **`run-out-of-band-migrations [-id <id> [, -id <id> ...]] [--apply-reverse=false]`**
+
+The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`. If no `-id` is supplied, then all registered out-of-band migrations will be invoked. If the flag `--apply-reverse` is supplied, then the invoked migrations will be migrated in the down direction.
+
+This command may be performed by a site-administrator as part of [repairing an unfinished migration](./unfinished_migration.md).
+
+### up
+
+Usage: **`up [-db=all] [--skip-upgrade-validation=false] [--skip-oobmigration-validation=false]`**
+
+> WARNING: The target migration leaves of this command are defined at `migrator` **compile time** and does not accept a version argument. This is the only command where the Sourcegraph instance version and `migrator` version are expected to match.
+
+The `up` command (the default behavior of the `migrator` service) applies all migrations defined at the time the `migrator` was built. The `-db` flag signifies the target schema(s) to modify. Comma-separated values are accepted. Supply `all` (the default) to migrate all schemas.
+
+This command is used on Sourcegraph instance startup to ensure the database schema is up to date prior to starting other services that depend on the database. Users should prefer the command [`upto`](#upto), which accepts more explicit bounds and does not depend on the migrator compilation version.
+
+Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
+
+If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrationsw ill not be read to assert completion of newly deprecated migrations.
+
+The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+
+The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+
+### upgrade
+
+Usage: **`upgrade --from=<current version> --to=<target version> [--skip-version-check=false] [--dry-run=false]`**
+
+The `upgrade` command performs database schema migrations and out-of-band migrations to transform existing data into the shaped expected by a given Sourcegraph instance version. The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
+
+This command is used by site-administrators to perform [multi-version upgrades](../updates/index.md#multi-version-upgrades).
+
+If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
+
+If the flag `--dry-run` is supplied, then the upgrade plan will be printed but not executed.
+
+The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+
+Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `upgrade` and `downgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
+
+### upto
+
+Usage: **`upto -db=<schema> -target=<target>,<target>,...`**
+
+The `upto` command ensures a given migration has been applied, and may apply dependency migrations. The `-db` flag signifies the target schema to modify. The `-target` flag signifies the migration to apply. Comma-separated values are accepted.
+
+If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrationsw ill not be read to assert completion of newly deprecated migrations.
+
+The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+
+The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+
 ### validate
 
-Usage: **`validate [-db=all]`**
+Usage: **`validate [-db=all] [--skip-out-of-band-migrations=false]`**
 
-The `validate` command validates the current state of the database. The `-db` flag signifies the target schema(s) to validate. Comma-separated values are accepted. Supply `all` (the default) to validate all schemas.
+The `validate` command validates the current state of the database (both schema as well as data related to out-of-band migrations). The `-db` flag signifies the target schema(s) to validate. Comma-separated values are accepted. Supply `all` (the default) to validate all schemas.
 
-> NOTE: These default behavior applies to all three databases. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the operation will fail. To work around this, explicitly supply database(s) via the `-db` flag (e.g., `-db=frontend,codeintel`).
+This command is used on Sourcegraph instance startup of database-dependent services to ensure that the migrator has been run to the expected version.
 
-### add-log
-
-Usage: **`add-log -db=<schema> -version=<version> [-up=true]`**
-
-The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file. The `-db` flag specifies the target schema to modify. The `-version` flag specifies the migration version. The `-up` flag specifies the migration direction.
+Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
 
 ## Environments
 
@@ -144,4 +216,6 @@ The log output of the `migrator` should include `INFO`-level logs and successful
 
 ### Local development
 
-The command detailed document are also available via `sg`. Replace `migrator` with `sg migration ...`.
+To run the migrator locally, simply run `go run ./cmd/migrator` or `go run ./enterprise/cmd/migrator`.
+
+Many of the commands detailed above are also available via `sg`. Replace `migrator` with `sg migration ...`. There are a few command registered on the `migrator` but not on `sg` (e.g., `upgrade` and `downgrade`), as local environments are a bit of a different beast than environments performing upgrades only along tagged releases.
