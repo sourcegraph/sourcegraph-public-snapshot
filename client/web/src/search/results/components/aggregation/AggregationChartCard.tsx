@@ -18,6 +18,7 @@ const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregati
     () => import('./AggregationChart'),
     'AggregationChart'
 )
+LazyAggregationChart.displayName = 'LazyAggregationChart'
 
 /** Set custom value for minimal rotation angle for X ticks in sidebar UI panel mode. */
 const MIN_X_TICK_ROTATION = 30
@@ -100,6 +101,11 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 className={classNames(styles.aggregationErrorContainer, className)}
             >
                 <BarsBackground size={size} />
+                <div className={styles.errorMessageLayout}>
+                    <div className={styles.errorMessage}>
+                        <span className={styles.loading}>Loading</span>
+                    </div>
+                </div>
             </DataLayoutContainer>
         )
     }
@@ -127,7 +133,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     <div className={styles.errorMessage}>
                         {aggregationError.type === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE ? (
                             <Button variant="link" className={styles.errorButton} size="sm" onClick={onExtendTimeout}>
-                                <Icon aria-hidden={true} src={mdiPlay} />
+                                <Icon aria-hidden={true} svgPath={mdiPlay} className="mr-1" />
                                 Run aggregation
                             </Button>
                         ) : (
@@ -224,6 +230,7 @@ const BarsBackground: FC<BarsBackgroundProps> = props => {
             {...attributes}
             className={classNames(className, styles.zeroStateBackground)}
             xmlns="http://www.w3.org/2000/svg"
+            height="115"
         >
             {data.map((bar, index) => (
                 <rect

@@ -35,6 +35,8 @@
 .error-button {
     display: inline-flex;
     align-items: center;
+    font-size: 0.857rem;
+    font-weight: 500;
 }
 
 // Internal error-alert UI
@@ -82,15 +84,24 @@
     max-width: 500px;
 }
 
-.loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.loading::after {
+    position: absolute;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: bottom;
+    content: '\2026';
+    width: 0px;
+    animation: ellipsis steps(4, end) 900ms infinite;
+}
+
+@keyframes ellipsis {
+    to {
+        width: 20px;
+    }
 }
 
 .zero-state-background {
     width: 100%;
-    flex-grow: 1;
     margin: auto;
 
     // Visually compensate bottom spacing between error chart mock
