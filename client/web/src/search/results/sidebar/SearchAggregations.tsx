@@ -55,7 +55,6 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         aggregationMode,
         proactive,
         caseSensitive,
-        limit: 10,
     })
 
     const handleBarLinkClick = (query: string, index: number): void => {
