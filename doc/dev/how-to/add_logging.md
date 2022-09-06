@@ -198,6 +198,15 @@ func doSubTask(logger log.Logger) {
 }
 ```
 
+Note that if `trace.Logger` finds an `internal/trace.Trace`, it will use that instead, and also apply the trace family as the logger scope.
+If the result proves problematic, you can bypass the behaviour by using `WithTrace` with `internal/trace.Context(...)` directly:
+
+```go
+func doSomething(ctx context.Context, logger log.Logger) {
+  logger = logger.WithTrace(trace.Context(ctx))
+}
+```
+
 ## Writing log messages
 
 The message in a log line should generally be in lowercase, and should generally not have ending punctuation.
@@ -268,7 +277,7 @@ For testing purposes, we also provide:
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
    3. Can be provided in code that accepts [injected loggers](#injected-loggers)
 2. An *optional* initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal).
-   1. Useful for testing code that [*does not* accept injected loggers](#instantiated-loggers)
+   1. This is required for testing code that [*does not* accept injected loggers](#instantiated-loggers)
 
 ### Injected loggers
 
