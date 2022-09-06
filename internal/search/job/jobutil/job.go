@@ -732,29 +732,26 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 }
 
 func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
-	switch typedQ := q.(type) {
-	case *zoektquery.And:
-		for _, child := range typedQ.Children {
-			res = append(res, zoektQueryPatternsAsRegexps(child)...)
+	zoektquery.VisitAtoms(q, func(zoektQ zoektquery.Q) {
+		switch typedQ := zoektQ.(type) {
+		case *zoektquery.Regexp:
+			if !typedQ.Content {
+				if typedQ.CaseSensitive {
+					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
+				} else {
+					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+				}
+			}
+		case *zoektquery.Substring:
+			if !typedQ.Content {
+				if typedQ.CaseSensitive {
+					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
+				} else {
+					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+				}
+			}
 		}
-	case *zoektquery.Or:
-		for _, child := range typedQ.Children {
-			res = append(res, zoektQueryPatternsAsRegexps(child)...)
-		}
-	case *zoektquery.Regexp:
-		if typedQ.CaseSensitive {
-			res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
-		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
-		}
-	case *zoektquery.Substring:
-		if typedQ.CaseSensitive {
-			res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
-		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
-		}
-	}
-
+	})
 	return res
 }
 

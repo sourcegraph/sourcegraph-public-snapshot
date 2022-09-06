@@ -372,10 +372,7 @@ func sendMatches(event *zoekt.SearchResult, zoektQueryRegexps []*regexp.Regexp, 
 			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
-		var pathMatches []result.Range
-		if len(zoektQueryRegexps) > 0 {
-			pathMatches = zoektFileMatchToPathMatchRanges(&file, zoektQueryRegexps)
-		}
+		pathMatches := zoektFileMatchToPathMatchRanges(&file, zoektQueryRegexps)
 
 		for _, inputRev := range inputRevs {
 			inputRev := inputRev // copy so we can take the pointer
@@ -480,26 +477,22 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 	return cms
 }
 
-func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, zoektQueryRegexps []*regexp.Regexp) []result.Range {
-	pathMatchRanges := make([]result.Range, 0, 1) // we don't expect a large number of path matches for any given file
-
+func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, zoektQueryRegexps []*regexp.Regexp) (pathMatchRanges []result.Range) {
 	for _, re := range zoektQueryRegexps {
 		pathSubmatches := re.FindAllStringSubmatchIndex(file.FileName, -1)
-		if len(pathSubmatches) > 0 {
-			for _, sm := range pathSubmatches {
-				pathMatchRanges = append(pathMatchRanges, result.Range{
-					Start: result.Location{
-						Offset: sm[0],
-						Line:   0, // we can treat path matches as a single-line
-						Column: utf8.RuneCount([]byte(file.FileName[:sm[0]])),
-					},
-					End: result.Location{
-						Offset: sm[1],
-						Line:   0,
-						Column: utf8.RuneCount([]byte(file.FileName[:sm[1]])),
-					},
-				})
-			}
+		for _, sm := range pathSubmatches {
+			pathMatchRanges = append(pathMatchRanges, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0, // we can treat path matches as a single-line
+					Column: utf8.RuneCountInString(file.FileName[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(file.FileName[:sm[1]]),
+				},
+			})
 		}
 	}
 
