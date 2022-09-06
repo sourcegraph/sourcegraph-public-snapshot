@@ -58,7 +58,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
 	}
-	dlog := logger.Scoped("dashboards", "dashboard generation")
+	dlog := logger.Scoped("grafana", "grafana dashboard generation")
 	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
@@ -117,7 +117,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "reloading prometheus instance").With(log.String("instance", localPrometheusURL))
+		rlog := logger.Scoped("prometheus", "prometheus alerts generation").With(log.String("instance", localPrometheusURL))
 		// Reload all Prometheus rules
 		rlog.Debug("Reloading Prometheus instance")
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
