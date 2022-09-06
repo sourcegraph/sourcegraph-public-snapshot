@@ -134,15 +134,17 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 
 	conf.Watch(func() {
 		c := conf.Get()
-		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
-			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		if c.ExperimentalFeatures == nil || c.ExperimentalFeatures.SubRepoPermissions == nil {
+			enabled.Store(false)
+			return
 		}
 
-		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
-			enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
-		} else {
-			enabled.Store(false)
+		cacheSize := c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize
+		if cacheSize == 0 {
+			cacheSize = defaultCacheSize
 		}
+		cache.Resize(cacheSize)
+		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
 	})
 
 	return &SubRepoPermsClient{
