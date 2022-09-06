@@ -147,7 +147,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btnBlock"
+              class="anchorLink btn btnSecondary btnBlock"
               href=""
             >
               <svg
@@ -323,7 +323,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btnBlock"
+              class="anchorLink btn btnSecondary btnBlock"
               href=""
             >
               <svg

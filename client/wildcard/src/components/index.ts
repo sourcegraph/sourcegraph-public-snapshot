@@ -2,7 +2,6 @@
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
-export { Calendar } from './Calendar'
 export { Container } from './Container'
 export { LineChart, BarChart, PieChart, LegendList, LegendItem, ScrollBox, ParentSize } from './Charts'
 export {

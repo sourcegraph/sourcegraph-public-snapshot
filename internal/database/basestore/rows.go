@@ -227,5 +227,7 @@ var (
 	ScanFirstBool       = NewFirstScanner(ScanAny[bool])
 	ScanTimes           = NewSliceScanner(ScanAny[time.Time])
 	ScanFirstTime       = NewFirstScanner(ScanAny[time.Time])
+	ScanNullTimes       = NewSliceScanner(ScanAny[*time.Time])
+	ScanFirstNullTime   = NewFirstScanner(ScanAny[*time.Time])
 	ScanFirstInt32Array = NewFirstScanner(ScanInt32Array)
 )

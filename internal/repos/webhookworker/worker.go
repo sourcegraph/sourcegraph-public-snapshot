@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -27,18 +28,18 @@ func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore work
 	return dbworker.NewWorker(ctx, workerStore, handler, options)
 }
 
-func NewResetter(ctx context.Context, workerStore workerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "webhook_build_resetter",
 		Interval: 1 * time.Minute,
 		Metrics:  metrics,
 	}
 
-	return dbworker.NewResetter(workerStore, options)
+	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateWorkerStore(dbHandle basestore.TransactableHandle) workerstore.Store {
-	return workerstore.New(dbHandle, workerstore.Options{
+func CreateWorkerStore(logger log.Logger, dbHandle basestore.TransactableHandle) workerstore.Store {
+	return workerstore.New(logger, dbHandle, workerstore.Options{
 		Name:              "webhook_build_worker_store",
 		TableName:         "webhook_build_jobs",
 		Scan:              workerstore.BuildWorkerScan(scanWebhookBuildJob),

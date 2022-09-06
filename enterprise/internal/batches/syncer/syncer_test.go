@@ -3,6 +3,7 @@ package syncer
 import (
 	"context"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -23,6 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
 
 func newTestStore() *MockSyncStore {
 	s := NewMockSyncStore()
