@@ -1,12 +1,12 @@
 import { Suspense, HTMLAttributes, ReactElement, MouseEvent, FC, SVGProps, forwardRef } from 'react'
 
+import { mdiPlay } from '@mdi/js'
 import classNames from 'classnames'
-import PlayIcon from 'mdi-react/PlayIcon'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Text, Link, Tooltip, ForwardReferenceComponent, Button } from '@sourcegraph/wildcard'
+import { Text, Link, Tooltip, ForwardReferenceComponent, Button, Icon } from '@sourcegraph/wildcard'
 
 import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
@@ -127,7 +127,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     <div className={styles.errorMessage}>
                         {aggregationError.type === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE ? (
                             <Button variant="link" className={styles.errorButton} size="sm" onClick={onExtendTimeout}>
-                                <PlayIcon />
+                                <Icon aria-hidden={true} src={mdiPlay} />
                                 Run aggregation
                             </Button>
                         ) : (
