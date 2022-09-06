@@ -32,7 +32,7 @@ type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
-	TextPatternRegexp *regexp.Regexp
+	PathRegexps []*regexp.Regexp
 
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these
@@ -203,7 +203,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches, s.TextPatternRegexp),
+			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
 		})
 	}
 
@@ -211,7 +211,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 }
 
 // convert converts a set of searcher matches into []result.Match
-func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, textPatternRegexp *regexp.Regexp) []result.Match {
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, pathRegexps []*regexp.Regexp) []result.Match {
 	matches := make([]result.Match, 0, len(searcherMatches))
 	for _, fm := range searcherMatches {
 		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
@@ -244,24 +244,22 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 			})
 		}
 
-		pathMatches := make([]result.Range, 0, 1) // we don't expect a large number of path matches per file
-		if textPatternRegexp != nil {
-			pathSubmatches := textPatternRegexp.FindAllStringSubmatchIndex(fm.Path, -1)
-			if len(pathSubmatches) > 0 {
-				for _, sm := range pathSubmatches {
-					pathMatches = append(pathMatches, result.Range{
-						Start: result.Location{
-							Offset: sm[0],
-							Line:   0,
-							Column: utf8.RuneCount([]byte(fm.Path[:sm[0]])),
-						},
-						End: result.Location{
-							Offset: sm[1],
-							Line:   0,
-							Column: utf8.RuneCount([]byte(fm.Path[:sm[1]])),
-						},
-					})
-				}
+		var pathMatches []result.Range
+		for _, pathRe := range pathRegexps {
+			pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
+			for _, sm := range pathSubmatches {
+				pathMatches = append(pathMatches, result.Range{
+					Start: result.Location{
+						Offset: sm[0],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+					},
+					End: result.Location{
+						Offset: sm[1],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+					},
+				})
 			}
 		}
 

@@ -318,16 +318,9 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 				}
-				var patStr string
-				if patternInfo.IsRegExp {
-					patStr = patternInfo.Pattern
-				} else {
-					patStr = regexp.QuoteMeta(patternInfo.Pattern)
-				}
-				if patternInfo.IsCaseSensitive {
-					searcherJob.TextPatternRegexp = regexp.MustCompile(patStr)
-				} else {
-					searcherJob.TextPatternRegexp = regexp.MustCompile(`(?i)` + patStr)
+
+				if patternInfo.PatternMatchesPath {
+					searcherJob.PathRegexps = getPathRegexpsFromTextPatternInfo(patternInfo)
 				}
 
 				addJob(&repoPagerJob{
@@ -462,6 +455,40 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	}
 
 	return NewParallelJob(allJobs...), nil
+}
+
+func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pathRegexps []*regexp.Regexp) {
+	for _, pattern := range patternInfo.IncludePatterns {
+		if patternInfo.IsRegExp {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			}
+		} else {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(pattern)))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(pattern)))
+			}
+		}
+	}
+
+	if patternInfo.IsRegExp {
+		if patternInfo.IsCaseSensitive {
+			pathRegexps = append(pathRegexps, regexp.MustCompile(patternInfo.Pattern))
+		} else {
+			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+patternInfo.Pattern))
+		}
+	} else {
+		if patternInfo.IsCaseSensitive {
+			pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(patternInfo.Pattern)))
+		} else {
+			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(patternInfo.Pattern)))
+		}
+	}
+
+	return pathRegexps
 }
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
