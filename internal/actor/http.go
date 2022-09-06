@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const (
@@ -134,6 +135,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 					log.Error(err),
 					log.String("uid", uidStr))
 				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
+				logger.WithTrace(trace.Context(ctx))
 
 				// Do not proceed with request
 				rw.WriteHeader(http.StatusForbidden)
