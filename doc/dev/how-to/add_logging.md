@@ -95,6 +95,8 @@ From a parent logger, you can create sub-loggers that have additional context at
 All the above mechanisms attach metadata to *all* log entries created by the sub-logger, and they do not modify the parent logger.
 Using sub-loggers allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
 
+> WARNING: All sub-logger constructors and functions on the `log.Logger` type (e.g. `(Logger).Soped(...)`, `(Logger).With(...)`, `(Logger).WithTrace(...)`) **do not** modify the underlying logger - you must hold and use the reference to the returned `log.Logger` instance.
+
 #### Scoped loggers
 
 Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occurred.
@@ -201,8 +203,10 @@ func doSubTask(logger log.Logger) {
 The message in a log line should generally be in lowercase, and should generally not have ending punctuation.
 
 ```go
-log.Info("this is my lowercase log line")
-log.Error("this is an error")
+logger.Info("this is my lowercase log line",
+  log.String("someField", value))
+logger.Error("this is an error",
+  log.Error(err))
 ```
 
 If writing log messages that, for example, indicate the results of a function, simply use the Go conventions for naming (i.e. just copy the function name).
@@ -211,6 +215,8 @@ If multiple log lines have similar components (such as a message prefix, or the 
 
 - instead of repeating a message prefix to e.g. indicate a component, [create a scoped sub-logger](#scoped-loggers) instead
 - instead of adding the same field to multiple log calls, [create a fields sub-logger](#fields-sub-loggers) instead
+
+> WARNING: Field constructors provided by the `sourcegraph/log` package, for example `log.Error(error)`, **do not** create log entries - they create fields (`type log.Field`) that are intended to be provided to `Logger` functions like `(Logger).Info` and so on.
 
 ### Log levels
 
