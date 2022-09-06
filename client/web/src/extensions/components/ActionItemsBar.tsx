@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiPuzzleOutline } from '@mdi/js'
+import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiChevronDoubleDown, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -365,8 +365,10 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                                         aria-hidden={true}
                                         svgPath={mdiChevronDoubleUp}
                                     />
-                                ) : (
+                                ) : window.context.enableLegacyExtensions ? (
                                     <Icon aria-hidden={true} svgPath={mdiPuzzleOutline} />
+                                ) : (
+                                    <Icon aria-hidden={true} svgPath={mdiChevronDoubleDown} />
                                 )}
                                 {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
                             </ButtonLink>
