@@ -20,9 +20,6 @@ export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public'
 
 export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
 
-export const userExternalServicesEnabledFromTags = (tags: string[]): boolean =>
-    modeEnabled(externalServiceUserModeFromTags(tags))
-
 export const showPasswordsPage = (props: UserProps): boolean => {
     // user is signed-in with builtin Auth and External Service is not public
     const mode = externalServiceUserMode(props)
