@@ -34,6 +34,7 @@ import { PlatformContext, PlatformContextProps, URLToFileContext } from '../plat
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'
+import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 
 const LOADING = 'loading' as const
 
@@ -479,7 +480,116 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
+            let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
+            if (!window.context?.enableLegacyExtensions) {
+                const promise = extensionHostAPI.registerContributions({
+                    actions: [
+                        {
+                            actionItem: {
+                                description:
+                                    '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || ""}',
+                                label:
+                                    '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results" || "Mix precise and search-based results"}',
+                            },
+                            command: 'updateConfiguration',
+                            commandArguments: [
+                                ['codeIntel.mixPreciseAndSearchBasedReferences'],
+                                '${!config.codeIntel.mixPreciseAndSearchBasedReferences}',
+                                null,
+                                'json',
+                            ],
+                            id: 'mixPreciseAndSearchBasedReferences.toggle',
+                            title:
+                                '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || "Mix precise and search-based results"}',
+                        },
+                        ...languageSpecs.map(spec => ({
+                            actionItem: { label: 'Find implementations' },
+                            command: 'open',
+                            commandArguments: [
+                                "${get(context, 'implementations_" +
+                                    spec.languageID +
+                                    "') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_" +
+                                    spec.languageID +
+                                    "') || 'noop'}",
+                            ],
+                            id: 'findImplementations',
+                            title: 'Find implementations',
+                        })),
+                    ],
+                    // configuration: {
+                    //     properties: {
+                    //         'basicCodeIntel.globalSearchesEnabled': {
+                    //             description:
+                    //                 'Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'basicCodeIntel.includeArchives': {
+                    //             description: 'Whether to include archived repositories in search results.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'basicCodeIntel.includeForks': {
+                    //             description: 'Whether to include forked repositories in search results.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'basicCodeIntel.indexOnly': {
+                    //             description: 'Whether to use only indexed requests to the search API.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'basicCodeIntel.unindexedSearchTimeout': {
+                    //             description: 'The timeout (in milliseconds) for un-indexed search requests.',
+                    //             type: 'number',
+                    //         },
+                    //         'codeIntel.disableRangeQueries': {
+                    //             description: 'Whether to fetch multiple precise definitions and references on hover.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'codeIntel.disableSearchBased': {
+                    //             description: 'Never fall back to search-based code intelligence.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'codeIntel.mixPreciseAndSearchBasedReferences': {
+                    //             description: 'Whether to supplement precise references with search-based results.',
+                    //             type: 'boolean',
+                    //         },
+                    //         'codeIntel.traceExtension': {
+                    //             description: 'Whether to enable trace logging on the extension.',
+                    //             type: 'boolean',
+                    //         },
+                    //     },
+                    //     title: 'Search-based code intelligence settings',
+                    // },
+                    menus: {
+                        hover: languageSpecs.map(spec => ({
+                            action: 'findImplementations',
+                            when:
+                                "resource.language == '" +
+                                spec.languageID +
+                                "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
+                        })),
+                        'panel/toolbar': [
+                            {
+                                action: 'mixPreciseAndSearchBasedReferences.toggle',
+                                when: "panel.activeView.id == 'references' && !config.codeIntel.disableSearchBased",
+                            },
+                        ],
+                    },
+                })
+                implementationsContributionPromise = promise
+                subscriptions.add(syncRemoteSubscription(promise))
+                for (const spec of languageSpecs) {
+                    if (spec.textDocumentImplemenationSupport) {
+                        extensionHostAPI.updateContext({
+                            [`implementations_${spec.languageID}`]: true,
+                        })
+                    }
+                }
+            }
+
+            return Promise.all([
+                definitionContributionsPromise,
+                referencesContributionPromise,
+                implementationsContributionPromise,
+            ])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
