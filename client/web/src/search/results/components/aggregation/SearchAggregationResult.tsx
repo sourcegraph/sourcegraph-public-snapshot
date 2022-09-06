@@ -51,9 +51,8 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         query,
         patternType,
         aggregationMode,
-        limit: 30,
-        proactive: true,
         caseSensitive,
+        proactive: true,
         extendedTimeout,
     })
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiPuzzleOutline } from '@mdi/js'
+import { mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -18,10 +18,12 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { useExperimentalFeatures } from '../../stores'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -203,6 +205,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+
     if (!isOpen) {
         return <div className={styles.barCollapsed} />
     }
@@ -223,6 +227,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
+                {extensionsAsCoreFeatures ? <OpenInEditorActionItem platformContext={props.platformContext} /> : null}
                 {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}
@@ -344,7 +349,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
                         {/**
                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
-                         * break its onClick handler and it will no longer prevent the default page reload (with no href).
+                         * break its onClick handler, and it will no longer prevent the default page reload (with no href).
                          */}
                         <span>
                             <ButtonLink

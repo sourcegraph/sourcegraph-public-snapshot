@@ -332,7 +332,7 @@ describe('Search aggregation', () => {
 
             expect(variables).toStrictEqual({
                 mode: null,
-                limit: 10,
+                limit: 30,
                 skipAggregation: false,
                 patternType: 'standard',
                 query: `${origQuery} case:yes`,
@@ -345,7 +345,7 @@ describe('Search aggregation', () => {
 
             expect(variablesForFileMode).toStrictEqual({
                 mode: 'PATH',
-                limit: 10,
+                limit: 30,
                 skipAggregation: false,
                 patternType: 'standard',
                 query: `${origQuery} case:yes`,
@@ -358,7 +358,7 @@ describe('Search aggregation', () => {
 
             expect(variablesWithoutCaseSensitivity).toStrictEqual({
                 mode: 'PATH',
-                limit: 10,
+                limit: 30,
                 skipAggregation: false,
                 patternType: 'standard',
                 query: origQuery,

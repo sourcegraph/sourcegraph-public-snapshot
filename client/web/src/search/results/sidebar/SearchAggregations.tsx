@@ -57,7 +57,6 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         aggregationMode,
         proactive,
         caseSensitive,
-        limit: 10,
         extendedTimeout,
     })
 
