@@ -107,7 +107,7 @@ Run the following commands on your Docker host.
 ```bash
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
 
-docker run
+docker run \
   --rm \
   --name migrator_$MIGRATOR_SOURCEGRAPH_VERSION \
   -e PGHOST='pgsql' \

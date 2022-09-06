@@ -325,14 +325,6 @@
             "pointer": true
           }
         },
-        "enableExtensionsDecorationsColumnView": {
-          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "extensionsAsCoreFeatures": {
           "description": "Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.",
           "type": "boolean",
@@ -393,6 +385,22 @@
           "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSearchResultsAggregations": {
+          "description": "Display aggregations for your search results on the search screen.",
+          "type": "boolean",
+          "default": "false",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "disableProactiveSearchAggregations": {
+          "description": "Search results aggregations are not triggered automatically with a search.",
+          "type": "boolean",
+          "default": "false",
           "!go": {
             "pointer": true
           }

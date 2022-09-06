@@ -361,6 +361,7 @@ func NewSchema(
 	searchContexts SearchContextsResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	insightsAggregation InsightsAggregationResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -450,6 +451,12 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if insightsAggregation != nil {
+		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
+		resolver.InsightsAggregationResolver = insightsAggregation
+		schemas = append(schemas, insightsAggregationsSchema)
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -481,6 +488,7 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 	NotebooksResolver
+	InsightsAggregationResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -548,16 +556,17 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver      CodeIntelResolver
-	computeResolver        ComputeResolver
-	insightsResolver       InsightsResolver
-	authzResolver          AuthzResolver
-	batchChangesResolver   BatchChangesResolver
-	codeMonitorsResolver   CodeMonitorsResolver
-	licenseResolver        LicenseResolver
-	dotcomResolver         DotcomRootResolver
-	searchContextsResolver SearchContextsResolver
-	notebooksResolver      NotebooksResolver
+	codeIntelResolver           CodeIntelResolver
+	computeResolver             ComputeResolver
+	insightsResolver            InsightsResolver
+	authzResolver               AuthzResolver
+	batchChangesResolver        BatchChangesResolver
+	codeMonitorsResolver        CodeMonitorsResolver
+	licenseResolver             LicenseResolver
+	dotcomResolver              DotcomRootResolver
+	searchContextsResolver      SearchContextsResolver
+	notebooksResolver           NotebooksResolver
+	InsightsAggregationResolver InsightsAggregationResolver
 }{}
 
 // DEPRECATED

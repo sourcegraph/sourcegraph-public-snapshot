@@ -10,7 +10,7 @@ describe('Button', () => {
     })
 
     it('supports rendering as different elements', () => {
-        const { asFragment } = renderWithBrandedContext(<Button as="a">I am a link</Button>)
+        const { asFragment } = renderWithBrandedContext(<Button as="div">I am a div</Button>)
         expect(asFragment()).toMatchSnapshot()
     })
 

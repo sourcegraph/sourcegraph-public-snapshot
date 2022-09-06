@@ -211,7 +211,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Write the session cookie
 	a := &actor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogAndError(logger, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		httpLogError(logger, log.LevelError, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -283,7 +283,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		// Validate user. Allow login by both email and username (for convenience).
 		u, err := getByEmailOrUsername(ctx, db, creds.Email)
 		if err != nil {
-			httpLogAndError(logger, w, "Authentication failed", http.StatusUnauthorized, log.Error(err))
+			httpLogError(logger, log.LevelWarn, w, "Authentication failed", http.StatusUnauthorized, log.Error(err))
 			return
 		}
 		user = *u
@@ -307,18 +307,18 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 				}
 			}()
 
-			httpLogAndError(logger, w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
+			httpLogError(logger, log.LevelError, w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
 			return
 		}
 
 		// 🚨 SECURITY: check password
 		correct, err := db.Users().IsPassword(ctx, user.ID, creds.Password)
 		if err != nil {
-			httpLogAndError(logger, w, "Error checking password", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger, log.LevelError, w, "Error checking password", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 		if !correct {
-			httpLogAndError(logger, w, "Authentication failed", http.StatusUnauthorized)
+			httpLogError(logger, log.LevelWarn, w, "Authentication failed", http.StatusUnauthorized)
 			return
 		}
 
@@ -327,7 +327,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 			UID: user.ID,
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			httpLogAndError(logger, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger, log.LevelError, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -365,7 +365,7 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 			if error != nil {
 				err = error.Error()
 			}
-			httpLogAndError(logger, w, err, http.StatusUnauthorized)
+			httpLogError(logger, log.LevelWarn, w, err, http.StatusUnauthorized)
 			return
 		}
 	}
@@ -418,7 +418,7 @@ func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFun
 			return
 		}
 		if err != nil {
-			httpLogAndError(logger, w, "Error checking username uniqueness", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger, log.LevelError, w, "Error checking username uniqueness", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -426,7 +426,18 @@ func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFun
 	}
 }
 
-func httpLogAndError(logger log.Logger, w http.ResponseWriter, msg string, code int, errArgs ...log.Field) {
-	logger.Error(msg, errArgs...)
+func httpLogError(logger log.Logger, level log.Level, w http.ResponseWriter, msg string, code int, errArgs ...log.Field) {
+	switch level {
+	case log.LevelInfo:
+		logger.Info(msg, errArgs...)
+	case log.LevelWarn:
+		logger.Warn(msg, errArgs...)
+	case log.LevelDebug:
+		logger.Debug(msg, errArgs...)
+	case log.LevelError:
+		logger.Error(msg, errArgs...)
+	default:
+		logger.Error(msg, errArgs...)
+	}
 	http.Error(w, msg, code)
 }

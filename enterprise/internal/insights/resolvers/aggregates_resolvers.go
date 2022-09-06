@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -34,8 +35,8 @@ const cgMultipleQueryPatternMsg = "Grouping by capture group does not support se
 const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
 
 // Possible reasons that grouping would fail
-const shardTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
-const generalTimeoutMsg = "We couldn't provide an aggregation for this query. The query was unable to complete in the allocated time."
+const shardTimeoutMsg = "The query was unable to complete in the allocated time."
+const generalTimeoutMsg = "The query was unable to complete in the allocated time."
 
 // These should be very rare
 const unknowAggregationModeMsg = "The requested grouping is not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
@@ -43,7 +44,8 @@ const unableToModifyQueryMsg = "The search query was unable to be updated to sup
 const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
 
 type searchAggregateResolver struct {
-	baseInsightResolver
+	postgresDB database.DB
+
 	searchQuery string
 	patternType string
 }
@@ -119,8 +121,8 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
 	defer cancelReqContext()
-	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithProgress(ctx, tabulationFunc, countingFunc, r.baseInsightResolver.postgresDB)
+	searchClient := streaming.NewInsightsSearchClient(r.postgresDB)
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithProgress(ctx, tabulationFunc, countingFunc, r.postgresDB)
 
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
@@ -143,12 +145,11 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery, r.patternType)
 
 	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
-		baseInsightResolver: r.baseInsightResolver,
-		searchQuery:         r.searchQuery,
-		patternType:         r.patternType,
-		mode:                aggregationMode,
-		results:             results,
-		isExhaustive:        cappedAggregator.OtherCounts().GroupCount == 0,
+		searchQuery:  r.searchQuery,
+		patternType:  r.patternType,
+		mode:         aggregationMode,
+		results:      results,
+		isExhaustive: cappedAggregator.OtherCounts().GroupCount == 0,
 	}}, nil
 }
 
@@ -326,10 +327,10 @@ func canAggregateByPath(searchQuery, patternType string) (bool, *notAvailableRea
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// cannot aggregate over:
-	// - searches by commit or repo
+	// - searches by commit, diff or repo
 	for _, parameter := range parameters {
 		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
-			if strings.EqualFold(parameter.Value, "commit") || strings.EqualFold(parameter.Value, "repo") {
+			if strings.EqualFold(parameter.Value, "commit") || strings.EqualFold(parameter.Value, "diff") || strings.EqualFold(parameter.Value, "repo") {
 				reason := fmt.Sprintf(fileUnsupportedFieldValueFmt,
 					parameter.Field, parameter.Value)
 				return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
@@ -389,13 +390,18 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// At the moment we don't allow capture group aggregation for path and repo searches
+	// At the moment we don't allow capture group aggregation for path, repo, diff or commit searches
+	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}}
+	notAllowedFieldTypeValues := map[string]struct{}{"repo": {}, "path": {}, "commit": {}, "diff": {}}
 	for _, parameter := range parameters {
-		if strings.EqualFold(parameter.Field, query.FieldSelect) && (strings.EqualFold(parameter.Value, "repo") || strings.EqualFold(parameter.Value, "file")) {
+		paramValue := strings.ToLower(parameter.Value)
+		_, notAllowedSelect := notAllowedSelectValues[paramValue]
+		if strings.EqualFold(parameter.Field, query.FieldSelect) && notAllowedSelect {
 			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
 			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}
-		if strings.EqualFold(parameter.Field, query.FieldType) && (strings.EqualFold(parameter.Value, "repo") || strings.EqualFold(parameter.Value, "path")) {
+		_, notAllowedFieldType := notAllowedFieldTypeValues[paramValue]
+		if strings.EqualFold(parameter.Field, query.FieldType) && notAllowedFieldType {
 			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
 			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}
@@ -459,7 +465,6 @@ func (r *searchAggregationNotAvailableResolver) Mode() string {
 
 // Resolver to calculate aggregations for a combination of search query, pattern type, aggregation mode
 type searchAggregationModeResultResolver struct {
-	baseInsightResolver
 	searchQuery  string
 	patternType  string
 	mode         types.SearchAggregationMode

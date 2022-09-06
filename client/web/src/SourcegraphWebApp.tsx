@@ -35,6 +35,7 @@ import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensio
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
+import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController.ts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -185,7 +186,7 @@ export class SourcegraphWebApp extends React.Component<
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
-        : null
+        : createNoopController(this.platformContext)
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
@@ -339,10 +340,10 @@ export class SourcegraphWebApp extends React.Component<
 
         return (
             <ApolloProvider client={graphqlClient}>
-                <ErrorBoundary location={null}>
-                    <FeatureFlagsProvider>
-                        <ShortcutProvider>
-                            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <ErrorBoundary location={null}>
+                        <FeatureFlagsProvider>
+                            <ShortcutProvider>
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                     <CoreWorkflowImprovementsEnabledProvider>
                                         <SearchResultsCacheProvider>
@@ -424,7 +425,8 @@ export class SourcegraphWebApp extends React.Component<
                                                         </CompatRouter>
                                                     </Router>
                                                 </ScrollManager>
-                                                {this.extensionsController !== null ? (
+                                                {this.extensionsController !== null &&
+                                                window.context.enableLegacyExtensions ? (
                                                     <Notifications
                                                         key={2}
                                                         extensionsController={this.extensionsController}
@@ -436,10 +438,10 @@ export class SourcegraphWebApp extends React.Component<
                                         </SearchResultsCacheProvider>
                                     </CoreWorkflowImprovementsEnabledProvider>
                                 </TemporarySettingsProvider>
-                            </WildcardThemeContext.Provider>
-                        </ShortcutProvider>
-                    </FeatureFlagsProvider>
-                </ErrorBoundary>
+                            </ShortcutProvider>
+                        </FeatureFlagsProvider>
+                    </ErrorBoundary>
+                </WildcardThemeContext.Provider>
             </ApolloProvider>
         )
     }

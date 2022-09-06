@@ -290,7 +290,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <div className="list-unstyled m-0">
-                    {extensionsController !== null ? (
+                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <div className={styles.listItem}>
                             <Tooltip content="Add extensions">
                                 <Link
@@ -324,7 +324,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
     extensionsController,
     className,
 }) => {
-    const panelName = extensionsController !== null ? 'extensions' : 'actions'
+    const panelName = extensionsController !== null && window.context.enableLegacyExtensions ? 'extensions' : 'actions'
 
     const { isOpen, toggle, toggleReference, barInPage } = useActionItemsToggle()
 

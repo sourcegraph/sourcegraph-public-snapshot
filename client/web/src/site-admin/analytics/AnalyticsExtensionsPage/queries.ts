@@ -5,11 +5,11 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
