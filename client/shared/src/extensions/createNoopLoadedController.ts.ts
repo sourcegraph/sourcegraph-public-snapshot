@@ -10,7 +10,7 @@ import { createExtensionHostAPI } from '../api/extension/extensionHostApi'
 import { createExtensionHostState } from '../api/extension/extensionHostState'
 import { pretendRemote } from '../api/util'
 import { newCodeIntelAPI } from '../codeintel/api'
-import { CodeIntelContext } from '../codeintel/legacy-extensions/api'
+import { CodeIntelContext, newSettingsGetter } from '../codeintel/legacy-extensions/api'
 import { PlatformContext } from '../platform/context'
 import { isSettingsValid } from '../settings/settings'
 
@@ -41,7 +41,7 @@ export function createNoopController(platformContext: PlatformContext): Controll
                 const extensionHostAPI = injectNewCodeintel(createExtensionHostAPI(extensionHostState), {
                     requestGraphQL: platformContext.requestGraphQL,
                     telemetryService: platformContext.telemetryService,
-                    settings: platformContext.settings,
+                    settings: newSettingsGetter(platformContext.settings),
                 })
 
                 // We don't have to load any extensions so we are already done

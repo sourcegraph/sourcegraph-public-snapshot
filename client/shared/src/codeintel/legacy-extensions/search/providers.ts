@@ -162,6 +162,7 @@ export function createProviders(
         textDocument: sourcegraph.TextDocument,
         position: sourcegraph.Position
     ): Promise<sourcegraph.Location[]> => {
+        console.log({ uri: textDocument.uri })
         const squirrelReferences = (await squirrel.references(textDocument, position)) ?? []
         if (squirrelReferences.length > 0) {
             return squirrelReferences
@@ -296,6 +297,7 @@ export function createProviders(
     return {
         definition: asyncGeneratorFromPromise(cache(definition, { max: 5 })),
         references: asyncGeneratorFromPromise(references),
+        referencesPromise: references,
         hover: asyncGeneratorFromPromise(hover),
         documentHighlights: asyncGeneratorFromPromise(documentHighlights),
     }

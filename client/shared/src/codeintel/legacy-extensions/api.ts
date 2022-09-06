@@ -1005,7 +1005,7 @@ export function searchContext(): string | undefined {
 
 export function getSetting<T>(key: string): T | undefined {
     if (context?.settings) {
-        return context.settings[key]
+        return context.settings(key)
     }
     return undefined
 }
@@ -1015,7 +1015,14 @@ export function updateCodeIntelContext(newContext: CodeIntelContext): void {
 }
 
 export interface CodeIntelContext extends Pick<PlatformContext, 'requestGraphQL' | 'telemetryService'> {
-    settings: Settings
+    settings: SettingsGetter
+}
+
+export type SettingsGetter = <T>(setting: string) => T | undefined
+
+export function newSettingsGetter(settingsCascade: Settings): SettingsGetter {
+    return <T>(setting: string): T | undefined =>
+        settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
 }
 
 export interface ExtensionContext {

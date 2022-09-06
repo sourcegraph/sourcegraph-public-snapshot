@@ -15,6 +15,7 @@ import { parseGitURI } from './util/uri'
 export interface Providers {
     definition: DefinitionProvider
     references: ReferencesProvider
+    referencesPromise: ReferencesPromiseProvider
     hover: HoverProvider
     documentHighlights: DocumentHighlightProvider
 }
@@ -102,6 +103,12 @@ export type ReferencesProvider = (
     position: sourcegraph.Position,
     context: sourcegraph.ReferenceContext
 ) => AsyncGenerator<sourcegraph.Location[] | null, void, undefined>
+
+export type ReferencesPromiseProvider = (
+    textDocument: sourcegraph.TextDocument,
+    position: sourcegraph.Position,
+    context: sourcegraph.ReferenceContext
+) => Promise<sourcegraph.Location[]>
 
 export type LocationsProvider = (
     textDocument: sourcegraph.TextDocument,

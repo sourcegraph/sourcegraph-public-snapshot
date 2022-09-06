@@ -57,6 +57,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
 
     providersForDocument(textParameters: TextDocumentPositionParameters): Observable<CodeIntelProviders> {
         const document = toTextDocument(textParameters.textDocument)
+        console.log({ document })
         const providers = findLanguageMatchingDocument(document)
         return of({
             definitions: providers ? true : false,

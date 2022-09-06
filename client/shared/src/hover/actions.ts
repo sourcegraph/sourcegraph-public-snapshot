@@ -138,7 +138,7 @@ export function getHoverActionsContext(
 
     return combineLatest([
         // definitionURLOrError:
-        definitionURLOrError.pipe(emitLoading<UIDefinitionURL | ErrorLike, null>(LOADER_DELAY, null)),
+        definitionURLOrError,
 
         // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
@@ -147,10 +147,8 @@ export function getHoverActionsContext(
     ]).pipe(
         map(
             ([definitionURLOrError, providers]): HoverActionsContext => {
-                const fileUrl =
-                    definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
-                        ? definitionURLOrError.url
-                        : ''
+                const result = definitionURLOrError.result
+                const fileUrl = !isErrorLike(result) && result !== null ? result : ''
                 const panelURL = urlToFile(
                     { ...hoverContext, position: hoverContext, viewState: 'panelID' },
                     { part: hoverContext.part }
@@ -161,24 +159,14 @@ export function getHoverActionsContext(
                     { part: hoverContext.part }
                 )
 
-                const definitionNotFound =
-                    definitionURLOrError === LOADING ||
-                    definitionURLOrError === null ||
-                    definitionURLOrError === undefined
+                const definitionNotFound = definitionURLOrError === null || definitionURLOrError === undefined
                 const definitionFound = !definitionNotFound
-                const definitionURL: string | null =
-                    (definitionURLOrError !== LOADING &&
-                        !isErrorLike(definitionURLOrError) &&
-                        definitionURLOrError?.url) ||
-                    null
-                console.log({ definitionURLOrError, providers })
+                const definitionURL = fileUrl !== '' ? fileUrl.url : ''
+                // console.log({ definitionURL })
                 return {
-                    'goToDefinition.showLoading': definitionURLOrError === LOADING,
+                    'goToDefinition.showLoading': false,
                     'goToDefinition.url': definitionURL,
-                    'goToDefinition.notFound':
-                        definitionURLOrError !== LOADING &&
-                        !isErrorLike(definitionURLOrError) &&
-                        !definitionURLOrError === null,
+                    'goToDefinition.notFound': !isErrorLike(definitionURLOrError) && !definitionURLOrError === null,
                     definitionFound,
                     'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
@@ -230,6 +218,7 @@ export const getDefinitionURL = (
                 Partial<MaybeLoadingResult<UIDefinitionURL | null>>
             > => {
                 definitions = definitions.filter(definition => definition.range) // filter out definitions that have no range
+                // console.log({ definitions })
                 if (definitions.length === 0) {
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }

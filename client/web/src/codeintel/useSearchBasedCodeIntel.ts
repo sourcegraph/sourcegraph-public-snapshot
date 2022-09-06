@@ -8,8 +8,9 @@ import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import * as scip from '@sourcegraph/shared/src/codeintel/scip'
 
-import { getWebGraphQLClient } from '../backend/graphql'
+import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { CodeIntelSearch2Variables } from '../graphql-operations'
 
 import { Location, buildSearchBasedLocation, split } from './location'
@@ -27,6 +28,8 @@ import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
+import { newCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { createProviders } from '@sourcegraph/shared/src/codeintel/legacy-extensions/search/providers'
 
 type LocationHandler = (locations: Location[]) => void
 
@@ -57,6 +60,7 @@ interface UseSearchBasedCodeIntelOptions {
 }
 
 export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions): UseSearchBasedCodeIntelResult => {
+    const providers = createProviders(options.spec, { definition: undefined })
     const [loadingReferences, setLoadingReferences] = useState(false)
     const [referencesError, setReferencesError] = useState<ErrorLike | undefined>()
 
@@ -85,8 +89,25 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
             fetchReferences(onReferences)
 
             setLoadingDefinitions(true)
+            providers
+                .referencesPromise(
+                    { uri: options.path, languageId: options.spec.languageID, text: options.fileContent },
+                    new scip.Position(options.position.line, options.position.character),
+                    {
+                        includeDeclaration: false,
+                    }
+                )
+                .then(
+                    oldstyle => {
+                        console.log({ oldstyle })
+                    },
+                    oldstyleError => {
+                        console.log({ oldstyleError })
+                    }
+                )
             searchBasedDefinitions(options)
                 .then(definitions => {
+                    console.log({ newstyle: definitions })
                     onDefinitions(definitions)
                     setLoadingDefinitions(false)
                 })

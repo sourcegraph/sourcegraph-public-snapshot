@@ -25,6 +25,9 @@ import {
 import { SettingsGetter } from './settings'
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
+import { newCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { requestGraphQL } from '../backend/graphql'
+import { newSettingsGetter } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 interface CodeIntelData {
     references: {
