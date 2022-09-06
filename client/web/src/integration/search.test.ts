@@ -477,6 +477,7 @@ describe('Search', () => {
         test('symbol results', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
+                ...highlightFileResult,
             })
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 

@@ -2,7 +2,7 @@
 
 The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting section](#troubleshooting) for additional information.
 
-[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). 
+[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). [Tracing](../../observability/tracing.md) is disabled by default, and if you intend to enable it, you will have to deploy and configure the [OpenTelemetry Collector](../../observability/opentelemetry.md). The Single Container deployment does not ship with this service included. It is strongly recommended to use one of the aforementioned deployment methods if tracing support is a requirement. 
 
 ## Installation
 
@@ -177,7 +177,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 ### Low resource environments
 
-To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus and Grafana).
 
 Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 

@@ -517,7 +517,11 @@ spec:
             value: "<REDIS_STORE_DSN>"
 ```
 
-## Configure a tracing backend
+## OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+### Configure a tracing backend
 
 Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
@@ -527,7 +531,8 @@ By default, the collector is [configured to export trace data by logging](https:
 1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml). Update the `command` of the `otel-collector` container to point to the mounted config by changing the flag to `"--config=/etc/otel-collector/conf/config.yaml"`.
 1. Apply the edited `ConfigMap` and `Deployment` manifests.
 
-### Enable the bundled Jaeger deployment
+#### Enable the bundled Jaeger deployment
+
 If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC

@@ -15,6 +15,7 @@ import {
     Link,
     Popover,
     PopoverContent,
+    PopoverTail,
     PopoverTrigger,
     Position,
     Icon,
@@ -32,13 +33,13 @@ import styles from './StatusMessagesNavItem.module.scss'
 type EntryType = 'progress' | 'warning' | 'success' | 'error'
 
 interface StatusMessageEntryProps {
+    title: string
     message: string
     linkTo: string
     linkText: string
     entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
     messageHint?: string
-    title?: string
 }
 
 function entryIcon(entryType: EntryType): JSX.Element {
@@ -175,7 +176,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             codeHostMessage = 'Cloning repositories...'
             icon = CloudSyncIconRefresh
         } else {
-            codeHostMessage = 'Repositories up-to-date'
+            codeHostMessage = 'Repositories up to date'
             icon = CloudCheckIconRefresh
         }
 
@@ -196,7 +197,8 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
-                    message="Repositories available for search"
+                    title="Repositories up to date"
+                    message="Repositories synced from code host and available for search."
                     linkTo="/site-admin/repositories"
                     linkText="View repositories"
                     linkOnClick={toggleIsOpen}
@@ -213,9 +215,10 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             <StatusMessagesNavItemEntry
                                 key={status.message}
                                 message={status.message}
-                                messageHint="Your repositories may not be up-to-date."
+                                title="Cloning repositories"
+                                messageHint="Not all repositories available for search yet."
                                 linkTo="/site-admin/repositories"
-                                linkText="View status"
+                                linkText="View repositories"
                                 linkOnClick={toggleIsOpen}
                                 entryType="progress"
                             />
@@ -224,11 +227,12 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                     if (status.__typename === 'ExternalServiceSyncError') {
                         return (
                             <StatusMessagesNavItemEntry
-                                key={status.message}
-                                message={`Can't connect to ${status.externalService.displayName}`}
-                                messageHint="Verify the code host configuration."
+                                key={status.externalService.id}
+                                title="Code host connection"
+                                message={`Failed to connect to "${status.externalService.displayName}".`}
+                                messageHint="Repositories synced to Sourcegraph may not be up to date."
                                 linkTo={`/site-admin/external-services/${status.externalService.id}`}
-                                linkText="Manage code hosts"
+                                linkText="View code host configuration"
                                 linkOnClick={toggleIsOpen}
                                 entryType="error"
                             />
@@ -239,11 +243,12 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             <StatusMessagesNavItemEntry
                                 key={status.message}
                                 message={status.message}
-                                messageHint="Your repositories may not be up-to-date."
+                                title="Syncing repositories from code hosts"
+                                messageHint="Repository contents may not be up to date."
                                 linkTo="/site-admin/repositories?status=failed-fetch"
-                                linkText="Manage repositories"
+                                linkText="View affected repositories"
                                 linkOnClick={toggleIsOpen}
-                                entryType="error"
+                                entryType="warning"
                             />
                         )
                     }
@@ -273,15 +278,17 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 {icon}
             </PopoverTrigger>
 
-            <PopoverContent position={Position.bottomEnd} className={classNames('p-0', styles.dropdownMenu)}>
+            <PopoverContent position={Position.bottom} className={classNames('p-0', styles.dropdownMenu)}>
                 <div className={styles.dropdownMenuContent}>
-                    <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
+                    <small className={classNames('d-inline-block text-muted', styles.sync)}>Status</small>
                     {error && (
                         <ErrorAlert className={styles.entry} prefix="Failed to load status messages" error={error} />
                     )}
                     {messages}
                 </div>
             </PopoverContent>
+
+            <PopoverTail />
         </Popover>
     )
 }

@@ -18,10 +18,15 @@ const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregati
     'AggregationChart'
 )
 
+/** Set custom value for minimal rotation angle for X ticks in sidebar UI panel mode. */
+const MIN_X_TICK_ROTATION = 30
+const MAX_SHORT_LABEL_WIDTH = 8
+const MAX_LABEL_WIDTH = 16
+
 const getName = (datum: SearchAggregationDatum): string => datum.label ?? ''
 const getValue = (datum: SearchAggregationDatum): number => datum.count
-const getColor = (datum: SearchAggregationDatum): string => (datum.label ? 'var(--primary)' : 'var(--text-muted)')
 const getLink = (datum: SearchAggregationDatum): string => datum.query ?? ''
+const getColor = (): string => 'var(--primary)'
 
 /**
  * Nested aggregation results types from {@link AGGREGATION_SEARCH_QUERY} GQL query
@@ -65,11 +70,22 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     loading: boolean
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
-    onBarLinkClick?: (query: string) => void
+    onBarLinkClick?: (query: string, barIndex: number) => void
+    onBarHover?: () => void
 }
 
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
-    const { data, error, loading, mode, className, size = 'sm', 'aria-label': ariaLabel, onBarLinkClick } = props
+    const {
+        data,
+        error,
+        loading,
+        mode,
+        className,
+        size = 'sm',
+        'aria-label': ariaLabel,
+        onBarLinkClick,
+        onBarHover,
+    } = props
 
     if (loading) {
         return (
@@ -113,33 +129,40 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     }
 
     const missingCount = getOtherGroupCount(data)
-    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum): void => {
+    const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum, index: number): void => {
         event.preventDefault()
-        onBarLinkClick?.(getLink(datum))
+        onBarLinkClick?.(getLink(datum), index)
     }
 
     return (
-        <Suspense>
-            <LazyAggregationChart
-                aria-label={ariaLabel}
-                data={getAggregationData(data)}
-                mode={mode}
-                getDatumValue={getValue}
-                getDatumColor={getColor}
-                getDatumName={getName}
-                getDatumLink={getLink}
-                onDatumLinkClick={handleDatumLinkClick}
-                className={classNames(className, styles.container)}
-            />
+        <div className={classNames(className, styles.container)}>
+            <Suspense>
+                <LazyAggregationChart
+                    aria-label={ariaLabel}
+                    data={getAggregationData(data)}
+                    mode={mode}
+                    minAngleXTick={size === 'md' ? 0 : MIN_X_TICK_ROTATION}
+                    maxXLabelLength={size === 'md' ? MAX_LABEL_WIDTH : MAX_SHORT_LABEL_WIDTH}
+                    getDatumValue={getValue}
+                    getDatumColor={getColor}
+                    getDatumName={getName}
+                    getDatumLink={getLink}
+                    onDatumLinkClick={handleDatumLinkClick}
+                    onDatumHover={onBarHover}
+                    className={styles.chart}
+                />
 
-            {!!missingCount && (
-                <Tooltip content={`Aggregation is not exhaustive, there are ${missingCount} groups more`}>
-                    <Text size="small" className={styles.missingLabelCount}>
-                        +{missingCount}
-                    </Text>
-                </Tooltip>
-            )}
-        </Suspense>
+                {!!missingCount && (
+                    <Tooltip
+                        content={`There are ${missingCount} more groups that were not included in this aggregation.`}
+                    >
+                        <Text size="small" className={styles.missingLabelCount}>
+                            +{missingCount}
+                        </Text>
+                    </Tooltip>
+                )}
+            </Suspense>
+        </div>
     )
 }
 

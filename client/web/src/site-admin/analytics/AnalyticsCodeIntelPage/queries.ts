@@ -55,6 +55,19 @@ export const CODEINTEL_STATISTICS = gql`
                         }
                     }
                 }
+                codeIntelByLanguage(dateRange: $dateRange) {
+                    language
+                    precision
+                    count
+                }
+                codeIntelTopRepositories(dateRange: $dateRange) {
+                    name
+                    language
+                    kind
+                    precision
+                    events
+                    hasPrecise
+                }
             }
         }
     }

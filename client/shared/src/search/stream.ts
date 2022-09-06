@@ -34,6 +34,7 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
@@ -574,6 +575,9 @@ export function streamComputeQuery(query: string): Observable<string[]> {
             onmessage(event) {
                 allData.push(event.data)
                 observer.next(allData)
+            },
+            onerror(event) {
+                observer.error(event)
             },
         }).then(
             () => observer.complete(),

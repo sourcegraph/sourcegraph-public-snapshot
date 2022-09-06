@@ -11,10 +11,16 @@
     margin-bottom: 1.5rem;
 }
 
+.card {
+    max-width: 60rem;
+    margin: 1rem auto 0;
+    border: 1px solid var(--border-color);
+}
+
 .chart-container {
     min-height: 26rem;
     max-height: 26rem;
-    max-width: 60rem;
+    width: 100%;
 
     // Simple UI mode theme
     // The full UI aggregation mode has different from sidebar background colors
@@ -32,10 +38,13 @@
 }
 
 .list-result {
-    max-width: 60rem;
     margin-top: 1.5rem;
     list-style: none;
     padding: 0;
+
+    &:empty {
+        display: none;
+    }
 }
 
 .list-result-item {

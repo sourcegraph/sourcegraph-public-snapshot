@@ -10,13 +10,11 @@ const prometheusProcLine = `prometheus: env STORAGE_PATH=/var/opt/sourcegraph/pr
 
 const grafanaProcLine = `grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`
 
-const jaegerProcLine = `jaeger: env QUERY_BASE_PATH=/-/debug/jaeger jaeger --memory.max-traces=20000 >> /var/opt/sourcegraph/jaeger.log 2>&1`
-
-func maybeMonitoring() []string {
+func maybeObservability() []string {
 	if os.Getenv("DISABLE_OBSERVABILITY") != "" {
-		log15.Info("WARNING: Running with monitoring disabled")
+		log15.Info("WARNING: Running with observability disabled")
 		return []string{""}
 	}
 
-	return []string{prometheusProcLine, grafanaProcLine, jaegerProcLine}
+	return []string{prometheusProcLine, grafanaProcLine}
 }

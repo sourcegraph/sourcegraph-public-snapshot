@@ -27,6 +27,21 @@ func Upgrade(
 		Usage:    "The target instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
 		Required: true,
 	}
+	unprivilegedOnlyFlag := &cli.BoolFlag{
+		Name:  "unprivileged-only",
+		Usage: "Refuse to apply privileged migrations.",
+		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
+		Value: false,
+	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Value: "",
+	}
 	skipVersionCheckFlag := &cli.BoolFlag{
 		Name:     "skip-version-check",
 		Usage:    "Skip validation of the instance's current version.",
@@ -72,14 +87,21 @@ func Upgrade(
 			return err
 		}
 
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		if err != nil {
+			return err
+		}
+
 		// Perform the upgrade on the configured databases.
 		return runMigration(
 			ctx,
 			runnerFactory,
 			plan,
+			privilegedMode,
+			privilegedHashFlag.Get(cmd),
 			skipVersionCheckFlag.Get(cmd),
 			dryRunFlag.Get(cmd),
-			true,
+			true, // up
 			registerMigrators,
 			out,
 		)
@@ -93,6 +115,9 @@ func Upgrade(
 		Flags: []cli.Flag{
 			fromFlag,
 			toFlag,
+			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
+			privilegedHashFlag,
 			skipVersionCheckFlag,
 			dryRunFlag,
 		},

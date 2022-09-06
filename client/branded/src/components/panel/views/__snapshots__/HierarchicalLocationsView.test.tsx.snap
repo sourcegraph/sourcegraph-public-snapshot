@@ -25,22 +25,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 id="result-container-0"
               >
                 <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
-                <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
@@ -59,7 +43,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -84,16 +68,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    1 match
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div
@@ -269,22 +246,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 id="result-container-0"
               >
                 <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
-                <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
@@ -303,7 +264,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -330,16 +291,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    2 matches
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div
@@ -461,22 +415,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 id="result-container-0"
               >
                 <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
-                <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
@@ -495,7 +433,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -520,16 +458,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    1 match
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div

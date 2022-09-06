@@ -10,6 +10,7 @@ import (
 
 type want struct {
 	Description string
+	Input       string
 	Query       string
 }
 
@@ -18,7 +19,7 @@ func TestNewGenerator(t *testing.T) {
 		q, _ := query.ParseStandard(input)
 		b, _ := query.ToBasicQuery(q)
 		g := NewGenerator(b, rulesNarrow, rulesWiden)
-		result, _ := json.MarshalIndent(generateAll(g), "", "  ")
+		result, _ := json.MarshalIndent(generateAll(g, input), "", "  ")
 		return string(result)
 	}
 
@@ -35,7 +36,7 @@ func TestNewGenerator(t *testing.T) {
 	}
 }
 
-func generateAll(g next) []want {
+func generateAll(g next, input string) []want {
 	var autoQ *autoQuery
 	generated := []want{}
 	for {
@@ -45,6 +46,7 @@ func generateAll(g next) []want {
 				generated,
 				want{
 					Description: autoQ.description,
+					Input:       input,
 					Query:       query.StringHuman(autoQ.query.ToParseTree()),
 				})
 		}
