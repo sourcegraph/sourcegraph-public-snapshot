@@ -17,7 +17,7 @@ type workspaceFileConnectionResolver struct {
 	store *store.Store
 	opts  store.ListBatchSpecMountsOpts
 
-	// Cache results because they are used by multiple fields.
+	// Cache results to save on hit to the database.
 	once  sync.Once
 	files []*btypes.BatchSpecMount
 	next  int64
