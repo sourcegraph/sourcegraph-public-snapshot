@@ -314,7 +314,8 @@ gitserver:
   sshSecret: gitserver-ssh
 ```
 
-#### Using an external observability backend <span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
+#### Using an external observability backend 
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
 
 > WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](../../observability/tracing.md).
 
@@ -373,6 +374,17 @@ openTelemetry:
               cert_file: /tls/file.cert
               key_file: /tls/file.key
 ```
+
+#### Using the bundled Jaeger instance
+
+Sourcegraph ships with a bundled Jaeger instance that is disabled by default. If you do not wish to make use of an external observability backend, you can enable this instance by adding the following to your overrides:
+
+```yaml
+jaeger:
+  enabled: true
+```
+
+This will also configure the OpenTelemetry Collector to export trace data to this instance. No further configuration is required.
 
 ### Advanced Configuration Methods
 
