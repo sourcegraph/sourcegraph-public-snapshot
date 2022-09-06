@@ -140,7 +140,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
                 {data && (
                     <ul className={styles.listResult}>
-                        {getAggregationData(data.searchQueryAggregate.aggregations, 30).map(datum => (
+                        {getAggregationData(data.searchQueryAggregate.aggregations).map(datum => (
                             <li key={datum.label} className={styles.listResultItem}>
                                 <span>{datum.label}</span>
                                 <span>{datum.count}</span>

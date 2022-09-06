@@ -24,6 +24,8 @@ const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregati
 const MIN_X_TICK_ROTATION = 30
 const MAX_SHORT_LABEL_WIDTH = 8
 const MAX_LABEL_WIDTH = 16
+const MAX_BARS_FULL_MODE = 30
+const MAX_BARS_PREVIEW_MOD = 10
 
 const getName = (datum: SearchAggregationDatum): string => datum.label ?? ''
 const getValue = (datum: SearchAggregationDatum): number => datum.count
@@ -43,11 +45,11 @@ function getAggregationError(aggregation?: SearchAggregationResult): Error | und
     return
 }
 
-export function getAggregationData(aggregations: SearchAggregationResult, limit: number): SearchAggregationDatum[] {
+export function getAggregationData(aggregations: SearchAggregationResult, limit?: number): SearchAggregationDatum[] {
     switch (aggregations?.__typename) {
         case 'ExhaustiveSearchAggregationResult':
         case 'NonExhaustiveSearchAggregationResult':
-            return aggregations.groups.slice(0, limit)
+            return limit !== undefined ? aggregations.groups.slice(0, limit) : aggregations.groups
 
         default:
             return []
@@ -121,7 +123,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         return null
     }
 
-    const maxBarsLimit = size === 'sm' ? 10 : 30
+    const maxBarsLimit = size === 'sm' ? MAX_BARS_PREVIEW_MOD : MAX_BARS_FULL_MODE
     const aggregationData = getAggregationData(data, maxBarsLimit)
     const missingCount = getOtherGroupCount(data, maxBarsLimit)
 
@@ -143,7 +145,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
             <Suspense>
                 <LazyAggregationChart
                     aria-label={ariaLabel}
-                    data={getAggregationData(data, maxBarsLimit)}
+                    data={aggregationData}
                     mode={mode}
                     minAngleXTick={size === 'md' ? 0 : MIN_X_TICK_ROTATION}
                     maxXLabelLength={size === 'md' ? MAX_LABEL_WIDTH : MAX_SHORT_LABEL_WIDTH}
