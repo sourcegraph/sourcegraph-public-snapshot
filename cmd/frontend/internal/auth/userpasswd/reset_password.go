@@ -46,7 +46,7 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 			return
 		}
 		if !conf.CanSendEmail() {
-			httpLogError(logger, log.LevelError, w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
+			httpLogError(logger.Error, w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
 			return
 		}
 
@@ -55,12 +55,12 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 			Email string `json:"email"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-			httpLogError(logger, log.LevelError, w, "Could not decode password reset request body", http.StatusBadRequest, log.Error(err))
+			httpLogError(logger.Error, w, "Could not decode password reset request body", http.StatusBadRequest, log.Error(err))
 			return
 		}
 
 		if formData.Email == "" {
-			httpLogError(logger, log.LevelWarn, w, "No email specified in password reset request", http.StatusBadRequest)
+			httpLogError(logger.Warn, w, "No email specified in password reset request", http.StatusBadRequest)
 			return
 		}
 
@@ -69,22 +69,22 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 			// 🚨 SECURITY: We don't show an error message when the user is not found
 			// as to not leak the existence of a given e-mail address in the database.
 			if !errcode.IsNotFound(err) {
-				httpLogError(logger, log.LevelWarn, w, "Failed to lookup user", http.StatusInternalServerError)
+				httpLogError(logger.Warn, w, "Failed to lookup user", http.StatusInternalServerError)
 			}
 			return
 		}
 
 		resetURL, err := backend.MakePasswordResetURL(ctx, db, usr.ID)
 		if err == database.ErrPasswordResetRateLimit {
-			httpLogError(logger, log.LevelWarn, w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, log.Error(err))
+			httpLogError(logger.Warn, w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, log.Error(err))
 			return
 		} else if err != nil {
-			httpLogError(logger, log.LevelError, w, "Could not reset password", http.StatusBadRequest, log.Error(err))
+			httpLogError(logger.Error, w, "Could not reset password", http.StatusBadRequest, log.Error(err))
 			return
 		}
 
 		if err := SendResetPasswordURLEmail(r.Context(), formData.Email, usr.Username, resetURL); err != nil {
-			httpLogError(logger, log.LevelError, w, "Could not send reset password email", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, "Could not send reset password email", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
@@ -185,7 +185,7 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 			Password string `json:"password"` // new password
 		}
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			httpLogError(logger, log.LevelError, w, "Password reset with code: could not decode request body", http.StatusBadGateway, log.Error(err))
+			httpLogError(logger.Error, w, "Password reset with code: could not decode request body", http.StatusBadGateway, log.Error(err))
 			return
 		}
 
@@ -196,7 +196,7 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 
 		success, err := db.Users().SetPassword(ctx, params.UserID, params.Code, params.Password)
 		if err != nil {
-			httpLogError(logger, log.LevelError, w, "Unexpected error", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, "Unexpected error", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
