@@ -24,7 +24,7 @@ import { Context } from '@sourcegraph/template-parser'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { CodeIntelProviders, FlatExtensionHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
@@ -53,6 +53,7 @@ export function getHoverActions(
     if (extensionsController === null) {
         return EMPTY
     }
+
     return getHoverActionsContext(
         {
             platformContext,
@@ -60,10 +61,10 @@ export function getHoverActions(
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
                 ),
-            providersForDocument: parameters =>
+            hasReferenceProvidersForDocument: parameters =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.providersForDocument(parameters))
+                        wrapRemoteObservable(extensionHostAPI.hasReferenceProvidersForDocument(parameters))
                     )
                 ),
             getWorkspaceRoots: () =>
@@ -114,12 +115,12 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
 export function getHoverActionsContext(
     {
         getDefinition,
-        providersForDocument,
+        hasReferenceProvidersForDocument,
         getWorkspaceRoots,
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
-        providersForDocument: (parameters: TextDocumentPositionParameters) => Observable<CodeIntelProviders>
+        hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => Observable<boolean>
         getWorkspaceRoots: () => Observable<WorkspaceRootWithMetadata[]>
         platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
     },
@@ -138,42 +139,63 @@ export function getHoverActionsContext(
 
     return combineLatest([
         // definitionURLOrError:
-        definitionURLOrError,
+        definitionURLOrError.pipe(emitLoading<UIDefinitionURL | ErrorLike, null>(LOADER_DELAY, null)),
 
         // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
-        providersForDocument(parameters),
+        hasReferenceProvidersForDocument(parameters),
+
+        // showFindReferences:
+        // If there is no definition, delay showing "Find references" because it is likely that the token is
+        // punctuation or something else that has no meaningful references. This reduces UI jitter when it can be
+        // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
+        // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
+        merge(
+            [false],
+            of(true).pipe(
+                delay(LOADER_DELAY),
+                takeUntil(definitionURLOrError.pipe(filter(({ result }) => result !== null)))
+            ),
+            definitionURLOrError.pipe(
+                filter(({ result }) => result !== null),
+                mapTo(true)
+            )
+        ),
     ]).pipe(
         map(
-            ([definitionURLOrError, providers]): HoverActionsContext => {
-                const result = definitionURLOrError.result
-                const fileUrl = !isErrorLike(result) && result !== null ? result : ''
-                const panelURL = urlToFile(
-                    { ...hoverContext, position: hoverContext, viewState: 'panelID' },
-                    { part: hoverContext.part }
-                )
+            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
+                const fileUrl =
+                    definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
+                        ? definitionURLOrError.url
+                        : ''
 
                 const hoveredFileUrl = urlToFile(
                     { ...hoverContext, position: hoverContext },
                     { part: hoverContext.part }
                 )
 
-                const definitionNotFound = definitionURLOrError === null || definitionURLOrError === undefined
-                const definitionFound = !definitionNotFound
-                const definitionURL = fileUrl !== '' ? fileUrl.url : ''
-                // console.log({ definitionURL })
                 return {
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': definitionURL,
-                    'goToDefinition.notFound': !isErrorLike(definitionURLOrError) && !definitionURLOrError === null,
-                    definitionFound,
+                    'goToDefinition.showLoading': definitionURLOrError === LOADING,
+                    'goToDefinition.url':
+                        (definitionURLOrError !== LOADING &&
+                            !isErrorLike(definitionURLOrError) &&
+                            definitionURLOrError?.url) ||
+                        null,
+                    'goToDefinition.notFound':
+                        definitionURLOrError !== LOADING &&
+                        !isErrorLike(definitionURLOrError) &&
+                        definitionURLOrError === null,
                     'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
-                    'findReferences.url': providers.references ? panelURL.replace(/panelID$/, 'references') : null,
-                    'findImplementations.url': providers.implementations
-                        ? panelURL.replace(/panelID$/, `implementations_${providers.language}`)
-                        : null,
+                    'findReferences.url':
+                        hasReferenceProvider && showFindReferences
+                            ? urlToFile(
+                                  { ...hoverContext, position: hoverContext, viewState: 'references' },
+                                  { part: hoverContext.part }
+                              )
+                            : null,
+
                     'panel.url': urlToFile(
                         { ...hoverContext, position: hoverContext, viewState: 'panelID' },
                         { part: hoverContext.part }
@@ -217,8 +239,6 @@ export const getDefinitionURL = (
             ([{ isLoading, result: definitions }, workspaceRoots]): Observable<
                 Partial<MaybeLoadingResult<UIDefinitionURL | null>>
             > => {
-                definitions = definitions.filter(definition => definition.range) // filter out definitions that have no range
-                // console.log({ definitions })
                 if (definitions.length === 0) {
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }
@@ -332,16 +352,16 @@ export function registerHoverContributions({
             // TODO(sqs): Pin hover after an action has been clicked and before it has completed.
             const definitionContributions = {
                 actions: [
-                    // {
-                    //     id: 'goToDefinition',
-                    //     title: 'Go to definition',
-                    //     command: 'goToDefinition',
-                    //     commandArguments: [
-                    //         /* eslint-disable no-template-curly-in-string */
-                    //         '${json(hoverPosition)}',
-                    //         /* eslint-enable no-template-curly-in-string */
-                    //     ],
-                    // },
+                    {
+                        id: 'goToDefinition',
+                        title: 'Go to definition',
+                        command: 'goToDefinition',
+                        commandArguments: [
+                            /* eslint-disable no-template-curly-in-string */
+                            '${json(hoverPosition)}',
+                            /* eslint-enable no-template-curly-in-string */
+                        ],
+                    },
                     {
                         // This action is used when preloading the definition succeeded and at least 1
                         // definition was found.
@@ -352,33 +372,20 @@ export function registerHoverContributions({
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
                     },
-                    {
-                        id: 'goToDefinition.notFound',
-                        title: 'Go to definition',
-                        disabledTitle: 'No definition found',
-                        command: 'open',
-                        // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: ['${goToDefinition.url}'],
-                    },
                 ],
                 menus: {
                     hover: [
-                        // // Do not show any actions if no definition provider is registered. (In that case,
-                        // // goToDefinition.{error, loading, url} will all be falsey.)
-                        // {
-                        //     action: 'goToDefinition',
-                        //     when: '(goToDefinition.error || goToDefinition.showLoading) && definitionNotFound',
-                        //     disabledWhen: 'hoveredOnDefinition',
-                        // },
+                        // Do not show any actions if no definition provider is registered. (In that case,
+                        // goToDefinition.{error, loading, url} will all be falsey.)
                         {
-                            action: 'goToDefinition.preloaded',
-                            when: 'goToDefinition.url && definitionFound',
+                            action: 'goToDefinition',
+                            when: 'goToDefinition.error || goToDefinition.showLoading',
                             disabledWhen: 'hoveredOnDefinition',
                         },
                         {
-                            action: 'goToDefinition.notFound',
-                            when: '!definitionFound',
-                            disabledWhen: '!definitionFound',
+                            action: 'goToDefinition.preloaded',
+                            when: 'goToDefinition.url',
+                            disabledWhen: 'hoveredOnDefinition',
                         },
                     ],
                 },
@@ -454,14 +461,6 @@ export function registerHoverContributions({
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${findReferences.url}'],
                     },
-                    {
-                        id: 'findImplementations',
-                        // title: parseTemplate('Find references'),
-                        title: 'Find implementations',
-                        command: 'open',
-                        // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: ['${findImplementations.url}'],
-                    },
                 ],
                 menus: {
                     hover: [
@@ -471,12 +470,8 @@ export function registerHoverContributions({
                         // logic is implemented in the observable pipe that sets findReferences.url above.
                         {
                             action: 'findReferences',
-                            when: 'findReferences.url',
-                            disabledWhen: 'false',
-                        },
-                        {
-                            action: 'findImplementations',
-                            when: 'findImplementations.url',
+                            when:
+                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                             disabledWhen: 'false',
                         },
                     ],

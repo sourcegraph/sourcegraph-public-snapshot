@@ -8,7 +8,6 @@ import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import * as scip from '@sourcegraph/shared/src/codeintel/scip'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { CodeIntelSearch2Variables } from '../graphql-operations'
@@ -28,8 +27,6 @@ import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
-import { newCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import { createProviders } from '@sourcegraph/shared/src/codeintel/legacy-extensions/search/providers'
 
 type LocationHandler = (locations: Location[]) => void
 
@@ -89,22 +86,6 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
             fetchReferences(onReferences)
 
             setLoadingDefinitions(true)
-            providers
-                .referencesPromise(
-                    { uri: options.path, languageId: options.spec.languageID, text: options.fileContent },
-                    new scip.Position(options.position.line, options.position.character),
-                    {
-                        includeDeclaration: false,
-                    }
-                )
-                .then(
-                    oldstyle => {
-                        console.log({ oldstyle })
-                    },
-                    oldstyleError => {
-                        console.log({ oldstyleError })
-                    }
-                )
             searchBasedDefinitions(options)
                 .then(definitions => {
                     console.log({ newstyle: definitions })
