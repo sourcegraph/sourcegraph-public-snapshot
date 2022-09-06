@@ -47,10 +47,10 @@ func forwardedFor(client *requestclient.Client) string {
 }
 
 type Record struct {
-	// The audited entity name
+	// Entity is the audited entity name
 	Entity string
-	// The audit action taking place
+	// Action is he audit action taking place
 	Action string
-	// Additional context relevant to the action
+	// Fields hold any additional context relevant to the action
 	Fields []log.Field
 }
