@@ -98,6 +98,37 @@ func commitMatch(repo, author string, date time.Time, repoID, numRanges int32, c
 	}
 }
 
+func diffMatch(repo, author string, repoID int) result.Match {
+	return &result.CommitMatch{
+		Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
+		Commit: gitdomain.Commit{
+			Author: gitdomain.Signature{Name: author},
+		},
+		DiffPreview: &result.MatchedString{
+			Content: "file3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
+			MatchedRanges: result.Ranges{{
+				Start: result.Location{Offset: 29, Line: 2, Column: 1},
+				End:   result.Location{Offset: 35, Line: 2, Column: 7},
+			}, {
+				Start: result.Location{Offset: 37, Line: 3, Column: 1},
+				End:   result.Location{Offset: 43, Line: 3, Column: 7},
+			}},
+		},
+		Diff: []result.DiffFile{{
+			OrigName: "file3",
+			NewName:  "file4",
+			Hunks: []result.Hunk{{
+				OldStart: 3,
+				NewStart: 1,
+				OldCount: 4,
+				NewCount: 6,
+				Header:   "",
+				Lines:    []string{"+needle", "-needle"},
+			}},
+		}},
+	}
+}
+
 var sampleDate time.Time = time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 
 func TestRepoAggregation(t *testing.T) {
@@ -171,6 +202,24 @@ func TestRepoAggregation(t *testing.T) {
 				}},
 			autogold.Want("Count repos on symbol matches", map[string]int{"myRepo": 4}),
 		},
+		{
+			types.REPO_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					diffMatch("myRepo", "author-a", 1),
+					diffMatch("myRepo", "author-b", 1),
+				}},
+			autogold.Want("Count repos on diff matches", map[string]int{"myRepo": 2}),
+		},
+		{
+			types.REPO_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					diffMatch("myRepo", "author-a", 1),
+					diffMatch("myRepo2", "author-b", 2),
+				}},
+			autogold.Want("Count multiple repos on diff matches", map[string]int{"myRepo": 1, "myRepo2": 1}),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
@@ -222,6 +271,16 @@ func TestAuthorAggregation(t *testing.T) {
 				},
 			},
 			autogold.Want("counts by author", map[string]int{"Author A": 1, "Author B": 2, "Author C": 1}),
+		},
+		{
+			types.AUTHOR_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					diffMatch("myRepo", "author-a", 1),
+					diffMatch("myRepo2", "author-a", 2),
+					diffMatch("myRepo2", "author-b", 2),
+				}},
+			autogold.Want("Count authors on diff matches", map[string]int{"author-a": 2, "author-b": 1}),
 		},
 	}
 	for _, tc := range testCases {
@@ -437,7 +496,79 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`z(.*)z`,
 			autogold.Want("accepts exactly 100 characters", map[string]int{longCaptureGroup: 1}),
 		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					pathMatch("myRepo", "dir1/file1.go", 1),
+					pathMatch("myRepo", "dir2/file2.go", 1),
+					pathMatch("myRepo", "dir2/file3.go", 1),
+				},
+			},
+			`(.*?)\/`,
+			autogold.Want("capture groups against whole file matches", map[string]int{"dir1": 1, "dir2": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					repoMatch("myRepo-a", 1),
+					repoMatch("myRepo-a", 1),
+					repoMatch("myRepo-b", 2),
+				},
+			},
+			`myrepo-(.*)`,
+			autogold.Want("capture groups against repo matches", map[string]int{"a": 2, "b": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "python2.7 python2.7"),
+					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "python2.7 python2.8"),
+				},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("capture groups against commit matches", map[string]int{"2.7": 3, "2.8": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "Python2.7 Python2.7"),
+					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "python2.7 Python2.8"),
+				},
+			},
+			`python([0-9]\.[0-9]) case:yes`,
+			autogold.Want("capture groups against commit matches case sensitve", map[string]int{"2.7": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					repoMatch("sourcegraph-repo1", 1),
+					repoMatch("sourcegraph-repo2", 2),
+					pathMatch("sourcegraph-repo1", "/dir/sourcegraph-test/file1.go", 1),
+					pathMatch("sourcegraph-repo1", "/dir/sourcegraph-client/file1.go", 1),
+					contentMatch("sourcegraph-repo1", "/dir/sourcegraph-client/app.css", 1, ".sourcegraph-notifications {", ".sourcegraph-alerts {"),
+					contentMatch("sourcegraph-repo1", "/dir/sourcegraph-client-legacy/app.css", 1, ".sourcegraph-notifications {"),
+				},
+			},
+			`/sourcegraph-(\\w+)/ patterntype:standard`,
+			autogold.Want("capture groups against multiple match types", map[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notifications": 2, "alerts": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					diffMatch("sourcegraph-repo1", "author-a", 1),
+				},
+			},
+			`/need(.)/ patterntype:standard`,
+			autogold.Want("capture groups ignores diff types", map[string]int{}),
+		},
 	}
+
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}

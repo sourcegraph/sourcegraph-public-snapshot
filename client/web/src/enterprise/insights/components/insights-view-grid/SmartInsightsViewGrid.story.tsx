@@ -626,8 +626,8 @@ function generateMocks(insights: SearchBasedInsight[]) {
                 id: insight.id,
                 filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                 seriesDisplayOptions: {
-                    limit: undefined,
-                    sortOptions: undefined,
+                    limit: 20,
+                    sortOptions: { direction: 'DESC', mode: 'RESULT_COUNT' },
                 },
             },
         },

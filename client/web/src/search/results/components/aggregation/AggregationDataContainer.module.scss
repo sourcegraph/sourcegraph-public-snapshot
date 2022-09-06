@@ -1,0 +1,13 @@
+// Container for both errors (business-like and internal error alerts messages)
+.error-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: auto;
+    padding-top: 0.5rem;
+
+    // Small mode is used for side panel (the standard size is used for the full UI)
+    &--small {
+        font-size: 0.75rem;
+    }
+}
