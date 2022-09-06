@@ -317,10 +317,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
-				}
-
-				if patternInfo.PatternMatchesPath {
-					searcherJob.PathRegexps = getPathRegexpsFromTextPatternInfo(patternInfo)
+					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
 				}
 
 				addJob(&repoPagerJob{
@@ -474,17 +471,19 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 		}
 	}
 
-	if patternInfo.IsRegExp {
-		if patternInfo.IsCaseSensitive {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(patternInfo.Pattern))
+	if patternInfo.PatternMatchesPath {
+		if patternInfo.IsRegExp {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(patternInfo.Pattern))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+patternInfo.Pattern))
+			}
 		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+patternInfo.Pattern))
-		}
-	} else {
-		if patternInfo.IsCaseSensitive {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(patternInfo.Pattern)))
-		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(patternInfo.Pattern)))
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(patternInfo.Pattern)))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(patternInfo.Pattern)))
+			}
 		}
 	}
 
