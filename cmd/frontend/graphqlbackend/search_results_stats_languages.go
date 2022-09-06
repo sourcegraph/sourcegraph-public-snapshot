@@ -29,7 +29,8 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srs.logger, srs.sr.db, matches)
+	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
+	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		goroutine.Go(func() {
 			defer run.Release()
 
-			invCtx, err := backend.InventoryContext(repos[key.repo].Name, db, key.commitID, true)
+			invCtx, err := backend.InventoryContext(logger, repos[key.repo].Name, db, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

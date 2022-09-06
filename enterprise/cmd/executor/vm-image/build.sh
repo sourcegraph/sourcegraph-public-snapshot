@@ -11,7 +11,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Capture src cli version before we reconfigure go environment.
+# Capture src cli version before we reconfigure the go environment.
 SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
 # Environment for building linux binaries
@@ -19,6 +19,7 @@ export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
+export VERSION
 
 echo "--- go build"
 pushd ./enterprise/cmd/executor 1>/dev/null
@@ -55,8 +56,9 @@ cp .tool-versions "$OUTPUT"
 pushd ./enterprise/cmd/executor/vm-image 1>/dev/null
 cp executor.json "$OUTPUT"
 cp install.sh "$OUTPUT"
-cp -R ignite-ubuntu "$OUTPUT"
 popd 1>/dev/null
+pushd ./docker-images 1>/dev/null
+cp -R executor-vm "$OUTPUT"
 
 export NAME
 NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"

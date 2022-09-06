@@ -32,7 +32,7 @@ func NewMigrator(frontendDB, insightsDB *basestore.Store) *insightsMigrator {
 func (m *insightsMigrator) ID() int                 { return 14 }
 func (m *insightsMigrator) Interval() time.Duration { return time.Second * 10 }
 
-func (m *insightsMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *insightsMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	if !insights.IsEnabled() {
 		return 1, nil
 	}

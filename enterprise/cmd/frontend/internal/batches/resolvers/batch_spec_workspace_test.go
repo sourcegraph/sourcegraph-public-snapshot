@@ -79,7 +79,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}

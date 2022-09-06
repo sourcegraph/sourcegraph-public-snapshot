@@ -115,7 +115,7 @@ func TestInsightsMigrator(t *testing.T) {
 
 	i := 0
 	for {
-		progress, err := migrator.Progress(ctx)
+		progress, err := migrator.Progress(ctx, false)
 		if err != nil {
 			t.Fatalf("unexpected error checking progress: %s", err)
 		}

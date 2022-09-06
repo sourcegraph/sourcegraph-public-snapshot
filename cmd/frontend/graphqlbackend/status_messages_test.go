@@ -25,10 +25,6 @@ func TestStatusMessages(t *testing.T) {
 					message
 				}
 
-				... on IndexingError {
-					message
-				}
-
 				... on ExternalServiceSyncError {
 					message
 					externalService {
@@ -60,7 +56,7 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
 		defer func() { repos.MockStatusMessages = nil }()
@@ -92,7 +88,7 @@ func TestStatusMessages(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
 					Cloning: &repos.CloningProgress{
@@ -108,11 +104,6 @@ func TestStatusMessages(t *testing.T) {
 				{
 					SyncError: &repos.SyncError{
 						Message: "Could not save to database",
-					},
-				},
-				{
-					IndexingError: &repos.IndexingError{
-						Message: "Could not complete indexing.",
 					},
 				},
 			}
@@ -142,10 +133,6 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
-							},
-							{
-								"__typename": "IndexingError",
-								"message": "Could not complete indexing."
 							}
 						]
 					}

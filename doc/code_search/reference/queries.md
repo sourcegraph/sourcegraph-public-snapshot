@@ -38,25 +38,39 @@ This page describes search pattern syntax and keywords available for code search
 
 This section documents the available search pattern syntax and interpretation in Sourcegraph. A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
 
-### Literal search (default)
+### Standard search (default)
 
-Literal search interprets search patterns literally to simplify searching for words or punctuation.
+Standard search matches literal patterns exactly, including puncutation like quotes. Specify regular expressions inside `/.../`.
 
 | Search pattern syntax                                                             | Description                                                                                                                                                                                                                           |
 | ---                                                                               | ---                                                                                                                                                                                                                                   |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal)         | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`, with exactly one space between the terms. Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
-| [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally.                                                                                                                                                                       |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=standard)         | Match the string `foo bar` exactly. No need to add quotes, we match `foo` followed by `bar`, with exactly one space between the terms. |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=standard) | Match the string `"foo bar"` exactly. The quotes are matched literally.                                                                                                                                                                       |
+| [`/foo.*bar/`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+/foo.*bar/&patternType=standard) | Match the **regular expression** `foo.*bar`.                      We support [RE2 syntax](https://golang.org/s/re2syntax).                                                        |
+| [`foo` `AND` `bar`](https://sourcegraph.com/search?q=context:global+foo+AND+bar&patternType=standard) | Match documents containing both `foo` _and_ `bar` anywhere in the document. |
 
-### Regular expression search
+Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
 
-Click the <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
+### Dedicated regular expression search
+
+Clicking the <span class="toggle-container"><img class="toggle"
+src=../img/regex.png alt="regular expression"></span> toggle interprets _all_
+search patterns as regular expressions.
+
+**Note.** You can achieve the same regular expression searches in the [default Standard mode](#standard-search-default) by enclosing patterns in `/.../`, so
+only use this mode if you find it more convenient to write out regular
+expressions without enclosing them in `/.../`. In this mode spaces between patterns mean "match anything". Patterns inside quotes mean "match
+exactly".
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
-| [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/ ... /` avoids the need for escaping spaces. |
+| [`foo bar`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. |
+| [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/.../` avoids the need for escaping spaces. |
 | [`foo\nbar`](https://sourcegraph.com/search?q=foo%5Cnbar&patternType=regexp) | Perform a multiline regexp search. `\n` is interpreted as a newline. |
-| [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings when regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings in this mode are interpreted exactly, except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
+
+As in Standard search, we support [RE2 syntax](https://golang.org/s/re2syntax). Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
+
 
 ### Structural search
 

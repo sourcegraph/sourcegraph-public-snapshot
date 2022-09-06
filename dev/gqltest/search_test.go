@@ -1324,7 +1324,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name: `file contains content predicate type diff`,
 				// matches .travis.yml and in the last commit that added after_success, but not in previous commits
-				query:  `type:diff repo:go-diff file:contains(after_success)`,
+				query:  `type:diff repo:go-diff file:contains.content(after_success)`,
 				counts: counts{Commit: 1},
 			},
 			{

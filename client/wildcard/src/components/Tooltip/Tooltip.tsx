@@ -6,7 +6,11 @@ import { isEmpty } from 'lodash'
 import styles from './Tooltip.module.scss'
 
 export interface TooltipProps {
-    /** A single child element that will trigger the Tooltip to open on hover. */
+    /**
+     * A single child element/component that will trigger the Tooltip to open on hover.
+     *
+     * **Note:** If you are using a component, it **must** be able to receive and attach a ref (React.forwardRef).
+     **/
     children: React.ReactElement
     /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
     content: string | null | undefined

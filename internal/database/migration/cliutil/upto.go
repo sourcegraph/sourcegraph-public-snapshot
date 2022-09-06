@@ -38,7 +38,12 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
+		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	ignoreSinglePendingLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-pending-log",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 
@@ -56,9 +61,10 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 					TargetVersions: versions,
 				},
 			},
-			PrivilegedMode:       privilegedMode,
-			PrivilegedHash:       privilegedHashFlag.Get(cmd),
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
+			PrivilegedMode:         privilegedMode,
+			PrivilegedHash:         privilegedHashFlag.Get(cmd),
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil
 	}
 
@@ -97,6 +103,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 			noopPrivilegedFlag,
 			privilegedHashFlag,
 			ignoreSingleDirtyLogFlag,
+			ignoreSinglePendingLogFlag,
 		},
 	}
 }

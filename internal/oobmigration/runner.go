@@ -45,7 +45,7 @@ func NewRunnerWithDB(db database.DB, refreshInterval time.Duration, observationC
 }
 
 func NewRunner(store *Store, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return newRunner(store, glock.NewRealTicker(refreshInterval), observationContext)
+	return newRunner(&storeShim{store}, glock.NewRealTicker(refreshInterval), observationContext)
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
@@ -177,6 +177,23 @@ func wrapMigrationErrors(errs ...error) error {
 		"Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n\n%s\n",
 		strings.Join(descriptions, "\n"),
 	)
+}
+
+// UpdateDirection sets the direction for each of the given migrations atomically.
+func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bool) (err error) {
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, id := range ids {
+		if err := tx.UpdateDirection(ctx, id, applyReverse); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Start runs registered migrators on a loop until they complete. This method will periodically
@@ -392,7 +409,7 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
 func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
-	progress, err := migrator.Progress(ctx)
+	progress, err := migrator.Progress(ctx, migration.ApplyReverse)
 	if err != nil {
 		return err
 	}

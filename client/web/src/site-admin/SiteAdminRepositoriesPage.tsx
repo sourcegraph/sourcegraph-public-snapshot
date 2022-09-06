@@ -4,10 +4,23 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code, Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Button,
+    Link,
+    Alert,
+    Icon,
+    H4,
+    Text,
+    Tooltip,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -36,7 +49,7 @@ interface RepositoryNodeProps {
 
 const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
-        className="repository-node list-group-item py-2"
+        className="repository-node list-group-item px-0 py-2"
         data-test-repository={node.name}
         data-test-cloned={node.mirrorInfo.cloned}
     >
@@ -129,7 +142,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     telemetryService,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('SiteAdminRepos')
+        telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
@@ -207,6 +220,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
+    const licenseInfo = window.context.licenseInfo
+
     return (
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
@@ -216,25 +231,47 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     statuses are displayed below.
                 </Alert>
             )}
-            <H2>Repositories</H2>
-            <Text>
-                Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
-                    code hosts
-                </Link>
-                .
-            </Text>
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GiB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+
             <Container className="mb-3">
-                {error && !loading && (
-                    <Alert variant="warning" as="p">
-                        {error.message}
-                    </Alert>
-                )}
+                {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
-                    listClassName="list-group list-group-flush mt-3"
+                    listClassName="list-group list-group-flush mb-0"
+                    summaryClassName="mt-2"
+                    withCenteredSummary={true}
                     noun="repository"
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}

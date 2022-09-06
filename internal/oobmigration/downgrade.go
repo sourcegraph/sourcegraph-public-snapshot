@@ -11,7 +11,6 @@ func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]Migratio
 
 	intervals := make([]migrationInterval, 0, len(migrations))
 	for _, m := range migrations {
-
 		if m.DeprecatedVersionMajor == nil {
 			// Just assume it's deprecated after the current version prior to a downgrade.
 			// This exact value doesn't matter if it exceeds the current migration range,
