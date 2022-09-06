@@ -1863,6 +1863,7 @@ type SettingsExperimentalFeatures struct {
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
 
+// SettingsOpenInEditor description: Group of settings related to opening files in an editor.
 type SettingsOpenInEditor struct {
 	// CustomUrlPattern description: If you add "custom" to openineditor.editorIds, this must be set. Use the placeholders "%file", "%line", and "%col" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: "idea://open?file=%file&line=%line&column=%col"
 	CustomUrlPattern string `json:"custom.urlPattern,omitempty"`
