@@ -35,17 +35,17 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 	t.Run("TotalCount", func(t *testing.T) {
 		t.Cleanup(func() {
-			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+			bstore.DeleteBatchSpecWorkspaceFile(ctx, store.DeleteBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			})
 		})
 
-		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
 		resolver := workspaceFileConnectionResolver{
 			store: bstore,
-			opts: store.ListBatchSpecMountsOpts{
+			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			},
 		}
@@ -57,17 +57,17 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 	t.Run("PageInfo Single Page", func(t *testing.T) {
 		t.Cleanup(func() {
-			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+			bstore.DeleteBatchSpecWorkspaceFile(ctx, store.DeleteBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			})
 		})
 
-		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
 		resolver := workspaceFileConnectionResolver{
 			store: bstore,
-			opts: store.ListBatchSpecMountsOpts{
+			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			},
 		}
@@ -80,17 +80,17 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 	t.Run("PageInfo Multiple Pages", func(t *testing.T) {
 		t.Cleanup(func() {
-			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+			bstore.DeleteBatchSpecWorkspaceFile(ctx, store.DeleteBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			})
 		})
 
-		err := createBatchSpecMounts(ctx, bstore, specID, 10)
+		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 10)
 		require.NoError(t, err)
 
 		resolver := workspaceFileConnectionResolver{
 			store: bstore,
-			opts: store.ListBatchSpecMountsOpts{
+			opts: store.ListBatchSpecWorkspaceFileOpts{
 				LimitOpts: store.LimitOpts{
 					Limit: 5,
 				},
@@ -107,7 +107,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		require.NoError(t, err)
 		resolver = workspaceFileConnectionResolver{
 			store: bstore,
-			opts: store.ListBatchSpecMountsOpts{
+			opts: store.ListBatchSpecWorkspaceFileOpts{
 				LimitOpts: store.LimitOpts{
 					Limit: 5,
 				},
@@ -124,17 +124,17 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 	t.Run("Nodes", func(t *testing.T) {
 		t.Cleanup(func() {
-			bstore.DeleteBatchSpecMount(ctx, store.DeleteBatchSpecMountOpts{
+			bstore.DeleteBatchSpecWorkspaceFile(ctx, store.DeleteBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			})
 		})
 
-		err := createBatchSpecMounts(ctx, bstore, specID, 1)
+		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
 		resolver := workspaceFileConnectionResolver{
 			store: bstore,
-			opts: store.ListBatchSpecMountsOpts{
+			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
 			},
 		}
@@ -148,7 +148,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		t.Cleanup(func() {
 			resolver := workspaceFileConnectionResolver{
 				store: bstore,
-				opts: store.ListBatchSpecMountsOpts{
+				opts: store.ListBatchSpecWorkspaceFileOpts{
 					BatchSpecID: specID,
 				},
 			}
@@ -172,9 +172,9 @@ func createBatchSpec(t *testing.T, db database.DB, ctx context.Context, bstore *
 	return spec.ID, nil
 }
 
-func createBatchSpecMounts(ctx context.Context, bstore *store.Store, specID int64, count int) error {
+func createBatchSpecWorkspaceFiles(ctx context.Context, bstore *store.Store, specID int64, count int) error {
 	for i := 0; i < count; i++ {
-		mount := &btypes.BatchSpecMount{
+		file := &btypes.BatchSpecWorkspaceFile{
 			BatchSpecID: specID,
 			FileName:    fmt.Sprintf("hello-%d.txt", i),
 			Path:        "foo/bar",
@@ -182,7 +182,7 @@ func createBatchSpecMounts(ctx context.Context, bstore *store.Store, specID int6
 			Content:     []byte("hello world!"),
 			ModifiedAt:  time.Now().UTC(),
 		}
-		if err := bstore.UpsertBatchSpecMount(ctx, mount); err != nil {
+		if err := bstore.UpsertBatchSpecWorkspaceFile(ctx, file); err != nil {
 			return err
 		}
 	}

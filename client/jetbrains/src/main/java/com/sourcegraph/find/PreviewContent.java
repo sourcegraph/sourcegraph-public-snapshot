@@ -9,15 +9,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.sourcegraph.common.BrowserErrorNotification;
-import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.common.BrowserOpener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -191,11 +186,13 @@ public class PreviewContent {
             && Objects.equals(relativeUrl, other.relativeUrl);
     }
 
-    public void openInEditorOrBrowser() throws URISyntaxException {
+    public void openInEditorOrBrowser() {
         if (opensInEditor()) {
             openInEditor();
         } else {
-            openInBrowser();
+            if (relativeUrl != null) {
+                BrowserOpener.openRelativeUrlInBrowser(project, relativeUrl);
+            }
         }
     }
 
@@ -214,16 +211,6 @@ public class PreviewContent {
         PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
         if (file != null) {
             DaemonCodeAnalyzer.getInstance(project).setHighlightingEnabled(file, false);
-        }
-    }
-
-    private void openInBrowser() throws URISyntaxException {
-        URI uri = new URI(ConfigUtil.getSourcegraphUrl(project) + "/" + relativeUrl);
-        // Source: https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java
-        try {
-            Desktop.getDesktop().browse(uri);
-        } catch (IOException | UnsupportedOperationException e) {
-            BrowserErrorNotification.show(project, uri);
         }
     }
 }

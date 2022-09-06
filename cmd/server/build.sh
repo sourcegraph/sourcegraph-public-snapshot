@@ -98,9 +98,6 @@ IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
 echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
 
-echo "--- jaeger-all-in-one binary"
-cmd/server/jaeger.sh
-
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \

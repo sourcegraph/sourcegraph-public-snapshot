@@ -61,7 +61,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
             },
             {
                 id: 'vscode',
-                name: aggregation.selected === 'count' ? 'VSCode IDE extension' : 'Users using VSCode IDE extension',
+                name: aggregation.selected === 'count' ? 'VS Code IDE extension' : 'Users using VS Code IDE extension',
                 color: 'var(--purple)',
                 data: vscode.nodes.map(
                     node => ({
@@ -90,7 +90,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: jetbrains.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: jetbrains.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description:
                     aggregation.selected === 'count' ? 'JetBrains\nIDE plugin' : 'Users using\nJetBrains IDE plugin',
                 color: 'var(--cyan)',
@@ -100,17 +100,17 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                         : 'The number of users searched in JetBrains IDE plugin.',
             },
             {
-                value: vscode.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: vscode.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description:
-                    aggregation.selected === 'count' ? 'VSCode\nIDE extension' : 'Users using\nVSCode IDE extension',
+                    aggregation.selected === 'count' ? 'VS Code\nIDE extension' : 'Users using\nVS Code IDE extension',
                 color: 'var(--purple)',
                 tooltip:
                     aggregation.selected === 'count'
-                        ? 'The number searches in VSCode IDE extension.'
+                        ? 'The number searches in VS Code IDE extension.'
                         : 'The number of users searched in IDE extension.',
             },
             {
-                value: browser.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: browser.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'Browser\nextension' : 'Users using\nbrowser extension',
                 color: 'var(--orange)',
                 tooltip:
@@ -126,7 +126,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
             dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
-                'Our extensions allow users to complete their goals without switching tools and context. We’ve calculated the value of maintaining momentum and using the tools users prefer. ',
+                'Our extensions allow users to complete their goals without switching tools and context. We’ve calculated the time saved by reducing context switching between tools.',
             value: totalEvents,
             items: [
                 {
@@ -141,14 +141,14 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                     minPerItem: 1.5,
                     value: jetbrains.summary.totalCount,
                     description:
-                        "Searches from JetBrains across all of your company's code across code hosts, without locally cloning repositories or complex scripting.",
+                        "Searches from JetBrains IDEs across all of your company's code without locally cloning repositories or complex scripting.",
                 },
                 {
-                    label: 'VSCode IDE extension',
+                    label: 'VS Code IDE extension',
                     minPerItem: 3,
                     value: vscode.summary.totalCount,
                     description:
-                        "Searches from VS Code across all of your company's code across code hosts, without locally cloning repositories or complex scripting.",
+                        "Searches from VS Code across all of your company's code without locally cloning repositories or complex scripting.",
                 },
             ],
         }
@@ -156,9 +156,9 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
         const installationStats =
             totalUsersCount > 0
                 ? {
-                      vscode: Math.floor((vscode.summary.totalUniqueUsers * 100) / totalUsersCount),
-                      jetbrains: Math.floor((jetbrains.summary.totalUniqueUsers * 100) / totalUsersCount),
-                      browser: Math.floor((browser.summary.totalUniqueUsers * 100) / totalUsersCount),
+                      vscode: Math.floor((vscode.summary.totalRegisteredUsers * 100) / totalUsersCount),
+                      jetbrains: Math.floor((jetbrains.summary.totalRegisteredUsers * 100) / totalUsersCount),
+                      browser: Math.floor((browser.summary.totalRegisteredUsers * 100) / totalUsersCount),
                   }
                 : undefined
 
@@ -212,8 +212,8 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                         <ul className="mb-3 pl-3">
                             <Text as="li">
                                 {installationStats.vscode}% of users have installed the{' '}
-                                <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                    VSCode IDE extension
+                                <AnchorLink to="/help/integration/editor" target="_blank">
+                                    VS Code IDE extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
@@ -226,7 +226,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                             </Text>
                             <Text as="li">
                                 {installationStats.browser}% of users have installed the{' '}
-                                <AnchorLink to="/help/integration/editor" target="_blank">
+                                <AnchorLink to="/help/integration/browser_extension" target="_blank">
                                     Browser extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.

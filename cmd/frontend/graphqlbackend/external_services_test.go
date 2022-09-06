@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -1356,7 +1357,7 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	err := backend.SyncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
+	err := backend.SyncExternalService(ctx, logtest.Scoped(t), svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
 
 	if err == nil {
 		t.Error("Expected error but got nil")

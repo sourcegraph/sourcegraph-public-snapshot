@@ -3,24 +3,23 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/search'
-import { GetSearchAggregationResult } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import { GetSearchAggregationResult, WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI } from './utils'
 
-const aggregationDefaultMock: GetSearchAggregationResult = {
+const aggregationDefaultMock = (mode: SearchAggregationMode): GetSearchAggregationResult => ({
     searchQueryAggregate: {
         __typename: 'SearchQueryAggregate',
         aggregations: {
             __typename: 'ExhaustiveSearchAggregationResult',
-            mode: SearchAggregationMode.REPO,
+            mode,
             otherGroupCount: 100,
             groups: [
                 {
@@ -76,7 +75,8 @@ const aggregationDefaultMock: GetSearchAggregationResult = {
             },
         ],
     },
-}
+})
+
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'matches',
@@ -144,7 +144,7 @@ describe('Search aggregation', () => {
         })
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
-            GetSearchAggregation: () => aggregationDefaultMock,
+            GetSearchAggregation: ({ mode }) => aggregationDefaultMock(mode ?? SearchAggregationMode.REPO),
         })
         testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
     })
@@ -168,13 +168,25 @@ describe('Search aggregation', () => {
         beforeEach(() =>
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                EvaluateFeatureFlag: variables => {
-                    if (variables.flagName === 'search-aggregation-filters') {
-                        return { evaluateFeatureFlag: true }
-                    }
-
-                    return { evaluateFeatureFlag: false }
-                },
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { enableSearchResultsAggregations: true },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
             })
         )
 
@@ -191,10 +203,10 @@ describe('Search aggregation', () => {
             await delay(100)
 
             const aggregationCases = [
-                { mode: 'REPO', id: 'repo-aggregation-mode' },
-                { mode: 'PATH', id: 'file-aggregation-mode' },
-                { mode: 'AUTHOR', id: 'author-aggregation-mode' },
-                { mode: 'CAPTURE_GROUP', id: 'captureGroup-aggregation-mode' },
+                { mode: 'REPO', urlKey: 'repo', id: 'repo-aggregation-mode' },
+                { mode: 'PATH', urlKey: 'path', id: 'file-aggregation-mode' },
+                { mode: 'AUTHOR', urlKey: 'author', id: 'author-aggregation-mode' },
+                { mode: 'CAPTURE_GROUP', urlKey: 'group', id: 'captureGroup-aggregation-mode' },
             ]
 
             for (const testCase of aggregationCases) {
@@ -210,15 +222,13 @@ describe('Search aggregation', () => {
                     },
                     { timeout: 5000 },
                     `${origQuery}`,
-                    testCase.mode
+                    testCase.urlKey
                 )
             }
         })
 
         test('should open expanded full UI by default if UI mode is set in URL query param', async () => {
-            await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent('insights(')}&groupByUI=searchPage`
-            )
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent('insights(')}&expanded`)
 
             await driver.page.waitForSelector('[aria-label="Aggregation results panel"]')
         })
@@ -245,13 +255,13 @@ describe('Search aggregation', () => {
                     const url = new URL(document.location.href)
                     const query = url.searchParams.get('q')
                     const aggregationMode = url.searchParams.get('groupBy')
-                    const aggregationUIMode = url.searchParams.get('groupByUI')
+                    const aggregationUIMode = url.searchParams.get('expanded')
 
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'PATH' &&
-                        aggregationUIMode === 'searchPage'
+                        aggregationMode === 'path' &&
+                        aggregationUIMode === ''
                     )
                 },
                 { timeout: 5000 },
@@ -268,13 +278,13 @@ describe('Search aggregation', () => {
                     const url = new URL(document.location.href)
                     const query = url.searchParams.get('q')
                     const aggregationMode = url.searchParams.get('groupBy')
-                    const aggregationUIMode = url.searchParams.get('groupByUI')
+                    const aggregationUIMode = url.searchParams.get('expanded')
 
                     return (
                         query &&
                         query.trim() === expectedQuery &&
-                        aggregationMode === 'AUTHOR' &&
-                        aggregationUIMode === 'sidebar'
+                        aggregationMode === 'author' &&
+                        aggregationUIMode === null
                     )
                 },
                 { timeout: 5000 },
@@ -307,6 +317,50 @@ describe('Search aggregation', () => {
             )
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourecegraph/about')
+        })
+
+        test('should preserve case sensitive filter in a query', async () => {
+            const origQuery = 'context:global insights('
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal&case=yes`
+            )
+
+            const variables = await testContext.waitForGraphQLRequest(() => {}, 'GetSearchAggregation')
+
+            expect(variables).toStrictEqual({
+                mode: null,
+                limit: 10,
+                skipAggregation: false,
+                patternType: 'standard',
+                query: `${origQuery} case:yes`,
+            })
+
+            const variablesForFileMode = await testContext.waitForGraphQLRequest(async () => {
+                await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+                await driver.page.click('[data-testid="file-aggregation-mode"]')
+            }, 'GetSearchAggregation')
+
+            expect(variablesForFileMode).toStrictEqual({
+                mode: 'PATH',
+                limit: 10,
+                skipAggregation: false,
+                patternType: 'standard',
+                query: `${origQuery} case:yes`,
+            })
+
+            const variablesWithoutCaseSensitivity = await testContext.waitForGraphQLRequest(
+                async () => driver.page.click('.test-case-sensitivity-toggle'),
+                'GetSearchAggregation'
+            )
+
+            expect(variablesWithoutCaseSensitivity).toStrictEqual({
+                mode: 'PATH',
+                limit: 10,
+                skipAggregation: false,
+                patternType: 'standard',
+                query: origQuery,
+            })
         })
     })
 })

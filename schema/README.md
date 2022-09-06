@@ -15,7 +15,6 @@ Sourcegraph uses the following JSON Schemas:
 1.  Run `go generate` to update the `*_stringdata.json` file.
 1.  Commit the changes to both files.
 1.  Run `sg start` to automatically update TypeScript schema files.
-1.  When the change is ready for release, [update the documentation](https://github.com/sourcegraph/website/blob/master/README.md#documentation-pages).
 
 ## Known issues
 

@@ -619,7 +619,7 @@ func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.List
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
-	opts := store.ListBatchSpecMountsOpts{
+	opts := store.ListBatchSpecWorkspaceFileOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},

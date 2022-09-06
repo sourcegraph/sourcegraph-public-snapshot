@@ -8,8 +8,32 @@ $input-font-size-sm: (11/14) + em;
 
 // Spacer
 $spacer: 1rem;
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
+);
+
+// Sizes
+$sizes: (
+    25: 25%,
+    50: 50%,
+    75: 75%,
+    100: 100%,
+    auto: auto,
+);
 
 :root {
+    --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-weight-base: 400;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --border-width: 1px;
+    --zindex-sticky: 1020;
     --spacer: #{$spacer};
     --font-size-base: #{$font-size-base};
     --line-height-base: #{$line-height-base};

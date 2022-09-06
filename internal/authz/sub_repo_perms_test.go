@@ -2,7 +2,9 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
+	"sort"
 	"testing"
 	"time"
 
@@ -178,6 +180,100 @@ func TestFilterActorPaths(t *testing.T) {
 	if diff := cmp.Diff(want, filtered); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func BenchmarkFilterActorPaths(b *testing.B) {
+	// This benchmark is simulating the code path taken by a monorepo with sub
+	// repo permissions. Our goal is to support repos with millions of files.
+	// For now we target a lower number since large numbers don't give enough
+	// runs of the benchmark to be useful.
+	const pathCount = 5_000
+	pathPatterns := []string{
+		"base/%d/foo.go",
+		"%d/stuff/baz",
+		"frontend/%d/stuff/baz/bam",
+		"subdir/sub/sub/sub/%d",
+		"%d/foo/README.md",
+		"subdir/remove/me/please/%d",
+		"subdir/%d/also-remove/me/please",
+		"a/deep/path/%d/.secrets.env",
+		"%d/does/not/match/anything",
+		"does/%d/not/match/anything",
+		"does/not/%d/match/anything",
+		"does/not/match/%d/anything",
+		"does/not/match/anything/%d",
+	}
+	paths := []string{
+		"config.yaml",
+		"dir.yaml",
+	}
+	for i := 0; len(paths) < pathCount; i++ {
+		for _, pat := range pathPatterns {
+			paths = append(paths, fmt.Sprintf(pat, i))
+		}
+	}
+	paths = paths[:pathCount]
+	sort.Strings(paths)
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	repo := api.RepoName("repo")
+
+	getter := NewMockSubRepoPermissionsGetter()
+	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+		return map[api.RepoName]SubRepoPermissions{
+			repo: {
+				PathIncludes: []string{
+					"base/**",
+					"*/stuff/**",
+					"frontend/**/stuff/*",
+					"config.yaml",
+					"subdir/**",
+					"**/README.md",
+					"dir.yaml",
+				},
+				PathExcludes: []string{
+					"subdir/remove/",
+					"subdir/*/also-remove/**",
+					"**/.secrets.env",
+				},
+			},
+		}, nil
+	})
+	checker, err := NewSubRepoPermsClient(getter)
+	if err != nil {
+		b.Fatal(err)
+	}
+	a := &actor.Actor{
+		UID: 1,
+	}
+	ctx := actor.WithActor(context.Background(), a)
+
+	b.ResetTimer()
+	start := time.Now()
+
+	for n := 0; n <= b.N; n++ {
+		filtered, err := FilterActorPaths(ctx, checker, a, repo, paths)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(filtered) == 0 {
+			b.Fatal("expected paths to be returned")
+		}
+		if len(filtered) == len(paths) {
+			b.Fatal("expected to filter out some paths")
+		}
+	}
+
+	b.ReportMetric(float64(len(paths))*float64(b.N)/time.Since(start).Seconds(), "paths/s")
 }
 
 func TestCanReadAllPaths(t *testing.T) {

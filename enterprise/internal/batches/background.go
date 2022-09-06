@@ -3,8 +3,8 @@ package batches
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -37,7 +37,7 @@ func InitBackgroundJobs(
 
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("batches.background", "batches background jobs"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	bstore := store.New(db, observationContext, key)

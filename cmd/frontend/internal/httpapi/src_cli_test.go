@@ -71,7 +71,7 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 
 		handler.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "\"3.42.1\"\n", rec.Body.String())
+		assert.Equal(t, `{"version":"3.42.1"}`+"\n", rec.Body.String())
 	})
 
 	t.Run("download", func(t *testing.T) {

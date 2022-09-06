@@ -3253,7 +3253,7 @@ type BatchSpec implements Node {
     """
     files (
         """
-        Returns the first n mounts from the list.
+        Returns the first n files from the list.
         """
         first: Int = 50
         """
@@ -3524,7 +3524,7 @@ A list of BatchSpecMounts.
 """
 type WorkspaceFileConnection {
     """
-    The total number of mounts.
+    The total number of files.
     """
     totalCount: Int!
     """
@@ -3532,7 +3532,7 @@ type WorkspaceFileConnection {
     """
     pageInfo: PageInfo!
     """
-    A list of mounts in a batch spec.
+    A list of workspace files in a batch spec.
     """
     nodes: [WorkspaceFile!]!
 }
@@ -3542,7 +3542,7 @@ The metadata of a file being used in a batch spec step.
 """
 type WorkspaceFile implements File2 & Node {
     """
-    The ID of the mount.
+    The ID of the file.
     """
     id: ID!
     """

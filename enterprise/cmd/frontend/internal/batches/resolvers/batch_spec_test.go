@@ -89,7 +89,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -515,9 +515,8 @@ func TestBatchSpecResolver_Mounts(t *testing.T) {
 
 	after := "1"
 	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListWorkspaceFilesArgs{
-		First:     int32(10),
-		After:     &after,
-		BatchSpec: "123",
+		First: int32(10),
+		After: &after,
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, connectionResolver)

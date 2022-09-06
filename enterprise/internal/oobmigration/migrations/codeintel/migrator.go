@@ -147,11 +147,18 @@ func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
 
 // Progress returns the ratio between the number of upload records that have been completely
 // migrated over the total number of upload records. A record is migrated if its schema version
-// is no less than the target migration version.
-func (m *migrator) Progress(ctx context.Context) (float64, error) {
+// is no less than (on upgradees) or no greater than (on downgrades) than the target migration
+// version.
+func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
+	table := "min_schema_version"
+	if applyReverse {
+		table = "max_schema_version"
+	}
+
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(
 		migratorProgressQuery,
 		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(table),
 		m.options.targetVersion,
 		sqlf.Sprintf(m.options.tableName),
 	)))
@@ -165,7 +172,7 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 const migratorProgressQuery = `
 -- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
-	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE min_schema_version >= %s) c1,
+	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE %s >= %s) c1,
 	(SELECT COUNT(*) as count FROM %s_schema_versions) c2
 `
 

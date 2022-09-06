@@ -19,7 +19,7 @@ func TestWorkspaceFileResolver(t *testing.T) {
 
 	resolver := workspaceFileResolver{
 		batchSpecRandID: "123abc",
-		file: &btypes.BatchSpecMount{
+		file: &btypes.BatchSpecWorkspaceFile{
 			RandID:     "987xyz",
 			FileName:   "hello.txt",
 			Path:       "foo/bar",

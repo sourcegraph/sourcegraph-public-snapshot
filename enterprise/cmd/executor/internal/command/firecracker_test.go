@@ -114,7 +114,7 @@ func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
-			Image:               "ignite-ubuntu",
+			Image:               "sourcegraph/executor-vm:3.43.1",
 			KernelImage:         "ignite-kernel:5.10.135",
 			VMStartupScriptPath: "/vm-startup.sh",
 		},
@@ -145,7 +145,7 @@ func TestSetupFirecracker(t *testing.T) {
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
 			"--ssh --name deadbeef",
 			"--kernel-image", "ignite-kernel:5.10.135",
-			"ignite-ubuntu",
+			"sourcegraph/executor-vm:3.43.1",
 		}, " "),
 		"ignite exec deadbeef -- /vm-startup.sh",
 	}
@@ -176,8 +176,8 @@ func TestTeardownFirecracker(t *testing.T) {
 }
 
 func TestSanitizeImage(t *testing.T) {
-	image := "sourcegraph/ignite-ubuntu"
-	tag := ":insiders"
+	image := "sourcegraph/executor-vm"
+	tag := ":3.43.1"
 	digest := "@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134"
 
 	testCases := map[string]string{

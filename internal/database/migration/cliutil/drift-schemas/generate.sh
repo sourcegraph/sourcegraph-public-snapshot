@@ -39,22 +39,52 @@ fi
 
 go build ./dev/sg # Currently requires migration at compile time; doesn't read from disk
 echo "Rewriting migration definitions as they were at ${revision}..."
+
+# frontend schema is available for all versions
 ./sg migration rewrite -db frontend -rev "${revision}" >/dev/null
-./sg migration rewrite -db codeintel -rev "${revision}" >/dev/null
-./sg migration rewrite -db codeinsights -rev "${revision}" >/dev/null
+
+if (("${revision:3:2}" >= 21)); then
+  # codeintel schema was introduced in 3.21
+  ./sg migration rewrite -db codeintel -rev "${revision}" >/dev/null
+
+  if (("${revision:3:2}" >= 25)); then
+    # codeinsights schema was introduced in 3.25
+    ./sg migration rewrite -db codeinsights -rev "${revision}" >/dev/null
+  fi
+fi
 
 go build ./dev/sg # Currently requires migration at compile time; doesn't read from disk
 echo "Squashing migration definitions as they were at ${revision}..."
 dropdbs
+
+# frontend schema is available for all versions
 ./sg migration squash-all -skip-data -skip-teardown -db frontend -f temp-squash
-./sg migration squash-all -skip-data -skip-teardown -db codeintel -f temp-squash
-if [[ "${codeinsights_container_args}" == "" ]]; then
-  ./sg migration squash-all -skip-data -skip-teardown -db codeinsights -f temp-squash
-else
-  ./sg migration squash-all -skip-data -skip-teardown -db codeinsights -f temp-squash "${codeinsights_container_args}"
+
+if (("${revision:3:2}" >= 21)); then
+  # codeintel schema was introduced in 3.21
+  ./sg migration squash-all -skip-data -skip-teardown -db codeintel -f temp-squash
+
+  if (("${revision:3:2}" >= 25)); then
+    # codeinsights schema was introduced in 3.25
+    if [[ "${codeinsights_container_args}" == "" ]]; then
+      ./sg migration squash-all -skip-data -skip-teardown -db codeinsights -f temp-squash
+    else
+      ./sg migration squash-all -skip-data -skip-teardown -db codeinsights -f temp-squash "${codeinsights_container_args}"
+    fi
+  fi
 fi
 
 echo "Describing migration definitions as they were at ${revision}..."
+
+# frontend schema is available for all versions
 ./sg migration describe -db frontend --format=json -force -out "${outdir}/${revision}-internal_database_schema.json"
-./sg migration describe -db codeintel --format=json -force -out "${outdir}/${revision}-internal_database_schema.codeintel.json"
-./sg migration describe -db codeinsights --format=json -force -out "${outdir}/${revision}-internal_database_schema.codeinsights.json"
+
+if (("${revision:3:2}" >= 21)); then
+  # codeintel schema was introduced in 3.21
+  ./sg migration describe -db codeintel --format=json -force -out "${outdir}/${revision}-internal_database_schema.codeintel.json"
+
+  if (("${revision:3:2}" >= 25)); then
+    # codeinsights schema was introduced in 3.25
+    ./sg migration describe -db codeinsights --format=json -force -out "${outdir}/${revision}-internal_database_schema.codeinsights.json"
+  fi
+fi
