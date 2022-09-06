@@ -375,6 +375,23 @@ openTelemetry:
               key_file: /tls/file.key
 ```
 
+##### Configuring trace sampling
+
+Review the [trace sampling documentation](../../observability/opentelemetry.md#sampling-traces) to understand how to configure sampling.
+
+Add your config to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override-processor.yaml) as follows:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        processors:
+          probabilistic_sampler:
+            hash_seed: 22 # An integer used to compute the hash algorithm. Note that all collectors for a given tier (e.g. behind the same load balancer) should have the same hash_seed.
+            sampling_percentage: 10.0 # (default = 0): Percentage at which traces are sampled; >= 100 samples all traces
+```
+
 #### Using the bundled Jaeger instance
 
 Sourcegraph ships with a bundled Jaeger instance that is disabled by default. If you do not wish to make use of an external observability backend, you can enable this instance by adding the following to your overrides:
