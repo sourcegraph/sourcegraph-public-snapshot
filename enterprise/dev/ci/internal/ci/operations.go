@@ -928,6 +928,12 @@ func uploadBuildeventTrace() operations.Operation {
 	}
 }
 
+func runCommandIfJobFailed(key string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep("Run on failed job", bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/run-on-job-failure.sh %s", key)))
+	}
+}
+
 func exposeBuildMetadata(c Config) (operations.Operation, error) {
 	overview := struct {
 		RunType      string       `json:"RunType"`
