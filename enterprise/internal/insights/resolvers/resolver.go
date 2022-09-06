@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -145,9 +144,8 @@ func NewAggregationResolver(postgres database.DB) graphqlbackend.InsightsAggrega
 }
 
 func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
-	fmt.Println("newResolver", args.Query, time.Now())
-	_, err := querybuilder.ParseQuery(args.Query, args.PatternType)
-	if err != nil {
+	// Do a check on the query at resolver initialisation time for nicer errors.
+	if _, err := querybuilder.ParseQuery(args.Query, args.PatternType); err != nil {
 		return nil, errors.Wrap(err, "ParseQuery")
 	}
 	return &searchAggregateResolver{
