@@ -244,6 +244,8 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	for _, match := range event.Results {
 		select {
 		case <-r.ctx.Done():
+			// let the tabulator an error occured.
+			r.tabulator(nil, r.ctx.Err())
 			return
 		default:
 			groups, err := r.countFunc(match)

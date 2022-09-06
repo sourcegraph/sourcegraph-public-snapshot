@@ -25,10 +25,12 @@ func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTa
 
 type testAggregator struct {
 	results map[string]int
+	errors  []error
 }
 
 func (r *testAggregator) AddResult(result *AggregationMatchResult, err error) {
 	if err != nil {
+		r.errors = append(r.errors, err)
 		return
 	}
 	current, _ := r.results[result.Key.Group]
@@ -621,6 +623,9 @@ func TestAggregationCancelation(t *testing.T) {
 			cancel()
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
+			if len(aggregator.errors) != 1 {
+				t.Errorf("context cancel should be captured as an error")
+			}
 		})
 	}
 }
