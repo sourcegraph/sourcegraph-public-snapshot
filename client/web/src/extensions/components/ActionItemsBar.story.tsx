@@ -95,6 +95,7 @@ export const Default: React.FunctionComponent<React.PropsWithChildren<unknown>> 
             extensionsController={mockExtensionsController}
             platformContext={NOOP_PLATFORM_CONTEXT as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            filePath=""
         />
     )
 }

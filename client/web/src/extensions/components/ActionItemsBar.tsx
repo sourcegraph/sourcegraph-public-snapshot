@@ -22,6 +22,7 @@ import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip 
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -173,6 +174,8 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
+    filePath: string
+    source: 'fileTree' | 'commit' | 'compare'
 }
 
 const actionItemClassName = classNames(
@@ -184,7 +187,7 @@ const actionItemClassName = classNames(
  * TODO: description
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
-    const { extensionsController } = props
+    const { extensionsController, filePath, source } = props
     const { isOpen, barReference } = props.useActionItemsBar()
 
     const {
@@ -223,6 +226,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
+                {source === 'fileTree' ? <ToggleBlameAction key="toggle-blame" filePath={filePath} /> : null}
                 {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}

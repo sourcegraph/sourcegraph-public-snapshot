@@ -138,9 +138,11 @@ export const RepositoryFileTreePage: React.FunctionComponent<
             <ActionItemsBar
                 useActionItemsBar={context.useActionItemsBar}
                 location={context.location}
+                filePath={repoRevisionProps.filePath}
                 extensionsController={context.extensionsController}
                 platformContext={context.platformContext}
                 telemetryService={context.telemetryService}
+                source="fileTree"
             />
         </>
     )

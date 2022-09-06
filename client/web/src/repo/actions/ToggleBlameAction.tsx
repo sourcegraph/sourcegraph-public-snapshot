@@ -7,14 +7,13 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
-import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
-export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; filePath: string }> = ({
-    actionType,
-    filePath,
-}) => {
+export const ToggleBlameAction: React.FC<{
+    filePath: string
+}> = ({ filePath }) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
@@ -29,15 +28,6 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; file
 
     if (!extensionsAsCoreFeatures) {
         return null
-    }
-
-    if (actionType === 'dropdown') {
-        return (
-            <RepoHeaderActionMenuItem file={true} onSelect={toggleBlameState}>
-                <Icon aria-hidden={true} svgPath={mdiGit} />
-                <span>{descriptiveText}</span>
-            </RepoHeaderActionMenuItem>
-        )
     }
 
     return (

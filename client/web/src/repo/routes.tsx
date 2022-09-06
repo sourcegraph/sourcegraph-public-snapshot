@@ -49,9 +49,11 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
+                    filePath={context.filePath}
                     useActionItemsBar={context.useActionItemsBar}
                     location={context.location}
                     telemetryService={context.telemetryService}
+                    source="commit"
                 />
             </RepoRevisionWrapper>
         ),
@@ -85,6 +87,8 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     useActionItemsBar={context.useActionItemsBar}
                     location={context.location}
                     telemetryService={context.telemetryService}
+                    filePath={context.filePath}
+                    source="compare"
                 />
             </RepoRevisionWrapper>
         ),
@@ -194,6 +198,8 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     useActionItemsBar={context.useActionItemsBar}
                     location={context.location}
                     telemetryService={context.telemetryService}
+                    filePath={context.filePath}
+                    source="compare"
                 />
             </RepoRevisionWrapper>
         ),
