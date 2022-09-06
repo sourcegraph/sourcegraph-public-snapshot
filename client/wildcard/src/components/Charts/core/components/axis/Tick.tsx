@@ -22,7 +22,7 @@ export const Tick: FC<TickProps> = props => {
         ...tickLabelProps
     } = props
 
-    // Formatted and truanted tick value
+    // Formatted and truncated tick value
     const tickValue = getTruncatedTick ? getTruncatedTick(formattedValue) : formattedValue
 
     // Empty tick value breaks the tick axis container measurement
