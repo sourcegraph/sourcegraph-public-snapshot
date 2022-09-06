@@ -581,10 +581,9 @@ func TestRepositories_Integration(t *testing.T) {
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloned: false",
-		wantRepos: []string{"repo1", "repo2", "repo3", "repo4"},
-		// Right now we don't produce a totalCount if "cloned: false" is used
-		wantNoTotalCount: true,
+		args:           "cloned: false",
+		wantRepos:      []string{"repo1", "repo2", "repo3", "repo4"},
+		wantTotalCount: 4,
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
@@ -594,10 +593,9 @@ func TestRepositories_Integration(t *testing.T) {
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "notCloned: false",
-		wantRepos: []string{"repo5", "repo6"},
-		// Right now we don't produce a totalCount if "notCloned" is used
-		wantNoTotalCount: true,
+		args:           "notCloned: false",
+		wantRepos:      []string{"repo5", "repo6"},
+		wantTotalCount: 2,
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
@@ -613,24 +611,21 @@ func TestRepositories_Integration(t *testing.T) {
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:NOT_CLONED",
-		wantRepos: []string{"repo1", "repo2"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
+		args:           "cloneStatus:NOT_CLONED",
+		wantRepos:      []string{"repo1", "repo2"},
+		wantTotalCount: 2,
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:CLONING",
-		wantRepos: []string{"repo3", "repo4"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
+		args:           "cloneStatus:CLONING",
+		wantRepos:      []string{"repo3", "repo4"},
+		wantTotalCount: 2,
 	})
 
 	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:CLONED",
-		wantRepos: []string{"repo5", "repo6"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
+		args:           "cloneStatus:CLONED",
+		wantRepos:      []string{"repo5", "repo6"},
+		wantTotalCount: 2,
 	})
 }
 
