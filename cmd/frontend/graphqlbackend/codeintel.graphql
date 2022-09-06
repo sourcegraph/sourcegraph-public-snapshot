@@ -106,6 +106,8 @@ extend type Mutation {
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
+
+    updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse
 }
 
 extend type Query {
@@ -269,6 +271,8 @@ extend type Query {
     Return the languages that this user has requested support for.
     """
     requestedLanguageSupport: [String!]!
+
+    codeIntelligenceInferenceScript: String!
 }
 
 """
