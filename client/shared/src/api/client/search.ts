@@ -5,6 +5,7 @@ import { from, Observable, of, TimeoutError } from 'rxjs'
 import { catchError, filter, first, switchMap, timeout } from 'rxjs/operators'
 
 import { FlatExtensionHostAPI } from '../contract'
+import { SharedEventLogger } from '../sharedEventLogger'
 
 import { wrapRemoteObservable } from './api/common'
 
@@ -63,7 +64,7 @@ export function transformSearchQuery({
     )
 }
 
-function goImportsTransform(query: string, eventLogger: EventLogger): string {
+function goImportsTransform(query: string, eventLogger: SharedEventLogger): string {
     const goImportsRegex = /\bgo.imports:(\S*)/
     if (query.match(goImportsRegex)) {
         // Get package name
@@ -83,8 +84,4 @@ function goImportsTransform(query: string, eventLogger: EventLogger): string {
         return query.replace(goImportsRegex, finalRegex)
     }
     return query
-}
-
-interface EventLogger {
-    log: (eventLabel: string, eventProperties?: any) => void
 }
