@@ -33,6 +33,7 @@ The response headers of the response will now include an `x-trace` entry, which 
 ## Tracing backends
 
 Tracing backends can be configured for Sourcegraph to export traces to.
+We support exporting traces via [OpenTelemetry](#opentelemetry) (recommended), or directly to [Jaeger](#jaeger).
 
 ### OpenTelemetry
 
@@ -43,7 +44,7 @@ For example, if you [export your traces to Honeycomb](./opentelemetry.md#otlp-co
 ```json
 {
   "observability.tracing": {
-    "type": "jaeger",
+    "type": "opentelemetry",
     "urlTemplate": "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"
   }
 }
