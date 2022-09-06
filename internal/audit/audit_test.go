@@ -13,9 +13,6 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-
 	testCases := []struct {
 		name              string
 		client            *requestclient.Client
