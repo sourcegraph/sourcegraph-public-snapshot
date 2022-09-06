@@ -18,7 +18,7 @@ export const useOpenCurrentUrlInEditor = (): ((
     const location = useLocation()
     return useCallback(
         (editorSettings: EditorSettings, sourcegraphURL: string, editorIndex = 0) => {
-            const {repoName, filePath, range} = parseBrowserRepoURL(location.pathname)
+            const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
             const url = buildEditorUrl(
                 `${repoName.split('/').pop() ?? ''}/${filePath}`,
                 range,
