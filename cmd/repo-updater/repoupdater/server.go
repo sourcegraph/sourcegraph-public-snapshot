@@ -230,7 +230,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
 		return
-	} else if statusCode == 0 {
+	}
+	if statusCode == 0 {
 		// client is gone
 		return
 	}
