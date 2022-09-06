@@ -15,17 +15,17 @@ var _ graphqlbackend.WorkspaceFileConnectionResolver = &workspaceFileConnectionR
 
 type workspaceFileConnectionResolver struct {
 	store *store.Store
-	opts  store.ListBatchSpecMountsOpts
+	opts  store.ListBatchSpecWorkspaceFileOpts
 
 	// Cache results to save on hit to the database.
 	once  sync.Once
-	files []*btypes.BatchSpecMount
+	files []*btypes.BatchSpecWorkspaceFile
 	next  int64
 	err   error
 }
 
 func (r *workspaceFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountBatchSpecMounts(ctx, r.opts)
+	count, err := r.store.CountBatchSpecWorkspaceFiles(ctx, r.opts)
 	return int32(count), err
 }
 
@@ -60,9 +60,9 @@ func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 	return resolvers, nil
 }
 
-func (r *workspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecMount, int64, error) {
+func (r *workspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecWorkspaceFile, int64, error) {
 	r.once.Do(func() {
-		r.files, r.next, r.err = r.store.ListBatchSpecMounts(ctx, r.opts)
+		r.files, r.next, r.err = r.store.ListBatchSpecWorkspaceFiles(ctx, r.opts)
 	})
 	return r.files, r.next, r.err
 }

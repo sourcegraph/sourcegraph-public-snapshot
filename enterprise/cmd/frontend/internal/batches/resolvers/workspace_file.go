@@ -22,7 +22,7 @@ var _ graphqlbackend.BatchWorkspaceFileResolver = &workspaceFileResolver{}
 
 type workspaceFileResolver struct {
 	batchSpecRandID string
-	file            *btypes.BatchSpecMount
+	file            *btypes.BatchSpecWorkspaceFile
 }
 
 func (r *workspaceFileResolver) ID() graphql.ID {
