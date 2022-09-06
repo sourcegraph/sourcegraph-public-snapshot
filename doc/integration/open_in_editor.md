@@ -39,30 +39,19 @@ Once you click **Save**, the icon will you’ll be able to jump to your editor f
 If you want to dig deeper, there are a bunch of optional settings to play with. Click your name at the top-right, select
 Settings, and add the `"openInEditor": {}` key to your user setting JSON.
 
-- **editorId:** a short name of an editor (“vscode”, “idea”, “sublime”, “pycharm”, etc.) or “custom”. This is what you
-  set in the dropdown when you first set up the feature.
-- **custom.urlPattern:** If you set editorId to “custom” then this must be set, too. Use the placeholders “%file”,
-  “%line”, and “%col” to mark where the file path, line number, and column number must be insterted. Example URL pattern
-  for IntelliJ IDEA: `idea://open?file=%file&line=%line&column=%col`
-- **projectPaths.default**: This is what you set in the form when you first set up the feature: The absolute path on
-  your computer where your git repositories live. All git repos to open have to be cloned under this path with their
-  original names. `/Users/yourusername/src` is a valid absolute path, `~/src` is not. Works both with and without a
-  trailing slash.
-- **projectPaths.linux**: Overwrites the default path on Linux. Handy if you use different environments. Works both with
-  and without a trailing slash.
+- **editorIds:** an array of short names of an editor (“vscode”, “idea”, “sublime”, “pycharm”, etc.) or “custom”. This is what you set in the dropdown when you first set up the feature.
+  - Currently, only one editor is supported (the first element of the array is used), but we plan to support multiple editors in the future. To prepare for that and set up multiple editors, add multiple items in `editorIds`.
+- **custom.urlPattern:** If you set editorId to “custom” then this must be set, too. Use the placeholders “%file”, “%line”, and “%col” to mark where the file path, line number, and column number must be insterted. Example URL pattern for IntelliJ IDEA: `idea://open?file=%file&line=%line&column=%col`
+- **projectPaths.default**: This is what you set in the form when you first set up the feature: The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. `/Users/yourusername/src` is a valid absolute path, `~/src` is not. Works both with and without a trailing slash.
+- **projectPaths.linux**: Overwrites the default path on Linux. Handy if you use different environments. Works both with and without a trailing slash.
 - **projectPaths.mac**: Overwrites the default path on macOS. Works both with and without a trailing slash.
 - **projectPaths.windows**: Overwrites the default path on Windows. Works both with and without a trailing backslash.
-- **replacements**: Key-value pairs. Each key will be replaced by the corresponding value in the final URL. Keys are
-  regular expressions, values can contain backreferences ($1, $2, ...).
-- **jetbrains.forceApi**: Forces using protocol handlers (like `idea://open?file=...`) or the built-in REST
-  API (`http://localhost:63342/api/file...`). If omitted, **protocol handlers** are used if available, otherwise the
-  built-in REST API is used.
+- **replacements**: Key-value pairs. Each key will be replaced by the corresponding value in the final URL. Keys are regular expressions, values can contain backreferences ($1, $2, ...).
+- **jetbrains.forceApi**: Forces using protocol handlers (like `idea://open?file=...`) or the built-in REST API (`http://localhost:63342/api/file...`). If omitted, **protocol handlers** are used if available, otherwise the built-in REST API is used.
 - **vscode.isProjectPathUNCPath**: Indicates that the given projects path is a UNC (Universal Naming Convention) path.
 - **vscode.useInsiders**: If set, files will open in VS Code Insiders rather than VS Code.
-- **vscode.useSSH**: If set, files will open on a remote server via SSH. This requires vscode.remoteHostForSSH to be
-  specified and VS Code extension “Remote Development by Microsoft” installed in your VS Code.
-- **vscode.remoteHostForSSH**: The remote host as `USER@HOSTNAME`. This needs you to install the extension called
-  “Remote Development by Microsoft” in your VS Code.
+- **vscode.useSSH**: If set, files will open on a remote server via SSH. This requires vscode.remoteHostForSSH to be specified and VS Code extension “Remote Development by Microsoft” installed in your VS Code.
+- **vscode.remoteHostForSSH**: The remote host as `USER@HOSTNAME`. This needs you to install the extension called “Remote Development by Microsoft” in your VS Code.
 
 Just save your settings and enjoy being totally advanced! 😎
 
@@ -85,9 +74,7 @@ To open repository files in your Documents directory:
 
 **Note:** We talk about IntelliJ here, but it’s similar for all JetBrains IDEs.
 
-The `idea://` protocol handler does not always work on Windows. If it fails for you, a workaround is to use IntelliJ’s
-built-in REST API to open files directly from a URL with
-some extra configuration steps.
+The `idea://` protocol handler does not always work on Windows. If it fails for you, a workaround is to use IntelliJ’s built-in REST API to open files directly from a URL with some extra configuration steps.
 
 Add this to your Sourcegraph _User settings_:
 
@@ -100,9 +87,7 @@ Add this to your Sourcegraph _User settings_:
 }
 ```
 
-Then open IntelliJ settings, go to `Build, Execution, Deployment` | `Debugger` | `Built-in Server`, and
-enable `Allow unsigned requests`. This allows Sourcegraph to make requests to the built-in server, as stated in
-JetBrains’ [docs](https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server).
+Then open IntelliJ settings, go to `Build, Execution, Deployment` | `Debugger` | `Built-in Server`, and enable `Allow unsigned requests`. This allows Sourcegraph to make requests to the built-in server, as stated in JetBrains’ [docs](https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server).
 
 **Note:** with this workaround, “Open in Editor” will only work if your IDE is running.
 
@@ -175,9 +160,7 @@ Uses the assigned path for the detected Operating System when available:
 
 ### Replacement Example 1: Open Remote folders with VS Code on Mac by removing file names
 
-**This requires VS Code
-extension [Remote Development by Microsoft](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
-to work.**
+**This requires VS Code extension [Remote Development by Microsoft](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) to work.**
 
 To open directory where the repository files reside in a remote server:
 
@@ -196,8 +179,7 @@ To open directory where the repository files reside in a remote server:
 
 ### Replacement Example 2: Add string to final file path
 
-Adds `sourcegraph-` in front of the string that matches the `(?<=Documents\/)(.*[\\\/])` RegExp pattern, which is the
-string after `Documents/` and before the final slash.
+Adds `sourcegraph-` in front of the string that matches the `(?<=Documents\/)(.*[\\\/])` RegExp pattern, which is the string after `Documents/` and before the final slash.
 
 ```json
 {
