@@ -39,9 +39,12 @@ class SpecFileReporter extends mocha.reporters.Spec {
   }
 
   safeClose(stream) {
-    stream.close()
     return new Promise((resolve, reject) => {
-      stream.once('close', () => {
+      stream.close(error => {
+        if (error) {
+          reject(error)
+        }
+        
         resolve()
       })
     })
