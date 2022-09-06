@@ -280,7 +280,7 @@ func TestAuthorAggregation(t *testing.T) {
 					diffMatch("myRepo2", "author-a", 2),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count repos on diff matches", map[string]int{"author-a": 2, "author-b": 1}),
+			autogold.Want("Count authors on diff matches", map[string]int{"author-a": 2, "author-b": 1}),
 		},
 	}
 	for _, tc := range testCases {
