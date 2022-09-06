@@ -614,7 +614,7 @@ query($batchSpec: ID!) {
       createdAt
       expiresAt
 
-      diffStat { added, deleted, changed }
+      diffStat { added, deleted }
 
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }
