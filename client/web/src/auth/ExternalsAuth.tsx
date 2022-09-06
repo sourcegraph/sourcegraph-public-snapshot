@@ -7,8 +7,6 @@ import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
-import { maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
-
 import styles from './CloudSignUpPage.module.scss'
 
 interface ExternalsAuthProps {
@@ -73,7 +71,7 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
         <>
             {githubProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
+                    to={githubProvider.authenticationURL || ''}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -88,7 +86,7 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
 
             {gitlabProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
+                    to={gitlabProvider.authenticationURL || ''}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
