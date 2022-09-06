@@ -7,7 +7,7 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 import styles from './SimpleActionItem.module.scss'
 
 export interface SimpleActionItemProps {
-    isActive: boolean
+    isActive?: boolean
     iconURL: string
     tooltip: string
     onClick: (event: React.MouseEvent<HTMLElement>) => void

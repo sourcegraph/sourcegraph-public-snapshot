@@ -9,7 +9,8 @@ export function buildEditorUrl(
     repoBaseNameAndPath: string,
     range: UIRangeSpec['range'] | undefined,
     editorSettings: EditorSettings | undefined,
-    sourcegraphBaseUrl: string
+    sourcegraphBaseUrl: string,
+    editorIndex = 0
 ): URL {
     const editorSettingsErrorMessage = getEditorSettingsErrorMessage(editorSettings, sourcegraphBaseUrl)
     if (editorSettingsErrorMessage) {
@@ -17,7 +18,7 @@ export function buildEditorUrl(
     }
 
     const projectPath = getProjectPath(editorSettings || {}) as string
-    const editor = getEditor(editorSettings?.editorIds?.[0] ?? 'vscode') as Editor
+    const editor = getEditor(editorSettings?.editorIds?.[editorIndex] ?? 'vscode') as Editor
     const urlPattern = getUrlPattern(editor, editorSettings || {})
     // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
     const pathPrefix =
@@ -60,11 +61,11 @@ export function getEditorSettingsErrorMessage(
     if (!editorSettings.editorIds || !editorSettings.editorIds.length) {
         return `Add \`editorIds\` to your user settings to open files. [Learn more](${learnMoreURL})`
     }
-    const editor = getEditor(editorSettings.editorIds[0])
+    const validEditorCount = editorSettings.editorIds.map(id => getEditor(id)).filter(editor => editor).length
 
-    if (!editor) {
+    if (validEditorCount !== editorSettings.editorIds.length) {
         return (
-            `Setting \`editorIds\` must be set to a valid value in your [user settings](${
+            `Setting \`editorIds\` must be set to a valid array of values in your [user settings](${
                 new URL('/user/settings', sourcegraphBaseUrl).href
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )

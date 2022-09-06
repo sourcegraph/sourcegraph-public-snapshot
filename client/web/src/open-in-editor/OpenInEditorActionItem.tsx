@@ -43,9 +43,8 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         settings?.openInEditor,
         props.platformContext.sourcegraphURL
     )
-    const editor = !editorSettingsErrorMessage
-        ? getEditor((settings?.openInEditor as EditorSettings | undefined)?.editorIds?.[0] || '')
-        : undefined
+    const editorIds = (settings?.openInEditor as EditorSettings | undefined)?.editorIds ?? []
+    const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
     useEffect(() => {
         setSettingSubscription(
@@ -74,18 +73,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         }
     }, [settingSubscription, props.platformContext.settings, props.platformContext])
 
-    const onClick = useCallback(
-        (event: React.MouseEvent<HTMLElement>) => {
-            event.stopPropagation()
-            if (editor) {
-                openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL)
-            } else {
-                togglePopover()
-            }
-        },
-        [editor, openCurrentUrlInEditor, props.platformContext.sourcegraphURL, settings?.openInEditor, togglePopover]
-    )
-
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
             if (!userSettings) {
@@ -103,16 +90,34 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         [props.platformContext, userSettings]
     )
 
-    return (
+    return editors ? (
+        <>
+            {editors.map(
+                (editor, index) =>
+                    editor && (
+                        <SimpleActionItem
+                            key={editor.id}
+                            tooltip={`Open file in ${editor?.name}`}
+                            iconURL={`${assetsRoot}/img/editors/${editor.id}.svg`}
+                            onClick={() =>
+                                openCurrentUrlInEditor(
+                                    settings?.openInEditor,
+                                    props.platformContext.sourcegraphURL,
+                                    index
+                                )
+                            }
+                        />
+                    )
+            )}
+        </>
+    ) : (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger as="div">
                 <SimpleActionItem
-                    tooltip={editor ? `Open file in ${editor?.name}` : 'Set your preferred editor'}
+                    tooltip="Set your preferred editor"
                     isActive={popoverOpen}
-                    iconURL={
-                        editor ? `${assetsRoot}/img/editors/${editor.id}.svg` : `${assetsRoot}/img/open-in-editor.svg`
-                    }
-                    onClick={onClick}
+                    iconURL={`${assetsRoot}/img/open-in-editor.svg`}
+                    onClick={togglePopover}
                 />
             </PopoverTrigger>
             <PopoverContent position={Position.leftStart} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
