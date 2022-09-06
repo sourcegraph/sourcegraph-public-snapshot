@@ -218,7 +218,7 @@ func TestRepoAggregation(t *testing.T) {
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count repos on diff matches", map[string]int{"myRepo": 1, "myRepo2": 1}),
+			autogold.Want("Count multiple repos on diff matches", map[string]int{"myRepo": 1, "myRepo2": 1}),
 		},
 	}
 	for _, tc := range testCases {
