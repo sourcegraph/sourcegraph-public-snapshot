@@ -61,7 +61,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const enableSearchAggregations = useExperimentalFeatures(
-        features => features.enableSearchResultsAggregations ?? true
+        features => features.enableSearchResultsAggregations ?? false
     )
     const disableProactiveSearchAggregations = useExperimentalFeatures(
         features => features.disableProactiveSearchAggregations ?? false
@@ -103,7 +103,6 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {/* Need to check status so that the feature flag is available before we render */}
             {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
