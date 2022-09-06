@@ -5,7 +5,7 @@ This guide will take you through how to deploy Sourcegraph via [Docker Compose](
 ## Prerequisites
 
 - Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
-- **[RECOMMENDED]** Follow Step 1 to 5 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to prepare a fork of the Sourcegraph Docker Compose deployment repository with `release branch` set up
+- <span class="badge badge-critical">RECOMMENDED</span> Follow Step 1 and 2 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to create your own customized copy of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
 ---
 
@@ -36,18 +36,18 @@ First, [create a new Digital Ocean Droplet](https://cloud.digitalocean.com/dropl
 
 #### Authentication
 
-1. **[RECOMMENDED]** Select **SSH keys** to create a **New SSH Key** for convenient access to the droplet
+1. <span class="badge badge-critical">RECOMMENDED</span> Select **SSH keys** to create a **New SSH Key** for convenient access to the droplet
 
 ![image](https://user-images.githubusercontent.com/68532117/188502682-37667333-75d0-4bd9-8fa8-3b92924c9755.png)
 
 #### Authentication > Enable backups
 
-1. **[RECOMMENDED]** Select **Enable backups** checkbox under *Select additional options* to enable weekly backups of all your data
+1. <span class="badge badge-critical">RECOMMENDED</span> Select **Enable backups** checkbox under *Select additional options* to enable weekly backups of all your data
 
 #### Authentication > User data
 
 1. Copy and paste the *Startup script* below into the **User data** text box
-4. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
+4. <span class="badge badge-critical">RECOMMENDED</span> Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
 

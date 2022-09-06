@@ -5,7 +5,7 @@ This guide will take you through how to deploy Sourcegraph with [Docker Compose]
 ## Prerequisites
 
 - Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
-- **[RECOMMENDED]** Follow Step 1 to 5 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to prepare a fork of the Sourcegraph Docker Compose deployment repository with `release branch` set up
+- <span class="badge badge-critical">RECOMMENDED</span> Follow Step 1 and 2 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to create your own customized copy of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
 ---
 
@@ -45,12 +45,11 @@ Expand the **Advanced options** section and the **Disks** section within to add 
   * `Attachment settings - Deletion rule`: Keep disk
 
 #### Advanced options > Management
+
 Expand the **Advanced options** section and the **Management** section within:
 
-![image](https://user-images.githubusercontent.com/68532117/188502993-05ef0eb2-ceb5-47bb-a6b6-177839149dd5.png)
-
 1. Copy and paste the *Startup script* in the **Automation** field
-2. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
+2. <span class="badge badge-critical">RECOMMENDED</span> Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
 
@@ -135,6 +134,8 @@ curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSI
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d
 ```
+
+![image](https://user-images.githubusercontent.com/68532117/188502993-05ef0eb2-ceb5-47bb-a6b6-177839149dd5.png)
 
 ## Deploy
 

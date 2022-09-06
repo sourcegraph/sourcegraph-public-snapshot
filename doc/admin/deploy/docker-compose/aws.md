@@ -5,7 +5,7 @@ This guide will take you through how to deploy Sourcegraph with [Docker Compose]
 ## Prerequisites
 
 - Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
-- **[RECOMMENDED]** Follow Step 1 to 5 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to prepare a fork of the Sourcegraph Docker Compose deployment repository with `release branch` set up
+- <span class="badge badge-critical">RECOMMENDED</span> Follow Step 1 and 2 in our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to create your own customized copy of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
 ---
 
@@ -57,7 +57,7 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 #### Advanced details > User Data
 
 1. Copy and paste the *Startup script* below in the **User Data** text box at the bottom
-2. **[RECOMMENDED]** Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
+2. <span class="badge badge-critical">RECOMMENDED</span> Update the *startup script* with the information of your fork and release branch if deploying from a fork of the reference repository
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
 
