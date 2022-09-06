@@ -125,6 +125,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                         loading={loading}
                         error={error}
                         mode={aggregationMode}
+                        showLoading={extendedTimeout}
                         className={styles.chartContainer}
                         onBarLinkClick={handleBarLinkClick}
                         onBarHover={handleBarHover}

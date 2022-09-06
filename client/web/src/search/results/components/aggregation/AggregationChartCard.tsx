@@ -1,4 +1,4 @@
-import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
+import { Suspense, HTMLAttributes, ReactElement, MouseEvent, useEffect } from 'react'
 
 import { mdiPlay } from '@mdi/js'
 import classNames from 'classnames'
@@ -78,6 +78,7 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     loading: boolean
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
+    showLoading?: boolean
     onBarLinkClick?: (query: string, barIndex: number) => void
     onBarHover?: () => void
     onExtendTimeout: () => void
@@ -91,6 +92,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         mode,
         className,
         size = 'sm',
+        showLoading = false,
         'aria-label': ariaLabel,
         onBarLinkClick,
         onBarHover,
@@ -99,8 +101,8 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (loading) {
         return (
-            <AggregationErrorContainer size={size}>
-                <span className={styles.loading}>Loading</span>
+            <AggregationErrorContainer size={size} className={className}>
+                {showLoading && <span className={styles.loading}>Loading</span>}
             </AggregationErrorContainer>
         )
     }
