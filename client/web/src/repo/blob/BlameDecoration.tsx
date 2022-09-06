@@ -174,7 +174,7 @@ export const BlameDecoration: React.FunctionComponent<{
                             target="_blank"
                             rel="noreferrer noopener"
                             className={styles.link}
-                            onClick={() => eventLogger.log('GitBlamePopupClicked')}
+                            onClick={logCommitClick}
                         >
                             {blameHunk.message}
                         </Link>
@@ -183,4 +183,8 @@ export const BlameDecoration: React.FunctionComponent<{
             </PopoverContent>
         </Popover>
     )
+}
+
+const logCommitClick = (): void => {
+    eventLogger.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
 }
