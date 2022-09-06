@@ -185,3 +185,10 @@ func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
 
 	return value, nil
 }
+
+var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
+
+func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {
+	err = s.Scan(&rr.ID, &rr.RepositoryID, &rr.Rev)
+	return rr, err
+}

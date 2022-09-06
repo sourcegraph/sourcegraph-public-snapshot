@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
@@ -33,5 +32,5 @@ type GitserverClient interface {
 }
 
 type AutoindexingService interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []autoindex.Index, err error)
+	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }

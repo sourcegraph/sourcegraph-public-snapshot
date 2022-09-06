@@ -21,7 +21,7 @@ type Resolver interface {
 type resolver struct {
 	svc                            Service
 	gitserver                      GitserverClient
-	autoindexer                    AutoindexingService
+	autoindexingSvc                AutoindexingService
 	maximumIndexesPerMonikerSearch int
 	hunkCacheSize                  int
 
@@ -29,11 +29,11 @@ type resolver struct {
 	operations *operations
 }
 
-func New(svc Service, gitserver GitserverClient, autoindexer AutoindexingService, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) Resolver {
+func New(svc Service, gitserver GitserverClient, autoindexingSvc AutoindexingService, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) Resolver {
 	return &resolver{
 		svc:                            svc,
 		gitserver:                      gitserver,
-		autoindexer:                    autoindexer,
+		autoindexingSvc:                autoindexingSvc,
 		operations:                     newOperations(observationContext),
 		hunkCacheSize:                  hunkCacheSize,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
@@ -58,11 +58,10 @@ func (r *resolver) GitBlobLSIFDataResolverFactory(ctx context.Context, repo *typ
 	if err != nil {
 		return nil, err
 	}
-
 	if len(uploads) == 0 {
-		// On dotcom...
+		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
 		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repo.Name), "crates/") {
-			_, err = r.autoindexer.QueueIndexes(ctx, int(repo.ID), commit, "", false, false)
+			err = r.autoindexingSvc.QueueRepoRev(ctx, int(repo.ID), commit)
 		}
 
 		return nil, err

@@ -26,6 +26,9 @@ type operations struct {
 	deleteIndexByID                *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
 	isQueued                       *observation.Operation
+	queueRepoRev                   *observation.Operation
+	getQueuedRepoRev               *observation.Operation
+	markRepoRevsAsProcessed        *observation.Operation
 
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
@@ -71,6 +74,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteIndexByID:                op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 		isQueued:                       op("IsQueued"),
+		queueRepoRev:                   op("QueueRepoRev"),
+		getQueuedRepoRev:               op("GetQueuedRepoRev"),
+		markRepoRevsAsProcessed:        op("MarkRepoRevsAsProcessed"),
 
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),

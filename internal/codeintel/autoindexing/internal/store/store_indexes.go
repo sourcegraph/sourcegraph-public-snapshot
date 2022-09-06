@@ -441,6 +441,78 @@ SELECT COUNT(*) WHERE EXISTS (
 )
 `
 
+// TODO - document
+// TODO - test
+func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+	if err != nil {
+		return err
+	}
+	if isQueued {
+		return nil
+	}
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+}
+
+const queueRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:QueuedRepoRev
+INSERT INTO codeintel_autoindex_queue VALUES (repository_id, rev)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
+`
+
+// TODO - document
+// TODO - test
+func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+}
+
+const getQueuedRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:GetQueuedRepoRev
+SELECT id, repository_id, rev
+FROM codeintel_autoindex_queue
+WHERE processed_at IS NULL
+ORDER BY queued_at ASC
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// TODO - document
+// TODO - test
+func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markRepoRevsAsProcessedQuery, pq.Array(ids)))
+}
+
+const markRepoRevsAsProcessedQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:MarkRepoRevsAsProcessed
+UPDATE codeintel_autoindex_queue
+SET processed_at = NOW()
+WHERE id IN (%s)
+`
+
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
 // The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
