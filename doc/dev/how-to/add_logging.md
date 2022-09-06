@@ -164,7 +164,7 @@ func (w *Worker) DoBigThing(ctx context.Context, id int) {
 
 Traced loggers are loggers with trace context (trace and span IDs) attached to them. These loggers can be created in several ways:
 
-1. [`internal/trace.Logger(ctx, logger)`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/trace) creates a sub-logger with trace context from `context.Context`
+1. [`internal/trace.Logger(ctx, logger)`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/trace/logger.go) creates a sub-logger with trace context from `context.Context`
 2. [`(internal/observation.Operation).With`](add_observability.md) creates a sub-logger with trace context and fields from the operation
 3. `(Logger).WithTrace(...)` creates a sub-logger with explicitly provided trace context
 
