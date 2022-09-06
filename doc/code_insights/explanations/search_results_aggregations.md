@@ -43,7 +43,6 @@ At the moment all aggregations search queries are run with a 2-second timeout, e
 
 At the moment all aggregations search queries are run with count:all, even if your search specified a count. 
 
-
 ### Best effort aggregation
 
 Results are aggregated in a best-effort approach using a limited-size buffer to hold group labels in order not to strain the webapp when these aggregations are run. 
