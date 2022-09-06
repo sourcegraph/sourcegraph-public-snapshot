@@ -15,7 +15,7 @@ import (
 // action - caller supplied, free form (log message)
 // entity - caller supplied, free form (should describe the component that's being audited)
 // context - any additional logging fields (log.Field)
-func Log(logger log.Logger, ctx context.Context, record *Record) {
+func Log(ctx context.Context, logger log.Logger, record *Record) {
 	var fields []log.Field
 	fields = append(fields, log.String("audit", "true"))
 
