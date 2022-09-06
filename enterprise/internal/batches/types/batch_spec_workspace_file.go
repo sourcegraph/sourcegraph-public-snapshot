@@ -2,8 +2,8 @@ package types
 
 import "time"
 
-// BatchSpecMount contains the metadata about the mount object for the batch spec.
-type BatchSpecMount struct {
+// BatchSpecWorkspaceFile contains the metadata about the workspace file for the batch spec.
+type BatchSpecWorkspaceFile struct {
 	ID          int64
 	RandID      string
 	BatchSpecID int64
@@ -20,8 +20,8 @@ type BatchSpecMount struct {
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a BatchSpecMount.
-func (b *BatchSpecMount) Clone() *BatchSpecMount {
+// Clone returns a clone of a BatchSpecWorkspaceFile.
+func (b *BatchSpecWorkspaceFile) Clone() *BatchSpecWorkspaceFile {
 	clone := *b
 	return &clone
 }
