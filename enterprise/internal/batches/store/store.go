@@ -196,11 +196,11 @@ type operations struct {
 	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
-	upsertBatchSpecMount *observation.Operation
-	deleteBatchSpecMount *observation.Operation
-	getBatchSpecMount    *observation.Operation
-	listBatchSpecMounts  *observation.Operation
-	countBatchSpecMounts *observation.Operation
+	upsertBatchSpecWorkspaceFile *observation.Operation
+	deleteBatchSpecWorkspaceFile *observation.Operation
+	getBatchSpecWorkspaceFile    *observation.Operation
+	listBatchSpecWorkspaceFiles  *observation.Operation
+	countBatchSpecWorkspaceFiles *observation.Operation
 
 	getBulkOperation        *observation.Operation
 	listBulkOperations      *observation.Operation
@@ -338,11 +338,11 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
-			upsertBatchSpecMount: op("UpsertBatchSpecMount"),
-			deleteBatchSpecMount: op("DeleteBatchSpecMount"),
-			getBatchSpecMount:    op("GetBatchSpecMount"),
-			listBatchSpecMounts:  op("ListBatchSpecMounts"),
-			countBatchSpecMounts: op("CountBatchSpecMounts"),
+			upsertBatchSpecWorkspaceFile: op("UpsertBatchSpecWorkspaceFile"),
+			deleteBatchSpecWorkspaceFile: op("DeleteBatchSpecWorkspaceFile"),
+			getBatchSpecWorkspaceFile:    op("GetBatchSpecWorkspaceFile"),
+			listBatchSpecWorkspaceFiles:  op("ListBatchSpecWorkspaceFiles"),
+			countBatchSpecWorkspaceFiles: op("CountBatchSpecWorkspaceFiles"),
 
 			getBulkOperation:        op("GetBulkOperation"),
 			listBulkOperations:      op("ListBulkOperations"),
