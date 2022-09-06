@@ -930,7 +930,11 @@ func uploadBuildeventTrace() operations.Operation {
 
 func runCommandIfJobFailed(key string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep("Run on failed job", bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/run-on-job-failure.sh %s", key)))
+		p.AddStep("Run on failed job",
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/run-on-job-failure.sh %s", key)),
+			bk.DependsOn(key),
+			bk.AllowDependencyFailure(),
+		)
 	}
 }
 
