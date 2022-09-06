@@ -1,4 +1,4 @@
-import { Suspense, HTMLAttributes, ReactElement, MouseEvent, useEffect } from 'react'
+import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
 import { mdiPlay } from '@mdi/js'
 import classNames from 'classnames'
