@@ -77,7 +77,7 @@ You can trigger an explicit search with an extended 1-minute timeout, or you can
 
 ### Structural searches
 
-Structural searches are slow and aggregations are unlikely to complete within a 2-second timeout for such searches. You can try to trigger an explicit aggregation for such cases.
+Aggregations for structural searches are unlikely to complete within a 2-second timeout. You can try to trigger an explicit aggregation for such cases.
 
 ### Standard searches with embedded regexp
 
