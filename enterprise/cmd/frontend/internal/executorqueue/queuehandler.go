@@ -22,7 +22,7 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := executorDB.New(db)
 	gitserverClient := gitserver.NewClient(db)
-	logger := log.Scoped("newExecutorQueueHandler", "new executor queue handler")
+	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
