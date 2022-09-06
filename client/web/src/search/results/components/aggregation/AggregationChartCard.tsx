@@ -1,15 +1,17 @@
-import { Suspense, HTMLAttributes, ReactElement, MouseEvent, FC, SVGProps, forwardRef } from 'react'
+import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
 import classNames from 'classnames'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Text, Link, Tooltip, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
 import type { AggregationChartProps } from './AggregationChart'
+import { DataLayoutContainer } from './AggregationDataContainer'
+import { AggregationErrorContainer } from './AggregationErrorContainer'
 
 import styles from './AggregationChartCard.module.scss'
 
@@ -108,24 +110,23 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (aggregationError) {
         return (
-            <DataLayoutContainer
-                data-error-layout={true}
-                size={size}
-                className={classNames(styles.aggregationErrorContainer, className)}
-            >
-                <BarsBackground size={size} />
-                <div className={styles.errorMessageLayout}>
-                    <div className={styles.errorMessage}>
-                        We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
-                        <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
-                    </div>
-                </div>
-            </DataLayoutContainer>
+            <AggregationErrorContainer size={size} className={className}>
+                We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
+                <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
+            </AggregationErrorContainer>
         )
     }
 
     if (!data) {
         return null
+    }
+
+    if (getAggregationData(data).length === 0) {
+        return (
+            <AggregationErrorContainer size={size} className={className}>
+                No data to display
+            </AggregationErrorContainer>
+        )
     }
 
     const missingCount = getOtherGroupCount(data)
@@ -163,56 +164,5 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                 )}
             </Suspense>
         </div>
-    )
-}
-
-interface DataLayoutContainerProps {
-    size?: 'sm' | 'md'
-}
-
-const DataLayoutContainer = forwardRef((props, ref) => {
-    const { as: Component = 'div', size = 'md', className, ...attributes } = props
-
-    return (
-        <Component
-            {...attributes}
-            ref={ref}
-            className={classNames(className, styles.errorContainer, {
-                [styles.errorContainerSmall]: size === 'sm',
-            })}
-        />
-    )
-}) as ForwardReferenceComponent<'div', DataLayoutContainerProps>
-
-const BAR_VALUES_FULL_UI = [95, 88, 83, 70, 65, 45, 35, 30, 30, 30, 30, 27, 27, 27, 27, 24, 10, 10, 10, 10, 10]
-const BAR_VALUES_SIDEBAR_UI = [95, 80, 75, 70, 68, 68, 55, 40, 38, 33, 30, 25, 15, 7]
-
-interface BarsBackgroundProps extends SVGProps<SVGSVGElement> {
-    size: 'sm' | 'md'
-}
-
-const BarsBackground: FC<BarsBackgroundProps> = props => {
-    const { size, className, ...attributes } = props
-
-    const padding = size === 'md' ? 1 : 2
-    const data = size === 'md' ? BAR_VALUES_FULL_UI : BAR_VALUES_SIDEBAR_UI
-    const barWidth = (100 - padding * (data.length - 1)) / data.length
-
-    return (
-        <svg
-            {...attributes}
-            className={classNames(className, styles.zeroStateBackground)}
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            {data.map((bar, index) => (
-                <rect
-                    key={index}
-                    x={`${index * (barWidth + padding)}%`}
-                    y={`${100 - bar}%`}
-                    height={`${bar}%`}
-                    width={`${barWidth}%`}
-                />
-            ))}
-        </svg>
     )
 }
