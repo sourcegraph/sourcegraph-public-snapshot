@@ -847,29 +847,6 @@ CREATE SEQUENCE batch_spec_execution_cache_entries_id_seq
 
 ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq OWNED BY batch_spec_execution_cache_entries.id;
 
-CREATE TABLE batch_spec_mounts (
-    id integer NOT NULL,
-    rand_id text NOT NULL,
-    batch_spec_id bigint NOT NULL,
-    filename text NOT NULL,
-    path text NOT NULL,
-    size bigint NOT NULL,
-    content bytea NOT NULL,
-    modified_at timestamp with time zone NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE batch_spec_mounts_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE batch_spec_mounts_id_seq OWNED BY batch_spec_mounts.id;
-
 CREATE TABLE batch_spec_resolution_jobs (
     id bigint NOT NULL,
     batch_spec_id integer NOT NULL,
@@ -969,6 +946,29 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
     q.place_in_user_queue
    FROM (batch_spec_workspace_execution_jobs j
      LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
+
+CREATE TABLE batch_spec_workspace_files (
+    id integer NOT NULL,
+    rand_id text NOT NULL,
+    batch_spec_id bigint NOT NULL,
+    filename text NOT NULL,
+    path text NOT NULL,
+    size bigint NOT NULL,
+    content bytea NOT NULL,
+    modified_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE batch_spec_workspace_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspace_files_id_seq OWNED BY batch_spec_workspace_files.id;
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
@@ -3498,11 +3498,11 @@ ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY batch_spec_execution_cache_entries ALTER COLUMN id SET DEFAULT nextval('batch_spec_execution_cache_entries_id_seq'::regclass);
 
-ALTER TABLE ONLY batch_spec_mounts ALTER COLUMN id SET DEFAULT nextval('batch_spec_mounts_id_seq'::regclass);
-
 ALTER TABLE ONLY batch_spec_resolution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_resolution_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY batch_spec_workspace_files ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_files_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspaces_id_seq'::regclass);
 
@@ -3653,9 +3653,6 @@ ALTER TABLE ONLY batch_spec_execution_cache_entries
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique UNIQUE (user_id, key);
 
-ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_unique UNIQUE (batch_spec_id);
 
@@ -3667,6 +3664,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
@@ -3982,10 +3982,6 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
-CREATE UNIQUE INDEX batch_spec_mounts_batch_spec_id_filename_path ON batch_spec_mounts USING btree (batch_spec_id, filename, path);
-
-CREATE INDEX batch_spec_mounts_rand_id ON batch_spec_mounts USING btree (rand_id);
-
 CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
@@ -3993,6 +3989,10 @@ CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_
 CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path);
+
+CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);
 
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
@@ -4367,9 +4367,6 @@ ALTER TABLE ONLY batch_changes
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -4381,6 +4378,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
