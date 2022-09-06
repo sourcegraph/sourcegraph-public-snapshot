@@ -49,7 +49,11 @@ func newEventMatch(event result.Match, contentNeeded bool) *eventMatch {
 	switch match := event.(type) {
 	case *result.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
-		content := make([]string, 0, len(match.ChunkMatches))
+		var capacity int
+		if contentNeeded {
+			capacity = len(match.ChunkMatches)
+		}
+		content := make([]string, 0, capacity)
 		if contentNeeded {
 			if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
 				for _, cm := range match.ChunkMatches {
