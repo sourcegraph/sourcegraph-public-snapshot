@@ -777,9 +777,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
-> WARNING: Skipping minor version upgrades of Sourcegraph is not supported. You must upgrade one minor version at a time - e.g. v3.26 –> v3.27 –> v3.28.
+### Standard upgrades
 
-### Upgrading
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
 1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
@@ -787,35 +787,62 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 1. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
 
-   ```bash
-      helm repo update sourcegraph
-   ```
+```bash
+helm repo update sourcegraph
+```
 
 1. (Optional) Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for options.
 
 1.  Install the new version:
 
-   ```bash
-      helm upgrade --install -f override.yaml --version 3.43.1 sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+helm upgrade --install -f override.yaml --version 3.43.1 sourcegraph sourcegraph/sourcegraph
+```
 
 1.  Verify the installation has started:
 
-   ```bash
-      kubectl get pods --watch
-   ```
+```bash
+kubectl get pods --watch
+```
 
-   When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
+When all pods have restarted and show as Running, you can browse to your Sourcegraph deployment and login to verify the instance is working as expected. For troubleshooting, refer to the [Operations guide](https://docs.sourcegraph.com/admin/install/kubernetes/operations) for common commands to gather more information about failures.
+
+### Multi-version upgrades
+
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
+
+**Before performing a multi-version upgrade**:
+
+- **Take an up-to-date snapshot of your databases.** We are unable to exhaustively test all upgrade paths or catch all possible edge cases in a customer environment. The upgrade process aggressively mutates the shape and contents of your database, and uncaught errors in the migration process or unexpected environmental differences may cause data loss. **If you do not feel confident running this process solo**, contact customer support team to help walk you thorough the process.
+- If possible, upgrade an idle clone of the production instance and switch traffic over on success. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+- Run the `migrator` drift detection on your current version to detect and repair any database schema discrepencies. Running with an unexpected schema may cause a painful upgrade process that may require engineering support. See the [command documentation](./../../how-to/manual_database_migrations.md#drift) for additional details.
+
+To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes with Helm:
+
+1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's configuration and re-applying.
+  - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+      - precise-code-intel-worker
+      - repo-updater
+      - searcher
+      - sourcegraph-frontend
+      - sourcegraph-frontend-internal
+      - symbols
+      - worker
+  - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+      - gitserver
+      - indexed-search
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details.
+1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Kubernetes with Helm](#standard-upgrades).
 
 ### Rollback
 
 You can revert to a previous version with the following command:
 
-   ```bash
-      helm rollback sourcegraph
-   ```
+```bash
+helm rollback sourcegraph
+```
 
-Sourcegraph only supports rolling back one minor version, due to database compatibility guarantees.
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
 
 ### Database Migrations
 
@@ -837,23 +864,23 @@ For example:
 
 1. Render the initial manifests from your existing deployment setup to an output file:
 
-   ```bash
-      CHART_VERSION=0.7.0 # Currently deployed version
-      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
-   ```
+```bash
+CHART_VERSION=0.7.0 # Currently deployed version
+helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
+```
 
 1. Make changes to your override file, and/or update the chart version, then render that output:
 
-   ```bash
-      CHART_VERSION=3.39.0 # Not yet deployed version
-      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
-   ```
+```bash
+CHART_VERSION=3.39.0 # Not yet deployed version
+helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
+```
 
 1. Compare the two outputs:
 
-   ```bash
-      diff original_manifests new_manifests
-   ```
+```bash
+diff original_manifests new_manifests
+```
 
 ### Using helm upgrade --dry-run
 
@@ -861,17 +888,17 @@ Similar to `helm template`, the `helm upgrade --dry-run` command can be used to 
 
 The following command will render and validate the manifests:
 
-   ```bash
-      helm upgrade --install --dry-run -f override.yaml sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+  helm upgrade --install --dry-run -f override.yaml sourcegraph sourcegraph/sourcegraph
+```
 
 Any validation errors will be displayed instead of the rendered manifests.
 
 If you are having difficulty tracking down the cause of an issue, add the `--debug` flag to enable verbose logging:
 
-   ```bash
-      helm upgrade --install --dry-run --debug -f override.yaml sourcegraph sourcegraph/sourcegraph
-   ```
+```bash
+helm upgrade --install --dry-run --debug -f override.yaml sourcegraph sourcegraph/sourcegraph
+```
 
 The `--debug` flag will enable verbose logging and additional context, including the computed values used by the chart. This is useful when confirming your overrides have been interpreted correctly.
 
@@ -881,15 +908,15 @@ The [Helm Diff] plugin can provide a diff against a deployed chart. It is simila
 
 To install the plugin, run:
 
-   ```bash
-      helm plugin install https://github.com/databus23/helm-diff
-   ```
+```bash
+helm plugin install https://github.com/databus23/helm-diff
+```
 
 Then, display a diff between a live deployment and an upgrade, with 5 lines of context:
 
-   ```bash
-      helm diff upgrade -f override.yaml sourcegraph sourcegraph/sourcegraph -C 5
-   ```
+```bash
+helm diff upgrade -f override.yaml sourcegraph sourcegraph/sourcegraph -C 5
+```
 
 For more examples and configuration options, reference the [Helm Diff] plugin documentation.
 

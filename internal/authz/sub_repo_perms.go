@@ -149,11 +149,19 @@ var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.Histog
 	Help: "Time spent syncing",
 }, []string{"error"})
 
-// subRepoPermsCacheHit tracks the number of cache hits and misses for sub-repo permissions
-var subRepoPermsCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "authz_sub_repo_perms_permissions_cache_count",
-	Help: "The number of sub-repo perms cache hits or misses",
-}, []string{"hit"})
+var (
+	metricSubRepoPermCacheHit  prometheus.Counter
+	metricSubRepoPermCacheMiss prometheus.Counter
+)
+
+func init() {
+	metric := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "authz_sub_repo_perms_permissions_cache_count",
+		Help: "The number of sub-repo perms cache hits or misses",
+	}, []string{"hit"})
+	metricSubRepoPermCacheHit = metric.WithLabelValues("true")
+	metricSubRepoPermCacheMiss = metric.WithLabelValues("false")
+}
 
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
@@ -237,10 +245,10 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	}
 
 	if ok && s.since(cached.timestamp) <= ttl {
-		subRepoPermsCacheHit.WithLabelValues("true").Inc()
+		metricSubRepoPermCacheHit.Inc()
 		return cached.rules, nil
 	}
-	subRepoPermsCacheHit.WithLabelValues("false").Inc()
+	metricSubRepoPermCacheMiss.Inc()
 
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
