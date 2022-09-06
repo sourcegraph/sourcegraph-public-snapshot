@@ -58,12 +58,11 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
 	}
-
+	dlog := logger.Scoped("dashboards", "dashboard generation")
 	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
-		clog := logger.Scoped(dashboard.Name, "name of the dashboard").With(log.String("instance", localGrafanaURL))
-
+		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("grafana", localGrafanaURL))
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
 			clog.Debug("Rendering Grafana assets")
