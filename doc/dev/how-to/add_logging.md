@@ -232,7 +232,7 @@ Guidance on when to use each log level is available on the docstrings of each re
 
 See [observability: logs](../../admin/observability/logs.md) in the administration docs.
 
-### Automatic error Reporting with Sentry
+### Automatic error reporting with Sentry
 
 If the optional sink [`log.NewSentrySink()`](https://doctree.org/github.com/sourcegraph/log/-/go/-//?id=NewSentrySink) is passed when initializing the logger, when an error is passed in a field to the logger with `log.Error(err)`, it will be reported to Sentry automatically if and only if the log level is above or equal to `Warn`.
 The log message and all fields will be used to annotate the error report and the logger scope will be used as a tag, which being indexed by Sentry, enables to group reports. 
