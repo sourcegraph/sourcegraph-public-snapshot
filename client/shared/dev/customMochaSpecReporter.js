@@ -44,7 +44,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
         if (error) {
           reject(error)
         }
-        
+
         resolve()
       })
     })
