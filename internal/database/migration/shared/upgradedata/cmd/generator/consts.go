@@ -18,4 +18,4 @@ var MaxVersion = func() oobmigration.Version {
 }()
 
 // MinVersion is the minimum version a migrator can support upgrading to a newer version of Sourcegraph.
-var MinVersion = oobmigration.NewVersion(3, 25)
+var MinVersion = oobmigration.NewVersion(3, 20)

@@ -25,6 +25,9 @@ const defaultGRPCCollectorEndpoint = "http://127.0.0.1:4317"
 // GetEndpoint returns the root collector endpoint, NOT per-signal endpoints. We do not
 // yet support per-signal endpoints.
 //
+// If an empty value is returned, then OTEL_EXPORTER_OTLP_ENDPOINT has explicitly been set
+// to an empty string, and callers should consider OpenTelemetry to be disabled.
+//
 // See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
 func GetEndpoint() string {
 	return getWithDefault(defaultGRPCCollectorEndpoint,

@@ -733,7 +733,6 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	if len(conds) == 0 {
 		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
-	fmt.Println(sqlf.Join(conds, ") AND ("))
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
 		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))

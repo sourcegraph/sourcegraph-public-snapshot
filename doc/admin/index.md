@@ -18,8 +18,13 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
-- [Migrations](migration/index.md)
-- [Upgrading PostgreSQL](postgres.md)
+- [Upgrade Sourcegraph](updates/index.md)
+  - [Update notes for Sourcegraph with Docker Compose](updates/docker_compose.md)
+  - [Update notes for Sourcegraph with Kubernetes](updates/kubernetes.md)
+  - [Update notes for single-container Sourcegraph with Docker](updates/server.md)
+  - [Update notes for pure-docker custom deployments](updates/pure_docker.md)
+- [Migration guides](migration/index.md)
+- [Upgrading PostgreSQL](postgres.md#upgrading-postgresql)
 
 ## [Configuration](config/index.md)
 

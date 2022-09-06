@@ -4,7 +4,7 @@ import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
 import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -73,12 +73,12 @@ export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> =
                 </H1>
                 <div>
                     <Button
-                        href="/site-admin/usage-statistics/archive"
+                        to="/site-admin/usage-statistics/archive"
                         download="true"
                         className="mr-4"
                         variant="secondary"
                         outline={true}
-                        as="a"
+                        as={AnchorLink}
                     >
                         <Icon svgPath={mdiDownload} aria-label="Download usage stats" className="mr-1" />
                         Download usage stats

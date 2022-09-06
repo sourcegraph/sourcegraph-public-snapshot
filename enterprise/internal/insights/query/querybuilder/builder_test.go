@@ -533,17 +533,17 @@ func Test_addRepoFilter(t *testing.T) {
 		{
 			input: "myquery",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("no initial repo filter", BasicQuery("repo:github\\.com/sourcegraph/sourcegraph myquery")),
+			want:  autogold.Want("no initial repo filter", BasicQuery("repo:(^github\\.com/sourcegraph/sourcegraph$) myquery")),
 		},
 		{
 			input: "myquery repo:supergreat",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:github\\.com/sourcegraph/sourcegraph myquery")),
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:(^github\\.com/sourcegraph/sourcegraph$) myquery")),
 		},
 		{
 			input: "(myquery repo:supergreat) or (big repo:asdf)",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:github\\.com/sourcegraph/sourcegraph myquery OR repo:asdf repo:github\\.com/sourcegraph/sourcegraph big)")),
+			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:(^github\\.com/sourcegraph/sourcegraph$) myquery OR repo:asdf repo:(^github\\.com/sourcegraph/sourcegraph$) big)")),
 		},
 	}
 	for _, test := range tests {
@@ -567,17 +567,17 @@ func Test_addFileFilter(t *testing.T) {
 		{
 			input: "myquery",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("no initial repo filter", BasicQuery("file:some/directory/file\\.md myquery")),
+			want:  autogold.Want("no initial repo filter", BasicQuery("file:(^some/directory/file\\.md$) myquery")),
 		},
 		{
 			input: "myquery repo:supergreat",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:some/directory/file\\.md myquery")),
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:(^some/directory/file\\.md$) myquery")),
 		},
 		{
 			input: "(myquery repo:supergreat file:abcdef) or (big repo:asdf)",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:some/directory/file\\.md myquery OR repo:asdf file:some/directory/file\\.md big)")),
+			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:(^some/directory/file\\.md$) myquery OR repo:asdf file:(^some/directory/file\\.md$) big)")),
 		},
 	}
 	for _, test := range tests {

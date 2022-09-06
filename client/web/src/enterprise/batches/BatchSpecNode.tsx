@@ -8,15 +8,16 @@ import {
     mdiChevronDown,
     mdiChevronRight,
     mdiStar,
+    mdiPencil,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
 
-import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
+import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
+import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
@@ -53,8 +54,11 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
-                <StateIcon state={node.state} />
-                <span className="text-muted">{upperFirst(node.state.toLowerCase())}</span>
+                <StateIcon source={node.source} state={node.state} />
+                <span className="text-muted">
+                    {node.source === BatchSpecSource.LOCAL && 'Uploaded'}
+                    {node.source !== BatchSpecSource.LOCAL && upperFirst(node.state.toLowerCase())}
+                </span>
             </div>
             <div className="px-2 pb-1">
                 <H3 className="pr-2">
@@ -71,7 +75,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                                     </Tooltip>{' '}
                                 </>
                             )}
-                            Executed by <strong>{node.creator?.username}</strong>{' '}
+                            Created by <strong>{node.creator?.username}</strong>{' '}
                             <Timestamp date={node.createdAt} now={now} />
                         </Link>
                     )}
@@ -91,13 +95,13 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 </H3>
                 {!currentSpecID && (
                     <small className="text-muted d-block">
-                        Executed by <strong>{node.creator?.username}</strong>{' '}
+                        Created by <strong>{node.creator?.username}</strong>{' '}
                         <Timestamp date={node.createdAt} now={now} />
                     </small>
                 )}
             </div>
             <div className="text-center pb-1">
-                <Duration start={parseISO(node.createdAt)} end={node.finishedAt ? new Date(node.finishedAt) : now()} />
+                {node.startedAt && <Duration start={node.startedAt} end={node.finishedAt ?? undefined} />}
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
@@ -114,7 +118,18 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
     )
 }
 
-const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchSpecState }>> = ({ state }) => {
+const StateIcon: React.FunctionComponent<
+    React.PropsWithChildren<{ state: BatchSpecState; source: BatchSpecSource }>
+> = ({ state, source }) => {
+    if (source === BatchSpecSource.LOCAL) {
+        return (
+            <Icon
+                aria-hidden={true}
+                className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
+                svgPath={mdiCheckCircle}
+            />
+        )
+    }
     switch (state) {
         case BatchSpecState.COMPLETED:
             return (
@@ -146,7 +161,6 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
             )
 
         case BatchSpecState.FAILED:
-        default:
             return (
                 <Icon
                     aria-hidden={true}
@@ -154,24 +168,13 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
                     svgPath={mdiAlertCircle}
                 />
             )
+        case BatchSpecState.PENDING:
+            return (
+                <Icon
+                    aria-hidden={true}
+                    className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
+                    svgPath={mdiPencil}
+                />
+            )
     }
-}
-
-const Duration: React.FunctionComponent<React.PropsWithChildren<{ start: Date; end: Date }>> = ({ start, end }) => {
-    // The duration in seconds.
-    let duration = (end.getTime() - start.getTime()) / 1000
-    const hours = Math.floor(duration / (60 * 60))
-    duration -= hours * 60 * 60
-    const minutes = Math.floor(duration / 60)
-    duration -= minutes * 60
-    const seconds = Math.round(duration)
-    return (
-        <>
-            {ensureTwoDigits(hours)}:{ensureTwoDigits(minutes)}:{ensureTwoDigits(seconds)}
-        </>
-    )
-}
-
-function ensureTwoDigits(value: number): string {
-    return value < 10 ? `0${value}` : `${value}`
 }

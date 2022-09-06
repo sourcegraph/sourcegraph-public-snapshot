@@ -28,8 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -100,7 +100,7 @@ func main() {
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
 	h = trace.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = ot.HTTPMiddleware(h)
+	h = instrumentation.HTTPMiddleware("", h)
 	http.Handle("/", h)
 
 	host := ""

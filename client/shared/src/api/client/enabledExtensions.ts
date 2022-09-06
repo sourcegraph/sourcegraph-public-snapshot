@@ -69,7 +69,14 @@ export const getConfiguredSideloadedExtension = (
  * List of extensions migrated to the core workflow. These extensions should not be activated if
  * `extensionsAsCoreFeatures` experimental feature is enabled.
  */
-export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
+export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set([
+    'sourcegraph/git-extras',
+    'sourcegraph/search-export',
+    'sourcegraph/open-in-editor',
+    'sourcegraph/open-in-vscode',
+    'dymka/open-in-webstorm',
+    'sourcegraph/open-in-atom',
+])
 
 /**
  * Returns an Observable of extensions enabled for the user.
@@ -98,13 +105,26 @@ export const getEnabledExtensions = once(
             map(([configuredExtensions, sideloadedExtension, settings]) => {
                 const extensionsAsCoreFeatures =
                     isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
+                const enableGoImportsSearchQueryTransform =
+                    isSettingsValid(settings) &&
+                    settings.final.experimentalFeatures?.enableGoImportsSearchQueryTransform
 
                 let enabled = configuredExtensions.filter(extension => {
+                    const extensionsAsCoreFeatureMigratedExtension =
+                        extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
                     // Ignore extensions migrated to the core workflow if the experimental feature is enabled
+                    if (context.clientApplication === 'sourcegraph' && extensionsAsCoreFeatureMigratedExtension) {
+                        return false
+                    }
+
+                    // Go import search query transform is enabled by default but can be disabled by the setting
+                    const enableGoImportsSearchQueryTransformMigratedExtension =
+                        (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) &&
+                        extension.id === 'go-imports-search'
+                    // Ignore loading the go-imports-search extension when the migrated go imports search is enabled
                     if (
                         context.clientApplication === 'sourcegraph' &&
-                        extensionsAsCoreFeatures &&
-                        MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                        enableGoImportsSearchQueryTransformMigratedExtension
                     ) {
                         return false
                     }

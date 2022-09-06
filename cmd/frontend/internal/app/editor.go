@@ -225,6 +225,7 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 		version:           q.Get("version"),
 		utmProductName:    q.Get("utm_product_name"),
 		utmProductVersion: q.Get("utm_product_name"),
+		logger:            log.Scoped("editor", "requests from editors."),
 	}
 	if v.editor == "" {
 		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")

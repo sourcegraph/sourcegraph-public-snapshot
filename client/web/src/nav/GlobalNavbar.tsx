@@ -140,7 +140,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
 
     return (
         <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
             </Link>
         </NavAction>
@@ -366,7 +366,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && extensionsController !== null && (
+                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
@@ -376,20 +376,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             />
                         </NavAction>
                     )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <NavAction>
+                            <StatusMessagesNavItem />
+                        </NavAction>
+                    )}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>

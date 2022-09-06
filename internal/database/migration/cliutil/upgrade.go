@@ -3,7 +3,6 @@ package cliutil
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -13,7 +12,6 @@ import (
 )
 
 func Upgrade(
-	logger log.Logger,
 	commandName string,
 	runnerFactory RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
@@ -28,6 +26,21 @@ func Upgrade(
 		Name:     "to",
 		Usage:    "The target instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
 		Required: true,
+	}
+	unprivilegedOnlyFlag := &cli.BoolFlag{
+		Name:  "unprivileged-only",
+		Usage: "Refuse to apply privileged migrations.",
+		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
+		Value: false,
+	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Value: "",
 	}
 	skipVersionCheckFlag := &cli.BoolFlag{
 		Name:     "skip-version-check",
@@ -49,35 +62,49 @@ func Upgrade(
 		if !ok {
 			return errors.New("bad format for -to")
 		}
+		if oobmigration.CompareVersions(from, to) != oobmigration.VersionOrderBefore {
+			return errors.Newf("invalid range (from=%s >= to=%s)", from, to)
+		}
 
-		// Construct inclusive upgrade version range `[from, to]`. This also checks
-		// for known major version upgrades (e.g., 3.0.0 -> 4.0.0) and ensures that
-		// the given values are in the correct order (e.g., from < to).
+		// Construct inclusive upgrade range (with knowledge of major version changes)
 		versionRange, err := oobmigration.UpgradeRange(from, to)
 		if err != nil {
 			return err
 		}
 
-		// Find the relevant schema and data migrations to perform (and in what order)
-		// for the given version range. Perform the upgrade on the configured databases.
-		plan, err := planUpgrade(versionRange)
+		// Determine the set of versions that need to have out of band migrations completed
+		// prior to a subsequent instance upgrade. We'll "pause" the migration at these points
+		// and run the out of band migration routines to completion.
+		interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
 		if err != nil {
 			return err
 		}
 
-		if err := runUpgrade(
-			ctx,
-			runnerFactory,
-			plan,
-			skipVersionCheckFlag.Get(cmd),
-			dryRunFlag.Get(cmd),
-			registerMigrators,
-			out,
-		); err != nil {
+		// Find the relevant schema and data migrations to perform (and in what order)
+		// for the given version range.
+		plan, err := planMigration(from, to, versionRange, interrupts)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		if err != nil {
+			return err
+		}
+
+		// Perform the upgrade on the configured databases.
+		return runMigration(
+			ctx,
+			runnerFactory,
+			plan,
+			privilegedMode,
+			privilegedHashFlag.Get(cmd),
+			skipVersionCheckFlag.Get(cmd),
+			dryRunFlag.Get(cmd),
+			true, // up
+			registerMigrators,
+			out,
+		)
 	})
 
 	return &cli.Command{
@@ -88,6 +115,9 @@ func Upgrade(
 		Flags: []cli.Flag{
 			fromFlag,
 			toFlag,
+			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
+			privilegedHashFlag,
 			skipVersionCheckFlag,
 			dryRunFlag,
 		},

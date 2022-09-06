@@ -29,6 +29,8 @@ var (
 	GitLabDotComURL = mustParseURL("https://gitlab.com")
 	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
 
+	BitbucketOrgURL = mustParseURL("https://bitbucket.org")
+
 	MavenURL    = &url.URL{Host: "maven"}
 	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
 

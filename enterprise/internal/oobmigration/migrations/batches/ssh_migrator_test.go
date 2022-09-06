@@ -48,7 +48,7 @@ func TestSSHMigrator(t *testing.T) {
 	})
 
 	migrator := NewSSHMigratorWithDB(store, key, 5)
-	progress, err := migrator.Progress(ctx)
+	progress, err := migrator.Progress(ctx, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestSSHMigrator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	progress, err = migrator.Progress(ctx)
+	progress, err = migrator.Progress(ctx, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestSSHMigrator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	progress, err = migrator.Progress(ctx)
+	progress, err = migrator.Progress(ctx, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestSSHMigrator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	progress, err = migrator.Progress(ctx)
+	progress, err = migrator.Progress(ctx, true)
 	if err != nil {
 		t.Fatal(err)
 	}

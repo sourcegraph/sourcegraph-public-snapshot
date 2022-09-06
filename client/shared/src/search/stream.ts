@@ -34,6 +34,7 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
@@ -231,8 +232,12 @@ interface Alert {
     proposedQueries: ProposedQuery[] | null
 }
 
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
+
 interface ProposedQuery {
     description?: string | null
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 
@@ -570,6 +575,9 @@ export function streamComputeQuery(query: string): Observable<string[]> {
             onmessage(event) {
                 allData.push(event.data)
                 observer.next(allData)
+            },
+            onerror(event) {
+                observer.error(event)
             },
         }).then(
             () => observer.complete(),

@@ -59,7 +59,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: &Alert{
 				Title:       "An alert for regex",
 				Description: "An alert for regex",
-				ProposedQueries: []*ProposedQuery{
+				ProposedQueries: []*QueryDescription{
 					{
 						Description: "Some query description",
 						Query:       "repo:github.com/sourcegraph/sourcegraph",
@@ -74,7 +74,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: &Alert{
 				Title:       "An alert for structural",
 				Description: "An alert for structural",
-				ProposedQueries: []*ProposedQuery{
+				ProposedQueries: []*QueryDescription{
 					{
 						Description: "Some query description",
 						Query:       "repo:github.com/sourcegraph/sourcegraph",

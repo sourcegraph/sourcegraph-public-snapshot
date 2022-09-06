@@ -2394,7 +2394,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `
@@ -2471,7 +2471,3 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 `
 
 func stringPtr(s string) *string { return &s }
-
-func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-}

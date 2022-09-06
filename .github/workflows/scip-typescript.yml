@@ -13,10 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install npm dependencies
-        run: yarn --ignore-engines --ignore-scripts
+        run: yarn
       - run: yarn generate
-      - run: yarn global add @sourcegraph/scip-typescript
-      - run: scip-typescript index --yarn-workspaces
+      - run: yarn dlx -p @sourcegraph/scip-typescript scip-typescript index --yarn-berry-workspaces
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |
