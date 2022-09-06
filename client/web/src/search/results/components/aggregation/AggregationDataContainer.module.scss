@@ -4,7 +4,7 @@
     flex-direction: column;
     position: relative;
     overflow: auto;
-    margin: 0;
+    padding-top: 0.5rem;
 
     // Small mode is used for side panel (the standard size is used for the full UI)
     &--small {

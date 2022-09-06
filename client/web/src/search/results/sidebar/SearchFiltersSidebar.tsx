@@ -35,10 +35,11 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     liveQuery: string
     submittedURLQuery: string
     patternType: SearchPatternType
+    caseSensitive: boolean
     filters?: Filter[]
+    showAggregationPanel?: boolean
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
-    caseSensitive: boolean
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
 }
@@ -50,6 +51,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         caseSensitive,
         patternType,
         filters,
+        showAggregationPanel,
         selectedSearchContextSpec,
         aggregationUIMode,
         onNavbarQueryChange,
@@ -104,20 +106,11 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService]
     )
 
-    const showAggregationsPanel = useMemo(
-        () =>
-            enableSearchAggregations &&
-            status === 'loaded' &&
-            aggregationUIMode === AggregationUIMode.Sidebar &&
-            repoFilters.length > 0,
-        [aggregationUIMode, enableSearchAggregations, repoFilters.length, status]
-    )
-
     return (
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {showAggregationsPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+            {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
