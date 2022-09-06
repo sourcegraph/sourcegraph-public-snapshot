@@ -57,7 +57,6 @@ interface UseSearchBasedCodeIntelOptions {
 }
 
 export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions): UseSearchBasedCodeIntelResult => {
-    const providers = createProviders(options.spec, { definition: undefined })
     const [loadingReferences, setLoadingReferences] = useState(false)
     const [referencesError, setReferencesError] = useState<ErrorLike | undefined>()
 

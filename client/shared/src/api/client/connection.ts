@@ -36,7 +36,7 @@ export interface ActivatedExtension {
 }
 
 /**
- * @paramendpoints The Worker object to communicate with
+ * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
     endpointsPromise: Promise<ClosableEndpointPair>,
@@ -93,11 +93,5 @@ export async function createExtensionHostClientConnection(
 
     // TODO(tj): return MainThreadAPI and add to Controller interface
     // to allow app to interact with APIs whose state lives in the main thread
-    return {
-        subscription,
-        // api: proxy, the old code
-        api: proxy,
-        mainThreadAPI: newAPI,
-        exposedToClient,
-    }
+    return { subscription, api: proxy, mainThreadAPI: newAPI, exposedToClient }
 }
