@@ -23,7 +23,7 @@ func (m *mockConfig) SiteConfig() schema.SiteConfiguration { return m.get() }
 func TestConfigWatcher(t *testing.T) {
 	var (
 		logger         = logtest.Scoped(t)
-		switchableOtel = newSwitchableOtelTracerProvider(logger.Scoped("otel", ""))
+		switchableOTel = newSwitchableOtelTracerProvider(logger.Scoped("otel", ""))
 		switchableOT   = newSwitchableOTTracer(logger.Scoped("ot", ""))
 		confQuerier    = &mockConfig{}
 	)
@@ -31,7 +31,7 @@ func TestConfigWatcher(t *testing.T) {
 	update := newConfWatcher(
 		logger,
 		confQuerier,
-		switchableOtel,
+		switchableOTel,
 		switchableOT,
 		options{},
 	)
@@ -44,7 +44,7 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should all be no-op
-		assert.Equal(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOtel.Tracer(""))
+		assert.Equal(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
 		assert.Equal(t, opentracing.NoopTracer{}, switchableOT.tracer)
 	})
 
@@ -59,11 +59,11 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOtel.Tracer(""))
+		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set to false
-		assert.False(t, switchableOtel.current.Load().(*otelTracerProviderCarrier).debug)
+		assert.False(t, switchableOTel.current.Load().(*otelTracerProviderCarrier).debug)
 		assert.False(t, switchableOT.debug)
 	})
 
@@ -80,11 +80,11 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOtel.Tracer(""))
+		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set
-		assert.True(t, switchableOtel.current.Load().(*otelTracerProviderCarrier).debug)
+		assert.True(t, switchableOTel.current.Load().(*otelTracerProviderCarrier).debug)
 		assert.True(t, switchableOT.debug)
 	})
 }
