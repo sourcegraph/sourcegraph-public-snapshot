@@ -8,7 +8,7 @@ This document outlines the process for adding or changing the raw user event dat
 
 All user event data must be:
 
-Anonymous (with only one exception–the email address of the initial site installer)
+Anonymous (with only one exception, the email address of the initial site installer)
 Non-specific (e.g., no repo names, no usernames, no file names, no specific search queries, etc.)
 
 ### Adding events to the raw user event data pipeline
