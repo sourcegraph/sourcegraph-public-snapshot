@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1211,13 +1210,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	auditFields := &audit.Record{
-		Entity: "gitserver",
-		Action: "get gitserver object",
-		Fields: []sglog.Field{sglog.String("additional", "stuff")},
-	}
-	audit.Log(c.logger, ctx, auditFields)
 
 	if resp.StatusCode != http.StatusOK {
 		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
