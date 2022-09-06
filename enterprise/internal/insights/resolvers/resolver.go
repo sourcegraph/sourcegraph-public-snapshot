@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -9,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
@@ -142,6 +145,11 @@ func NewAggregationResolver(postgres database.DB) graphqlbackend.InsightsAggrega
 }
 
 func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
+	fmt.Println("newResolver", args.Query, time.Now())
+	_, err := querybuilder.ParseQuery(args.Query, args.PatternType)
+	if err != nil {
+		return nil, errors.Wrap(err, "ParseQuery")
+	}
 	return &searchAggregateResolver{
 		postgresDB:  r.postgresDB,
 		searchQuery: args.Query,
