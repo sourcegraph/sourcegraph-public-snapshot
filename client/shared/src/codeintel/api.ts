@@ -59,7 +59,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         const document = toTextDocument(textParameters.textDocument)
         const providers = findLanguageMatchingDocument(document)
         return of({
-            definitions: true,
+            definitions: providers ? true : false,
             references: providers ? true : false,
             implementations: providers?.spec.textDocumentImplemenationSupport || false,
             language: document.languageId,
@@ -99,7 +99,6 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         const request = requestFor(textParameters)
         return request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
             map(result => {
-                console.log({ result })
                 return result ? (result as sglegacy.DocumentHighlight[]) : []
             })
         )

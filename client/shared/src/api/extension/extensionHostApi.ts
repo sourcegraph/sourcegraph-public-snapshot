@@ -197,8 +197,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-        providersForDocument: (textParameters: TextDocumentPositionParameters) => {
-            return proxySubscribable(of({ definitions: true, references: true, implementations: true, language: '' }))
+        providersForDocument: () => {
+            return proxySubscribable(
+                of({ definitions: false, references: false, implementations: false, language: '' })
+            )
         },
         hasReferenceProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
             const document = getTextDocument(textParameters.textDocument.uri)

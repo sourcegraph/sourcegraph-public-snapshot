@@ -178,17 +178,25 @@ export function getHoverActionsContext(
                     { part: hoverContext.part }
                 )
 
+                const definitionNotFound =
+                    definitionURLOrError === LOADING ||
+                    definitionURLOrError === null ||
+                    definitionURLOrError === undefined
+                const definitionFound = !definitionNotFound
+                const definitionURL: string | null =
+                    (definitionURLOrError !== LOADING &&
+                        !isErrorLike(definitionURLOrError) &&
+                        definitionURLOrError?.url) ||
+                    null
+                console.log({ definitionURLOrError, providers })
                 return {
                     'goToDefinition.showLoading': definitionURLOrError === LOADING,
-                    'goToDefinition.url':
-                        (definitionURLOrError !== LOADING &&
-                            !isErrorLike(definitionURLOrError) &&
-                            definitionURLOrError?.url) ||
-                        null,
+                    'goToDefinition.url': definitionURL,
                     'goToDefinition.notFound':
                         definitionURLOrError !== LOADING &&
                         !isErrorLike(definitionURLOrError) &&
-                        definitionURLOrError === null,
+                        !definitionURLOrError === null,
+                    definitionFound,
                     'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
                     'findReferences.url':
@@ -240,6 +248,7 @@ export const getDefinitionURL = (
             ([{ isLoading, result: definitions }, workspaceRoots]): Observable<
                 Partial<MaybeLoadingResult<UIDefinitionURL | null>>
             > => {
+                definitions = definitions.filter(definition => definition.range) // filter out definitions that have no range
                 if (definitions.length === 0) {
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }
@@ -353,16 +362,16 @@ export function registerHoverContributions({
             // TODO(sqs): Pin hover after an action has been clicked and before it has completed.
             const definitionContributions = {
                 actions: [
-                    {
-                        id: 'goToDefinition',
-                        title: 'Go to definition',
-                        command: 'goToDefinition',
-                        commandArguments: [
-                            /* eslint-disable no-template-curly-in-string */
-                            '${json(hoverPosition)}',
-                            /* eslint-enable no-template-curly-in-string */
-                        ],
-                    },
+                    // {
+                    //     id: 'goToDefinition',
+                    //     title: 'Go to definition',
+                    //     command: 'goToDefinition',
+                    //     commandArguments: [
+                    //         /* eslint-disable no-template-curly-in-string */
+                    //         '${json(hoverPosition)}',
+                    //         /* eslint-enable no-template-curly-in-string */
+                    //     ],
+                    // },
                     {
                         // This action is used when preloading the definition succeeded and at least 1
                         // definition was found.
@@ -374,7 +383,7 @@ export function registerHoverContributions({
                         commandArguments: ['${goToDefinition.url}'],
                     },
                     {
-                        id: 'goToDefinition.not-found',
+                        id: 'goToDefinition.notFound',
                         title: 'Go to definition',
                         disabledTitle: 'No definition found',
                         command: 'open',
@@ -384,22 +393,22 @@ export function registerHoverContributions({
                 ],
                 menus: {
                     hover: [
-                        // Do not show any actions if no definition provider is registered. (In that case,
-                        // goToDefinition.{error, loading, url} will all be falsey.)
-                        {
-                            action: 'goToDefinition',
-                            when: 'goToDefinition.error || goToDefinition.showLoading',
-                            disabledWhen: 'hoveredOnDefinition',
-                        },
+                        // // Do not show any actions if no definition provider is registered. (In that case,
+                        // // goToDefinition.{error, loading, url} will all be falsey.)
+                        // {
+                        //     action: 'goToDefinition',
+                        //     when: '(goToDefinition.error || goToDefinition.showLoading) && definitionNotFound',
+                        //     disabledWhen: 'hoveredOnDefinition',
+                        // },
                         {
                             action: 'goToDefinition.preloaded',
-                            when: 'goToDefinition.url',
+                            when: 'goToDefinition.url && definitionFound',
                             disabledWhen: 'hoveredOnDefinition',
                         },
                         {
-                            action: 'goToDefinition.not-found',
-                            when: 'goToDefinition.url',
-                            disabledWhen: 'definitionNotFound',
+                            action: 'goToDefinition.notFound',
+                            when: '!definitionFound',
+                            disabledWhen: '!definitionFound',
                         },
                     ],
                 },
@@ -492,14 +501,12 @@ export function registerHoverContributions({
                         // logic is implemented in the observable pipe that sets findReferences.url above.
                         {
                             action: 'findReferences',
-                            when:
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            when: 'findReferences.url',
                             disabledWhen: 'false',
                         },
                         {
                             action: 'findImplementations',
-                            when:
-                                'findImplementations.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            when: 'findImplementations.url',
                             disabledWhen: 'false',
                         },
                     ],

@@ -101,16 +101,7 @@ export function injectNewCodeintel(
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
         },
         getDefinition(parameters) {
-            return proxySubscribable(
-                thenMaybeLoadingResult(
-                    codeintel.getDefinition(parameters).pipe(
-                        map(x => {
-                            console.log({ x })
-                            return x
-                        })
-                    )
-                )
-            )
+            return proxySubscribable(thenMaybeLoadingResult(codeintel.getDefinition(parameters)))
         },
         getReferences(parameters, context) {
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getReferences(parameters, context)))
