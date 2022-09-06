@@ -45,23 +45,24 @@ type eventMatch struct {
 }
 
 // NewEventEnvironment maps event matches into a consistent type
-func newEventMatch(event result.Match) *eventMatch {
+func newEventMatch(event result.Match, contentNeeded bool) *eventMatch {
 	switch match := event.(type) {
 	case *result.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
 		content := make([]string, 0, len(match.ChunkMatches))
-		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
-			for _, cm := range match.ChunkMatches {
-				for _, range_ := range cm.Ranges {
-					content = append(content, chunkContent(cm, range_))
+		if contentNeeded {
+			if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
+				for _, cm := range match.ChunkMatches {
+					for _, range_ := range cm.Ranges {
+						content = append(content, chunkContent(cm, range_))
+					}
 				}
+			} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
+
+			} else { // This is a File match representing a whole file
+				content = append(content, match.Path)
 			}
-		} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
-
-		} else { // This is a File match representing a whole file
-			content = append(content, match.Path)
 		}
-
 		return &eventMatch{
 			Repo:        string(match.Repo.Name),
 			RepoID:      int32(match.Repo.ID),
@@ -71,18 +72,24 @@ func newEventMatch(event result.Match) *eventMatch {
 			Content:     content,
 		}
 	case *result.RepoMatch:
+		var content []string
+		if contentNeeded {
+			content = append(content, string(match.RepoName().Name))
+		}
 		return &eventMatch{
 			Repo:        string(match.RepoName().Name),
 			RepoID:      int32(match.RepoName().ID),
 			ResultCount: 1,
-			Content:     []string{string(match.RepoName().Name)},
+			Content:     content,
 		}
 	case *result.CommitMatch:
-		content := make([]string, 0, 1)
-		if match.DiffPreview != nil { // signals this is a Diff match
-			//TODO(insights): figure out extracting the right content for diff capture group matching
-		} else {
-			content = append(content, string(match.Commit.Message))
+		var content []string
+		if contentNeeded {
+			if match.DiffPreview != nil { // signals this is a Diff match
+				//TODO(insights): figure out extracting the right content for diff capture group matching
+			} else {
+				content = append(content, string(match.Commit.Message))
+			}
 		}
 
 		return &eventMatch{
@@ -106,7 +113,7 @@ type MatchKey struct {
 }
 
 func countRepo(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
+	match := newEventMatch(r, false)
 	if match.Repo != "" {
 		return map[MatchKey]int{{
 			RepoID: match.RepoID,
@@ -118,7 +125,7 @@ func countRepo(r result.Match) (map[MatchKey]int, error) {
 }
 
 func countLang(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
+	match := newEventMatch(r, false)
 	if match.Lang != "" {
 		return map[MatchKey]int{{
 			RepoID: match.RepoID,
@@ -130,7 +137,7 @@ func countLang(r result.Match) (map[MatchKey]int, error) {
 }
 
 func countPath(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
+	match := newEventMatch(r, false)
 	if match.Path != "" {
 		return map[MatchKey]int{{
 			RepoID: match.RepoID,
@@ -142,7 +149,7 @@ func countPath(r result.Match) (map[MatchKey]int, error) {
 }
 
 func countAuthor(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
+	match := newEventMatch(r, false)
 	if match.Author != "" {
 		return map[MatchKey]int{{
 			RepoID: match.RepoID,
@@ -164,7 +171,7 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 	}
 
 	return func(r result.Match) (map[MatchKey]int, error) {
-		match := newEventMatch(r)
+		match := newEventMatch(r, true)
 		if len(match.Content) != 0 {
 			matches := map[MatchKey]int{}
 			for _, contentPiece := range match.Content {
