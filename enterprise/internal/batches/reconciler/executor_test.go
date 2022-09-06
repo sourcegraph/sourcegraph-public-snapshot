@@ -830,125 +830,34 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
-	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
-
-	admin := bt.CreateTestUser(t, db, true)
-	user := bt.CreateTestUser(t, db, false)
-
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, 0)
-	adminBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
-	userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
-
-	t.Run("imported changeset fails when no site-credential exists", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 0,
-		}, repo)
-		if err == nil {
-			t.Errorf("unexpected nil error")
-		}
-	})
-
-	t.Run("imported changeset uses site-credential when exists", func(t *testing.T) {
-		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "batch_changes_site_credentials")
-		})
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 0,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
-		}
-	})
-
-	t.Run("owned by missing batch change", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 1234,
-		}, repo)
+	t.Run("handles ErrMissingCredentials", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrMissingCredentials, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-	})
-
-	t.Run("owned by user without credential", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: adminBatchChange.ID,
-		}, repo)
-		if !errors.Is(err, errMissingCredentials{repo: string(repo.Name)}) {
-			t.Fatalf("unexpected error %v", err)
+		if have, want := err.Error(), `user does not have a valid credential for repository "test"`; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
-
-	t.Run("owned by user with credential", func(t *testing.T) {
-		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              admin.ID,
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
+	t.Run("handles ErrNoSSHCredential", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrNoSSHCredential, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+		if err == nil {
+			t.Error("unexpected nil error")
 		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "user_credentials")
-		})
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: adminBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
+		if have, want := err.Error(), "The used credential doesn't support SSH pushes, but the repo requires pushing over SSH."; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
-
-	t.Run("owned by user without credential falls back to site-credential", func(t *testing.T) {
-		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
+	t.Run("handles ErrNoPushCredentials", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrNoPushCredentials{CredentialsType: "*auth.OAuthBearerTokenWithSSH"}, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+		if err == nil {
+			t.Error("unexpected nil error")
 		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "batch_changes_site_credentials")
-		})
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
+		if have, want := err.Error(), "cannot use credentials of type *auth.OAuthBearerTokenWithSSH to push commits"; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
 }
