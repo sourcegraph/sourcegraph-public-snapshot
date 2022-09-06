@@ -281,7 +281,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         // If query or pattern type have been changed we should "reset" our assumptions
         // about calculated aggregation mode and make another api call to determine it
         setState(state => ({ ...state, calculatedMode: null }))
-    }, [query, patternType])
+    }, [aggregationQuery, patternType])
 
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
