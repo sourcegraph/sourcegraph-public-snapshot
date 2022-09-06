@@ -187,18 +187,12 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_index_scheduler",
-				MetricDescriptionRoot: "scheduler",
-				By:                    []string{"op"},
+				MetricDescriptionRoot: "auto-indexing job scheduler",
+				RangeWindow:           model.Duration(time.Minute) * 10,
 			},
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
-			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
-		},
-		Aggregate: &SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
 			Duration:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),

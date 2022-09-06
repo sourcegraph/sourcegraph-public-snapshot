@@ -249,7 +249,9 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/repo-updater
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -329,12 +331,12 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
@@ -343,7 +345,7 @@ commands:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
-      yarn --no-progress
+      yarn
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
@@ -420,7 +422,8 @@ commands:
       env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
-      JAEGER_DISABLED: false
+      JAEGER_DISABLED: true
+      OPENTELEMETRY_DISABLED: false
       GOGC: 25
 
   zoekt-web-0:
@@ -432,7 +435,9 @@ commands:
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/codeintel-worker
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -804,6 +809,7 @@ commandsets:
       - minio
       - codeintel-worker
       - codeintel-executor
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -903,6 +909,7 @@ commandsets:
       - docker
     commands:
       - jaeger
+      - otel-collector
       - prometheus
       - grafana
       - postgres_exporter

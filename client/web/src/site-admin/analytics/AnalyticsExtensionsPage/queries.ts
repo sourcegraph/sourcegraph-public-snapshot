@@ -5,11 +5,11 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
@@ -30,7 +30,7 @@ export const EXTENSIONS_STATISTICS = gql`
                     }
                 }
             }
-            users(deleted: false) {
+            users(deletedAt: { empty: true }) {
                 totalCount
             }
         }

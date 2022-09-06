@@ -3,7 +3,37 @@
     --lead-font-size: calc(var(--font-size-base) * 1.25);
     --hr-margin-y: 0.25rem;
     --line-height-typography: 1.2;
+    --paragraph-margin-bottom: 1rem;
+    --headings-margin-bottom: 0.5rem;
 }
+
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
+h2,
+h3,
+h4,
+h6 {
+    margin-top: 0;
+    margin-bottom: var(--headings-margin-bottom);
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+// Reset margins on paragraphs
+// Similarly, the top margin on `<p>`s get reset. However, we also reset the
+// bottom margin to use `rem` units instead of `em`.
+p {
+    margin-top: 0;
+    margin-bottom: var(--paragraph-margin-bottom);
+}
+
+b {
+    font-weight: bolder; // Add the correct font weight in Chrome, Edge, and Safari
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
 
 h1 {
     font-size: 1.625rem; // 26px
@@ -68,13 +98,27 @@ small,
 sup,
 sub {
     font-size: 0.5em;
+    position: relative;
+    line-height: 0;
+    vertical-align: baseline;
 }
+
 sup {
     top: -1em;
 }
 
+// 1. Correct the text wrapping in Edge and IE.
+// 2. Correct the color inheritance from `fieldset` elements in IE.
 legend {
     font-size: 1rem;
+    display: block;
+    width: 100%;
+    max-width: 100%; // 1
+    padding: 0;
+    margin-bottom: 0.5rem;
+    line-height: inherit;
+    color: inherit; // 2
+    white-space: normal; // 1
 }
 
 // Body / Base / Medium
@@ -144,7 +188,14 @@ label.text-uppercase small,
     }
 }
 
+// Content grouping
+//
+// 1. Add the correct box sizing in Firefox.
+// 2. Show the overflow in Edge and IE.
 hr {
+    box-sizing: content-box; // 1
+    height: 0; // 1
+    overflow: visible; // 2
     margin-top: var(--hr-margin-y);
     margin-bottom: var(--hr-margin-y);
     border: 0;

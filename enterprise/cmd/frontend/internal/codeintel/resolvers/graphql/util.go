@@ -236,8 +236,12 @@ func sharedPoliciesUploadsToStoreUpload(dump store.Upload) policiesShared.Upload
 func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.RetentionPolicyMatchCandidate) []resolvers.RetentionPolicyMatchCandidate {
 	retentionPolicy := make([]resolvers.RetentionPolicyMatchCandidate, 0, len(policy))
 	for _, p := range policy {
-		retentionPolicy = append(retentionPolicy, resolvers.RetentionPolicyMatchCandidate{
-			ConfigurationPolicy: &store.ConfigurationPolicy{
+		r := resolvers.RetentionPolicyMatchCandidate{
+			Matched:           p.Matched,
+			ProtectingCommits: p.ProtectingCommits,
+		}
+		if p.ConfigurationPolicy != nil {
+			r.ConfigurationPolicy = &store.ConfigurationPolicy{
 				ID:                        p.ID,
 				RepositoryID:              p.RepositoryID,
 				RepositoryPatterns:        p.RepositoryPatterns,
@@ -251,10 +255,9 @@ func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.Retenti
 				IndexingEnabled:           p.IndexingEnabled,
 				IndexCommitMaxAge:         p.IndexCommitMaxAge,
 				IndexIntermediateCommits:  p.IndexIntermediateCommits,
-			},
-			Matched:           p.Matched,
-			ProtectingCommits: p.ProtectingCommits,
-		})
+			}
+		}
+		retentionPolicy = append(retentionPolicy, r)
 	}
 
 	return retentionPolicy

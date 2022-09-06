@@ -3,8 +3,8 @@ package uploads
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -29,7 +29,7 @@ func GetService(db, codeIntelDB database.DB, gsc shared.GitserverClient) *Servic
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
 				Logger:     log.Scoped("uploads."+name, "codeintel uploads "+name),
-				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 				Registerer: prometheus.DefaultRegisterer,
 			}
 		}

@@ -11,8 +11,6 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -299,11 +297,7 @@ func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 		return nil, err
 	}
 	if !ok {
-		// We either have no uploads or the committed_at fields for this repository are still being
-		// backfilled. In the first case, we'll return an empty graph to no-op the update. In the
-		// latter case, we'll end up retrying to recalculate the commit graph for this repository
-		// again once the migration fills the commit dates for this repository's uploads.
-		s.logger.Warn("No oldest commit date found", sglog.Int("repositoryID", repositoryID))
+		// No uploads exist for this repository
 		return gitdomain.ParseCommitGraph(nil), nil
 	}
 
@@ -690,7 +684,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 
 func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
 	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
-	if err != nil && !gitdomain.IsRepoNotExist(err) {
+	if err != nil {
 		return "", errors.Wrap(err, "gitserver.CommitDate")
 	}
 

@@ -64,7 +64,7 @@ import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-ap
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -1376,9 +1376,7 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) =>
-                                update(flattenDecorations(decorations), isLightTheme)
-                            )
+                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
                     )
                 }
 
