@@ -10,7 +10,11 @@ import { EditorSettings } from './editor-settings'
 /**
  * @returns A function to open the current location in your preferred editor
  */
-export const useOpenCurrentUrlInEditor = (): ((editorSettings: EditorSettings, sourcegraphURL: string, editorIndex?: number) => void) => {
+export const useOpenCurrentUrlInEditor = (): ((
+    editorSettings: EditorSettings,
+    sourcegraphURL: string,
+    editorIndex?: number
+) => void) => {
     const location = useLocation()
     return useCallback(
         (editorSettings: EditorSettings, sourcegraphURL: string, editorIndex = 0) => {
