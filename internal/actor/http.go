@@ -131,11 +131,11 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 		default:
 			uid, err := strconv.Atoi(uidStr)
 			if err != nil {
-				logger.Warn("invalid user ID in request",
-					log.Error(err),
-					log.String("uid", uidStr))
+				trace.Logger(ctx, logger).
+					Warn("invalid user ID in request",
+						log.Error(err),
+						log.String("uid", uidStr))
 				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
-				logger.WithTrace(trace.Context(ctx))
 
 				// Do not proceed with request
 				rw.WriteHeader(http.StatusForbidden)
