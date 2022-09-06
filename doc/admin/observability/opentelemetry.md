@@ -18,7 +18,7 @@ Refer to the [documentation](https://opentelemetry.io/docs/collector/configurati
 For more details on configuring the OpenTelemetry collector for your deployment method, refer to the deployment-specific guidance:
 
 - [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#opentelemetry-collector)
-- [Docker Compose](../deploy/docker-compose/operations.md#opentelmeetry-collector)
+- [Docker Compose](../deploy/docker-compose/operations.md#opentelemetry-collector)
 
 ## Tracing
 
