@@ -19,11 +19,9 @@ We may continue adding new aggregation categories, like date and code host, base
 
 ## Feature visibility
 
-You can turn the aggregations on with the feature flag: `search-aggregation-filters`
+You can turn the aggregations on with the experimental feature setting: `enableSearchResultsAggregations`
 
-You can turn off just the proactive aggregations with the feature flag: `disable-proactive-insight-aggregation`
-
-You can read more about creating feature flags [here](../../dev/how-to/use_feature_flags.md#create-a-feature-flag).
+You can turn off just the proactive aggregations with the setting: `disableProactiveSearchAggregations`
 
 ## Limitations
 
