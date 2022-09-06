@@ -138,14 +138,14 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                 },
                 {
                     label: 'JetBrains IDE plugin',
-                    minPerItem: 1.5,
+                    minPerItem: 5,
                     value: jetbrains.summary.totalCount,
                     description:
                         "Searches from JetBrains IDEs across all of your company's code without locally cloning repositories or complex scripting.",
                 },
                 {
                     label: 'VS Code IDE extension',
-                    minPerItem: 3,
+                    minPerItem: 5,
                     value: vscode.summary.totalCount,
                     description:
                         "Searches from VS Code across all of your company's code without locally cloning repositories or complex scripting.",
