@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/url"
 	"strings"
@@ -18,19 +17,30 @@ var liveCommand = &cli.Command{
 	Usage:     "Reports which version of Sourcegraph is currently live in the given environment",
 	UsageText: `
 # See which version is deployed on a preset environment
-sg live cloud
-sg live k8s
 sg live s2
+sg live dotcom
+sg live k8s
 
 # See which version is deployed on a custom environment
 sg live https://demo.sourcegraph.com
 
-# List environments:
+# List environments
 sg live -help
+
+# Check for commits further back in history
+sg live -n 50 s2
 	`,
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
 	Action:      liveExec,
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:    "commits",
+			Aliases: []string{"c", "n"},
+			Value:   20,
+			Usage:   "Number of commits to check for live version",
+		},
+	},
 	BashComplete: completeOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
@@ -54,12 +64,11 @@ func liveExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
-		return flag.ErrHelp
+		return NewEmptyExitErr(1)
 	}
-
 	if len(args) != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
-		return flag.ErrHelp
+		return NewEmptyExitErr(1)
 	}
 
 	e, ok := getEnvironment(args[0])
@@ -68,9 +77,9 @@ func liveExec(ctx *cli.Context) error {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
-			return flag.ErrHelp
+			return NewEmptyExitErr(1)
 		}
 	}
 
-	return printDeployedVersion(e)
+	return printDeployedVersion(e, ctx.Int("commits"))
 }

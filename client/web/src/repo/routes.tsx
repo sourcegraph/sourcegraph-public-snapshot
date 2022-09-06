@@ -7,11 +7,9 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
-import { ToggleBlameAction } from './actions/ToggleBlameAction'
 import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
-import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
@@ -51,13 +49,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
@@ -91,13 +82,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
@@ -190,13 +174,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}

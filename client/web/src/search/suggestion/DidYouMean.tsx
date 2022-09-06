@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
+
 import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -9,7 +11,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Link, H3, createLinkUrl } from '@sourcegraph/wildcard'
+import { Link, createLinkUrl, Icon } from '@sourcegraph/wildcard'
 
 import styles from './QuerySuggestion.module.scss'
 
@@ -140,7 +142,6 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     if (suggestions.length > 0) {
         return (
             <div className={styles.root}>
-                <H3>Did you mean:</H3>
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(
@@ -150,17 +151,19 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
                             selectedSearchContextSpec
                         )
                         return (
-                            <li key={suggestion.query}>
+                            <li key={suggestion.query} className={styles.listItem}>
                                 <Link
                                     onClick={() =>
                                         telemetryService.log('SearchDidYouMeanClicked', { type: suggestion.type })
                                     }
                                     to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
+                                    className={styles.link}
                                 >
+                                    <span className={styles.description}>Did you mean: {suggestion.text}</span>
+                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                                     <span className={styles.suggestion}>
-                                        <SyntaxHighlightedSearchQuery query={suggestion.query} />
+                                        <SyntaxHighlightedSearchQuery query={suggestion.query.trim()} />
                                     </span>
-                                    {suggestion.text}
                                 </Link>
                             </li>
                         )

@@ -43,7 +43,8 @@ interface SearchConsolePageProps
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
-    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
+    const extensionHostAPI =
+        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
         features => features.enableGoImportsSearchQueryTransform
     )

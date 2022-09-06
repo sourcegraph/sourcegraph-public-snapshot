@@ -13,7 +13,7 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { getFiltersOfKind } from './helpers'
 
-import styles from './SearchSidebarSection.module.scss'
+import styles from './SearchFilterSection.module.scss'
 
 export interface FilterLinkProps {
     label: string

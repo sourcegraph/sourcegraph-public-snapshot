@@ -40,7 +40,7 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameDecorations } from '../blame/useBlameDecorations'
+import { useBlameHunks } from '../blame/useBlameHunks'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -282,7 +282,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return `${repoString}`
     }
 
-    const blameDecorations = useBlameDecorations({ repoName, revision, filePath })
+    const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -361,7 +361,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 id="toggle-blame"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
+                {({ actionType }) => (
+                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
+                )}
             </RepoHeaderContributionPortal>
         </>
     )
@@ -488,7 +490,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
-                        blameDecorations={blameDecorations}
+                        blameHunks={blameDecorations}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
                 </TraceSpanProvider>

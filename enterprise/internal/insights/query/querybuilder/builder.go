@@ -285,7 +285,7 @@ func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) 
 		modified = append(modified, basic.Parameters...)
 		modified = append(modified, searchquery.Parameter{
 			Field:      field,
-			Value:      regexp.QuoteMeta(value),
+			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(value)),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})

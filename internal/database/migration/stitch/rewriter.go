@@ -114,6 +114,8 @@ var rewriters = []func(schemaName string, version oobmigration.Version, migratio
 	reorderMigrations,
 }
 
+var codeintelSchemaMigrationsCommentPattern = lazyregexp.New(`COMMENT ON (TABLE|COLUMN) codeintel_schema_migrations(\.[a-z_]+)? IS '[^']+';`)
+
 // rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
 // title of "squashed migration".
 func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
@@ -123,6 +125,11 @@ func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version,
 
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
+	})
+
+	// Replace comments on possibly missing table in init migrations
+	mapContents(contents, migrationFilename(1000000004, "up.sql"), func(old string) string {
+		return codeintelSchemaMigrationsCommentPattern.ReplaceAllString(old, "-- Comments removed")
 	})
 }
 
@@ -198,7 +205,7 @@ func extractPrivilegedQueriesFromSquashedMigrations(_ string, version oobmigrati
 }
 
 var unmarkedPrivilegedMigrationsMap = map[string][]int{
-	"frontend":     {1528395764, 1528395953},
+	"frontend":     {1528395717, 1528395764, 1528395953},
 	"codeintel":    {1000000003, 1000000020},
 	"codeinsights": {1000000001, 1000000027},
 }
@@ -214,7 +221,7 @@ func rewriteUnmarkedPrivilegedMigrations(schemaName string, _ oobmigration.Versi
 }
 
 var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
-	"frontend":     {1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
+	"frontend":     {1528395696, 1528395707, 1528395708, 1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
 	"codeintel":    {1000000009, 1000000010, 1000000011},
 	"codeinsights": {},
 }
