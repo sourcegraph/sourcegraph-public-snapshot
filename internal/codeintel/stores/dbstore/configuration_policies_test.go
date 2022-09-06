@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 	"testing"
 	"time"
 
@@ -584,39 +585,42 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	ids := func(policies []ConfigurationPolicy) (ids []int) {
+	sortedIDs := func(policies []ConfigurationPolicy) (ids []int) {
 		for _, policy := range policies {
 			ids = append(ids, policy.ID)
 		}
 
+		sort.Slice(ids, func(i, j int) bool {
+			return ids[i] < ids[j]
+		})
 		return ids
 	}
 
 	// Can return nulls
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{101, 102}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{101, 102}, sortedIDs(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Returns new batch
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{103, 104}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{103, 104}, sortedIDs(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{101, 102, 103}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{101, 102, 103}, sortedIDs(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{104, 101, 102}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{101, 102, 104}, sortedIDs(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 }
