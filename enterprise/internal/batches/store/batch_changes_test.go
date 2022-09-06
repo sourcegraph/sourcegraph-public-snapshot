@@ -718,7 +718,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		{
 			want := &diff.Stat{
 				Added:   testDiffStatCount,
-				Changed: testDiffStatCount,
 				Deleted: testDiffStatCount,
 			}
 			opts := GetBatchChangeDiffStatOpts{BatchChangeID: batchChangeID}
@@ -801,7 +800,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo1.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount1 + testDiffStatCount2,
-						Changed: testDiffStatCount1,
 						Deleted: testDiffStatCount1 + testDiffStatCount2,
 					},
 				},
@@ -809,7 +807,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo2.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount2,
-						Changed: testDiffStatCount2,
 						Deleted: testDiffStatCount2,
 					},
 				},
@@ -817,7 +814,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo3.ID,
 					want: &diff.Stat{
 						Added:   0,
-						Changed: 0,
 						Deleted: 0,
 					},
 				},

@@ -59,8 +59,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			BatchSpecID: int64(i + 910),
 			BaseRepoID:  repo.ID,
 
-			DiffStatAdded:   123,
-			DiffStatDeleted: 789,
+			DiffStatAdded:   579,
+			DiffStatDeleted: 1245,
 		}
 		if i == 0 {
 			c.BaseRef = "refs/heads/main"
