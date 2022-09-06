@@ -3,22 +3,12 @@ import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
+import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    PageHeader,
-    CardBody,
-    Card,
-    Link,
-    Container,
-    H2,
-    H3,
-    H4,
-    Text,
-    screenReaderAnnounce,
-} from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container, H2, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -93,7 +83,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
     // different set of filtered data.
-    const [lastTotalCount, setLastTotalCount] = useState<number>(0)
+    const [lastTotalCount, setLastTotalCount] = useState<number>()
 
     // We use the license and usage query to check whether or not there are any batch
     // changes _at all_. If there aren't, we automatically switch the user to the "Getting
@@ -137,18 +127,20 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
+
             return data.node.batchChanges
         },
     })
 
     useEffect(() => {
         // If the data in the connection updates with new results, update the total count.
-        if (connection) {
-            const totalBatchChanges = connection.totalCount || 0
-            setLastTotalCount(totalBatchChanges)
-            screenReaderAnnounce(`${totalBatchChanges} batch changes`)
+        if (typeof connection?.totalCount === 'number') {
+            setLastTotalCount(connection.totalCount)
+            screenReaderAnnounce(`${connection.totalCount} batch changes`)
         }
     }, [connection])
+
+    const currentTotalCount = licenseAndUsageInfo?.allBatchChanges.totalCount
 
     return (
         <Page>
@@ -174,12 +166,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 <Container className="mb-4">
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
-                            {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 className="align-self-end flex-1">{`${lastTotalCount} batch changes`}</H3>
+                            {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
+                                <H3 className="align-self-end flex-1">
+                                    {lastTotalCount} of {currentTotalCount}{' '}
+                                    {pluralize('batch change', currentTotalCount)}
+                                </H3>
                             )}
-                            <H4 as={H3} className="mb-0 mr-2">
-                                Status
-                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}

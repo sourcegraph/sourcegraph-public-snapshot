@@ -85,6 +85,7 @@ var DeploySourcegraphDockerImages = []string{
 	"worker",
 	"migrator",
 	"executor",
+	"executor-vm",
 	"opentelemetry-collector",
 }
 

@@ -213,7 +213,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220831095746-37cdc94f44dc
+	github.com/sourcegraph/zoekt v0.0.0-20220902142146-d1964a317f84
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -456,7 +456,7 @@ replace (
 // or issues with specific versions.
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).

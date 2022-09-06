@@ -1,5 +1,7 @@
 import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo, PropsWithChildren } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+
 import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
 import {
     SearchSidebar,
@@ -21,11 +23,10 @@ import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSide
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code } from '@sourcegraph/wildcard'
+import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { buildSearchURLQueryFromQueryState } from '../../../stores'
-import { AggregationUIMode } from '../components/aggregation'
+import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'
+import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
 import { SearchAggregations } from './SearchAggregations'
@@ -37,6 +38,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     filters?: Filter[]
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
+    caseSensitive: boolean
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
 }
@@ -45,6 +47,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const {
         liveQuery,
         submittedURLQuery,
+        caseSensitive,
         patternType,
         filters,
         selectedSearchContextSpec,
@@ -57,10 +60,14 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         ...attributes
     } = props
 
-    // Feature flags
+    // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const [disableProactiveSearchAggregations, status] = useFeatureFlag('disable-proactive-insight-aggregation', false)
-    const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
+    const enableSearchAggregations = useExperimentalFeatures(
+        features => features.enableSearchResultsAggregations ?? false
+    )
+    const disableProactiveSearchAggregations = useExperimentalFeatures(
+        features => features.disableProactiveSearchAggregations ?? false
+    )
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Derived state
@@ -83,21 +90,36 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService, onSearchSubmit]
     )
 
-    const handleAggregationBarLinkClick = (query: string): void => {
-        onSearchSubmit([{ type: 'replaceQuery', value: query }])
-    }
+    const handleAggregationBarLinkClick = useCallback(
+        (query: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        },
+        [onSearchSubmit]
+    )
+
+    const handleGroupedByToggle = useCallback(
+        (open: boolean): void => {
+            telemetryService.log(open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection)
+        },
+        [telemetryService]
+    )
 
     return (
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {/* Need to check status so that the feature flag is available before we render */}
-            {enableSearchAggregations && status === 'loaded' && aggregationUIMode === AggregationUIMode.Sidebar && (
-                <SearchSidebarSection sectionId={SectionID.GROUPED_BY} header="Group results by">
+            {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+                <SearchSidebarSection
+                    sectionId={SectionID.GROUPED_BY}
+                    header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    onToggle={handleGroupedByToggle}
+                >
                     <SearchAggregations
                         query={submittedURLQuery}
                         patternType={patternType}
                         proactive={!disableProactiveSearchAggregations}
+                        caseSensitive={caseSensitive}
+                        telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />
                 </SearchSidebarSection>
@@ -194,4 +216,18 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
         None of the top {repoFilterLinks.length} repositories in your results match this filter. Try a{' '}
         <Code>repo:</Code> search in the main search bar instead.
     </span>
+)
+
+const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
+    <>
+        Group results by
+        <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
+            <Icon
+                aria-label="Info icon about aggregation run"
+                size="md"
+                svgPath={mdiInformationOutline}
+                onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+            />
+        </Tooltip>
+    </>
 )

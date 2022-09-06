@@ -1,11 +1,24 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { startCase } from 'lodash'
+import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
+import {
+    Card,
+    H2,
+    Text,
+    LoadingSpinner,
+    AnchorLink,
+    H4,
+    LineChart,
+    Series,
+    BarChart,
+    LegendList,
+    LegendItem,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -16,7 +29,7 @@ import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import { formatNumber, StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
 
@@ -36,6 +49,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsCodeIntel')
     }, [])
+
+    type Kind = 'inApp' | 'codeHost' | 'crossRepo' | 'precise'
+
+    const [kindToMinPerItem, setKindToMinPerItem] = useState<Record<Kind, number>>({
+        inApp: 0.5,
+        codeHost: 1.5,
+        crossRepo: 3,
+        precise: 1,
+    })
+
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
@@ -120,7 +143,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
         ]
 
-        const calculatorProps = {
+        const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
             page: 'CodeIntel',
             label: 'Intel events',
             dateRange: dateRange.value,
@@ -131,28 +154,32 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             items: [
                 {
                     label: 'In app code navigation',
-                    minPerItem: 0.5,
+                    minPerItem: kindToMinPerItem.inApp,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, inApp: minPerItem })),
                     value: inAppEvents.summary.totalCount,
                     description:
                         'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
-                    minPerItem: 1.5,
+                    minPerItem: kindToMinPerItem.codeHost,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
                     value: codeHostEvents.summary.totalCount,
                     description:
                         'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
-                    minPerItem: 3,
+                    minPerItem: kindToMinPerItem.crossRepo,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
                 {
                     label: 'Precise code intel*',
-                    minPerItem: 1,
+                    minPerItem: kindToMinPerItem.precise,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, precise: minPerItem })),
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
@@ -161,7 +188,15 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         }
 
         return [stats, legends, calculatorProps]
-    }, [data, dateRange.value, aggregation.selected])
+    }, [
+        data,
+        dateRange.value,
+        aggregation.selected,
+        kindToMinPerItem.codeHost,
+        kindToMinPerItem.crossRepo,
+        kindToMinPerItem.inApp,
+        kindToMinPerItem.precise,
+    ])
 
     if (error) {
         throw error
@@ -173,6 +208,85 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
     const repos = data?.site.analytics.repos
     const groupingLabel = startCase(grouping.value.toLowerCase())
+
+    const preciseFraction = data
+        ? data.site.analytics.codeIntel.preciseEvents.summary.totalCount /
+          (data.site.analytics.codeIntel.preciseEvents.summary.totalCount +
+              data.site.analytics.codeIntel.searchBasedEvents.summary.totalCount)
+        : undefined
+
+    interface TopRepo {
+        repoName: string
+        events: number
+        hoursSaved: number
+        preciseEnabled: boolean
+        preciseNavigation: JSX.Element
+    }
+
+    const langToIndexerUrl: Record<string, string> = {
+        python: 'https://github.com/sourcegraph/scip-python',
+        typescript: 'https://github.com/sourcegraph/scip-typescript',
+        java: 'https://github.com/sourcegraph/scip-java',
+        ruby: 'https://github.com/sourcegraph/scip-ruby',
+        go: 'https://github.com/sourcegraph/lsif-go',
+        rust: 'https://github.com/rust-analyzer/rust-analyzer',
+        scala: 'https://github.com/sourcegraph/lsif-java',
+        cpp: 'https://github.com/sourcegraph/lsif-clang',
+        csharp: 'https://github.com/tcz717/LsifDotnet',
+        dart: 'https://github.com/sourcegraph/lsif-dart',
+        haskell: 'https://github.com/mpickering/hie-lsif',
+        kotlin: 'https://github.com/sourcegraph/lsif-java',
+    }
+
+    const topRepos: TopRepo[] | undefined = (() => {
+        const allRows = data?.site.analytics.codeIntelTopRepositories
+        if (!allRows) {
+            return undefined
+        }
+
+        const unsortedRepos = Object.entries(groupBy(allRows, row => row.name)).map(([name, rows]) => ({
+            repoName: name,
+            events: sumBy(rows, row => row.events),
+            hoursSaved: sumBy(
+                rows,
+                row => (((kindToMinPerItem[row.kind as Kind] as number | undefined) ?? 0) * row.events) / 60
+            ),
+            preciseEnabled: rows[0]?.hasPrecise ?? false,
+            preciseNavigation: ((): JSX.Element => {
+                const items = Object.entries(groupBy(rows, row => row.language)).map(([lang, rows]) => {
+                    const searchBased = sumBy(
+                        rows.filter(row => row.precision === 'search-based'),
+                        row => row.events
+                    )
+                    const precise = sumBy(
+                        rows.filter(row => row.precision === 'precise'),
+                        row => row.events
+                    )
+                    const total = searchBased + precise
+
+                    if (precise > 0) {
+                        return (
+                            <div key={lang}>
+                                <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
+                                <strong>{lang}</strong>
+                            </div>
+                        )
+                    }
+                    if (lang in langToIndexerUrl) {
+                        return (
+                            <div key={lang}>
+                                Configure precise navigation for <Link to={langToIndexerUrl[lang]}>{lang}</Link>
+                            </div>
+                        )
+                    }
+                    return <></>
+                })
+                return <>{items}</>
+            })(),
+        }))
+
+        return sortBy(unsortedRepos, repo => -repo.events)
+    })()
 
     return (
         <>
@@ -229,6 +343,60 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         )}
                     </ul>
                 </div>
+                <div>
+                    <H4 className="my-3">Events by language</H4>
+                    {data && (
+                        <div className={styles.events}>
+                            <ChartContainer className={styles.chart} labelX="Languages" labelY="Events">
+                                {width => (
+                                    <>
+                                        <LegendList>
+                                            <LegendItem color={color('precise')} name="precise" />
+                                            <LegendItem color={color('search-based')} name="search-based" />
+                                        </LegendList>
+                                        <BarChart
+                                            stacked={true}
+                                            width={width}
+                                            height={300}
+                                            data={data.site.analytics.codeIntelByLanguage}
+                                            getDatumColor={value => color(value.precision)}
+                                            getDatumValue={value => value.count}
+                                            getDatumName={value => value.language}
+                                            getDatumHover={value => `${value.language} ${value.precision}`}
+                                        />
+                                    </>
+                                )}
+                            </ChartContainer>
+                            <div className={styles.percentContainer}>
+                                <div className={styles.percent}>
+                                    {preciseFraction ? (100 * preciseFraction).toFixed(1) : '...'}%
+                                </div>
+                                <div>Precise code navigation</div>
+                            </div>
+                        </div>
+                    )}
+                    <H4 className="my-3">Top repositories</H4>
+                    {topRepos && (
+                        <div className={styles.repos}>
+                            <div className="text-muted text-nowrap">{/* Repository */}</div>
+                            <div className="text-center text-muted text-nowrap">Events</div>
+                            <div className="text-center text-muted text-nowrap">Hours saved</div>
+                            <div className="text-center text-muted text-nowrap">Precise enabled</div>
+                            <div className="text-muted text-nowrap">Precise navigation</div>
+                            {topRepos.map((repo, index) => (
+                                <React.Fragment key={index}>
+                                    <td className="text-muted">{repo.repoName}</td>
+                                    <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
+                                    <td className="text-center font-weight-bold">{formatNumber(repo.hoursSaved)}</td>
+                                    <td className="text-center font-weight-bold">
+                                        {repo.preciseEnabled ? 'Yes' : 'No'}
+                                    </td>
+                                    <td>{repo.preciseNavigation}</td>
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
@@ -236,4 +404,15 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             </Text>
         </>
     )
+}
+
+const color = (precision: string): string => {
+    switch (precision) {
+        case 'precise':
+            return 'rgb(255, 184, 109)'
+        case 'search-based':
+            return 'rgb(155, 211, 255)'
+        default:
+            return 'gray'
+    }
 }

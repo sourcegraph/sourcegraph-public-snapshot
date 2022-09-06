@@ -6,9 +6,9 @@ If you are using Docker Toolbox on Windows to run Sourcegraph, you may see an er
 
 ```bash
 frontend |
-     frontend |
-     frontend |
-     frontend |     New state of 'nil' is invalid.
+frontend |
+frontend |
+frontend |     New state of 'nil' is invalid.
 ```
 
 After this error, no more `frontend` log output is printed.

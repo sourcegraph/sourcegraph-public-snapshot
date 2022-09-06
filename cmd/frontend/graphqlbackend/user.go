@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -474,16 +475,19 @@ func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesA
 }
 
 type ListUserRepositoriesArgs struct {
-	First             *int32
-	Query             *string
-	After             *string
-	Cloned            bool
-	NotCloned         bool
-	Indexed           bool
-	NotIndexed        bool
+	graphqlutil.ConnectionArgs
+	Query *string
+
+	Cloned     bool
+	NotCloned  bool
+	Indexed    bool
+	NotIndexed bool
+
 	ExternalServiceID *graphql.ID
-	OrderBy           *string
-	Descending        bool
+
+	OrderBy    *string
+	Descending bool
+	After      *string
 }
 
 func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error) {
@@ -526,11 +530,18 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.ExternalServiceIDs = []int64{id}
 	}
 
+	if !args.Cloned {
+		opt.NoCloned = true
+	} else if !args.NotCloned {
+		// notCloned is true by default.
+		// this condition is valid only if it has been
+		// explicitly set to false by the client.
+		opt.OnlyCloned = true
+	}
+
 	return &repositoryConnectionResolver{
 		db:         r.db,
 		opt:        opt,
-		cloned:     args.Cloned,
-		notCloned:  args.NotCloned,
 		indexed:    args.Indexed,
 		notIndexed: args.NotIndexed,
 	}, nil

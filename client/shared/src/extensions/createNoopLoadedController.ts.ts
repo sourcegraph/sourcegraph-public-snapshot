@@ -32,6 +32,9 @@ export function createNoopController(platformContext: PlatformContext): Controll
                 )
                 const extensionHostAPI = pretendRemote(createExtensionHostAPI(extensionHostState))
 
+                // We don't have to load any extensions so we are already done
+                extensionHostState.haveInitialExtensionsLoaded.next(true)
+
                 resolve(extensionHostAPI)
             })
         }),

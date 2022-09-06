@@ -25,7 +25,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
-    onBarClick: (event: MouseEvent, datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
 }
 
 const isSafari = getBrowserName() === 'safari'
@@ -59,20 +59,28 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     )
 
     const handleGroupMouseMove = (event: MouseEvent): void => {
-        const [category, datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
+        const [datum, category] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (category && datum) {
-            onBarHover(category, datum)
+            if (!activeSegment?.datum) {
+                onBarHover(datum, category)
+                return
+            }
+
+            // Do not call onBarHover every time we mouse move over the same datum
+            if (getDatumName(activeSegment.datum) !== getDatumName(datum)) {
+                onBarHover(datum, category)
+            }
         } else {
             onBarLeave()
         }
     }
 
     const handleGroupClick = (event: MouseEvent): void => {
-        const [datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
+        const [datum, , index] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
-        if (datum) {
-            onBarClick(event, datum)
+        if (datum && index !== null) {
+            onBarClick(event, datum, index)
         }
     }
 
@@ -80,7 +88,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         <Group {...attributes} pointerEvents="bounding-rect">
             {categories.map(category => (
                 <Group key={category.id} left={xScale(category.id)} height={height}>
-                    {category.data.map(datum => {
+                    {category.data.map((datum, index) => {
                         const isOneDatumCategory = category.data.length === 1
                         const barWidth = isOneDatumCategory ? xScale.bandwidth() : xCategoriesScale.bandwidth()
                         const barHeight = height - yScale(getDatumValue(datum))
@@ -92,7 +100,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                                 key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
                                 to={getDatumLink(datum)}
                                 onFocus={() => onBarHover(datum, category)}
-                                onClick={event => onBarClick(event, datum)}
+                                onClick={event => onBarClick(event, datum, index)}
                             >
                                 <rect
                                     x={barX}
@@ -149,7 +157,9 @@ function scaleBandInvert(scale: ScaleBand<string>): (x: number) => number {
     }
 }
 
-function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | null, category: Category<Datum> | null] {
+type ActiveBarTuple<Datum> = [datum: Datum | null, category: Category<Datum> | null, index: number | null]
+
+function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Datum> {
     const { event, xCategoriesScale, categories, xScale } = input
 
     const targetRectangle = (event.currentTarget as Element).getBoundingClientRect()
@@ -160,13 +170,13 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | n
     const category = categories[categoryPossibleIndex]
 
     if (!category) {
-        return [null, null]
+        return [null, null, null]
     }
 
     const isOneDatumCategory = category.data.length === 1
 
     if (isOneDatumCategory) {
-        return [category.data[0], category]
+        return [category.data[0], category, 0]
     }
 
     const invertCategories = scaleBandInvert(xCategoriesScale)
@@ -174,8 +184,8 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | n
     const possibleBarIndex = invertCategories(xCord - categoryWindow)
 
     if (category.data[possibleBarIndex]) {
-        return [category.data[possibleBarIndex], category]
+        return [category.data[possibleBarIndex], category, possibleBarIndex]
     }
 
-    return [null, null]
+    return [null, null, null]
 }

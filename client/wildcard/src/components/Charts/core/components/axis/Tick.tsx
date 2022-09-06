@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
-import { Text, TextProps } from '@visx/text'
+import { TextProps } from '@visx/text'
 import classNames from 'classnames'
 
 import styles from './Tick.module.scss'
@@ -13,7 +13,22 @@ export interface TickProps extends TickRendererProps {
 
 /** Tick component displays tick label for each axis line of chart. */
 export const Tick: FC<TickProps> = props => {
-    const { formattedValue = '', 'aria-label': ariaLabel, className, getTruncatedTick, ...tickLabelProps } = props
+    const {
+        children,
+        formattedValue = '',
+        className,
+        'aria-label': ariaLabel,
+        getTruncatedTick,
+        ...tickLabelProps
+    } = props
+
+    // Formatted and truncated tick value
+    const tickValue = getTruncatedTick ? getTruncatedTick(formattedValue) : formattedValue
+
+    // Empty tick value breaks the tick axis container measurement
+    // And therefore breaks the whole chart content calculation
+    // see https://github.com/sourcegraph/sourcegraph/issues/41158
+    const sanitizedTickValue = tickValue.trim() === '' ? '&nbsp;' : tickValue
 
     // Hack with Group + Text (aria hidden)
     // Because the Text component renders text inside svg element and text element with tspan
@@ -23,9 +38,12 @@ export const Tick: FC<TickProps> = props => {
     return (
         // eslint-disable-next-line jsx-a11y/aria-role
         <Group role="text" aria-label={ariaLabel}>
-            <Text aria-hidden={true} className={classNames(styles.tick, className)} {...(tickLabelProps as TextProps)}>
-                {getTruncatedTick ? getTruncatedTick(formattedValue) : formattedValue}
-            </Text>
+            <text
+                aria-hidden={true}
+                className={classNames(styles.tick, className)}
+                {...(tickLabelProps as TextProps)}
+                dangerouslySetInnerHTML={{ __html: sanitizedTickValue }}
+            />
         </Group>
     )
 }

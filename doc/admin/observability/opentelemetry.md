@@ -8,10 +8,17 @@ Sourcegraph exports OpenTelemetry data to a bundled [OpenTelemetry Collector](ht
 This service can be configured to ingest, process, and then export observability data to an observability backend of choice.
 This approach offers a great deal of flexibility.
 
+## Configuration
+
 Sourcegraph's OpenTelemetry Collector is deployed with a [custom image, `sourcegraph/opentelemetry-collector`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/opentelemetry-collector), and is configured with a configuration YAML file.
 By default, `sourcegraph/opentelemetry-collector` is configured to not do anything with the data it receives, but [exporters to various backends](#exporters) can be configured for each signal we currently support - **currently, only [traces data](#tracing) is supported**.
 
 Refer to the [documentation](https://opentelemetry.io/docs/collector/configuration/) for an in-depth explanation of the parts that compose a full collector pipeline.
+
+For more details on configuring the OpenTelemetry collector for your deployment method, refer to the deployment-specific guidance:
+
+- [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#opentelemetry-collector)
+- [Docker Compose](../deploy/docker-compose/operations.md#opentelmeetry-collector)
 
 ## Tracing
 
