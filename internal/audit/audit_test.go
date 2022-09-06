@@ -85,7 +85,7 @@ func TestLog(t *testing.T) {
 
 			logger, exportLogs := logtest.Captured(t)
 
-			Log(logger, ctx, fields)
+			Log(ctx, logger, fields)
 
 			logs := exportLogs()
 			if len(logs) != 1 {
