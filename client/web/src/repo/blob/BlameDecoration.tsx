@@ -133,13 +133,17 @@ export const BlameDecoration: React.FunctionComponent<{
                 className={styles.popoverContent}
             >
                 <div className="py-1">
-                    <div className="py-2 px-3">
+                    <div className={classNames(styles.head, 'px-3')}>
                         <span className={styles.author}>{blameHunk.displayInfo.displayName}</span>{' '}
-                        {blameHunk.displayInfo.dateString}
+                        {blameHunk.displayInfo.timestampString}
                     </div>
                     <hr className={styles.separator} />
-                    <div className="py-2 px-3 d-flex align-items-center">
-                        <Icon aria-hidden={true} as={SourceCommitIcon} className="mr-2 flex-shrink-0" />
+                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
+                        <Icon
+                            aria-hidden={true}
+                            as={SourceCommitIcon}
+                            className={classNames('mr-2 flex-shrink-0', styles.icon)}
+                        />
                         <Link
                             to={blameHunk.displayInfo.linkURL}
                             target="_blank"
