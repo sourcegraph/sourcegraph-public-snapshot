@@ -102,11 +102,7 @@ export const OpenInEditorPopover: React.FunctionComponent<
                         message={
                             <>
                                 Use a different editor?{' '}
-                                <Link
-                                    to="https://docs.sourcegraph.com/integration/open_in_editor"
-                                    target="_blank"
-                                    rel="noreferrer noopener"
-                                >
+                                <Link to="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">
                                     Set up another editor
                                 </Link>
                             </>
