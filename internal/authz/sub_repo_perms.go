@@ -143,18 +143,6 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 	}, nil
 }
 
-// WithGetter returns a new instance that uses the supplied getter. The cache
-// from the original instance is left intact.
-func (s *SubRepoPermsClient) WithGetter(g SubRepoPermissionsGetter) *SubRepoPermsClient {
-	return &SubRepoPermsClient{
-		permissionsGetter: g,
-		clock:             s.clock,
-		since:             s.since,
-		group:             s.group,
-		cache:             s.cache,
-	}
-}
-
 // subRepoPermsPermissionsDuration tracks the behaviour and performance of Permissions()
 var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name: "authz_sub_repo_perms_permissions_duration_seconds",
