@@ -15,7 +15,7 @@ If a customer downgrades their instance to a previous version, they need to down
 
 > NOTE: A customer rollback is considered an **emergency operation**. Please contact support at <mailto:support@sourcegraph.com> for guidance on this operation.
 
-A database schema downgrade will not always be enough. If a newer version was running even for a small time, it could have migrated data in the background into a format that's not longer readable by the previous version of Sourcegraph.
+A database schema downgrade will not always be enough. If a newer version was running even for a small time, it could have migrated data in the background into a format that's no longer readable by the previous version of Sourcegraph.
 
 The `migrator` can be used to run both schema and data migrations (in the appropriate order) so that the old version of Sourcegraph can start and run without broken features. See the [command documentation](./manual_database_migrations.md#downgrade) for additional details.
 
