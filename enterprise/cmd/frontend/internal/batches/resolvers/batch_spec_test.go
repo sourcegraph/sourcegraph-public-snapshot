@@ -515,9 +515,8 @@ func TestBatchSpecResolver_Mounts(t *testing.T) {
 
 	after := "1"
 	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListWorkspaceFilesArgs{
-		First:     int32(10),
-		After:     &after,
-		BatchSpec: "123",
+		First: int32(10),
+		After: &after,
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, connectionResolver)

@@ -597,9 +597,8 @@ type ListBatchSpecArgs struct {
 }
 
 type ListWorkspaceFilesArgs struct {
-	First     int32
-	After     *string
-	BatchSpec graphql.ID
+	First int32
+	After *string
 }
 
 type AvailableBulkOperationsArgs struct {
