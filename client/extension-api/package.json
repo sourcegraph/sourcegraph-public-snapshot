@@ -29,6 +29,7 @@
     "typedoc": "^0.17.8"
   },
   "peerDependencies": {
-    "graphql": "^15.4.0"
+    "graphql": "^15.4.0",
+    "typescript": "^4.7.2"
   }
 }
