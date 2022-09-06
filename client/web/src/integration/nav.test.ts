@@ -12,7 +12,7 @@ import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createBlobContentResult,
     createTreeEntriesResult,
@@ -23,7 +23,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
     FileNames: () => createFileNamesResult(),
-    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FileExternalLinks: ({ filePath, repoName, revision }) =>
         createFileExternalLinksResult(
             `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(

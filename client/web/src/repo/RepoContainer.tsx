@@ -57,7 +57,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, ResolvedRevision, resolveRevision } from './backend'
+import { fetchFileExternalLinks, ResolvedRevision, resolveRepoRevision } from './backend'
 import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -178,7 +178,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         // catchError returns a new observable, so repeatUntil will
                         // properly resubscribe to the outer observable and re-fetch.
                         switchMap(() =>
-                            resolveRevision({ repoName, revision }).pipe(
+                            resolveRepoRevision({ repoName, revision }).pipe(
                                 catchError(error => {
                                     const redirect = isRepoSeeOtherErrorLike(error)
 
@@ -209,7 +209,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
      * This GraphQL query was merged into the `resolveRevision` query to
      * speed up the network requests waterfall. To minimize the blast radius
      * of changes required to make it work, continue working with the `repo`
-     * data as it was received from a separate query.
+     * data as if it was received from a separate query.
      */
     const repoOrError = isErrorLike(resolvedRevisionOrError) ? resolvedRevisionOrError : resolvedRevisionOrError?.repo
 

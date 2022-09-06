@@ -13,7 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
@@ -45,7 +45,7 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+        ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
@@ -948,7 +948,7 @@ describe('Blob viewer', () => {
                     },
                 }),
                 TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, files),
-                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl, commitID),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl, commitID),
                 HighlightedFile: ({ filePath }) => ({
                     repository: {
                         commit: {

@@ -61,11 +61,11 @@ export interface Repo {
  *
  * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
-export const resolveRevision = memoizeObservable(
+export const resolveRepoRevision = memoizeObservable(
     ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision & Repo> =>
         queryGraphQL(
             gql`
-                query ResolveRev($repoName: String!, $revision: String!) {
+                query ResolveRepoRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
                         __typename
                         ... on Repository {

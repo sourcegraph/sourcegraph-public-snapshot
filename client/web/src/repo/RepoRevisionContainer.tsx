@@ -147,6 +147,8 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
         : revision.slice(0, 7)) ||
         resolvedRevisionOrError?.defaultBranch || <LoadingSpinner />
 
+    const isPopoverContentReady = repo && resolvedRevisionOrError
+
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
@@ -158,6 +160,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
                 size="sm"
+                disabled={!isPopoverContentReady}
             >
                 {revisionLabel}
                 <RepoRevisionChevronDownIcon aria-hidden={true} />
@@ -167,7 +170,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 className="pt-0 pb-0"
                 aria-labelledby="repo-revision-popover"
             >
-                {repo && resolvedRevisionOrError && (
+                {isPopoverContentReady && (
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}

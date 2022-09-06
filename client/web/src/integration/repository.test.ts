@@ -17,7 +17,7 @@ import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } 
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
@@ -34,7 +34,7 @@ export const getCommonRepositoryGraphQlResults = (
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
-    ResolveRev: () => createResolveRevisionResult(repositoryName),
+    ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
@@ -601,7 +601,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ResolveRev: () => createResolveRevisionResult(repositoryName),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
