@@ -109,6 +109,7 @@ export const OpenInEditorPopover: React.FunctionComponent<
                         }
                         value={selectedEditorId}
                         onChange={handleEditorChange}
+                        className={styles.editorSelect}
                     >
                         <option value="" />
                         {[...supportedEditors]
