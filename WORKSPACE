@@ -29,9 +29,9 @@ npm_translate_lock(
             "tsserver": "./bin/tsserver",
         },
     },
-    # pnpm_lock = "//:pnpm-lock.yaml",
-    package_json = "//:package.json",
-    yarn_lock = "//:yarn.lock",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    # package_json = "//:package.json",
+    # yarn_lock = "//:yarn.lock",
     verify_node_modules_ignored = "//:.bazelignore",
 )
 
