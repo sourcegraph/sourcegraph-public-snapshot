@@ -14,9 +14,9 @@ import { CollaboratorsFragment, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
-import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
 
 import styles from './CollaboratorsPanel.module.scss'
 
