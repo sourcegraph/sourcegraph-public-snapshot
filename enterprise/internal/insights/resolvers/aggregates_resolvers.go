@@ -390,9 +390,11 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// At the moment we don't allow capture group aggregation for path, repo, diff or commit searches
-	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}}
-	notAllowedFieldTypeValues := map[string]struct{}{"repo": {}, "path": {}, "commit": {}, "diff": {}}
+
+	//Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
+	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
+	// At the moment we don't allow capture group aggregation for diff or symbol searches
+	notAllowedFieldTypeValues := map[string]struct{}{"diff": {}, "symbol": {}}
 	for _, parameter := range parameters {
 		paramValue := strings.ToLower(parameter.Value)
 		_, notAllowedSelect := notAllowedSelectValues[paramValue]
