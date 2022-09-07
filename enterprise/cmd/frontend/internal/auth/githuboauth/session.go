@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/dghubble/gologin/github"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -31,6 +30,7 @@ import (
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
+	logger       log.Logger
 	db           database.DB
 	clientID     string
 	allowSignup  bool
@@ -57,7 +57,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	ghClient := s.newClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user email is verified
-	verifiedEmails := getVerifiedEmails(ctx, ghClient)
+	verifiedEmails := getVerifiedEmails(ctx, s.logger, ghClient)
 	if len(verifiedEmails) == 0 {
 		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
@@ -128,7 +128,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				if err != nil {
 					// Only log a warning, since we still want to create the user account
 					// even if we fail to get installations.
-					log15.Warn("Could not get GitHub App installations", "error", err)
+					s.logger.Warn("Could not get GitHub App installations", log.Error(err))
 				}
 				for _, installation := range installations {
 					accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
@@ -150,7 +150,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 					})
 
 					if err != nil {
-						log15.Warn("Error while saving associated user installation", "error", err)
+						s.logger.Warn("Error while saving associated user installation", log.Error(err))
 					}
 				}
 			}
@@ -291,16 +291,16 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
+	return githubsvc.NewV3Client(s.logger.Scoped("github.v3", "github v3 client for session issuer"),
 		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
 // it will be the first email in the returned list. It only checks the first 100 user emails.
-func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verifiedEmails []string) {
+func getVerifiedEmails(ctx context.Context, logger log.Logger, ghClient *githubsvc.V3Client) (verifiedEmails []string) {
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx)
 	if err != nil {
-		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
+		logger.Warn("Could not get GitHub authenticated user emails", log.Error(err))
 		return nil
 	}
 
@@ -333,7 +333,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
 
 		if err != nil {
-			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
+			s.logger.Warn("Could not get GitHub authenticated user organizations", log.Error(err))
 			return false
 		}
 
@@ -368,7 +368,7 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 
 		githubTeams, hasNextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
 		if err != nil {
-			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
+			s.logger.Warn("Could not get GitHub authenticated user teams", log.Error(err))
 			return false
 		}
 

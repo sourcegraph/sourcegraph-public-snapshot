@@ -11,8 +11,9 @@ import (
 
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -84,12 +85,13 @@ type ProviderOp struct {
 	Callback     func(oauth2.Config) http.Handler
 }
 
-func NewProvider(op ProviderOp) *Provider {
+func NewProvider(logger log.Logger, op ProviderOp) *Provider {
+	logger = logger.Scoped("oauth.provider", "sets up oauth provders and loging and callback handlers").With(log.String("serviceID", op.ServiceID))
 	providerID := op.ServiceID + "::" + op.OAuth2Config().ClientID
 	return &Provider{
 		ProviderOp: op,
-		Login:      stateHandler(true, providerID, op.StateConfig, op.Login),
-		Callback:   stateHandler(false, providerID, op.StateConfig, op.Callback),
+		Login:      stateHandler(logger, true, providerID, op.StateConfig, op.Login),
+		Callback:   stateHandler(logger, false, providerID, op.StateConfig, op.Callback),
 	}
 }
 
@@ -100,7 +102,8 @@ func NewProvider(op ProviderOp) *Provider {
 // we encode the returnTo URL in the state. We could use the `redirect_uri` parameter to do this,
 // but doing so would require using Sourcegraph's external hostname and making sure it is consistent
 // with what is specified in the OAuth app config as the "callback URL."
-func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
+func stateHandler(logger log.Logger, isLogin bool, providerID string, config gologin.CookieConfig, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
+	logger = logger.Scoped("stateHandler", "handles decoding state from the session cookie")
 	return func(oauthConfig oauth2.Config) http.Handler {
 		handler := success(oauthConfig)
 
@@ -108,14 +111,14 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 			ctx := req.Context()
 			csrf, err := randomState()
 			if err != nil {
-				log15.Error("Failed to generated random state", "error", err)
+				logger.Error("Failed to generated random state", log.Error(err))
 				http.Error(w, "Failed to generate random state", http.StatusInternalServerError)
 				return
 			}
 			if isLogin {
 				redirect, err := getRedirect(req)
 				if err != nil {
-					log15.Error("Failed to parse URL from Referrer header", "error", err)
+					logger.Error("Failed to parse URL from Referrer header", log.Error(err))
 					http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
 					return
 				}
@@ -127,7 +130,7 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 					Op:         LoginStateOp(req.URL.Query().Get("op")),
 				}.Encode()
 				if err != nil {
-					log15.Error("Could not encode OAuth state", "error", err)
+					logger.Error("Could not encode OAuth state", log.Error(err))
 					http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
 					return
 				}

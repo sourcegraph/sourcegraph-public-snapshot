@@ -21,6 +21,8 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -218,12 +220,12 @@ func TestMiddleware(t *testing.T) {
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(db).API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/.api/", Middleware(logtest.Scoped(t), db).API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID && uid != 0 {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
-	authedHandler.Handle("/", Middleware(db).App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/", Middleware(logtest.Scoped(t), db).App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			_, _ = w.Write([]byte("This is the home"))

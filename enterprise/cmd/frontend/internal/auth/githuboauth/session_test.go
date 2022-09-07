@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -294,6 +296,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
 				s := &sessionIssuerHelper{
+					logger:       logtest.Scoped(t),
 					CodeHost:     codeHost,
 					clientID:     clientID,
 					allowSignup:  ci.allowSignup,
@@ -363,6 +366,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 
 	ctx := githublogin.WithUser(context.Background(), ghUser)
 	s := &sessionIssuerHelper{
+		logger:      logtest.Scoped(t),
 		CodeHost:    codeHost,
 		clientID:    clientID,
 		allowSignup: true,
@@ -394,6 +398,7 @@ func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
 	}()
 
 	s := &sessionIssuerHelper{
+		logger:       logtest.Scoped(t),
 		CodeHost:     nil,
 		clientID:     "clientID",
 		allowSignup:  true,
@@ -426,7 +431,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 
 	ctx := context.Background()
 	db := database.NewMockDB()
-	s := &sessionIssuerHelper{db: db}
+	s := &sessionIssuerHelper{logger: logtest.Scoped(t), db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
 		_, _, err := s.CreateCodeHostConnection(ctx, nil, "")
 		assert.Error(t, err)

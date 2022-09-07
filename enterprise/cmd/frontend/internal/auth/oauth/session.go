@@ -37,7 +37,7 @@ type SessionIssuerHelper interface {
 }
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
-	logger = logger.Scoped("SessionIssuer", "validates a token and then sets up a session")
+	logger = logger.Scoped("SessionIssuerHandler", "http handler that validates a token and then sets up a session")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

@@ -31,7 +31,7 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitLab)
 
-	return oauth.NewProvider(oauth.ProviderOp{
+	return oauth.NewProvider(logger, oauth.ProviderOp{
 		AuthPrefix: authPrefix,
 		OAuth2Config: func(extraScopes ...string) oauth2.Config {
 			return oauth2.Config{

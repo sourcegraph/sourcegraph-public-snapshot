@@ -38,7 +38,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitHub)
 
-	return oauth.NewProvider(oauth.ProviderOp{
+	return oauth.NewProvider(logger, oauth.ProviderOp{
 		AuthPrefix: authPrefix,
 		OAuth2Config: func(extraScopes ...string) oauth2.Config {
 			return oauth2.Config{
@@ -62,6 +62,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 			return github.CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
+					logger:       logger.Scoped("sessionIssuerHelper", "helper that handles interaction with github oauth"),
 					CodeHost:     codeHost,
 					db:           db,
 					clientID:     p.ClientID,

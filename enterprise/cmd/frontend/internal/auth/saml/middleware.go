@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -25,16 +26,17 @@ const authPrefix = auth.AuthURLPrefix + "/saml"
 // enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-func Middleware(db database.DB) *auth.Middleware {
+func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
+	logger = logger.Scoped("saml", "auth middleware for SAML authentication")
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(db, w, r, next, true)
+				authHandler(logger, db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(db, w, r, next, false)
+				authHandler(logger, db, w, r, next, false)
 			})
 		},
 	}
@@ -44,10 +46,10 @@ func Middleware(db database.DB) *auth.Middleware {
 //
 // It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
 // multiple auth providers with SAML and expose more SAML functionality.
-func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func authHandler(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Delegate to SAML ACS and metadata endpoint handlers.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
-		samlSPHandler(db)(w, r)
+		samlSPHandler(logger, db)(w, r)
 		return
 	}
 
@@ -72,7 +74,7 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	next.ServeHTTP(w, r)
 }
 
-func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestPath := strings.TrimPrefix(r.URL.Path, authPrefix)
 
@@ -88,14 +90,14 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			case "/metadata":
 				metadata, err := p.samlSP.Metadata()
 				if err != nil {
-					log15.Error("Error generating SAML service provider metadata.", "err", err)
+					logger.Error("Error generating SAML service provider metadata.", log.Error(err))
 					http.Error(w, "", http.StatusInternalServerError)
 					return
 				}
 
 				buf, err := xml.MarshalIndent(metadata, "", "  ")
 				if err != nil {
-					log15.Error("Error encoding SAML service provider metadata.", "err", err)
+					logger.Error("Error encoding SAML service provider metadata.", log.Error(err))
 					http.Error(w, "", http.StatusInternalServerError)
 					return
 				}
@@ -136,7 +138,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 		case "/acs":
 			info, err := readAuthnResponse(p, r.FormValue("SAMLResponse"))
 			if err != nil {
-				log15.Error("Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.", "err", err)
+				logger.Error("Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.", log.Error(err))
 				http.Error(w, "Error validating SAML assertions. Try signing in again. If the problem persists, a site admin must check the configuration.", http.StatusForbidden)
 				return
 			}
@@ -149,14 +151,14 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			allowSignup := (p.config.AllowSignup == nil || *p.config.AllowSignup)
 			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
-				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
+				logger.Error("Error looking up SAML-authenticated user.", log.Error(err))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
 
 			user, err := db.Users().GetByID(r.Context(), actor.UID)
 			if err != nil {
-				log15.Error("Error retrieving SAML-authenticated user from database.", "error", err)
+				logger.Error("Error retrieving SAML-authenticated user from database.", log.Error(err))
 				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -173,7 +175,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// 	exp = time.Until(*info.SessionNotOnOrAfter)
 			// }
 			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
-				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
+				logger.Error("Error setting SAML-authenticated actor in session.", log.Error(err))
 				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
 				return
 			}
@@ -198,7 +200,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// validate the LogoutResponse to avoid being vulnerable to spoofing.
 			_, err := p.samlSP.ValidateEncodedResponse(encodedResp)
 			if err != nil && !strings.HasPrefix(err.Error(), "unable to unmarshal response:") {
-				log15.Error("Error validating SAML logout response.", "err", err)
+				logger.Error("Error validating SAML logout response.", log.Error(err))
 				http.Error(w, "Error validating SAML logout response.", http.StatusForbidden)
 				return
 			}
@@ -207,7 +209,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// session (but there's no harm in clearing it again). If it's an IdP-initiated logout,
 			// then it hasn't, and we must clear it here.
 			if err := session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
-				log15.Error("Error clearing actor from session in SAML logout handler.", "err", err)
+				logger.Error("Error clearing actor from session in SAML logout handler.", log.Error(err))
 				http.Error(w, "Error signing out of SAML-authenticated session.", http.StatusInternalServerError)
 				return
 			}
