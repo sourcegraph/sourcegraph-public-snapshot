@@ -17,9 +17,9 @@ Sourcegraph extensions are like editor extensions, but run anywhere you view cod
 </div>
 
 ## Getting started
-- [Using extensions](usage) – How to enable extensions on Sourcegraph.
-- [Principles](principles)
-- [Security and privacy](security) – All the ways we protect the privacy of your code.
+- [Using extensions](usage.md) – How to enable extensions on Sourcegraph.
+- [Principles](principles.md)
+- [Security and privacy](security.md) – All the ways we protect the privacy of your code.
 
 ## Administering extensions
 
