@@ -10,11 +10,8 @@ import (
 )
 
 // Log creates an INFO log statement that will be a part of the audit log.
-// The audit log records comply with the following design: an actor takes an action on an entity within a context
-// actor - obtained from the context
-// action - caller supplied, free form (log message)
-// entity - caller supplied, free form (should describe the component that's being audited)
-// context - any additional logging fields (log.Field)
+// The audit log records comply with the following design: an actor takes an action on an entity within a context.
+// Refer to Record struct to see details about individual components.
 func Log(ctx context.Context, logger log.Logger, record *Record) {
 	var fields []log.Field
 
