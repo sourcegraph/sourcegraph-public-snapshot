@@ -2,7 +2,7 @@
 
 <span class="badge badge-note">Sourcegraph 4.0+</span>
 
-> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md).
+> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. **The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md)**.
 
 Sourcegraph exports OpenTelemetry data to a bundled [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) instance.
 This service can be configured to ingest, process, and then export observability data to an observability backend of choice.
@@ -17,6 +17,7 @@ Refer to the [documentation](https://opentelemetry.io/docs/collector/configurati
 
 For more details on configuring the OpenTelemetry collector for your deployment method, refer to the deployment-specific guidance:
 
+- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#opentelemetry-collector)
 - [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#opentelemetry-collector)
 - [Docker Compose](../deploy/docker-compose/operations.md#opentelemetry-collector)
 
