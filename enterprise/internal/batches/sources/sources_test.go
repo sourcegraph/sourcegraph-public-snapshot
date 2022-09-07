@@ -592,16 +592,3 @@ func newMockSourcer(css ChangesetSource) Sourcer {
 		return css, nil
 	})
 }
-
-// func TestLoadChangesetSource(t *testing.T) {
-// 	t.Run("owned by missing batch change", func(t *testing.T) {
-// 		fakeSource := &stesting.FakeChangesetSource{}
-// 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-// 		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-// 			OwnedByBatchChangeID: 1234,
-// 		}, repo)
-// 		if err == nil {
-// 			t.Error("unexpected nil error")
-// 		}
-// 	})
-// }
