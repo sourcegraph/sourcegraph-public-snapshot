@@ -11,7 +11,6 @@
 
 export {
     useNavbarQueryState,
-    setQueryStateFromURL,
     setQueryStateFromSettings,
     setSearchPatternType,
     setSearchCaseSensitivity,

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import * as H from 'history'
+import { of } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -8,27 +10,23 @@ import {
     InitialParametersSource,
     isSearchContextSpecAvailable,
     SearchContextInputProps,
-    SearchPatternType,
     SubmitSearchParameters,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { parseSearchURL, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
-import { NavbarQueryState, setQueryStateFromURL, setSearchPatternType } from '../../stores/navbarSearchQueryState'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { useObservable } from '@sourcegraph/wildcard'
-
-import { of } from 'rxjs'
-import { startWith } from 'rxjs/operators'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
 interface Props
     extends ActivationProps,
@@ -62,11 +60,11 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const { searchContextsEnabled } = props
+    const { history, location, searchContextsEnabled, selectedSearchContextSpec, setSelectedSearchContextSpec } = props
     const autoFocus = props.isSearchAutoFocusRequired ?? true
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
+    const isSearchPage = location.pathname === '/search' && Boolean(parseSearchURLQuery(location.search))
 
     // Features and settings
 
@@ -114,25 +112,21 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     useEffect(() => {
         // Only override filters from URL if there is a search query
         if (queryFromURL) {
-            if (globalSearchContextSpec?.spec && globalSearchContextSpec.spec !== props.selectedSearchContextSpec) {
-                props.setSelectedSearchContextSpec(globalSearchContextSpec.spec)
+            if (globalSearchContextSpec?.spec && globalSearchContextSpec.spec !== selectedSearchContextSpec) {
+                setSelectedSearchContextSpec(globalSearchContextSpec.spec)
             }
         }
-    }, [
-        history,
-        props.selectedSearchContextSpec,
-        queryFromURL,
-        props.setSelectedSearchContextSpec,
-        globalSearchContextSpec?.spec,
-    ])
+    }, [selectedSearchContextSpec, queryFromURL, setSelectedSearchContextSpec, globalSearchContextSpec?.spec])
 
-    const queryFromURLClean = useMemo(() => {
-        // If a global search context spec is available to the user, we omit it from the
-        // query and move it to the search contexts dropdown
-        return globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-            ? omitFilter(queryFromURL, globalSearchContextSpec.filter)
-            : queryFromURL
-    }, [globalSearchContextSpec, isSearchContextAvailable, showSearchContext])
+    const queryFromURLClean = useMemo(
+        () =>
+            // If a global search context spec is available to the user, we omit it from the
+            // query and move it to the search contexts dropdown
+            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
+                ? omitFilter(queryFromURL, globalSearchContextSpec.filter)
+                : queryFromURL,
+        [queryFromURL, globalSearchContextSpec, isSearchContextAvailable, showSearchContext]
+    )
 
     // Update internal search state from URL
     useEffect(() => {
@@ -143,7 +137,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             parametersSource: InitialParametersSource.URL,
             searchQueryFromURL: queryFromURL,
         }))
-    }, [useNavbarQueryState, queryFromURL, queryFromURLClean, patternTypeFromURL, caseSensitiveFromURL])
+    }, [queryFromURL, queryFromURLClean, patternTypeFromURL, caseSensitiveFromURL])
 
     // Internal search state
 
@@ -166,14 +160,14 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
-                history: props.history,
+                history,
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, history, props.activation, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(

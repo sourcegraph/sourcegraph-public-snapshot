@@ -16,7 +16,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { parseSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
