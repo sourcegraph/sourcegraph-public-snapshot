@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -41,7 +40,7 @@ func Init(logger log.Logger, db database.DB) {
 		gitlaboauth.Middleware(db),
 	)
 	// Register app-level sign-out handler
-	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
+	app.RegisterSSOSignOutHandler(ssoSignOutHandler(logger))
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -95,17 +94,20 @@ func Init(logger log.Logger, db database.DB) {
 	})
 }
 
-func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
-	for _, p := range conf.Get().AuthProviders {
-		var err error
-		switch {
-		case p.Openidconnect != nil:
-			_, err = openidconnect.SignOut(w, r)
-		case p.Saml != nil:
-			_, err = saml.SignOut(w, r)
-		}
-		if err != nil {
-			log15.Error("Error clearing auth provider session data.", "err", err)
+func ssoSignOutHandler(logger log.Logger) http.HandlerFunc {
+	logger = logger.Scoped("ssoSignOutHandler", "handler which handles SSO sign-outs")
+	return func(w http.ResponseWriter, r *http.Request) {
+		for _, p := range conf.Get().AuthProviders {
+			var err error
+			switch {
+			case p.Openidconnect != nil:
+				_, err = openidconnect.SignOut(w, r)
+			case p.Saml != nil:
+				_, err = saml.SignOut(w, r)
+			}
+			if err != nil {
+				logger.Error("Error clearing auth provider session data.", log.Error(err))
+			}
 		}
 	}
 }

@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -49,16 +50,16 @@ type userClaims struct {
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func Middleware(db database.DB) *auth.Middleware {
+func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, true)
+				handleOpenIDConnectAuth(logger.Scoped("openidconnect.api", "OpenID Connect authentication middleware"), db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, false)
+				handleOpenIDConnectAuth(logger.Scoped("openidconnect.app", "OpenID Connect authentication middleware"), db, w, r, next, false)
 			})
 		},
 	}
@@ -66,7 +67,7 @@ func Middleware(db database.DB) *auth.Middleware {
 
 // handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
 // both API requests and non-API requests.
-func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func handleOpenIDConnectAuth(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Fixup URL path. We use "/.auth/callback" as the redirect URI for OpenID Connect, but the rest
 	// of this middleware's handlers expect paths of "/.auth/openidconnect/...", so add the
 	// "openidconnect" path component. We can't change the redirect URI because it is hardcoded in
@@ -78,7 +79,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 
 	// Delegate to the OpenID Connect auth handler.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
-		authHandler(db)(w, r)
+		authHandler(logger, db)(w, r)
 		return
 	}
 
@@ -112,7 +113,8 @@ var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func authHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter, r *http.Request) {
+	logger = log.Scoped("authHandler", "handles the OIDC authentication code flow")
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login":
@@ -129,7 +131,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			if authError := r.URL.Query().Get("error"); authError != "" {
 				errorDesc := r.URL.Query().Get("error_description")
-				log15.Error("OpenID Connect auth provider returned error to callback.", "error", authError, "description", errorDesc)
+				logger.Error("OpenID Connect auth provider returned error to callback.", log.String("error", authError), log.String("description", errorDesc))
 				http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The authentication provider reported the following problems.\n\n%s\n\n%s", authError, errorDesc), http.StatusUnauthorized)
 				return
 			}
@@ -142,16 +144,16 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 			stateCookie, err := r.Cookie(stateCookieName)
 			if err == http.ErrNoCookie {
-				log15.Error("OpenID Connect auth failed: no state cookie found (possible request forgery).")
+				logger.Error("OpenID Connect auth failed: no state cookie found (possible request forgery).")
 				http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: no OpenID Connect state cookie found (possible request forgery, or more than %s elapsed since you started the authentication process).", stateCookieTimeout), http.StatusBadRequest)
 				return
 			} else if err != nil {
-				log15.Error("OpenID Connect auth failed: could not read state cookie (possible request forgery).", "error", err)
+				logger.Error("OpenID Connect auth failed: could not read state cookie (possible request forgery).", log.Error(err))
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: invalid OpenID Connect state cookie.", http.StatusInternalServerError)
 				return
 			}
 			if stateCookie.Value != stateParam {
-				log15.Error("OpenID Connect auth failed: state cookie mismatch (possible request forgery).")
+				logger.Error("OpenID Connect auth failed: state cookie mismatch (possible request forgery).")
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OpenID Connect state parameter did not match the expected value (possible request forgery).", http.StatusBadRequest)
 				return
 			}
@@ -159,7 +161,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// Decode state param value
 			var state authnState
 			if err := state.Decode(stateParam); err != nil {
-				log15.Error("OpenID Connect auth failed: state parameter was malformed.", "error", err)
+				logger.Error("OpenID Connect auth failed: state parameter was malformed.", log.Error(err))
 				http.Error(w, "Authentication failed. OpenID Connect state parameter was malformed.", http.StatusBadRequest)
 				return
 			}
@@ -174,7 +176,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
 			oauth2Token, err := p.oauth2Config().Exchange(ctx, r.URL.Query().Get("code"))
 			if err != nil {
-				log15.Error("OpenID Connect auth failed: failed to obtain access token from OP.", "error", err)
+				logger.Error("OpenID Connect auth failed: failed to obtain access token from OP.", log.Error(err))
 				http.Error(w, "Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.", http.StatusUnauthorized)
 				return
 			}
@@ -182,7 +184,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// Extract the ID Token from the Access Token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenResponse.
 			rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 			if !ok {
-				log15.Error("OpenID Connect auth failed: the issuer's authorization response did not contain an ID token.")
+				logger.Error("OpenID Connect auth failed: the issuer's authorization response did not contain an ID token.")
 				http.Error(w, "Authentication failed. Try signing in again. The error was: the issuer's authorization response did not contain an ID token.", http.StatusUnauthorized)
 				return
 			}
@@ -194,7 +196,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			} else {
 				idToken, err = verifier.Verify(ctx, rawIDToken)
 				if err != nil {
-					log15.Error("OpenID Connect auth failed: the ID token verification failed.", "error", err)
+					logger.Error("OpenID Connect auth failed: the ID token verification failed.", log.Error(err))
 					http.Error(w, "Authentication failed. Try signing in again. The error was: OpenID Connect ID token could not be verified.", http.StatusUnauthorized)
 					return
 				}
@@ -204,38 +206,38 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// We set the nonce to be the same as the state in the Authentication Request state, so we check for equality
 			// here.
 			if idToken.Nonce != stateParam {
-				log15.Error("OpenID Connect auth failed: nonce is incorrect (possible replay attach).")
+				logger.Error("OpenID Connect auth failed: nonce is incorrect (possible replay attach).")
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OpenID Connect nonce is incorrect (possible replay attack).", http.StatusUnauthorized)
 				return
 			}
 
 			userInfo, err := p.oidc.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 			if err != nil {
-				log15.Error("Failed to get userinfo", "error", err)
+				logger.Error("Failed to get userinfo", log.Error(err))
 				http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 
 			if p.config.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+p.config.RequireEmailDomain) {
-				log15.Error("OpenID Connect auth failed: user's email is not from allowed domain.", "userEmail", userInfo.Email, "requireEmailDomain", p.config.RequireEmailDomain)
+				logger.Error("OpenID Connect auth failed: user's email is not from allowed domain.", log.String("userEmail", userInfo.Email), log.String("requireEmailDomain", p.config.RequireEmailDomain))
 				http.Error(w, fmt.Sprintf("Authentication failed. Only users in %q are allowed.", p.config.RequireEmailDomain), http.StatusUnauthorized)
 				return
 			}
 
 			var claims userClaims
 			if err := userInfo.Claims(&claims); err != nil {
-				log15.Warn("OpenID Connect auth: could not parse userInfo claims.", "error", err)
+				logger.Warn("OpenID Connect auth: could not parse userInfo claims.", log.Error(err))
 			}
 			actr, safeErrMsg, err := getOrCreateUser(ctx, db, p, idToken, userInfo, &claims)
 			if err != nil {
-				log15.Error("OpenID Connect auth failed: error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
+				logger.Error("OpenID Connect auth failed: error looking up OpenID-authenticated user.", log.Error(err), log.String("userErr", safeErrMsg))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
 
 			user, err := db.Users().GetByID(r.Context(), actr.UID)
 			if err != nil {
-				log15.Error("OpenID Connect auth failed: error retrieving user from database.", "error", err)
+				logger.Error("OpenID Connect auth failed: error retrieving user from database.", log.Error(err))
 				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -252,7 +254,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
 			if err := session.SetActor(w, r, actr, exp, user.CreatedAt); err != nil {
-				log15.Error("OpenID Connect auth failed: could not initiate session.", "error", err)
+				logger.Error("OpenID Connect auth failed: could not initiate session.", log.Error(err))
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
 			}
@@ -265,7 +267,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err := session.SetData(w, r, sessionKey, data); err != nil {
 				// It's not fatal if this fails. It just means we won't be able to sign the user out of
 				// the OP.
-				log15.Warn("Failed to set OpenID Connect session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", "error", err)
+				logger.Warn("Failed to set OpenID Connect session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
 			}
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
