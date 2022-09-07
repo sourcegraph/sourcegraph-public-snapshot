@@ -69,33 +69,28 @@ func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *San
 		state.SetGlobal(name, lua.LNil)
 	}
 
-	// Add our own package loader so that we can do: "require('fun')"
-	tbl := state.GetField(state.GetGlobal("package"), "loaders").(*lua.LTable)
-	tbl.Insert(1, state.NewFunction(func(laterState *lua.LState) int {
-		requireArg := laterState.Get(-1)
-		switch luaModString := requireArg.(type) {
-		case lua.LString:
-			modString := luaModString.String()
-			if _, ok := opts.LuaModules[modString]; !ok {
-				break
+	// Insert a new package loader into the Lua state to control `require("...")`
+	state.GetField(state.GetGlobal("package"), "loaders").(*lua.LTable).Insert(
+		1,
+		state.NewFunction(func(s *lua.LState) int {
+			contents, ok := opts.LuaModules[s.Get(-1).(lua.LString).String()]
+			if !ok {
+				// loaders return nil if they don't do anything
+				state.Push(lua.LNil)
+				return 1
 			}
 
-			val, err := state.LoadString(opts.LuaModules[modString])
+			val, err := state.LoadString(contents)
 			if err != nil {
 				state.RaiseError(err.Error())
 				return 0
 			}
 
-			// return the function to tell Lua that we have found
-			// an appropriate lua chunk to load
+			// return loaded Lua chunk
 			state.Push(val)
 			return 1
-		}
-
-		// loaders return nil if they don't do anything
-		state.Push(lua.LNil)
-		return 1
-	}))
+		}),
+	)
 
 	return &Sandbox{
 		state:      state,
