@@ -28,7 +28,7 @@ import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
-interface Props
+export interface SearchNavbarItemProps
     extends ActivationProps,
         SettingsCascadeProps,
         ThemeProps,
@@ -59,7 +59,9 @@ const selectQueryState = ({
 /**
  * The search item in the navbar
  */
-export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<SearchNavbarItemProps>> = (
+    props: SearchNavbarItemProps
+) => {
     const { history, location, searchContextsEnabled, selectedSearchContextSpec, setSelectedSearchContextSpec } = props
     const autoFocus = props.isSearchAutoFocusRequired ?? true
     // This uses the same logic as in Layout.tsx until we have a better solution
@@ -130,9 +132,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
 
     // Update internal search state from URL
     useEffect(() => {
-        useNavbarQueryState.setState(({ searchPatternType }) => ({
-            searchPatternType: patternTypeFromURL ?? searchPatternType,
-            searchCaseSensitivity: caseSensitiveFromURL,
+        useNavbarQueryState.setState(({ searchPatternType, searchCaseSensitivity }) => ({
+            searchPatternType: queryFromURLClean !== '' && patternTypeFromURL ? patternTypeFromURL : searchPatternType,
+            searchCaseSensitivity: queryFromURLClean !== '' ? caseSensitiveFromURL : searchCaseSensitivity,
             queryState: { query: queryFromURLClean },
             parametersSource: InitialParametersSource.URL,
             searchQueryFromURL: queryFromURL,
@@ -149,9 +151,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     // content in the query input we use the information directly from the URL
     // when we know that the URL changed.
     if (updatingFromURL.current) {
-        searchCaseSensitivity = caseSensitiveFromURL
-        if (patternTypeFromURL !== undefined) {
-            searchPatternType = patternTypeFromURL
+        if (queryFromURLClean !== '') {
+            searchCaseSensitivity = caseSensitiveFromURL
+            if (patternTypeFromURL !== undefined) {
+                searchPatternType = patternTypeFromURL
+            }
         }
         queryState = { query: queryFromURLClean }
         updatingFromURL.current = false
