@@ -1,23 +1,20 @@
 import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
 import { mdiPlay } from '@mdi/js'
-import classNames from 'classnames'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text, Link, Tooltip, Button, Icon } from '@sourcegraph/wildcard'
 
-import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
+import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../../../graphql-operations'
 
-import type { AggregationChartProps } from './AggregationChart'
-import { DataLayoutContainer } from './AggregationDataContainer'
-import { AggregationErrorContainer } from './AggregationErrorContainer'
+import { AggregationChartProps, AggregationTextContent, AggregationContent } from './components'
 
 import styles from './AggregationChartCard.module.scss'
 
 const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregationDatum>, string>(
-    () => import('./AggregationChart'),
+    () => import('./components/AggregationChart'),
     'AggregationChart'
 )
 LazyAggregationChart.displayName = 'LazyAggregationChart'
@@ -101,18 +98,18 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (loading) {
         return (
-            <AggregationErrorContainer size={size} className={className}>
+            <AggregationTextContent size={size} className={className}>
                 {showLoading && <span className={styles.loading}>Loading</span>}
-            </AggregationErrorContainer>
+            </AggregationTextContent>
         )
     }
 
     // Internal error
     if (error) {
         return (
-            <DataLayoutContainer size={size} className={className}>
+            <AggregationContent size={size} className={className}>
                 <ErrorAlert error={error} className={styles.errorAlert} />
-            </DataLayoutContainer>
+            </AggregationContent>
         )
     }
 
@@ -120,9 +117,9 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (aggregationError) {
         return (
-            <AggregationErrorContainer size={size} className={className}>
+            <AggregationTextContent size={size} className={className}>
                 {aggregationError.type === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE ? (
-                    <Button variant="link" className={styles.errorButton} size="sm" onClick={onExtendTimeout}>
+                    <Button variant="link" size="sm" className={styles.errorButton} onClick={onExtendTimeout}>
                         <Icon aria-hidden={true} svgPath={mdiPlay} className="mr-1" />
                         Run aggregation
                     </Button>
@@ -133,7 +130,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                         <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
                     </>
                 )}
-            </AggregationErrorContainer>
+            </AggregationTextContent>
         )
     }
 
@@ -147,9 +144,9 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     if (aggregationData.length === 0) {
         return (
-            <AggregationErrorContainer size={size} className={className}>
+            <AggregationTextContent size={size} className={className}>
                 No data to display
-            </AggregationErrorContainer>
+            </AggregationTextContent>
         )
     }
 
@@ -159,7 +156,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     }
 
     return (
-        <div className={classNames(className, styles.container)}>
+        <AggregationContent className={className}>
             <Suspense>
                 <LazyAggregationChart
                     aria-label={ariaLabel}
@@ -186,6 +183,6 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     </Tooltip>
                 )}
             </Suspense>
-        </div>
+        </AggregationContent>
     )
 }
