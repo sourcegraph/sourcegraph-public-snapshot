@@ -45,7 +45,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
                 )}
             >
-                <Link to={getRepoMatchUrl(result)} ref={repoNameElement}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                <Link to={getRepoMatchUrl(result)} ref={repoNameElement}>
+                    {displayRepoName(getRepoMatchLabel(result))}
+                </Link>
             </span>
         </div>
     )
@@ -142,7 +144,14 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 )
             }
         }
-    }, [result, result.repositoryMatches, repoNameElement, result.description, result.descriptionMatches, repoDescriptionElement])
+    }, [
+        result,
+        result.repositoryMatches,
+        repoNameElement,
+        result.description,
+        result.descriptionMatches,
+        repoDescriptionElement,
+    ])
 
     return (
         <ResultContainer

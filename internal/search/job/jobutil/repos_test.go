@@ -1,11 +1,11 @@
 package jobutil
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
