@@ -61,6 +61,7 @@ func DefaultServices() Services {
 		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
 		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:     makeNotFoundHandler("bitbucket cloud webhook"),
+		BatchesFileHandler:        makeNotFoundHandler("batches file handler"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:  func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
