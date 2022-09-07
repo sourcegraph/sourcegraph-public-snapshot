@@ -3,7 +3,7 @@
 In site configuration, you can enable tracing globally by configuring a sampling mode in `observability.tracing`.
 There are currently three modes:
 
-* `"sampling": "selective"` (default) will cause a trace to be recorded only when `trace=1` is present as a URL parameter.
+* `"sampling": "selective"` (default) will cause a trace to be recorded only when `trace=1` is present as a URL parameter (though background jobs may still emit traces).
 * `"sampling": "all"` will cause a trace to be recorded on every request.
 * `"sampling": "none"` will disable all tracing.
 
@@ -18,14 +18,31 @@ We support the following tracing backend types:
 
 In addition, we also export some tracing [via net/trace](#nettrace).
 
-## Trace a search query
+## How to use traces
+
+Tracing is a powerful debugging tool that can break down where time is spent over the lifecycle of a
+request and help pinpoint the source of high latency or errors.
+To get started with using traces, you must first [configure a tracing backend](#tracing-backends).
+
+We generally follow the following algorithm to root-cause issues with traces:
+
+1. Reproduce a slower user request (e.g., a search query that takes too long or times out) and acquire a trace:
+   1. [Trace a search query](#trace-a-search-query)
+   2. [Trace a GraphQL request](#trace-a-graphql-request)
+2. Explore the breakdown of the request tree in the UI of your [tracing backend](#tracing-backends), such as Honeycomb or Jaeger. Look for:
+   1. items near the leaves that take up a significant portion of the overall request time.
+   2. spans that have errors attached to them
+   3. [log entries](./logs.md) that correspond to spans in the trace (using the `TraceId` and `SpanId` fields)
+3. Report this information to Sourcegraph (via [issue](https://github.com/sourcegraph/sourcegraph/issues/new) or [reaching out directly](https://about.sourcegraph.com/contact/request-info/)) by screenshotting the relevant trace or sharing the trace JSON.
+
+### Trace a search query
 
 To trace a search query, run a search on your Sourcegraph instance with the `?trace=1` query parameter.
 A link to the [exported trace](#tracing-backends) should be show up in the search results:
 
 ![link to trace](https://user-images.githubusercontent.com/23356519/184953302-099bcb62-ccdb-4eed-be5d-801b7fe16d97.png)
 
-## Trace GraphQL requests
+### Trace a GraphQL request
 
 To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
 The response headers of the response will now include an `x-trace` entry, which will have a URL the [exported trace](#tracing-backends).
@@ -38,7 +55,11 @@ We support exporting traces via [OpenTelemetry](#opentelemetry) (recommended), o
 ### OpenTelemetry
 
 To learn about exporting traces to various backends using OpenTelemetry, review our [OpenTelemetry documentation](./opentelemetry.md).
-Once configured, you can set up a `urlTemplate` that points to your traces backend.
+Once configured, you can set up a `urlTemplate` that points to your traces backend, which allows you to use the following variables:
+
+* `{{ .TraceID }}` is the full trace ID
+* `{{ .ExternalURL }}` is the external URL of your Sourcegraph instance
+
 For example, if you [export your traces to Honeycomb](./opentelemetry.md#otlp-compatible-backends), your configuration might look like:
 
 ```json
@@ -58,7 +79,8 @@ To configure Jaeger, first ensure Jeager is running:
 
 * **Single Docker container:** Deploy a separate Jaeger instance and configure it with [Jaeger client environment variables](https://github.com/jaegertracing/jaeger-client-go#environment-variables).
 * **Docker Compose:** See the relevant [enable the bundled Jaeger deployment guide](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
-* **Kubernetes:** See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/operations.md#enable-the-bundled-jaeger-deployment)
+* **Kubernetes (with Helm)**: See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
+* **Kubernetes (without Helm):** See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/operations.md#enable-the-bundled-jaeger-deployment)
 
 The Jaeger UI should look something like this:
 
@@ -76,26 +98,6 @@ Then, configure Jaeger as your tracing backend in site configuration:
 ```
 
 You can test the exporter by [tracing a search query](#trace-a-search-query).
-
-#### Jaeger debugging algorithm
-
-Jaeger is a powerful debugging tool that can break down where time is spent over the lifecycle of a
-request and help pinpoint the source of high latency or errors. We generally follow the following
-algorithm to root-cause issues with Jaeger:
-
-1. Reproduce a slower user request (e.g., a search query that takes too long or times out).
-1. Add `?trace=1` to the slow URL and reload the page, so that traces will be collected.
-1. Open Chrome developer tools to the Network tab and find the corresponding GraphQL request that
-   takes a long time. If there are multiple requests that take a long time, investigate them one by
-   one.
-1. In the Response Headers for the slow GraphQL request, find the `x-trace` header. It should
-   contain a trace ID like `7edb43f744c42fbf`.
-1. Go to the Jaeger UI and paste in the trace ID to the "Lookup by Trace ID" input in the top menu
-   bar.
-1. Explore the breakdown of the request tree in the Jaeger UI. Look for items near the leaves that
-   take up a significant portion of the overall request time.
-1. Report this information to Sourcegraph by screenshotting the relevant trace or by downloading the
-   trace JSON.
 
 ### net/trace
 
