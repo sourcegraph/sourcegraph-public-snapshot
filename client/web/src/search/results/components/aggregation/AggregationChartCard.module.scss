@@ -31,18 +31,18 @@
     font-weight: 500;
 }
 
-.loading:after {
+.loading::after {
     position: absolute;
     overflow: hidden;
     display: inline-block;
     vertical-align: bottom;
     animation: ellipsis steps(4, end) 900ms infinite;
     content: '\2026';
-    width: 0px;
+    width: 0;
 }
 
 @keyframes ellipsis {
     to {
-        width: 20px;
+        width: 1.25rem;
     }
 }
