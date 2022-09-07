@@ -408,14 +408,10 @@ func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !SubRepoEnabled(s) {
+	if doCheck, err := actorSubRepoEnabled(s, a); err != nil {
+		return None, err
+	} else if !doCheck {
 		return Read, nil
-	}
-	if a.IsInternal() {
-		return Read, nil
-	}
-	if !a.IsAuthenticated() {
-		return None, &ErrUnauthenticated{}
 	}
 
 	perms, err := s.Permissions(ctx, a.UID, content)
@@ -423,6 +419,23 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// actorSubRepoEnabled returns true if you should do sub repo permission
+// checks with s for actor a. If false, you can skip sub repo checks.
+//
+// If the actor represents an anonymous user, ErrUnauthenticated is returned.
+func actorSubRepoEnabled(s SubRepoPermissionChecker, a *actor.Actor) (bool, error) {
+	if !SubRepoEnabled(s) {
+		return false, nil
+	}
+	if a.IsInternal() {
+		return false, nil
+	}
+	if !a.IsAuthenticated() {
+		return false, &ErrUnauthenticated{}
+	}
+	return true, nil
 }
 
 // SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
@@ -449,15 +462,11 @@ func SubRepoEnabledForRepo(ctx context.Context, checker SubRepoPermissionChecker
 }
 
 func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (bool, error) {
-	if !SubRepoEnabled(checker) {
-		return true, nil
-	}
 	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
+		return false, err
+	} else if !doCheck {
 		return true, nil
-	}
-	if !a.IsAuthenticated() {
-		return false, &ErrUnauthenticated{}
 	}
 
 	c := RepoContent{
