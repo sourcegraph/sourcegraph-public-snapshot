@@ -18,35 +18,36 @@ type CodeInsights struct {
 var insightsCreatedNodesQuery = `
 	SELECT
 		%s AS date,
-		COUNT(DISTINCT changesets.id) AS count,
-		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
-	FROM
-		changesets
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
+		COUNT(DISTINCT s.id) AS count,
+		COUNT(DISTINCT g.user_id) AS unique_users,
+		COUNT(DISTINCT g.user_id) AS registered_users
+	FROM insight_series AS s
+		JOIN insight_view_series AS vs ON vs.insight_series_id = s.id
+		LEFT JOIN insight_view_grants AS g ON g.insight_view_id = vs.insight_view_id
+	WHERE %s
 	GROUP BY date
 `
 
 var insightsCreatedSummaryQuery = `
 	SELECT
-		COUNT(DISTINCT changesets.id) AS total_count,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_registered_users
-	FROM
-		changesets
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
+		COUNT(DISTINCT s.id) AS total_count,
+		COUNT(DISTINCT g.user_id) AS total_unique_users,
+		COUNT(DISTINCT g.user_id) AS total_registered_users
+	FROM insight_series AS s
+		JOIN insight_view_series AS vs ON vs.insight_series_id = s.id
+		LEFT JOIN insight_view_grants AS g ON g.insight_view_id = vs.insight_view_id
+	WHERE %s
 `
 
-func (c *CodeInsights) InsightCreated() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "changesets.created_at")
+func (c *CodeInsights) InsightCreations() (*AnalyticsFetcher, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "s.created_at")
 	if err != nil {
 		return nil, err
 	}
+	conds := []*sqlf.Query{sqlf.Sprintf(`s.created_at %s`, dateBetweenCond)}
 
-	nodesQuery := sqlf.Sprintf(insightsCreatedNodesQuery, dateTruncExp, dateBetweenCond)
-	summaryQuery := sqlf.Sprintf(insightsCreatedSummaryQuery, dateBetweenCond)
+	nodesQuery := sqlf.Sprintf(insightsCreatedNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
+	summaryQuery := sqlf.Sprintf(insightsCreatedSummaryQuery, sqlf.Join(conds, "AND"))
 
 	return &AnalyticsFetcher{
 		db:           c.DB,
@@ -54,7 +55,7 @@ func (c *CodeInsights) InsightCreated() (*AnalyticsFetcher, error) {
 		grouping:     c.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Insights:InsightCreated",
+		group:        "Insights:InsightCreations",
 		cache:        c.Cache,
 	}, nil
 }

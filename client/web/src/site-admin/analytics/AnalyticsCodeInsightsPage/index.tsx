@@ -37,8 +37,17 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
         const legends: ValueLegendListProps['items'] = [
+            {
+                value:
+                    aggregation.selected === 'count'
+                        ? insightCreations.summary.totalCount
+                        : insightCreations.summary.totalRegisteredUsers,
+                description: aggregation.selected === 'count' ? 'Insights created' : 'Users created insights',
+                color: 'var(--cyan)',
+                tooltip: 'TODO:',
+            },
             {
                 value:
                     aggregation.selected === 'count'
@@ -66,10 +75,24 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
         const activities: Series<StandardDatum>[] = [
             {
-                id: 'activity',
+                id: 'insights-created',
+                name: aggregation.selected === 'count' ? 'Insight created' : 'Users created insights',
+                color: 'var(--cyan)',
+                data: insightCreations.nodes.map(
+                    node => ({
+                        date: new Date(node.date),
+                        value: node[aggregation.selected],
+                    }),
+                    dateRange.value
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
+            {
+                id: 'insight-hovers',
                 name: aggregation.selected === 'count' ? 'Insight hovers' : 'Users hovering insights',
                 color: 'var(--orange)',
                 data: insightHovers.nodes.map(
@@ -83,7 +106,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 getYValue: ({ value }) => value,
             },
             {
-                id: 'activity',
+                id: 'datapoint-clicks',
                 name: aggregation.selected === 'count' ? 'Datapoint clicks' : 'Users clicking datapoints',
                 color: 'var(--purple)',
                 data: insightDataPointClicks.nodes.map(

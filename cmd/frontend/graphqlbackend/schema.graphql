@@ -6415,7 +6415,7 @@ type AnalyticsExtensionsResult {
 Code insights analytics.
 """
 type AnalyticsCodesInsightsResult {
-    # insightCreations: AnalyticsStatItem!
+    insightCreations: AnalyticsStatItem!
     insightHovers: AnalyticsStatItem!
     insightDataPointClicks: AnalyticsStatItem!
     # dashboardCreations: AnalyticsStatItem!

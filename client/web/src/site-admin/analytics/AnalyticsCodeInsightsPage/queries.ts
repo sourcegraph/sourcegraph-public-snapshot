@@ -19,16 +19,16 @@ export const INSIGHTS_STATISTICS = gql`
         site {
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
-                    # insightCreations {
+                    insightCreations {
+                        ...AnalyticsStatItemFragment
+                    }
+                    # searchInsightCreations: insightCreations(generationType: SEARCH) {
                     #     ...AnalyticsStatItemFragment
                     # }
-                    # searchInsightsCreations: insightCreations(type: SEARCH) {
+                    # languageInsightCreations: insightCreations(generationType: LANGUAGE_STATS) {
                     #     ...AnalyticsStatItemFragment
                     # }
-                    # languageInsightsCreations: insightCreations(type: LANGUAGE_STATS) {
-                    #     ...AnalyticsStatItemFragment
-                    # }
-                    # computeInsightsCreations: insightCreations(type: SEARCH_COMPUTE) {
+                    # computeInsightCreations: insightCreations(generationType: SEARCH_COMPUTE) {
                     #     ...AnalyticsStatItemFragment
                     # }
                     insightHovers {
