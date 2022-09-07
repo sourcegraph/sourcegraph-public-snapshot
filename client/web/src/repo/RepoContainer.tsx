@@ -6,7 +6,7 @@ import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -409,29 +409,31 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController={extensionsController}
                 telemetryService={props.telemetryService}
             />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={2}
-                id="go-to-code-host"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <GoToCodeHostAction
-                        key="go-to-code-host"
-                        repo={repoOrError}
-                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                        revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
-                        filePath={filePath}
-                        commitRange={commitRange}
-                        position={position}
-                        range={range}
-                        externalLinks={externalLinks}
-                        fetchFileExternalLinks={fetchFileExternalLinks}
-                        actionType={actionType}
-                        repoName={repoName}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
+            {getIsGoToCodeHostActionVisible(props.match) && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={2}
+                    id="go-to-code-host"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            repo={repoOrError}
+                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                            revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
+                            filePath={filePath}
+                            commitRange={commitRange}
+                            position={position}
+                            range={range}
+                            externalLinks={externalLinks}
+                            fetchFileExternalLinks={fetchFileExternalLinks}
+                            actionType={actionType}
+                            repoName={repoName}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             {isCodeIntelRepositoryBadgeVisible && (
                 <RepoHeaderContributionPortal
@@ -519,4 +521,9 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
         matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
 
     return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
+}
+
+// TODO: add comment
+function getIsGoToCodeHostActionVisible(match: RepoContainerProps['match']): boolean {
+    return !matchPath(match.url, { path: `${match.path}/-/(blob|tree)` })
 }
