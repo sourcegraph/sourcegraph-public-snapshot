@@ -241,9 +241,6 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 					r.tabulator(nil, err)
 					continue
 				}
-				if groups == nil {
-					continue
-				}
 				current, _ := combined[groupKey]
 				combined[groupKey] = current + count
 			}
