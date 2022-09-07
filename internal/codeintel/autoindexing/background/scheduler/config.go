@@ -31,6 +31,6 @@ func (c *config) Load() {
 	c.RepositoryBatchSize = c.GetInt(repositoryBatchSizeName, "100", "The number of repositories to consider for auto-indexing scheduling at a time.")
 	c.PolicyBatchSize = c.GetInt(policyBatchSizeName, "100", "The number of policies to consider for auto-indexing scheduling at a time.")
 
-	c.OnDemandSchedulerInterval = c.GetInterval("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_INTERVAL", "10m", "How frequently to run the on-demand auto-indexing scheduling routine.")
+	c.OnDemandSchedulerInterval = c.GetInterval("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_INTERVAL", "30s", "How frequently to run the on-demand auto-indexing scheduling routine.")
 	c.OnDemandBatchsize = c.GetInt("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_BATCH_SIZE", "100", "The number of repo/rev pairs to consider for on-demand auto-indexing scheduling at a time.")
 }
