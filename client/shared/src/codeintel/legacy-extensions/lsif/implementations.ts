@@ -69,7 +69,7 @@ const implementationsQuery = gql`
 `
 
 /** Retrieve implementations for the current hover position. */
- 
+
 export async function* implementationsForPosition(
     textDocument: sourcegraph.TextDocument,
     position: sourcegraph.Position,
