@@ -62,7 +62,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
-		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("grafana", localGrafanaURL))
+		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
 			clog.Debug("Rendering Grafana assets")
