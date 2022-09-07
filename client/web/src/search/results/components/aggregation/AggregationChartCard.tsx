@@ -1,11 +1,12 @@
 import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
+import { mdiPlay } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Text, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Text, Link, Tooltip, Button, Icon } from '@sourcegraph/wildcard'
 
 import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../graphql-operations'
 
@@ -19,6 +20,7 @@ const LazyAggregationChart = lazyComponent<AggregationChartProps<SearchAggregati
     () => import('./AggregationChart'),
     'AggregationChart'
 )
+LazyAggregationChart.displayName = 'LazyAggregationChart'
 
 /** Set custom value for minimal rotation angle for X ticks in sidebar UI panel mode. */
 const MIN_X_TICK_ROTATION = 30
@@ -37,9 +39,11 @@ const getColor = (): string => 'var(--primary)'
  */
 type SearchAggregationResult = GetSearchAggregationResult['searchQueryAggregate']['aggregations']
 
-function getAggregationError(aggregation?: SearchAggregationResult): Error | undefined {
+function getAggregationError(
+    aggregation?: SearchAggregationResult
+): { error: Error; type: NotAvailableReasonType } | undefined {
     if (aggregation?.__typename === 'SearchAggregationNotAvailable') {
-        return new Error(aggregation.reason)
+        return { error: new Error(aggregation.reason), type: aggregation.reasonType }
     }
 
     return
@@ -74,8 +78,10 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     loading: boolean
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
+    showLoading?: boolean
     onBarLinkClick?: (query: string, barIndex: number) => void
     onBarHover?: () => void
+    onExtendTimeout: () => void
 }
 
 export function AggregationChartCard(props: AggregationChartCardProps): ReactElement | null {
@@ -86,16 +92,18 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         mode,
         className,
         size = 'sm',
+        showLoading = false,
         'aria-label': ariaLabel,
         onBarLinkClick,
         onBarHover,
+        onExtendTimeout,
     } = props
 
     if (loading) {
         return (
-            <DataLayoutContainer size={size} className={classNames(styles.loading, className)}>
-                Loading...
-            </DataLayoutContainer>
+            <AggregationErrorContainer size={size} className={className}>
+                {showLoading && <span className={styles.loading}>Loading</span>}
+            </AggregationErrorContainer>
         )
     }
 
@@ -113,8 +121,18 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
     if (aggregationError) {
         return (
             <AggregationErrorContainer size={size} className={className}>
-                We couldn’t provide an aggregation for this query. <ErrorMessage error={aggregationError} />{' '}
-                <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
+                {aggregationError.type === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE ? (
+                    <Button variant="link" className={styles.errorButton} size="sm" onClick={onExtendTimeout}>
+                        <Icon aria-hidden={true} svgPath={mdiPlay} className="mr-1" />
+                        Run aggregation
+                    </Button>
+                ) : (
+                    <>
+                        We couldn’t provide an aggregation for this query.{' '}
+                        <ErrorMessage error={aggregationError.error} />{' '}
+                        <Link to="/help/code_insights/explanations/search_results_aggregations">Learn more</Link>
+                    </>
+                )}
             </AggregationErrorContainer>
         )
     }

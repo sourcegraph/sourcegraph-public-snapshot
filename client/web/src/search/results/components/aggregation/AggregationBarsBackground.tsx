@@ -23,6 +23,7 @@ export const BarsBackground: FC<BarsBackgroundProps> = props => {
             {...attributes}
             className={classNames(className, styles.zeroStateBackground)}
             xmlns="http://www.w3.org/2000/svg"
+            height="115"
         >
             {data.map((bar, index) => (
                 <rect

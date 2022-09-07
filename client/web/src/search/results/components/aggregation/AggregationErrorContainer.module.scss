@@ -1,4 +1,5 @@
 .aggregation-error-container {
+    margin-top: 0.5rem;
     :global(.theme-dark) & rect {
         fill: var(--gray-09);
     }
