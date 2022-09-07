@@ -164,11 +164,13 @@ func TestFilterActorPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		if content.Path == "file1" {
-			return Read, nil
-		}
-		return None, nil
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			if path == "file1" {
+				return Read, nil
+			}
+			return None, nil
+		}, nil
 	})
 
 	filtered, err := FilterActorPaths(ctx, checker, a, repo, testPaths)
@@ -289,13 +291,15 @@ func TestCanReadAllPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		switch content.Path {
-		case "file1", "file2", "file3":
-			return Read, nil
-		default:
-			return None, nil
-		}
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			switch path {
+			case "file1", "file2", "file3":
+				return Read, nil
+			default:
+				return None, nil
+			}
+		}, nil
 	})
 
 	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)

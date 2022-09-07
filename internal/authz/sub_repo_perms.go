@@ -486,7 +486,18 @@ func SubRepoEnabledForRepo(ctx context.Context, checker SubRepoPermissionChecker
 	return checker.EnabledForRepo(ctx, repo)
 }
 
-func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (bool, error) {
+var (
+	metricCanReadPathsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "authz_sub_repo_perms_can_read_paths_duration_seconds",
+		Help: "Time spent checking permissions for files for an actor.",
+	}, []string{"any", "result", "error"})
+	metricCanReadPathsLenTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "authz_sub_repo_perms_can_read_paths_len_total",
+		Help: "The total number of paths considered for permissions checking.",
+	}, []string{"any", "result"})
+)
+
+func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (result bool, err error) {
 	a := actor.FromContext(ctx)
 	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
 		return false, err
@@ -494,13 +505,24 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 		return true, nil
 	}
 
-	c := RepoContent{
-		Repo: repo,
+	start := time.Now()
+	var checkPathPermsCount int
+	defer func() {
+		anyS := strconv.FormatBool(any)
+		resultS := strconv.FormatBool(result)
+		errS := strconv.FormatBool(err != nil)
+		metricCanReadPathsLenTotal.WithLabelValues(anyS, resultS).Add(float64(checkPathPermsCount))
+		metricCanReadPathsDuration.WithLabelValues(anyS, resultS, errS).Observe(time.Since(start).Seconds())
+	}()
+
+	checkPathPerms, err := checker.FilePermissionsFunc(ctx, a.UID, repo)
+	if err != nil {
+		return false, err
 	}
 
 	for _, p := range paths {
-		c.Path = p
-		perms, err := checker.Permissions(ctx, a.UID, c)
+		checkPathPermsCount++
+		perms, err := checkPathPerms(p)
 		if err != nil {
 			return false, err
 		}
@@ -524,16 +546,46 @@ func CanReadAnyPath(ctx context.Context, checker SubRepoPermissionChecker, repo 
 	return canReadPaths(ctx, checker, repo, paths, true)
 }
 
+var (
+	metricFilterActorPathsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "authz_sub_repo_perms_filter_actor_paths_duration_seconds",
+		Help: "Time spent checking permissions for files for an actor.",
+	}, []string{"error"})
+	metricFilterActorPathsLenTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "authz_sub_repo_perms_filter_actor_paths_len_total",
+		Help: "The total number of paths considered for permissions filtering.",
+	})
+)
+
 // FilterActorPaths will filter the given list of paths for the given actor
 // returning on paths they are allowed to read.
-func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
+func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) (_ []string, err error) {
+	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	} else if !doCheck {
+		return paths, nil
+	}
+
+	start := time.Now()
+	var checkPathPermsCount int
+	defer func() {
+		metricFilterActorPathsLenTotal.Add(float64(checkPathPermsCount))
+		metricFilterActorPathsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+	}()
+
+	checkPathPerms, err := checker.FilePermissionsFunc(ctx, a.UID, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	}
+
 	filtered := make([]string, 0, len(paths))
 	for _, p := range paths {
-		include, err := FilterActorPath(ctx, checker, a, repo, p)
+		checkPathPermsCount++
+		perms, err := checkPathPerms(p)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking sub-repo permissions")
 		}
-		if include {
+		if perms.Include(Read) {
 			filtered = append(filtered, p)
 		}
 	}
