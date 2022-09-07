@@ -143,7 +143,6 @@ func deleteBatchSpecWorkspaceFileQuery(opts DeleteBatchSpecWorkspaceFileOpts) *s
 var deleteBatchSpecWorkspaceFileQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:DeleteBatchSpecWorkspaceFile
 DELETE FROM batch_spec_workspace_files
-%s
 WHERE %s`
 
 // GetBatchSpecWorkspaceFileOpts are the options to determine which BatchSpecWorkspaceFile to retrieve.
