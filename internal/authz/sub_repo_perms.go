@@ -28,6 +28,12 @@ type RepoContent struct {
 	Path string
 }
 
+// FilePermissionFunc is a function which returns the Perm of path. This
+// function is associated with a user and repository and should not be used
+// beyond the lifetime of a single request. It exists to amortize the costs of
+// setup when checking many files in a repository.
+type FilePermissionFunc func(path string) (Perms, error)
+
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 type SubRepoPermissionChecker interface {
@@ -36,6 +42,13 @@ type SubRepoPermissionChecker interface {
 	//
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
+
+	// FilePermissionFunc returns a FilePermissionFunc for userID in repo.
+	// This function should only be used during the lifetime of a request. It
+	// exists to amortize the cost of checking many files in a repo.
+	//
+	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
+	FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error)
 
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
@@ -57,6 +70,12 @@ type noopPermsChecker struct{}
 
 func (*noopPermsChecker) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	return None, nil
+}
+
+func (*noopPermsChecker) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	return func(path string) (Perms, error) {
+		return None, nil
+	}, nil
 }
 
 func (*noopPermsChecker) Enabled() bool {
@@ -261,6 +280,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 
 	// Return None if no rule matches to be safe
 	return None, nil
+}
+
+func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	return func(path string) (Perms, error) {
+		return s.Permissions(ctx, userID, RepoContent{Repo: repo, Path: path})
+	}, nil
 }
 
 // getCompiledRules fetches rules for the given repo with caching.
