@@ -255,13 +255,13 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 	return string(r.mode)
 }
 
-func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
+func (r *aggregationModeAvailabilityResolver) Available() bool {
 	canAggregateByFunc := getAggregateBy(r.mode)
 	if canAggregateByFunc == nil {
-		return false, nil
+		return false
 	}
-	available, _, err := canAggregateByFunc(r.searchQuery, r.patternType)
-	return available, err
+	available, _, _ := canAggregateByFunc(r.searchQuery, r.patternType)
+	return available
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
