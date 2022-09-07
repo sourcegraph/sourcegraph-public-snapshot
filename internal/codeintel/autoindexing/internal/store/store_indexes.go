@@ -441,7 +441,8 @@ SELECT COUNT(*) WHERE EXISTS (
 )
 `
 
-// TODO - document
+// QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
+// This method is ultimately used to index on-demand (with deduplication) from transport layers.
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -473,7 +474,9 @@ VALUES (%s, %s)
 ON CONFLICT DO NOTHING
 `
 
-// TODO - document
+// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
+// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
+// has been committed or rolled back.
 func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
 	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
@@ -493,7 +496,7 @@ FOR UPDATE SKIP LOCKED
 LIMIT %s
 `
 
-// TODO - document
+// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
 func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
 	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
