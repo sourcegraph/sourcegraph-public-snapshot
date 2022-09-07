@@ -59,40 +59,6 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
 }
 
 /**
- * Update or initialize query state related data from URL search parameters
- */
-export function setQueryStateFromURL(urlParameters: string): void {
-    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
-        return
-    }
-
-    // This will be updated with the default in settings when the web app mounts.
-    const newState: Partial<
-        Pick<
-            NavbarQueryState,
-            'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
-        >
-    > = {}
-
-    const parsedSearchURL = parseSearchURL(urlParameters)
-
-    if (parsedSearchURL.query) {
-        // Only update flags if the URL contains a search query.
-        newState.parametersSource = InitialParametersSource.URL
-        newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
-        if (parsedSearchURL.patternType !== undefined) {
-            newState.searchPatternType = parsedSearchURL.patternType
-        }
-    }
-
-    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
-
-    // The way Zustand is designed makes it difficult to build up a partial new
-    // state object, hence the cast to any here.
-    useNavbarQueryState.setState(newState as any)
-}
-
-/**
  * Update or initialize query state related data from settings
  */
 export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {

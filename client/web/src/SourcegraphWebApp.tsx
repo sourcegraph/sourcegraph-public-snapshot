@@ -83,7 +83,6 @@ import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import {
     setQueryStateFromSettings,
-    setQueryStateFromURL,
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
@@ -211,8 +210,6 @@ export class SourcegraphWebApp extends React.Component<
                 })
             )
         }
-
-        setQueryStateFromURL(window.location.search)
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
