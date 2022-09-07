@@ -34,7 +34,7 @@ func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(logger.Scoped("saml.api", "auth middleware for SAML authentication"), db, w, r, next, false)
+				authHandler(logger.Scoped("saml.app", "auth middleware for SAML authentication"), db, w, r, next, false)
 			})
 		},
 	}
