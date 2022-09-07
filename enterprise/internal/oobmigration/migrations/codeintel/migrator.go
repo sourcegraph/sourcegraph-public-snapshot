@@ -2,12 +2,14 @@ package codeintel
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
@@ -59,6 +61,11 @@ type migratorOptions struct {
 
 	// batchSize limits the number of rows that will be scanned on each call to Up/Down.
 	batchSize int
+
+	// numRoutines is the maximum number of routines that can run at once on invocation of the
+	// mgirator's Up or Down methods. If zero, a number of routines proportional to available
+	// CPUs will be used.
+	numRoutines int
 
 	// fields is an ordered set of fields used to construct temporary tables and update queries.
 	fields []fieldSpec
@@ -130,6 +137,10 @@ func newMigrator(store *basestore.Store, driver migrationDriver, options migrato
 		}
 	}
 
+	if options.numRoutines == 0 {
+		options.numRoutines = runtime.GOMAXPROCS(0)
+	}
+
 	return &migrator{
 		store:                    store,
 		driver:                   driver,
@@ -178,11 +189,29 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 
 // Up runs a batch of the migration.
 func (m *migrator) Up(ctx context.Context) (err error) {
+	g := group.New().WithErrors()
+	for i := 0; i < m.options.numRoutines; i++ {
+		g.Go(func() error { return m.up(ctx) })
+	}
+
+	return g.Wait()
+}
+
+func (m *migrator) up(ctx context.Context) (err error) {
 	return m.run(ctx, m.options.targetVersion-1, m.options.targetVersion, m.driver.MigrateRowUp)
 }
 
 // Down runs a batch of the migration in reverse.
 func (m *migrator) Down(ctx context.Context) error {
+	g := group.New().WithErrors()
+	for i := 0; i < m.options.numRoutines; i++ {
+		g.Go(func() error { return m.down(ctx) })
+	}
+
+	return g.Wait()
+}
+
+func (m *migrator) down(ctx context.Context) error {
 	return m.run(ctx, m.options.targetVersion, m.options.targetVersion-1, m.driver.MigrateRowDown)
 }
 

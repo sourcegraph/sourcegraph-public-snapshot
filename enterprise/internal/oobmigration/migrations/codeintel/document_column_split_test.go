@@ -20,7 +20,7 @@ func TestDocumentColumnSplitMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewDocumentColumnSplitMigrator(store, 250)
+	migrator := NewDocumentColumnSplitMigrator(store, 250, 1)
 	serializer := newSerializer()
 
 	assertProgress := func(expectedProgress float64, applyReverse bool) {

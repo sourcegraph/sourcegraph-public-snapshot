@@ -88,10 +88,10 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
-		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000),
-		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
-		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
-		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
+		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000, 0),
+		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
+		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
+		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		insights.NewMigrator(deps.store, deps.insightsStore),
 	})
 }
