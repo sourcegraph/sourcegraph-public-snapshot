@@ -665,6 +665,48 @@ func TestIsQueued(t *testing.T) {
 	}
 }
 
+func TestQueueRepoRev(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if err := store.QueueRepoRev(ctx, 50, "HEAD"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// TODO
+	t.Fatalf("unimplemented")
+}
+
+func TestGetQueuedRepoRev(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := store.GetQueuedRepoRev(ctx, 5); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// TODO
+	t.Fatalf("unimplemented")
+}
+
+func TestMarkRepoRevsAsProcessed(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if err := store.MarkRepoRevsAsProcessed(ctx, []int{1, 2, 3}); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// TODO
+	t.Fatalf("unimplemented")
+}
+
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {

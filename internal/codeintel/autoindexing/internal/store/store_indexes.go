@@ -442,7 +442,6 @@ SELECT COUNT(*) WHERE EXISTS (
 `
 
 // TODO - document
-// TODO - test
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -469,13 +468,12 @@ func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) 
 
 const queueRepoRevQuery = `
 -- source: internal/codeintel/stores/dbstore/indexes.go:QueuedRepoRev
-INSERT INTO codeintel_autoindex_queue VALUES (repository_id, rev)
+INSERT INTO codeintel_autoindex_queue (repository_id, rev)
 VALUES (%s, %s)
 ON CONFLICT DO NOTHING
 `
 
 // TODO - document
-// TODO - test
 func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
 	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
@@ -496,7 +494,6 @@ LIMIT %s
 `
 
 // TODO - document
-// TODO - test
 func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
 	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
@@ -510,7 +507,7 @@ const markRepoRevsAsProcessedQuery = `
 -- source: internal/codeintel/stores/dbstore/indexes.go:MarkRepoRevsAsProcessed
 UPDATE codeintel_autoindex_queue
 SET processed_at = NOW()
-WHERE id IN (%s)
+WHERE id = ANY(%s)
 `
 
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.

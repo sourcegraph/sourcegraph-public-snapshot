@@ -203,7 +203,6 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
 }
 
-// TODO - test
 func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
@@ -216,7 +215,6 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
-// TODO - test
 func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
