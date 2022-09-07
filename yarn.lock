@@ -11359,16 +11359,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap@npm:^4.5.2":
-  version: 4.5.2
-  resolution: "bootstrap@npm:4.5.2"
-  peerDependencies:
-    jquery: 1.9.1 - 3
-    popper.js: ^1.16.1
-  checksum: 6c98ca6eb432d704f18e1c8d83a592bc78064e0bd9b8e99a478fda25adba17349bf425811c31cb3863da6cb88eecf6ac50eb3bb9ab5721aea665432b4f618eb1
-  languageName: node
-  linkType: hard
-
 "bowser@npm:^2.4.0":
   version: 2.9.0
   resolution: "bowser@npm:2.9.0"
@@ -29000,7 +28990,6 @@ pvutils@latest:
     babel-plugin-webpack-chunkname: ^1.2.0
     babel-preset-react-app: ^10.0.0
     bloomfilter: ^0.0.18
-    bootstrap: ^4.5.2
     browserslist: ^4.21.3
     buffer: ^6.0.3
     bundlesize2: ^0.0.31

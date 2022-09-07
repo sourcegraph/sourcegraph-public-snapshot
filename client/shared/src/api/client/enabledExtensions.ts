@@ -69,7 +69,14 @@ export const getConfiguredSideloadedExtension = (
  * List of extensions migrated to the core workflow. These extensions should not be activated if
  * `extensionsAsCoreFeatures` experimental feature is enabled.
  */
-export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
+export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set([
+    'sourcegraph/git-extras',
+    'sourcegraph/search-export',
+    'sourcegraph/open-in-editor',
+    'sourcegraph/open-in-vscode',
+    'dymka/open-in-webstorm',
+    'sourcegraph/open-in-atom',
+])
 
 /**
  * Returns an Observable of extensions enabled for the user.

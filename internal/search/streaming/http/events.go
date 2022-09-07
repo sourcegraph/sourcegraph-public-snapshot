@@ -20,6 +20,7 @@ type EventContentMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string           `json:"path"`
+	PathMatches     []Range          `json:"pathMatches,omitempty"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
 	RepoStars       int              `json:"repoStars,omitempty"`

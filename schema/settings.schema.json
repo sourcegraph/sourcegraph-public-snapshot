@@ -408,6 +408,92 @@
       },
       "group": "Experimental"
     },
+    "openInEditor": {
+      "title": "SettingsOpenInEditor",
+      "description": "Group of settings related to opening files in an editor.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "editorIds": {
+          "description": "The editor to open files in. If set to this to \"custom\", you must also set \"custom.urlPattern\"",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "appcode",
+              "atom",
+              "clion",
+              "goland",
+              "idea",
+              "phpstorm",
+              "pycharm",
+              "rider",
+              "rubymine",
+              "sublime",
+              "vscode",
+              "webstorm",
+              "custom"
+            ]
+          }
+        },
+        "projectPaths.default": {
+          "description": "The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. \"/Users/yourusername/src\" is a valid absolute path, \"~/src\" is not. Works both with and without a trailing slash.",
+          "type": "string"
+        },
+        "projectPaths.linux": {
+          "description": "Overrides the default path when the browser detects Linux. Works both with and without a trailing slash.",
+          "type": "string"
+        },
+        "projectPaths.mac": {
+          "description": "Overrides the default path when the browser detects macOS. Works both with and without a trailing slash.",
+          "type": "string"
+        },
+        "projectPaths.windows": {
+          "description": "Overrides the default path when the browser detects Windows. Doesn't need a trailing backslash.",
+          "type": "string"
+        },
+        "replacements": {
+          "description": "Each key will be replaced by the corresponding value in the final URL. Keys are regular expressions, values can contain backreferences ($1, $2, ...).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "A regular expression to match against URLs."
+          },
+          "additionalProperties": {
+            "type": "string",
+            "description": "Replace string. For backreferences to capturing groups, use $1, $2, ..."
+          }
+        },
+        "jetbrains.forceApi": {
+          "description": "Forces using protocol handlers (like ikea://open?file=...) or the built-in REST API (http://localhost:63342/api/file...). If omitted, protocol handlers are used if available, otherwise the built-in REST API is used.",
+          "type": "string",
+          "enum": ["protocolHandler", "builtInServer"]
+        },
+        "vscode.isProjectPathUNCPath": {
+          "description": "Indicates that the given project path is a UNC (Universal Naming Convention) path.",
+          "type": "boolean",
+          "default": false
+        },
+        "vscode.useInsiders": {
+          "description": "If set, files will open in VS Code Insiders rather than VS Code.",
+          "type": "boolean",
+          "default": false
+        },
+        "vscode.useSSH": {
+          "description": "If set, files will open on a remote server via SSH. This requires vscode.remoteHostForSSH to be specified and VS Code extension \"Remote Development by Microsoft\" installed in your VS Code.",
+          "type": "boolean",
+          "default": false
+        },
+        "vscode.remoteHostForSSH": {
+          "description": "The remote host as \"USER@HOSTNAME\". This needs you to install the extension called \"Remote Development by Microsoft\" in your VS Code.",
+          "type": "string"
+        },
+        "custom.urlPattern": {
+          "description": "If you add \"custom\" to openineditor.editorIds, this must be set. Use the placeholders \"%file\", \"%line\", and \"%col\" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: \"idea://open?file=%file&line=%line&column=%col\"",
+          "type": "string"
+        }
+      }
+    },
     "search.savedQueries": {
       "description": "DEPRECATED: Saved search queries",
       "type": "array",
