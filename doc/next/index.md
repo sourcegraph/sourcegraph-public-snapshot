@@ -9,6 +9,7 @@ title: Deploy Sourcegraph
     gap: 1em;
   }
   .app-btn {
+    cursor: pointer;
     text-decoration: none;
     height: 15em;
     width: 100%;
@@ -34,7 +35,7 @@ title: Deploy Sourcegraph
 
 # Deploy Sourcegraph
 
-Get started with one of the available deployment methods below, from creating a managed instance hosted by Sourcegraph Cloud to setting up a self-hosted instance with [AWS One-Click](./aws-oneclick.md) --we've got you covered!
+Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
 ## Recommended
 
@@ -46,7 +47,7 @@ Get started with one of the available deployment methods below, from creating a 
   </button>
 </form>
 
-## Self-Hosted
+## Self-hosted
 
 <form class="grid">
   <!-- AWS -->
@@ -99,7 +100,7 @@ Get started with one of the available deployment methods below, from creating a 
   </button>
 </form>
 
-## Local Machine
+## Local machine
 
 <form class="grid">
   <button class="app-btn btn" formaction="/admin/deploy/docker-single-container">
@@ -107,4 +108,5 @@ Get started with one of the available deployment methods below, from creating a 
     <h3>Docker Container</h3>
     <p>Spin up a local Sourcegraph instance</p>
   </button>
+  <div></div><div></div>
 </form>
