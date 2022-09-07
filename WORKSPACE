@@ -22,13 +22,13 @@ load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
-    bins = {
-        # derived from "bin" attribute in node_modules/typescript/package.json
-        "typescript": {
-            "tsc": "./bin/tsc",
-            "tsserver": "./bin/tsserver",
-        },
-    },
+    # bins = {
+    #     # derived from "bin" attribute in node_modules/typescript/package.json
+    #     "typescript": {
+    #         "tsc": "./bin/tsc",
+    #         "tsserver": "./bin/tsserver",
+    #     },
+    # },
     pnpm_lock = "//:pnpm-lock.yaml",
     # package_json = "//:package.json",
     # yarn_lock = "//:yarn.lock",
