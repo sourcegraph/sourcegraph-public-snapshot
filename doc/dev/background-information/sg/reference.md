@@ -189,6 +189,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--format="<value>"`: Output format for the preview, (valid values are 'markdown', 'json' and 'yaml' which will both output the raw pipeline in that format (default: markdown)
 
 ### sg ci status
 
