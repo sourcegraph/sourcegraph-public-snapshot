@@ -186,7 +186,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 html: blob.highlight.html ?? '',
                                 repoName,
                                 revision,
-                                commitID,
                                 filePath,
                                 mode,
                                 // Properties used in `BlobPage` but not `Blob`
@@ -200,7 +199,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [commitID, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -246,7 +245,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             lsif: blob.highlight.lsif ?? '',
                             repoName,
                             revision,
-                            commitID,
                             filePath,
                             mode,
                             // Properties used in `BlobPage` but not `Blob`
@@ -257,7 +255,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
+            [repoName, revision, filePath, mode, enableCodeMirror]
         )
     )
 
