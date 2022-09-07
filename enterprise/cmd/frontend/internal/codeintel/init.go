@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -38,15 +37,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
 	uploadResolver := uploadgraphql.New(services.UploadSvc, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(
-		services.dbStore,
-		symbols.DefaultClient,
-		codenavResolver,
-		executorResolver,
-		policyResolver,
-		autoindexingResolver,
-		uploadResolver,
-	)
+	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
 
