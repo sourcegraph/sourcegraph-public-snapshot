@@ -115,15 +115,15 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ## Get started
 
-- [Tour](/getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
-- [Using Sourcegraph](/getting-started/index.md)
-- [How to run a Sourcegraph trial](/adopt/trial/index.md) at your company
-- [Integrations](/integration/index.md) with GitHub, GitLab, Bitbucket, etc.
-- [Chrome and Firefox browser extensions](/integration/browser_extension.md)
+- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [Using Sourcegraph](getting-started/index.md)
+- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
+- [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
+- [Chrome and Firefox browser extensions](integration/browser_extension.md)
 - Reference:
-  - [Query syntax reference](/code_search/reference/queries.md)
-  - [API documentation](/api/index.md)
-- [Sourcegraph AWS launch stack](/admin/deploy/aws-oneclick.md)
+  - [Query syntax reference](code_search/reference/queries.md)
+  - [API documentation](api/index.md)
+- [Sourcegraph AWS launch stack](admin/deploy/aws-oneclick.md)
 
 ### Other links
 
