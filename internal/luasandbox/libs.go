@@ -16,7 +16,7 @@ var defaultAPIs = map[string]LuaLib{
 	"path": libs.Path,
 }
 
-var DefaultModules = func() map[string]lua.LGFunction {
+var DefaultGoModules = func() map[string]lua.LGFunction {
 	modules := map[string]lua.LGFunction{}
 	for name, api := range defaultAPIs {
 		modules[name] = util.CreateModule(api.LuaAPI())
