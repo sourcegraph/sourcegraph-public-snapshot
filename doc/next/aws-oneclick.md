@@ -39,7 +39,7 @@ You will only need to choose your VPC and SSH key-pair to get started.
 3. Select or create a new Key Pair for connecting to your instance securely
 
 ## Launcher
-<span class="badge badge-warning">Coming soon</span> Create a Sourcegraph instance in one-click!
+<span class="badge badge-warning">Coming soon</span> Set up a Sourcegraph instance in one-click!
 <!-- ref: https://aws.amazon.com/blogs/devops/construct-your-own-launch-stack-url/ -->
 <form class="launcher" name="launcher" action="" target="_blank">
   <select name="region" disabled>
