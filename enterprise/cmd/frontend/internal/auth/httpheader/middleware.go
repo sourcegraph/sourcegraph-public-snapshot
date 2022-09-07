@@ -51,7 +51,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			}
 
 			if authProvider.c.UsernameHeader == "" {
-				logger.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
+				logger.Warn("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
 				http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 				return
 			}
@@ -79,7 +79,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			if rawUsername != "" {
 				username, err = auth.NormalizeUsername(rawUsername)
 				if err != nil {
-					logger.Error("Error normalizing username from HTTP auth proxy.", log.String("username", rawUsername), log.Error(err))
+					logger.Warn("Error normalizing username from HTTP auth proxy.", log.String("username", rawUsername), log.Error(err))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
 
@@ -88,7 +88,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				// if they don't have a username, let's create one from their email
 				username, err = auth.NormalizeUsername(rawEmail)
 				if err != nil {
-					logger.Error("Error normalizing username from email header in HTTP auth proxy.", log.String("email", rawEmail), log.Error(err))
+					logger.Warn("Error normalizing username from email header in HTTP auth proxy.", log.String("email", rawEmail), log.Error(err))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
 				}
@@ -111,7 +111,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				LookUpByUsername: rawEmail == "", // if the email is provided, we should look up by email, otherwise username
 			})
 			if err != nil {
-				logger.Error("unable to get/create user from SSO header",
+				logger.Warn("unable to get/create user from SSO header",
 					log.String("header", authProvider.c.UsernameHeader),
 					log.String("rawUsername", rawUsername),
 					log.Error(err),
