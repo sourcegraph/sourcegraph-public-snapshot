@@ -193,6 +193,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
                 filePath={result.path}
+                pathMatchRanges={'pathMatches' in result ? result.pathMatches : []}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName

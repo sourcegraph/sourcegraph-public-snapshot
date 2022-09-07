@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,6 +43,12 @@ func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedM
 		Definitions: definitions,
 		BoundsByRev: boundsByRev,
 	}, nil
+}
+
+var schemaBounds = map[string]oobmigration.Version{
+	"frontend":     oobmigration.NewVersion(0, 0),
+	"codeintel":    oobmigration.NewVersion(3, 21),
+	"codeinsights": oobmigration.NewVersion(3, 24),
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,
@@ -83,12 +90,28 @@ const squashedMigrationPrefix = "squashed migrations"
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
 func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
+	revVersion, ok := oobmigration.NewVersionFromString(rev)
+	if !ok {
+		return shared.MigrationBounds{}, errors.Newf("illegal rev %q", rev)
+	}
+	firstVersionForSchema, ok := schemaBounds[schemaName]
+	if !ok {
+		return shared.MigrationBounds{}, errors.Newf("illegal schema %q", rev)
+	}
+	if oobmigration.CompareVersions(revVersion, firstVersionForSchema) != oobmigration.VersionOrderAfter {
+		return shared.MigrationBounds{PreCreation: true}, nil
+	}
+
 	fs, err := ReadMigrations(schemaName, root, rev)
 	if err != nil {
 		return shared.MigrationBounds{}, err
 	}
 
-	revDefinitions, err := definition.ReadDefinitions(fs, migrationPath(schemaName))
+	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	if err != nil {
+		return shared.MigrationBounds{}, err
+	}
+	revDefinitions, err := definition.ReadDefinitions(fs, pathForSchemaAtRev)
 	if err != nil {
 		return shared.MigrationBounds{}, errors.Wrap(err, "@"+rev)
 	}
@@ -182,6 +205,8 @@ var allowedOverrideMap = map[int]struct{}{
 	1645554732: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
 	1655481894: {}, // https://github.com/sourcegraph/sourcegraph/pull/40204 - fixed down mgiration reference
 	1528395786: {}, // https://github.com/sourcegraph/sourcegraph/pull/18667 - drive-by edit of empty migration
+	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
+	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent

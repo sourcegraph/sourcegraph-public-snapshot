@@ -11,6 +11,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/atomic"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,6 +28,12 @@ type RepoContent struct {
 	Path string
 }
 
+// FilePermissionFunc is a function which returns the Perm of path. This
+// function is associated with a user and repository and should not be used
+// beyond the lifetime of a single request. It exists to amortize the costs of
+// setup when checking many files in a repository.
+type FilePermissionFunc func(path string) (Perms, error)
+
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 type SubRepoPermissionChecker interface {
@@ -35,6 +42,13 @@ type SubRepoPermissionChecker interface {
 	//
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
+
+	// FilePermissionFunc returns a FilePermissionFunc for userID in repo.
+	// This function should only be used during the lifetime of a request. It
+	// exists to amortize the cost of checking many files in a repo.
+	//
+	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
+	FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error)
 
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
@@ -56,6 +70,12 @@ type noopPermsChecker struct{}
 
 func (*noopPermsChecker) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	return None, nil
+}
+
+func (*noopPermsChecker) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	return func(path string) (Perms, error) {
+		return None, nil
+	}, nil
 }
 
 func (*noopPermsChecker) Enabled() bool {
@@ -91,8 +111,9 @@ type SubRepoPermsClient struct {
 	clock             func() time.Time
 	since             func(time.Time) time.Duration
 
-	group *singleflight.Group
-	cache *lru.Cache
+	group   *singleflight.Group
+	cache   *lru.Cache
+	enabled *atomic.Bool
 }
 
 const defaultCacheSize = 1000
@@ -128,10 +149,21 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		return nil, errors.Wrap(err, "creating LRU cache")
 	}
 
+	enabled := atomic.NewBool(false)
+
 	conf.Watch(func() {
-		if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
-			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		c := conf.Get()
+		if c.ExperimentalFeatures == nil || c.ExperimentalFeatures.SubRepoPermissions == nil {
+			enabled.Store(false)
+			return
 		}
+
+		cacheSize := c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize
+		if cacheSize == 0 {
+			cacheSize = defaultCacheSize
+		}
+		cache.Resize(cacheSize)
+		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
 	})
 
 	return &SubRepoPermsClient{
@@ -140,32 +172,41 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		since:             time.Since,
 		group:             &singleflight.Group{},
 		cache:             cache,
+		enabled:           enabled,
 	}, nil
 }
 
-// WithGetter returns a new instance that uses the supplied getter. The cache
-// from the original instance is left intact.
-func (s *SubRepoPermsClient) WithGetter(g SubRepoPermissionsGetter) *SubRepoPermsClient {
-	return &SubRepoPermsClient{
-		permissionsGetter: g,
-		clock:             s.clock,
-		since:             s.since,
-		group:             s.group,
-		cache:             s.cache,
-	}
+var (
+	metricSubRepoPermsPermissionsDurationSuccess prometheus.Observer
+	metricSubRepoPermsPermissionsDurationError   prometheus.Observer
+)
+
+func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
+	metric := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "authz_sub_repo_perms_permissions_duration_seconds",
+		Help: "Time spent calculating permissions of a file for an actor.",
+	}, []string{"error"})
+	metricSubRepoPermsPermissionsDurationSuccess = metric.WithLabelValues("false")
+	metricSubRepoPermsPermissionsDurationError = metric.WithLabelValues("true")
 }
 
-// subRepoPermsPermissionsDuration tracks the behaviour and performance of Permissions()
-var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "authz_sub_repo_perms_permissions_duration_seconds",
-	Help: "Time spent syncing",
-}, []string{"error"})
+var (
+	metricSubRepoPermCacheHit  prometheus.Counter
+	metricSubRepoPermCacheMiss prometheus.Counter
+)
 
-// subRepoPermsCacheHit tracks the number of cache hits and misses for sub-repo permissions
-var subRepoPermsCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "authz_sub_repo_perms_permissions_cache_count",
-	Help: "The number of sub-repo perms cache hits or misses",
-}, []string{"hit"})
+func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
+	metric := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "authz_sub_repo_perms_permissions_cache_count",
+		Help: "The number of sub-repo perms cache hits or misses",
+	}, []string{"hit"})
+	metricSubRepoPermCacheHit = metric.WithLabelValues("true")
+	metricSubRepoPermCacheMiss = metric.WithLabelValues("false")
+}
 
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
@@ -179,7 +220,11 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	began := time.Now()
 	defer func() {
 		took := time.Since(began).Seconds()
-		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
+		if err == nil {
+			metricSubRepoPermsPermissionsDurationSuccess.Observe(took)
+		} else {
+			metricSubRepoPermsPermissionsDurationError.Observe(took)
+		}
 	}()
 
 	if s.permissionsGetter == nil {
@@ -237,6 +282,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	return None, nil
 }
 
+func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	return func(path string) (Perms, error) {
+		return s.Permissions(ctx, userID, RepoContent{Repo: repo, Path: path})
+	}, nil
+}
+
 // getCompiledRules fetches rules for the given repo with caching.
 func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32) (map[api.RepoName]compiledRules, error) {
 	// Fast path for cached rules
@@ -249,10 +300,10 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	}
 
 	if ok && s.since(cached.timestamp) <= ttl {
-		subRepoPermsCacheHit.WithLabelValues("true").Inc()
+		metricSubRepoPermCacheHit.Inc()
 		return cached.rules, nil
 	}
-	subRepoPermsCacheHit.WithLabelValues("false").Inc()
+	metricSubRepoPermCacheMiss.Inc()
 
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
@@ -319,10 +370,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 }
 
 func (s *SubRepoPermsClient) Enabled() bool {
-	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
-		return c.ExperimentalFeatures.SubRepoPermissions.Enabled
-	}
-	return false
+	return s.enabled.Load()
 }
 
 func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
@@ -385,14 +433,10 @@ func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !SubRepoEnabled(s) {
+	if doCheck, err := actorSubRepoEnabled(s, a); err != nil {
+		return None, err
+	} else if !doCheck {
 		return Read, nil
-	}
-	if a.IsInternal() {
-		return Read, nil
-	}
-	if !a.IsAuthenticated() {
-		return None, &ErrUnauthenticated{}
 	}
 
 	perms, err := s.Permissions(ctx, a.UID, content)
@@ -400,6 +444,23 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// actorSubRepoEnabled returns true if you should do sub repo permission
+// checks with s for actor a. If false, you can skip sub repo checks.
+//
+// If the actor represents an anonymous user, ErrUnauthenticated is returned.
+func actorSubRepoEnabled(s SubRepoPermissionChecker, a *actor.Actor) (bool, error) {
+	if !SubRepoEnabled(s) {
+		return false, nil
+	}
+	if a.IsInternal() {
+		return false, nil
+	}
+	if !a.IsAuthenticated() {
+		return false, &ErrUnauthenticated{}
+	}
+	return true, nil
 }
 
 // SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
@@ -426,15 +487,11 @@ func SubRepoEnabledForRepo(ctx context.Context, checker SubRepoPermissionChecker
 }
 
 func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (bool, error) {
-	if !SubRepoEnabled(checker) {
-		return true, nil
-	}
 	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
+		return false, err
+	} else if !doCheck {
 		return true, nil
-	}
-	if !a.IsAuthenticated() {
-		return false, &ErrUnauthenticated{}
 	}
 
 	c := RepoContent{
@@ -454,7 +511,7 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 		}
 	}
 
-	return true && !any, nil
+	return !any, nil
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.

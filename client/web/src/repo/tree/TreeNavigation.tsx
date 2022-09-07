@@ -7,10 +7,10 @@ import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, ButtonGroup, Icon, Link } from '@sourcegraph/wildcard'
 
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
-import { TreePageRepositoryFields } from '../../graphql-operations'
 
 interface TreeNavigationProps {
-    repo: TreePageRepositoryFields
+    repoName: string
+    viewerCanAdminister: boolean | undefined
     revision: string
     tree: TreeFields
     codeIntelligenceEnabled: boolean
@@ -18,7 +18,8 @@ interface TreeNavigationProps {
 }
 
 export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<TreeNavigationProps>> = ({
-    repo,
+    repoName,
+    viewerCanAdminister,
     revision,
     tree,
     codeIntelligenceEnabled,
@@ -28,17 +29,17 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
         <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
             <Icon aria-hidden={true} svgPath={mdiSourceCommit} /> Commits
         </Button>
-        <Button to={`/${encodeURIPathComponent(repo.name)}/-/branches`} variant="secondary" outline={true} as={Link}>
+        <Button to={`/${encodeURIPathComponent(repoName)}/-/branches`} variant="secondary" outline={true} as={Link}>
             <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> Branches
         </Button>
-        <Button to={`/${encodeURIPathComponent(repo.name)}/-/tags`} variant="secondary" outline={true} as={Link}>
+        <Button to={`/${encodeURIPathComponent(repoName)}/-/tags`} variant="secondary" outline={true} as={Link}>
             <Icon aria-hidden={true} svgPath={mdiTag} /> Tags
         </Button>
         <Button
             to={
                 revision
-                    ? `/${encodeURIPathComponent(repo.name)}/-/compare/...${encodeURIComponent(revision)}`
-                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
+                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(revision)}`
+                    : `/${encodeURIPathComponent(repoName)}/-/compare`
             }
             variant="secondary"
             outline={true}
@@ -47,7 +48,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
             <Icon aria-hidden={true} svgPath={mdiHistory} /> Compare
         </Button>
         <Button
-            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
+            to={`/${encodeURIPathComponent(repoName)}/-/stats/contributors`}
             variant="secondary"
             outline={true}
             as={Link}
@@ -56,7 +57,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
         </Button>
         {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/code-graph`}
+                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
                 variant="secondary"
                 outline={true}
                 as={Link}
@@ -64,14 +65,9 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
                 <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph data
             </Button>
         )}
-        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
-        {repo.viewerCanAdminister && (
-            <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                variant="secondary"
-                outline={true}
-                as={Link}
-            >
+        {batchChangesEnabled && <RepoBatchChangesButton repoName={repoName} />}
+        {viewerCanAdminister && (
+            <Button to={`/${encodeURIPathComponent(repoName)}/-/settings`} variant="secondary" outline={true} as={Link}>
                 <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
             </Button>
         )}

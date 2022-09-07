@@ -2,7 +2,7 @@
 
 The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting section](#troubleshooting) for additional information.
 
-[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). 
+[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). [Tracing](../../observability/tracing.md) is disabled by default, and if you intend to enable it, you will have to deploy and configure the [OpenTelemetry Collector](../../observability/opentelemetry.md). The Single Container deployment does not ship with this service included. It is strongly recommended to use one of the aforementioned deployment methods if tracing support is a requirement. 
 
 ## Installation
 
@@ -136,15 +136,22 @@ SELECT * FROM users;
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
+**Before upgrading:**
 
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
 
-You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+### Standard upgrades
 
-- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
-- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
-- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is a patch or single minor release away your current version) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+
+### Multi-version upgrades
+
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
+
+Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point.
 
 ## Troubleshooting
 
@@ -177,7 +184,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 ### Low resource environments
 
-To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus and Grafana).
 
 Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 

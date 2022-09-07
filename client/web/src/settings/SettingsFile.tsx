@@ -9,13 +9,14 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
+import { EditorActionsGroup } from './EditorActionsGroup'
+
 import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -168,21 +169,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <div className={adminConfigurationStyles.actionGroups}>
-                    <div className={adminConfigurationStyles.actions}>
-                        {settingsActions.map(({ id, label }) => (
-                            <Button
-                                key={id}
-                                className={adminConfigurationStyles.action}
-                                onClick={() => this.runAction(id)}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                {label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
+                <EditorActionsGroup actions={settingsActions} onClick={this.runAction.bind(this)} />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}

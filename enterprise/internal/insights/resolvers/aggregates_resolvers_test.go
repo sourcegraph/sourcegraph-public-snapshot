@@ -25,11 +25,11 @@ type canAggregateBySuite struct {
 	canAggregateByFunc canAggregateBy
 }
 
-func safeString(s *string) string {
-	if s == nil {
+func safeReason(r *notAvailableReason) string {
+	if r == nil {
 		return ""
 	}
-	return *s
+	return r.reason
 }
 
 func (suite *canAggregateBySuite) Test_canAggregateBy() {
@@ -38,7 +38,7 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			if tc.patternType == "" {
 				tc.patternType = "literal"
 			}
-			canAggregate, reason, err := suite.canAggregateByFunc(tc.query, tc.patternType)
+			canAggregate, reasonNA, err := suite.canAggregateByFunc(tc.query, tc.patternType)
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
@@ -49,8 +49,8 @@ func (suite *canAggregateBySuite) Test_canAggregateBy() {
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
 			}
-			if !strings.EqualFold(safeString(reason), tc.reason) {
-				t.Errorf("expected reason to be %v, got %v", tc.reason, safeString(reason))
+			if !strings.EqualFold(safeReason(reasonNA), tc.reason) {
+				t.Errorf("expected reason to be %v, got %v", tc.reason, safeReason(reasonNA))
 			}
 		})
 	}
@@ -96,6 +96,12 @@ func Test_canAggregateByPath(t *testing.T) {
 			name:         "cannot aggregate for query with type:commit parameter",
 			query:        "insights type:commit",
 			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with type:diff parameter",
+			query:        "insights type:diff",
+			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "diff"),
 			canAggregate: false,
 		},
 		{
@@ -237,23 +243,28 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			canAggregate: false,
 		},
 		{
-			name:         "cannot for type:repo query",
-			query:        "repo:contains.path(README) func(\\w+) type:repo",
+			name:         "cannot aggregate for select:symbol query",
+			query:        "repo:contains.path(README) func(\\w+) select:symbol",
 			patternType:  "regexp",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "repo"),
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "symbol"),
 			canAggregate: false,
 		},
 		{
-			name:         "cannot aggregate for type:path query",
-			query:        "repo:contains.path(README) func(\\w+) type:path",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
+			name:         "can for type:repo query",
+			query:        "sourcegraph-(\\w+) type:repo",
 			patternType:  "regexp",
-			canAggregate: false,
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for type:path query",
+			query:        "repo:contains.path(README) /(\\w+)_test.go/ type:path ",
+			patternType:  "regexp",
+			canAggregate: true,
 		},
 		{
 			name:         "ensure type check is not case sensitive",
-			query:        "repo:contains.path(README) func(\\w+) TyPe:path",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "path"),
+			query:        "repo:contains.path(README) func(\\w+) TyPe:diff",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
 			patternType:  "regexp",
 			canAggregate: false,
 		},
@@ -269,6 +280,26 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
 			reason:       cgMultipleQueryPatternMsg,
 			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "can aggregate for query with type commit",
+			query:        `type:commit repo:^github\.com/sourcegraph/sourcegraph$ after:"5 days ago" /Fix (\\w+)/`,
+			patternType:  "standard",
+			canAggregate: true,
+		},
+		{
+			name:         "cannot aggregate for query with type diff",
+			query:        "/func(\\w+)/ case:yes type:diff",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with select commit",
+			query:        "/func(\\w+)/ case:yes select:commit",
+			patternType:  "standard",
+			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "commit"),
 			canAggregate: false,
 		},
 	}

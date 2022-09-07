@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	gh "github.com/google/go-github/v41/github"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -1357,12 +1358,12 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 
 // isDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
-//   - Permissions user mapping is enabled
+//   - Permissions user mapping (aka explicit permissions API) is enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
-		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
 

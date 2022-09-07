@@ -22,6 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
+
 // Notable versions:
 //
 // v3.29.0 -> oldest supported

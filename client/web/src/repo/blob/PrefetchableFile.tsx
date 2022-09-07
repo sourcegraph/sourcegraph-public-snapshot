@@ -38,7 +38,7 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
         // The primary aim is to kickstart the memoized observable so that
         // when BlobPage does try to fetch the data, it is already resolved/resolving.
         observable.current = fetchBlob({
-            commitID: revision,
+            revision,
             filePath,
             repoName,
             format: enableCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT,

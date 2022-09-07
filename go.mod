@@ -140,7 +140,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20220829165858-090861ec23a3
+	github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -177,7 +177,7 @@ require (
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	gonum.org/v1/gonum v0.11.0
@@ -201,15 +201,19 @@ require github.com/XSAM/otelsql v0.15.0
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 )
 
 require github.com/hmarr/codeowners v0.4.0
 
-require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+require (
+	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+)
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab
+	github.com/sourcegraph/zoekt v0.0.0-20220906183641-6ba33af2cc5f
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -452,7 +456,7 @@ replace (
 // or issues with specific versions.
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).

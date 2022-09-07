@@ -8,10 +8,12 @@ import "context"
 // (e.g., gob-encode or gzipped payloads).
 type Migrator interface {
 	// Progress returns a percentage (in the range range [0, 1]) of data records that need
-	// to be upgraded in the forward direction. A value of 1 means that no further action
-	// is required. A value < 1 denotes that a future invocation of the Up method could
-	// migrate additional data (excluding error conditions and prerequisite migrations).
-	Progress(ctx context.Context) (float64, error)
+	// to be migrated in the up direction. A value of 0 means that no data has been changedk.
+	// A value of 1 means that the underlying data has been completely migrated. A value < 1
+	// denotes that a future invocation of the Up method may affect additional data, excluding
+	// error conditions and prerequisite migrations. A value > 0 denotes that a future invocation
+	// of the Down method may affect additional data.
+	Progress(ctx context.Context, applyReverse bool) (float64, error)
 
 	// Up runs a batch of the migration. This method is called repeatedly until the Progress
 	// method reports completion. Errors returned from this method will be associated with the

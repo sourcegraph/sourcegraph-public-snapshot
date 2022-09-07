@@ -269,11 +269,13 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     __typename: 'BatchSpec',
                     id: 'Execution',
                     state: BatchSpecState.COMPLETED,
-                    finishedAt: null,
+                    finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
                         name: 'test-batch-change',
                     },
+                    source: BatchSpecSource.REMOTE,
+                    startedAt: '2022-07-06T23:21:45Z',
                     namespace: {
                         namespaceName: 'alice',
                         url: '/users/alice',
@@ -486,7 +488,7 @@ describe('Batches', () => {
             allBatchChanges: {
                 totalCount: 1,
             },
-            maxUnlicensedChangesets: 5,
+            maxUnlicensedChangesets: 10,
         }),
     }
     const batchChangesListResults = {

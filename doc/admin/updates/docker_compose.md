@@ -4,16 +4,22 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 ## Upgrade procedure
 
-1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your instance.
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+2. Find the relevant entry for your update in the update notes on this page.
+3. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your instance.
 
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
-<!-- Add changes changes to this section before release. -->'
+<!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
+* `jaeger` (deployed with the `jaeger-all-in-one` image) has been removed in favor of an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. See [Configure a tracing backend](../deploy/docker-compose/operations.md#configure-a-tracing-backend)
+* Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/docker-compose/operations.md#configure-a-tracing-backend) to configure.
+* The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.
 
 
 ## 3.42 -> 3.43.1

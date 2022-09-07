@@ -13,17 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Init(db database.DB) {
+func Init(logger log.Logger, db database.DB) {
+	const pkgName = "gitlaboauth"
+	logger = log.Scoped(pkgName, "GitLab OAuth config watch")
+
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(cfg, db)
+		_, problems := parseConfig(logger, cfg, db)
 		return problems
 	})
 
 	go func() {
-		const pkgName = "gitlaboauth"
-		logger := log.Scoped(pkgName, "GitLab OAuth config watch")
 		conf.Watch(func() {
-			newProviders, _ := parseConfig(conf.Get(), db)
+			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
 				return
@@ -49,7 +50,7 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
+func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
@@ -67,7 +68,7 @@ func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
-		provider, providerMessages := parseProvider(db, callbackURL.String(), pr.Gitlab, pr)
+		provider, providerMessages := parseProvider(logger, db, callbackURL.String(), pr.Gitlab, pr)
 
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
 		ps = append(ps, Provider{

@@ -14,8 +14,6 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
-    UserRepositoriesResult,
-    UserRepositoriesVariables,
     RepositoriesVariables,
     RepositoriesResult,
     ExternalServiceKind,
@@ -42,23 +40,19 @@ import {
     UpdateMirrorRepositoryVariables,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
-    UserPublicRepositoriesResult,
-    UserPublicRepositoriesVariables,
-    UserPublicRepositoriesFields,
-    SetUserPublicRepositoriesResult,
-    SetUserPublicRepositoriesVariables,
     OutOfBandMigrationFields,
     OutOfBandMigrationsResult,
     OutOfBandMigrationsVariables,
-    UserRepositoriesTotalCountVariables,
     SetUserTagResult,
     SetUserTagVariables,
     FeatureFlagsResult,
     FeatureFlagsVariables,
     FeatureFlagFields,
+    SiteAdminAccessTokenConnectionFields,
+    SiteAdminAccessTokensVariables,
+    SiteAdminAccessTokensResult,
 } from '../graphql-operations'
-
-type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
+import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 /**
  * Fetches all users.
@@ -180,132 +174,6 @@ const siteAdminRepositoryFieldsFragment = gql`
         }
     }
 `
-interface RepoCountResult {
-    node: { repositories: { totalCount: number | null } }
-}
-export async function fetchUserRepositoriesCount(
-    args: Partial<UserRepositoriesTotalCountVariables>
-): Promise<RepoCountResult> {
-    return dataOrThrowErrors(
-        await requestGraphQL<RepoCountResult, UserRepositoriesTotalCountVariables>(
-            gql`
-                query UserRepositoriesTotalCount(
-                    $id: ID!
-                    $first: Int
-                    $query: String
-                    $cloned: Boolean
-                    $notCloned: Boolean
-                    $indexed: Boolean
-                    $notIndexed: Boolean
-                    $externalServiceID: ID
-                ) {
-                    node(id: $id) {
-                        ... on User {
-                            __typename
-                            repositories(
-                                first: $first
-                                query: $query
-                                cloned: $cloned
-                                notCloned: $notCloned
-                                indexed: $indexed
-                                notIndexed: $notIndexed
-                                externalServiceID: $externalServiceID
-                            ) {
-                                totalCount(precise: true)
-                            }
-                        }
-                    }
-                }
-            `,
-            {
-                id: args.id!,
-                cloned: args.cloned ?? true,
-                notCloned: args.notCloned ?? true,
-                indexed: args.indexed ?? true,
-                notIndexed: args.notIndexed ?? true,
-                first: args.first ?? null,
-                query: args.query ?? null,
-                externalServiceID: args.externalServiceID ?? null,
-            }
-        ).toPromise()
-    )
-}
-
-export function listUserRepositories(args: Partial<UserRepositoriesVariables>): Observable<UserRepositories> {
-    return requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
-        gql`
-            query UserRepositories(
-                $id: ID!
-                $first: Int
-                $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
-                $indexed: Boolean
-                $notIndexed: Boolean
-                $externalServiceID: ID
-            ) {
-                node(id: $id) {
-                    ... on User {
-                        __typename
-                        repositories(
-                            first: $first
-                            query: $query
-                            cloned: $cloned
-                            notCloned: $notCloned
-                            indexed: $indexed
-                            notIndexed: $notIndexed
-                            externalServiceID: $externalServiceID
-                        ) {
-                            nodes {
-                                ...SiteAdminRepositoryFields
-                            }
-                            totalCount(precise: true)
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${siteAdminRepositoryFieldsFragment}
-        `,
-        {
-            id: args.id!,
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            externalServiceID: args.externalServiceID ?? null,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (data.node === null || data.node.__typename !== 'User') {
-                throw new Error('user not found')
-            }
-            return data.node.repositories
-        })
-    )
-}
-
-export function listUserRepositoriesAndPollIfEmptyOrAnyCloning(
-    args: Partial<UserRepositoriesVariables>
-): Observable<UserRepositories> {
-    return listUserRepositories(args).pipe(
-        // Poll every 5000ms if repositories are being cloned or the list is empty.
-        repeatUntil(
-            result =>
-                result.nodes &&
-                result.nodes.length > 0 &&
-                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: 5000 }
-        )
-    )
-}
-
 /**
  * Fetches all repositories.
  *
@@ -875,54 +743,6 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
     )
 }
 
-export function queryUserPublicRepositories(
-    userId: Scalars['ID']
-): Observable<UserPublicRepositoriesFields[] | undefined> {
-    return requestGraphQL<UserPublicRepositoriesResult, UserPublicRepositoriesVariables>(
-        gql`
-            query UserPublicRepositories($userId: ID!) {
-                node(id: $userId) {
-                    ... on User {
-                        __typename
-                        publicRepositories {
-                            ...UserPublicRepositoriesFields
-                        }
-                    }
-                }
-            }
-            fragment UserPublicRepositoriesFields on Repository {
-                id
-                name
-            }
-        `,
-        { userId }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (data?.node?.__typename === 'User') {
-                return data.node.publicRepositories
-            }
-            return []
-        })
-    )
-}
-
-export function setUserPublicRepositories(
-    userId: Scalars['ID'],
-    repos: string[]
-): Observable<SetUserPublicRepositoriesResult> {
-    return requestGraphQL<SetUserPublicRepositoriesResult, SetUserPublicRepositoriesVariables>(
-        gql`
-            mutation SetUserPublicRepositories($userId: ID!, $repos: [String!]!) {
-                SetUserPublicRepos(userID: $userId, repoURIs: $repos) {
-                    alwaysNil
-                }
-            }
-        `,
-        { userId, repos }
-    ).pipe(map(dataOrThrowErrors))
-}
-
 /**
  * Fetches all out-of-band migrations.
  */
@@ -1013,3 +833,31 @@ export const REPOSITORY_STATS = gql`
         }
     }
 `
+
+export function queryAccessTokens(args: { first?: number }): Observable<SiteAdminAccessTokenConnectionFields> {
+    return requestGraphQL<SiteAdminAccessTokensResult, SiteAdminAccessTokensVariables>(
+        gql`
+            query SiteAdminAccessTokens($first: Int) {
+                site {
+                    accessTokens(first: $first) {
+                        ...SiteAdminAccessTokenConnectionFields
+                    }
+                }
+            }
+            fragment SiteAdminAccessTokenConnectionFields on AccessTokenConnection {
+                nodes {
+                    ...AccessTokenFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+            }
+            ${accessTokenFragment}
+        `,
+        { first: args.first ?? null }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.accessTokens)
+    )
+}
