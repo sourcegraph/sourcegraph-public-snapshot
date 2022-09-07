@@ -39,7 +39,6 @@ import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -354,15 +353,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         revision={props.revision}
                         filePath={filePath}
                     />
-                )}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                id="toggle-blame"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
                 )}
             </RepoHeaderContributionPortal>
         </>
