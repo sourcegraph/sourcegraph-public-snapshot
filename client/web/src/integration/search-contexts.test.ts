@@ -13,7 +13,6 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
@@ -427,7 +426,6 @@ describe('Search contexts', () => {
     test('Delete search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
             DeleteSearchContext: () => ({
                 deleteSearchContext: {
                     alwaysNil: '',

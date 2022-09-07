@@ -191,17 +191,22 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         const measuredSize = ticks.length * maxWidth
         const fontSize = 12 // 0.75rem
         const rotate =
-            upperRangeBound < measuredSize
+            upperRangeBound <= measuredSize
                 ? Math.max(maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2), minRotateAngle)
                 : 0
 
         if (rotate) {
+            const xCoord = props.x
+            const yCoord = hideTicks ? props.y - fontSize / 2 : props.y
+
             return {
                 ...props,
+                x: xCoord,
+                y: yCoord,
                 // Truncate ticks only if we rotate them, this means truncate labels only
                 // when they overlap
                 getTruncatedTick,
-                transform: `rotate(${rotate}, ${props.x + fontSize / 2} ${props.y - fontSize / 2})`,
+                transform: `rotate(${rotate}, ${xCoord} ${yCoord})`,
                 textAnchor: 'start',
             }
         }

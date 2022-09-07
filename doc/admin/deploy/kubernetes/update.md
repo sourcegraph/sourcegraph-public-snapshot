@@ -5,43 +5,79 @@
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
-> WARNING: Please check the [Kubernetes update notes](../../updates/kubernetes.md) before upgrading to any particular version of Sourcegraph to check if any manual migrations are necessary.
+## Upgrades
 
-## Steps
+**Before upgrading:**
 
-**These steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
 
-1. Merge the new version of Sourcegraph into your release branch.
+### Standard upgrades
 
-   ```bash
-   cd $DEPLOY_SOURCEGRAPH_FORK
-   # get updates
-   git fetch upstream
-   # to merge the upstream release tag into your release branch.
-   git checkout release
-   # Choose which version you want to deploy from https://github.com/sourcegraph/deploy-sourcegraph/releases
-   git merge $NEW_VERSION
-   ```
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
-2. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
+**The following steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
 
-   ```bash
-   ./kubectl-apply-all.sh
-   ```
+First, merge the new version of Sourcegraph into your release branch.
 
-3. Monitor the status of the deployment.
+```bash
+cd $DEPLOY_SOURCEGRAPH_FORK
+# get updates
+git fetch upstream
+# to merge the upstream release tag into your release branch.
+git checkout release
+# Choose which version you want to deploy from https://github.com/sourcegraph/deploy-sourcegraph/releases
+git merge $NEW_VERSION
+```
 
-   ```bash
-   kubectl get pods -o wide --watch
-   ```
+Then, deploy the updated version of Sourcegraph to your Kubernetes cluster:
+
+```bash
+./kubectl-apply-all.sh
+```
+
+Monitor the status of the deployment to determine its success.
+
+```bash
+kubectl get pods -o wide --watch
+```
+
+### Multi-version upgrades
+
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
+
+**Before performing a multi-version upgrade**:
+
+- **Take an up-to-date snapshot of your databases.** We are unable to exhaustively test all upgrade paths or catch all possible edge cases in a customer environment. The upgrade process aggressively mutates the shape and contents of your database, and uncaught errors in the migration process or unexpected environmental differences may cause data loss. **If you do not feel confident running this process solo**, contact customer support team to help walk you thorough the process.
+- If possible, upgrade an idle clone of the production instance and switch traffic over on success. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+- Run the `migrator` drift detection on your current version to detect and repair any database schema discrepencies. Running with an unexpected schema may cause a painful upgrade process that may require engineering support. See the [command documentation](./../../how-to/manual_database_migrations.md#drift) for additional details.
+
+To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes:
+
+1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's configuration and re-applying.
+  - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+      - precise-code-intel-worker
+      - repo-updater
+      - searcher
+      - sourcegraph-frontend
+      - sourcegraph-frontend-internal
+      - symbols
+      - worker
+  - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+      - gitserver
+      - indexed-search
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details.
+1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Kubernetes](#standard-upgrades).
 
 ## Rollback
 
-You can rollback by resetting your `release` branch to the old state and proceeding with step 2 above.
+You can rollback by resetting your `release` branch to the old state and proceeding re-running the following:
 
-_If an update includes a database migration, rollback will require some manual DB
-modifications. We plan to eliminate these in the near future, but for now,
-email <mailto:support@sourcegraph.com> if you have concerns before updating to a new release._
+```
+./kubectl-apply-all.sh
+```
+
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
 
 ## Improving update reliability and latency with node selectors
 
@@ -82,9 +118,7 @@ the following:
   determine if an instance goes down.
 - Database migrations are handled automatically on update when they are necessary.
 
-## Database Migrations
-
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
+## Database migrations
 
 By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
