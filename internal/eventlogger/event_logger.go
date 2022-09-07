@@ -19,6 +19,8 @@ type TelemetryRequest struct {
 	PublicArgument json.RawMessage
 }
 
+// List of events that don't meet the criteria of "active" usage of Sourcegraph.
+// These are mostly actions taken by signed-out users.
 var NonActiveUserEvents = []string{
 	"ViewSignIn",
 	"ViewSignUp",
