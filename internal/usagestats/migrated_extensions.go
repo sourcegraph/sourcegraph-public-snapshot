@@ -31,6 +31,34 @@ func GetMigratedExtensionsUsageStatistics(ctx context.Context, db database.DB) (
 		return nil, err
 	}
 
+	openInEditorUsageByIde := []*types.MigratedExtensionsOpenInEditorUsageStatistics{}
+	rows, err := db.QueryContext(ctx, MigratedExtensionsOpenInEditorUsageQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		openInEditorUsage := types.MigratedExtensionsOpenInEditorUsageStatistics{}
+
+		if err := rows.Scan(
+			&openInEditorUsage.IdeKind,
+			&openInEditorUsage.Clicked,
+			&openInEditorUsage.ClickedUniqueUsers,
+		); err != nil {
+			return nil, err
+		}
+
+		openInEditorUsageByIde = append(openInEditorUsageByIde, &openInEditorUsage)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	stats.OpenInEditor = openInEditorUsageByIde
+
 	return &stats, nil
 }
 
@@ -87,4 +115,32 @@ var MigratedExtensionsUsageQuery = `
 		event_log_stats.go_imports_search_query_transformed_unique_users
 	FROM
 		event_log_stats;
+`
+
+var MigratedExtensionsOpenInEditorUsageQuery = `
+	WITH events_with_ide_kind AS (
+		SELECT
+			public_argument ->> 'editor'::text AS ide_kind,
+			name,
+			user_id
+		FROM event_logs
+		WHERE
+			name IN (
+				'OpenInEditorClicked'
+			)
+	), event_log_stats AS (
+		SELECT
+			ide_kind,
+			NULLIF(COUNT(*) FILTER (WHERE events_with_ide_kind.name = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked,
+			NULLIF(COUNT(DISTINCT events_with_ide_kind.user_id) FILTER (WHERE events_with_ide_kind.name = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked_unique_users
+		FROM events_with_ide_kind
+		GROUP BY
+			ide_kind
+	)
+	SELECT
+		ide_kind,
+		event_log_stats.open_in_editor_clicked,
+		event_log_stats.open_in_editor_clicked_unique_users
+	FROM
+		event_log_stats
 `

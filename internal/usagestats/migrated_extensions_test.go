@@ -60,8 +60,12 @@ func TestMigratedExtensionsUsageStatistics(t *testing.T) {
 			(9498, 'GitBlameEnabled', 'https://sourcegraph.test:3443/github.com/grafana/grafana/-/blob/pkg/setting/setting.go', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{}', '0.0.0+dev', '2022-09-05 14:12:23.031747+02', '{"code-ownership": true}', '2022-02-21', '{}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'de065e3b-d786-42e9-8a56-18304eda43a6'),
 			(9502, 'GitBlamePopupViewed', 'https://sourcegraph.test:3443/github.com/grafana/grafana/-/blob/pkg/setting/setting.go', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{}', '0.0.0+dev', '2022-09-05 14:12:26.290946+02', '{"code-ownership": true}', '2022-02-21', '{}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '416efd98-c400-4f88-bf0c-27cf751c8a5c'),
 			(9506, 'GitBlameDisabled', 'https://sourcegraph.test:3443/github.com/grafana/grafana/-/blob/pkg/setting/setting.go', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{}', '0.0.0+dev', '2022-09-05 14:12:32.084328+02', '{"code-ownership": true}', '2022-02-21', '{}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '4b7dc000-12db-4689-9471-ec41bbad16a7'),
-			(9508, 'SearchExportPerformed', 'https://sourcegraph.test:3443/search?q=context:global+test+test&patternType=standard', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"count": 13}', '0.0.0+dev', '2022-09-05 14:12:37.137032+02', '{"code-ownership": true}', '2022-02-21', '{"count": 13}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'fa316362-3c33-4bcd-a0d3-f35cdc5ec714')
-	`)
+			(9508, 'SearchExportPerformed', 'https://sourcegraph.test:3443/search?q=context:global+test+test&patternType=standard', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"count": 13}', '0.0.0+dev', '2022-09-05 14:12:37.137032+02', '{"code-ownership": true}', '2022-02-21', '{"count": 13}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'fa316362-3c33-4bcd-a0d3-f35cdc5ec714'),
+			(10521, 'OpenInEditorClicked', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/dev/sg/os.go?L26', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"editor": "vscode"}', '0.0.0+dev', '2022-09-07 13:14:20.641057+02', '{"code-ownership": true}', '2022-02-21', '{"editor": "vscode"}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '0eb2c3d9-f2c1-4e32-b68f-af47a58ac699'),
+			(10528, 'OpenInEditorIDEConfigured', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/dev/sg/os.go?L26', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"editor": "vscode"}', '0.0.0+dev', '2022-09-07 13:19:46.311728+02', '{"code-ownership": true}', '2022-02-21', '{"editor": "vscode"}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '652ec4c9-dc1c-4c94-90f2-fc92fbb7e761'),
+			(10529, 'OpenInEditorClicked', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/dev/sg/os.go?L26', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"editor": "goland"}', '0.0.0+dev', '2022-09-07 13:14:20.641057+02', '{"code-ownership": true}', '2022-02-21', '{"editor": "goland"}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '0eb2c3d9-f2c1-4e32-b68f-af47a58ac699'),
+			(10530, 'OpenInEditorIDEConfigured', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/dev/sg/os.go?L26', 1, 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', 'WEB', '{"editor": "goland"}', '0.0.0+dev', '2022-09-07 13:19:46.311728+02', '{"code-ownership": true}', '2022-02-21', '{"editor": "goland"}', 'https://sourcegraph.test:3443/search', 'https://sourcegraph.test:3443/search', '', 'a58d0dbd-46aa-4277-b0b4-883c5c6a886c', '652ec4c9-dc1c-4c94-90f2-fc92fbb7e761')
+			`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,6 +92,19 @@ func TestMigratedExtensionsUsageStatistics(t *testing.T) {
 
 		GoImportsSearchQueryTransformed:            ptr(int32(8)),
 		GoImportsSearchQueryTransformedUniqueUsers: ptr(int32(1)),
+
+		OpenInEditor: []*types.MigratedExtensionsOpenInEditorUsageStatistics{
+			{
+				IdeKind:            "goland",
+				Clicked:            ptr(int32(1)),
+				ClickedUniqueUsers: ptr(int32(1)),
+			},
+			{
+				IdeKind:            "vscode",
+				Clicked:            ptr(int32(1)),
+				ClickedUniqueUsers: ptr(int32(1)),
+			},
+		},
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {

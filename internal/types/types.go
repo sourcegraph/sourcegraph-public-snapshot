@@ -1281,9 +1281,9 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
-// MigratedExtensionsUsageStatistics repreents the daily, weekly and monthly
-// numbers of interactions with the migrated extensions (git blame, open in
-// editor, search exports, and go imports search)
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
 type MigratedExtensionsUsageStatistics struct {
 	GitBlameEnabled                 *int32
 	GitBlameEnabledUniqueUsers      *int32
@@ -1299,18 +1299,16 @@ type MigratedExtensionsUsageStatistics struct {
 	SearchExportFailed               *int32
 	SearchExportFailedUniqueUsers    *int32
 
-	OpenInEditorClicked         []*MigratedExtensionsOpenInEditorEvent
-	OpenInEditorPreferredIDESet []*MigratedExtensionsOpenInEditorEvent
-	OpenInEditorIDEConfigured   []*MigratedExtensionsOpenInEditorEvent
-
 	GoImportsSearchQueryTransformed            *int32
 	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
 }
 
-type MigratedExtensionsOpenInEditorEvent struct {
-	IdeKind     string
-	Count       *int32
-	UniqueUsers *int32
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
 }
 
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
