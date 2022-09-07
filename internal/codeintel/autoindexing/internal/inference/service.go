@@ -204,8 +204,14 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 	ctx, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	luaModules, err := luasandbox.LuaModulesFromFS(lua.Scripts, ".", "sg.autoindex")
+	if err != nil {
+		return nil, err
+	}
+
 	opts := luasandbox.CreateOptions{
-		Modules: defaultModules,
+		GoModules:  defaultModules,
+		LuaModules: luaModules,
 	}
 	sandbox, err := s.sandboxService.CreateSandbox(ctx, opts)
 	if err != nil {
