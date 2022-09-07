@@ -713,6 +713,21 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.codeintel_autoindex_queue"
+```
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id            | integer                  |           | not null | nextval('codeintel_autoindex_queue_id_seq'::regclass)
+ repository_id | integer                  |           | not null | 
+ rev           | text                     |           | not null | 
+ queued_at     | timestamp with time zone |           | not null | now()
+ processed_at  | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_autoindex_queue_pkey" PRIMARY KEY, btree (id)
+    "codeintel_autoindex_queue_repository_id_commit" UNIQUE, btree (repository_id, rev)
+
+```
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              
