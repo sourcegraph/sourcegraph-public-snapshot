@@ -325,28 +325,28 @@ export const ReferencesList: React.FunctionComponent<
 
     // This is the history of the panel, that is inside a memory router
     const panelHistory = useHistory()
-    // When we user clicks on a token *inside* the code blob on the right, we
-    // update the history for the panel itself, which is inside a memory router.
-    //
-    // We also '#tab=references' and '?jumpToFirst=true' to the URL.
-    //
-    // '#tab=references' will cause the panel to show the references of the clicked token,
-    // but not navigate the main web app to it.
-    //
-    // '?jumpToFirst=true' causes the panel to select the first reference and
-    // open it in code blob on right.
-    const onBlobNav = (url: string): void => {
-        // If we're going to navigate inside the same file in the same repo we
-        // can optimistically jump to that position in the code blob.
-        if (activeLocation !== undefined) {
-            const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url, { syncToPanel: false })
-            }
-        }
+    //// When we user clicks on a token *inside* the code blob on the right, we
+    //// update the history for the panel itself, which is inside a memory router.
+    ////
+    //// We also '#tab=references' and '?jumpToFirst=true' to the URL.
+    ////
+    //// '#tab=references' will cause the panel to show the references of the clicked token,
+    //// but not navigate the main web app to it.
+    ////
+    //// '?jumpToFirst=true' causes the panel to select the first reference and
+    //// open it in code blob on right.
+    //const onBlobNav = (url: string): void => {
+    //    // If we're going to navigate inside the same file in the same repo we
+    //    // can optimistically jump to that position in the code blob.
+    //    if (activeLocation !== undefined) {
+    //        const urlToken = tokenFromUrl(url)
+    //        if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
+    //            blobMemoryHistory.push(url, { syncToPanel: false })
+    //        }
+    //    }
 
-        panelHistory.push(appendJumpToFirstQueryParameter(url))
-    }
+    //    panelHistory.push(appendJumpToFirstQueryParameter(url))
+    //}
 
     const navigateToUrl = (url: string): void => {
         props.externalHistory.push(url)
@@ -495,7 +495,7 @@ export const ReferencesList: React.FunctionComponent<
                     </CardHeader>
                     <SideBlob
                         {...props}
-                        blobNav={onBlobNav}
+                        blobNav={navigateToUrl}
                         history={blobMemoryHistory}
                         panelHistory={panelHistory}
                         location={blobMemoryHistory.location}
@@ -1020,12 +1020,4 @@ export const appendJumpToFirstQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('jumpToFirst', 'true')
     return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
-
-const tokenFromUrl = (url: string): { repoName: string; commitID?: string; filePath?: string } => {
-    const parsed = new URL(url, window.location.href)
-
-    const { filePath, repoName, commitID } = parseBrowserRepoURL(parsed.pathname)
-
-    return { repoName, filePath, commitID }
 }
