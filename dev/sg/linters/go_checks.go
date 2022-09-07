@@ -3,7 +3,6 @@ package linters
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -63,5 +63,39 @@ func lintSGExit() *linter {
 
 			return nil
 		})
+	})
+}
+
+// lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
+func lintLoggingLibraries() *linter {
+	return newUsageLinter(usageLinterOptions{
+		Target: "**/*.go",
+		BannedUsages: []string{
+			// No standard log library
+			`"log"`,
+			// No log15 - we only catch import changes for now, checking for 'log15.' is
+			// too sensitive to just code moves.
+			`"github.com/inconshreveable/log15"`,
+			// No zap - we re-rexport everything via github.com/sourcegraph/log
+			`"go.uber.org/zap"`,
+			`"go.uber.org/zap/zapcore"`,
+		},
+		AllowedFiles: []string{
+			// Let everything in dev use whatever they want
+			"dev", "enterprise/dev",
+			// Banned imports will match on the linter here
+			"dev/sg/linters",
+			// We allow one usage of a direct zap import here
+			"internal/observation/fields.go",
+			// Dependencies require direct usage of zap
+			"cmd/frontend/internal/app/otlpadapter",
+			// Not worth fixing the deprecated package
+			"cmd/frontend/internal/usagestatsdeprecated",
+		},
+		ErrorFunc: func(bannedImport string) error {
+			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
+				bannedImport)
+		},
+		HelpText: "Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging",
 	})
 }
