@@ -220,13 +220,13 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 	}
 }
 
-func redirectToAuthURL(w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
+func redirectToAuthURL(logger log.Logger, w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
 	authURL, err := buildAuthURLRedirect(p, relayState{
 		ProviderID:  p.ConfigID().ID,
 		ReturnToURL: auth.SafeRedirectURL(returnToURL),
 	})
 	if err != nil {
-		log15.Error("Failed to build SAML auth URL.", "err", err)
+		logger.Error("Failed to build SAML auth URL.", logger.String("error", err))
 		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
 		return
 	}

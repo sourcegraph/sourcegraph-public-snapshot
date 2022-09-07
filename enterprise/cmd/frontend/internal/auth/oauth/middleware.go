@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -34,8 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewHandler(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
+func NewHandler(logger log.Logger, db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+	logger = log.Scoped("oauthFlowHandler", "handles oauth authentication flow")
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(logger, db, serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
@@ -67,13 +67,13 @@ func NewHandler(db database.DB, serviceType, authPrefix string, isAPIHandler boo
 	})
 }
 
-func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
+func newOAuthFlowHandler(logger log.Logger, db database.DB, serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {
-			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
+			logger.Error("no OAuth provider found with ID and service type", log.String("id", id), log.String("serviceType", serviceType))
 			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
@@ -81,7 +81,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		op := LoginStateOp(req.URL.Query().Get("op"))
 		extraScopes, err := getExtraScopes(req.Context(), db, serviceType, op)
 		if err != nil {
-			log15.Error("Getting extra OAuth scopes", "error", err)
+			logger.Error("Getting extra OAuth scopes", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +97,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		p := GetProvider(serviceType, state.ProviderID)
 		if p == nil {
-			log15.Error("OAuth failed: in callback, no auth provider found with ID and service type", "id", state.ProviderID, "serviceType", serviceType)
+			logger.Error("OAuth failed: in callback, no auth provider found with ID and service type", log.String("id", state.ProviderID), log.String("serviceType", serviceType))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not find provider that matches the OAuth state parameter.", http.StatusBadRequest)
 			return
 		}

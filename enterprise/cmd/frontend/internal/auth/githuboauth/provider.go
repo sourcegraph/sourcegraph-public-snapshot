@@ -8,7 +8,6 @@ import (
 	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/github"
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -70,35 +69,38 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 					allowOrgs:    p.AllowOrgs,
 					allowOrgsMap: p.AllowOrgsMap,
 				}, sessionKey),
-				http.HandlerFunc(failureHandler),
+				http.HandlerFunc(failureHandler(logger)),
 			)
 		},
 	}), messages
 }
 
-func failureHandler(w http.ResponseWriter, r *http.Request) {
-	// As a special case wa want to handle `access_denied` errors by redirecting
-	// back. This case arises when the user decides not to proceed by clicking `cancel`.
-	if err := r.URL.Query().Get("error"); err != "access_denied" {
-		// Fall back to default failure handler
-		gologin.DefaultFailureHandler.ServeHTTP(w, r)
-		return
-	}
+func failureHandler(logger log.Logger) http.HandlerFunc {
+	logger = logger.Scoped("failureHandler", "handles github oauth authentication failures")
+	return func(w http.ResponseWriter, r *http.Request) {
+		// As a special case wa want to handle `access_denied` errors by redirecting
+		// back. This case arises when the user decides not to proceed by clicking `cancel`.
+		if err := r.URL.Query().Get("error"); err != "access_denied" {
+			// Fall back to default failure handler
+			gologin.DefaultFailureHandler.ServeHTTP(w, r)
+			return
+		}
 
-	ctx := r.Context()
-	encodedState, err := goauth2.StateFromContext(ctx)
-	if err != nil {
-		log15.Error("OAuth failed: could not get state from context.", "error", err)
-		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
-		return
+		ctx := r.Context()
+		encodedState, err := goauth2.StateFromContext(ctx)
+		if err != nil {
+			logger.Error("could not get state from context.", log.Error(err))
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
+			return
+		}
+		state, err := oauth.DecodeState(encodedState)
+		if err != nil {
+			logger.Error("could not decode state.", log.Error(err))
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 	}
-	state, err := oauth.DecodeState(encodedState)
-	if err != nil {
-		log15.Error("OAuth failed: could not decode state.", "error", err)
-		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 }
 
 var clientIDSecretValidator = lazyregexp.New("^[a-zA-Z0-9.]*$")

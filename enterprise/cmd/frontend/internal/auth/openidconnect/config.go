@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -29,22 +28,24 @@ func getProvider(id string) *provider {
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
+func handleGetProvider(ctx context.Context, logger log.Logger, w http.ResponseWriter, id string) (p *provider, handled bool) {
 	handled = true // safer default
 
 	p = getProvider(id)
 	if p == nil {
-		log15.Error("No OpenID Connect auth provider found with ID.", "id", id)
+		logger.Error("No OpenID Connect auth provider found with ID.", log.String("id", id))
 		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
 	if p.config.Issuer == "" {
-		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ConfigID())
+		configID := p.ConfigID()
+		logger.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", log.Object("configID", log.String("id", configID.ID), log.String("type", configID.Type)))
 		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ConfigID(), "error", err)
+		configID := p.ConfigID()
+		logger.Error("Error refreshing OpenID Connect auth provider.", log.Object("configID", log.String("id", configID.ID), log.String("type", configID.Type)), log.Error(err))
 		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details", http.StatusInternalServerError)
 		return nil, true
 	}
