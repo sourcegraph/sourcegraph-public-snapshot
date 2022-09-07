@@ -138,14 +138,14 @@ func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
 	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
 	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
 	//
-	// When this is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
+	// When storing of files is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167
-
-	// Prevent client from uploading files that are too large. This will also be enforced on the src-cli side as well.
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		if _, ok := err.(*http.MaxBytesError); ok {
 			http.Error(w, "request payload exceeds 10MB limit", http.StatusBadRequest)
