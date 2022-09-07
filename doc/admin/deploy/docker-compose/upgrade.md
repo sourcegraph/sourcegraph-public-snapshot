@@ -49,7 +49,7 @@ docker-compose pull --include-deps
 Restart Docker Compose using the new minor version along with your customizations:
 
 ```bash
-docker-compose up -d ---remove-orphans
+docker-compose up -d --remove-orphans
 ```
 ### Multi-version upgrades
 
