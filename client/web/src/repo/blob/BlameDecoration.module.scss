@@ -14,6 +14,7 @@
         .content {
             white-space: pre;
             color: var(--text-muted);
+            font-family: var(--font-family-base);
 
             &::before {
                 content: attr(data-contents);
@@ -22,12 +23,14 @@
     }
 
     &-content {
-        // stylelint-disable-next-line declaration-property-unit-allowed-list
-        margin-left: 140px;
         max-width: 348px;
 
         border: 1px solid var(--border-color);
         border-radius: 5px;
+
+        .head {
+            line-height: 1rem;
+        }
 
         .author {
             font-weight: 500;
@@ -35,6 +38,18 @@
 
         .separator {
             color: var(--color-bg-2);
+        }
+
+        .body {
+            margin-top: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1.3333333333;
+            color: var(--body-color);
+        }
+
+        .icon {
+            font-size: 1rem;
         }
 
         .link {
