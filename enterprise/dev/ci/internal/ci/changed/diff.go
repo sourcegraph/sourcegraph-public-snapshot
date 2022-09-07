@@ -18,6 +18,7 @@ const (
 	DatabaseSchema
 	Docs
 	Dockerfiles
+	ExecutorVMImage
 	ExecutorDockerRegistryMirror
 	CIScripts
 	Terraform
@@ -131,6 +132,11 @@ func ParseDiff(files []string) (diff Diff) {
 			diff |= ExecutorDockerRegistryMirror
 		}
 
+		// Affects executor VM image
+		if strings.HasPrefix(p, "docker-images/executor-vm/") {
+			diff |= ExecutorVMImage
+		}
+
 		// Affects CI scripts
 		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
 			diff |= CIScripts
@@ -187,6 +193,8 @@ func (d Diff) String() string {
 		return "Dockerfiles"
 	case ExecutorDockerRegistryMirror:
 		return "ExecutorDockerRegistryMirror"
+	case ExecutorVMImage:
+		return "ExecutorVMImage"
 	case CIScripts:
 		return "CIScripts"
 	case Terraform:

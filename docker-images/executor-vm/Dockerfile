@@ -87,4 +87,8 @@ RUN set -ex && \
   apt-get -y autoremove && \
   apt-get clean && \
   rm -rf /var/cache/* && \
-  rm -rf /var/lib/apt/lists/*
+  rm -rf /var/lib/apt/lists/* && \
+  # Clear SSH host keys so they are regenerated on boot for each machine individually.
+  rm /etc/ssh/ssh_host_ecdsa_key && \
+  rm /etc/ssh/ssh_host_ed25519_key && \
+  rm /etc/ssh/ssh_host_rsa_key
