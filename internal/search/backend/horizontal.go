@@ -91,7 +91,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// maxQueueDepth should be chosen as large as possible given the available
 	// resources.
 	if maxReorderDuration > 0 {
-		done := make(chan struct{}, 1)
+		done := make(chan struct{})
 		defer close(done)
 
 		go func() {
