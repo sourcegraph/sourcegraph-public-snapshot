@@ -38,11 +38,17 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { seriesCreations, insightHovers, insightDataPointClicks, summary } = data.site.analytics.codeInsights
+        const {
+            seriesCreations,
+            insightHovers,
+            insightDataPointClicks,
+            insightCreations,
+            dashboardCreations,
+        } = data.site.analytics.codeInsights
         const legends: ValueLegendListProps['items'] = [
             {
-                value: seriesCreations.summary.totalCount,
-                description: 'Series created',
+                value: insightCreations.summary.totalCount,
+                description: 'Insights created',
                 color: 'var(--cyan)',
                 tooltip: 'TODO:',
             },
@@ -65,14 +71,14 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 tooltip: 'TODO:',
             },
             {
-                value: summary.totalInsightsCount,
-                description: 'Insights created',
+                value: seriesCreations.summary.totalCount,
+                description: 'Series created',
                 color: 'var(--black)',
                 position: 'right',
                 tooltip: 'TODO:',
             },
             {
-                value: summary.totalDashboardsCount,
+                value: dashboardCreations.summary.totalCount,
                 description: 'Dashboards created',
                 color: 'var(--black)',
                 position: 'right',
@@ -87,13 +93,13 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { seriesCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
         const activities: Series<StandardDatum>[] = [
             {
-                id: 'series-creations',
-                name: 'Series created',
+                id: 'insight-creations',
+                name: 'Insights created',
                 color: 'var(--cyan)',
-                data: seriesCreations.nodes.map(
+                data: insightCreations.nodes.map(
                     node => ({
                         date: new Date(node.date),
                         value: node.count,
@@ -146,7 +152,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
 
     const calculatorProps = useMemo(() => {
         if (!data) {
-            return []
+            return null
         }
         const {
             searchSeriesCreations,
@@ -155,7 +161,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         } = data.site.analytics.codeInsights
         const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
             page: 'Insights',
-            label: 'Insights',
+            label: 'Insights series',
             dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
@@ -164,6 +170,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 searchSeriesCreations.summary.totalCount +
                 languageSeriesCreations.summary.totalCount +
                 computeSeriesCreations.summary.totalCount,
+            itemsLabel: 'Series',
             items: [
                 {
                     label: 'Track changes',

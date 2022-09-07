@@ -83,48 +83,105 @@ func (c *CodeInsights) SeriesCreations(ctx context.Context, args *struct {
 	}, nil
 }
 
-// Insights:Summary
+// Insights:DashboardCreations
 
-func (c *CodeInsights) Summary(ctx context.Context) (*InsightsSummary, error) {
-	cacheKey := "Insights:Summary"
-	if c.Cache {
-		if summary, err := getItemFromCache[InsightsSummary](cacheKey); err == nil {
-			return summary, nil
-		}
-	}
-
-	query := sqlf.Sprintf(`
+var dashboardCreationNodesQuery = `
 	SELECT
-		(SELECT COUNT(DISTINCT id) FROM insight_view) as total_insights_count,
-		(SELECT COUNT(DISTINCT id) AS total_count FROM dashboard) AS total_dashboards_count
-	`)
-	var data InsightsSummaryData
+		%s AS date,
+		COUNT(DISTINCT id) AS count,
+		-- Add empty columns to reuse AnalyticsFetcher
+		0 as unique_users,
+		0 as registered_users
+	FROM dashboard
+	WHERE %s
+	GROUP BY date
+`
 
-	if err := c.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&data.TotalInsightsCount, &data.TotalDashboardsCount); err != nil {
+var dashboardCreationsSummaryQuery = `
+	SELECT
+		COUNT(DISTINCT id) AS total_count,
+		-- Add empty columns to reuse AnalyticsFetcher
+		0 as total_unique_users,
+		0 as total_registered_users
+	FROM dashboard
+	WHERE %s
+`
+
+func (c *CodeInsights) DashboardCreations() (*AnalyticsFetcher, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "created_at")
+	if err != nil {
 		return nil, err
 	}
+	conds := []*sqlf.Query{sqlf.Sprintf(`created_at %s`, dateBetweenCond)}
+	nodesQuery := sqlf.Sprintf(dashboardCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
+	summaryQuery := sqlf.Sprintf(dashboardCreationsSummaryQuery, sqlf.Join(conds, "AND"))
 
-	summary := &InsightsSummary{data}
+	return &AnalyticsFetcher{
+		db:           c.DB,
+		dateRange:    c.DateRange,
+		grouping:     c.Grouping,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Insights:DashboardCreations",
+		cache:        c.Cache,
+	}, nil
+}
 
-	if _, err := setItemToCache(cacheKey, summary); err != nil {
+// Insights:InsightCreations
+
+var insightCTEQueryFragment = `
+WITH insights AS (
+    SELECT
+		v.id as insight_id,
+		MIN(s.created_at) as created_at
+	FROM insight_view v
+        INNER JOIN insight_view_series vs ON vs.insight_view_id = v.id
+        INNER JOIN insight_series s ON s.id = vs.insight_series_id
+    GROUP BY v.id
+)
+`
+
+var insightCreationNodesQuery = insightCTEQueryFragment + `
+	SELECT
+		%s AS date,
+		COUNT(DISTINCT insight_id) AS count,
+		-- Add empty columns to reuse AnalyticsFetcher
+		0 as unique_users,
+		0 as registered_users
+		FROM insights
+	WHERE %s
+	GROUP BY date
+`
+
+var insightCreationsSummaryQuery = insightCTEQueryFragment + `
+	SELECT
+		COUNT(DISTINCT insight_id) AS count,
+		-- Add empty columns to reuse AnalyticsFetcher
+		0 as unique_users,
+		0 as registered_users
+	FROM insights
+	WHERE %s
+`
+
+func (c *CodeInsights) InsightCreations() (*AnalyticsFetcher, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "created_at")
+	if err != nil {
 		return nil, err
 	}
+	conds := []*sqlf.Query{sqlf.Sprintf(`created_at %s`, dateBetweenCond)}
+	nodesQuery := sqlf.Sprintf(insightCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
+	summaryQuery := sqlf.Sprintf(insightCreationsSummaryQuery, sqlf.Join(conds, "AND"))
 
-	return summary, nil
+	return &AnalyticsFetcher{
+		db:           c.DB,
+		dateRange:    c.DateRange,
+		grouping:     c.Grouping,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Insights:InsightCreations",
+		cache:        c.Cache,
+	}, nil
 }
-
-type InsightsSummary struct {
-	Data InsightsSummaryData
-}
-
-type InsightsSummaryData struct {
-	TotalInsightsCount   float64
-	TotalDashboardsCount float64
-}
-
-func (s *InsightsSummary) TotalInsightsCount() float64 { return s.Data.TotalInsightsCount }
-
-func (s *InsightsSummary) TotalDashboardsCount() float64 { return s.Data.TotalDashboardsCount }
 
 // Insights:Hovers
 

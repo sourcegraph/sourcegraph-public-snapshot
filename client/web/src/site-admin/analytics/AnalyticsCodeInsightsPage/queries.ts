@@ -23,10 +23,6 @@ export const INSIGHTS_STATISTICS = gql`
                         summary {
                             totalCount
                         }
-                        nodes {
-                            date
-                            count
-                        }
                     }
                     searchSeriesCreations: seriesCreations(generationType: SEARCH) {
                         summary {
@@ -49,9 +45,19 @@ export const INSIGHTS_STATISTICS = gql`
                     insightDataPointClicks {
                         ...AnalyticsStatItemFragment
                     }
-                    summary {
-                        totalInsightsCount
-                        totalDashboardsCount
+                    dashboardCreations {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    insightCreations {
+                        summary {
+                            totalCount
+                        }
+                        nodes {
+                            date
+                            count
+                        }
                     }
                 }
             }
