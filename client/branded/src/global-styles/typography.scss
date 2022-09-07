@@ -170,7 +170,7 @@ label.text-uppercase small,
 .theme-light,
 .theme-dark {
     @each $color, $value in $theme-colors {
-        @include text-emphasis-variant('.text-#{$color}', $value, true);
+        @include text-emphasis-variant('.text-#{$color}', $value);
     }
 }
 

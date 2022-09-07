@@ -1,18 +1,6 @@
 $grid-row-columns: 6;
 $grid-columns: 12;
 
-// Grid breakpoints
-//
-// Define the minimum dimensions at which your layout will change,
-// adapting to different screen sizes, for use in media queries.
-$grid-breakpoints: (
-    xs: 0,
-    sm: 576px,
-    md: 768px,
-    lg: 992px,
-    xl: 1200px,
-);
-
 :root {
     --grid-gutter-width: 1.5rem;
 }

@@ -7,13 +7,13 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation) to upgrade your instance.
+3. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-single-container/index.md#upgrade) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
-<!-- Add changes changes to this section before release. -->'
+<!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 

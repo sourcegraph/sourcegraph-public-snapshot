@@ -6,11 +6,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"regexp/syntax"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -35,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 func TestNewPlanJob(t *testing.T) {
@@ -1148,6 +1151,81 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
 	require.Equal(t, wantResultKeys, matchKeys)
+}
+
+func TestZoektQueryPatternsAsRegexps(t *testing.T) {
+	tests := []struct {
+		name  string
+		input zoektquery.Q
+		want  []*regexp.Regexp
+	}{
+		{
+			name:  "literal substring query",
+			input: &zoektquery.Substring{Pattern: "foobar"},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
+		},
+		{
+			name:  "regex query",
+			input: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
+		},
+		{
+			name: "and query",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "or query",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "literal and regex",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name: "literal or regex",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name:  "respect case sensitivity setting",
+			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
+			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := zoektQueryPatternsAsRegexps(tc.input)
+			require.Equal(t, tc.want, got)
+		})
+	}
 }
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
