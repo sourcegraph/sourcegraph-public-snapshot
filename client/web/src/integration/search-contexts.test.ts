@@ -50,27 +50,6 @@ describe('Search contexts', () => {
                 },
             },
         }),
-        UserRepositories: () => ({
-            node: {
-                __typename: 'User',
-                repositories: {
-                    totalCount: 1,
-                    nodes: [
-                        {
-                            id: '1',
-                            name: 'repo',
-                            viewerCanAdminister: false,
-                            createdAt: '',
-                            url: '',
-                            isPrivate: false,
-                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null, lastError: null },
-                            externalRepository: { serviceType: '', serviceID: '' },
-                        },
-                    ],
-                    pageInfo: { hasNextPage: false },
-                },
-            },
-        }),
     }
 
     const getSelectedSearchContextSpec = () =>

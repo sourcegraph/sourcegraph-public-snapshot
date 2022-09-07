@@ -2,7 +2,7 @@ import { gql, MutationFunctionOptions, FetchResult } from '@apollo/client'
 
 import { useMutation } from '@sourcegraph/http-client'
 
-import { Exact, InviteEmailToSourcegraphResult, InviteEmailToSourcegraphVariables } from '../../../graphql-operations'
+import { Exact, InviteEmailToSourcegraphResult, InviteEmailToSourcegraphVariables } from '../../graphql-operations'
 
 const INVITE_EMAIL_TO_SOURCEGRAPH = gql`
     mutation InviteEmailToSourcegraph($email: String!) {

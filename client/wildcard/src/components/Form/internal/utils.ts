@@ -1,5 +1,5 @@
 /**
- * Returns the Bootstrap specific styles to apply to the form element based on associated validity.
+ * Returns the global CSS classes to apply to the form element based on associated validity.
  */
 export const getValidStyle = (isValid?: boolean): string => {
     if (isValid === undefined) {

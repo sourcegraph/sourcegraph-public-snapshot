@@ -5050,43 +5050,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-    """
-    Repositories from external services owned by this user.
-    """
-    repositories(
-        """
-        Returns the first n repositories from the list.
-        """
-        first: Int
-        """
-        Return repositories whose names match the query.
-        """
-        query: String
-        """
-        An opaque cursor that is used for pagination.
-        """
-        after: String
-        """
-        Include cloned repositories.
-        """
-        cloned: Boolean = true
-        """
-        Include repositories that are not yet cloned and for which cloning is not in progress.
-        """
-        notCloned: Boolean = true
-        """
-        Include repositories that have a text search index.
-        """
-        indexed: Boolean = true
-        """
-        Include repositories that do not have a text search index.
-        """
-        notIndexed: Boolean = true
-        """
-        Only include repositories from this external service.
-        """
-        externalServiceID: ID
-    ): RepositoryConnection!
 
     """
     publicRepositories returns the repos listed in user_public_repos for this user

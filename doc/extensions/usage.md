@@ -6,7 +6,7 @@
 
 To view all available extensions on your Sourcegraph instance, click **User menu > Extensions** in the top navigation bar.
 
-> Don't see an extension you need? You can also [author your own extension](authoring/index.md) or [share your idea](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request) with an issue labeled `extension-request`.
+> Don't see an extension you need? You can [share your idea](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request) with an issue labeled `extension-request`.
 
 To enable/disable an extension for yourself, click **User menu > Extensions**, find the extension, and toggle the slider.
 
@@ -39,9 +39,3 @@ On a self-hosted Sourcegraph instance, add the same JSON above to global setting
 <div style="text-align:center;margin:20px 0;display:flex">
 <img src="https://sourcegraphstatic.com/docs/images/extensions/all-users-global-settings.png" style="padding:15px"></a>
 </div>
-
-### Default extensions
-
-The Sourcegraph-maintained Sourcegraph extension [git-extras](https://sourcegraph.com/extensions/sourcegraph/git-extras) and all search-based code navigation extensions are enabled by default.
-
-We enable these extensions by default because they are essentially native product features that make use of the [Sourcegraph extension API](authoring/index.md), because they are maintained by the Sourcegraph team, and because they don't connect to any outside servers (neither Sourcegraph-owned nor third-party-owned).

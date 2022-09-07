@@ -1,4 +1,4 @@
-import { showAccountSecurityPage, showPasswordsPage, userExternalServicesEnabled } from './cloud-ga'
+import { showAccountSecurityPage, showPasswordsPage } from './cloud-ga'
 import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = [
@@ -35,16 +35,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         to: '/security',
         exact: true,
         condition: showAccountSecurityPage,
-    },
-    {
-        label: 'Code host connections',
-        to: '/code-hosts',
-        condition: userExternalServicesEnabled,
-    },
-    {
-        label: 'Your repositories',
-        to: '/repositories',
-        condition: userExternalServicesEnabled,
     },
     {
         label: 'Your organizations',

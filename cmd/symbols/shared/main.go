@@ -122,7 +122,7 @@ func Main(setup SetupFunc) {
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = actor.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,

@@ -24,7 +24,7 @@ import { enterpriseTrial } from '../util/features'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
-import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -276,7 +276,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <Button
-                                    to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
+                                    to={provider.authenticationURL}
                                     display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
