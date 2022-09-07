@@ -224,3 +224,12 @@ func TestConcurrencySafe(t *testing.T) {
 		}()
 	}
 }
+
+func BenchmarkLimitedAggregator_Add(b *testing.B) {
+	for _, size := range []int{10, 100, 1000} {
+		for i := 0; i < b.N; i++ {
+			aggregator := NewLimitedAggregator(size)
+			aggregator.Add(string(rune(i)), int32(i))
+		}
+	}
+}
