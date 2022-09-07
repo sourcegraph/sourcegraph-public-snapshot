@@ -8,7 +8,7 @@ import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionIt
 import { Icon } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
-import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { useBlameVisibility } from './useBlameVisibility'
 
 import styles from './ToggleBlameAction.module.scss'
 

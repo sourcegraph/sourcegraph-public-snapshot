@@ -23,7 +23,7 @@ import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
-import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
+import { ToggleBlameAction } from '../../repo/blame/ToggleBlameAction'
 import { useExperimentalFeatures } from '../../stores'
 
 import styles from './ActionItemsBar.module.scss'
