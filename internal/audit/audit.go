@@ -15,18 +15,27 @@ import (
 func Log(ctx context.Context, logger log.Logger, record Record) {
 	var fields []log.Field
 
-	act := actor.FromContext(ctx)
 	client := requestclient.FromContext(ctx)
 
 	fields = append(fields, log.Object("audit",
 		log.String("entity", record.Entity),
 		log.Object("actor",
-			log.String("actorUID", act.UIDString()),
+			log.String("actorUID", actorId(actor.FromContext(ctx))),
 			log.String("ip", ip(client)),
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
 	logger.Info(record.Action, fields...)
+}
+
+func actorId(act *actor.Actor) string {
+	if act.UID > 0 {
+		return act.UIDString()
+	}
+	if act.AnonymousUID != "" {
+		return act.AnonymousUID
+	}
+	return "unknown"
 }
 
 func ip(client *requestclient.Client) string {

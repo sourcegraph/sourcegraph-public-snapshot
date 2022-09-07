@@ -15,12 +15,14 @@ import (
 func TestLog(t *testing.T) {
 	testCases := []struct {
 		name              string
+		actor             *actor.Actor
 		client            *requestclient.Client
 		additionalContext []log.Field
 		expectedEntry     map[string]interface{}
 	}{
 		{
-			name: "fully populated audit data",
+			name:  "fully populated audit data",
+			actor: &actor.Actor{UID: 1},
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
@@ -39,7 +41,48 @@ func TestLog(t *testing.T) {
 			},
 		},
 		{
+			name:  "anonymous actor",
+			actor: &actor.Actor{AnonymousUID: "anonymous"},
+			client: &requestclient.Client{
+				IP:           "192.168.0.1",
+				ForwardedFor: "192.168.0.1",
+			},
+			additionalContext: []log.Field{log.String("additional", "stuff")},
+			expectedEntry: map[string]interface{}{
+				"audit": map[string]interface{}{
+					"entity": "test entity",
+					"actor": map[string]interface{}{
+						"actorUID":        "anonymous",
+						"ip":              "192.168.0.1",
+						"X-Forwarded-For": "192.168.0.1",
+					},
+				},
+				"additional": "stuff",
+			},
+		},
+		{
+			name:  "missing actor",
+			actor: &actor.Actor{ /*missing data*/ },
+			client: &requestclient.Client{
+				IP:           "192.168.0.1",
+				ForwardedFor: "192.168.0.1",
+			},
+			additionalContext: []log.Field{log.String("additional", "stuff")},
+			expectedEntry: map[string]interface{}{
+				"audit": map[string]interface{}{
+					"entity": "test entity",
+					"actor": map[string]interface{}{
+						"actorUID":        "unknown",
+						"ip":              "192.168.0.1",
+						"X-Forwarded-For": "192.168.0.1",
+					},
+				},
+				"additional": "stuff",
+			},
+		},
+		{
 			name:              "missing client info",
+			actor:             &actor.Actor{UID: 1},
 			client:            nil,
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: map[string]interface{}{
@@ -55,7 +98,8 @@ func TestLog(t *testing.T) {
 			},
 		},
 		{
-			name: "no additional context",
+			name:  "no additional context",
+			actor: &actor.Actor{UID: 1},
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
@@ -77,7 +121,7 @@ func TestLog(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			ctx = actor.WithActor(ctx, tc.actor)
 			ctx = requestclient.WithClient(ctx, tc.client)
 
 			fields := Record{
