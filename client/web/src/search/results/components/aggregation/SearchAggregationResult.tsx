@@ -140,6 +140,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     loading={loading}
                     error={error}
                     size="md"
+                    showLoading={extendedTimeout}
                     className={styles.chartContainer}
                     onBarLinkClick={handleBarLinkClick}
                     onBarHover={handleBarHover}
