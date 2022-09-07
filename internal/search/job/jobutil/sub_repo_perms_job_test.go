@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,6 +36,11 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			}
 		}
 		return authz.Read, nil
+	})
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return checker.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
 	})
 
 	type args struct {

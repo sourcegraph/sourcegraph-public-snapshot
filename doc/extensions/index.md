@@ -17,31 +17,10 @@ Sourcegraph extensions are like editor extensions, but run anywhere you view cod
 </div>
 
 ## Getting started
-
-<div class="getting-started">
-   <a href="usage" class="btn">
-   <span>Using extensions</span>
-   </br>
-   How to enable extensions on Sourcegraph.
-  </a>
-
-  <a href="https://sourcegraph.com/extensions" class="btn">
-   <span>Extension registry</span>
-   </br>
-   Browse popular extensions like git extras, link previews, open-in-editor, Codecov, or Sonarqube.
-  </a>
-
-  <a href="security" class="btn">
-   <span>Security and privacy</span>
-   </br>
-    All the ways we protect the privacy of your code.
-  </a>
-</div>
+- [Using extensions](usage.md) – How to enable extensions on Sourcegraph.
+- [Principles](principles.md)
+- [Security and privacy](security.md) – All the ways we protect the privacy of your code.
 
 ## Administering extensions
 
 Site admins can control instance-wide extensions settings and additional permissions features. See [Administering extensions on your Sourcegraph instance](../admin/extensions/index.md).
-
-## Authoring extensions
-
-Have an improvement or an idea for a new Sourcegraph extension? Want to publish your extension publicly? See [**Authoring extensions**](authoring/index.md).

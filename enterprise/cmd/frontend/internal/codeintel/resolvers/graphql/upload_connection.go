@@ -8,6 +8,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -16,13 +17,13 @@ type UploadConnectionResolver struct {
 	db               database.DB
 	gitserver        GitserverClient
 	resolver         resolvers.Resolver
-	uploadsResolver  *resolvers.UploadsResolver
+	uploadsResolver  *uploadsgraphql.UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, uploadsResolver *uploadsgraphql.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
 		db:               db,
@@ -43,7 +44,8 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []gql.LSIFUploa
 
 	resolvers := make([]gql.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.db, r.gitserver, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.errTracer))
+		upload := convertSharedUploadsToDBStoreUploads(r.uploadsResolver.Uploads[i])
+		resolvers = append(resolvers, NewUploadResolver(r.db, r.gitserver, r.resolver, upload, r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }
