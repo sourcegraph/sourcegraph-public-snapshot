@@ -122,40 +122,9 @@ func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, repoNameRegexps []*regexp.Regexp, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 
-	// Remove code host from repo name (e.g. remove "github.com/")
-	// The code host is removed from the repo name before being displayed in the client (see function `displayRepoName()`)
-	// so this is needed to ensure the repo name match ranges are highlighted correctly in the client.
-	// This is not ideal, but works for now.
-	simplifyRepoName := func(repoName string) string {
-		parts := strings.Split(repoName, "/")
-		if len(parts) >= 3 && strings.Contains(parts[0], ".") {
-			parts = parts[1:]
-		}
-		return strings.Join(parts, "/")
-	}
-
 	for _, r := range repos {
-		var repoNameMatches []result.Range
-		simplifiedRepoName := simplifyRepoName(string(r.Repo.Name))
-
-		// Find repo name match ranges
-		for _, repoNameRe := range repoNameRegexps {
-			submatches := repoNameRe.FindAllStringSubmatchIndex(simplifiedRepoName, -1)
-			for _, sm := range submatches {
-				repoNameMatches = append(repoNameMatches, result.Range{
-					Start: result.Location{
-						Offset: sm[0],
-						Line:   0, // we can treat repo names as single-line
-						Column: utf8.RuneCountInString(simplifiedRepoName[:sm[0]]),
-					},
-					End: result.Location{
-						Offset: sm[1],
-						Line:   0,
-						Column: utf8.RuneCountInString(simplifiedRepoName[:sm[1]]),
-					},
-				})
-			}
-		}
+		// Get repo name matches once per repo
+		repoNameMatches := repoMatchRanges(string(r.Repo.Name), repoNameRegexps)
 
 		for _, rev := range r.Revs {
 			rm := result.RepoMatch{
@@ -171,4 +140,36 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, repoNameRegexps 
 		}
 	}
 	return matches
+}
+
+func repoMatchRanges(repoName string, repoNameRegexps []*regexp.Regexp) (res []result.Range) {
+	// Remove code host from repo name (e.g. remove "github.com/")
+	// The code host is removed from the repo name before being displayed in the client (see function `displayRepoName()`)
+	// so this is needed to ensure the repo name match ranges are highlighted correctly in the client.
+	// This is not ideal, but works for now.
+	parts := strings.Split(repoName, "/")
+	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
+		parts = parts[1:]
+	}
+	simplifiedRepoName := strings.Join(parts, "/")
+
+	for _, repoNameRe := range repoNameRegexps {
+		submatches := repoNameRe.FindAllStringSubmatchIndex(simplifiedRepoName, -1)
+		for _, sm := range submatches {
+			res = append(res, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0, // we can treat repo names as single-line
+					Column: utf8.RuneCountInString(simplifiedRepoName[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(simplifiedRepoName[:sm[1]]),
+				},
+			})
+		}
+	}
+
+	return res
 }
