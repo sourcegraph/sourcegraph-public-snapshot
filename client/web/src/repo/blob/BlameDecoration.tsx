@@ -154,11 +154,11 @@ export const BlameDecoration: React.FunctionComponent<{
                 className={styles.popoverContent}
             >
                 <div className="py-1">
-                    <div className={classNames(styles.head, 'px-3')}>
+                    <div className={classNames(styles.head, 'px-3 my-2')}>
                         <span className={styles.author}>{blameHunk.displayInfo.displayName}</span>{' '}
                         {blameHunk.displayInfo.timestampString}
                     </div>
-                    <hr className={styles.separator} />
+                    <hr className={classNames(styles.separator, 'm-0')} />
                     <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
                         <Icon
                             aria-hidden={true}
