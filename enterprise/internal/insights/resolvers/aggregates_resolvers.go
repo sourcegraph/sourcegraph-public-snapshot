@@ -260,7 +260,10 @@ func (r *aggregationModeAvailabilityResolver) Available() bool {
 	if canAggregateByFunc == nil {
 		return false
 	}
-	available, _, _ := canAggregateByFunc(r.searchQuery, r.patternType)
+	available, _, err := canAggregateByFunc(r.searchQuery, r.patternType)
+	if err != nil {
+		return false
+	}
 	return available
 }
 
