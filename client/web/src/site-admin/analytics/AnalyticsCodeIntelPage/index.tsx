@@ -385,13 +385,17 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             <div className="text-muted text-nowrap">Precise navigation</div>
                             {topRepos.map((repo, index) => (
                                 <React.Fragment key={index}>
-                                    <td className="text-muted">{repo.repoName}</td>
-                                    <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
-                                    <td className="text-center font-weight-bold">{formatNumber(repo.hoursSaved)}</td>
-                                    <td className="text-center font-weight-bold">
+                                    <Text className="text-muted">{repo.repoName}</Text>
+                                    <Text weight="bold" className="text-center">
+                                        {formatNumber(repo.events)}
+                                    </Text>
+                                    <Text weight="bold" className="text-center">
+                                        {formatNumber(repo.hoursSaved)}
+                                    </Text>
+                                    <Text weight="bold" className="text-center">
                                         {repo.preciseEnabled ? 'Yes' : 'No'}
-                                    </td>
-                                    <td>{repo.preciseNavigation}</td>
+                                    </Text>
+                                    <Text>{repo.preciseNavigation}</Text>
                                 </React.Fragment>
                             ))}
                         </div>
