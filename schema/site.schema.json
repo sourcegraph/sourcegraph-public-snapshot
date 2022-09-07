@@ -490,6 +490,12 @@
               "type": "integer",
               "group": "Search",
               "!go": { "pointer": true }
+            },
+            "maxReorderDurationMS": {
+              "description": "The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.",
+              "type": "integer",
+              "default": 0,
+              "group": "Search"
             }
           }
         },
