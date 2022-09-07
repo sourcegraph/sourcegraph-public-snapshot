@@ -100,7 +100,7 @@ OTLP-compatible backends typically accept the [OTLP gRPC protocol](#otlp-grpc-ba
 
 #### OTLP gRPC backends
 
-Read the [`otlp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all options.
+Refer to the [`otlp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all available options.
 
 ```yaml
 exporters:
@@ -117,7 +117,7 @@ exporters:
 
 #### OTLP HTTP backends
 
-Read the [`otlphttp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
+Refer to the [`otlphttp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all available options.
 
 ```yaml
 exporters:
@@ -127,7 +127,7 @@ exporters:
 
 ### Jaeger
 
-Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.
+Refer to the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.
 
 Most Sourcegraph deployment methods still ship with an opt-in Jaeger instance - to set this up, follow the relevant deployment guides, which will also set up the appropriate configuration for you:
 
@@ -149,7 +149,7 @@ exporters:
 
 ### Google Cloud
 
-Read the [`googlecloud` documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all options.
+Refer to the [`googlecloud` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all available options.
 
 If you run Sourcegraph on a GCP workload, all requests will be authenticated automatically. The documentation describes other authentication methods.
 
