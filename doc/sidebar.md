@@ -10,7 +10,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 -->
 
-- [Getting started](getting-started/index.md)
+- [About](getting-started/index.md)
   - [Product tour](getting-started/tour.md)
   - [Personalization](getting-started/personalization/index.md)
 - [Code search](code_search/index.md)
@@ -71,6 +71,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - <br/>
-- [★ Quick install](index.md#getting-started)
+- [★ Getting Started](index.md)
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ API](api/index.md)
