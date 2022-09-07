@@ -1281,6 +1281,38 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the daily, weekly and monthly
+// numbers of interactions with the migrated extensions (git blame, open in
+// editor, search exports, and go imports search)
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	OpenInEditorClicked         []*MigratedExtensionsOpenInEditorEvent
+	OpenInEditorPreferredIDESet []*MigratedExtensionsOpenInEditorEvent
+	OpenInEditorIDEConfigured   []*MigratedExtensionsOpenInEditorEvent
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+}
+
+type MigratedExtensionsOpenInEditorEvent struct {
+	IdeKind     string
+	Count       *int32
+	UniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
