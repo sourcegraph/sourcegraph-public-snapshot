@@ -23,7 +23,7 @@ For more details on configuring the OpenTelemetry collector for your deployment 
 
 ## Tracing
 
-Sourcegraph tarces are exported in OpenTelemetry format to the bundled OpenTelemetry collector.
+Sourcegraph traces are exported in OpenTelemetry format to the bundled OpenTelemetry collector.
 To learn more about Sourcegraph traces in general, refer to our [tracing documentation](tracing.md).
 
 `sourcegraph/opentelemetry-collector` includes the following exporters that support traces:
