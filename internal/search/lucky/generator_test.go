@@ -39,21 +39,15 @@ func TestNewGenerator(t *testing.T) {
 func generateAll(g next, input string) []want {
 	var autoQ *autoQuery
 	generated := []want{}
-	for {
+	for g != nil {
 		autoQ, g = g()
-		if autoQ != nil {
-			generated = append(
-				generated,
-				want{
-					Description: autoQ.description,
-					Input:       input,
-					Query:       query.StringHuman(autoQ.query.ToParseTree()),
-				})
-		}
-
-		if g == nil {
-			break
-		}
+		generated = append(
+			generated,
+			want{
+				Description: autoQ.description,
+				Input:       input,
+				Query:       query.StringHuman(autoQ.query.ToParseTree()),
+			})
 	}
 	return generated
 }

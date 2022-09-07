@@ -75,7 +75,7 @@ const config = {
     },
     {
       path: path.join(STATIC_ASSETS_PATH, 'styles/!(app|embed).*.css.br'),
-      maxSize: '10kb',
+      maxSize: '25kb',
       compression: 'none',
     },
   ],

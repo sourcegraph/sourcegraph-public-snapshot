@@ -38,7 +38,7 @@ type repositoryArgs struct {
 	After      *string
 }
 
-func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
+func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
 			Field:      ToDBRepoListColumn(args.OrderBy),
@@ -54,7 +54,7 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 	if args.After != nil {
 		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
-			return nil, err
+			return opt, err
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
@@ -70,6 +70,7 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 
 		opt.Cursors = append(opt.Cursors, &cursor)
 	}
+	args.Set(&opt.LimitOffset)
 
 	if args.CloneStatus != nil {
 		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
@@ -86,7 +87,15 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		opt.OnlyCloned = true
 	}
 
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	return opt, nil
+}
+
+func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
+	opt, err := args.toReposListOptions()
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &repositoryConnectionResolver{
 		db:         r.db,
@@ -239,14 +248,6 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}
 	}
 
-	i32ptr := func(v int32) *int32 {
-		return &v
-	}
-
-	if r.opt.NoCloned || r.opt.OnlyCloned || r.opt.CloneStatus != types.CloneStatusUnknown {
-		// Don't support counting if filtering by clone status.
-		return nil, nil
-	}
 	if !r.indexed || !r.notIndexed {
 		// Don't support counting if filtering by index status.
 		return nil, nil
@@ -269,6 +270,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
+	i32ptr := func(v int32) *int32 { return &v }
 	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }

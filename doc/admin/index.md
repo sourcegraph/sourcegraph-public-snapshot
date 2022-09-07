@@ -18,11 +18,17 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
+> NOTE: The Sourcegraph 4.0 [`migrator`](./how-to/manual_database_migrations.md) can now perform upgrades across 
+multiple versions on any instance 3.20 or later.
+
 - [Upgrade Sourcegraph](updates/index.md)
-  - [Update notes for Sourcegraph with Docker Compose](updates/docker_compose.md)
-  - [Update notes for Sourcegraph with Kubernetes](updates/kubernetes.md)
-  - [Update notes for single-container Sourcegraph with Docker](updates/server.md)
-  - [Update notes for pure-docker custom deployments](updates/pure_docker.md)
+  - [Single-minor-version "standard" upgrades](updates/index.md#standard-upgrades)
+  - [Multi-version upgrades](updates/index.md#multi-version-upgrades)
+- [Upgrade notes](updates/index.md#update-notes) (by distribution method):
+  - [Sourcegraph with Docker Compose](updates/docker_compose.md)
+  - [Sourcegraph with Kubernetes](updates/kubernetes.md)
+  - [Single-container Sourcegraph with Docker](updates/server.md)
+  - [Pure-docker custom deployments](updates/pure_docker.md)
 - [Migration guides](migration/index.md)
 - [Upgrading PostgreSQL](postgres.md#upgrading-postgresql)
 

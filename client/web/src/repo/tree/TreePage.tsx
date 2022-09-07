@@ -70,7 +70,8 @@ interface Props
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
+    repoName: string
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -95,6 +96,7 @@ export const treePageRepositoryFragment = gql`
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
+    repoName,
     commitID,
     revision,
     filePath,
@@ -126,30 +128,29 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
-                        repoName={repo.name}
+                        repoName={repoName}
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
-                        repoUrl={repo.url}
                         telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
+        }, [filePath, repoName, revision, props.telemetryService])
     )
 
     const treeOrError = useObservable(
         useMemo(
             () =>
                 fetchTreeEntries({
-                    repoName: repo.name,
+                    repoName,
                     commitID,
                     revision,
                     filePath,
                     first: 2500,
                     requestGraphQL: props.platformContext.requestGraphQL,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
-            [repo.name, commitID, revision, filePath, props.platformContext]
+            [repoName, commitID, revision, filePath, props.platformContext]
         )
     )
 
@@ -159,7 +160,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         settingsCascade.final['insights.displayLocation.directory'] === true
 
     // Add DirectoryViewer
-    const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
+    const uri = toURIWithPath({ repoName, commitID, filePath })
 
     const { extensionsController } = props
     useEffect(() => {
@@ -193,7 +194,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }, [uri, showCodeInsights, extensionsController])
 
     const getPageTitle = (): string => {
-        const repoString = displayRepoName(repo.name)
+        const repoString = displayRepoName(repoName)
         if (filePath) {
             return `${basename(filePath)} - ${repoString}`
         }
@@ -257,10 +258,10 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             <div className="d-flex justify-content-between align-items-center">
                 <div>
                     <PageHeader
-                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repo.name) }]}
+                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repoName) }]}
                         className="mb-3 test-tree-page-title"
                     />
-                    {repo.description && <Text>{repo.description}</Text>}
+                    {repo?.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
@@ -276,9 +277,9 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             </Button>
                         )}
 
-                        {repo.viewerCanAdminister && (
+                        {repo?.viewerCanAdminister && (
                             <Button
-                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
@@ -297,7 +298,8 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 <TreeNavigation
                     batchChangesEnabled={batchChangesEnabled}
                     codeIntelligenceEnabled={codeIntelligenceEnabled}
-                    repo={repo}
+                    repoName={repoName}
+                    viewerCanAdminister={repo?.viewerCanAdminister}
                     revision={revision}
                     tree={tree}
                 />
@@ -309,7 +311,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         <div className={styles.treePage}>
             <Container className={styles.container}>
                 {!showPageTitle && <PageTitle title={getPageTitle()} />}
-                {treeOrError === undefined ? (
+                {treeOrError === undefined || repo === undefined ? (
                     <div>
                         <LoadingSpinner /> Loading files and directories
                     </div>
@@ -317,7 +319,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
+                        <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )
@@ -349,6 +351,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             render={routeComponentProps => (
                                                 <RepoCommits
                                                     repo={repo}
+                                                    revision={revision || ''}
                                                     useBreadcrumb={useBreadcrumb}
                                                     {...props}
                                                     {...routeComponentProps}
@@ -387,7 +390,11 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/compare/tab`}
                                             render={() => (
                                                 <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                    <RepositoryGitDataContainer
+                                                        {...props}
+                                                        repoName={repoName}
+                                                        resolvedRevisionOrError={undefined}
+                                                    >
                                                         <RepositoryCompareArea
                                                             repo={repo}
                                                             match={match}

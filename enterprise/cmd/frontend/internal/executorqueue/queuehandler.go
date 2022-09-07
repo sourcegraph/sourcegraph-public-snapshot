@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +22,7 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := executorDB.New(db)
 	gitserverClient := gitserver.NewClient(db)
+	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -38,7 +41,7 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 
 		base.Path("/files/batches/{path:.*}").Methods("GET", "HEAD").Handler(batchesMountHandler)
 
-		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
+		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
 	}
 
 	return factory, nil
