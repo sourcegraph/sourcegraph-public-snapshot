@@ -16,6 +16,7 @@ type RepoMatch struct {
 	Rev string
 
 	DescriptionMatches []Range
+	RepoNameMatches    []Range
 }
 
 func (r RepoMatch) RepoName() types.MinimalRepo {

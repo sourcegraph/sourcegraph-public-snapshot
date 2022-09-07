@@ -442,9 +442,19 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						descriptionPatterns = append(descriptionPatterns, regexp.MustCompile(`(?is)`+pat))
 					}
 
+					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
+					for _, repoFilter := range repoOptions.RepoFilters {
+						if repoOptions.CaseSensitiveRepoFilters {
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(regexp.QuoteMeta(repoFilter)))
+						} else {
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(repoFilter)))
+						}
+					}
+
 					addJob(&RepoSearchJob{
 						RepoOpts:            repoOptions,
 						DescriptionPatterns: descriptionPatterns,
+						RepoNamePatterns:    repoNamePatterns,
 					})
 				}
 			}
