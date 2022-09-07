@@ -91,7 +91,6 @@ export function injectNewCodeintel(
 
     const codeintelOverrides: Pick<
         FlatExtensionHostAPI,
-        | 'providersForDocument'
         | 'getHover'
         | 'getDocumentHighlights'
         | 'getReferences'
@@ -99,9 +98,6 @@ export function injectNewCodeintel(
         | 'getLocations'
         | 'hasReferenceProvidersForDocument'
     > = {
-        providersForDocument(textParameters) {
-            return proxySubscribable(codeintel.providersForDocument(textParameters))
-        },
         hasReferenceProvidersForDocument(textParameters) {
             return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
         },

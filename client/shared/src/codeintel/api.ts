@@ -20,12 +20,10 @@ import { defaultIfEmpty, map } from 'rxjs/operators'
 import { toPosition } from '../api/extension/api/types'
 import { castArray } from 'lodash'
 import { isDefined } from '@sourcegraph/common/src/types'
-import { CodeIntelProviders } from '../api/contract'
 
 export type QueryGraphQLFn<T> = () => Promise<T>
 
 export interface CodeIntelAPI {
-    providersForDocument(textParameters: TextDocumentPositionParameters): Observable<CodeIntelProviders>
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
     getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getReferences(
@@ -56,17 +54,6 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         )
     }
 
-    providersForDocument(textParameters: TextDocumentPositionParameters): Observable<CodeIntelProviders> {
-        const document = toTextDocument(textParameters.textDocument)
-        console.log({ document })
-        const providers = findLanguageMatchingDocument(document)
-        return of({
-            definitions: providers ? true : false,
-            references: providers ? true : false,
-            implementations: providers?.spec.textDocumentImplemenationSupport || false,
-            language: document.languageId,
-        })
-    }
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean> {
         const document = toTextDocument(textParameters.textDocument)
         const providers = findLanguageMatchingDocument(document)?.providers
