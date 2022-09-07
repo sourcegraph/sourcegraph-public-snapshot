@@ -73,5 +73,6 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	// Initialize services
 	return []goroutine.BackgroundRoutine{
 		scheduler.NewScheduler(autoindexingSvc, policySvc, uploadSvc, policyMatcher, observationContext),
+		scheduler.NewOnDemandScheduler(autoindexingSvc, observationContext),
 	}, nil
 }
