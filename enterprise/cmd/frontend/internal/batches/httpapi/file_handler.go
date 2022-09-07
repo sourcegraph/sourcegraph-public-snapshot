@@ -128,6 +128,9 @@ func getPathParts(r *http.Request) (string, string, error) {
 	return batchSpecRandID, batchSpecWorkspaceFileID, nil
 }
 
+const maxUploadSize = 10 << 20 // 10MB
+const maxMemory = 1 << 20      // 1MB
+
 func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
 	specID := mux.Vars(r)["path"]
 	if specID == "" {
@@ -135,9 +138,20 @@ func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// max memory: 32MB
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
-		http.Error(w, fmt.Sprintf("failed to parse multipart form: %s", err), http.StatusBadRequest)
+	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
+	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
+	//
+	// When this is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
+	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167
+
+	// Prevent client from uploading files that are too large. This will also be enforced on the src-cli side as well.
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	if err := r.ParseMultipartForm(maxMemory); err != nil {
+		if _, ok := err.(*http.MaxBytesError); ok {
+			http.Error(w, "request payload exceeds 10MB limit", http.StatusBadRequest)
+		} else {
+			http.Error(w, fmt.Sprintf("failed to parse multipart form: %s", err), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -147,7 +161,6 @@ func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: could probably use some goroutines here
 	if err = h.uploadFile(r, spec); err != nil {
 		http.Error(w, fmt.Sprintf("failed to upload file: %s", err), http.StatusInternalServerError)
 		return

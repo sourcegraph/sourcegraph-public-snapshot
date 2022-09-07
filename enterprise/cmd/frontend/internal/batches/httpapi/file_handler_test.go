@@ -75,7 +75,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "path incorrectly structured\n",
 		},
 		{
-			name:       "Get file failed to find file",
+			name:       "Failed to find file",
 			isExecutor: true,
 			method:     http.MethodGet,
 			path:       fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
@@ -108,7 +108,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			name:       "Upload file invalid content type",
+			name:       "Upload has invalid content type",
 			isExecutor: true,
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
@@ -119,7 +119,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to parse multipart form: request Content-Type isn't multipart/form-data\n",
 		},
 		{
-			name:       "Upload file failed to lookup batch spec",
+			name:       "Upload failed to lookup batch spec",
 			isExecutor: true,
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
@@ -135,7 +135,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to lookup batch spec: failed to find batch spec\n",
 		},
 		{
-			name:       "Upload file missing filemod",
+			name:       "Upload missing filemod",
 			isExecutor: true,
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
@@ -154,7 +154,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to upload file: missing file modification time\n",
 		},
 		{
-			name:       "Upload file missing file",
+			name:       "Upload missing file",
 			isExecutor: true,
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
@@ -174,7 +174,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to upload file: http: no such file\n",
 		},
 		{
-			name:       "Upload file failed to insert batch spec workspace file",
+			name:       "Failed to create batch spec workspace file",
 			isExecutor: true,
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
@@ -207,7 +207,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			name:       "File Does Exists",
+			name:       "File Does Not Exists",
 			isExecutor: true,
 			method:     http.MethodHead,
 			path:       fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
@@ -234,12 +234,30 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to check if file exists: failed to count\n",
 		},
 		{
-			name:                 "File Exists Missing file id",
+			name:                 "Missing file id",
 			isExecutor:           true,
 			method:               http.MethodHead,
 			path:                 fmt.Sprintf("/files/batches/%s", batchSpecRandID),
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "path incorrectly structured\n",
+		},
+		{
+			name:       "File exceeds max limit",
+			isExecutor: true,
+			method:     http.MethodPost,
+			path:       fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				body := &bytes.Buffer{}
+				w := multipart.NewWriter(body)
+				w.WriteField("filemod", modifiedTimeString)
+				w.WriteField("filepath", "foo/bar")
+				part, _ := w.CreateFormFile("file", "hello.txt")
+				io.Copy(part, io.LimitReader(neverEnding('a'), 11<<20))
+				w.Close()
+				return body, w.FormDataContentType()
+			},
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "request payload exceeds 10MB limit\n",
 		},
 	}
 	for _, test := range tests {
@@ -328,4 +346,13 @@ func (m *mockBatchesStore) GetBatchSpecWorkspaceFile(ctx context.Context, opts s
 func (m *mockBatchesStore) UpsertBatchSpecWorkspaceFile(ctx context.Context, file *btypes.BatchSpecWorkspaceFile) error {
 	args := m.Called(ctx, file)
 	return args.Error(0)
+}
+
+type neverEnding byte
+
+func (b neverEnding) Read(p []byte) (n int, err error) {
+	for i := range p {
+		p[i] = byte(b)
+	}
+	return len(p), nil
 }
