@@ -1,18 +1,20 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,80 +33,92 @@ type BatchesStore interface {
 }
 
 // NewFileHandler creates a new FileHandler.
-func NewFileHandler(
-	//db database.DB,
-	store BatchesStore,
-	operations *Operations,
-	executor bool,
-) http.Handler {
+func NewFileHandler(store BatchesStore, operations *Operations) http.Handler {
 	handler := &FileHandler{
-		logger:     sglog.Scoped("FileHandler", "").With(sglog.Bool("executor", executor)),
+		logger:     sglog.Scoped("FileHandler", ""),
 		store:      store,
 		operations: operations,
 	}
-
-	// If the handler is being used in the executor, no need to add security. Executor comes with its own security.
-	if executor {
-		return handler
-	}
-
-	// 🚨 SECURITY: TODO
 	return handler
 }
 
 func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		h.get(w, r)
-	case http.MethodHead:
-		h.exists(w, r)
-	case http.MethodPost:
-		h.upload(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	// Wrap the method operations to get a single point for logging.
+	responseBody, statusCode, err := func() (_ io.Reader, statusCode int, err error) {
+		ctx, _, endObservation := h.operations.serveHTTP.With(r.Context(), &err, observation.Args{})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.String("method", r.Method),
+				log.Int("statusCode", statusCode),
+			}})
+		}()
+
+		var handlerFunc fileHandlerFunc
+
+		switch r.Method {
+		case http.MethodGet:
+			handlerFunc = h.get
+		case http.MethodHead:
+			handlerFunc = h.exists
+		case http.MethodPost:
+			// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
+			r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+			//h.upload(w, r)
+			handlerFunc = h.upload
+		default:
+			return nil, http.StatusMethodNotAllowed, nil
+		}
+		return handlerFunc(ctx, r)
+	}()
+
+	if err != nil {
+		http.Error(w, err.Error(), statusCode)
+		return
+	}
+
+	w.WriteHeader(statusCode)
+
+	if responseBody != nil {
+		if _, err := io.Copy(w, responseBody); err != nil {
+			h.logger.Error("batches.httpapi: failed to write payload to client", sglog.Error(err))
+		}
 	}
 }
 
-func (h *FileHandler) get(w http.ResponseWriter, r *http.Request) {
+type fileHandlerFunc = func(context.Context, *http.Request) (io.Reader, int, error)
+
+func (h *FileHandler) get(ctx context.Context, r *http.Request) (io.Reader, int, error) {
 	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
 	_, fileID, err := getPathParts(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, http.StatusBadRequest, err
 	}
 
-	file, err := h.store.GetBatchSpecWorkspaceFile(r.Context(), store.GetBatchSpecWorkspaceFileOpts{
-		RandID: fileID,
-	})
+	file, err := h.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: fileID})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to lookup file metadata: %s", err), http.StatusInternalServerError)
-		return
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "retrieving file")
 	}
-	if _, err = w.Write(file.Content); err != nil {
-		http.Error(w, fmt.Sprintf("failed to write file to reponse: %s", err), http.StatusInternalServerError)
-		return
-	}
+
+	return bytes.NewReader(file.Content), http.StatusOK, nil
 }
 
-func (h *FileHandler) exists(w http.ResponseWriter, r *http.Request) {
+func (h *FileHandler) exists(ctx context.Context, r *http.Request) (io.Reader, int, error) {
 	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
 	_, fileID, err := getPathParts(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, http.StatusBadRequest, err
 	}
 
-	count, err := h.store.CountBatchSpecWorkspaceFiles(r.Context(), store.ListBatchSpecWorkspaceFileOpts{RandID: fileID})
+	count, err := h.store.CountBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{RandID: fileID})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to check if file exists: %s", err), http.StatusInternalServerError)
-		return
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "checking file existence")
 	}
 
 	// Either the count is 1 or zero.
 	if count == 1 {
-		w.WriteHeader(http.StatusOK)
+		return nil, http.StatusOK, nil
 	} else {
-		w.WriteHeader(http.StatusNotFound)
+		return nil, http.StatusNotFound, nil
 	}
 }
 
@@ -131,15 +145,11 @@ func getPathParts(r *http.Request) (string, string, error) {
 const maxUploadSize = 10 << 20 // 10MB
 const maxMemory = 1 << 20      // 1MB
 
-func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
+func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, int, error) {
 	specID := mux.Vars(r)["path"]
 	if specID == "" {
-		http.Error(w, "spec ID not provided", http.StatusBadRequest)
-		return
+		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
 	}
-
-	// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
 	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
 	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
@@ -148,26 +158,25 @@ func (h *FileHandler) upload(w http.ResponseWriter, r *http.Request) {
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		if _, ok := err.(*http.MaxBytesError); ok {
-			http.Error(w, "request payload exceeds 10MB limit", http.StatusBadRequest)
+			return nil, http.StatusBadRequest, errors.New("request payload exceeds 10MB limit")
 		} else {
-			http.Error(w, fmt.Sprintf("failed to parse multipart form: %s", err), http.StatusInternalServerError)
+			return nil, http.StatusInternalServerError, errors.Wrap(err, "parsing request")
 		}
-		return
 	}
 
-	spec, err := h.store.GetBatchSpec(r.Context(), store.GetBatchSpecOpts{RandID: specID})
+	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to lookup batch spec: %s", err), http.StatusInternalServerError)
-		return
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
 	}
 
-	if err = h.uploadFile(r, spec); err != nil {
-		http.Error(w, fmt.Sprintf("failed to upload file: %s", err), http.StatusInternalServerError)
-		return
+	if err = h.uploadFile(ctx, r, spec); err != nil {
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "uploading file")
 	}
+
+	return nil, http.StatusOK, err
 }
 
-func (h *FileHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec) error {
+func (h *FileHandler) uploadFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) error {
 	modtime := r.Form.Get("filemod")
 	if modtime == "" {
 		return errors.New("missing file modification time")
@@ -188,7 +197,7 @@ func (h *FileHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec) error 
 	if err != nil {
 		return err
 	}
-	if err = h.store.UpsertBatchSpecWorkspaceFile(r.Context(), &btypes.BatchSpecWorkspaceFile{
+	if err = h.store.UpsertBatchSpecWorkspaceFile(ctx, &btypes.BatchSpecWorkspaceFile{
 		BatchSpecID: spec.ID,
 		FileName:    headers.Filename,
 		Path:        filePath,
