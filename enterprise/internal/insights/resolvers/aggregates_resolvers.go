@@ -215,19 +215,27 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 	otherResults := aggregator.OtherCounts().ResultCount
 	otherGroups := aggregator.OtherCounts().GroupCount
 
+	clickThroughAvailable := len(sorted) > 1 || otherGroups > 0 || mode == types.CAPTURE_GROUP_AGGREGATION_MODE
+
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
 			label := sorted[i].Label
-			drilldownQuery, err := buildDrilldownQuery(mode, originalQuery, label, patternType)
-			if err != nil {
-				// for some reason we couldn't generate a new query, so fallback to the original
-				drilldownQuery = originalQuery
+			var drilldownQuery *string
+			if clickThroughAvailable {
+				query, err := buildDrilldownQuery(mode, originalQuery, label, patternType)
+				if err != nil {
+					// for some reason we couldn't generate a new query, so fallback to the original
+					continue
+				} else {
+					drilldownQuery = &query
+				}
 			}
 			groups = append(groups, &AggregationGroup{
 				label: label,
 				count: int(sorted[i].Count),
-				query: &drilldownQuery,
+				query: drilldownQuery,
 			})
+
 		} else {
 			otherGroups++
 			otherResults += sorted[i].Count
