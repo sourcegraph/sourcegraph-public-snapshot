@@ -314,14 +314,51 @@ gitserver:
   sshSecret: gitserver-ssh
 ```
 
-#### Using an external observability backend 
-<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
+### Advanced Configuration Methods
 
-> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](../../observability/tracing.md).
+The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
 
-Sourcegraph supports sending [OpenTelemetry trace data](../../observability/opentelemetry.md) to arbitrary observability backends. You can configure the OpenTelemetry Collector to export this data to your backend of choice.  
+The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
 
-First review the [configuration documentation](../../observability/opentelemetry.md#configuration) to understand how configuring the Collector works.  
+> ⚠️ While both of these approaches are available, deployment changes that are not covered by Sourcegraph documentation should be discussed with either your Customer Engineer or Support contact before proceeding, to ensure the changes proposed can be supported by Sourcegraph. This also allows Sourcegraph to consider adding the required customizations to the Helm chart.
+
+#### Integrate Kustomize with Helm chart
+
+For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
+
+You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
+
+#### Helm subcharts
+
+[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
+
+With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
+
+An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
+
+More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
+
+### OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+#### Configure a tracing backend
+
+Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
+
+You can add the following values in your `override.yaml` to configure trace exporting:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        exporters:
+          ...
+
+        processors:
+          ...
+```
 
 As an example, to configure the collector to export to an external Jaeger instance, add the following to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override.yaml):
 
@@ -340,9 +377,9 @@ openTelemetry:
               insecure: true
 ```
 
-##### Connecting to an observability backend with TLS
+#### Configure a tracing backend with TLS enabled
 
-If you require a TLS connection to export trace data, you need to first add the certificate data to a Secret.
+If you require a TLS connection to export trace data, you need to first add the certificate data to a Secret. The following snippet demonstrates how you can achieve this:
 
 > WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
 
@@ -375,7 +412,7 @@ openTelemetry:
               key_file: /tls/file.key
 ```
 
-##### Configuring trace sampling
+#### Configure trace sampling
 
 Review the [trace sampling documentation](../../observability/opentelemetry.md#sampling-traces) to understand how to configure sampling.
 
@@ -392,7 +429,7 @@ openTelemetry:
             sampling_percentage: 10.0 # (default = 0): Percentage at which traces are sampled; >= 100 samples all traces
 ```
 
-#### Using the bundled Jaeger instance
+#### Enable the bundled Jaeger deployment
 
 Sourcegraph ships with a bundled Jaeger instance that is disabled by default. If you do not wish to make use of an external observability backend, you can enable this instance by adding the following to your overrides:
 
@@ -402,30 +439,6 @@ jaeger:
 ```
 
 This will also configure the OpenTelemetry Collector to export trace data to this instance. No further configuration is required.
-
-### Advanced Configuration Methods
-
-The Helm chart is new and still under active development, and our values.yaml (and therefore the customization available to use via an override file) may not cover every need. Equally, some changes are environment or customer-specific, and so will never be part of the default Sourcegraph Helm chart.
-
-The following guidance for using Kustomize with Helm and Helm Subcharts covers both of these scenarios.
-
-> ⚠️ While both of these approaches are available, deployment changes that are not covered by Sourcegraph documentation should be discussed with either your Customer Engineer or Support contact before proceeding, to ensure the changes proposed can be supported by Sourcegraph. This also allows Sourcegraph to consider adding the required customizations to the Helm chart.
-
-#### Integrate Kustomize with Helm chart
-
-For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
-
-You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
-
-#### Helm subcharts
-
-[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
-
-With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
-
-An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
-
-More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
 
 ## Cloud providers guides
 
