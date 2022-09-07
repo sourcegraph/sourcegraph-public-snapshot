@@ -73,7 +73,6 @@ const commonProps = (props: Args): UserNavItemProps => ({
     onThemePreferenceChange,
     showDotComMarketing: props.showDotComMarketing,
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
-    showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
     showKeyboardShortcutsHelp: () => undefined,
@@ -122,7 +121,6 @@ export const WithAvatar: Story = args => {
                             {...props}
                             {...webProps}
                             menuButtonRef={menuButtonRef}
-                            showRepositorySection={true}
                             authenticatedUser={{
                                 ...props.authenticatedUser,
                                 avatarURL:

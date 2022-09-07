@@ -96,12 +96,12 @@ export const OVERVIEW_STATISTICS = gql`
                 users(dateRange: $dateRange, grouping: WEEKLY) {
                     activity {
                         summary {
-                            totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                 }
             }
-            adminUsers: users(siteAdmin: true, deleted: false) {
+            adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
                 totalCount
             }
         }

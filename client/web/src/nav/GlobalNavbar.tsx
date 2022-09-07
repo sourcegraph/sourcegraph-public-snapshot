@@ -48,7 +48,6 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
-import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
@@ -140,7 +139,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
 
     return (
         <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
             </Link>
         </NavAction>
@@ -168,12 +167,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
-
-    // UI includes repositories section as part of the user navigation bar
-    // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = props.authenticatedUser
-        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
-        : false
 
     const isSearchContextAvailable = useObservable(
         useMemo(
@@ -366,7 +359,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && extensionsController !== null && (
+                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
@@ -376,20 +369,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             />
                         </NavAction>
                     )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <NavAction>
+                            <StatusMessagesNavItem />
+                        </NavAction>
+                    )}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>
@@ -417,7 +401,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}
-                                showRepositorySection={showRepositorySection}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||

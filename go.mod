@@ -140,7 +140,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20220822162457-5c757f638021
+	github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -169,15 +169,15 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.9.0
 	go.opentelemetry.io/otel/sdk v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0
-	go.uber.org/atomic v1.9.0
+	go.uber.org/atomic v1.10.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
-	go.uber.org/zap v1.22.0
+	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	gonum.org/v1/gonum v0.11.0
@@ -201,15 +201,19 @@ require github.com/XSAM/otelsql v0.15.0
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 )
 
 require github.com/hmarr/codeowners v0.4.0
 
-require go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+require (
+	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
+)
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220826062732-19e4a677f5ab
+	github.com/sourcegraph/zoekt v0.0.0-20220906183641-6ba33af2cc5f
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -341,8 +345,8 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
@@ -376,7 +380,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.1 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect
@@ -408,7 +412,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.33.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.33.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.34.0
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.9.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.9.0
 	go.opentelemetry.io/proto/otlp v0.18.0
@@ -452,7 +456,7 @@ replace (
 // or issues with specific versions.
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220825134523-e3712953a6a5
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).

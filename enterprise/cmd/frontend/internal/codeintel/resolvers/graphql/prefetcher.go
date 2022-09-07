@@ -71,9 +71,7 @@ func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (store.Upload, b
 	}
 	sort.Ints(ids)
 
-	uploadsResolver := p.resolver.UploadsResolver()
-
-	u, err := uploadsResolver.GetUploadsByIDs(ctx, ids...)
+	u, err := p.resolver.UploadsResolver().GetUploadsByIDs(ctx, ids...)
 	if err != nil {
 		return store.Upload{}, false, err
 	}

@@ -1388,31 +1388,51 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
-	WeeklyInsightsPageViews                      *int32
-	WeeklyStandaloneInsightPageViews             *int32
-	WeeklyStandaloneDashboardClicks              *int32
-	WeeklyStandaloneEditClicks                   *int32
-	WeeklyInsightsGetStartedPageViews            *int32
-	WeeklyInsightsUniquePageViews                *int32
-	WeeklyInsightsGetStartedUniquePageViews      *int32
-	WeeklyStandaloneInsightUniquePageViews       *int32
-	WeeklyStandaloneInsightUniqueDashboardClicks *int32
-	WeeklyStandaloneInsightUniqueEditClicks      *int32
-	WeeklyInsightConfigureClick                  *int32
-	WeeklyInsightAddMoreClick                    *int32
-	WeekStart                                    time.Time
-	WeeklyInsightCreators                        *int32
-	WeeklyFirstTimeInsightCreators               *int32
-	WeeklyAggregatedUsage                        []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab                []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab            []InsightGetStartedTabClickPing
-	InsightTimeIntervals                         []InsightTimeIntervalPing
-	InsightOrgVisible                            []OrgVisibleInsightPing
-	InsightTotalCounts                           InsightTotalCounts
-	TotalOrgsWithDashboard                       *int32
-	TotalDashboardCount                          *int32
-	InsightsPerDashboard                         InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
+	WeeklyInsightsPageViews                        *int32
+	WeeklyStandaloneInsightPageViews               *int32
+	WeeklyStandaloneDashboardClicks                *int32
+	WeeklyStandaloneEditClicks                     *int32
+	WeeklyInsightsGetStartedPageViews              *int32
+	WeeklyInsightsUniquePageViews                  *int32
+	WeeklyInsightsGetStartedUniquePageViews        *int32
+	WeeklyStandaloneInsightUniquePageViews         *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
+	WeeklyStandaloneInsightUniqueEditClicks        *int32
+	WeeklyInsightConfigureClick                    *int32
+	WeeklyInsightAddMoreClick                      *int32
+	WeekStart                                      time.Time
+	WeeklyInsightCreators                          *int32
+	WeeklyFirstTimeInsightCreators                 *int32
+	WeeklyAggregatedUsage                          []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
+	InsightTimeIntervals                           []InsightTimeIntervalPing
+	InsightOrgVisible                              []OrgVisibleInsightPing
+	InsightTotalCounts                             InsightTotalCounts
+	TotalOrgsWithDashboard                         *int32
+	TotalDashboardCount                            *int32
+	InsightsPerDashboard                           InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                  *int32
+	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsInfoIconHover                *int32
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover                []GroupResultPing
+	WeeklyGroupResultsChartBarClick                []GroupResultPing
+	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {

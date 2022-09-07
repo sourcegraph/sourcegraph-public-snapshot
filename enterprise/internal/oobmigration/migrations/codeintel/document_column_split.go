@@ -76,7 +76,8 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, erro
 	}, nil
 }
 
-// MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
+// MigrateRowDown recombines the split payloads into a single column to undo the migration
+// up direction.
 func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte

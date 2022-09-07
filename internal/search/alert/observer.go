@@ -66,7 +66,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
-		proposedQueries := []*search.ProposedQuery{
+		proposedQueries := []*search.QueryDescription{
 			{
 				Description: "search in the global context",
 				Query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
@@ -98,7 +98,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 	}
 
-	var proposedQueries []*search.ProposedQuery
+	var proposedQueries []*search.QueryDescription
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
 			RepoFilters:      repoFilters,
@@ -107,7 +107,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries,
-				&search.ProposedQuery{
+				&search.QueryDescription{
 					Description: "include forked repositories in your query.",
 					Query:       o.OriginalQuery + " fork:yes",
 					PatternType: o.PatternType,
@@ -126,7 +126,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries,
-				&search.ProposedQuery{
+				&search.QueryDescription{
 					Description: "include archived repositories in your query.",
 					Query:       o.OriginalQuery + " archived:yes",
 					PatternType: o.PatternType,
@@ -342,7 +342,7 @@ func needsPackageHostConfiguration(ctx context.Context, db database.DB) (bool, e
 }
 
 type errOverRepoLimit struct {
-	ProposedQueries []*search.ProposedQuery
+	ProposedQueries []*search.QueryDescription
 	Description     string
 }
 
@@ -359,7 +359,7 @@ const (
 
 type ErrLuckyQueries struct {
 	Type            LuckyAlertType
-	ProposedQueries []*search.ProposedQuery
+	ProposedQueries []*search.QueryDescription
 }
 
 func (e *ErrLuckyQueries) Error() string {

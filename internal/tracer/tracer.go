@@ -193,7 +193,7 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	case Jaeger, openTracing:
 		exporter, err = exporters.NewJaegerExporter()
 	case OpenTelemetry:
-		exporter, err = exporters.NewOTelCollectorExporter(context.Background(), logger)
+		exporter, err = exporters.NewOTLPExporter(context.Background(), logger)
 	}
 
 	if err != nil || exporter == nil {

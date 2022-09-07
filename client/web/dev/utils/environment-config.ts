@@ -33,6 +33,8 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
     // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
+    // The name used to generate Statoscope JSON stats and HTML report in the `/ui/assets` folder.
+    WEBPACK_STATS_NAME: process.env.WEBPACK_STATS_NAME,
     // Allow overriding default Webpack naming behavior for debugging
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
 

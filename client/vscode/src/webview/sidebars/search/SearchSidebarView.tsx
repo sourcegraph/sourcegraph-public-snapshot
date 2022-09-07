@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { ReactElement, ReactNode, useCallback, useMemo } from 'react'
 
+import { useHistory } from 'react-router'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 // Disable so we can create a separate store for the VS Code extension.
 // eslint-disable-next-line no-restricted-imports
@@ -7,16 +8,28 @@ import create from 'zustand'
 
 import {
     InitialParametersSource,
+    QueryUpdate,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStore,
-    SearchQueryStateStoreProvider,
     updateQuery,
 } from '@sourcegraph/search'
-import { SearchSidebar } from '@sourcegraph/search-ui'
+import {
+    getDynamicFilterLinks,
+    getFiltersOfKind,
+    getQuickLinks,
+    getRepoFilterLinks,
+    getSearchReferenceFactory,
+    getSearchSnippetLinks,
+    SearchSidebar,
+    SearchSidebarSection,
+} from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -29,6 +42,10 @@ interface SearchSidebarViewProps
 
 export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
     ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
+        const history = useHistory()
+        const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+
+        // TODO: Get rid of Zustand create store since this is no longer needed after sidebar decoupling
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>
                 create<SearchQueryState>((set, get) => ({
@@ -106,26 +123,90 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
             }
         }, [searchQueryStateFromPanel])
 
-        const patternType = useSearchQueryState(state => state.searchPatternType)
-        const caseSensitive = useSearchQueryState(state => state.searchCaseSensitivity)
+        const submitSearch = useSearchQueryState(state => state.submitSearch)
+        const setQueryState = useSearchQueryState(state => state.setQueryState)
+
+        const handleSidebarSearchSubmit = useCallback(
+            (updates: QueryUpdate[]) =>
+                submitSearch(
+                    {
+                        history,
+                        source: 'filter',
+                    },
+                    updates
+                ),
+            [history, submitSearch]
+        )
+
+        const onDynamicFilterClicked = useCallback(
+            (value: string, kind?: string) => {
+                platformContext.telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
+                handleSidebarSearchSubmit([{ type: 'toggleSubquery', value }])
+            },
+            [handleSidebarSearchSubmit, platformContext.telemetryService]
+        )
+
+        const onSnippetClicked = useCallback(
+            (value: string) => {
+                platformContext.telemetryService.log('SearchSnippetClicked')
+                handleSidebarSearchSubmit([{ type: 'toggleSubquery', value }])
+            },
+            [handleSidebarSearchSubmit, platformContext.telemetryService]
+        )
+
+        const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
 
         return (
-            <SearchQueryStateStoreProvider useSearchQueryState={useSearchQueryState}>
-                <SearchSidebar
-                    // Used for SearchTypeLink, which we shouldn't render in the extension.
-                    buildSearchURLQueryFromQueryState={() => ''}
-                    // Ensure we always render SearchTypeButton which sets zustand state,
-                    // instead of URL state which wouldn't make sense in this webview.
-                    forceButton={true}
-                    caseSensitive={caseSensitive}
-                    patternType={patternType}
-                    settingsCascade={settingsCascade}
-                    telemetryService={platformContext.telemetryService}
-                    className={styles.sidebarContainer}
-                    filters={filters}
-                    // Debt: no selected search context spec
-                />
-            </SearchQueryStateStoreProvider>
+            <SearchSidebar onClose={() => setSelectedTab(null)} className={styles.sidebarContainer}>
+                <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
+                    {getDynamicFilterLinks(
+                        filters,
+                        ['lang', 'file', 'utility'],
+                        onDynamicFilterClicked,
+                        (label, value) => `Filter by ${value}`,
+                        (label, value) => value
+                    )}
+                </SearchSidebarSection>
+
+                <SearchSidebarSection
+                    sectionId={SectionID.REPOSITORIES}
+                    header="Repositories"
+                    showSearch={true}
+                    minItems={1}
+                    noResultText={getRepoFilterNoResultText}
+                >
+                    {getRepoFilterLinks(repoFilters, onDynamicFilterClicked, false)}
+                </SearchSidebarSection>
+
+                <SearchSidebarSection
+                    sectionId={SectionID.SEARCH_REFERENCE}
+                    header="Search reference"
+                    showSearch={true}
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange={false}
+                >
+                    {getSearchReferenceFactory({
+                        telemetryService: platformContext.telemetryService,
+                        setQueryState,
+                    })}
+                </SearchSidebarSection>
+
+                <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
+                    {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
+                </SearchSidebarSection>
+
+                <SearchSidebarSection sectionId={SectionID.QUICK_LINKS} header="Quicklinks">
+                    {getQuickLinks(settingsCascade)}
+                </SearchSidebarSection>
+            </SearchSidebar>
         )
     }
+)
+
+const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode => (
+    <span>
+        None of the top {repoFilterLinks.length} repositories in your results match this filter. Try a{' '}
+        <Code>repo:</Code> search in the main search bar instead.
+    </span>
 )

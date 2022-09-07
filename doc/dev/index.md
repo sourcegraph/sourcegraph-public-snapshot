@@ -93,7 +93,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
-- [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
 - [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
@@ -165,7 +164,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
 - [Set up local monitoring development](how-to/monitoring_local_dev.md)
-- [Set up local OpenTelemetry development](how-to/otel_local_dev.md)
+- [Set up local OpenTelemetry development](how-to/opentelemetry_local_dev.md)
 
 ### Documentation
 

@@ -118,11 +118,11 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
-                <div className="list-group position-relative">
+                <div className="position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
-                        inputClassName="w-auto"
-                        listClassName={classNames(styles.grid, 'mb-3')}
+                        inputClassName="flex-1"
+                        listClassName={classNames('list-group', styles.grid, 'mb-3')}
                         noun="index"
                         pluralNoun="indexes"
                         querySubject={querySubject}

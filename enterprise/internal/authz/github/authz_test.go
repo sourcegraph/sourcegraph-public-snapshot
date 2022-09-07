@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -17,7 +18,7 @@ import (
 
 func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no authorization", func(t *testing.T) {
-		providers, problems, warnings := NewAuthzProviders(
+		providers, problems, warnings, invalidConnections := NewAuthzProviders(
 			database.NewMockExternalServiceStore(),
 			[]*ExternalConnection{
 				{
@@ -39,10 +40,12 @@ func TestNewAuthzProviders(t *testing.T) {
 		assert.Len(providers, 0, "unexpected a providers: %+v", providers)
 		assert.Len(problems, 0, "unexpected problems: %+v", problems)
 		assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
+		assert.Len(invalidConnections, 0, "unexpected invalidConnections: %+v", invalidConnections)
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
-		providers, problems, warnings := NewAuthzProviders(
+		licensing.MockCheckFeatureError("")
+		providers, problems, warnings, invalidConnections := NewAuthzProviders(
 			database.NewMockExternalServiceStore(),
 			[]*ExternalConnection{
 				{
@@ -67,6 +70,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		assert.NotNil(t, providers[0])
 
 		assert.Empty(t, problems)
+		assert.Empty(t, invalidConnections)
 
 		require.Len(t, warnings, 1, "expect exactly one warning")
 		assert.Contains(t, warnings[0], "no authentication provider")
@@ -74,7 +78,8 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
-			providers, problems, warnings := NewAuthzProviders(
+			licensing.MockCheckFeatureError("")
+			providers, problems, warnings, invalidConnections := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
 					{
@@ -99,10 +104,41 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			assert.Empty(t, problems)
 			assert.Empty(t, warnings)
+			assert.Empty(t, invalidConnections)
+		})
+
+		t.Run("license does not have ACLs feature", func(t *testing.T) {
+			licensing.MockCheckFeatureError("failed")
+			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url:           schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{},
+							},
+						},
+					},
+				},
+				[]schema.AuthProviders{{
+					Github: &schema.GitHubAuthProvider{},
+				}},
+				false,
+			)
+
+			expectedError := []string{"failed"}
+			expInvalidConnectionErr := []string{"github"}
+			assert.Equal(t, expectedError, problems)
+			assert.Equal(t, expInvalidConnectionErr, invalidConnections)
+			assert.Empty(t, providers)
+			assert.Empty(t, warnings)
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
-			providers, problems, warnings := NewAuthzProviders(
+			licensing.MockCheckFeatureError("")
+			providers, problems, warnings, invalidConnections := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
 					{
@@ -134,13 +170,14 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			require.Len(t, warnings, 1, "expect exactly one warning")
 			assert.Contains(t, warnings[0], "allowGroupsPermissionsSync")
+			assert.Empty(t, invalidConnections)
 		})
 
 		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
 			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
 				return []string{"read:org"}, nil
 			}
-			providers, problems, warnings := NewAuthzProviders(
+			providers, problems, warnings, invalidConnections := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
 					{
@@ -170,6 +207,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			assert.Empty(t, problems)
 			assert.Empty(t, warnings)
+			assert.Empty(t, invalidConnections)
 		})
 
 		t.Run("github app installation id available", func(t *testing.T) {
@@ -188,7 +226,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			providers, problems, warnings := NewAuthzProviders(
+			providers, problems, warnings, invalidConnections := NewAuthzProviders(
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
 					{
@@ -221,6 +259,7 @@ func TestNewAuthzProviders(t *testing.T) {
 
 			assert.Empty(t, problems)
 			assert.Empty(t, warnings)
+			assert.Empty(t, invalidConnections)
 		})
 	})
 }

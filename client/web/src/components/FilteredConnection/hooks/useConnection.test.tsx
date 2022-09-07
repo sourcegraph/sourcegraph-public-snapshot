@@ -15,18 +15,16 @@ import {
 import { useConnection } from './useConnection'
 
 const TEST_CONNECTION_QUERY = gql`
-    query TestConnectionQuery($username: String!, $first: Int) {
-        user(username: $username) {
-            repositories(first: $first) {
-                nodes {
-                    id
-                    name
-                }
-                totalCount
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
+    query TestConnectionQuery($first: Int) {
+        repositories(first: $first) {
+            nodes {
+                id
+                name
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
             }
         }
     }
@@ -46,14 +44,10 @@ const TestComponent = () => {
         query: TEST_CONNECTION_QUERY,
         variables: {
             first: 1,
-            username: 'username',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            if (!data.user) {
-                throw new Error('User not found')
-            }
-            return data.user.repositories
+            return data.repositories
         },
         options: {
             useURL: true,
@@ -87,7 +81,6 @@ const generateMockRequest = ({
 }): MockedResponse<TestConnectionQueryResult>['request'] => ({
     query: getDocumentNode(TEST_CONNECTION_QUERY),
     variables: {
-        username: 'username',
         after,
         first,
     },
@@ -105,15 +98,13 @@ const generateMockResult = ({
     totalCount: number
 }): MockedResponse<TestConnectionQueryResult>['result'] => ({
     data: {
-        user: {
-            repositories: {
-                nodes,
-                pageInfo: {
-                    endCursor,
-                    hasNextPage,
-                },
-                totalCount,
+        repositories: {
+            nodes,
+            pageInfo: {
+                endCursor,
+                hasNextPage,
             },
+            totalCount,
         },
     },
 })

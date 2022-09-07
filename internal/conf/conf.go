@@ -54,7 +54,19 @@ const (
 	modeEmpty
 )
 
+var (
+	cachedModeOnce sync.Once
+	cachedMode     configurationMode
+)
+
 func getMode() configurationMode {
+	cachedModeOnce.Do(func() {
+		cachedMode = getModeUncached()
+	})
+	return cachedMode
+}
+
+func getModeUncached() configurationMode {
 	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {

@@ -48,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -56,7 +57,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -170,9 +170,10 @@ func main() {
 	// Create Handler now since it also initializes state
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
-	handler = actor.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	// Ready immediately
 	ready := make(chan struct{})
