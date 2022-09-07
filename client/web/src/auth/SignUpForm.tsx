@@ -276,7 +276,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <Button
-                                    to={provider.authenticationURL || ''}
+                                    to={provider.authenticationURL}
                                     display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"

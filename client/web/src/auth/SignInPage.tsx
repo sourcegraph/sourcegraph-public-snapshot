@@ -73,12 +73,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <Button
-                                to={provider.authenticationURL || ''}
-                                display="block"
-                                variant="secondary"
-                                as={AnchorLink}
-                            >
+                            <Button to={provider.authenticationURL} display="block" variant="secondary" as={AnchorLink}>
                                 {provider.serviceType === 'github' && (
                                     <>
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
