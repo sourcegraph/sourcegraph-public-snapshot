@@ -125,6 +125,43 @@ export const OVERVIEW_DEV_TIME_SAVED = gql`
                         }
                     }
                 }
+                codeInsights(dateRange: $dateRange, grouping: WEEKLY) {
+                    searchSeriesCreations: seriesCreations(generationType: SEARCH) {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    languageSeriesCreations: seriesCreations(generationType: LANGUAGE_STATS) {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    computeSeriesCreations: seriesCreations(generationType: SEARCH_COMPUTE) {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    insightHovers {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    insightDataPointClicks {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    dashboardCreations {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    insightCreations {
+                        summary {
+                            totalCount
+                        }
+                    }
+                }
             }
         }
     }
