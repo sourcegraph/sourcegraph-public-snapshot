@@ -31,7 +31,7 @@ const MAX_BARS_PREVIEW_MOD = 10
 
 const getName = (datum: SearchAggregationDatum): string => datum.label ?? ''
 const getValue = (datum: SearchAggregationDatum): number => datum.count
-const getLink = (datum: SearchAggregationDatum): string => datum.query ?? ''
+const getLink = (datum: SearchAggregationDatum): string | null => datum.query ?? null
 const getColor = (): string => 'var(--primary)'
 
 /**
@@ -155,7 +155,10 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
     const handleDatumLinkClick = (event: MouseEvent, datum: SearchAggregationDatum, index: number): void => {
         event.preventDefault()
-        onBarLinkClick?.(getLink(datum), index)
+        const link = getLink(datum)
+        if (link) {
+            onBarLinkClick?.(link, index)
+        }
     }
 
     return (
