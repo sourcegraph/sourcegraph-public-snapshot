@@ -11,6 +11,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/atomic"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -91,8 +92,9 @@ type SubRepoPermsClient struct {
 	clock             func() time.Time
 	since             func(time.Time) time.Duration
 
-	group *singleflight.Group
-	cache *lru.Cache
+	group   *singleflight.Group
+	cache   *lru.Cache
+	enabled *atomic.Bool
 }
 
 const defaultCacheSize = 1000
@@ -128,10 +130,21 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		return nil, errors.Wrap(err, "creating LRU cache")
 	}
 
+	enabled := atomic.NewBool(false)
+
 	conf.Watch(func() {
-		if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
-			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		c := conf.Get()
+		if c.ExperimentalFeatures == nil || c.ExperimentalFeatures.SubRepoPermissions == nil {
+			enabled.Store(false)
+			return
 		}
+
+		cacheSize := c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize
+		if cacheSize == 0 {
+			cacheSize = defaultCacheSize
+		}
+		cache.Resize(cacheSize)
+		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
 	})
 
 	return &SubRepoPermsClient{
@@ -140,6 +153,7 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		since:             time.Since,
 		group:             &singleflight.Group{},
 		cache:             cache,
+		enabled:           enabled,
 	}, nil
 }
 
@@ -331,10 +345,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 }
 
 func (s *SubRepoPermsClient) Enabled() bool {
-	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
-		return c.ExperimentalFeatures.SubRepoPermissions.Enabled
-	}
-	return false
+	return s.enabled.Load()
 }
 
 func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
@@ -466,7 +477,7 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 		}
 	}
 
-	return true && !any, nil
+	return !any, nil
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.
