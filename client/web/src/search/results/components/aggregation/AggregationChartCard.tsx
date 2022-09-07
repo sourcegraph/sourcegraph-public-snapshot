@@ -31,7 +31,7 @@ const MAX_BARS_PREVIEW_MOD = 10
 
 const getName = (datum: SearchAggregationDatum): string => datum.label ?? ''
 const getValue = (datum: SearchAggregationDatum): number => datum.count
-const getLink = (datum: SearchAggregationDatum): string | null => datum.query ?? null
+const getLink = (datum: SearchAggregationDatum): string | undefined => datum.query ?? undefined
 const getColor = (): string => 'var(--primary)'
 
 /**
