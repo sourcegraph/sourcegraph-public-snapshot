@@ -132,8 +132,10 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 // other internal services).
 func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
 	internalMux := http.NewServeMux()
+	logger := log.Scoped("internal", "internal http handlers")
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
+			logger,
 			featureflag.Middleware(db.FeatureFlags(),
 				internalhttpapi.NewInternalHandler(
 					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
@@ -149,7 +151,6 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	logger := log.Scoped("internal", "internal http handlers")
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("internal", h)
 	return h
