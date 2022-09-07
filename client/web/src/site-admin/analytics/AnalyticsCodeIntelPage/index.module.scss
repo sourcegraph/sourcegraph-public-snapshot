@@ -37,3 +37,7 @@
     align-items: center;
     padding-left: 2rem;
 }
+
+.precise-item:not(:last-child) {
+    padding-bottom: 4px;
+}

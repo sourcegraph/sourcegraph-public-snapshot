@@ -266,7 +266,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
                     if (precise > 0) {
                         return (
-                            <div key={lang}>
+                            <div key={lang} className={styles.preciseItem}>
                                 <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
                                 <strong>{lang}</strong>
                             </div>
@@ -274,7 +274,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     }
                     if (lang in langToIndexerUrl) {
                         return (
-                            <div key={lang}>
+                            <div key={lang} className={styles.preciseItem}>
                                 Configure precise navigation for <Link to={langToIndexerUrl[lang]}>{lang}</Link>
                             </div>
                         )
