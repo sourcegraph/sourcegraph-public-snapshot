@@ -246,6 +246,8 @@ describe('Search aggregation', () => {
             await delay(100)
 
             await driver.page.click('[data-testid="file-aggregation-mode"]')
+
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
 
             await driver.page.waitForSelector('[aria-label="Aggregation results panel"]')
@@ -328,39 +330,21 @@ describe('Search aggregation', () => {
 
             const variables = await testContext.waitForGraphQLRequest(() => {}, 'GetSearchAggregation')
 
-            expect(variables).toStrictEqual({
-                mode: null,
-                limit: 30,
-                skipAggregation: false,
-                patternType: 'standard',
-                query: `${origQuery} case:yes`,
-            })
+            expect(variables.query).toEqual(`${origQuery} case:yes`)
 
             const variablesForFileMode = await testContext.waitForGraphQLRequest(async () => {
                 await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
                 await driver.page.click('[data-testid="file-aggregation-mode"]')
             }, 'GetSearchAggregation')
 
-            expect(variablesForFileMode).toStrictEqual({
-                mode: 'PATH',
-                limit: 30,
-                skipAggregation: false,
-                patternType: 'standard',
-                query: `${origQuery} case:yes`,
-            })
+            expect(variablesForFileMode.query).toEqual(`${origQuery} case:yes`)
 
             const variablesWithoutCaseSensitivity = await testContext.waitForGraphQLRequest(
                 async () => driver.page.click('.test-case-sensitivity-toggle'),
                 'GetSearchAggregation'
             )
 
-            expect(variablesWithoutCaseSensitivity).toStrictEqual({
-                mode: 'PATH',
-                limit: 30,
-                skipAggregation: false,
-                patternType: 'standard',
-                query: origQuery,
-            })
+            expect(variablesWithoutCaseSensitivity.query).toEqual(origQuery)
         })
     })
 })

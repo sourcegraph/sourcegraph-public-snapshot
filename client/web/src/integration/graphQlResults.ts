@@ -218,16 +218,6 @@ export const commonWebGraphQlResults: Partial<
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: false,
     }),
-    UserRepositories: () => ({
-        node: {
-            __typename: 'User',
-            repositories: {
-                totalCount: 0,
-                nodes: [],
-                pageInfo: { hasNextPage: false },
-            },
-        },
-    }),
     ExternalServices: () => ({
         externalServices: {
             totalCount: 0,
