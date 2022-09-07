@@ -138,6 +138,21 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
+			name:   "Unauthorized upload",
+			method: http.MethodPost,
+			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: adminID}, nil).
+					Once()
+			},
+			userID:             creatorID,
+			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
 			name:   "Upload has invalid content type",
 			method: http.MethodPost,
 			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
