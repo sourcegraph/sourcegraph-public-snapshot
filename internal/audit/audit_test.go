@@ -80,7 +80,7 @@ func TestLog(t *testing.T) {
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 			ctx = requestclient.WithClient(ctx, tc.client)
 
-			fields := &Record{
+			fields := Record{
 				Entity: "test entity",
 				Action: "test audit action",
 				Fields: tc.additionalContext,
