@@ -65,32 +65,34 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                         <tr>
                             <td>
                                 <TreeLayerTable>
-                                    <TreeRootContext.Consumer>
-                                        {treeRootContext => (
-                                            <File
-                                                entryInfo={{
-                                                    name: GO_UP_TREE_LABEL,
-                                                    path: props.parentPath as string,
-                                                    isDirectory: false,
-                                                    url: dirname(treeRootContext.rootTreeUrl),
-                                                    isSingleChild: false,
-                                                    submodule: null,
-                                                }}
-                                                location={props.location}
-                                                depth={sharedProps.depth}
-                                                index={0}
-                                                isLightTheme={sharedProps.isLightTheme}
-                                                handleTreeClick={NOOP}
-                                                noopRowClick={NOOP}
-                                                linkRowClick={() => props.telemetryService.log('FileTreeClick')}
-                                                isActive={false}
-                                                isSelected={false}
-                                                isGoUpTreeLink={true}
-                                                customIconPath={mdiFolderOutline}
-                                                enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
-                                            />
-                                        )}
-                                    </TreeRootContext.Consumer>
+                                    <tbody>
+                                        <TreeRootContext.Consumer>
+                                            {treeRootContext => (
+                                                <File
+                                                    entryInfo={{
+                                                        name: GO_UP_TREE_LABEL,
+                                                        path: props.parentPath as string,
+                                                        isDirectory: false,
+                                                        url: dirname(treeRootContext.rootTreeUrl),
+                                                        isSingleChild: false,
+                                                        submodule: null,
+                                                    }}
+                                                    location={props.location}
+                                                    depth={sharedProps.depth}
+                                                    index={0}
+                                                    isLightTheme={sharedProps.isLightTheme}
+                                                    handleTreeClick={NOOP}
+                                                    noopRowClick={NOOP}
+                                                    linkRowClick={() => props.telemetryService.log('FileTreeClick')}
+                                                    isActive={false}
+                                                    isSelected={false}
+                                                    isGoUpTreeLink={true}
+                                                    customIconPath={mdiFolderOutline}
+                                                    enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
+                                                />
+                                            )}
+                                        </TreeRootContext.Consumer>
+                                    </tbody>
                                 </TreeLayerTable>
                             </td>
                         </tr>

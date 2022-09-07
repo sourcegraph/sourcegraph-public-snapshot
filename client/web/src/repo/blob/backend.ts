@@ -29,14 +29,14 @@ function fetchBlobCacheKey(options: FetchBlobOptions): string {
 
 interface FetchBlobOptions {
     repoName: string
-    commitID: string
+    revision: string
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, commitID, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
@@ -48,14 +48,14 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
         gql`
             query Blob(
                 $repoName: String!
-                $commitID: String!
+                $revision: String!
                 $filePath: String!
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
             ) {
                 repository(name: $repoName) {
-                    commit(rev: $commitID) {
+                    commit(rev: $revision) {
                         file(path: $filePath) {
                             ...BlobFileFields
                         }
@@ -73,7 +73,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, commitID, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
