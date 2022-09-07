@@ -391,7 +391,7 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 
-	//Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
+	// Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
 	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
 	// At the moment we don't allow capture group aggregation for diff or symbol searches
 	notAllowedFieldTypeValues := map[string]struct{}{"diff": {}, "symbol": {}}
@@ -505,6 +505,7 @@ func (r *searchAggregationModeResultResolver) Mode() (string, error) {
 }
 
 func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string, drilldown string, patternType string) (string, error) {
+	caseSensitive := false
 	var modifierFunc func(querybuilder.BasicQuery, string) (querybuilder.BasicQuery, error)
 	switch mode {
 	case types.REPO_AGGREGATION_MODE:
@@ -525,10 +526,17 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
 			return replacer.Replace(s)
 		}
+		caseSensitive = true
 	default:
 		return "", errors.New("unsupported aggregation mode")
 	}
 
 	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
+	if err != nil {
+		return "", err
+	}
+	if caseSensitive {
+		newQuery, err = querybuilder.SetCaseSensitivity(newQuery, true)
+	}
 	return string(newQuery), err
 }
