@@ -30,7 +30,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const navigateToAuthProvider = useCallback((): void => {
         setIsLoading(true)
-        window.location.assign(`${authProvider.authenticationURL as string}&redirect=${window.location.href}`)
+        window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
     }, [authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account

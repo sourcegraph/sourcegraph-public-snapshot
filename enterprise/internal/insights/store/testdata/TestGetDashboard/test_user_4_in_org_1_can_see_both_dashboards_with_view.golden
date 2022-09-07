@@ -12,7 +12,7 @@
 	},
 	{
 		ID:           3,
-		Title:        "private dashbord for org 1",
+		Title:        "private dashboard for org 1",
 		InsightIDs:   []string{"shared1234"},
 		UserIdGrants: []int64{},
 		OrgIdGrants:  []int64{1},

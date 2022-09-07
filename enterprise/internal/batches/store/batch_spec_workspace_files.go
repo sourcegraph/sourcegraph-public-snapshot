@@ -125,7 +125,6 @@ func (s *Store) DeleteBatchSpecWorkspaceFile(ctx context.Context, opts DeleteBat
 
 func deleteBatchSpecWorkspaceFileQuery(opts DeleteBatchSpecWorkspaceFileOpts) *sqlf.Query {
 	var preds []*sqlf.Query
-	var joins []*sqlf.Query
 
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_files.id = %s", opts.ID))
@@ -137,7 +136,6 @@ func deleteBatchSpecWorkspaceFileQuery(opts DeleteBatchSpecWorkspaceFileOpts) *s
 
 	return sqlf.Sprintf(
 		deleteBatchSpecWorkspaceFileQueryFmtstr,
-		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

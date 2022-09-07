@@ -1734,6 +1734,8 @@ type Settings struct {
 	//
 	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
 	Notices []*Notice `json:"notices,omitempty"`
+	// OpenInEditor description: Group of settings related to opening files in an editor.
+	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
@@ -1859,6 +1861,34 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
+}
+
+// SettingsOpenInEditor description: Group of settings related to opening files in an editor.
+type SettingsOpenInEditor struct {
+	// CustomUrlPattern description: If you add "custom" to openineditor.editorIds, this must be set. Use the placeholders "%file", "%line", and "%col" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: "idea://open?file=%file&line=%line&column=%col"
+	CustomUrlPattern string `json:"custom.urlPattern,omitempty"`
+	// EditorIds description: The editor to open files in. If set to this to "custom", you must also set "custom.urlPattern"
+	EditorIds []string `json:"editorIds,omitempty"`
+	// JetbrainsForceApi description: Forces using protocol handlers (like ikea://open?file=...) or the built-in REST API (http://localhost:63342/api/file...). If omitted, protocol handlers are used if available, otherwise the built-in REST API is used.
+	JetbrainsForceApi string `json:"jetbrains.forceApi,omitempty"`
+	// ProjectPathsDefault description: The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. "/Users/yourusername/src" is a valid absolute path, "~/src" is not. Works both with and without a trailing slash.
+	ProjectPathsDefault string `json:"projectPaths.default,omitempty"`
+	// ProjectPathsLinux description: Overrides the default path when the browser detects Linux. Works both with and without a trailing slash.
+	ProjectPathsLinux string `json:"projectPaths.linux,omitempty"`
+	// ProjectPathsMac description: Overrides the default path when the browser detects macOS. Works both with and without a trailing slash.
+	ProjectPathsMac string `json:"projectPaths.mac,omitempty"`
+	// ProjectPathsWindows description: Overrides the default path when the browser detects Windows. Doesn't need a trailing backslash.
+	ProjectPathsWindows string `json:"projectPaths.windows,omitempty"`
+	// Replacements description: Each key will be replaced by the corresponding value in the final URL. Keys are regular expressions, values can contain backreferences ($1, $2, ...).
+	Replacements map[string]string `json:"replacements,omitempty"`
+	// VscodeIsProjectPathUNCPath description: Indicates that the given project path is a UNC (Universal Naming Convention) path.
+	VscodeIsProjectPathUNCPath bool `json:"vscode.isProjectPathUNCPath,omitempty"`
+	// VscodeRemoteHostForSSH description: The remote host as "USER@HOSTNAME". This needs you to install the extension called "Remote Development by Microsoft" in your VS Code.
+	VscodeRemoteHostForSSH string `json:"vscode.remoteHostForSSH,omitempty"`
+	// VscodeUseInsiders description: If set, files will open in VS Code Insiders rather than VS Code.
+	VscodeUseInsiders bool `json:"vscode.useInsiders,omitempty"`
+	// VscodeUseSSH description: If set, files will open on a remote server via SSH. This requires vscode.remoteHostForSSH to be specified and VS Code extension "Remote Development by Microsoft" installed in your VS Code.
+	VscodeUseSSH bool `json:"vscode.useSSH,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

@@ -1,4 +1,4 @@
-// Utilies classes extracted from bootstrap library.
+// Utility classes extracted from bootstrap library.
 @import './utilities/align';
 @import './utilities/border-radius';
 @import './utilities/border';
@@ -28,6 +28,13 @@
 
 .bg-transparent {
     background-color: transparent !important;
+}
+
+// Extend Bootstrap's bg-* utilities with classes for our grey/blueish theme-aware background colors.
+@for $number from 1 through 6 {
+    .bg-#{$number} {
+        background: var(--color-bg-#{$number});
+    }
 }
 
 // Displays
