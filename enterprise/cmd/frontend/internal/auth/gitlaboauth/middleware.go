@@ -26,7 +26,7 @@ func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
 			return oauth.NewHandler(logger.Scoped("gitlaboauth.api", "api handler for gitlab oauth authentication"), db, extsvc.TypeGitLab, authPrefix, true, next)
 		},
 		App: func(next http.Handler) http.Handler {
-			return oauth.NewHandler(logger.Scoped("gitlaboauth.app", "app handlier for gitlab oauth authentication"), db, extsvc.TypeGitLab, authPrefix, false, next)
+			return oauth.NewHandler(logger.Scoped("gitlaboauth.app", "app handler for gitlab oauth authentication"), db, extsvc.TypeGitLab, authPrefix, false, next)
 		},
 	}
 }
