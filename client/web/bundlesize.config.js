@@ -69,16 +69,13 @@ const config = {
      * Notebook embed main entry CSS bundle.
      */
     {
-      path: path.join(STATIC_ASSETS_PATH, 'styles/@(embed|sg_notebooks_notebookPage_EmbeddedNotebookPage).*.css.br'),
+      path: path.join(STATIC_ASSETS_PATH, 'styles/embed.*.css.br'),
       maxSize: '35kb',
       compression: 'none',
     },
     {
-      path: path.join(
-        STATIC_ASSETS_PATH,
-        'styles/!(app|embed|sg_notebooks_notebookPage_EmbeddedNotebookPage).*.css.br'
-      ),
-      maxSize: '10kb',
+      path: path.join(STATIC_ASSETS_PATH, 'styles/!(app|embed).*.css.br'),
+      maxSize: '25kb',
       compression: 'none',
     },
   ],

@@ -1,8 +1,12 @@
 package graphql
 
 import (
+	"time"
+
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
 // AdjustedLocation is a path and range pair from within a particular upload. The adjusted commit
@@ -32,4 +36,17 @@ type AdjustedCodeIntelligenceRange struct {
 	References      []AdjustedLocation
 	Implementations []AdjustedLocation
 	HoverText       string
+}
+
+type RepositorySummary struct {
+	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
+	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
+}
+
+type RetentionPolicyMatchCandidate struct {
+	*store.ConfigurationPolicy
+	Matched           bool
+	ProtectingCommits []string
 }

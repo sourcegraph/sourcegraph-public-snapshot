@@ -181,7 +181,7 @@ func run(logger log.Logger) error {
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
+	handler := actor.HTTPMiddleware(logger, service)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 

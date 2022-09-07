@@ -10,7 +10,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
+import { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     useLocalStorage,
@@ -34,8 +34,13 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps, SettingsCascadeProps {
-    repoID: Scalars['ID']
+interface RepoRevisionSidebarProps
+    extends RepoFile,
+        ExtensionsControllerProps,
+        ThemeProps,
+        TelemetryProps,
+        SettingsCascadeProps {
+    repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
@@ -51,7 +56,9 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const RepoRevisionSidebar: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionSidebarProps>
+> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
@@ -146,38 +153,41 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                         )}
                     </TabList>
                     <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
-                        <TabPanels>
-                            <TabPanel>
-                                <Tree
-                                    key="files"
-                                    repoName={props.repoName}
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    commitID={props.commitID}
-                                    history={props.history}
-                                    location={props.location}
-                                    scrollRootSelector=".explorer"
-                                    activePath={props.filePath}
-                                    activePathIsDir={props.isDir}
-                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                    extensionsController={props.extensionsController}
-                                    isLightTheme={props.isLightTheme}
-                                    telemetryService={props.telemetryService}
-                                    enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
-                                />
-                            </TabPanel>
-                            {!enableMergedFileSymbolSidebar && (
+                        {/* TODO: See if we can render more here, instead of waiting for these props */}
+                        {props.repoID && props.commitID && (
+                            <TabPanels>
                                 <TabPanel>
-                                    <RepoRevisionSidebarSymbols
-                                        key="symbols"
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
                                         repoID={props.repoID}
                                         revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
                                         activePath={props.filePath}
-                                        onHandleSymbolClick={handleSymbolClick}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                        telemetryService={props.telemetryService}
+                                        enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
                                     />
                                 </TabPanel>
-                            )}
-                        </TabPanels>
+                                {!enableMergedFileSymbolSidebar && (
+                                    <TabPanel>
+                                        <RepoRevisionSidebarSymbols
+                                            key="symbols"
+                                            repoID={props.repoID}
+                                            revision={props.revision}
+                                            activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
+                                        />
+                                    </TabPanel>
+                                )}
+                            </TabPanels>
+                        )}
                     </div>
                 </Tabs>
             </div>
