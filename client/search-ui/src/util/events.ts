@@ -3,7 +3,7 @@
  * user clicking a result.
  * To be removed at latest by 12/2022.
  */
-export const luckySearchClickedEvent = (alertTitle: string, descriptions: string[]): string => {
+export const smartSearchClickedEvent = (alertTitle: string, descriptions: string[]): string => {
     const rules = descriptions.map(entry => {
         if (entry.match(/patterns as regular expressions/)) {
             return 'Regexp'
