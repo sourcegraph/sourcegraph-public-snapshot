@@ -49,13 +49,15 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
@@ -82,13 +84,15 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
@@ -132,7 +136,6 @@ export const RepoCommits: React.FunctionComponent<
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
         '',
-        '/-/:objectType(blob|tree)/:filePath*',
         '/-/docs/tab/:pathID*',
         '/-/commits/tab',
         '/-/branch/tab',
@@ -154,6 +157,27 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     })),
     {
+        path: '/-/:objectType(blob|tree)/:filePath*',
+        render: (props: RepositoryFileTreePageProps) => (
+            <TraceSpanProvider
+                name="RepositoryFileTreePage"
+                attributes={{
+                    objectType: props.match.params.objectType,
+                }}
+            >
+                <RepositoryFileTreePage {...props} />
+
+                <ActionItemsBar
+                    useActionItemsBar={props.useActionItemsBar}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                />
+            </TraceSpanProvider>
+        ),
+    },
+    {
         path: '/-/commits',
         render: RepoCommits,
     },
@@ -174,13 +198,15 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
