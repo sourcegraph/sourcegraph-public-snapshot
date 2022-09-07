@@ -151,6 +151,8 @@ func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, i
 		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
 	}
 
+	// 🚨 SECURITY: Only site-admins or the creator of batch spec can upload files.
+
 	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
 	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
 	//
