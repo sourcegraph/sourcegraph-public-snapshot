@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS codeintel_autoindex_queue (
     processed_at timestamptz
 );
 
-CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue(repository_id, rev);
+CREATE UNIQUE INDEX IF NOT EXISTS codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue(repository_id, rev);
