@@ -99,3 +99,26 @@ func lintLoggingLibraries() *linter {
 		HelpText: "Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging",
 	})
 }
+
+func lintTracingLibraries() *linter {
+	return newUsageLinter(usageLinterOptions{
+		Target: "**/*.go",
+		BannedUsages: []string{
+			// No OpenTracing
+			`"github.com/opentracing/opentracing-go"`,
+			// No OpenTracing util library
+			`"github.com/sourcegraph/sourcegraph/internal/trace/ot"`,
+		},
+		AllowedFiles: []string{
+			// Banned imports will match on the linter here
+			"dev/sg/linters",
+			// Adapters here
+			"internal/tracer",
+		},
+		ErrorFunc: func(bannedImport string) error {
+			return errors.Newf(`banned usage of '%s': use "go.opentelemetry.io/otel/trace" instead`,
+				bannedImport)
+		},
+		HelpText: "OpenTracing interop with OpenTelemetry is set up, but the libraries are deprecated - use OpenTelemetry directly instead: https://go.opentelemetry.io/otel/trace",
+	})
+}
