@@ -530,6 +530,9 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 	}
 
 	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
+	if err != nil {
+		return "", err
+	}
 	caseSensitive, err := querybuilder.SetCaseSensitivity(newQuery, true)
 	return string(caseSensitive), err
 }
