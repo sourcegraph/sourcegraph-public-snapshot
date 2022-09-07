@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -62,23 +63,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		return err
 	}
 
-	siteConfig := conf.Get().SiteConfiguration
-
-	maxQueueDepth := 24
-	var maxReorderDuration time.Duration
-
-	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil {
-		if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-			maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
-		}
-
-		maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
-	}
-
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
 		endpoints = append(endpoints, endpoint)
 	}
+
+	maxQueueDepth, maxReorderDuration := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
 
 	// resultQueue is used to re-order results by priority.
 	var mu sync.Mutex
@@ -163,6 +153,23 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	resultQueue.FlushAll(streamer)
 
 	return nil
+}
+
+func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration) {
+	// defaults
+	maxQueueDepth = 24
+	maxReorderDuration = 0
+
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return
+	}
+
+	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
+		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+	}
+
+	maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+	return
 }
 
 // The results from each endpoint are mostly sorted by priority, with bounded
