@@ -53,8 +53,11 @@ func lintSGExit() *linter {
 					continue
 				}
 
-				if strings.Contains(added, "os.Exit") || strings.Contains(added, "signal.Notify") {
-					return errors.New("do not use 'os.Exit' or 'signal.Notify', use the 'dev/sg/internal/interrupt' package instead")
+				if strings.Contains(added, "os.Exit") ||
+					strings.Contains(added, "signal.Notify") ||
+					strings.Contains(added, "logger.Fatal") ||
+					strings.Contains(added, "log.Fatal") {
+					return errors.New("do not use 'os.Exit' or 'signal.Notify' or fatal logging, since they break 'dev/sg/internal/interrupt'")
 				}
 			}
 
