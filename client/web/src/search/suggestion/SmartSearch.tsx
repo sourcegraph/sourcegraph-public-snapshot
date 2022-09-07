@@ -10,7 +10,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import styles from './QuerySuggestion.module.scss'
 
-interface LuckySearchProps {
+interface SmartSearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
 }
 
@@ -21,8 +21,8 @@ const processDescription = (description: string): string => {
     return split.join(', ')
 }
 
-export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckySearchProps>> = ({ alert }) => {
-    const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseLuckySearch')
+export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({ alert }) => {
+    const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseSmartSearch')
 
     return alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
         <div className={styles.root}>
@@ -93,7 +93,7 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
     )
 }
 
-export const luckySearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
+export const smartSearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
     const rules = descriptions.map(entry => {
         if (entry.match(/patterns as regular expressions/)) {
             return 'Regexp'

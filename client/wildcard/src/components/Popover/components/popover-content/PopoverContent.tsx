@@ -29,7 +29,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         autoFocus = true,
         as: Component = 'div',
         role = 'dialog',
-        'aria-modal': ariaModel = true,
+        'aria-modal': ariaModal = true,
         ...otherProps
     } = props
 
@@ -84,7 +84,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
             target={anchor?.current ?? targetElement}
             marker={tailElement}
             role={role}
-            aria-modal={ariaModel}
+            aria-modal={ariaModal}
             rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
         >
