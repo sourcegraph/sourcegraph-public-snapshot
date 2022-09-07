@@ -40,24 +40,18 @@ type MatchKey struct {
 }
 
 func countRepo(r result.Match) (map[MatchKey]int, error) {
-	resultCount := r.ResultCount()
-	switch r.(type) {
-	case *result.CommitMatch:
-		resultCount = 1
-	}
 	if r.RepoName().Name != "" {
 		return map[MatchKey]int{{
 			RepoID: int32(r.RepoName().ID),
 			Repo:   string(r.RepoName().Name),
 			Group:  string(r.RepoName().Name),
-		}: resultCount}, nil
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
 func countLang(r result.Match) (map[MatchKey]int, error) {
 	var lang string
-	resultCount := r.ResultCount()
 	switch match := r.(type) {
 	case *result.FileMatch:
 		lang, _ = enry.GetLanguageByExtension(match.Path)
@@ -68,14 +62,13 @@ func countLang(r result.Match) (map[MatchKey]int, error) {
 			RepoID: int32(r.RepoName().ID),
 			Repo:   string(r.RepoName().Name),
 			Group:  lang,
-		}: resultCount}, nil
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
 func countPath(r result.Match) (map[MatchKey]int, error) {
 	var path string
-	resultCount := r.ResultCount()
 	switch match := r.(type) {
 	case *result.FileMatch:
 		path = match.Path
@@ -86,7 +79,7 @@ func countPath(r result.Match) (map[MatchKey]int, error) {
 			RepoID: int32(r.RepoName().ID),
 			Repo:   string(r.RepoName().Name),
 			Group:  path,
-		}: resultCount}, nil
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
@@ -103,7 +96,7 @@ func countAuthor(r result.Match) (map[MatchKey]int, error) {
 			RepoID: int32(r.RepoName().ID),
 			Repo:   string(r.RepoName().Name),
 			Group:  author,
-		}: 1}, nil
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
