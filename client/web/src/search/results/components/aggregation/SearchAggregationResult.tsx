@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes, useEffect, useState } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
@@ -31,6 +31,8 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
+    caseSensitive: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected
@@ -40,16 +42,18 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, onQuerySubmit, telemetryService, ...attributes } = props
+    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
 
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
         patternType,
         aggregationMode,
-        limit: 30,
+        caseSensitive,
         proactive: true,
+        extendedTimeout,
     })
 
     const handleCollapseClick = (): void => {
@@ -93,6 +97,11 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         }
     }
 
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
+
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
+
     return (
         <section {...attributes}>
             <header className={styles.header}>
@@ -131,9 +140,11 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     loading={loading}
                     error={error}
                     size="md"
+                    showLoading={extendedTimeout}
                     className={styles.chartContainer}
                     onBarLinkClick={handleBarLinkClick}
                     onBarHover={handleBarHover}
+                    onExtendTimeout={handleExtendTimeout}
                 />
 
                 {data && (

@@ -292,6 +292,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         })
     }
 
+    // Show aggregation panel by default and only if search doesn't have any matches
+    // hide aggregation panel from the sidebar
+    const showAggregationPanel = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
+
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
@@ -303,10 +307,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 submittedURLQuery={submittedURLQuery}
                 patternType={patternType}
                 filters={results?.filters}
+                showAggregationPanel={showAggregationPanel}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
                 aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                caseSensitive={caseSensitive}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
                 onSearchSubmit={handleSidebarSearchSubmit}
@@ -323,6 +329,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 <SearchAggregationResult
                     query={submittedURLQuery}
                     patternType={patternType}
+                    caseSensitive={caseSensitive}
                     aria-label="Aggregation results panel"
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}

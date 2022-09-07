@@ -22,6 +22,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     pixelsPerYTick?: number
     pixelsPerXTick?: number
     hideXTicks?: boolean
+    minAngleXTick?: number
     maxAngleXTick?: number
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
@@ -38,6 +39,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         pixelsPerYTick,
         pixelsPerXTick,
         hideXTicks,
+        minAngleXTick,
         maxAngleXTick,
         stacked = false,
         getDatumHover,
@@ -90,6 +92,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
             <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
             <SvgAxisBottom
                 pixelsPerTick={pixelsPerXTick}
+                minRotateAngle={minAngleXTick}
                 maxRotateAngle={maxAngleXTick}
                 hideTicks={hideXTicks}
                 getTruncatedTick={getTruncatedXTick}

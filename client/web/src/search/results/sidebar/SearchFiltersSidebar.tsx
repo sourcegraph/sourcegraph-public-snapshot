@@ -25,8 +25,7 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { buildSearchURLQueryFromQueryState } from '../../../stores'
+import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
@@ -36,7 +35,9 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     liveQuery: string
     submittedURLQuery: string
     patternType: SearchPatternType
+    caseSensitive: boolean
     filters?: Filter[]
+    showAggregationPanel?: boolean
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
@@ -47,8 +48,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const {
         liveQuery,
         submittedURLQuery,
+        caseSensitive,
         patternType,
         filters,
+        showAggregationPanel,
         selectedSearchContextSpec,
         aggregationUIMode,
         onNavbarQueryChange,
@@ -59,10 +62,14 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         ...attributes
     } = props
 
-    // Feature flags
+    // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const [disableProactiveSearchAggregations, status] = useFeatureFlag('disable-proactive-insight-aggregation', false)
-    const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
+    const enableSearchAggregations = useExperimentalFeatures(
+        features => features.enableSearchResultsAggregations ?? false
+    )
+    const disableProactiveSearchAggregations = useExperimentalFeatures(
+        features => features.disableProactiveSearchAggregations ?? false
+    )
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Derived state
@@ -85,9 +92,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService, onSearchSubmit]
     )
 
-    const handleAggregationBarLinkClick = (query: string): void => {
-        onSearchSubmit([{ type: 'replaceQuery', value: query }])
-    }
+    const handleAggregationBarLinkClick = useCallback(
+        (query: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        },
+        [onSearchSubmit]
+    )
 
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {
@@ -100,8 +110,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
             {children}
 
-            {/* Need to check status so that the feature flag is available before we render */}
-            {enableSearchAggregations && status === 'loaded' && aggregationUIMode === AggregationUIMode.Sidebar && (
+            {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
@@ -111,6 +120,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                         query={submittedURLQuery}
                         patternType={patternType}
                         proactive={!disableProactiveSearchAggregations}
+                        caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />

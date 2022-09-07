@@ -1255,7 +1255,7 @@ type Query {
         """
         notIndexed: Boolean = true
         """
-        Include repositories that have encountered errors when cloning or fetching
+        Include only repositories that have encountered errors when cloning or fetching
         """
         failedFetch: Boolean = false
         """

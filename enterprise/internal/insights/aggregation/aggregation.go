@@ -33,16 +33,15 @@ type AggregationTabulator func(*AggregationMatchResult, error)
 type OnMatches func(matches []result.Match)
 
 type eventMatch struct {
-	Repo         string
-	RepoID       int32
-	Path         string
-	Commit       string
-	Author       string
-	Date         time.Time
-	Lang         string
-	ResultCount  int
-	Content      string
-	ChunkMatches result.ChunkMatches
+	Repo        string
+	RepoID      int32
+	Path        string
+	Commit      string
+	Author      string
+	Date        time.Time
+	Lang        string
+	ResultCount int
+	Content     []string
 }
 
 // NewEventEnvironment maps event matches into a consistent type
@@ -50,27 +49,49 @@ func newEventMatch(event result.Match) *eventMatch {
 	switch match := event.(type) {
 	case *result.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
+		content := make([]string, 0, len(match.ChunkMatches))
+		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
+			for _, cm := range match.ChunkMatches {
+				for _, range_ := range cm.Ranges {
+					content = append(content, chunkContent(cm, range_))
+				}
+			}
+		} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
+
+		} else { // This is a File match representing a whole file
+			content = append(content, match.Path)
+		}
+
 		return &eventMatch{
-			Repo:         string(match.Repo.Name),
-			RepoID:       int32(match.Repo.ID),
-			Path:         match.Path,
-			Lang:         lang,
-			ResultCount:  match.ResultCount(),
-			ChunkMatches: match.ChunkMatches,
+			Repo:        string(match.Repo.Name),
+			RepoID:      int32(match.Repo.ID),
+			Path:        match.Path,
+			Lang:        lang,
+			ResultCount: match.ResultCount(),
+			Content:     content,
 		}
 	case *result.RepoMatch:
 		return &eventMatch{
 			Repo:        string(match.RepoName().Name),
 			RepoID:      int32(match.RepoName().ID),
 			ResultCount: 1,
+			Content:     []string{string(match.RepoName().Name)},
 		}
 	case *result.CommitMatch:
+		content := make([]string, 0, 1)
+		if match.DiffPreview != nil { // signals this is a Diff match
+			//TODO(insights): figure out extracting the right content for diff capture group matching
+		} else {
+			content = append(content, string(match.Commit.Message))
+		}
+
 		return &eventMatch{
 			Repo:        string(match.Repo.Name),
 			RepoID:      int32(match.Repo.ID),
 			Author:      match.Commit.Author.Name,
 			Date:        match.Commit.Author.Date,
-			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
+			ResultCount: 1,
+			Content:     content,
 		}
 	default:
 		return &eventMatch{}
@@ -144,21 +165,18 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 
 	return func(r result.Match) (map[MatchKey]int, error) {
 		match := newEventMatch(r)
-		if len(match.ChunkMatches) != 0 {
+		if len(match.Content) != 0 {
 			matches := map[MatchKey]int{}
-			for _, cm := range match.ChunkMatches {
-				for _, range_ := range cm.Ranges {
-					content := chunkContent(cm, range_)
-					for _, submatches := range regexp.FindAllStringSubmatchIndex(content, -1) {
-						chunkMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
-						for value, count := range chunkMatches {
-							key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
-							if len(key.Group) > 100 {
-								key.Group = key.Group[:100]
-							}
-							current := matches[key]
-							matches[key] = current + count
+			for _, contentPiece := range match.Content {
+				for _, submatches := range regexp.FindAllStringSubmatchIndex(contentPiece, -1) {
+					contentMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), contentPiece)
+					for value, count := range contentMatches {
+						key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
+						if len(key.Group) > 100 {
+							key.Group = key.Group[:100]
 						}
+						current := matches[key]
+						matches[key] = current + count
 					}
 				}
 			}
@@ -190,8 +208,9 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	return modeCountFunc, nil
 }
 
-func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
+func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
 	return &searchAggregationResults{
+		ctx:       ctx,
 		tabulator: tabulator,
 		countFunc: countFunc,
 		progress: client.ProgressAggregator{
@@ -203,6 +222,7 @@ func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator Aggre
 }
 
 type searchAggregationResults struct {
+	ctx       context.Context
 	tabulator AggregationTabulator
 	countFunc AggregationCountFunc
 	progress  client.ProgressAggregator
@@ -222,19 +242,28 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	r.progress.Update(event)
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
-		groups, err := r.countFunc(match)
-		for groupKey, count := range groups {
-			// delegate error handling to the passed in tabulator
-			if err != nil {
-				r.tabulator(nil, err)
-				continue
+		select {
+		case <-r.ctx.Done():
+			// let the tabulator an error occured.
+			err := errors.Wrap(r.ctx.Err(), "tabulation terminated context is done")
+			r.tabulator(nil, err)
+			return
+		default:
+			groups, err := r.countFunc(match)
+			for groupKey, count := range groups {
+				// delegate error handling to the passed in tabulator
+				if err != nil {
+					r.tabulator(nil, err)
+					continue
+				}
+				if groups == nil {
+					continue
+				}
+				current, _ := combined[groupKey]
+				combined[groupKey] = current + count
 			}
-			if groups == nil {
-				continue
-			}
-			current, _ := combined[groupKey]
-			combined[groupKey] = current + count
 		}
+
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)

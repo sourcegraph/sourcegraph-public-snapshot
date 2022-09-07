@@ -15,6 +15,7 @@ import {
     Link,
     Popover,
     PopoverContent,
+    PopoverTail,
     PopoverTrigger,
     Position,
     Icon,
@@ -277,7 +278,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 {icon}
             </PopoverTrigger>
 
-            <PopoverContent position={Position.bottomEnd} className={classNames('p-0', styles.dropdownMenu)}>
+            <PopoverContent position={Position.bottom} className={classNames('p-0', styles.dropdownMenu)}>
                 <div className={styles.dropdownMenuContent}>
                     <small className={classNames('d-inline-block text-muted', styles.sync)}>Status</small>
                     {error && (
@@ -286,6 +287,8 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                     {messages}
                 </div>
             </PopoverContent>
+
+            <PopoverTail />
         </Popover>
     )
 }
