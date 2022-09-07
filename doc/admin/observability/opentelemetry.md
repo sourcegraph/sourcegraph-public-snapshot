@@ -1,6 +1,6 @@
 # OpenTelemetry
 
-<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
+<span class="badge badge-note">Sourcegraph 4.0+</span>
 
 > WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md).
 

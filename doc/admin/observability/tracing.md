@@ -13,8 +13,8 @@ Note that the policies above are implemented at an application level - to sample
 
 We support the following tracing backend types:
 
-* [`"type": "jaeger"`](#jaeger) (default)
-* [`"type": "opentelemetry"`](#opentelemetry) <span class="badge badge-experimental">Experimental</span>
+* [`"type": "opentelemetry"`](#opentelemetry) (default)
+* [`"type": "jaeger"`](#jaeger)
 
 In addition, we also export some tracing [via net/trace](#nettrace).
 
@@ -33,19 +33,32 @@ The response headers of the response will now include an `x-trace` entry, which 
 ## Tracing backends
 
 Tracing backends can be configured for Sourcegraph to export traces to.
+We support exporting traces via [OpenTelemetry](#opentelemetry) (recommended), or directly to [Jaeger](#jaeger).
+
+### OpenTelemetry
+
+To learn about exporting traces to various backends using OpenTelemetry, review our [OpenTelemetry documentation](./opentelemetry.md).
+Once configured, you can set up a `urlTemplate` that points to your traces backend.
+For example, if you [export your traces to Honeycomb](./opentelemetry.md#otlp-compatible-backends), your configuration might look like:
+
+```json
+{
+  "observability.tracing": {
+    "type": "opentelemetry",
+    "urlTemplate": "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"
+  }
+}
+```
+
+You can test the exporter by [tracing a search query](#trace-a-search-query).
 
 ### Jaeger
 
 To configure Jaeger, first ensure Jeager is running:
 
-* **Single Docker container:** Jaeger will be integrated into the Sourcegraph single Docker container starting in 3.16.
-* **Docker Compose:** Jaeger is deployed if you use the provided `docker-compose.yaml`. Access it at
-  port 16686 on the Sourcegraph node. One way to do this is to add an Ingress rule exposing port
-  16686 to public Internet traffic from your IP, then navigate to `http://${NODE_IP}:16686` in your
-  browser. You must also [enable tracing](../deploy/docker-compose/index.md#enable-tracing).
-* **Kubernetes:** Jaeger is already deployed, unless you explicitly removed it from the Sourcegraph
-  manifest. Jaeger can be accessed from the admin UI under Maintenance/Tracing. Or by running `kubectl port-forward svc/jaeger-query 16686` and going to
-  `http://localhost:16686` in your browser.
+* **Single Docker container:** Deploy a separate Jaeger instance and configure it with [Jaeger client environment variables](https://github.com/jaegertracing/jaeger-client-go#environment-variables).
+* **Docker Compose:** See the relevant [enable the bundled Jaeger deployment guide](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
+* **Kubernetes:** See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/operations.md#enable-the-bundled-jaeger-deployment)
 
 The Jaeger UI should look something like this:
 
@@ -56,7 +69,8 @@ Then, configure Jaeger as your tracing backend in site configuration:
 ```json
 {
   "observability.tracing": {
-    "type": "jaeger"
+    "type": "jaeger",
+    "urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
   }
 }
 ```
@@ -83,18 +97,12 @@ algorithm to root-cause issues with Jaeger:
 1. Report this information to Sourcegraph by screenshotting the relevant trace or by downloading the
    trace JSON.
 
-
-### OpenTelemetry
-
-<span class="badge badge-experimental">Experimental</span>
-
-To learn about configuring Sourcegraph to make use of OpenTelemetry tracing, review our [OpenTelemetry documentation](./opentelemetry.md).  
-
 ### net/trace
 
 Sourcegraph uses the [`net/trace`](https://pkg.go.dev/golang.org/x/net/trace) package in its backend
-services. This provides simple tracing information within a single process. It can be used as an
-alternative when Jaeger is not available or as a supplement to Jaeger.
+services, in addition to the other tracing mechanisms listed above.
+This provides simple tracing information within a single process.
+It can be used as an alternative when Jaeger is not available or as a supplement to Jaeger.
 
 Site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. From
 there, click **Requests** to view the traces for that service.
