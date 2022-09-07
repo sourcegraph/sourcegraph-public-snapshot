@@ -415,46 +415,60 @@ func Test_buildDrilldownQuery(t *testing.T) {
 		mode        types.SearchAggregationMode
 	}{
 		{
-			want:        autogold.Want("author_no_whitespace", "type:commit author:^Drilldown$ case:yes findme"),
+			want:        autogold.Want("author_no_whitespace", "type:commit author:^Drilldown$ findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("repo_no_whitespace", "repo:^Drilldown$ case:yes findme"),
+			want:        autogold.Want("repo_no_whitespace", "repo:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("path_no_whitespace", "file:^Drilldown$ case:yes findme"),
+			want:        autogold.Want("path_no_whitespace", "file:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
 			patternType: "standard",
 			mode:        types.PATH_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("author_with_whitespace", "type:commit author:(^Drill down$) case:yes findme"),
+			want:        autogold.Want("author_with_whitespace", "type:commit author:(^Drill down$) findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("repo_with_whitespace", "repo:(^Drill down$) case:yes findme"),
+			want:        autogold.Want("repo_with_whitespace", "repo:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Want("path_with_whitespace", "file:(^Drill down$) case:yes findme"),
+			want:        autogold.Want("path_with_whitespace", "file:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
 			patternType: "standard",
 			mode:        types.PATH_AGGREGATION_MODE,
+		},
+		{
+			want:        autogold.Want("capturegroup_with_whitespace", "case:yes /fin(?:d m)e/"),
+			query:       "/fin(.*)e/",
+			drilldown:   "d m",
+			patternType: "standard",
+			mode:        types.CAPTURE_GROUP_AGGREGATION_MODE,
+		},
+		{
+			want:        autogold.Want("capturegroup_without_whitespace", "case:yes /fin(?:dm)e/"),
+			query:       "/fin(.*)e/",
+			drilldown:   "dm",
+			patternType: "standard",
+			mode:        types.CAPTURE_GROUP_AGGREGATION_MODE,
 		},
 	}
 	for _, test := range tests {

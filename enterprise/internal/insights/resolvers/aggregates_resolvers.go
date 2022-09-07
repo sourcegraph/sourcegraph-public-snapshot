@@ -505,6 +505,7 @@ func (r *searchAggregationModeResultResolver) Mode() (string, error) {
 }
 
 func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string, drilldown string, patternType string) (string, error) {
+	caseSensitive := false
 	var modifierFunc func(querybuilder.BasicQuery, string) (querybuilder.BasicQuery, error)
 	switch mode {
 	case types.REPO_AGGREGATION_MODE:
@@ -525,6 +526,7 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
 			return replacer.Replace(s)
 		}
+		caseSensitive = true
 	default:
 		return "", errors.New("unsupported aggregation mode")
 	}
@@ -533,6 +535,8 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 	if err != nil {
 		return "", err
 	}
-	caseSensitive, err := querybuilder.SetCaseSensitivity(newQuery, true)
-	return string(caseSensitive), err
+	if caseSensitive {
+		newQuery, err = querybuilder.SetCaseSensitivity(newQuery, true)
+	}
+	return string(newQuery), err
 }
