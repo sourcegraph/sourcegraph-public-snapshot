@@ -86,7 +86,7 @@ type ProviderOp struct {
 }
 
 func NewProvider(logger log.Logger, op ProviderOp) *Provider {
-	logger = logger.Scoped("oauth.provider", "sets up oauth provders and loging and callback handlers").With(log.String("serviceID", op.ServiceID))
+	logger = logger.Scoped("oauth.provider", "sets up oauth providers, and login and callback handlers").With(log.String("serviceID", op.ServiceID))
 	providerID := op.ServiceID + "::" + op.OAuth2Config().ClientID
 	return &Provider{
 		ProviderOp: op,
