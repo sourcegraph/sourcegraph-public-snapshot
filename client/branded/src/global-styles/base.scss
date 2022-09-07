@@ -54,7 +54,6 @@ $custom-select-feedback-icon-size: 0;
 // Disable all Bootstrap transitions
 $enable-transitions: false;
 
-/* stylelint-disable @sourcegraph/no-restricted-imports */
 @import './functions.scss';
 @import './mixins.scss';
 @import './reboot';
