@@ -3251,7 +3251,7 @@ type BatchSpec implements Node {
     """
     The files that are mounted in the steps of a batch spec.
     """
-    files (
+    files(
         """
         Returns the first n files from the list.
         """
@@ -3606,7 +3606,7 @@ type WorkspaceFile implements File2 & Node {
     highlight(
         disableTimeout: Boolean!
         isLightTheme: Boolean
-        @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
