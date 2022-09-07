@@ -253,35 +253,58 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             ),
             preciseEnabled: rows[0]?.hasPrecise ?? false,
             preciseNavigation: ((): JSX.Element => {
-                const items = Object.entries(groupBy(rows, row => row.language)).map(([lang, rows]) => {
-                    const searchBased = sumBy(
-                        rows.filter(row => row.precision === 'search-based'),
-                        row => row.events
-                    )
-                    const precise = sumBy(
-                        rows.filter(row => row.precision === 'precise'),
-                        row => row.events
-                    )
-                    const total = searchBased + precise
+                interface Item {
+                    brand: 'precise' | 'configurable'
+                    element: React.ReactNode
+                }
 
-                    if (precise > 0) {
-                        return (
-                            <div key={lang} className={styles.preciseItem}>
-                                <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
-                                <strong>{lang}</strong>
-                            </div>
+                const items: Item[] = Object.entries(groupBy(rows, row => row.language))
+                    .map(([lang, rows]): Item | undefined => {
+                        const searchBased = sumBy(
+                            rows.filter(row => row.precision === 'search-based'),
+                            row => row.events
                         )
-                    }
-                    if (lang in langToIndexerUrl) {
-                        return (
-                            <div key={lang} className={styles.preciseItem}>
-                                Configure precise navigation for <Link to={langToIndexerUrl[lang]}>{lang}</Link>
-                            </div>
+                        const precise = sumBy(
+                            rows.filter(row => row.precision === 'precise'),
+                            row => row.events
                         )
-                    }
-                    return <></>
-                })
-                return <>{items}</>
+                        const total = searchBased + precise
+
+                        if (precise > 0) {
+                            return {
+                                brand: 'precise',
+                                element: (
+                                    <div key={lang} className={styles.preciseItem}>
+                                        <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
+                                        <strong>{lang}</strong>
+                                    </div>
+                                ),
+                            }
+                        }
+                        if (lang in langToIndexerUrl) {
+                            return {
+                                brand: 'configurable',
+                                element: <Link to={langToIndexerUrl[lang]}>{lang}</Link>,
+                            }
+                        }
+                        return undefined
+                    })
+                    .filter((item): item is Item => item !== undefined)
+
+                return (
+                    <>
+                        {items.filter(item => item.brand === 'precise').map(item => item.element)}
+                        {items.some(item => item.brand === 'configurable') && (
+                            <div className={styles.preciseItem}>
+                                Configure precise navigation for{' '}
+                                {items
+                                    .filter(item => item.brand === 'configurable')
+                                    .map(item => item.element)
+                                    .reduce((acc, item) => [acc, ', ', item])}
+                            </div>
+                        )}
+                    </>
+                )
             })(),
         }))
 
