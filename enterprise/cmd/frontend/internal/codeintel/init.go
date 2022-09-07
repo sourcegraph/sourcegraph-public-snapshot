@@ -14,6 +14,7 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,15 +36,16 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
+	uploadResolver := uploadgraphql.New(services.UploadSvc, oc("upload"))
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
-		services.lsifStore,
 		symbols.DefaultClient,
 		codenavResolver,
 		executorResolver,
 		policyResolver,
 		autoindexingResolver,
+		uploadResolver,
 	)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
