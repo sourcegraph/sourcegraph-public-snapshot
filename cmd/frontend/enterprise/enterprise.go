@@ -20,7 +20,7 @@ type Services struct {
 	GitLabWebhook               http.Handler
 	BitbucketServerWebhook      http.Handler
 	BitbucketCloudWebhook       http.Handler
-	BatchesMountHandler       http.Handler
+	BatchesFileHandler          http.Handler
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
 	NewExecutorProxyHandler     NewExecutorProxyHandler
 	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler

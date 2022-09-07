@@ -342,7 +342,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 			GitLabWebhook:             enterprise.GitLabWebhook,
 			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
 			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
-			BatchesMountHandler:       enterprise.BatchesMountHandler,
+			BatchesFileHandler:        enterprise.BatchesFileHandler,
 			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
 		},
