@@ -130,6 +130,7 @@ Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/ope
 
 Most Sourcegraph deployment methods still ship with an opt-in Jaeger instance - to set this up, follow the relevant deployment guides, which will also set up the appropriate configuration for you:
 
+- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
 - [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment)
 - [Docker Compose](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
 
