@@ -19,27 +19,40 @@ export const INSIGHTS_STATISTICS = gql`
         site {
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
-                    insightCreations {
-                        ...AnalyticsStatItemFragment
+                    seriesCreations {
+                        summary {
+                            totalCount
+                        }
+                        nodes {
+                            date
+                            count
+                        }
                     }
-                    # searchInsightCreations: insightCreations(generationType: SEARCH) {
-                    #     ...AnalyticsStatItemFragment
-                    # }
-                    # languageInsightCreations: insightCreations(generationType: LANGUAGE_STATS) {
-                    #     ...AnalyticsStatItemFragment
-                    # }
-                    # computeInsightCreations: insightCreations(generationType: SEARCH_COMPUTE) {
-                    #     ...AnalyticsStatItemFragment
-                    # }
+                    searchSeriesCreations: seriesCreations(generationType: SEARCH) {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    languageSeriesCreations: seriesCreations(generationType: LANGUAGE_STATS) {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    computeSeriesCreations: seriesCreations(generationType: SEARCH_COMPUTE) {
+                        summary {
+                            totalCount
+                        }
+                    }
                     insightHovers {
                         ...AnalyticsStatItemFragment
                     }
                     insightDataPointClicks {
                         ...AnalyticsStatItemFragment
                     }
-                    # dashboardCreations {
-                    #     ...AnalyticsStatItemFragment
-                    # }
+                    summary {
+                        totalInsightsCount
+                        totalDashboardsCount
+                    }
                 }
             }
         }

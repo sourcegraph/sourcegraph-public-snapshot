@@ -6411,14 +6411,39 @@ type AnalyticsExtensionsResult {
     browser: AnalyticsStatItem!
 }
 
+type AnalyticsInsightSeriesCreationsStatItem {
+    summary: AnalyticsInsightSeriesCreationsSummary!
+    nodes: [AnalyticsInsightSeriesCreationsNode!]!
+}
+
+type AnalyticsInsightSeriesCreationsNode {
+    date: String!
+    count: Float!
+}
+
+type AnalyticsInsightSeriesCreationsSummary {
+    totalCount: Float!
+}
+
+type AnalyticsCodeInsightsSummaryResult {
+    totalInsightsCount: Float!
+    totalDashboardsCount: Float!
+}
+
+enum AnalyticsInsightGenerationType {
+    SEARCH
+    SEARCH_COMPUTE
+    LANGUAGE_STATS
+}
+
 """
 Code insights analytics.
 """
 type AnalyticsCodesInsightsResult {
-    insightCreations: AnalyticsStatItem!
+    seriesCreations(generationType: AnalyticsInsightGenerationType): AnalyticsInsightSeriesCreationsStatItem!
     insightHovers: AnalyticsStatItem!
     insightDataPointClicks: AnalyticsStatItem!
-    # dashboardCreations: AnalyticsStatItem!
+    summary: AnalyticsCodeInsightsSummaryResult!
 }
 """
 Analytics describes a new site statistics.

@@ -1,16 +1,17 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 
 import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, Text, LineChart, Series } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, Text, LineChart, Series, H2 } from '@sourcegraph/wildcard'
 
 import { InsightsStatisticsResult, InsightsStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
+import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
@@ -37,14 +38,11 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { seriesCreations, insightHovers, insightDataPointClicks, summary } = data.site.analytics.codeInsights
         const legends: ValueLegendListProps['items'] = [
             {
-                value:
-                    aggregation.selected === 'count'
-                        ? insightCreations.summary.totalCount
-                        : insightCreations.summary.totalRegisteredUsers,
-                description: aggregation.selected === 'count' ? 'Insights created' : 'Users created insights',
+                value: seriesCreations.summary.totalCount,
+                description: 'Series created',
                 color: 'var(--cyan)',
                 tooltip: 'TODO:',
             },
@@ -66,6 +64,20 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 color: 'var(--purple)',
                 tooltip: 'TODO:',
             },
+            {
+                value: summary.totalInsightsCount,
+                description: 'Insights created',
+                color: 'var(--black)',
+                position: 'right',
+                tooltip: 'TODO:',
+            },
+            {
+                value: summary.totalDashboardsCount,
+                description: 'Dashboards created',
+                color: 'var(--black)',
+                position: 'right',
+                tooltip: 'TODO:',
+            },
         ]
 
         return legends
@@ -75,16 +87,16 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { seriesCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
         const activities: Series<StandardDatum>[] = [
             {
-                id: 'insights-created',
-                name: aggregation.selected === 'count' ? 'Insight created' : 'Users created insights',
+                id: 'series-creations',
+                name: 'Series created',
                 color: 'var(--cyan)',
-                data: insightCreations.nodes.map(
+                data: seriesCreations.nodes.map(
                     node => ({
                         date: new Date(node.date),
-                        value: node[aggregation.selected],
+                        value: node.count,
                     }),
                     dateRange.value
                 ),
@@ -124,6 +136,62 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         return activities
     }, [data, aggregation.selected, dateRange.value])
 
+    type Kind = 'search' | 'searchCompute' | 'languageStats'
+
+    const [kindToMinPerItem, setKindToMinPerItem] = useState<Record<Kind, number>>({
+        search: 150,
+        searchCompute: 3,
+        languageStats: 1,
+    })
+
+    const calculatorProps = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const {
+            searchSeriesCreations,
+            languageSeriesCreations,
+            computeSeriesCreations,
+        } = data.site.analytics.codeInsights
+        const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
+            page: 'Insights',
+            label: 'Insights',
+            dateRange: dateRange.value,
+            color: 'var(--purple)',
+            description:
+                'Without insights, gathering reliable analysis of code involves building custom internal tools, or having every team manually fill a spreadsheet.',
+            value:
+                searchSeriesCreations.summary.totalCount +
+                languageSeriesCreations.summary.totalCount +
+                computeSeriesCreations.summary.totalCount,
+            items: [
+                {
+                    label: 'Track changes',
+                    minPerItem: kindToMinPerItem.search,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, inApp: minPerItem })),
+                    value: searchSeriesCreations.summary.totalCount,
+                    description: 'Track customizable metrics across your codebase over time.',
+                },
+                {
+                    label: 'Detect and track patterns “series sets”',
+                    minPerItem: kindToMinPerItem.searchCompute,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
+                    value: languageSeriesCreations.summary.totalCount,
+                    description:
+                        'Automatically track versions, licenses, or other patterns across your codebase. New versions and patterns appear automatically as their own lines so you don’t need to add them. ',
+                },
+                {
+                    label: 'Language stats',
+                    minPerItem: kindToMinPerItem.languageStats,
+                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
+                    value: computeSeriesCreations.summary.totalCount,
+                    description: 'LOC count for individual repositories for compliance or auditing purposes.',
+                },
+            ],
+        }
+        return calculatorProps
+    }, [data, dateRange.value, kindToMinPerItem.languageStats, kindToMinPerItem.search, kindToMinPerItem.searchCompute])
+
     if (error) {
         throw error
     }
@@ -161,9 +229,12 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                         </div>
                     </div>
                 )}
+
+                <H2 className="my-3">Total time saved</H2>
+                {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
             </Card>
             <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table and are updated every 24 hours..
+                Some metrics are generated from entries in the event logs table and are updated every 24 hours..
             </Text>
         </>
     )
