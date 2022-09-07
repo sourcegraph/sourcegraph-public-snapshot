@@ -8,7 +8,7 @@
 # NOTE: This section is taken from https://github.com/weaveworks/ignite/blob/main/images/ubuntu/Dockerfile.
 # We maintain this on our end, so we can determine when we want to pull new ubuntu versions, sice
 # upstream ignite doesn't push new ones frequently.
-FROM amd64/ubuntu:20.04@sha256:a06ae92523384c2cd182dcfe7f8b2bf09075062e937d5653d7d0db0375ad2221
+FROM amd64/ubuntu:20.04@sha256:a0a45bd8c6c4acd6967396366f01f2a68f73406327285edc5b7b07cb1cf073db
 
 # udev is needed for booting a "real" VM, setting up the ttyS0 console properly
 # kmod is needed for modprobing modules
