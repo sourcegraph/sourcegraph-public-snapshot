@@ -1,13 +1,13 @@
 import * as assert from 'assert'
 
-import * as sourcegraph from '../api'
 import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 
 import { nodeToLocation } from './locations'
 
 describe('nodeToLocation', () => {
     it('converts to a location', () => {
-        const range = scip.Range.of(10, 12, 10, 15)
+        const range = scip.Range.fromNumbers(10, 12, 10, 15)
 
         const location = nodeToLocation(
             {
@@ -30,7 +30,7 @@ describe('nodeToLocation', () => {
     })
 
     it('falls back to current document', () => {
-        const range = scip.Range.of(10, 12, 10, 15)
+        const range = scip.Range.fromNumbers(10, 12, 10, 15)
 
         const location = nodeToLocation(
             {

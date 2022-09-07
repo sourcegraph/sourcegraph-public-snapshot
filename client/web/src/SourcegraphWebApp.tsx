@@ -33,6 +33,7 @@ import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabled
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController.ts'
@@ -99,7 +100,6 @@ import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './SourcegraphWebApp.module.scss'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,

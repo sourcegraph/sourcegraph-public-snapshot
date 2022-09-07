@@ -1,9 +1,11 @@
-import { from, NEVER, Observable } from 'rxjs'
+import { Remote } from 'comlink'
+import { from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
+import { ExposedToClient, initMainThreadAPI } from '../api/client/mainthread-api'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { createExtensionHostAPI } from '../api/extension/extensionHostApi'
@@ -15,16 +17,13 @@ import { PlatformContext } from '../platform/context'
 import { isSettingsValid } from '../settings/settings'
 
 import { Controller } from './controller'
-import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
-import { ExposedToClient, initMainThreadAPI } from '../api/client/mainthread-api'
-import { Remote } from 'comlink'
 
 export function createNoopController(platformContext: PlatformContext): Controller {
     const api: Promise<{
         remoteExtensionHostAPI: Remote<FlatExtensionHostAPI>
         exposedToClient: ExposedToClient
     }> = new Promise((resolve, reject) => {
-        platformContext.settings.subscribe(async settingsCascade => {
+        platformContext.settings.subscribe(settingsCascade => {
             if (!isSettingsValid(settingsCascade)) {
                 reject(new Error('Settings are not valid'))
                 return
@@ -119,10 +118,12 @@ export function injectNewCodeintel(
 
     return new Proxy(old, {
         get(target, prop) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
             const codeintelFunction = (codeintelOverrides as any)[prop]
             if (codeintelFunction) {
                 return codeintelFunction
             }
+            // eslint-disable-next-line prefer-rest-params
             return Reflect.get(target, prop, ...arguments)
         },
     })

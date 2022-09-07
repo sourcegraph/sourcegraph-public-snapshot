@@ -1,8 +1,9 @@
+/* eslint-disable jsdoc/check-param-names */
 import { extname } from 'path'
 
 import { escapeRegExp } from 'lodash'
-import * as sourcegraph from '../api'
 
+import * as sourcegraph from '../api'
 import { parseGitURI } from '../util/uri'
 
 /**

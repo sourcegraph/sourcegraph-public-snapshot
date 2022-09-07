@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
 import { sortBy } from 'lodash'
-import * as sourcegraph from '../api'
 
+import * as sourcegraph from '../api'
 import { PromiseProviders } from '../providers'
 import { API, Range, RepoCommitPath } from '../util/api'
 import { parseGitURI } from '../util/uri'
@@ -76,14 +76,10 @@ export const mkSquirrel = (api: API): PromiseProviders => ({
 
 type RepoCommitPathRange = RepoCommitPath & { range: Range }
 
-const mkSourcegraphLocation = ({ repo, commit, path, range }: RepoCommitPathRange): sourcegraph.Location => {
-    return {
-        uri: new URL(`git://${repo}?${commit}#${path}`),
-        range: range
-            ? rangeToSourcegraphRange({ row: range.row, column: range.column, length: range.length })
-            : undefined,
-    }
-}
+const mkSourcegraphLocation = ({ repo, commit, path, range }: RepoCommitPathRange): sourcegraph.Location => ({
+    uri: new URL(`git://${repo}?${commit}#${path}`),
+    range: range ? rangeToSourcegraphRange({ row: range.row, column: range.column, length: range.length }) : undefined,
+})
 
 // We can't use `scip.Range.of()` directly because it only sets internal fields like `_start` and
 // `_end` and in the extension host the type checker believes the properties `start` and `end` exist, but

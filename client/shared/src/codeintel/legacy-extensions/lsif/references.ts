@@ -1,6 +1,6 @@
-import * as sourcegraph from '../api'
 import gql from 'tagged-template-noop'
 
+import * as sourcegraph from '../api'
 import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 import { concat } from '../util/ix'
 
@@ -69,7 +69,7 @@ const referencesQuery = gql`
 `
 
 /** Retrieve references for the current hover position. */
-// eslint-disable-next-line @typescript-eslint/require-await
+
 export async function* referencesForPosition(
     textDocument: sourcegraph.TextDocument,
     position: sourcegraph.Position,

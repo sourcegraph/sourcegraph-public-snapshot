@@ -1,5 +1,7 @@
-import { createAggregateError } from '@sourcegraph/common'
 import { fromBase64 } from 'js-base64'
+
+import { createAggregateError } from '@sourcegraph/common'
+
 import * as sourcegraph from '../api'
 
 /** The generic type of the queryGraphQL function. */

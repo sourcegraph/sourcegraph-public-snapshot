@@ -18,7 +18,7 @@ export interface JsonOccurrence {
 
 export class Position implements sourcegraph.Position {
     constructor(public readonly line: number, public readonly character: number) {}
-    public static of(position: sourcegraph.Position): Position {
+    public static fromPosition(position: sourcegraph.Position): Position {
         return new Position(position.line, position.character)
     }
 
@@ -46,10 +46,10 @@ export class Position implements sourcegraph.Position {
 }
 export class Range {
     constructor(public readonly start: Position, public readonly end: Position) {}
-    public static of(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+    public static fromNumbers(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
         return new Range(new Position(startLine, startCharacter), new Position(endLine, endCharacter))
     }
-    public contains(position: sourcegraph.Position) {
+    public contains(position: sourcegraph.Position): boolean {
         return this.start.isSmallerOrEqual(position) && this.end.isGreater(position)
     }
     public withStart(newStart: Position): Range {

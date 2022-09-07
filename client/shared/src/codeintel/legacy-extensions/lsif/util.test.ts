@@ -1,8 +1,9 @@
 import sinon from 'sinon'
-import * as sourcegraph from '../api'
-import * as scip from '../../scip'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
+
+import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 
 import { GenericLSIFResponse } from './api'
 
@@ -23,13 +24,14 @@ export const makeResource = (
 })
 
 export const position = new scip.Position(5, 10)
-export const range1 = scip.Range.of(1, 2, 3, 4)
-export const range2 = scip.Range.of(2, 3, 4, 5)
-export const range3 = scip.Range.of(3, 4, 5, 6)
-export const range4 = scip.Range.of(4, 5, 6, 7)
-export const range5 = scip.Range.of(5, 6, 7, 8)
-export const range6 = scip.Range.of(6, 7, 8, 9)
+export const range1 = scip.Range.fromNumbers(1, 2, 3, 4)
+export const range2 = scip.Range.fromNumbers(2, 3, 4, 5)
+export const range3 = scip.Range.fromNumbers(3, 4, 5, 6)
+export const range4 = scip.Range.fromNumbers(4, 5, 6, 7)
+export const range5 = scip.Range.fromNumbers(5, 6, 7, 8)
+export const range6 = scip.Range.fromNumbers(6, 7, 8, 9)
 
+// eslint-disable-next-line import/no-named-as-default-member
 export const stencil1 = sinon.stub().callsFake(() =>
     makeEnvelope({
         stencil: [new scip.Range(position, new scip.Position(position.line, position.character + 1))],

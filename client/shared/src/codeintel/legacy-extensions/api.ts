@@ -1,6 +1,10 @@
+/* eslint-disable etc/no-deprecated */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Observable } from 'rxjs'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { GraphQLResult } from '@sourcegraph/http-client'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { PlatformContext } from '../../platform/context'
 
 export interface Unsubscribable {
@@ -988,12 +992,17 @@ let _searchContext: string | undefined
 export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknown }): Promise<GraphQLResult<T>> {
     if (!context) {
         return Promise.reject(
-            'code-intel: requestGraphQL not available. To fix this problem, call `updateCodeIntelContext` before invoking code-intel APIs.'
+            new Error(
+                'code-intel: requestGraphQL not available. To fix this problem, call `updateCodeIntelContext` before invoking code-intel APIs.'
+            )
         )
     }
-    return context
-        .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
-        .toPromise()
+    return (
+        context
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+            .toPromise()
+    )
 }
 
 export function setCodeIntelSearchContext(newSearchContext: string | undefined): void {
@@ -1053,6 +1062,6 @@ export interface ExtensionContext {
 export function logTelemetryEvent(
     eventName: string,
     eventProperties: { durationMs: number; languageId: string; repositoryId: number }
-) {
+): void {
     context?.telemetryService?.log(eventName, eventProperties)
 }

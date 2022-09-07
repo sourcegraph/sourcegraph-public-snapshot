@@ -28,13 +28,13 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
+import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'
-import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 
 const LOADING = 'loading' as const
 
@@ -481,25 +481,29 @@ export function registerHoverContributions({
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
             let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
-            if (!window.context?.enableLegacyExtensions) {
+            if (window.context?.enableLegacyExtensions === false) {
                 const promise = extensionHostAPI.registerContributions({
                     actions: [
                         {
                             actionItem: {
                                 description:
+                                    // eslint-disable-next-line no-template-curly-in-string
                                     '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || ""}',
                                 label:
+                                    // eslint-disable-next-line no-template-curly-in-string
                                     '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results" || "Mix precise and search-based results"}',
                             },
                             command: 'updateConfiguration',
                             commandArguments: [
                                 ['codeIntel.mixPreciseAndSearchBasedReferences'],
+                                // eslint-disable-next-line no-template-curly-in-string
                                 '${!config.codeIntel.mixPreciseAndSearchBasedReferences}',
                                 null,
                                 'json',
                             ],
                             id: 'mixPreciseAndSearchBasedReferences.toggle',
                             title:
+                                // eslint-disable-next-line no-template-curly-in-string
                                 '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || "Mix precise and search-based results"}',
                         },
                         ...languageSpecs.map(spec => ({
@@ -522,6 +526,7 @@ export function registerHoverContributions({
                             when:
                                 "resource.language == '" +
                                 spec.languageID +
+                                // eslint-disable-next-line no-template-curly-in-string
                                 "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
                         })),
                         'panel/toolbar': [
@@ -536,9 +541,14 @@ export function registerHoverContributions({
                 subscriptions.add(syncRemoteSubscription(promise))
                 for (const spec of languageSpecs) {
                     if (spec.textDocumentImplemenationSupport) {
-                        extensionHostAPI.updateContext({
-                            [`implementations_${spec.languageID}`]: true,
-                        })
+                        extensionHostAPI
+                            .updateContext({
+                                [`implementations_${spec.languageID}`]: true,
+                            })
+                            .then(
+                                () => {},
+                                () => {}
+                            )
                     }
                 }
             }

@@ -1,8 +1,9 @@
+/* eslint-disable jsdoc/check-param-names */
 import { flatten, sortBy } from 'lodash'
 import { from, isObservable, Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
-import * as sourcegraph from '../api'
 
+import * as sourcegraph from '../api'
 import { FilterDefinitions, LanguageSpec } from '../language-specs/spec'
 import { Providers } from '../providers'
 import { cache } from '../util'

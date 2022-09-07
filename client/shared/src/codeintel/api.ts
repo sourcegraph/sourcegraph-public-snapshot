@@ -1,25 +1,29 @@
+import { castArray } from 'lodash'
+import { Observable, of } from 'rxjs'
+import { defaultIfEmpty, map } from 'rxjs/operators'
+import * as sglegacy from 'sourcegraph'
+import { DocumentSelector, TextDocument } from 'sourcegraph'
+
 import {
     fromHoverMerged,
     HoverMerged,
     TextDocumentIdentifier,
     TextDocumentPositionParameters,
 } from '@sourcegraph/client-api'
-import * as sourcegraph from './legacy-extensions/api'
-import * as sglegacy from 'sourcegraph'
+// eslint-disable-next-line no-restricted-imports
+import { isDefined } from '@sourcegraph/common/src/types'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { languageSpecs } from './legacy-extensions/language-specs/languages'
-import { LanguageSpec } from './legacy-extensions/language-specs/spec'
-import { DocumentSelector, TextDocument } from 'sourcegraph'
+
 import { match } from '../api/client/types/textDocument'
+import { toPosition } from '../api/extension/api/types'
 import { getModeFromPath } from '../languages'
 import { parseRepoURI } from '../util/url'
-import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
+
+import * as sourcegraph from './legacy-extensions/api'
+import { languageSpecs } from './legacy-extensions/language-specs/languages'
+import { LanguageSpec } from './legacy-extensions/language-specs/spec'
 import { RedactingLogger } from './legacy-extensions/logging'
-import { Observable, of } from 'rxjs'
-import { defaultIfEmpty, map } from 'rxjs/operators'
-import { toPosition } from '../api/extension/api/types'
-import { castArray } from 'lodash'
-import { isDefined } from '@sourcegraph/common/src/types'
+import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
 
 export type QueryGraphQLFn<T> = () => Promise<T>
 
@@ -54,12 +58,12 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
         )
     }
 
-    hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean> {
+    public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean> {
         const document = toTextDocument(textParameters.textDocument)
         const providers = findLanguageMatchingDocument(document)?.providers
-        return of(providers ? true : false)
+        return of(!!providers)
     }
-    getReferences(
+    public getReferences(
         textParameters: TextDocumentPositionParameters,
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]> {
@@ -68,17 +72,17 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.references.provideReferences(request.document, request.position, context)
         )
     }
-    getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
+    public getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
         const request = requestFor(textParameters)
         return this.locationResult(request.providers.definition.provideDefinition(request.document, request.position))
     }
-    getImplementations(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
+    public getImplementations(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
         const request = requestFor(textParameters)
         return this.locationResult(
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
@@ -88,13 +92,13 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 .pipe(map(result => fromHoverMerged([result]) || { contents: [] }))
         )
     }
-    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]> {
+    public getDocumentHighlights(
+        textParameters: TextDocumentPositionParameters
+    ): Observable<sglegacy.DocumentHighlight[]> {
         const request = requestFor(textParameters)
         return request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
             defaultIfEmpty(),
-            map(result => {
-                return result ? (result as sglegacy.DocumentHighlight[]) : []
-            })
+            map(result => (result ? (result as sglegacy.DocumentHighlight[]) : []))
         )
     }
 }

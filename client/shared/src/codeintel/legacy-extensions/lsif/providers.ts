@@ -1,7 +1,7 @@
 import { once } from 'lodash'
-import * as sourcegraph from '../api'
-import * as scip from '../../scip'
 
+import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 import { Logger } from '../logging'
 import { CombinedProviders, DefinitionAndHover } from '../providers'
 import { cache } from '../util'
@@ -97,7 +97,7 @@ export async function searchStencil(
         }
 
         // Do accurate check
-        if (scip.Range.of(start.line, start.character, end.line, end.character).contains(position)) {
+        if (scip.Range.fromNumbers(start.line, start.character, end.line, end.character).contains(position)) {
             return 'hit'
         }
     }

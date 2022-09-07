@@ -4,6 +4,7 @@ import { QueryResult } from '@apollo/client'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
@@ -24,10 +25,6 @@ import {
 } from './ReferencesPanelQueries'
 import { SettingsGetter } from './settings'
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
-import { newCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import { requestGraphQL } from '../backend/graphql'
-import { newSettingsGetter } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 interface CodeIntelData {
     references: {

@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 
-import * as sourcegraph from '../api'
-
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
+
+import * as sourcegraph from '../api'
 
 import { definitionQuery, referencesQuery } from './queries'
 

@@ -7,9 +7,10 @@ import LRU from 'lru-cache'
 import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
+import { getWebGraphQLClient } from '../backend/graphql'
 import { CodeIntelSearch2Variables } from '../graphql-operations'
 
 import { Location, buildSearchBasedLocation, split } from './location'
@@ -26,7 +27,6 @@ import {
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
 
 type LocationHandler = (locations: Location[]) => void
 

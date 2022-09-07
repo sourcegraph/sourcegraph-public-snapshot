@@ -1,6 +1,5 @@
-import * as sourcegraph from '../api'
 import * as scip from '../../scip'
-
+import * as sourcegraph from '../api'
 import { LineMatch, SearchResult, SearchSymbol } from '../util/api'
 import { isDefined } from '../util/helpers'
 
@@ -102,7 +101,7 @@ function lineMatchesToResults(
         repo,
         rev: revision,
         file,
-        range: scip.Range.of(lineNumber, offset, lineNumber, offset + length),
+        range: scip.Range.fromNumbers(lineNumber, offset, lineNumber, offset + length),
     }))
 }
 

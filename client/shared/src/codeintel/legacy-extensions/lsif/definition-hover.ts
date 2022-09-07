@@ -1,6 +1,6 @@
-import * as sourcegraph from '../api'
 import gql from 'tagged-template-noop'
 
+import * as sourcegraph from '../api'
 import { DefinitionAndHover } from '../providers'
 import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 

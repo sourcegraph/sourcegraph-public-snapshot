@@ -1,6 +1,7 @@
-import * as sourcegraph from '../api'
+/* eslint-disable jsdoc/check-param-names */
 import gql from 'tagged-template-noop'
 
+import * as sourcegraph from '../api'
 import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse, queryLSIF } from './api'
@@ -59,14 +60,15 @@ interface RangeWindow {
  *
  * @param queryGraphQL The function used to query the GraphQL API.
  */
-export async function makeRangeWindowFactory(
+export function makeRangeWindowFactory(
     hasImplementationsField: boolean,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryGraphQL: QueryGraphQLFn<any> = sgQueryGraphQL
 ): Promise<RangeWindowFactoryFn> {
     const disabled = sourcegraph.getSetting<boolean>('codeIntel.disableRangeQueries')
     if (disabled) {
         // No-op if the user has explicitly disabled bulk loading
-        return () => Promise.resolve(null)
+        return Promise.resolve(() => Promise.resolve(null))
     }
 
     const cache = new Map<
@@ -109,8 +111,9 @@ export async function makeRangeWindowFactory(
         )
     }
 
-    return async (textDocument, position) =>
+    return Promise.resolve(async (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) =>
         findOverlappingCodeIntelligenceRange(position, (await getPromise(textDocument, position)) || [])
+    )
 }
 
 /**
@@ -132,6 +135,7 @@ export async function findOverlappingWindows(
     position: sourcegraph.Position,
     rangeWindows: RangeWindow[],
     hasImplementationsField: boolean,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryGraphQL: QueryGraphQLFn<any> = sgQueryGraphQL
 ): Promise<CodeIntelligenceRange[] | null> {
     let index = -1

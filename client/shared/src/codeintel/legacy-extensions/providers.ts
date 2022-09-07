@@ -1,6 +1,7 @@
+/* eslint-disable jsdoc/check-param-names */
 import { Observable, of } from 'rxjs'
-import * as sourcegraph from './api'
 
+import * as sourcegraph from './api'
 import * as indicators from './indicators'
 import { LanguageSpec, LSIFSupport } from './language-specs/spec'
 import { Logger, NoopLogger } from './logging'

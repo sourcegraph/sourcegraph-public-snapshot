@@ -39,20 +39,20 @@ export class TelemetryEmitter {
         }
 
         this.emitted.add(action)
-        this.emit(action, args).catch(error => console.error(error))
+        this.emit(action, args)
         return true
     }
 
     /**
      * Emit a telemetry event with durationMs and languageId attributes.
      */
-    public async emit(action: string, args: object = {}): Promise<void> {
+    public emit(action: string, args: object = {}): void {
         if (!this.enabled) {
             return
         }
 
         try {
-            await sourcegraph.logTelemetryEvent(`codeintel.${action}`, {
+            sourcegraph.logTelemetryEvent(`codeintel.${action}`, {
                 ...args,
                 durationMs: this.elapsed(),
                 languageId: this.languageID,

@@ -1,7 +1,7 @@
 import { once } from 'lodash'
-import * as sourcegraph from '../api'
 import gql from 'tagged-template-noop'
 
+import * as sourcegraph from '../api'
 import { cache } from '../util'
 
 import { graphqlIdToRepoId, queryGraphQL } from './graphql'

@@ -1,12 +1,13 @@
+/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
 import { afterEach, beforeEach } from 'mocha'
 import * as sinon from 'sinon'
-import * as sourcegraph from '../api'
-import * as scip from '../../scip'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
+import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 import { cStyleComment } from '../language-specs/comments'
 import { LanguageSpec, Result } from '../language-specs/spec'
 import { Providers, SourcegraphProviders } from '../providers'
@@ -37,9 +38,9 @@ const textDocument2 = createStubTextDocument({
 })
 
 const position = new scip.Position(3, 1)
-const range1 = scip.Range.of(2, 3, 4, 5)
-const range2 = scip.Range.of(3, 4, 5, 6)
-const range3 = scip.Range.of(4, 5, 6, 7)
+const range1 = scip.Range.fromNumbers(2, 3, 4, 5)
+const range2 = scip.Range.fromNumbers(3, 4, 5, 6)
+const range3 = scip.Range.fromNumbers(4, 5, 6, 7)
 
 const searchResult1 = {
     file: { path: '/a.ts', commit: { oid: 'rev1' } },

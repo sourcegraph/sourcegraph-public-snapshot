@@ -2,11 +2,12 @@ import * as assert from 'assert'
 
 import { Observable } from 'rxjs'
 import * as sinon from 'sinon'
-import * as sourcegraph from './api'
-import * as scip from '../scip'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
+import * as scip from '../scip'
+
+import * as sourcegraph from './api'
 import * as indicators from './indicators'
 import { LSIFSupport } from './language-specs/spec'
 import {
@@ -25,8 +26,8 @@ const textDocument = createStubTextDocument({
 })
 
 const position = new scip.Position(10, 5)
-const range1 = scip.Range.of(1, 2, 3, 4)
-const range2 = scip.Range.of(5, 6, 7, 8)
+const range1 = scip.Range.fromNumbers(1, 2, 3, 4)
+const range2 = scip.Range.fromNumbers(5, 6, 7, 8)
 
 const location1 = new sourcegraph.Location(new URL('http://test/1'), range1)
 const location2 = new sourcegraph.Location(new URL('http://test/2'), range1)

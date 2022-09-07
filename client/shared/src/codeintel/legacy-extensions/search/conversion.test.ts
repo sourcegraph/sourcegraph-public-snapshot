@@ -10,12 +10,12 @@ describe('resultToLocation', () => {
             repo: 'github.com/foo/bar',
             rev: '84bf4aea50d542be71e0e6339ff8e096b35c84e6',
             file: 'bonk/quux.ts',
-            range: scip.Range.of(10, 20, 15, 25),
+            range: scip.Range.fromNumbers(10, 20, 15, 25),
         })
 
         assert.deepStrictEqual(location, {
             uri: new URL('git://github.com/foo/bar?84bf4aea50d542be71e0e6339ff8e096b35c84e6#bonk/quux.ts'),
-            range: scip.Range.of(10, 20, 15, 25),
+            range: scip.Range.fromNumbers(10, 20, 15, 25),
         })
     })
 
@@ -24,12 +24,12 @@ describe('resultToLocation', () => {
             repo: 'github.com/foo/bar',
             rev: '',
             file: 'bonk/quux.ts',
-            range: scip.Range.of(10, 20, 15, 25),
+            range: scip.Range.fromNumbers(10, 20, 15, 25),
         })
 
         assert.deepStrictEqual(location, {
             uri: new URL('git://github.com/foo/bar?HEAD#bonk/quux.ts'),
-            range: scip.Range.of(10, 20, 15, 25),
+            range: scip.Range.fromNumbers(10, 20, 15, 25),
         })
     })
 })
@@ -49,7 +49,7 @@ describe('searchResultToResults', () => {
                     kind: 'class',
                     location: {
                         resource: { path: 'honk.ts' },
-                        range: scip.Range.of(1, 2, 3, 4),
+                        range: scip.Range.fromNumbers(1, 2, 3, 4),
                     },
                 },
                 {
@@ -58,7 +58,7 @@ describe('searchResultToResults', () => {
                     kind: 'class',
                     location: {
                         resource: { path: 'ronk.ts' },
-                        range: scip.Range.of(4, 5, 6, 7),
+                        range: scip.Range.fromNumbers(4, 5, 6, 7),
                     },
                 },
                 {
@@ -67,7 +67,7 @@ describe('searchResultToResults', () => {
                     kind: 'method',
                     location: {
                         resource: { path: 'zonk.ts' },
-                        range: scip.Range.of(6, 7, 8, 9),
+                        range: scip.Range.fromNumbers(6, 7, 8, 9),
                     },
                 },
             ],
@@ -98,33 +98,33 @@ describe('searchResultToResults', () => {
                 symbolKind: 'class',
                 file: 'honk.ts',
                 fileLocal: true,
-                range: scip.Range.of(1, 2, 3, 4),
+                range: scip.Range.fromNumbers(1, 2, 3, 4),
             },
             {
                 ...common,
                 symbolKind: 'class',
                 file: 'ronk.ts',
                 fileLocal: false,
-                range: scip.Range.of(4, 5, 6, 7),
+                range: scip.Range.fromNumbers(4, 5, 6, 7),
             },
             {
                 ...common,
                 symbolKind: 'method',
                 file: 'zonk.ts',
                 fileLocal: true,
-                range: scip.Range.of(6, 7, 8, 9),
+                range: scip.Range.fromNumbers(6, 7, 8, 9),
             },
             {
                 ...common,
-                range: scip.Range.of(20, 3, 20, 8),
+                range: scip.Range.fromNumbers(20, 3, 20, 8),
             },
             {
                 ...common,
-                range: scip.Range.of(40, 1, 40, 4),
+                range: scip.Range.fromNumbers(40, 1, 40, 4),
             },
             {
                 ...common,
-                range: scip.Range.of(40, 4, 40, 10),
+                range: scip.Range.fromNumbers(40, 4, 40, 10),
             },
         ])
     })

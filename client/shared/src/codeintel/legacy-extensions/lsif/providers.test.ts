@@ -1,9 +1,10 @@
+/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
-import * as sourcegraph from '../api'
-import * as scip from '../../scip'
 
+import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 import { QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse } from './api'

@@ -1,9 +1,9 @@
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
-import * as sourcegraph from '../api'
-import * as scip from '../../scip'
 
+import * as scip from '../../scip'
+import * as sourcegraph from '../api'
 import { QueryGraphQLFn } from '../util/graphql'
 
 import { GenericLSIFResponse } from './api'
@@ -125,7 +125,7 @@ describe('calculateRangeWindow', () => {
 
 describe('findOverlappingCodeIntelligenceRange', () => {
     it('checks singe line overlap', () => {
-        const range = { range: scip.Range.of(10, 5, 10, 7) }
+        const range = { range: scip.Range.fromNumbers(10, 5, 10, 7) }
 
         const overlappingPositions = [new scip.Position(10, 5), new scip.Position(10, 6)]
 
@@ -147,7 +147,7 @@ describe('findOverlappingCodeIntelligenceRange', () => {
     })
 
     it('checks multi line overlap', () => {
-        const range = { range: scip.Range.of(10, 5, 12, 7) }
+        const range = { range: scip.Range.fromNumbers(10, 5, 12, 7) }
 
         const overlappingPositions = [
             new scip.Position(11, 4), // inner line
@@ -175,10 +175,10 @@ describe('findOverlappingCodeIntelligenceRange', () => {
 
     it('returns the inner-most range', () => {
         const ranges = [
-            { range: scip.Range.of(1, 0, 5, 10) },
-            { range: scip.Range.of(2, 0, 4, 10) },
-            { range: scip.Range.of(3, 2, 3, 8) },
-            { range: scip.Range.of(3, 4, 3, 6) },
+            { range: scip.Range.fromNumbers(1, 0, 5, 10) },
+            { range: scip.Range.fromNumbers(2, 0, 4, 10) },
+            { range: scip.Range.fromNumbers(3, 2, 3, 8) },
+            { range: scip.Range.fromNumbers(3, 4, 3, 6) },
         ]
 
         const position = new scip.Position(3, 5)

@@ -1,5 +1,4 @@
 import * as sourcegraph from '../api'
-
 import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
 import { parseGitURI } from '../util/uri'
 
