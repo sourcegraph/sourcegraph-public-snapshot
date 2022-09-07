@@ -27,12 +27,13 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: map[string]interface{}{
-				"audit":        "true",
-				"audit.entity": "test entity",
-				"audit.actor": map[string]interface{}{
-					"actorUID":        "1",
-					"ip":              "192.168.0.1",
-					"X-Forwarded-For": "192.168.0.1",
+				"audit": map[string]interface{}{
+					"entity": "test entity",
+					"actor": map[string]interface{}{
+						"actorUID":        "1",
+						"ip":              "192.168.0.1",
+						"X-Forwarded-For": "192.168.0.1",
+					},
 				},
 				"additional": "stuff",
 			},
@@ -42,12 +43,13 @@ func TestLog(t *testing.T) {
 			client:            nil,
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: map[string]interface{}{
-				"audit":        "true",
-				"audit.entity": "test entity",
-				"audit.actor": map[string]interface{}{
-					"actorUID":        "1",
-					"ip":              "unknown",
-					"X-Forwarded-For": "unknown",
+				"audit": map[string]interface{}{
+					"entity": "test entity",
+					"actor": map[string]interface{}{
+						"actorUID":        "1",
+						"ip":              "unknown",
+						"X-Forwarded-For": "unknown",
+					},
 				},
 				"additional": "stuff",
 			},
@@ -60,12 +62,13 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: nil,
 			expectedEntry: map[string]interface{}{
-				"audit":        "true",
-				"audit.entity": "test entity",
-				"audit.actor": map[string]interface{}{
-					"actorUID":        "1",
-					"ip":              "192.168.0.1",
-					"X-Forwarded-For": "192.168.0.1",
+				"audit": map[string]interface{}{
+					"entity": "test entity",
+					"actor": map[string]interface{}{
+						"actorUID":        "1",
+						"ip":              "192.168.0.1",
+						"X-Forwarded-For": "192.168.0.1",
+					},
 				},
 			},
 		},

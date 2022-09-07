@@ -17,16 +17,16 @@ import (
 // context - any additional logging fields (log.Field)
 func Log(ctx context.Context, logger log.Logger, record *Record) {
 	var fields []log.Field
-	fields = append(fields, log.String("audit", "true"))
 
 	act := actor.FromContext(ctx)
 	client := requestclient.FromContext(ctx)
 
-	fields = append(fields, log.Object("audit.actor",
-		log.String("actorUID", act.UIDString()),
-		log.String("ip", ip(client)),
-		log.String("X-Forwarded-For", forwardedFor(client))))
-	fields = append(fields, log.String("audit.entity", record.Entity))
+	fields = append(fields, log.Object("audit",
+		log.String("entity", record.Entity),
+		log.Object("actor",
+			log.String("actorUID", act.UIDString()),
+			log.String("ip", ip(client)),
+			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
 	logger.Info(record.Action, fields...)
