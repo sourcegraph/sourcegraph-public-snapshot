@@ -12,13 +12,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +40,12 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 
 	operations := httpapi.NewOperations(&observation.TestContext)
 
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	creatorID := bt.CreateTestUser(t, db, false).ID
+	adminID := bt.CreateTestUser(t, db, true).ID
+
 	tests := []struct {
 		name string
 
@@ -43,6 +54,8 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		requestBody func() (io.Reader, string)
 
 		mockInvokes func()
+
+		userID int32
 
 		expectedStatusCode   int
 		expectedResponseBody string
@@ -95,13 +108,33 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
 				mockStore.
 					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 			},
+			userID:             creatorID,
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			name:   "Upload file as site admin",
+			method: http.MethodPost,
+			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+				mockStore.
+					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Return(nil).
+					Once()
+			},
+			userID:             adminID,
 			expectedStatusCode: http.StatusOK,
 		},
 		{
@@ -111,6 +144,12 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return nil, "application/json"
 			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+			},
+			userID:               creatorID,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "parsing request: request Content-Type isn't multipart/form-data\n",
 		},
@@ -141,9 +180,10 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
 			},
+			userID:               creatorID,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "uploading file: missing file modification time\n",
 		},
@@ -160,9 +200,10 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
 			},
+			userID:               creatorID,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "uploading file: http: no such file\n",
 		},
@@ -175,13 +216,14 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
 				mockStore.
 					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
 					Return(errors.New("failed to insert batch spec file")).
 					Once()
 			},
+			userID:               creatorID,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "uploading file: failed to insert batch spec file\n",
 		},
@@ -243,6 +285,12 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 				w.Close()
 				return body, w.FormDataContentType()
 			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+			},
+			userID:               creatorID,
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "request payload exceeds 10MB limit\n",
 		},
@@ -253,7 +301,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 				test.mockInvokes()
 			}
 
-			handler := httpapi.NewFileHandler(mockStore, operations)
+			handler := httpapi.NewFileHandler(db, mockStore, operations)
 
 			var body io.Reader
 			var contentType string
@@ -263,6 +311,9 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			r := httptest.NewRequest(test.method, test.path, body)
 			r.Header.Add("Content-Type", contentType)
 			w := httptest.NewRecorder()
+
+			// Setup user
+			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(test.userID)))
 
 			// In order to get the mux variables from the path, setup mux routes
 			router := mux.NewRouter()

@@ -14,6 +14,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,6 +23,7 @@ import (
 // FileHandler handles retrieving and uploading of files.
 type FileHandler struct {
 	logger     sglog.Logger
+	db         database.DB
 	store      BatchesStore
 	operations *Operations
 }
@@ -33,14 +36,17 @@ type BatchesStore interface {
 }
 
 // NewFileHandler creates a new FileHandler.
-func NewFileHandler(store BatchesStore, operations *Operations) http.Handler {
+func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) http.Handler {
 	handler := &FileHandler{
 		logger:     sglog.Scoped("FileHandler", ""),
+		db:         db,
 		store:      store,
 		operations: operations,
 	}
 	return handler
 }
+
+const maxUploadSize = 10 << 20 // 10MB
 
 func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Wrap the method operations to get a single point for logging.
@@ -142,8 +148,7 @@ func getPathParts(r *http.Request) (string, string, error) {
 	return batchSpecRandID, batchSpecWorkspaceFileID, nil
 }
 
-const maxUploadSize = 10 << 20 // 10MB
-const maxMemory = 1 << 20      // 1MB
+const maxMemory = 1 << 20 // 1MB
 
 func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, int, error) {
 	specID := mux.Vars(r)["path"]
@@ -151,7 +156,15 @@ func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, i
 		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
 	}
 
+	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
+	}
+
 	// 🚨 SECURITY: Only site-admins or the creator of batch spec can upload files.
+	if !isSiteAdminOrSameUser(ctx, h.logger, h.db, spec.UserID) {
+		return nil, http.StatusUnauthorized, nil
+	}
 
 	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
 	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
@@ -166,16 +179,25 @@ func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, i
 		}
 	}
 
-	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
-	}
-
 	if err = h.uploadFile(ctx, r, spec); err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "uploading file")
 	}
 
 	return nil, http.StatusOK, err
+}
+
+func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database.DB, userId int32) bool {
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+			return false
+		}
+
+		logger.Error("batches.httpapi: failed to get up current user", sglog.Error(err))
+		return false
+	}
+
+	return user != nil && (user.SiteAdmin || user.ID == userId)
 }
 
 func (h *FileHandler) uploadFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) error {
