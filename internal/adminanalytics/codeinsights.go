@@ -2,6 +2,7 @@ package adminanalytics
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -61,12 +62,14 @@ func (c *CodeInsights) SeriesCreations(ctx context.Context, args *struct {
 		return nil, err
 	}
 	conds := []*sqlf.Query{sqlf.Sprintf(`created_at %s`, dateBetweenCond)}
+	cacheGroupKey := "Insights:SeriesCreations"
 	if args.GenerationType != nil {
 		generationType, err := makeGenerationTypeField(*args.GenerationType)
 		if err != nil {
 			return nil, err
 		}
 		conds = append(conds, sqlf.Sprintf(`generation_method = %s`, generationType))
+		cacheGroupKey = fmt.Sprintf("%s:%s", cacheGroupKey, *args.GenerationType)
 	}
 
 	nodesQuery := sqlf.Sprintf(seriesCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
@@ -78,7 +81,7 @@ func (c *CodeInsights) SeriesCreations(ctx context.Context, args *struct {
 		grouping:     c.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "Insights:SeriesCreations",
+		group:        cacheGroupKey,
 		cache:        c.Cache,
 	}, nil
 }
