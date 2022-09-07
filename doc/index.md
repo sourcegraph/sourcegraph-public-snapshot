@@ -57,7 +57,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <p>Deploy manually onto AWS EC2</p>
   </button>
   <!-- AWS One Click-->
-  <button class="app-btn btn" formaction="/next/aws-oneclick">
+  <button class="app-btn btn" formaction="/admin/deploy/aws-oneclick">
     <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
     <h3>AWS One-Click</h3>
     <p>Deploy onto AWS in one click</p>
