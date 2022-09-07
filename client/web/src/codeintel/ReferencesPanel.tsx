@@ -777,7 +777,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     handleOpenChange,
     searchToken,
 }) => {
-    const repoUrl = `/${repoLocationGroup.repoName}`
     const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
 
     return (
@@ -792,16 +791,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                 >
                     <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
-                        <Link
-                            to={repoUrl}
-                            onClick={event => {
-                                event.preventDefault()
-                                navigateToUrl(repoUrl)
-                            }}
-                            className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
-                        >
+                        <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
                             {displayRepoName(repoLocationGroup.repoName)}
-                        </Link>
+                        </span>
                     </small>
                 </CollapseHeader>
 
@@ -841,7 +833,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         highlighted = group.path.split(filter)
     }
 
-    const fileUrl = group.locations[group.locations.length - 1].url.split('?')[0]
     const open = isOpen(group.path) ?? true
 
     return (
@@ -863,13 +854,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
-                            <Link
+                            <span
                                 aria-label={`File path ${group.path}`}
-                                to={fileUrl}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(fileUrl)
-                                }}
                                 className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
                             >
                                 {highlighted.length === 2 ? (
@@ -881,7 +867,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 ) : (
                                     group.path
                                 )}{' '}
-                            </Link>
+                            </span>
                             <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
                                 {pluralize('occurrence', group.locations.length, 'occurrences')})
