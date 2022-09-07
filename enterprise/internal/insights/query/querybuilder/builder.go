@@ -256,7 +256,7 @@ func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldAuthor,
-			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(author)),
+			Value:      buildFilterText(author),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
@@ -274,6 +274,14 @@ func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
 }
 
+func buildFilterText(raw string) string {
+	quoted := regexp.QuoteMeta(raw)
+	if strings.Contains(raw, " ") {
+		return fmt.Sprintf("(^%s$)", quoted)
+	}
+	return fmt.Sprintf("^%s$", quoted)
+}
+
 func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -285,7 +293,7 @@ func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) 
 		modified = append(modified, basic.Parameters...)
 		modified = append(modified, searchquery.Parameter{
 			Field:      field,
-			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(value)),
+			Value:      buildFilterText(value),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
