@@ -57,5 +57,11 @@ export function isQuoted(value: string): boolean {
  * @param replacement an optional replacement string
  */
 export function replaceRange(string: string, { start, end }: { start: number; end: number }, replacement = ''): string {
-    return string.slice(0, start) + replacement + string.slice(end)
+    // We should preserve any original string whitespaces in case if we just replace,
+    // and we should remove whitespaces before removed part if we're removing from the string
+    const leftPart = replacement ? string.slice(0, start) : string.slice(0, start).trimEnd()
+
+    const rightPart = string.slice(end)
+
+    return leftPart + replacement + rightPart
 }
