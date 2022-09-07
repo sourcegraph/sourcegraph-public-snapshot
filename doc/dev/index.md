@@ -93,7 +93,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
-- [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
 - [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)

@@ -29,7 +29,6 @@
 - [Developing code insights](insights/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
-- [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
 - [Pull request reviews](pull_request_reviews.md)
 - [Commit messages](commit_messages.md)

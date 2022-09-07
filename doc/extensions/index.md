@@ -41,7 +41,3 @@ Sourcegraph extensions are like editor extensions, but run anywhere you view cod
 ## Administering extensions
 
 Site admins can control instance-wide extensions settings and additional permissions features. See [Administering extensions on your Sourcegraph instance](../admin/extensions/index.md).
-
-## Authoring extensions
-
-Have an improvement or an idea for a new Sourcegraph extension? Want to publish your extension publicly? See [**Authoring extensions**](authoring/index.md).
