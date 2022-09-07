@@ -70,6 +70,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 
 		opt.Cursors = append(opt.Cursors, &cursor)
 	}
+	args.Set(&opt.LimitOffset)
 
 	if args.CloneStatus != nil {
 		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
