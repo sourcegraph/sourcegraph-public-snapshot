@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -43,6 +43,7 @@ func Middleware(db database.DB) *auth.Middleware {
 func middleware(db database.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger := log.Scoped("middleware", "check http header")
 			authProvider, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType}).(*provider)
 			if !ok {
 				next.ServeHTTP(w, r)
@@ -50,7 +51,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			}
 
 			if authProvider.c.UsernameHeader == "" {
-				log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
+				logger.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
 				http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 				return
 			}
@@ -78,15 +79,16 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			if rawUsername != "" {
 				username, err = auth.NormalizeUsername(rawUsername)
 				if err != nil {
-					log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
+					logger.Error("Error normalizing username from HTTP auth proxy.", log.String("username", rawUsername), log.Error(err))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
+
 				}
 			} else if rawEmail != "" {
 				// if they don't have a username, let's create one from their email
 				username, err = auth.NormalizeUsername(rawEmail)
 				if err != nil {
-					log15.Error("Error normalizing username from email header in HTTP auth proxy.", "email", rawEmail, "err", err)
+					logger.Error("Error normalizing username from email header in HTTP auth proxy.", log.String("email", rawEmail), log.Error(err))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
 				}
@@ -109,7 +111,11 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				LookUpByUsername: rawEmail == "", // if the email is provided, we should look up by email, otherwise username
 			})
 			if err != nil {
-				log15.Error("unable to get/create user from SSO header", "header", authProvider.c.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
+				logger.Error("unable to get/create user from SSO header",
+					log.String("header", authProvider.c.UsernameHeader),
+					log.String("rawUsername", rawUsername),
+					log.Error(err),
+					log.String("userErr", safeErrMsg))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
