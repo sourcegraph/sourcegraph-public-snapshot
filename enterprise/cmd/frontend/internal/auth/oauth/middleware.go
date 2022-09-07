@@ -34,7 +34,7 @@ import (
 )
 
 func NewHandler(logger log.Logger, db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	logger = log.Scoped("oauthFlowHandler", "handles oauth authentication flow")
+	logger = logger.Scoped("oauthFlowHandler", "handles oauth authentication flow")
 	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(logger, db, serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler

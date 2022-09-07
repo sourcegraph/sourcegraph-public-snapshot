@@ -15,6 +15,8 @@ import (
 
 	"github.com/coreos/go-oidc"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -162,10 +164,11 @@ func TestMiddleware(t *testing.T) {
 
 	const mockUserID = 123
 
+	logger := logtest.Scoped(t)
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(db).API(h))
-	authedHandler.Handle("/", Middleware(db).App(h))
+	authedHandler.Handle("/.api/", Middleware(logger, db).API(h))
+	authedHandler.Handle("/", Middleware(logger, db).App(h))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -339,7 +342,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware(db).App(h)
+	authedHandler := Middleware(logtest.Scoped(t), db).App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

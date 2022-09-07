@@ -26,16 +26,15 @@ const authPrefix = auth.AuthURLPrefix + "/saml"
 //
 // 🚨 SECURITY
 func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
-	logger = logger.Scoped("saml", "auth middleware for SAML authentication")
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(logger, db, w, r, next, true)
+				authHandler(logger.Scoped("saml.api", "auth middleware for SAML authentication"), db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(logger, db, w, r, next, false)
+				authHandler(logger.Scoped("saml.api", "auth middleware for SAML authentication"), db, w, r, next, false)
 			})
 		},
 	}
@@ -62,11 +61,11 @@ func authHandler(logger log.Logger, db database.DB, w http.ResponseWriter, r *ht
 	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
 	// anyway; there's no point in showing them a signin screen with just a single signin option.
 	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
+		p, handled := handleGetProvider(r.Context(), logger, w, ps[0].ConfigID().ID)
 		if handled {
 			return
 		}
-		redirectToAuthURL(w, r, p, auth.SafeRedirectURL(r.URL.String()))
+		redirectToAuthURL(logger, w, r, p, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 
@@ -80,7 +79,7 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 		// Handle GET endpoints.
 		if r.Method == "GET" {
 			// All of these endpoints expect the provider ID in the URL query.
-			p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
+			p, handled := handleGetProvider(r.Context(), logger, w, r.URL.Query().Get("pc"))
 			if handled {
 				return
 			}
@@ -108,7 +107,7 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 			case "/login":
 				// It is safe to use r.Referer() because the redirect-to URL will be checked later,
 				// before the client is actually instructed to navigate there.
-				redirectToAuthURL(w, r, p, r.Referer())
+				redirectToAuthURL(logger, w, r, p, r.Referer())
 				return
 			}
 		}
@@ -127,7 +126,7 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 		var relayState relayState
 		relayState.decode(r.FormValue("RelayState"))
 
-		p, handled := handleGetProvider(r.Context(), w, relayState.ProviderID)
+		p, handled := handleGetProvider(r.Context(), logger, w, relayState.ProviderID)
 		if handled {
 			return
 		}
@@ -143,7 +142,11 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 			}
 
 			if !allowSignin(p, info.groups) {
-				logger.Warn("Error authorizing SAML-authenticated user.", log.String("AccountID", info.spec.AccountID), log.Strings("Expected groups", p.config.AllowGroups), log.Strings("Got", info.groups))
+				groups := make([]string, len(info.groups))
+				for k, _ := range info.groups {
+					groups = append(groups, k)
+				}
+				logger.Warn("Error authorizing SAML-authenticated user.", log.String("AccountID", info.spec.AccountID), log.Strings("Expected groups", p.config.AllowGroups), log.Strings("Got", groups))
 				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
 				return
 			}
@@ -226,7 +229,7 @@ func redirectToAuthURL(logger log.Logger, w http.ResponseWriter, r *http.Request
 		ReturnToURL: auth.SafeRedirectURL(returnToURL),
 	})
 	if err != nil {
-		logger.Error("Failed to build SAML auth URL.", logger.String("error", err))
+		logger.Error("Failed to build SAML auth URL.", log.Error(err))
 		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
 		return
 	}

@@ -58,19 +58,19 @@ func handleGetProvider(ctx context.Context, logger log.Logger, w http.ResponseWr
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-        configID := p.ConfigID()
-		logger.Error("Error getting SAML auth provider", log.Object("configID", log.String("id", configID.ID), log.String("type", configID.Type), log.Error(err))
+		configID := p.ConfigID()
+		logger.Error("Error getting SAML auth provider", log.Object("configID", log.String("id", configID.ID), log.String("type", configID.Type)), log.Error(err))
 		http.Error(w, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".", http.StatusInternalServerError)
 		return nil, true
 	}
 	return p, false
 }
 
-func Init() {
+func Init(logger log.Logger) {
 	conf.ContributeValidator(validateConfig)
 
 	const pkgName = "saml"
-	logger := log.Scoped(pkgName, "SAML config watch")
+	logger = logger.Scoped(pkgName, "SAML config watch")
 	go func() {
 		conf.Watch(func() {
 

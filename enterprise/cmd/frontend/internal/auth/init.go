@@ -25,19 +25,19 @@ import (
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(logger log.Logger, db database.DB) {
 	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
-	openidconnect.Init()
-	saml.Init()
-	httpheader.Init()
+	openidconnect.Init(logger)
+	saml.Init(logger)
+	httpheader.Init(logger)
 	githuboauth.Init(logger, db)
 	gitlaboauth.Init(logger, db)
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
-		openidconnect.Middleware(db),
+		openidconnect.Middleware(logger, db),
 		saml.Middleware(logger, db),
-		httpheader.Middleware(db),
-		githuboauth.Middleware(db),
-		gitlaboauth.Middleware(db),
+		httpheader.Middleware(logger, db),
+		githuboauth.Middleware(logger, db),
+		gitlaboauth.Middleware(logger, db),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler(logger))

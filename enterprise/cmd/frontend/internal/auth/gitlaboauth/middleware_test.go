@@ -44,8 +44,8 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(nil).API(h))
-	authedHandler.Handle("/", Middleware(nil).App(h))
+	authedHandler.Handle("/.api/", Middleware(logger, nil).API(h))
+	authedHandler.Handle("/", Middleware(logger, nil).App(h))
 
 	mockGitLabCom := newMockProvider(t, db, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
 	mockPrivateGitLab := newMockProvider(t, db, "gitlab-private-instance-client", "github-private-instance-secret", "https://mycompany.com/")

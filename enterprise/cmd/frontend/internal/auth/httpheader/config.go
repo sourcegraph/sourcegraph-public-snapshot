@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const pkgName = "httpheader"
+
 // getProviderConfig returns the HTTP header auth provider config. At most 1 can be specified in
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).
@@ -25,12 +27,10 @@ func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
 	return pc, false
 }
 
-const pkgName = "httpheader"
-
-func Init() {
+func Init(logger log.Logger) {
 	conf.ContributeValidator(validateConfig)
 
-	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
+	logger = log.Scoped(pkgName, "HTTP header authentication config watch")
 	go func() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()

@@ -52,11 +52,11 @@ func handleGetProvider(ctx context.Context, logger log.Logger, w http.ResponseWr
 	return p, false
 }
 
-func Init() {
+func Init(logger log.Logger) {
 	conf.ContributeValidator(validateConfig)
 
 	const pkgName = "openidconnect"
-	logger := log.Scoped(pkgName, "OpenID Connect config watch")
+	logger = logger.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
 		conf.Watch(func() {
 

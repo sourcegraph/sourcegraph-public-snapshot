@@ -40,8 +40,8 @@ func TestMiddleware(t *testing.T) {
 		_, _ = w.Write([]byte("got through"))
 	})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(nil).API(h))
-	authedHandler.Handle("/", Middleware(nil).App(h))
+	authedHandler.Handle("/.api/", Middleware(logger, nil).API(h))
+	authedHandler.Handle("/", Middleware(logger, nil).App(h))
 
 	mockGitHubCom := newMockProvider(t, db, "githubcomclient", "githubcomsecret", "https://github.com/")
 	mockGHE := newMockProvider(t, db, "githubenterpriseclient", "githubenterprisesecret", "https://mycompany.com/")
