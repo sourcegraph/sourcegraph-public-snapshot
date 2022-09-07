@@ -63,6 +63,14 @@ chmod +x /usr/local/bin/src
 
 See [Sourcegraph CLI for Windows](WINDOWS.md).
 
+### Installation: Docker
+
+`sourcegraph/src-cli` is published to Docker Hub. You can use the `latest` tag or a specific version such as `3.43`. To see all versions view [sourcegraph/src-cli tags](https://hub.docker.com/r/sourcegraph/src-cli/tags).
+
+```bash
+docker run --rm=true sourcegraph/src-cli:latest search 'hello world'
+```
+
 ## Log into your Sourcegraph instance
 
 Run <code><strong>src login <i>SOURCEGRAPH-URL</i></strong></code> to authenticate `src` to access your Sourcegraph instance with your user credentials.
