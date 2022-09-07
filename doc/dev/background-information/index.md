@@ -57,6 +57,7 @@
 ## Testing
 
 - [Continuous Integration](ci/index.md)
+- [Testing a pull request](testing_pr.md)
 - [Testing Principles](testing_principles.md)
 - [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
