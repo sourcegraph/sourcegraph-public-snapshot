@@ -26,7 +26,7 @@ function cluster_capture_state() {
 
 # Cleanup the cluster
 function cluster_cleanup() {
-  cluster_capture_state
+  cluster_capture_state || true
   kubectl delete namespace "$NAMESPACE"
 }
 
