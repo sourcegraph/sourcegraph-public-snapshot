@@ -1,14 +1,20 @@
-import { escapeRegExp } from 'lodash'
-import { Observable } from 'rxjs'
+import { Location } from 'history'
+import { escapeRegExp, memoize } from 'lodash'
+import { combineLatest, from, Observable, of } from 'rxjs'
+import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
-import { replaceRange } from '@sourcegraph/common'
+import { memoizeObservable, replaceRange } from '@sourcegraph/common'
+import { InitialParametersSource } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+
+import { useNavbarQueryState } from '../stores'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -188,4 +194,87 @@ export interface SearchStreamingProps {
         queryObservable: Observable<string>,
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
+}
+
+/**
+ * updateQueryStateFromLocation listens to history changes (via the location
+ * observable) and updates the query state store while also taking care of
+ * handling and validating search context information.
+ * It returns an observable that emits the parsed query information and the
+ * extracted search context (if any).
+ */
+export function updateQueryStateFromLocation({
+    location,
+    showSearchContext,
+    isSearchContextAvailable,
+}: {
+    location: Observable<Location>
+    /**
+     * Whether or not the search context should be shown or not. This is usually
+     * controlled by user settings.
+     */
+    showSearchContext: Observable<boolean>
+    /**
+     * Resolves to true if the provided search context exists for the user.
+     */
+    isSearchContextAvailable: (searchContextSpec: string) => Promise<boolean>
+}): Observable<{ parsedSearchURL: ParsedSearchURL; searchContextSpec: string | undefined }> {
+    // Memoized function to extract the `context:...` filter from a given
+    // search query (avoids reparsing the query)
+    const memoizedGetGlobalSearchContextSpec = memoize((query: string) => getGlobalSearchContextFilter(query))
+
+    const memoizedIsSearchContextAvailable = memoizeObservable(
+        (spec: string) =>
+            spec
+                ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
+                  // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
+                  // user selects a search context from the dropdown.
+                  // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
+                  from(isSearchContextAvailable(spec)).pipe(startWith(true), distinctUntilChanged())
+                : of(false),
+        spec => spec ?? ''
+    )
+
+    // This subscription handles updating the global query state store from
+    // the URL.
+    return combineLatest([
+        // Extract information from URL and validate search context if
+        // available.
+        location.pipe(
+            switchMap(
+                (location): Observable<[ReturnType<typeof parseSearchURL>, boolean]> => {
+                    const parsedQuery = parseSearchURL(location.search)
+                    return memoizedIsSearchContextAvailable(
+                        memoizedGetGlobalSearchContextSpec(parsedQuery.query ?? '')?.spec ?? ''
+                    ).pipe(map(isSearchContextAvailable => [parsedQuery, isSearchContextAvailable]))
+                }
+            )
+        ),
+        showSearchContext.pipe(distinctUntilChanged()),
+    ]).pipe(
+        map(([[parsedSearchURL, isSearchContextAvailable], showSearchContext]) => {
+            const query = parsedSearchURL.query ?? ''
+
+            const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)
+
+            const queryClean =
+                // If a global search context spec is available to the user, we omit it from the
+                // query and move it to the search contexts dropdown
+                globalSearchContextSpec && isSearchContextAvailable && showSearchContext
+                    ? omitFilter(query, globalSearchContextSpec.filter)
+                    : query
+
+            // Update global query state
+            useNavbarQueryState.setState(({ searchPatternType, searchCaseSensitivity }) => ({
+                searchPatternType:
+                    queryClean !== '' && parsedSearchURL.patternType ? parsedSearchURL.patternType : searchPatternType,
+                searchCaseSensitivity: queryClean !== '' ? parsedSearchURL.caseSensitive : searchCaseSensitivity,
+                queryState: { query: queryClean },
+                parametersSource: InitialParametersSource.URL,
+                searchQueryFromURL: query ?? '',
+            }))
+
+            return { parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec }
+        })
+    )
 }
