@@ -2,6 +2,7 @@ package aggregation
 
 import (
 	"sort"
+	"sync"
 )
 
 type LimitedAggregator interface {
@@ -22,6 +23,8 @@ type limitedAggregator struct {
 	smallestResult   *Aggregate
 	Results          map[string]int32
 	OtherCount       OtherCount
+
+	mu sync.RWMutex
 }
 
 type Aggregate struct {
@@ -40,6 +43,9 @@ func (a *limitedAggregator) Add(label string, count int32) {
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
 	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
 	// 4. We don't have a match or a better result. Update the overflow by the hit count.
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	if a.resultBufferSize <= 0 {
 		return
 	}
@@ -97,7 +103,7 @@ func (a *limitedAggregator) updateOtherCount(resultCount, groupCount int32) {
 }
 
 // SortAggregate sorts aggregated results into a slice of descending order.
-func (a limitedAggregator) SortAggregate() []*Aggregate {
+func (a *limitedAggregator) SortAggregate() []*Aggregate {
 	aggregateSlice := make([]*Aggregate, 0, len(a.Results))
 	for val, count := range a.Results {
 		aggregateSlice = append(aggregateSlice, &Aggregate{val, count})

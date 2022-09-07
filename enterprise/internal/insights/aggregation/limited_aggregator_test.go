@@ -204,3 +204,23 @@ func TestSortAggregate(t *testing.T) {
 	}
 	autogold.Want("SortAggregate should return DESC sorted list", want).Equal(t, a.SortAggregate())
 }
+
+// This particular test isn't expected to fail on a regular go test run.
+// You should test it using the -race flag.
+func TestConcurrencySafe(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("The code panicked")
+		}
+	}()
+
+	aggregator := NewLimitedAggregator(3)
+
+	for i, letter := range []string{"a", "b", "c", "d", "e", "a", "b", "c"} {
+		letter := letter
+		i := i
+		go func() {
+			aggregator.Add(letter, int32(i))
+		}()
+	}
+}
