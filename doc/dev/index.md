@@ -164,7 +164,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
 - [Set up local monitoring development](how-to/monitoring_local_dev.md)
-- [Set up local OpenTelemetry development](how-to/otel_local_dev.md)
+- [Set up local OpenTelemetry development](how-to/opentelemetry_local_dev.md)
 
 ### Documentation
 
