@@ -361,7 +361,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Path */}
             {result.type === 'path' && (
                 <div className={styles.item} data-testid="file-match-children-item">
-                    <small>Path match</small>
+                    <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>
                 </div>
             )}
 

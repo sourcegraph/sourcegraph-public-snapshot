@@ -25,11 +25,12 @@ type SharedBarProps<Datum> = Omit<BarChartProps<Datum>, PredefinedBarProps>
 
 export interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
     mode?: SearchAggregationMode | null
+    minAngleXTick: number
     maxXLabelLength: number
 }
 
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
-    const { mode, maxXLabelLength, className, ...attributes } = props
+    const { mode, minAngleXTick, maxXLabelLength, className, ...attributes } = props
 
     const getTruncatedXLabel = useMemo(() => getTruncationFormatter(mode, maxXLabelLength), [mode, maxXLabelLength])
 
@@ -40,9 +41,10 @@ export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): Re
                     {...attributes}
                     width={parent.width}
                     height={parent.height}
+                    hideXTicks={true}
                     pixelsPerYTick={20}
                     pixelsPerXTick={20}
-                    hideXTicks={true}
+                    minAngleXTick={minAngleXTick}
                     maxAngleXTick={45}
                     getScaleXTicks={getXScaleTicks}
                     getTruncatedXTick={getTruncatedXLabel}

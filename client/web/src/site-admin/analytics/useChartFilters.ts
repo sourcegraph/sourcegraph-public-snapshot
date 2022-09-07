@@ -70,7 +70,7 @@ export function useChartFilters(props: IProps): IResult {
                 },
                 {
                     tooltip: 'unique # of users triggered',
-                    label: 'Uniques users',
+                    label: 'Unique users',
                     value: 'registeredUsers',
                 },
             ],

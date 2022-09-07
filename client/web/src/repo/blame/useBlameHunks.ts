@@ -31,11 +31,11 @@ export type BlameHunk = NonNullable<
 const fetchBlame = memoizeObservable(
     ({
         repoName,
-        commitID,
+        revision,
         filePath,
     }: {
         repoName: string
-        commitID: string
+        revision: string
         filePath: string
     }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
@@ -68,7 +68,7 @@ const fetchBlame = memoizeObservable(
                     }
                 }
             `,
-            { repo: repoName, rev: commitID, path: filePath }
+            { repo: repoName, rev: revision, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => repository?.commit?.blob?.blame)
@@ -102,11 +102,11 @@ const getDisplayInfoFromHunk = (
 export const useBlameHunks = (
     {
         repoName,
-        commitID,
+        revision,
         filePath,
     }: {
         repoName: string
-        commitID: string
+        revision: string
         filePath: string
     },
     sourcegraphURL: string
@@ -117,9 +117,9 @@ export const useBlameHunks = (
         useMemo(
             () =>
                 extensionsAsCoreFeatures && isBlameVisible
-                    ? fetchBlame({ commitID, repoName, filePath })
+                    ? fetchBlame({ revision, repoName, filePath })
                     : of(undefined),
-            [extensionsAsCoreFeatures, isBlameVisible, commitID, repoName, filePath]
+            [extensionsAsCoreFeatures, isBlameVisible, revision, repoName, filePath]
         )
     )
 

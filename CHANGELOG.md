@@ -18,6 +18,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A new look for Sourcegraph, previously in beta as "Simple UI", is now permanently enabled. [#41021](https://github.com/sourcegraph/sourcegraph/pull/41021)
+- A new [multi-version upgrade](https://docs.sourcegraph.com/admin/updates#multi-version-upgrades) process now allows Sourcegraph instances to upgrade more than a single minor version. Instances at version 3.20 or later can now jump directly to 4.0. [#40628](https://github.com/sourcegraph/sourcegraph/pull/40628)
+- Matching ranges in file paths are now highlighted for path results and content results. [#41296](https://github.com/sourcegraph/sourcegraph/pull/41296) [#41385](https://github.com/sourcegraph/sourcegraph/pull/41385)
 
 ### Changed
 
@@ -30,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The recommended [src-cli](https://github.com/sourcegraph/src-cli) version is now reported consistently. [#39468](https://github.com/sourcegraph/sourcegraph/issues/39468)
 - A performance issue affecting structural search causing results to not stream. It is much faster now. [#40872](https://github.com/sourcegraph/sourcegraph/pull/40872)
 - An issue where the saved search input box reports an invalid pattern type for `standard`, which is now valid. [#41068](https://github.com/sourcegraph/sourcegraph/pull/41068)
+- The performance, stability, and latency of search predicates like `repo:has.file()`, `repo:has.content()`, and `file:has.content()` have been dramatically improved. [#418](https://github.com/sourcegraph/zoekt/pull/418), [#40239](https://github.com/sourcegraph/sourcegraph/pull/40239), [#38988](https://github.com/sourcegraph/sourcegraph/pull/38988), [#39501](https://github.com/sourcegraph/sourcegraph/pull/39501)
 
 ### Removed
 

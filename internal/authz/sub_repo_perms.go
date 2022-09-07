@@ -11,6 +11,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/atomic"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -91,8 +92,9 @@ type SubRepoPermsClient struct {
 	clock             func() time.Time
 	since             func(time.Time) time.Duration
 
-	group *singleflight.Group
-	cache *lru.Cache
+	group   *singleflight.Group
+	cache   *lru.Cache
+	enabled *atomic.Bool
 }
 
 const defaultCacheSize = 1000
@@ -128,10 +130,21 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		return nil, errors.Wrap(err, "creating LRU cache")
 	}
 
+	enabled := atomic.NewBool(false)
+
 	conf.Watch(func() {
-		if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
-			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		c := conf.Get()
+		if c.ExperimentalFeatures == nil || c.ExperimentalFeatures.SubRepoPermissions == nil {
+			enabled.Store(false)
+			return
 		}
+
+		cacheSize := c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize
+		if cacheSize == 0 {
+			cacheSize = defaultCacheSize
+		}
+		cache.Resize(cacheSize)
+		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
 	})
 
 	return &SubRepoPermsClient{
@@ -140,32 +153,41 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		since:             time.Since,
 		group:             &singleflight.Group{},
 		cache:             cache,
+		enabled:           enabled,
 	}, nil
 }
 
-// WithGetter returns a new instance that uses the supplied getter. The cache
-// from the original instance is left intact.
-func (s *SubRepoPermsClient) WithGetter(g SubRepoPermissionsGetter) *SubRepoPermsClient {
-	return &SubRepoPermsClient{
-		permissionsGetter: g,
-		clock:             s.clock,
-		since:             s.since,
-		group:             s.group,
-		cache:             s.cache,
-	}
+var (
+	metricSubRepoPermsPermissionsDurationSuccess prometheus.Observer
+	metricSubRepoPermsPermissionsDurationError   prometheus.Observer
+)
+
+func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
+	metric := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "authz_sub_repo_perms_permissions_duration_seconds",
+		Help: "Time spent calculating permissions of a file for an actor.",
+	}, []string{"error"})
+	metricSubRepoPermsPermissionsDurationSuccess = metric.WithLabelValues("false")
+	metricSubRepoPermsPermissionsDurationError = metric.WithLabelValues("true")
 }
 
-// subRepoPermsPermissionsDuration tracks the behaviour and performance of Permissions()
-var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "authz_sub_repo_perms_permissions_duration_seconds",
-	Help: "Time spent syncing",
-}, []string{"error"})
+var (
+	metricSubRepoPermCacheHit  prometheus.Counter
+	metricSubRepoPermCacheMiss prometheus.Counter
+)
 
-// subRepoPermsCacheHit tracks the number of cache hits and misses for sub-repo permissions
-var subRepoPermsCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "authz_sub_repo_perms_permissions_cache_count",
-	Help: "The number of sub-repo perms cache hits or misses",
-}, []string{"hit"})
+func init() {
+	// We cache the result of WithLabelValues since we call them in
+	// performance sensitive code. See BenchmarkFilterActorPaths.
+	metric := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "authz_sub_repo_perms_permissions_cache_count",
+		Help: "The number of sub-repo perms cache hits or misses",
+	}, []string{"hit"})
+	metricSubRepoPermCacheHit = metric.WithLabelValues("true")
+	metricSubRepoPermCacheMiss = metric.WithLabelValues("false")
+}
 
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
@@ -179,7 +201,11 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	began := time.Now()
 	defer func() {
 		took := time.Since(began).Seconds()
-		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
+		if err == nil {
+			metricSubRepoPermsPermissionsDurationSuccess.Observe(took)
+		} else {
+			metricSubRepoPermsPermissionsDurationError.Observe(took)
+		}
 	}()
 
 	if s.permissionsGetter == nil {
@@ -249,10 +275,10 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	}
 
 	if ok && s.since(cached.timestamp) <= ttl {
-		subRepoPermsCacheHit.WithLabelValues("true").Inc()
+		metricSubRepoPermCacheHit.Inc()
 		return cached.rules, nil
 	}
-	subRepoPermsCacheHit.WithLabelValues("false").Inc()
+	metricSubRepoPermCacheMiss.Inc()
 
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
@@ -319,10 +345,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 }
 
 func (s *SubRepoPermsClient) Enabled() bool {
-	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
-		return c.ExperimentalFeatures.SubRepoPermissions.Enabled
-	}
-	return false
+	return s.enabled.Load()
 }
 
 func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
@@ -454,7 +477,7 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 		}
 	}
 
-	return true && !any, nil
+	return !any, nil
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.

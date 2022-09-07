@@ -1,0 +1,22 @@
+.simple-action-item {
+    width: 2rem;
+    height: 2rem;
+
+    margin: 0.375rem 0.25rem;
+    padding: 0.4375rem 0;
+
+    &:hover:not(&--active) {
+        background-color: var(--color-bg-2);
+    }
+
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+}
+
+.simple-action-item img {
+    width: 1rem;
+    height: 1rem;
+
+    vertical-align: initial;
+}

@@ -29,6 +29,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
@@ -1083,12 +1084,12 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tr.LogFields(
-		otlog.String("repo", string(args.Repo)),
-		otlog.Bool("include_diff", args.IncludeDiff),
-		otlog.String("query", args.Query.String()),
-		otlog.Int("limit", args.Limit),
-		otlog.Bool("include_modified_files", args.IncludeModifiedFiles),
+	tr.SetAttributes(
+		attribute.String("repo", string(args.Repo)),
+		attribute.Bool("include_diff", args.IncludeDiff),
+		attribute.String("query", args.Query.String()),
+		attribute.Int("limit", args.Limit),
+		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
 	)
 
 	searchStart := time.Now()
@@ -1104,7 +1105,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	var latencyOnce sync.Once
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		tr.LogFields(otlog.Int("flushing", len(data)))
+		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
 		latencyOnce.Do(func() {
 			searchLatency.Observe(time.Since(searchStart).Seconds())
 		})
@@ -1116,7 +1117,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
 		logger.Error("failed to send done event", log.Error(writeErr))
 	}
-	tr.LogFields(otlog.Bool("limit_hit", limitHit))
+	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
 	searchDuration.
 		WithLabelValues(strconv.FormatBool(searchErr != nil)).
@@ -1515,18 +1516,19 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
-		tr.LogFields(
-			otlog.Object("args", args),
-			otlog.String("ensure_revision", req.EnsureRevision),
+		tr.SetAttributes(
+			attribute.String("args", args),
+			attribute.String("ensure_revision", req.EnsureRevision),
 		)
 
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
-			tr.LogFields(
-				otlog.String("status", status),
-				otlog.Int64("stdout", stdoutN),
-				otlog.Int64("stderr", stderrN),
-				otlog.String("ensure_revision_status", ensureRevisionStatus),
+			tr.AddEvent(
+				"done",
+				attribute.String("status", status),
+				attribute.Int64("stdout", stdoutN),
+				attribute.Int64("stderr", stderrN),
+				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
 			tr.Finish()
@@ -1768,16 +1770,14 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
-		tr.LogFields(
-			otlog.Object("args", args),
-		)
+		tr.SetAttributes(attribute.String("args", args))
 
 		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
 		defer func() {
-			tr.LogFields(
-				otlog.String("status", status),
-				otlog.Int64("stdout", stdoutN),
-				otlog.Int64("stderr", stderrN),
+			tr.AddEvent("done",
+				attribute.String("status", status),
+				attribute.Int64("stdout", stdoutN),
+				attribute.Int64("stderr", stderrN),
 			)
 			tr.SetError(execErr)
 			tr.Finish()
