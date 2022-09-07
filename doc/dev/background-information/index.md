@@ -29,7 +29,6 @@
 - [Developing code insights](insights/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
-- [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
 - [Pull request reviews](pull_request_reviews.md)
 - [Commit messages](commit_messages.md)
@@ -58,6 +57,7 @@
 ## Testing
 
 - [Continuous Integration](ci/index.md)
+- [Testing a pull request](testing_pr.md)
 - [Testing Principles](testing_principles.md)
 - [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
