@@ -83,6 +83,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableLazyHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
 
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
@@ -396,7 +400,14 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             luckySearchEnabled={luckySearchEnabled}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={params =>
-                                fetchBlob({ ...params, format: HighlightResponseFormat.HTML_PLAINTEXT })
+                                fetchBlob({
+                                    ...params,
+                                    format: enableCodeMirror
+                                        ? HighlightResponseFormat.JSON_SCIP
+                                        : enableLazyHighlighting
+                                        ? HighlightResponseFormat.HTML_PLAINTEXT
+                                        : HighlightResponseFormat.HTML_HIGHLIGHT,
+                                })
                             }
                         />
                     </div>

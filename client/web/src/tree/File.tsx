@@ -81,6 +81,9 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         features => features.enableSidebarFilePrefetch ?? false
     )
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableLazyHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -138,6 +141,8 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     ...params,
                                     format: enableCodeMirror
                                         ? HighlightResponseFormat.JSON_SCIP
+                                        : enableLazyHighlighting
+                                        ? HighlightResponseFormat.HTML_PLAINTEXT
                                         : HighlightResponseFormat.HTML_HIGHLIGHT,
                                 })
                             }
