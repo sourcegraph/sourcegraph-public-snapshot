@@ -1,0 +1,63 @@
+.text-layout {
+    :global(.theme-dark) & rect {
+        fill: var(--gray-09);
+    }
+
+    :global(.theme-light) & rect {
+        fill: var(--gray-03);
+    }
+
+    // Simple UI mode theme
+    :global(.core-workflow-improvements-enabled) & {
+        :global(.theme-dark) & rect {
+            fill: var(--gray-10);
+        }
+
+        :global(.theme-light) & rect {
+            fill: var(--gray-02);
+            opacity: 0.6;
+        }
+    }
+
+    &-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &-message {
+        margin: auto;
+        max-width: 500px;
+    }
+}
+
+// Container for both errors (business-like and internal error alerts messages)
+.layout {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    // Small mode is used for side panel (the standard size is used for the full UI)
+    &--small {
+        font-size: 0.75rem;
+
+        .zero-state-background {
+            max-height: 160px;
+        }
+    }
+}
+
+.zero-state-background {
+    width: 100%;
+    margin: auto;
+    flex-grow: 1;
+
+    // Visually compensate bottom spacing between error chart mock
+    // UI and aggregation controls UI which are placed below this
+    // zero state block
+    padding: 0.5rem;
+}
