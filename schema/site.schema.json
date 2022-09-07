@@ -1213,11 +1213,11 @@
       }
     },
     "observability.tracing": {
-      "description": "Controls the settings for distributed tracing.",
+      "description": "Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing",
       "type": "object",
       "properties": {
         "sampling": {
-          "description": "Determines the conditions under distributed traces are recorded. \"none\" turns off tracing entirely. \"selective\" (default) sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for \"opentracing\", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).",
+          "description": "Determines the conditions under which distributed traces are recorded. \"none\" turns off tracing entirely. \"selective\" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type \"opentelemetry\", refer to https://docs.sourcegraph.com/admin/observability/opentelemetry#tracing ",
           "type": "string",
           "enum": ["selective", "all", "none"],
           "default": "selective"
