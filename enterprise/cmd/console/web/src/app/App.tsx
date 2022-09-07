@@ -2,7 +2,7 @@ import './App.css'
 
 import { useObservable } from '@sourcegraph/wildcard'
 import React, { useMemo } from 'react'
-import { Link, Redirect, Route, Switch } from 'react-router-dom'
+import { Link, Redirect, Route, Switch, useLocation } from 'react-router-dom'
 
 import { InstanceList } from '../instances/instanceListPage/InstanceList'
 import { SignupPage } from '../trialStartFlow/steps/1-signup/SignupPage'
@@ -17,6 +17,9 @@ import { InstanceManagePage } from '../instances/instanceManagePage/InstanceMana
 export const App: React.FunctionComponent = () => {
     const apiClient = useMemo(() => newAPIClient(), [])
     const data = useObservable(useMemo(() => apiClient.getData(), [apiClient]))
+
+    const location = useLocation()
+    console.log('location', location.pathname)
 
     return (
         <>
@@ -64,7 +67,7 @@ export const App: React.FunctionComponent = () => {
                             </ConsoleLayout>
                         )}
                     />
-                    <Route path="/">
+                    <Route path="/" exact={true}>
                         <Redirect to="/instances" />
                     </Route>
                 </Switch>
