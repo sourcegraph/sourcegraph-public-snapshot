@@ -15,8 +15,8 @@ import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { InlineSymbolsResult, HighlightResponseFormat } from '../graphql-operations'
-import { fetchBlob } from '../repo/blob/backend'
+import { InlineSymbolsResult } from '../graphql-operations'
+import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -76,14 +76,11 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         customIconPath,
     } = props
 
-    const { commitID, repoName } = useTreeRootContext()
+    const { revision, repoName } = useTreeRootContext()
     const isSidebarFilePrefetchEnabled = useExperimentalFeatures(
         features => features.enableSidebarFilePrefetch ?? false
     )
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const enableLazyHighlighting = useExperimentalFeatures(
-        features => features.enableLazyBlobSyntaxHighlighting ?? false
-    )
+    const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -139,15 +136,11 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             prefetch={params =>
                                 fetchBlob({
                                     ...params,
-                                    format: enableCodeMirror
-                                        ? HighlightResponseFormat.JSON_SCIP
-                                        : enableLazyHighlighting
-                                        ? HighlightResponseFormat.HTML_PLAINTEXT
-                                        : HighlightResponseFormat.HTML_HIGHLIGHT,
+                                    format: prefetchBlobFormat,
                                 })
                             }
                             isSelected={isSelected}
-                            revision={commitID}
+                            revision={revision}
                             repoName={repoName}
                             filePath={entryInfo.path}
                             as={TreeLayerRowContentsLink}

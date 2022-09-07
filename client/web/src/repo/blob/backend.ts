@@ -7,6 +7,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 
 /**
  * Makes sure that default values are applied consistently for the cache key and the `fetchBlob` function.
@@ -84,3 +85,37 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
         })
     )
 }, fetchBlobCacheKey)
+
+/**
+ * Returns the preferred blob prefetch format.
+ *
+ * Note: This format should match the format used when the blob is 'normally' fetched. E.g. in `BlobPage.tsx`.
+ */
+export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableLazyHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
+
+    /**
+     * Highlighted blobs (Fast)
+     *
+     * TODO: For large files, `PLAINTEXT` can still be faster, this is another potential UX improvement.
+     * Outstanding issue before this can be enabled: https://github.com/sourcegraph/sourcegraph/issues/41413
+     */
+    if (enableCodeMirror) {
+        return HighlightResponseFormat.JSON_SCIP
+    }
+
+    /**
+     * Plaintext blobs (Fast)
+     */
+    if (enableLazyHighlighting) {
+        return HighlightResponseFormat.HTML_PLAINTEXT
+    }
+
+    /**
+     * Highlighted blobs (Slow)
+     */
+    return HighlightResponseFormat.HTML_HIGHLIGHT
+}

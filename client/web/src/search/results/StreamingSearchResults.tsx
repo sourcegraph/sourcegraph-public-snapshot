@@ -17,7 +17,6 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/schema'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
@@ -32,7 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
-import { fetchBlob } from '../../repo/blob/backend'
+import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
@@ -83,10 +82,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const enableLazyHighlighting = useExperimentalFeatures(
-        features => features.enableLazyBlobSyntaxHighlighting ?? false
-    )
+    const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
@@ -409,11 +405,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFile={params =>
                                 fetchBlob({
                                     ...params,
-                                    format: enableCodeMirror
-                                        ? HighlightResponseFormat.JSON_SCIP
-                                        : enableLazyHighlighting
-                                        ? HighlightResponseFormat.HTML_PLAINTEXT
-                                        : HighlightResponseFormat.HTML_HIGHLIGHT,
+                                    format: prefetchBlobFormat,
                                 })
                             }
                         />
