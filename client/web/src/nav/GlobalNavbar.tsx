@@ -48,7 +48,6 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
-import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
@@ -168,12 +167,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
-
-    // UI includes repositories section as part of the user navigation bar
-    // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = props.authenticatedUser
-        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
-        : false
 
     const isSearchContextAvailable = useObservable(
         useMemo(
@@ -408,7 +401,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}
-                                showRepositorySection={showRepositorySection}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||

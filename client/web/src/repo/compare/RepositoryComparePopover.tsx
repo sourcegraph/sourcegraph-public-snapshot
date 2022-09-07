@@ -84,7 +84,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
             </PopoverTrigger>
             <PopoverContent position={Position.bottomStart}>
                 <RevisionsPopover
-                    repo={repo.id}
+                    repoId={repo.id}
                     repoName={repo.name}
                     defaultBranch={defaultBranch}
                     currentRev={currentRevision}

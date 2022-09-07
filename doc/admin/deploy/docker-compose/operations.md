@@ -233,7 +233,7 @@ You can monitor the health of a deployment in several ways:
 - Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
   - This requires direct access to your instance's host machine.
 
-## OpenTelmeetry Collector
+## OpenTelemetry Collector
 
 Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
 

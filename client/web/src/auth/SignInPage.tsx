@@ -16,7 +16,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
-import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
+import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -73,12 +73,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <Button
-                                to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                display="block"
-                                variant="secondary"
-                                as={AnchorLink}
-                            >
+                            <Button to={provider.authenticationURL} display="block" variant="secondary" as={AnchorLink}>
                                 {provider.serviceType === 'github' && (
                                     <>
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}

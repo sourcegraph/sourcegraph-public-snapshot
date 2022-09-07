@@ -403,7 +403,6 @@
     "ajv-formats": "^2.1.1",
     "apollo3-cache-persist": "^0.12.1",
     "bloomfilter": "^0.0.18",
-    "bootstrap": "^4.5.2",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",

@@ -15,6 +15,7 @@ import (
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +36,13 @@ type service interface {
 	GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error)
 	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error)
 
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language Support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+
 	// Uploads Service
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
 	GetUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error)
@@ -42,20 +50,22 @@ type service interface {
 }
 
 type Service struct {
-	store      store.Store
-	lsifstore  lsifstore.LsifStore
-	gitserver  GitserverClient
-	uploadSvc  UploadService
-	operations *operations
+	store         store.Store
+	lsifstore     lsifstore.LsifStore
+	gitserver     GitserverClient
+	symbolsClient *symbols.Client
+	uploadSvc     UploadService
+	operations    *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(store store.Store, lsifstore lsifstore.LsifStore, uploadSvc UploadService, gitserver GitserverClient, symbolsClient *symbols.Client, observationContext *observation.Context) *Service {
 	return &Service{
-		store:      store,
-		lsifstore:  lsifstore,
-		gitserver:  gitserver,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationContext),
+		store:         store,
+		lsifstore:     lsifstore,
+		gitserver:     gitserver,
+		symbolsClient: symbolsClient,
+		uploadSvc:     uploadSvc,
+		operations:    newOperations(observationContext),
 	}
 }
 
@@ -1255,6 +1265,41 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 	)
 
 	return filtered, nil
+}
+
+func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
+			}
+		}
+	}
+
+	return false, "", nil
+}
+
+func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID), traceLog.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetLanguagesRequestedBy(ctx, userID)
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given

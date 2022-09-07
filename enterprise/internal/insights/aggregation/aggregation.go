@@ -3,6 +3,7 @@ package aggregation
 import (
 	"context"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
@@ -208,8 +209,9 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	return modeCountFunc, nil
 }
 
-func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
+func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
 	return &searchAggregationResults{
+		ctx:       ctx,
 		tabulator: tabulator,
 		countFunc: countFunc,
 		progress: client.ProgressAggregator{
@@ -221,9 +223,12 @@ func NewSearchResultsAggregatorWithProgress(ctx context.Context, tabulator Aggre
 }
 
 type searchAggregationResults struct {
+	ctx       context.Context
 	tabulator AggregationTabulator
 	countFunc AggregationCountFunc
 	progress  client.ProgressAggregator
+
+	mu sync.Mutex
 }
 
 func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
@@ -237,22 +242,34 @@ func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 }
 
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.progress.Update(event)
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
-		groups, err := r.countFunc(match)
-		for groupKey, count := range groups {
-			// delegate error handling to the passed in tabulator
-			if err != nil {
-				r.tabulator(nil, err)
-				continue
+		select {
+		case <-r.ctx.Done():
+			// let the tabulator an error occured.
+			err := errors.Wrap(r.ctx.Err(), "tabulation terminated context is done")
+			r.tabulator(nil, err)
+			return
+		default:
+			groups, err := r.countFunc(match)
+			for groupKey, count := range groups {
+				// delegate error handling to the passed in tabulator
+				if err != nil {
+					r.tabulator(nil, err)
+					continue
+				}
+				if groups == nil {
+					continue
+				}
+				current, _ := combined[groupKey]
+				combined[groupKey] = current + count
 			}
-			if groups == nil {
-				continue
-			}
-			current, _ := combined[groupKey]
-			combined[groupKey] = current + count
 		}
+
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)

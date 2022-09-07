@@ -56,7 +56,6 @@ describe('UserNavItem', () => {
                 <MemoryRouter>
                     <CompatRouter>
                         <UserNavItem
-                            showRepositorySection={true}
                             isLightTheme={true}
                             onThemePreferenceChange={() => undefined}
                             showKeyboardShortcutsHelp={() => undefined}
@@ -74,7 +73,6 @@ describe('UserNavItem', () => {
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         renderWithBrandedContext(
             <UserNavItem
-                showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
                 showKeyboardShortcutsHelp={() => undefined}
