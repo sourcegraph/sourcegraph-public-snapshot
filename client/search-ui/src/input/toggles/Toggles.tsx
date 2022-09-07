@@ -133,14 +133,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
-    const copyQueryButton = showCopyQueryButton && (
-        <CopyQueryButton
-            fullQuery={fullQuery}
-            isMacPlatform={isMacPlatform()}
-            className={classNames(styles.toggle, styles.copyQueryButton)}
-        />
-    )
-
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             <>
@@ -207,7 +199,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                                 ]}
                             />
                         )}
-                        <div className={styles.separator} />
+                        {(showSmartSearch || showCopyQueryButton) && <div className={styles.separator} />}
                     </>
                 )}
                 {showSmartSearch && (
@@ -226,7 +218,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         ]}
                     />
                 )}
-                {copyQueryButton}
+                {showCopyQueryButton && (
+                    <CopyQueryButton
+                        fullQuery={fullQuery}
+                        isMacPlatform={isMacPlatform()}
+                        className={classNames(styles.toggle, styles.copyQueryButton)}
+                    />
+                )}
             </>
         </div>
     )
