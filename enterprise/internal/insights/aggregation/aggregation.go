@@ -3,6 +3,7 @@ package aggregation
 import (
 	"context"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
@@ -226,6 +227,8 @@ type searchAggregationResults struct {
 	tabulator AggregationTabulator
 	countFunc AggregationCountFunc
 	progress  client.ProgressAggregator
+
+	mu sync.Mutex
 }
 
 func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
@@ -239,6 +242,9 @@ func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 }
 
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.progress.Update(event)
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
