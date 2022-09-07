@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -227,64 +228,100 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		}
 	}()
 
-	if s.permissionsGetter == nil {
-		return None, errors.New("PermissionsGetter is nil")
-	}
-
-	if userID == 0 {
-		return None, &ErrUnauthenticated{}
-	}
-
-	// An empty path is equivalent to repo permissions so we can assume it has
-	// already been checked at that level.
-	if content.Path == "" {
-		return Read, nil
-	}
-
-	repoRules, err := s.getCompiledRules(ctx, userID)
+	f, err := s.FilePermissionsFunc(ctx, userID, content.Repo)
 	if err != nil {
-		return None, errors.Wrap(err, "compiling match rules")
+		return None, err
 	}
+	return f(content.Path)
+}
 
-	rules, ok := repoRules[content.Repo]
-	if !ok {
-		// If we make it this far it implies that we have access at the repo level.
-		// Having any empty set of rules here implies that we can access the whole repo.
-		// Repos that support sub-repo permissions will only have an entry in our
-		// repo_permissions table after all sub-repo permissions have been processed.
-		return Read, nil
-	}
-
-	// The current path needs to either be included or NOT excluded and we'll give
-	// preference to exclusion.
-	for _, rule := range rules.excludes {
-		if rule.Match(content.Path) {
-			return None, nil
-		}
-	}
-	for _, rule := range rules.includes {
-		if rule.Match(content.Path) {
-			return Read, nil
-		}
-	}
-
-	// We also want to match any directories above paths that we include so that we
-	// can browse down the file hierarchy.
-	if strings.HasSuffix(content.Path, "/") {
-		for _, rule := range rules.dirIncludes {
-			if rule.Match(content.Path) {
-				return Read, nil
-			}
-		}
-	}
-
-	// Return None if no rule matches to be safe
-	return None, nil
+// filePermissionsFuncAllRead is a FilePermissionFunc which _always_ returns
+// Read. Only use in cases that sub repo permission checks should not be done.
+func filePermissionsFuncAllRead(_ string) (Perms, error) {
+	return Read, nil
 }
 
 func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	// Are sub-repo permissions enabled at the site level
+	if !s.Enabled() {
+		return filePermissionsFuncAllRead, nil
+	}
+
+	if s.permissionsGetter == nil {
+		return nil, errors.New("PermissionsGetter is nil")
+	}
+
+	if userID == 0 {
+		return nil, &ErrUnauthenticated{}
+	}
+
+	var (
+		once       sync.Once
+		rules      compiledRules
+		rulesExist bool
+		rulesErr   error
+	)
+
 	return func(path string) (Perms, error) {
-		return s.Permissions(ctx, userID, RepoContent{Repo: repo, Path: path})
+		// An empty path is equivalent to repo permissions so we can assume it has
+		// already been checked at that level.
+		if path == "" {
+			return Read, nil
+		}
+
+		once.Do(func() {
+			repoRules, err := s.getCompiledRules(ctx, userID)
+			if err != nil {
+				rulesErr = errors.Wrap(err, "compiling match rules")
+				return
+			}
+
+			rules, rulesExist = repoRules[repo]
+		})
+
+		if rulesErr != nil {
+			return None, rulesErr
+		} else if !rulesExist {
+			// If we make it this far it implies that we have access at the repo level.
+			// Having any empty set of rules here implies that we can access the whole repo.
+			// Repos that support sub-repo permissions will only have an entry in our
+			// repo_permissions table after all sub-repo permissions have been processed.
+			return Read, nil
+		}
+
+		// TODO(keegancsmith) I am preserving behaviour with all the code
+		// above here in this function. IE we are using a Once to lazily
+		// initialize rules, just in case passing in an empty path happens.
+		// I'd prefer to not check for empty path + remove lazily evaluation.
+		// Lets discuss if we can change this behaviour on the PR and
+		// follow-up. For now I'd rather preserve behaviour to prevent
+		// regressions.
+
+		// The current path needs to either be included or NOT excluded and we'll give
+		// preference to exclusion.
+		for _, rule := range rules.excludes {
+			if rule.Match(path) {
+				return None, nil
+			}
+		}
+		for _, rule := range rules.includes {
+			if rule.Match(path) {
+				return Read, nil
+			}
+		}
+
+		// We also want to match any directories above paths that we include so that we
+		// can browse down the file hierarchy.
+		if strings.HasSuffix(path, "/") {
+			for _, rule := range rules.dirIncludes {
+				if rule.Match(path) {
+					return Read, nil
+				}
+			}
+		}
+
+		// Return None if no rule matches to be safe
+		return None, nil
 	}, nil
 }
 
