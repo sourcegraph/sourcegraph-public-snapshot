@@ -54,13 +54,8 @@ $custom-select-feedback-icon-size: 0;
 // Disable all Bootstrap transitions
 $enable-transitions: false;
 
-/* stylelint-disable @sourcegraph/no-restricted-imports */
-// Apply static variables before Bootstrap imports.
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-
-/* stylelint-enable @sourcegraph/no-restricted-imports */
+@import './functions.scss';
+@import './mixins.scss';
 @import './reboot';
 @import './utilities';
 @import 'wildcard/src/global-styles/breakpoints';
