@@ -1,7 +1,6 @@
 /* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
-import { afterEach, beforeEach } from 'mocha'
 import * as sinon from 'sinon'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
@@ -9,7 +8,7 @@ import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 import * as scip from '../../scip'
 import * as sourcegraph from '../api'
 import { cStyleComment } from '../language-specs/comments'
-import { LanguageSpec, Result } from '../language-specs/spec'
+import { LanguageSpec, Result } from '../language-specs/language-spec'
 import { Providers, SourcegraphProviders } from '../providers'
 import { API, SearchResult } from '../util/api'
 import { observableFromAsyncIterator } from '../util/ix'

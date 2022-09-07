@@ -14,8 +14,8 @@ import { cppSpec, cudaSpec } from './cpp'
 import { goSpec } from './go'
 import { createIdentCharPattern, rubyIdentCharPattern } from './identifiers'
 import { javaSpec } from './java'
+import { LanguageSpec } from './language-spec'
 import { pythonSpec } from './python'
-import { LanguageSpec } from './spec'
 import { typescriptSpec } from './typescript'
 
 // Please keep the specs below in lexicographic order.

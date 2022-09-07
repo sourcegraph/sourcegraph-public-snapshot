@@ -1,6 +1,6 @@
 import { isDefined } from '../util/helpers'
 
-import { Result } from './spec'
+import { Result } from './language-spec'
 
 /**
  * Extract content from each line of the source file. The first match on

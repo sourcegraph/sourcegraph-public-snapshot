@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs'
 
 import * as sourcegraph from './api'
 import * as indicators from './indicators'
-import { LanguageSpec, LSIFSupport } from './language-specs/spec'
+import { LanguageSpec, LSIFSupport } from './language-specs/language-spec'
 import { Logger, NoopLogger } from './logging'
 import { createProviders as createLSIFProviders } from './lsif/providers'
 import { createProviders as createSearchProviders } from './search/providers'

@@ -20,8 +20,8 @@ import { getModeFromPath } from '../languages'
 import { parseRepoURI } from '../util/url'
 
 import * as sourcegraph from './legacy-extensions/api'
+import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
-import { LanguageSpec } from './legacy-extensions/language-specs/spec'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
 

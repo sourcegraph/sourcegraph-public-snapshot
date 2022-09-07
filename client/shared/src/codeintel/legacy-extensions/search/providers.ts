@@ -4,7 +4,7 @@ import { from, isObservable, Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
 
 import * as sourcegraph from '../api'
-import { FilterDefinitions, LanguageSpec } from '../language-specs/spec'
+import { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
 import { Providers } from '../providers'
 import { cache } from '../util'
 import { API } from '../util/api'

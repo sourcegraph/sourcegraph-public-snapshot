@@ -61,3 +61,5 @@ export async function gatherValues<T>(generator: AsyncGenerator<T>): Promise<T[]
     }
     return values
 }
+
+test('util.test.ts', () => {})

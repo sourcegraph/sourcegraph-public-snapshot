@@ -9,7 +9,7 @@ import * as scip from '../scip'
 
 import * as sourcegraph from './api'
 import * as indicators from './indicators'
-import { LSIFSupport } from './language-specs/spec'
+import { LSIFSupport } from './language-specs/language-spec'
 import {
     clearReferenceResultCache,
     createDefinitionProvider,

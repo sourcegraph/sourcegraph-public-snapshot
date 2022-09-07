@@ -4,7 +4,7 @@ import { QueryResult } from '@apollo/client'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/spec'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
