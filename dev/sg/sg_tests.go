@@ -29,7 +29,7 @@ var testCommand = &cli.Command{
 sg test backend
 sg test backend-integration
 sg test client
-sg test client-e2e
+sg test web-e2e
 
 # List available test suites:
 sg test -help

@@ -310,9 +310,9 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* client-e2e
-* client-regression
 * docsite
+* web-e2e
+* web-regression
 * web-integration
 
 ```sh
@@ -320,7 +320,7 @@ Available testsuites in `sg.config.yaml`:
 $ sg test backend
 $ sg test backend-integration
 $ sg test client
-$ sg test client-e2e
+$ sg test web-e2e
 
 # List available test suites:
 $ sg test -help
