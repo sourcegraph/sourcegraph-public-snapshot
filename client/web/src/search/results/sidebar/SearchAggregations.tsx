@@ -6,6 +6,7 @@ import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/sr
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
+import { NotAvailableReasonType } from '../../../graphql-operations'
 import {
     AggregationChartCard,
     AggregationModeControls,
@@ -62,6 +63,30 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
 
     // When query is updated reset extendedTimeout as per business rules
     useEffect(() => setExtendedTimeoutLocal(false), [query])
+
+    useEffect(() => {
+        if (!proactive || loading || error || !data) {
+            return
+        }
+
+        const aggregation = data.searchQueryAggregate.aggregations
+        let pingType = GroupResultsPing.ProactiveLimitSuccess
+
+        if (aggregation?.__typename === 'SearchAggregationNotAvailable') {
+            if (aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE) {
+                pingType = GroupResultsPing.ProactiveLimitHit
+            }
+            if (aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE) {
+                pingType = GroupResultsPing.ExplicitLimitHit
+            }
+        }
+
+        if (extendedTimeout) {
+            pingType = GroupResultsPing.ExplicitLimitSuccess
+        }
+
+        telemetryService.log(pingType, { aggregationMode, uiMode: 'sidebar' }, { aggregationMode, uiMode: 'sidebar' })
+    }, [aggregationMode, data, error, extendedTimeout, loading, proactive, telemetryService])
 
     const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
 
