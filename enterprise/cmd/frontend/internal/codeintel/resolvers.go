@@ -179,8 +179,8 @@ func (r *Resolver) CodeIntelligenceInferenceScript(ctx context.Context) (_ strin
 	return r.autoIndexingRootResolver.CodeIntelligenceInferenceScript(ctx)
 }
 
-func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, script string) (_ *gql.EmptyResponse, err error) {
-	return &gql.EmptyResponse{}, r.autoIndexingRootResolver.UpdateCodeIntelligenceInferenceScript(ctx, script)
+func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *autoindexinggraphql.UpdateCodeIntelligenceInferenceScriptArgs) (_ *gql.EmptyResponse, err error) {
+	return &gql.EmptyResponse{}, r.autoIndexingRootResolver.UpdateCodeIntelligenceInferenceScript(ctx, args)
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *policiesgraphql.PreviewGitObjectFilterArgs) (_ []policiesgraphql.GitObjectFilterPreviewResolver, err error) {

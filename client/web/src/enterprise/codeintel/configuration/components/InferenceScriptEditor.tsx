@@ -1,7 +1,6 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import * as H from 'history'
-import { editor } from 'monaco-editor'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,7 +12,6 @@ import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
-import allConfigSchema from '../schema.json'
 
 export interface InferenceScriptEditorProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -32,7 +30,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     const save = useCallback(
         async (content: string) =>
             updateInferenceScript({
-                variables: { content },
+                variables: { script: content },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() => {
                 screenReaderAnnounce('Saved successfully')
@@ -42,7 +40,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    const [_editor, setEditor] = useState<editor.ICodeEditor>()
+    // const [_editor, setEditor] = useState<editor.ICodeEditor>()
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps>
@@ -51,6 +49,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
         () => ({
             saveToolbar: SaveToolbar,
             propsGenerator: props => {
+                console.log(JSON.stringify(props))
                 const mergedProps = {
                     ...props,
                     loading: isUpdating,
@@ -77,7 +76,8 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
                     value={inferenceScript}
-                    jsonSchema={allConfigSchema}
+                    language="lua"
+                    // jsonSchema={allConfigSchema}
                     canEdit={authenticatedUser?.siteAdmin}
                     readOnly={!authenticatedUser?.siteAdmin}
                     onSave={save}
@@ -88,7 +88,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}
-                    onEditor={setEditor}
+                    // onEditor={setEditor}
                 />
             )}
         </>

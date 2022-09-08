@@ -14,7 +14,6 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
-import { CodeIntelInferenceConfigurationPage } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
 import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
@@ -157,11 +156,6 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             {
                 to: '/index-configuration',
                 label: 'Auto-index configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-            },
-            {
-                to: '/inference-configuration',
-                label: 'Auto-index inference configuration',
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
         ],
