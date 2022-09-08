@@ -1,0 +1,41 @@
+.chart {
+    flex-grow: 1;
+}
+
+.missing-label-count {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    padding: 0.25rem;
+    background: var(--body-bg);
+    color: var(--text-muted);
+}
+
+// Internal error-alert UI
+.error-alert {
+    margin: 0;
+    overflow: auto;
+}
+
+.error-button {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.857rem;
+    font-weight: 500;
+}
+
+.loading::after {
+    position: absolute;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: bottom;
+    animation: ellipsis steps(4, end) 900ms infinite;
+    content: '\2026';
+    width: 0;
+}
+
+@keyframes ellipsis {
+    to {
+        width: 1.25rem;
+    }
+}

@@ -16,6 +16,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../tracking/eventLogger'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
@@ -107,7 +108,10 @@ export const BlameDecoration: React.FunctionComponent<{
     onDeselect?: (line: number) => void
 }> = ({ line, blameHunk, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
-    const onOpen = useCallback(() => onSelect?.(line), [onSelect, line])
+    const onOpen = useCallback(() => {
+        onSelect?.(line)
+        eventLogger.log('GitBlamePopupViewed')
+    }, [onSelect, line])
     const onClose = useCallback(() => onDeselect?.(line), [onDeselect, line])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,
@@ -170,6 +174,7 @@ export const BlameDecoration: React.FunctionComponent<{
                             target="_blank"
                             rel="noreferrer noopener"
                             className={styles.link}
+                            onClick={logCommitClick}
                         >
                             {blameHunk.message}
                         </Link>
@@ -178,4 +183,8 @@ export const BlameDecoration: React.FunctionComponent<{
             </PopoverContent>
         </Popover>
     )
+}
+
+const logCommitClick = (): void => {
+    eventLogger.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
 }

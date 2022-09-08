@@ -6,9 +6,8 @@ import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/sr
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
-import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
-import { AggregationLimitLabel } from './AggregationLimitLabel'
-import { AggregationModeControls } from './AggregationModeControls'
+import { AggregationLimitLabel, AggregationModeControls } from './components'
+import { AggregationChartCard, getAggregationData } from './components/aggregation-chart-card/AggregationChartCard'
 import {
     isNonExhaustiveAggregationResults,
     useAggregationSearchMode,
@@ -45,7 +44,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
     const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
-    const [, setAggregationUIMode] = useAggregationUIMode()
+    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
@@ -61,7 +60,14 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
     }
 
+    const resetUIMode = (): void => {
+        if (aggregationUIMode !== AggregationUIMode.Sidebar) {
+            setAggregationUIMode(AggregationUIMode.Sidebar)
+        }
+    }
+
     const handleBarLinkClick = (query: string, index: number): void => {
+        resetUIMode()
         onQuerySubmit(query)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,

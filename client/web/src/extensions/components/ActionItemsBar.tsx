@@ -23,7 +23,6 @@ import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
-import { useExperimentalFeatures } from '../../stores'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -205,8 +204,6 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-
     if (!isOpen) {
         return <div className={styles.barCollapsed} />
     }
@@ -227,7 +224,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
-                {extensionsAsCoreFeatures ? <OpenInEditorActionItem platformContext={props.platformContext} /> : null}
+                <OpenInEditorActionItem platformContext={props.platformContext} />
                 {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}

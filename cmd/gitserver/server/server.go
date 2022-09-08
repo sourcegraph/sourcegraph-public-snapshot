@@ -499,7 +499,7 @@ func (s *Server) Handler() http.Handler {
 		accesslog.HTTPMiddleware(
 			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
 			conf.DefaultClient(),
-			handleGetObject(getObjectFunc),
+			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
 		)))
 
 	return mux
@@ -608,17 +608,21 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 }
 
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
+	logger := s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
+
 	for j := range jobs {
+		logger := logger.With(log.String("job.repo", string(j.repo)))
+
 		select {
 		case <-ctx.Done():
-			s.Logger.Error("cloneJobConsumer: ", log.Error(ctx.Err()))
+			logger.Error("context done", log.Error(ctx.Err()))
 			return
 		default:
 		}
 
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
-			s.Logger.Error("cloneJobConsumer: ", log.Error(err))
+			logger.Error("acquireCloneLimiter", log.Error(err))
 			continue
 		}
 
@@ -627,7 +631,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
 			if err != nil {
-				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
+				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
 			s.setLastErrorNonFatal(s.ctx, job.repo, err)
@@ -1469,18 +1473,20 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
+	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(w); fw != nil {
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
 		w = fw
 		defer fw.Close()
 	}
 
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
+	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
+		logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
 
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("invalid command"))
@@ -1520,6 +1526,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
 		)
+		logger = logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
@@ -1580,13 +1587,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if traceLogs {
-					s.Logger.Debug("TRACE gitserver exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Debug("TRACE gitserver exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlow {
-					s.Logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlowFetch {
-					s.Logger.Warn("Slow fetch/clone for exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Slow fetch/clone for exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 			}
 		}()
@@ -1595,7 +1602,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	dir := s.dir(req.Repo)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
-			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
@@ -1615,7 +1622,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
@@ -1688,7 +1695,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	checkMaybeCorruptRepo(req.Repo, dir, stderr)
+	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
@@ -1743,9 +1750,11 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4ExecRequest) {
+	logger := s.Logger.Scoped("p4exec", "")
+
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(w); fw != nil {
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
 		w = fw
 		defer fw.Close()
 	}
@@ -1771,6 +1780,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
 		tr.SetAttributes(attribute.String("args", args))
+		logger = logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
 		defer func() {
@@ -1821,10 +1831,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				_ = ev.Send()
 
 				if traceLogs {
-					s.Logger.Debug("TRACE gitserver p4exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Debug("TRACE gitserver p4exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlow {
-					s.Logger.Warn("Long p4exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Long p4exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 			}
 		}()
@@ -2063,6 +2073,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 }
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
+	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
+
 	defer lock.Release()
 	defer func() {
 		if err != nil {
@@ -2116,12 +2128,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	s.Logger.Info("cloning repo", log.String("repo", string(repo)), log.String("tmp", tmpPath), log.String("dst", dstPath))
+	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
 
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -2133,7 +2145,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, tmp, syncer, repo, remoteURL); err != nil {
 		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2143,7 +2155,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	}
 
 	// Update the last-changed stamp.
-	if err := setLastChanged(tmp); err != nil {
+	if err := setLastChanged(logger, tmp); err != nil {
 		return errors.Wrapf(err, "failed to update last changed time")
 	}
 
@@ -2175,15 +2187,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting last fetch in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting repo size", log.Error(err))
 	}
 
-	s.Logger.Info("repo cloned", log.String("repo", string(repo)))
+	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
 	return nil
@@ -2191,10 +2203,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
 	var logFile *os.File
 	var err error
-	logger := log.Scoped("readCloneProgress", "scans the reader and saves the most recent line of output")
 
 	if conf.Get().CloneProgressLog {
 		logFile, err = os.CreateTemp("", "")
@@ -2441,6 +2452,8 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
 func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
+	logger := s.Logger.Scoped("backgroundRepoUpdate", "")
+
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
@@ -2491,8 +2504,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
-		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+	if err := setHEAD(ctx, logger, dir, syncer, repo, remoteURL); err != nil {
+		logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2501,19 +2514,19 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 
 	// Update the last-changed stamp on disk.
-	if err := setLastChanged(dir); err != nil {
-		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
+	if err := setLastChanged(logger, dir); err != nil {
+		logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	return nil
@@ -2571,14 +2584,13 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
 
 	// Fallback to git's default branch name if git remote show fails.
 	headBranch := "master"
-	logger := log.Scoped("setHEAD", "configures git repo defaults (such as what HEAD is) which are needed for git commands to work.")
 
 	// try to fetch HEAD from origin
 	cmd, err := syncer.RemoteShowCommand(ctx, remoteURL)
@@ -2653,7 +2665,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 // an empty repository (not an error) or some kind of actual error
 // that is possibly causing our data to be incorrect, which should
 // be reported.
-func setLastChanged(dir GitDir) error {
+func setLastChanged(logger log.Logger, dir GitDir) error {
 	hashFile := dir.Path("sg_refhash")
 
 	hash, err := computeRefHash(dir)
@@ -2665,7 +2677,7 @@ func setLastChanged(dir GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp = computeLatestCommitTimestamp(dir)
+		stamp = computeLatestCommitTimestamp(logger, dir)
 	}
 
 	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)
@@ -2687,8 +2699,10 @@ func setLastChanged(dir GitDir) error {
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
 // future, or there is any error, time.Now is returned.
-func computeLatestCommitTimestamp(dir GitDir) time.Time {
-	logger := log.Scoped("computeLatestCommitTimestamp", "eturns the timestamp of the most recent commit if any")
+func computeLatestCommitTimestamp(logger log.Logger, dir GitDir) time.Time {
+	logger = logger.Scoped("computeLatestCommitTimestamp", "compute the timestamp of the most recent commit").
+		With(log.String("repo", string(dir)))
+
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	dir.Set(cmd)
@@ -2696,7 +2710,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", log.String("repo", string(dir)), log.Error(err))
+		logger.Warn("failed to execute, defaulting to time.Now", log.Error(err))
 		return now
 	}
 
@@ -2710,7 +2724,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", log.String("repo", string(dir)), log.String("timestamp", string(words[0])))
+		logger.Warn("ignoring corrupted timestamp, defaulting to time.Now", log.String("timestamp", string(words[0])))
 		return now
 	}
 	stamp := time.Unix(epoch, 0)

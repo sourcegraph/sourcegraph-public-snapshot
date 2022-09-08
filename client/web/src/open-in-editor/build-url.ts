@@ -1,6 +1,6 @@
 import * as path from 'path'
 
-import type { UIRangeSpec } from '@sourcegraph/shared/out/src/util/url'
+import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
