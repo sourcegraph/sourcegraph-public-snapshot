@@ -6411,20 +6411,47 @@ type AnalyticsExtensionsResult {
     browser: AnalyticsStatItem!
 }
 
+"""
+Analytics insights statistics item.
+"""
 type AnalyticsInsightStatItem {
+    """
+    Statistics summary for the date range.
+    """
     summary: AnalyticsInsightStatItemSummary!
+    """
+    List of statistics for each day.
+    """
     nodes: [AnalyticsInsightStatItemNode!]!
 }
 
+"""
+Analytics insights statistics item node.
+"""
 type AnalyticsInsightStatItemNode {
+    """
+    A date in ISO format
+    """
     date: String!
+    """
+    Total number of events/metrics for a date.
+    """
     count: Float!
 }
 
+"""
+Analytics insights statistics item summary.
+"""
 type AnalyticsInsightStatItemSummary {
+    """
+    Total number of events/metrics.
+    """
     totalCount: Float!
 }
 
+"""
+Insight Series generation type enum.
+"""
 enum AnalyticsInsightSeriesGenerationType {
     SEARCH
     SEARCH_COMPUTE
@@ -6435,10 +6462,25 @@ enum AnalyticsInsightSeriesGenerationType {
 Code insights analytics.
 """
 type AnalyticsCodesInsightsResult {
+    """
+    Insights hovers statistics.
+    """
     insightHovers: AnalyticsStatItem!
+    """
+    Insights data point clicks statistics.
+    """
     insightDataPointClicks: AnalyticsStatItem!
+    """
+    The number of currently existing insights.
+    """
     totalInsightsCount: Float
+    """
+    Insight series creation statistics.
+    """
     seriesCreations(generationType: AnalyticsInsightSeriesGenerationType): AnalyticsInsightStatItem!
+    """
+    Insight dashboard creation statistics.
+    """
     dashboardCreations: AnalyticsInsightStatItem!
 }
 """
