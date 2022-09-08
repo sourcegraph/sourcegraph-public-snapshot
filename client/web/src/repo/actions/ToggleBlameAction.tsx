@@ -13,7 +13,6 @@ import { useBlameVisibility } from '../blame/useBlameVisibility'
 import styles from './ToggleBlameAction.module.scss'
 
 export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location }) => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
     // Turn off visibility when the file path changes.
@@ -32,10 +31,6 @@ export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location
             eventLogger.log('GitBlameEnabled')
         }
     }, [isBlameVisible, setIsBlameVisible])
-
-    if (!extensionsAsCoreFeatures) {
-        return null
-    }
 
     return (
         <SimpleActionItem isActive={isBlameVisible} tooltip={descriptiveText} onSelect={toggleBlameState}>
