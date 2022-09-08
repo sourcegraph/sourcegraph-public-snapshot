@@ -473,6 +473,13 @@ export class SourcegraphWebApp extends React.Component<
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        // NOTE(2022-09-08) Inform the inlined code from
+        // sourcegraph/code-intel-extensions about the change of search context.
+        // The old extension code previously accessed this information from the
+        // 'sourcegraph' npm package, and updating the context like this was the
+        // simplest solution to mirror the old behavior while deprecating
+        // extensions on a tight deadline. It would be nice to properly pass
+        // around this via React state in the future.
         setCodeIntelSearchContext(spec)
         if (this.extensionsController === null) {
             return
