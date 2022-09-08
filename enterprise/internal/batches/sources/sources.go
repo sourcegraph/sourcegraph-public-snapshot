@@ -292,13 +292,10 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 		}
 
 		switch cfg.(type) {
-		case *schema.GitHubConnection:
-			return e, nil
-		case *schema.BitbucketServerConnection:
-			return e, nil
-		case *schema.GitLabConnection:
-			return e, nil
-		case *schema.BitbucketCloudConnection:
+		case *schema.GitHubConnection,
+			*schema.BitbucketServerConnection,
+			*schema.GitLabConnection,
+			*schema.BitbucketCloudConnection:
 			return e, nil
 		}
 	}
