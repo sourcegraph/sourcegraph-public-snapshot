@@ -11,9 +11,9 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
-var _ graphqlbackend.WorkspaceFileConnectionResolver = &workspaceFileConnectionResolver{}
+var _ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver = &batchSpecWorkspaceFileConnectionResolver{}
 
-type workspaceFileConnectionResolver struct {
+type batchSpecWorkspaceFileConnectionResolver struct {
 	store *store.Store
 	opts  store.ListBatchSpecWorkspaceFileOpts
 
@@ -24,12 +24,12 @@ type workspaceFileConnectionResolver struct {
 	err   error
 }
 
-func (r *workspaceFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *batchSpecWorkspaceFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountBatchSpecWorkspaceFiles(ctx, r.opts)
 	return int32(count), err
 }
 
-func (r *workspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *batchSpecWorkspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (r *workspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchWorkspaceFileResolver, error) {
+func (r *batchSpecWorkspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchWorkspaceFileResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 
 	resolvers := make([]graphqlbackend.BatchWorkspaceFileResolver, len(nodes))
 	for i, node := range nodes {
-		resolvers[i] = &workspaceFileResolver{
+		resolvers[i] = &batchSpecWorkspaceFileResolver{
 			batchSpecRandID: r.opts.BatchSpecRandID,
 			file:            node,
 		}
@@ -60,7 +60,7 @@ func (r *workspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 	return resolvers, nil
 }
 
-func (r *workspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecWorkspaceFile, int64, error) {
+func (r *batchSpecWorkspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecWorkspaceFile, int64, error) {
 	r.once.Do(func() {
 		r.files, r.next, r.err = r.store.ListBatchSpecWorkspaceFiles(ctx, r.opts)
 	})

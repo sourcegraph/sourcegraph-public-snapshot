@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestWorkspaceFileConnectionResolver(t *testing.T) {
+func TestBatchSpecWorkspaceFileConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -43,7 +43,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
-		resolver := workspaceFileConnectionResolver{
+		resolver := batchSpecWorkspaceFileConnectionResolver{
 			store: bstore,
 			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
@@ -65,7 +65,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
-		resolver := workspaceFileConnectionResolver{
+		resolver := batchSpecWorkspaceFileConnectionResolver{
 			store: bstore,
 			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
@@ -88,7 +88,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 10)
 		require.NoError(t, err)
 
-		resolver := workspaceFileConnectionResolver{
+		resolver := batchSpecWorkspaceFileConnectionResolver{
 			store: bstore,
 			opts: store.ListBatchSpecWorkspaceFileOpts{
 				LimitOpts: store.LimitOpts{
@@ -105,7 +105,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 		cursor, err := strconv.ParseInt(*pageInfo.EndCursor(), 10, 32)
 		require.NoError(t, err)
-		resolver = workspaceFileConnectionResolver{
+		resolver = batchSpecWorkspaceFileConnectionResolver{
 			store: bstore,
 			opts: store.ListBatchSpecWorkspaceFileOpts{
 				LimitOpts: store.LimitOpts{
@@ -132,7 +132,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 		err := createBatchSpecWorkspaceFiles(ctx, bstore, specID, 1)
 		require.NoError(t, err)
 
-		resolver := workspaceFileConnectionResolver{
+		resolver := batchSpecWorkspaceFileConnectionResolver{
 			store: bstore,
 			opts: store.ListBatchSpecWorkspaceFileOpts{
 				BatchSpecID: specID,
@@ -146,7 +146,7 @@ func TestWorkspaceFileConnectionResolver(t *testing.T) {
 
 	t.Run("Nodes Empty", func(t *testing.T) {
 		t.Cleanup(func() {
-			resolver := workspaceFileConnectionResolver{
+			resolver := batchSpecWorkspaceFileConnectionResolver{
 				store: bstore,
 				opts: store.ListBatchSpecWorkspaceFileOpts{
 					BatchSpecID: specID,

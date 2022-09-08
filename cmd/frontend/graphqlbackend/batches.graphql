@@ -3260,7 +3260,7 @@ type BatchSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
-    ): WorkspaceFileConnection
+    ): BatchSpecWorkspaceFileConnection
 }
 
 """
@@ -3522,7 +3522,7 @@ input ChangesetSpecPublicationStateInput {
 """
 A list of BatchSpecMounts.
 """
-type WorkspaceFileConnection {
+type BatchSpecWorkspaceFileConnection {
     """
     The total number of files.
     """
@@ -3534,13 +3534,13 @@ type WorkspaceFileConnection {
     """
     A list of workspace files in a batch spec.
     """
-    nodes: [WorkspaceFile!]!
+    nodes: [BatchSpecWorkspaceFile!]!
 }
 
 """
 The metadata of a file being used in a batch spec step.
 """
-type WorkspaceFile implements File2 & Node {
+type BatchSpecWorkspaceFile implements File2 & Node {
     """
     The ID of the file.
     """

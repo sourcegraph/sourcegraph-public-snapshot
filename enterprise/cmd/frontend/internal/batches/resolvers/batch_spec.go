@@ -615,7 +615,7 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 	return r.canAdminister, r.canAdministerErr
 }
 
-func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListWorkspaceFilesArgs) (_ graphqlbackend.WorkspaceFileConnectionResolver, err error) {
+func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListBatchSpecWorkspaceFilesArgs) (_ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver, err error) {
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -641,5 +641,5 @@ func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.List
 		opts.Cursor = int64(id)
 	}
 
-	return &workspaceFileConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchSpecWorkspaceFileConnectionResolver{store: r.store, opts: opts}, nil
 }

@@ -14,10 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestWorkspaceFileResolver(t *testing.T) {
+func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	date := time.Date(2022, 1, 2, 3, 5, 6, 0, time.UTC)
 
-	resolver := workspaceFileResolver{
+	resolver := batchSpecWorkspaceFileResolver{
 		batchSpecRandID: "123abc",
 		file: &btypes.BatchSpecWorkspaceFile{
 			RandID:     "987xyz",
