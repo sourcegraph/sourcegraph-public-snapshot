@@ -524,7 +524,8 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
     return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
 }
 
-// TODO: add comment
+// Go to the code host action is rendered in the actions sidebar on blob and tree views.
+// No need to duplicate it in the repo header.
 function getIsGoToCodeHostActionVisible(match: RepoContainerProps['match']): boolean {
     return !matchPath(match.url, { path: `${match.path}/-/(blob|tree)` })
 }
