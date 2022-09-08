@@ -1693,8 +1693,26 @@ type Settings struct {
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
+	// BasicCodeIntelGlobalSearchesEnabled description: Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.
+	BasicCodeIntelGlobalSearchesEnabled bool `json:"basicCodeIntel.globalSearchesEnabled,omitempty"`
+	// BasicCodeIntelIncludeArchives description: Whether to include archived repositories in search results.
+	BasicCodeIntelIncludeArchives bool `json:"basicCodeIntel.includeArchives,omitempty"`
+	// BasicCodeIntelIncludeForks description: Whether to include forked repositories in search results.
+	BasicCodeIntelIncludeForks bool `json:"basicCodeIntel.includeForks,omitempty"`
+	// BasicCodeIntelIndexOnly description: Whether to use only indexed requests to the search API.
+	BasicCodeIntelIndexOnly bool `json:"basicCodeIntel.indexOnly,omitempty"`
+	// BasicCodeIntelUnindexedSearchTimeout description: The timeout (in milliseconds) for un-indexed search requests.
+	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
+	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
+	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
+	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
+	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
+	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
+	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
+	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
+	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
