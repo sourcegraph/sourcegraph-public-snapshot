@@ -33,7 +33,9 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         : undefined
 
     const [popoverOpen, setPopoverOpen] = useState(false)
-    const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+    const togglePopover = useCallback(() => {
+        setPopoverOpen(previous => !previous)
+    }, [])
 
     const openCurrentUrlInEditor = useOpenCurrentUrlInEditor()
 
@@ -88,24 +90,29 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
 
     return editors ? (
         <>
-            {editors.map((editor, index) => {
-                editor && (
-                    <SimpleActionItem
-                        key={editor.id}
-                        tooltip={`Open file in ${editor?.name}`}
-                        onSelect={() => {
-                            eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
-                            openCurrentUrlInEditor(settings?.openInEditor, props.platformContext.sourcegraphURL, index)
-                        }}
-                    >
-                        <img
-                            src={`${assetsRoot}/img/editors/${editor.id}.svg`}
-                            alt={`Open file in ${editor?.name}`}
-                            className={styles.icon}
-                        />
-                    </SimpleActionItem>
-                )
-            })}
+            {editors.map(
+                (editor, index) =>
+                    editor && (
+                        <SimpleActionItem
+                            key={editor.id}
+                            tooltip={`Open file in ${editor?.name}`}
+                            onSelect={() => {
+                                eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
+                                openCurrentUrlInEditor(
+                                    settings?.openInEditor,
+                                    props.platformContext.sourcegraphURL,
+                                    index
+                                )
+                            }}
+                        >
+                            <img
+                                src={`${assetsRoot}/img/editors/${editor.id}.svg`}
+                                alt={`Open file in ${editor?.name}`}
+                                className={styles.icon}
+                            />
+                        </SimpleActionItem>
+                    )
+            )}
         </>
     ) : (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>

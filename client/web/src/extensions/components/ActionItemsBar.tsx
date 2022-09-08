@@ -22,15 +22,15 @@ import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable 
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { RepositoryFields } from '../../graphql-operations'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
+import { fetchFileExternalLinks } from '../../repo/backend'
 import { useExperimentalFeatures } from '../../stores'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import styles from './ActionItemsBar.module.scss'
-import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
-import { parseBrowserRepoURL } from '../../util/url'
-import { fetchFileExternalLinks } from '../../repo/backend'
-import { RepositoryFields } from '../../graphql-operations'
 
 const scrollButtonClassName = styles.scroll
 
