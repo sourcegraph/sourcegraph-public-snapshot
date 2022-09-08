@@ -110,6 +110,7 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	case job.VerbosityBasic:
 		res = append(res,
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+			log.Object("repoNamePatterns", s.RepoNamePatterns),
 		)
 	}
 	return res
