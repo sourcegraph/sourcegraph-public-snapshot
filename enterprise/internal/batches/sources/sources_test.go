@@ -2,7 +2,7 @@ package sources
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,91 +17,74 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestExtractCloneURL(t *testing.T) {
 	tcs := []struct {
-		name            string
-		want            string
-		configs         []string
-		overrideRepoURL string
+		name      string
+		want      string
+		cloneURLs []string
 	}{
 		{
 			name: "https",
-			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			configs: []string{
-				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
+			want: "https://github.com/sourcegraph/sourcegraph",
+			cloneURLs: []string{
+				`https://github.com/sourcegraph/sourcegraph`,
 			},
 		},
 		{
 			name: "ssh",
 			want: "git@github.com:sourcegraph/sourcegraph.git",
-			configs: []string{
-				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+			cloneURLs: []string{
+				`git@github.com:sourcegraph/sourcegraph.git`,
 			},
 		},
 		{
 			name: "https and ssh, favoring https",
-			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			configs: []string{
-				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
-				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+			want: "https://github.com/sourcegraph/sourcegraph",
+			cloneURLs: []string{
+				`https://github.com/sourcegraph/sourcegraph`,
+				`git@github.com:sourcegraph/sourcegraph.git`,
 			},
 		},
 		{
 			name: "https and ssh, favoring https different order",
-			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			configs: []string{
-				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
-				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
+			want: "https://github.com/sourcegraph/sourcegraph",
+			cloneURLs: []string{
+				`git@github.com:sourcegraph/sourcegraph.git`,
+				`https://github.com/sourcegraph/sourcegraph`,
 			},
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			sources := map[string]*types.SourceInfo{}
+			for i, c := range tc.cloneURLs {
+				sources[strconv.Itoa(i)] = &types.SourceInfo{
+					ID:       strconv.Itoa(i),
+					CloneURL: c,
+				}
+			}
 			repo := &types.Repo{
 				Name:    api.RepoName("github.com/sourcegraph/sourcegraph"),
 				URI:     "github.com/sourcegraph/sourcegraph",
-				Sources: make(map[string]*types.SourceInfo),
+				Sources: sources,
 				Metadata: &github.Repository{
 					NameWithOwner: "sourcegraph/sourcegraph",
 					URL:           "https://github.com/sourcegraph/sourcegraph",
 				},
 			}
-			if tc.overrideRepoURL != "" {
-				repo.Metadata.(*github.Repository).URL = tc.overrideRepoURL
-			}
 
-			for idx := range tc.configs {
-				repo.Sources[fmt.Sprintf("%d", idx)] = &types.SourceInfo{
-					ID: fmt.Sprintf("::%d", idx), // see SourceInfo.ExternalServiceID
-				}
-			}
-
-			ess := database.NewMockExternalServiceStore()
-			ess.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				services := make([]*types.ExternalService, 0, len(opt.IDs))
-				for _, id := range opt.IDs {
-					services = append(services, &types.ExternalService{
-						ID:     id,
-						Kind:   extsvc.KindGitHub,
-						Config: extsvc.NewUnencryptedConfig(tc.configs[int(id)]),
-					})
-				}
-				return services, nil
-			})
-
-			have, err := extractCloneURL(context.Background(), ess, repo)
+			have, err := extractCloneURL(repo)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have != tc.want {
+			if have.String() != tc.want {
 				t.Fatalf("invalid cloneURL returned, want=%q have=%q", tc.want, have)
 			}
 		})
@@ -113,30 +96,24 @@ func TestLoadExternalService(t *testing.T) {
 
 	ctx := context.Background()
 
-	noToken := types.ExternalService{
+	globalES := types.ExternalService{
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub no token",
+		DisplayName: "GitHub global",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
-	userOwnedWithToken := types.ExternalService{
+	userOwnedES := types.ExternalService{
 		ID:              2,
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "GitHub user owned",
 		NamespaceUserID: 1234,
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
-	withToken := types.ExternalService{
+	newerGlobalES := types.ExternalService{
 		ID:          3,
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub token",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
-	}
-	withTokenNewer := types.ExternalService{
-		ID:          4,
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub newer token",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123456", "authorization": {}}`),
+		DisplayName: "GitHub global newer",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
 
 	repo := &types.Repo{
@@ -149,20 +126,16 @@ func TestLoadExternalService(t *testing.T) {
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*types.SourceInfo{
-			noToken.URN(): {
-				ID:       noToken.URN(),
+			globalES.URN(): {
+				ID:       globalES.URN(),
 				CloneURL: "https://github.com/sourcegraph/sourcegraph",
 			},
-			userOwnedWithToken.URN(): {
-				ID:       userOwnedWithToken.URN(),
+			userOwnedES.URN(): {
+				ID:       userOwnedES.URN(),
 				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
 			},
-			withToken.URN(): {
-				ID:       withToken.URN(),
-				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
-			},
-			withTokenNewer.URN(): {
-				ID:       withTokenNewer.URN(),
+			newerGlobalES.URN(): {
+				ID:       newerGlobalES.URN(),
 				CloneURL: "https://123456@github.com/sourcegraph/sourcegraph",
 			},
 		},
@@ -171,17 +144,14 @@ func TestLoadExternalService(t *testing.T) {
 	ess := database.NewMockExternalServiceStore()
 	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		sources := make([]*types.ExternalService, 0)
-		if _, ok := repo.Sources[noToken.URN()]; ok {
-			sources = append(sources, &noToken)
+		if _, ok := repo.Sources[globalES.URN()]; ok {
+			sources = append(sources, &globalES)
 		}
-		if _, ok := repo.Sources[userOwnedWithToken.URN()]; ok {
-			sources = append(sources, &userOwnedWithToken)
+		if _, ok := repo.Sources[userOwnedES.URN()]; ok {
+			sources = append(sources, &userOwnedES)
 		}
-		if _, ok := repo.Sources[withToken.URN()]; ok {
-			sources = append(sources, &withToken)
-		}
-		if _, ok := repo.Sources[withTokenNewer.URN()]; ok {
-			sources = append(sources, &withTokenNewer)
+		if _, ok := repo.Sources[newerGlobalES.URN()]; ok {
+			sources = append(sources, &newerGlobalES)
 		}
 		return sources, nil
 	})
@@ -191,18 +161,18 @@ func TestLoadExternalService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
-	if have, want := svc.ID, withTokenNewer.ID; have != want {
+	if have, want := svc.ID, newerGlobalES.ID; have != want {
 		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
 	}
 
 	// Now delete the global external services and expect the user owned external service to be returned.
-	delete(repo.Sources, withTokenNewer.URN())
-	delete(repo.Sources, withToken.URN())
+	delete(repo.Sources, newerGlobalES.URN())
+	delete(repo.Sources, globalES.URN())
 	svc, err = loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
-	if have, want := svc.ID, userOwnedWithToken.ID; have != want {
+	if have, want := svc.ID, userOwnedES.ID; have != want {
 		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
 	}
 }
@@ -226,8 +196,7 @@ func TestGitserverPushConfig(t *testing.T) {
 		name                string
 		repoName            string
 		externalServiceType string
-		config              string
-		repoMetadata        any
+		cloneURLs           []string
 		authenticator       auth.Authenticator
 		wantPushConfig      *protocol.PushConfig
 		wantErr             error
@@ -237,38 +206,17 @@ func TestGitserverPushConfig(t *testing.T) {
 			name:                "GitHub HTTPS no token",
 			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			config:              `{"url": "https://github.com", "authorization": {}}`,
-			repoMetadata: &github.Repository{
-				NameWithOwner: "sourcegraph/sourcegraph",
-				URL:           "https://github.com/sourcegraph/sourcegraph",
-			},
-			wantErr: ErrNoPushCredentials{},
+			cloneURLs:           []string{"https://github.com/sourcegraph/sourcegraph"},
+			authenticator:       nil,
+			wantErr:             ErrNoPushCredentials{},
 		},
 		// With authenticator:
 		{
-			name:                "GitHub HTTPS no token with authenticator",
+			name:                "GitHub HTTPS with authenticator",
 			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			config:              `{"url": "https://github.com", "authorization": {}}`,
+			cloneURLs:           []string{"https://github.com/sourcegraph/sourcegraph"},
 			authenticator:       &oauthHTTPSAuthenticator,
-			repoMetadata: &github.Repository{
-				NameWithOwner: "sourcegraph/sourcegraph",
-				URL:           "https://github.com/sourcegraph/sourcegraph",
-			},
-			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitHub HTTPS token with authenticator",
-			repoName:            "github.com/sourcegraph/sourcegraph",
-			externalServiceType: extsvc.TypeGitHub,
-			config:              `{"url": "https://github.com", "token": "token", "authorization": {}}`,
-			authenticator:       &oauthHTTPSAuthenticator,
-			repoMetadata: &github.Repository{
-				NameWithOwner: "sourcegraph/sourcegraph",
-				URL:           "https://github.com/sourcegraph/sourcegraph",
-			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
 			},
@@ -277,12 +225,8 @@ func TestGitserverPushConfig(t *testing.T) {
 			name:                "GitHub SSH with authenticator",
 			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			config:              `{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+			cloneURLs:           []string{"git@github.com:sourcegraph/sourcegraph.git"},
 			authenticator:       &oauthSSHAuthenticator,
-			repoMetadata: &github.Repository{
-				NameWithOwner: "sourcegraph/sourcegraph",
-				URL:           "https://github.com/sourcegraph/sourcegraph",
-			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL:  "git@github.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
@@ -290,33 +234,11 @@ func TestGitserverPushConfig(t *testing.T) {
 			},
 		},
 		{
-			name:                "GitLab HTTPS no token with authenticator",
+			name:                "GitLab HTTPS with authenticator",
 			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			config:              `{}`,
+			cloneURLs:           []string{"https://gitlab.com/sourcegraph/sourcegraph"},
 			authenticator:       &oauthHTTPSAuthenticator,
-			repoMetadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "sourcegraph/sourcegraph",
-					HTTPURLToRepo:     "https://gitlab.com/sourcegraph/sourcegraph",
-				}},
-			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitLab HTTPS token with authenticator",
-			repoName:            "sourcegraph/sourcegraph",
-			externalServiceType: extsvc.TypeGitLab,
-			config:              `{}`,
-			authenticator:       &oauthHTTPSAuthenticator,
-			repoMetadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "sourcegraph/sourcegraph",
-					HTTPURLToRepo:     "https://git:token@gitlab.com/sourcegraph/sourcegraph",
-				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
 			},
@@ -325,14 +247,8 @@ func TestGitserverPushConfig(t *testing.T) {
 			name:                "GitLab SSH with authenticator",
 			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			config:              `{"gitURLType": "ssh"}`,
+			cloneURLs:           []string{"git@gitlab.com:sourcegraph/sourcegraph.git"},
 			authenticator:       &oauthSSHAuthenticator,
-			repoMetadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "sourcegraph/sourcegraph",
-					SSHURLToRepo:      "git@gitlab.com:sourcegraph/sourcegraph.git",
-				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL:  "git@gitlab.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
@@ -340,99 +256,23 @@ func TestGitserverPushConfig(t *testing.T) {
 			},
 		},
 		{
-			name:                "Bitbucket server HTTPS no token with authenticator",
+			name:                "Bitbucket server HTTPS with authenticator",
+			repoName:            "bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			config:              `{}`,
+			cloneURLs:           []string{"https://bitbucket.sgdev.org/sourcegraph/sourcegraph"},
 			authenticator:       &basicHTTPSAuthenticator,
-			repoMetadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "sourcegraph/sourcegraph",
-				Project: &bitbucketserver.Project{
-					Key: "sourcegraph/sourcegraph",
-				},
-				Links: struct {
-					Clone []struct {
-						Href string `json:"href"`
-						Name string `json:"name"`
-					} `json:"clone"`
-					Self []struct {
-						Href string `json:"href"`
-					} `json:"self"`
-				}{
-					Clone: []struct {
-						Href string "json:\"href\""
-						Name string "json:\"name\""
-					}{
-						{Name: "http", Href: "https://bitbucket.sgdev.org/sourcegraph/sourcegraph"},
-					},
-				},
-			},
-			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "Bitbucket server HTTPS token with authenticator",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			config:              `{}`,
-			authenticator:       &basicHTTPSAuthenticator,
-			repoMetadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "sourcegraph/sourcegraph",
-				Project: &bitbucketserver.Project{
-					Key: "sourcegraph/sourcegraph",
-				},
-				Links: struct {
-					Clone []struct {
-						Href string `json:"href"`
-						Name string `json:"name"`
-					} `json:"clone"`
-					Self []struct {
-						Href string `json:"href"`
-					} `json:"self"`
-				}{
-					Clone: []struct {
-						Href string "json:\"href\""
-						Name string "json:\"name\""
-					}{
-						{Name: "http", Href: "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph"},
-					},
-				},
-			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "Bitbucket server SSH with authenticator",
+			repoName:            "bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			config:              `{"gitURLType": "ssh"}`,
 			authenticator:       &basicSSHAuthenticator,
-			repoMetadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "sourcegraph/sourcegraph",
-				Project: &bitbucketserver.Project{
-					Key: "sourcegraph/sourcegraph",
-				},
-				Links: struct {
-					Clone []struct {
-						Href string `json:"href"`
-						Name string `json:"name"`
-					} `json:"clone"`
-					Self []struct {
-						Href string `json:"href"`
-					} `json:"self"`
-				}{
-					Clone: []struct {
-						Href string "json:\"href\""
-						Name string "json:\"name\""
-					}{
-						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
-					},
-				},
-			},
+			cloneURLs:           []string{"git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git",
+				RemoteURL:  "git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
@@ -441,95 +281,37 @@ func TestGitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server SSH no keypair",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			config:              `{"gitURLType": "ssh"}`,
+			cloneURLs:           []string{"git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
 			authenticator:       &basicHTTPSAuthenticator,
-			repoMetadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "sourcegraph/sourcegraph",
-				Project: &bitbucketserver.Project{
-					Key: "sourcegraph/sourcegraph",
-				},
-				Links: struct {
-					Clone []struct {
-						Href string `json:"href"`
-						Name string `json:"name"`
-					} `json:"clone"`
-					Self []struct {
-						Href string `json:"href"`
-					} `json:"self"`
-				}{
-					Clone: []struct {
-						Href string "json:\"href\""
-						Name string "json:\"name\""
-					}{
-						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
-					},
-				},
-			},
-			wantErr: ErrNoSSHCredential,
+			wantErr:             ErrNoSSHCredential,
 		},
 		{
 			name:                "Invalid credential type",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			config:              `{}`,
+			cloneURLs:           []string{"https://bitbucket.sgdev.org/sourcegraph/sourcegraph"},
 			authenticator:       &auth.OAuthClient{},
-			repoMetadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "sourcegraph/sourcegraph",
-				Project: &bitbucketserver.Project{
-					Key: "sourcegraph/sourcegraph",
-				},
-				Links: struct {
-					Clone []struct {
-						Href string `json:"href"`
-						Name string `json:"name"`
-					} `json:"clone"`
-					Self []struct {
-						Href string `json:"href"`
-					} `json:"self"`
-				}{
-					Clone: []struct {
-						Href string "json:\"href\""
-						Name string "json:\"name\""
-					}{
-						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
-					},
-				},
-			},
-			wantErr: ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
+			wantErr:             ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
 		},
 	}
 	for _, tt := range tcs {
 		t.Run(tt.name, func(t *testing.T) {
+			sources := map[string]*types.SourceInfo{}
+			for i, c := range tt.cloneURLs {
+				sources[strconv.Itoa(i)] = &types.SourceInfo{
+					ID:       strconv.Itoa(i),
+					CloneURL: c,
+				}
+			}
 			repo := &types.Repo{
+				Name:    api.RepoName(tt.repoName),
+				URI:     tt.repoName,
+				Sources: sources,
 				ExternalRepo: api.ExternalRepoSpec{
 					ServiceType: tt.externalServiceType,
 				},
-				Name:     api.RepoName(tt.repoName),
-				URI:      tt.repoName,
-				Sources:  make(map[string]*types.SourceInfo),
-				Metadata: tt.repoMetadata,
 			}
 
-			repo.Sources["1"] = &types.SourceInfo{
-				ID: "::1", // see SourceInfo.ExternalServiceID
-			}
-
-			ess := database.NewMockExternalServiceStore()
-			ess.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				services := make([]*types.ExternalService, 0, len(opt.IDs))
-				for _, id := range opt.IDs {
-					services = append(services, &types.ExternalService{
-						ID:     id,
-						Kind:   extsvc.TypeToKind(tt.externalServiceType),
-						Config: extsvc.NewUnencryptedConfig(tt.config),
-					})
-				}
-
-				return services, nil
-			})
-
-			havePushConfig, haveErr := GitserverPushConfig(context.Background(), ess, repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}
@@ -540,7 +322,7 @@ func TestGitserverPushConfig(t *testing.T) {
 	}
 }
 
-func TestWithAuthenticatorForChangeset(t *testing.T) {
+func TestSourcer_ForChangeset(t *testing.T) {
 	ctx := context.Background()
 
 	es := &types.ExternalService{
@@ -585,6 +367,9 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
 				return bc, nil
@@ -598,7 +383,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -613,6 +398,9 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
 				return bc, nil
@@ -633,7 +421,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -650,6 +438,9 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
 				return bc, nil
@@ -662,13 +453,8 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.UserCredentialsFunc.SetDefaultReturn(credStore)
 
 			css := NewMockChangesetSource()
-			want := errors.New("validator was called")
-			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
-
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.NoError(t, err)
-			assert.Same(t, css, have)
-			assert.Same(t, want, css.ValidateAuthenticator(ctx))
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			assert.Error(t, err)
 		})
 	})
 
@@ -677,6 +463,9 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 
 		t.Run("with site credential", func(t *testing.T) {
 			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
@@ -692,7 +481,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -701,6 +490,9 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			// When we remove the fallback to the external service
 			// configuration, this test is expected to fail.
 			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
@@ -711,10 +503,8 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.NoError(t, err)
-			assert.Same(t, css, have)
-			assert.Same(t, want, css.ValidateAuthenticator(ctx))
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			assert.Error(t, err)
 		})
 	})
 }
@@ -794,5 +584,11 @@ func TestGetRemoteRepo(t *testing.T) {
 				mockassert.CalledOnce(t, css.GetUserForkFunc)
 			})
 		})
+	})
+}
+
+func newMockSourcer(css ChangesetSource) Sourcer {
+	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error) {
+		return css, nil
 	})
 }

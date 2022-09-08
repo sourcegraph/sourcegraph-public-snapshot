@@ -13,7 +13,6 @@ import (
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -61,15 +60,6 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 	s, client := mockBitbucketCloudSource()
 	client.AuthenticatorFunc.SetDefaultReturn(&au)
 
-	ctx := context.Background()
-
-	svc := types.ExternalService{
-		Kind:   extsvc.KindBitbucketCloud,
-		Config: extsvc.NewEmptyConfig(),
-	}
-	store := database.NewStrictMockExternalServiceStore()
-	store.ListFunc.SetDefaultReturn([]*types.ExternalService{&svc}, nil)
-
 	repo := &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
 			ServiceType: extsvc.TypeBitbucketCloud,
@@ -92,7 +82,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	pushConfig, err := s.GitserverPushConfig(ctx, store, repo)
+	pushConfig, err := s.GitserverPushConfig(repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@bitbucket.org/clone/link", pushConfig.RemoteURL)

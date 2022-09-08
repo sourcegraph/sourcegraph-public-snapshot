@@ -27,7 +27,6 @@ import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionI
 import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
 import { fetchFileExternalLinks } from '../../repo/backend'
-import { useExperimentalFeatures } from '../../stores'
 import { parseBrowserRepoURL } from '../../util/url'
 
 import styles from './ActionItemsBar.module.scss'
@@ -214,8 +213,6 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-
     if (!isOpen) {
         return <div className={styles.barCollapsed} />
     }
@@ -236,24 +233,22 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
-                {extensionsAsCoreFeatures ? (
-                    <>
-                        <GoToCodeHostAction
-                            as="actionItemBarAction"
-                            repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                            revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
-                            filePath={filePath}
-                            commitRange={commitRange}
-                            position={position}
-                            range={range}
-                            repoName={repoName}
-                            actionType="nav"
-                            fetchFileExternalLinks={fetchFileExternalLinks}
-                        />
-                        <ToggleBlameAction location={props.location} />
-                        <OpenInEditorActionItem platformContext={props.platformContext} />
-                    </>
-                ) : null}
+
+                <GoToCodeHostAction
+                    as="actionItemBarAction"
+                    repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                    revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
+                    filePath={filePath}
+                    commitRange={commitRange}
+                    position={position}
+                    range={range}
+                    repoName={repoName}
+                    actionType="nav"
+                    fetchFileExternalLinks={fetchFileExternalLinks}
+                />
+                <ToggleBlameAction location={props.location} />
+                <OpenInEditorActionItem platformContext={props.platformContext} />
+
                 {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}

@@ -184,7 +184,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), remoteRepo)
+	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
 		return err
 	}
@@ -528,14 +528,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	// This is a ChangesetSource authenticated with the external service
-	// token.
-	css, err := sourcer.ForRepo(ctx, s, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo, false)
+	css, err := sourcer.ForChangeset(ctx, s, ch)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:

@@ -25,6 +25,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -62,7 +63,6 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			DisplayName: "Bitbucket",
 			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
-				Token: bitbucketServerToken,
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
@@ -95,6 +95,18 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+
+		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
+			ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   bitbucketRepo.ExternalRepo.ServiceID,
+		},
+			&auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: bitbucketServerToken},
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
+
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
@@ -148,7 +160,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-			src, err := sourcer.ForRepo(ctx, s, bitbucketRepo)
+			src, err := sourcer.ForChangeset(ctx, s, ch)
 			if err != nil {
 				t.Fatal(err)
 			}

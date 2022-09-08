@@ -7,7 +7,6 @@ import * as H from 'history'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 
