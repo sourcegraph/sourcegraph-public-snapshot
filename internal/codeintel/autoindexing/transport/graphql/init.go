@@ -3,8 +3,8 @@ package graphql
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -21,8 +21,9 @@ var (
 func GetResolver(svc *autoindexing.Service) *Resolver {
 	resolverOnce.Do(func() {
 		observationContext := &observation.Context{
-			Logger:     log.Scoped("autoindexing.transport.graphql", "codeintel autoindexing graphql transport"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Logger: log.Scoped("autoindexing.transport.graphql", "codeintel autoindexing graphql transport"),
+			Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
