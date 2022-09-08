@@ -10,7 +10,7 @@ import { Route, Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -77,18 +77,20 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
-import { parseSearchURL } from './search'
+import { parseSearchURL, getQueryStateFromLocation } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import {
     setQueryStateFromSettings,
-    setQueryStateFromURL,
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
+    observeStore,
+    useExperimentalFeatures,
 } from './stores'
+import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -213,8 +215,6 @@ export class SourcegraphWebApp extends React.Component<
             )
         }
 
-        setQueryStateFromURL(window.location.search)
-
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
@@ -299,6 +299,37 @@ export class SourcegraphWebApp extends React.Component<
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             console.error('Error sending search context to extensions!', error)
         })
+
+        // Update search query state whenever the URL changes
+        this.subscriptions.add(
+            getQueryStateFromLocation({
+                location: observeLocation(history).pipe(startWith(history.location)),
+                showSearchContext: observeStore(useExperimentalFeatures).pipe(
+                    // We use true here because search contexts are enabled by
+                    // default
+                    map(([features]) => features.showSearchContext ?? true),
+                    startWith(true),
+                    distinctUntilChanged()
+                ),
+                isSearchContextAvailable: (searchContext: string) =>
+                    this.props.searchContextsEnabled
+                        ? isSearchContextSpecAvailable({ spec: searchContext, platformContext: this.platformContext })
+                              .pipe(first())
+                              .toPromise()
+                        : Promise.resolve(false),
+            }).subscribe(({ parsedSearchURL, searchContextSpec, processedQuery }) => {
+                // Only override filters from URL if there is a search query
+                if (
+                    parsedSearchURL.query &&
+                    searchContextSpec &&
+                    searchContextSpec !== this.state.selectedSearchContextSpec
+                ) {
+                    this.setSelectedSearchContextSpec(searchContextSpec)
+                }
+
+                setQueryStateFromURL(parsedSearchURL, processedQuery)
+            })
+        )
 
         this.userRepositoriesUpdates.next()
     }

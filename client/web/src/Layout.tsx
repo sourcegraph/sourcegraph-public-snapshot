@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useState } from 'react'
 
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
@@ -15,7 +15,6 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -52,11 +51,10 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
+import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromURL } from './stores'
 import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -148,24 +146,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             setIsFuzzyFinderVisible(false)
         }
     }, [isRepositoryRelatedPage, isFuzzyFinderVisible])
-
-    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
-
-    useEffect(() => setQueryStateFromURL(location.search), [location.search])
-
-    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
-
-    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
-
-    useEffect(() => {
-        // Only override filters from URL if there is a search query
-        if (query) {
-            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
-                setSelectedSearchContextSpec(searchContextSpec)
-            }
-        }
-    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
