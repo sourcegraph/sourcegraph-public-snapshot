@@ -518,6 +518,7 @@ describe('Repository component', () => {
             })
 
             describe('jump to definition', () => {
+                // https://github.com/sourcegraph/sourcegraph/issues/41555
                 test.skip('noops when on the definition', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
