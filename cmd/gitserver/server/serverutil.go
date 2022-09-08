@@ -102,7 +102,9 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
+// getTlsExternalDoNotInvoke as the name suggests, exists as a function instead of being passed
+// directly to conf.Cached below just so that we can test it.
+func getTlsExternalDoNotInvoke() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
@@ -132,7 +134,12 @@ var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
 		SSLNoVerify: c.InsecureSkipVerify,
 		SSLCAInfo:   sslCAInfo,
 	}
-})
+}
+
+// tlsExternal will create a new cache for this gitserer process and store the certificates set in
+// the site config.
+// This creates a long lived
+var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
@@ -392,10 +399,9 @@ var logUnflushableResponseWriterOnce sync.Once
 // must call Close to free the resources created by the writer.
 //
 // If w does not support flushing, it returns nil.
-func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
+func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
-	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
 			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",

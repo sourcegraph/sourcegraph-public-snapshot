@@ -403,6 +403,7 @@ index 51a59ef1c..493090958 100644
 			}
 			return authz.Read, nil
 		})
+		usePermissionsForFilePermissionsFunc(checker)
 		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
@@ -491,6 +492,7 @@ func TestRepository_BlameFile(t *testing.T) {
 			}
 			return authz.None, nil
 		})
+		usePermissionsForFilePermissionsFunc(checker)
 		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
 
 		// Sub-repo permissions
@@ -714,6 +716,7 @@ func runFileListingTest(t *testing.T,
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -851,6 +854,7 @@ func TestListDirectoryChildren(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -943,80 +947,6 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
-	}
-}
-
-func TestClientImplementor_ExecSafe(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	tests := []struct {
-		args                   []string
-		wantStdout, wantStderr string
-		wantExitCode           int
-		wantError              bool
-	}{
-		{
-			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?"},
-			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
-		},
-		{
-			args:       []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", "-m", "-i", "-n200", "--author=a@a.com"},
-			wantStdout: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8 -\nauthor a\nauthor-date 2006-01-02 15:04:05 +0000\nparents \nsummary foo\n\nfilename ?\n",
-		},
-		{
-			args:       []string{"show"},
-			wantStdout: "commit ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8\nAuthor: a <a@a.com>\nDate:   Mon Jan 2 15:04:05 2006 +0000\n\n    foo\n",
-		},
-		{
-			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?", ";show"},
-			wantStderr:   "fatal: ambiguous argument ';show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
-			wantExitCode: 128,
-		},
-		{
-			args:         []string{"log", "--name-status", "--full-history", "-M", "--date=iso8601", "--format=%H -%nauthor %an%nauthor-date %ai%nparents %P%nsummary %B%nfilename ?;", "show"},
-			wantStderr:   "fatal: ambiguous argument 'show': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'",
-			wantExitCode: 128,
-		},
-		{
-			args:      []string{"rm"},
-			wantError: true,
-		},
-		{
-			args:      []string{"checkout"},
-			wantError: true,
-		},
-		{
-			args:      []string{"show;", "echo", "hello"},
-			wantError: true,
-		},
-	}
-
-	repo := MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
-
-	client := NewClient(database.NewMockDB()).(*clientImplementor)
-	for _, test := range tests {
-		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
-			stdout, stderr, exitCode, err := client.execSafe(context.Background(), repo, test.args)
-			if err == nil && test.wantError {
-				t.Errorf("got error %v, want error %v", err, test.wantError)
-			}
-			if test.wantError {
-				return
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(stdout) != test.wantStdout {
-				t.Errorf("got stdout %q, want %q", stdout, test.wantStdout)
-			}
-			if string(stderr) != test.wantStderr {
-				t.Errorf("got stderr %q, want %q", stderr, test.wantStderr)
-			}
-			if exitCode != test.wantExitCode {
-				t.Errorf("got exitCode %d, want %d", exitCode, test.wantExitCode)
-			}
-		})
 	}
 }
 
@@ -1232,6 +1162,7 @@ func TestStat(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -2446,6 +2377,7 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 		}
 		return authz.Read, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	return checker
 }
 
@@ -2631,6 +2563,7 @@ func TestRead(t *testing.T) {
 
 	for name, test := range tests {
 		checker := authz.NewMockSubRepoPermissionChecker()
+		usePermissionsForFilePermissionsFunc(checker)
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
@@ -2890,4 +2823,12 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
 		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
+	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
+	})
 }

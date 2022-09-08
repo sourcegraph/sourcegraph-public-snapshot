@@ -3,11 +3,8 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-// eslint-disable-next-line no-restricted-imports
 
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -23,7 +20,6 @@ import {
     Select,
     Icon,
     Badge,
-    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -40,7 +36,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     >
     showDotComMarketing: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showKeyboardShortcutsHelp: () => void
@@ -74,8 +69,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
     const onThemeCycle = useCallback((): void => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
-
-    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
@@ -119,14 +112,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
-                            {props.showRepositorySection && (
-                                <MenuLink
-                                    as={Link}
-                                    to={`/users/${props.authenticatedUser.username}/settings/repositories`}
-                                >
-                                    Your repositories
-                                </MenuLink>
-                            )}
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
@@ -170,17 +155,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         </small>
                                     </div>
                                 )}
-                            </div>
-                            <div className="px-2 py-1">
-                                <div className="d-flex align-items-center justify-content-between">
-                                    <div className="mr-2">
-                                        Simple UI <ProductStatusBadge status="beta" className="ml-1" />
-                                    </div>
-                                    <Toggle
-                                        value={coreWorkflowImprovementsEnabled}
-                                        onToggle={setCoreWorkflowImprovementsEnabled}
-                                    />
-                                </div>
                             </div>
                             {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                                 <>

@@ -16,6 +16,7 @@ import (
 
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,6 +36,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	defer authz.SetProviders(true, nil)
 
+	licensing.MockCheckFeatureError("")
 	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
 
@@ -54,6 +56,7 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	defer authz.SetProviders(true, nil)
 
+	licensing.MockCheckFeatureError("")
 	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.ScheduleRepos(context.Background(), 1)
 
@@ -1020,6 +1023,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	})
 
 	t.Run("max concurrency", func(t *testing.T) {
+		t.Skip("flaky https://github.com/sourcegraph/sourcegraph/issues/40917")
 		// Enough buffer to make two goroutines to send data without being blocked, to
 		// avoid the case that the second goroutine is blocked by trying to send data to
 		// channel rather than being throttled by the max concurrency (1) we imposed.

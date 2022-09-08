@@ -4,8 +4,8 @@ import escapeRegExp from 'lodash/escapeRegExp'
 
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
-import { LanguageSpec } from './language-specs/languagespec'
 import { raceWithDelayOffset } from './promise'
 import { SettingsGetter } from './settings'
 import { isDefined } from './util/helpers'

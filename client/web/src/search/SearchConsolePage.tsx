@@ -4,7 +4,7 @@ import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import * as H from 'history'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
@@ -22,7 +22,8 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { useExperimentalFeatures } from '../stores'
+import { eventLogger } from '../tracking/eventLogger'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -43,7 +44,11 @@ interface SearchConsolePageProps
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
-    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
+    const extensionHostAPI =
+        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
+    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+        features => features.enableGoImportsSearchQueryTransform
+    )
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -62,13 +67,13 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         let query = parseSearchURLQuery(props.location.search)
         query = query?.replace(/\/\/.*/g, '') || ''
 
-        return extensionHostAPI !== null
-            ? transformSearchQuery({
-                  query,
-                  extensionHostAPIPromise: extensionHostAPI,
-              })
-            : of(query)
-    }, [props.location.search, extensionHostAPI])
+        return transformSearchQuery({
+            query,
+            extensionHostAPIPromise: extensionHostAPI,
+            enableGoImportsSearchQueryTransform,
+            eventLogger,
+        })
+    }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 
     const autocompletion = useMemo(
         () =>
@@ -133,7 +138,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 results={results}
                                 showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 executedQuery={props.location.search}
                             />
                         ))}

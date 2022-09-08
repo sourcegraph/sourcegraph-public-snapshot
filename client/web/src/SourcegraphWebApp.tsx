@@ -33,8 +33,10 @@ import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabled
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
+import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController.ts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -185,7 +187,7 @@ export class SourcegraphWebApp extends React.Component<
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
-        : null
+        : createNoopController(this.platformContext)
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
@@ -339,10 +341,10 @@ export class SourcegraphWebApp extends React.Component<
 
         return (
             <ApolloProvider client={graphqlClient}>
-                <ErrorBoundary location={null}>
-                    <FeatureFlagsProvider>
-                        <ShortcutProvider>
-                            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                    <ErrorBoundary location={null}>
+                        <FeatureFlagsProvider>
+                            <ShortcutProvider>
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                     <CoreWorkflowImprovementsEnabledProvider>
                                         <SearchResultsCacheProvider>
@@ -424,7 +426,8 @@ export class SourcegraphWebApp extends React.Component<
                                                         </CompatRouter>
                                                     </Router>
                                                 </ScrollManager>
-                                                {this.extensionsController !== null ? (
+                                                {this.extensionsController !== null &&
+                                                window.context.enableLegacyExtensions ? (
                                                     <Notifications
                                                         key={2}
                                                         extensionsController={this.extensionsController}
@@ -436,10 +439,10 @@ export class SourcegraphWebApp extends React.Component<
                                         </SearchResultsCacheProvider>
                                     </CoreWorkflowImprovementsEnabledProvider>
                                 </TemporarySettingsProvider>
-                            </WildcardThemeContext.Provider>
-                        </ShortcutProvider>
-                    </FeatureFlagsProvider>
-                </ErrorBoundary>
+                            </ShortcutProvider>
+                        </FeatureFlagsProvider>
+                    </ErrorBoundary>
+                </WildcardThemeContext.Provider>
             </ApolloProvider>
         )
     }
@@ -470,6 +473,14 @@ export class SourcegraphWebApp extends React.Component<
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        // NOTE(2022-09-08) Inform the inlined code from
+        // sourcegraph/code-intel-extensions about the change of search context.
+        // The old extension code previously accessed this information from the
+        // 'sourcegraph' npm package, and updating the context like this was the
+        // simplest solution to mirror the old behavior while deprecating
+        // extensions on a tight deadline. It would be nice to properly pass
+        // around this via React state in the future.
+        setCodeIntelSearchContext(spec)
         if (this.extensionsController === null) {
             return
         }

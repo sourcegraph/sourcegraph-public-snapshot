@@ -361,7 +361,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Path */}
             {result.type === 'path' && (
                 <div className={styles.item} data-testid="file-match-children-item">
-                    <small>Path match</small>
+                    <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>
                 </div>
             )}
 
@@ -385,21 +385,20 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {((coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <div
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                    className={styles.symbol}
+                    className={classNames('test-file-match-children-item', styles.symbol)}
+                    data-href={symbol.url}
+                    role="link"
+                    tabIndex={0}
+                    onClick={navigateToFile}
+                    onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                    onKeyDown={navigateToFile}
                 >
                     <div className="mr-2 flex-shrink-0">
                         <SymbolTag kind={symbol.kind} />
                     </div>
-                    <div
-                        className={styles.symbolCodeExcerpt}
-                        data-href={symbol.url}
-                        onClick={navigateToFile}
-                        onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                        onKeyDown={navigateToFile}
-                        role="link"
-                        tabIndex={0}
-                    >
+                    <div className={styles.symbolCodeExcerpt}>
                         <CodeExcerpt
+                            className="a11y-ignore"
                             repoName={result.repository}
                             commitID={result.commit || ''}
                             filePath={result.path}

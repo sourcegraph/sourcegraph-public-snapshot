@@ -42,6 +42,7 @@ var Targets = []Target{
 			noLocalHost,
 			lintGoDirectives(),
 			lintLoggingLibraries(),
+			lintTracingLibraries(),
 			goModGuards(),
 			lintSGExit(),
 		},

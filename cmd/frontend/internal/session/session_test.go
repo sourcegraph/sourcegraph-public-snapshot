@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,8 @@ import (
 )
 
 func TestSetActorDeleteSession(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -74,7 +77,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 	if session == nil {
 		t.Fatal("session was nil")
 	}
-	authedActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder()))
+	authedActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actr, authedActor) {
 		t.Fatalf("session was not created: %+v != %+v", authedActor, actr)
 	}
@@ -100,7 +103,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 	for _, cookie := range authCookies {
 		authedReq3.AddCookie(cookie)
 	}
-	actor3 := actor.FromContext(authenticateByCookie(db, authedReq3, httptest.NewRecorder()))
+	actor3 := actor.FromContext(authenticateByCookie(logger, db, authedReq3, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actor3, &actor.Actor{}) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
 	}
@@ -138,6 +141,8 @@ func checkCookieDeleted(t *testing.T, resp *http.Response) {
 }
 
 func TestSessionExpiry(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -173,16 +178,18 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
+	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
 	time.Sleep(1100 * time.Millisecond)
-	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
+	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
 		t.Errorf("session didn't expire, found actor %+v", gotActor)
 	}
 }
 
 func TestManualSessionExpiry(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -219,7 +226,7 @@ func TestManualSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); reflect.DeepEqual(gotActor, actr) {
+	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("Actor should have been deleted, got %v", gotActor)
 	}
 }
@@ -283,17 +290,21 @@ func TestCookieMiddleware(t *testing.T) {
 			expActor: &actor.Actor{},
 		},
 	}
-	for _, testcase := range testcases {
-		rr := httptest.NewRecorder()
-		CookieMiddleware(db, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotActor := actor.FromContext(r.Context())
-			if !reflect.DeepEqual(testcase.expActor, gotActor) {
-				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
+	for i, testcase := range testcases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			rr := httptest.NewRecorder()
+
+			CookieMiddleware(logtest.Scoped(t), db, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotActor := actor.FromContext(r.Context())
+				if !reflect.DeepEqual(testcase.expActor, gotActor) {
+					t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
+				}
+			})).ServeHTTP(rr, testcase.req)
+			if deleted := strings.Contains(rr.Header().Get("Set-Cookie"), cookieName+"=;"); deleted != testcase.deleted {
+				t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
 			}
-		})).ServeHTTP(rr, testcase.req)
-		if deleted := strings.Contains(rr.Header().Get("Set-Cookie"), cookieName+"=;"); deleted != testcase.deleted {
-			t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
-		}
+		})
+
 	}
 }
 
@@ -329,7 +340,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	})
 	w := httptest.NewRecorder()
 
-	CookieMiddleware(database.NewDB(logger, nil), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
+	CookieMiddleware(logger, database.NewDB(logger, nil), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
 
 	// Want the request to succeed and clear the bad cookie.
 	resp := w.Result()
@@ -350,6 +361,8 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 }
 
 func TestMismatchedUserCreationFails(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -386,7 +399,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(db, req, w))
+	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}
@@ -403,13 +416,15 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(db, req, w))
+	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
 	if !reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not deleted")
 	}
 }
 
 func TestOldUserSessionSucceeds(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -445,7 +460,7 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(db, req, w))
+	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}

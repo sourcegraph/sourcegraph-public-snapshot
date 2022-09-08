@@ -79,7 +79,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 	// - w, the index of the widen rule to apply (-1 if empty)
 	var n func(phase PHASE, k int, c *cg, w int) next
 	n = func(phase PHASE, k int, c *cg, w int) next {
-		var transform transform
+		var transform []transform
 		var descriptions []string
 		var generated *query.Basic
 
@@ -93,7 +93,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 				// Base case: we exhausted the set of narrow
 				// rules (if any) and we've attempted every
 				// widen rule with the sets of narrow rules.
-				return func() (*autoQuery, next) { return nil, nil }
+				return nil
 			}
 
 			transform = append(transform, widen[w].transform...)
@@ -194,7 +194,7 @@ func pruneRules(seed query.Basic, rules []rule) []rule {
 }
 
 // applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
-func applyTransformation(b query.Basic, transform transform) *query.Basic {
+func applyTransformation(b query.Basic, transform []transform) *query.Basic {
 	for _, apply := range transform {
 		res := apply(b)
 		if res == nil {

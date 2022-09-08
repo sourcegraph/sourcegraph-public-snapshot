@@ -6,7 +6,7 @@ import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, Link, AnchorLink } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -159,7 +159,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             </Button>
                         )}{' '}
                         {!!this.props.node.refreshURL && (
-                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
+                            <Button to={this.props.node.refreshURL} variant="secondary" as={AnchorLink}>
                                 Refresh
                             </Button>
                         )}{' '}

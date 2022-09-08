@@ -111,8 +111,3 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       RETURN NULL;
   END
 $$;
-DROP TRIGGER IF EXISTS trig_recalc_gitserver_repos_statistics_on_update ON gitserver_repos;
-CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_update
-AFTER UPDATE ON gitserver_repos
-REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab
-FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update();

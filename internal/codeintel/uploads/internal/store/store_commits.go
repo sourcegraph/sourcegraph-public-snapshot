@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -253,15 +254,33 @@ ORDER BY c.commit_bytea
 LIMIT %s
 `
 
+type backfillIncompleteError struct {
+	repositoryID int
+}
+
+func (e backfillIncompleteError) Error() string {
+	return fmt.Sprintf("repository %d has not yet completed its backfill of column committed_at", e.repositoryID)
+}
+
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
-// non-nil values, a false-valued flag is returned.
+// non-nil values, a false-valued flag is returned. If there are any null values, the committed_at backfill job
+// has not yet completed and an error is returned to prevent downstream expiration errors being made due to
+// outdated commit graph data.
 func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+	t, ok, err := basestore.ScanFirstNullTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+	if err != nil || !ok {
+		return time.Time{}, false, err
+	}
+	if t == nil {
+		return time.Time{}, false, &backfillIncompleteError{repositoryID}
+	}
+
+	return *t, true, nil
 }
 
 // Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
@@ -269,7 +288,15 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 // having pristine database.
 const getOldestCommitDateQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
-SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
+SELECT
+	committed_at
+FROM lsif_uploads
+WHERE
+	repository_id = %s AND
+	state = 'completed' AND
+	(committed_at != '-infinity' OR committed_at IS NULL)
+ORDER BY committed_at NULLS FIRST
+LIMIT 1
 `
 
 // HasCommit determines if the given commit is known for the given repository.

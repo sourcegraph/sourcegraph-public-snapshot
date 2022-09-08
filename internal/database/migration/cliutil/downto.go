@@ -31,9 +31,19 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Value: "",
+	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
+		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	ignoreSinglePendingLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-pending-log",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 
@@ -51,8 +61,10 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 					TargetVersions: versions,
 				},
 			},
-			PrivilegedMode:       privilegedMode,
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
+			PrivilegedMode:         privilegedMode,
+			PrivilegedHash:         privilegedHashFlag.Get(cmd),
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil
 	}
 
@@ -89,7 +101,9 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 			targetFlag,
 			unprivilegedOnlyFlag,
 			noopPrivilegedFlag,
+			privilegedHashFlag,
 			ignoreSingleDirtyLogFlag,
+			ignoreSinglePendingLogFlag,
 		},
 	}
 }
