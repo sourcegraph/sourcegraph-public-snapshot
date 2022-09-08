@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -154,13 +156,22 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 }
 
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
+	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
+
+	min := func(x, y int) int {
+		if x < y {
+			return x
+		}
+		return y
+	}
+
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
 	if err != nil || settings == nil {
 		return extendedSearchTimeLimitSecondsDefault
 	}
 	val := settings.InsightsAggregationsExtendedTimeout
 	if val > 0 {
-		return val
+		return min(searchLimit, val)
 	}
 	return extendedSearchTimeLimitSecondsDefault
 }
