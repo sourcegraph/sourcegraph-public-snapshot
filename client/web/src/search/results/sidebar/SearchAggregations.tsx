@@ -64,55 +64,52 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     // When query is updated reset extendedTimeout as per business rules
     useEffect(() => setExtendedTimeoutLocal(false), [query])
 
-    useEffect(
-        function proactiveModePings() {
-            if (loading || error || !data.searchQueryAggregate.aggregations) {
-                return
+    useEffect(() => {
+        if (loading || error || !data.searchQueryAggregate.aggregations) {
+            return
+        }
+
+        const aggregation = data.searchQueryAggregate.aggregations
+        const aggregationType = aggregation.__typename
+        const aggregationAvailable =
+            aggregationType === 'ExhaustiveSearchAggregationResult' ||
+            aggregationType === 'NonExhaustiveSearchAggregationResult'
+        const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
+
+        let pingType
+
+        if (aggregationUnavailable) {
+            const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+            const noExtensionAvailable =
+                aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+
+            if (proactive && extensionAvailable) {
+                pingType = GroupResultsPing.ProactiveLimitHit
             }
 
-            const aggregation = data.searchQueryAggregate.aggregations
-            const aggregationType = aggregation.__typename
-            const aggregationAvailable =
-                aggregationType === 'ExhaustiveSearchAggregationResult' ||
-                aggregationType === 'NonExhaustiveSearchAggregationResult'
-            const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
+            if (noExtensionAvailable) {
+                pingType = GroupResultsPing.ExplicitLimitHit
+            }
+        }
 
-            let pingType
-
-            if (aggregationUnavailable) {
-                const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
-                const noExtensionAvailable =
-                    aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
-
-                if (proactive && extensionAvailable) {
-                    pingType = GroupResultsPing.ProactiveLimitHit
-                }
-
-                if (noExtensionAvailable) {
-                    pingType = GroupResultsPing.ExplicitLimitHit
-                }
+        if (aggregationAvailable) {
+            if (proactive) {
+                pingType = GroupResultsPing.ProactiveLimitSuccess
             }
 
-            if (aggregationAvailable) {
-                if (proactive) {
-                    pingType = GroupResultsPing.ProactiveLimitSuccess
-                }
-
-                if (extendedTimeout) {
-                    pingType = GroupResultsPing.ExplicitLimitSuccess
-                }
+            if (extendedTimeout) {
+                pingType = GroupResultsPing.ExplicitLimitSuccess
             }
+        }
 
-            if (pingType) {
-                telemetryService.log(
-                    pingType,
-                    { aggregationMode, uiMode: 'sidebar' },
-                    { aggregationMode, uiMode: 'sidebar' }
-                )
-            }
-        },
-        [aggregationMode, data, error, extendedTimeout, loading, proactive, telemetryService]
-    )
+        if (pingType) {
+            telemetryService.log(
+                pingType,
+                { aggregationMode, uiMode: 'sidebar' },
+                { aggregationMode, uiMode: 'sidebar' }
+            )
+        }
+    }, [aggregationMode, data, error, extendedTimeout, loading, proactive, telemetryService])
 
     const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
 
