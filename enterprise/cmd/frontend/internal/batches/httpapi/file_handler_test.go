@@ -80,6 +80,19 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "Hello world!",
 		},
 		{
+			name:   "Workspace file does not exist for retrieval",
+			method: http.MethodGet,
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			mockInvokes: func() {
+				mockStore.
+					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
+					Return(nil, store.ErrNoResults).
+					Once()
+			},
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: "workspace file does not exist\n",
+		},
+		{
 			name:               "Get file missing file id",
 			method:             http.MethodGet,
 			path:               fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
@@ -150,6 +163,22 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			userID:             creatorID,
 			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name:   "Batch spec does not exist for upload",
+			method: http.MethodPost,
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(nil, store.ErrNoResults).
+					Once()
+			},
+			userID:               creatorID,
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: "batch spec does not exist\n",
 		},
 		{
 			name:   "Upload has invalid content type",
