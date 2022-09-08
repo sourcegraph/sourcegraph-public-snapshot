@@ -455,22 +455,12 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:              streamhttp.RepoMatchType,
-		RepositoryID:      int32(rm.ID),
-		Repository:        string(rm.Name),
-		RepositoryMatches: fromRanges(rm.RepoNameMatches),
-		Branches:          branches,
-	}
-
-	if len(rm.DescriptionMatches) > 0 {
-		dms := make([]streamhttp.Range, 0, len(rm.DescriptionMatches))
-		for _, matchRange := range rm.DescriptionMatches {
-			dms = append(dms, streamhttp.Range{
-				Start: fromLocation(matchRange.Start),
-				End:   fromLocation(matchRange.End),
-			})
-		}
-		repoEvent.DescriptionMatches = dms
+		Type:               streamhttp.RepoMatchType,
+		RepositoryID:       int32(rm.ID),
+		Repository:         string(rm.Name),
+		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
+		Branches:           branches,
+		DescriptionMatches: fromRanges(rm.DescriptionMatches),
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
