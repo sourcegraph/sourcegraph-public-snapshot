@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { from } from 'rxjs'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
+import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { Popover, PopoverContent, PopoverTrigger, Position, useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,7 +13,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
 import { EditorId, getEditor } from './editors'
-import { migrateLegacySettings } from './migrate-legacy-settings'
 import { OpenInEditorPopover } from './OpenInEditorPopover'
 import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
@@ -21,10 +20,6 @@ export interface OpenInEditorActionItemProps {
     platformContext: PlatformContext
     assetsRoot?: string
 }
-
-// We only want to attemt to upgrade the legacy open in editor settings once per
-// page load.
-let didAttemptToUpgradeSettings = false
 
 export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionItemProps> = props => {
     const assetsRoot = props.assetsRoot ?? (window.context?.assetsRoot || '')
@@ -51,14 +46,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     )
     const editorIds = (settings?.openInEditor as EditorSettings | undefined)?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
-
-    useEffect(() => {
-        if (!settings || !userSettingsSubject || didAttemptToUpgradeSettings) {
-            return
-        }
-        didAttemptToUpgradeSettings = true
-        upgradeSettings(props.platformContext, settings, userSettingsSubject)
-    }, [props.platformContext, settings, userSettingsSubject])
 
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
@@ -118,16 +105,4 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
             </PopoverContent>
         </Popover>
     )
-}
-
-function upgradeSettings(platformContext: PlatformContext, settings: Settings, userSettingsSubject: string): void {
-    const migratedSettings = migrateLegacySettings(settings)
-    platformContext
-        .updateSettings(userSettingsSubject, JSON.stringify(migratedSettings, null, 4))
-        .then(() => {
-            console.log('Migrated items successfully.')
-        })
-        .catch(error => {
-            console.error('Setting migration failed.', error)
-        })
 }
