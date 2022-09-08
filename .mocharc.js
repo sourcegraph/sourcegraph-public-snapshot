@@ -1,11 +1,15 @@
+const { execSync } = require('child_process')
+
+const repoRoot = execSync('git rev-parse --show-toplevel').toString().trimEnd()
+
 module.exports = {
   require: [
     'ts-node/register/transpile-only',
     'abort-controller/polyfill',
-    __dirname + '/client/shared/dev/fetch',
-    __dirname + '/client/shared/dev/suppressPollyErrors',
+    repoRoot + '/client/shared/dev/fetch',
+    repoRoot + '/client/shared/dev/suppressPollyErrors',
   ],
-  reporter: __dirname + '/client/shared/dev/customMochaSpecReporter.js',
+  reporter: repoRoot + '/client/shared/dev/customMochaSpecReporter.js',
   extension: ['js', 'ts'],
   // 1 minute test timeout. This must be greater than the default Puppeteer
   // command timeout of 30s in order to get the stack trace to point to the

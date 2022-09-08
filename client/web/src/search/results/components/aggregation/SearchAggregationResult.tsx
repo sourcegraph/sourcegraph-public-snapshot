@@ -44,7 +44,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
     const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
-    const [, setAggregationUIMode] = useAggregationUIMode()
+    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
@@ -60,7 +60,14 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
     }
 
+    const resetUIMode = (): void => {
+        if (aggregationUIMode !== AggregationUIMode.Sidebar) {
+            setAggregationUIMode(AggregationUIMode.Sidebar)
+        }
+    }
+
     const handleBarLinkClick = (query: string, index: number): void => {
+        resetUIMode()
         onQuerySubmit(query)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,

@@ -1239,7 +1239,7 @@
           "examples": [
             "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}",
             "https://console.cloud.google.com/traces/list?tid={{ .TraceID }}&project=$PROJECT",
-            "https://sourcegraph.grafana.net/explore?orgId=1&left=[\"now-1h\",\"now\",\"grafanacloud-sourcegraph-traces\",{\"query\":\"{{ .TraceID }}\",\"queryType\":\"traceId\"}]",
+            "https://$ORGANIZATION.grafana.net/explore?orgId=1&left=[\"now-1h\",\"now\",\"$DATASOURCE\",{\"query\":\"{{ .TraceID }}\",\"queryType\":\"traceId\"}]",
             "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
           ]
         }

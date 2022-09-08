@@ -112,6 +112,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    // SearchAggregations content contains component that makes a few API network requests
+                    // in order to prevent these calls if this section is collapsed we turn off force render
+                    // for collapse section component
+                    forcedRender={false}
                     onToggle={handleGroupedByToggle}
                 >
                     <SearchAggregations
