@@ -84,12 +84,12 @@ func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]s
 					Start: result.Location{
 						Offset: sm[0],
 						Line:   0,
-						Column: utf8.RuneCount([]byte(repoDescription[:sm[0]])),
+						Column: utf8.RuneCountInString(repoDescription[:sm[0]]),
 					},
 					End: result.Location{
 						Offset: sm[1],
 						Line:   0,
-						Column: utf8.RuneCount([]byte(repoDescription[:sm[1]])),
+						Column: utf8.RuneCountInString(repoDescription[:sm[1]]),
 					},
 				})
 			}
