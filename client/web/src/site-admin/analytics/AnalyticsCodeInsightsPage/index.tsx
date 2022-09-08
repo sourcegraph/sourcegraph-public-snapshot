@@ -19,6 +19,25 @@ import { StandardDatum } from '../utils'
 
 import { INSIGHTS_STATISTICS } from './queries'
 
+/**
+ * Minutes saved constants for code insights.
+ */
+const MinutesSaved = {
+    SearchSeries: 150,
+    LanguageSeries: 3,
+    ComputeSeries: 1,
+}
+
+/**
+ * Calculates the total time saved in minutes for a given series.
+ *
+ * This is used to in "Analytics / Overview" page.
+ */
+export const calculateMinutesSaved = (data: typeof MinutesSaved): number =>
+    data.SearchSeries * MinutesSaved.SearchSeries +
+    data.LanguageSeries * MinutesSaved.LanguageSeries +
+    data.ComputeSeries * MinutesSaved.ComputeSeries
+
 export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Insights', aggregation: 'count' })
     const { data, error, loading } = useQuery<InsightsStatisticsResult, InsightsStatisticsVariables>(
@@ -84,7 +103,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 tooltip: 'The number of dashboards created during the timeframe.',
             },
             {
-                value: totalInsightsCount,
+                value: totalInsightsCount ?? '-',
                 description: 'Total insights',
                 position: 'right',
                 tooltip: 'The number of currently existing insights.',
@@ -147,13 +166,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         return activities
     }, [data, aggregation.selected, dateRange.value])
 
-    type Kind = 'search' | 'searchCompute' | 'languageStats'
-
-    const [kindToMinPerItem, setKindToMinPerItem] = useState<Record<Kind, number>>({
-        search: 150,
-        searchCompute: 3,
-        languageStats: 1,
-    })
+    const [kindToMinPerItem, setKindToMinPerItem] = useState<typeof MinutesSaved>(MinutesSaved)
 
     const calculatorProps = useMemo(() => {
         if (!data) {
@@ -179,30 +192,39 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
             items: [
                 {
                     label: 'Track changes',
-                    minPerItem: kindToMinPerItem.search,
-                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, inApp: minPerItem })),
+                    minPerItem: kindToMinPerItem.SearchSeries,
+                    onMinPerItemChange: minPerItem =>
+                        setKindToMinPerItem(old => ({ ...old, SearchSeries: minPerItem })),
                     value: searchSeriesCreations.summary.totalCount,
                     description: 'Track customizable metrics across your codebase over time.',
                 },
                 {
                     label: 'Detect and track patterns “series sets”',
-                    minPerItem: kindToMinPerItem.searchCompute,
-                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
+                    minPerItem: kindToMinPerItem.LanguageSeries,
+                    onMinPerItemChange: minPerItem =>
+                        setKindToMinPerItem(old => ({ ...old, LanguageSeries: minPerItem })),
                     value: languageSeriesCreations.summary.totalCount,
                     description:
                         'Automatically track versions, licenses, or other patterns across your codebase. New versions and patterns appear automatically as their own lines so you don’t need to add them. ',
                 },
                 {
                     label: 'Language stats',
-                    minPerItem: kindToMinPerItem.languageStats,
-                    onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
+                    minPerItem: kindToMinPerItem.ComputeSeries,
+                    onMinPerItemChange: minPerItem =>
+                        setKindToMinPerItem(old => ({ ...old, ComputeSeries: minPerItem })),
                     value: computeSeriesCreations.summary.totalCount,
                     description: 'LOC count for individual repositories for compliance or auditing purposes.',
                 },
             ],
         }
         return calculatorProps
-    }, [data, dateRange.value, kindToMinPerItem.languageStats, kindToMinPerItem.search, kindToMinPerItem.searchCompute])
+    }, [
+        data,
+        dateRange.value,
+        kindToMinPerItem.ComputeSeries,
+        kindToMinPerItem.LanguageSeries,
+        kindToMinPerItem.SearchSeries,
+    ])
 
     if (error) {
         throw error
