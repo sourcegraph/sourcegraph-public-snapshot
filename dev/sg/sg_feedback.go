@@ -27,7 +27,7 @@ func addFeedbackFlags(commands []*cli.Command) {
 		if command.Action != nil {
 			feedbackFlag := cli.BoolFlag{
 				Name:  "feedback",
-				Usage: "provide feedback about this command by opening up a Github discussion",
+				Usage: "provide feedback about this command by opening up a GitHub discussion",
 			}
 
 			command.Flags = append(command.Flags, &feedbackFlag)
@@ -46,8 +46,8 @@ func addFeedbackFlags(commands []*cli.Command) {
 
 var feedbackCommand = &cli.Command{
 	Name:     "feedback",
-	Usage:    "opens up a Github discussion page to provide feedback about sg",
-	Category: CategoryCompany,
+	Usage:    "Provide feedback about sg",
+	Category: CategoryUtil,
 	Action:   feedbackAction,
 }
 

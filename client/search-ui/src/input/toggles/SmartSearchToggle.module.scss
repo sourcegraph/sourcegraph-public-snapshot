@@ -1,0 +1,46 @@
+.popover-window {
+    // Move the popover a bit so the close button aligns with the smart search icon
+    margin-top: 0.5rem;
+    margin-left: 0.875rem;
+}
+
+.label {
+    max-width: 17rem;
+    display: flex;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+
+    &:focus-within,
+    &:focus {
+        box-shadow: inset 0 0 0 0.125rem var(--primary-2);
+    }
+}
+
+.radio-icon {
+    flex-shrink: 0;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+    margin-top: 0.05rem; // Slight shifting for optical alignment of icon and text
+    color: var(--text-muted);
+
+    &--active {
+        color: var(--primary);
+    }
+
+    .label:hover &:not(&--active) {
+        color: var(--body-color);
+    }
+}
+
+.radio-header {
+    font-weight: 500;
+}
+
+.radio-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: normal;
+}

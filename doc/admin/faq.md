@@ -122,3 +122,9 @@ This error is expected if your instance was not [deployed with Kubernetes](./dep
 ## Troubleshooting
 
 Please refer to our [dedicated troubleshooting page](troubleshooting.md).
+
+## How are active users calculated?
+
+Active users are all users that have completed an action that represents product usage, such as events logged by the [eventLogger](https://sourcegraph.com/search?q=context:global+repo:sourcegraph/sourcegraph+eventLogger.log%28&patternType=lucky) and events logged by Sourcegraph integrations like browser and IDE extensions, within a specified time period (commonly expressed in daily, weekly or monthly), with [the following filters](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/event_logs.go?L540):
+- All actions done by the system where an event is also logged, such as sending a ping to Sourcegraph. 
+- Certain events relating to user authentication ([full list here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/event_logs.go?L472)). These same filters are also implemented separetely in our in-product analytics code. 

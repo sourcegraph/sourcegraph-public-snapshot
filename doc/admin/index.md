@@ -55,6 +55,8 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Monitoring guide](how-to/monitoring-guide.md)
 - [Metrics and dashboards](./observability/metrics.md)
 - [Alerting](./observability/alerting.md)
+- [Tracing](./observability/tracing.md)
+- [Logs](./observability/logs.md)
 
 ## Features
 
