@@ -399,10 +399,9 @@ var logUnflushableResponseWriterOnce sync.Once
 // must call Close to free the resources created by the writer.
 //
 // If w does not support flushing, it returns nil.
-func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
+func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
-	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
 			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",

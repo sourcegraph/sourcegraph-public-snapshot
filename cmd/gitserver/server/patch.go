@@ -279,7 +279,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			// it in the background.
 			// This is used to pass the private key to be used when pushing to the remote,
 			// without the need to store it on the disk.
-			agent, err := newSSHAgent([]byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+			agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 			if err != nil {
 				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 				return http.StatusInternalServerError, resp

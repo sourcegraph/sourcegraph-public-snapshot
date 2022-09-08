@@ -499,7 +499,7 @@ func (s *Server) Handler() http.Handler {
 		accesslog.HTTPMiddleware(
 			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
 			conf.DefaultClient(),
-			handleGetObject(getObjectFunc),
+			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
 		)))
 
 	return mux
@@ -1473,18 +1473,20 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
+	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(w); fw != nil {
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
 		w = fw
 		defer fw.Close()
 	}
 
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
+	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
+		logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
 
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("invalid command"))
@@ -1524,6 +1526,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
 		)
+		logger = logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
@@ -1584,13 +1587,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if traceLogs {
-					s.Logger.Debug("TRACE gitserver exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Debug("TRACE gitserver exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlow {
-					s.Logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlowFetch {
-					s.Logger.Warn("Slow fetch/clone for exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Slow fetch/clone for exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 			}
 		}()
@@ -1599,7 +1602,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	dir := s.dir(req.Repo)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
-			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
@@ -1619,7 +1622,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
@@ -1747,9 +1750,11 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4ExecRequest) {
+	logger := s.Logger.Scoped("p4exec", "")
+
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(w); fw != nil {
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
 		w = fw
 		defer fw.Close()
 	}
@@ -1775,6 +1780,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
 		tr.SetAttributes(attribute.String("args", args))
+		logger = logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
 		defer func() {
@@ -1825,10 +1831,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				_ = ev.Send()
 
 				if traceLogs {
-					s.Logger.Debug("TRACE gitserver p4exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Debug("TRACE gitserver p4exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 				if isSlow {
-					s.Logger.Warn("Long p4exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+					logger.Warn("Long p4exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 				}
 			}
 		}()
