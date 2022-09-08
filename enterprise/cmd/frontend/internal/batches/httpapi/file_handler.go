@@ -49,32 +49,21 @@ func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) 
 const maxUploadSize = 10 << 20 // 10MB
 
 func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Wrap the method operations to get a single point for logging.
-	responseBody, statusCode, err := func() (_ io.Reader, statusCode int, err error) {
-		ctx, _, endObservation := h.operations.serveHTTP.With(r.Context(), &err, observation.Args{})
-		defer func() {
-			endObservation(1, observation.Args{LogFields: []log.Field{
-				log.String("method", r.Method),
-				log.Int("statusCode", statusCode),
-			}})
-		}()
+	var handlerFunc fileHandlerFunc
+	switch r.Method {
+	case http.MethodGet:
+		handlerFunc = h.get
+	case http.MethodHead:
+		handlerFunc = h.exists
+	case http.MethodPost:
+		// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+		handlerFunc = h.upload
+	default:
+		handlerFunc = defaultFileHandlerFunc
+	}
 
-		var handlerFunc fileHandlerFunc
-
-		switch r.Method {
-		case http.MethodGet:
-			handlerFunc = h.get
-		case http.MethodHead:
-			handlerFunc = h.exists
-		case http.MethodPost:
-			// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
-			r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-			handlerFunc = h.upload
-		default:
-			return nil, http.StatusMethodNotAllowed, nil
-		}
-		return handlerFunc(ctx, r)
-	}()
+	responseBody, statusCode, err := handlerFunc(r)
 
 	if err != nil {
 		http.Error(w, err.Error(), statusCode)
@@ -90,9 +79,16 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type fileHandlerFunc = func(context.Context, *http.Request) (io.Reader, int, error)
+type fileHandlerFunc = func(*http.Request) (io.Reader, int, error)
 
-func (h *FileHandler) get(ctx context.Context, r *http.Request) (io.Reader, int, error) {
+func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err error) {
+	ctx, _, endObservation := h.operations.get.With(r.Context(), &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("statusCode", statusCode),
+		}})
+	}()
+
 	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
 	_, fileID, err := getPathParts(r)
 	if err != nil {
@@ -107,7 +103,14 @@ func (h *FileHandler) get(ctx context.Context, r *http.Request) (io.Reader, int,
 	return bytes.NewReader(file.Content), http.StatusOK, nil
 }
 
-func (h *FileHandler) exists(ctx context.Context, r *http.Request) (io.Reader, int, error) {
+func (h *FileHandler) exists(r *http.Request) (_ io.Reader, statusCode int, err error) {
+	ctx, _, endObservation := h.operations.exists.With(r.Context(), &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("statusCode", statusCode),
+		}})
+	}()
+
 	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
 	_, fileID, err := getPathParts(r)
 	if err != nil {
@@ -149,7 +152,14 @@ func getPathParts(r *http.Request) (string, string, error) {
 
 const maxMemory = 1 << 20 // 1MB
 
-func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, int, error) {
+func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err error) {
+	ctx, _, endObservation := h.operations.upload.With(r.Context(), &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("statusCode", statusCode),
+		}})
+	}()
+
 	specID := mux.Vars(r)["path"]
 	if specID == "" {
 		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
@@ -232,4 +242,8 @@ func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.
 		return err
 	}
 	return nil
+}
+
+func defaultFileHandlerFunc(_ *http.Request) (io.Reader, int, error) {
+	return nil, http.StatusMethodNotAllowed, nil
 }
