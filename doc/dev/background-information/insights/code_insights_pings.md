@@ -348,7 +348,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ## Search Results Aggregations Metrics
 
-### Information icon hover
+### Information icon hovers
 
 **Type:** FE event
 
@@ -357,7 +357,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 **Functional implementation:** This ping works by firing a telemetry evente on the client when a user hovers over the information icon.
 
 - Aggregation: Weekly
-- Event Codes: [WeeklyGroupResultsInfoIconHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsInfoIconHover&patternType=lucky)
+- Event Code: [WeeklyGroupResultsInfoIconHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsInfoIconHover&patternType=lucky)
 - **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
 
 
@@ -377,4 +377,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
   - [WeeklyGroupResultsCollapseSection](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsCollapseSection&patternType=lucky)
   - [WeeklyGroupResultsExpandedViewOpen](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewOpen&patternType=lucky)
   - [WeeklyGroupResultsExpandedViewCollapse](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewCollapse&patternType=lucky)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+### Aggregation modes clicks and hovers
+
+**Type:** FE event
+
+**Intended purpose:** To track aggregation mode usage and interest.
+
+**Functional implementation:** These pings work by firing telemetry events on the client when a user clicks on a mode or hovers over a disabled mode.
+
+**Other considerations:** The ping also includes data on which UI mode the user was.
+
+- Aggregation: Weekly
+- Event Codes: 
+  - [WeeklyGroupResultsAggregationModeClicked](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeClicked%7CGroupAggregationModeClicked&patternType=regexp)
+  - [WeeklyGroupResultsAggregationModeDisabledHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeDisabledHover%7CGroupAggregationModeDisabledHover&patternType=regexp)
 - **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
