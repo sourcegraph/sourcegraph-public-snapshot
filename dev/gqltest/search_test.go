@@ -1226,9 +1226,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `repo does not have commit after`,
+				query:  `repo:go-diff -repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 0},
+			},
+			{
 				name:   `repo has commit after no results`,
 				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo does not has commit after some results`,
+				query:  `repo:go-diff -repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `unscoped repo has commit after no results`,
