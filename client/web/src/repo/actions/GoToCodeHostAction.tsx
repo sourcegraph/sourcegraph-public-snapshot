@@ -10,16 +10,16 @@ import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Icon, Link, ButtonLink, Tooltip, ButtonLinkProps } from '@sourcegraph/wildcard'
+import { useObservable, Icon, Link, Tooltip, ButtonLinkProps } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
-import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs'> | null
