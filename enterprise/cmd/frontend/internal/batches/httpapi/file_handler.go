@@ -179,7 +179,7 @@ func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, i
 		}
 	}
 
-	if err = h.uploadFile(ctx, r, spec); err != nil {
+	if err = h.uploadBatchSpecWorkspaceFile(ctx, r, spec); err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "uploading file")
 	}
 
@@ -200,7 +200,7 @@ func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database
 	return user != nil && (user.SiteAdmin || user.ID == userId)
 }
 
-func (h *FileHandler) uploadFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) error {
+func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) error {
 	modtime := r.Form.Get("filemod")
 	if modtime == "" {
 		return errors.New("missing file modification time")
