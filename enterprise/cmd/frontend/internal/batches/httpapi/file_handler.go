@@ -142,12 +142,12 @@ func getPathParts(r *http.Request) (string, string, error) {
 		return "", "", errors.New("spec ID not provided")
 	}
 
-	batchSpecWorkspaceFileID := parts[1]
-	if batchSpecWorkspaceFileID == "" {
+	batchSpecWorkspaceFileRandID := parts[1]
+	if batchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
 	}
 
-	return batchSpecRandID, batchSpecWorkspaceFileID, nil
+	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
 }
 
 const maxMemory = 1 << 20 // 1MB
