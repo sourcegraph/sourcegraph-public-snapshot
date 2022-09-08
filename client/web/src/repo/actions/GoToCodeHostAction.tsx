@@ -19,6 +19,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs'> | null
@@ -139,11 +140,9 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     if (props.as === 'actionItemBarAction') {
         return (
-            <Tooltip content={descriptiveText}>
-                <ButtonLink {...commonProps}>
-                    <Icon as={exportIcon} aria-hidden={true} />
-                </ButtonLink>
-            </Tooltip>
+            <SimpleActionItem tooltip={descriptiveText} {...commonProps}>
+                <Icon as={exportIcon} aria-hidden={true} />
+            </SimpleActionItem>
         )
     }
 

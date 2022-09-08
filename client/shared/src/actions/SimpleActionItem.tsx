@@ -2,35 +2,37 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { ButtonLink, ButtonLinkProps, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SimpleActionItem.module.scss'
 
-interface Props {
+interface SimpleActionItemProps extends Omit<ButtonLinkProps, 'href'> {
     isActive?: boolean
     tooltip: string
-    onClick: (event: React.MouseEvent<HTMLElement>) => void
 }
 
-type SimpleActionItemProps = Props & ({ icon: React.ReactElement } | { iconURL: string })
-
 export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = props => {
-    const icon =
-        'icon' in props ? props.icon : 'iconURL' in props ? <img src={props.iconURL} alt={props.tooltip || ''} /> : null
-
-    if (!icon) {
-        return null
-    }
+    const { isActive, tooltip, children, className, ...buttonLinkProps } = props
 
     return (
         <Tooltip content={props.tooltip}>
-            <Button
-                className={classNames(styles.simpleActionItem, props.isActive && styles.simpleActionItemActive)}
-                onClick={props.onClick}
-                aria-label={props.tooltip}
-            >
-                {icon}
-            </Button>
+            <span>
+                {/**
+                 * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                 * break its onClick handler, and it will no longer prevent the default page reload (with no href).
+                 */}
+                <ButtonLink
+                    className={classNames(
+                        styles.simpleActionItem,
+                        isActive && styles.simpleActionItemActive,
+                        className
+                    )}
+                    aria-label={props.tooltip}
+                    {...buttonLinkProps}
+                >
+                    {children}
+                </ButtonLink>
+            </span>
         </Tooltip>
     )
 }

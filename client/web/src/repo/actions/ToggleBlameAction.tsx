@@ -11,7 +11,7 @@ import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 
-import styles from '../blame/ToggleBlameAction.module.scss'
+import styles from './ToggleBlameAction.module.scss'
 
 export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location }) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
@@ -39,12 +39,12 @@ export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location
     }
 
     return (
-        <SimpleActionItem
-            tooltip={descriptiveText}
-            icon={
-                <Icon aria-hidden={true} svgPath={mdiGit} className={classNames(isBlameVisible && styles.iconActive)} />
-            }
-            onClick={toggleBlameState}
-        />
+        <SimpleActionItem isActive={isBlameVisible} tooltip={descriptiveText} onSelect={toggleBlameState}>
+            <Icon
+                aria-hidden={true}
+                svgPath={mdiGit}
+                className={classNames(styles.icon, isBlameVisible && styles.iconActive)}
+            />
+        </SimpleActionItem>
     )
 }
