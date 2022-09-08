@@ -167,6 +167,9 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 
 	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
 	if err != nil {
+		if errors.Is(err, store.ErrNoResults) {
+			return nil, http.StatusNotFound, errors.New("batch spec does not exist")
+		}
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
 	}
 
