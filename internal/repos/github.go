@@ -656,7 +656,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 
 	// The regular Github API endpoint for listing public repos doesn't return whether the repo is archived, so we have to list
 	// all of the public archived repos first so we know if a repo is archived or not.
-	// TODO: Remove querying for archived repos first when https://github.com/orgs/github-community/discussions/12554 gets resolved
+	// TODO: Remove querying for archived repos first when https://github.com/orgs/community/discussions/12554 gets resolved
 	archivedReposChannel := make(chan *githubResult)
 	go func() {
 		s.listPublicArchivedRepos(ctx, archivedReposChannel)
@@ -701,7 +701,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 }
 
 // listPublicArchivedRepos returns all of the public archived repositories listed on the /search/repositories endpoint.
-// NOTE: There is a limitation om the search API that this uses, if there are more than 1000 public archived repos that
+// NOTE: There is a limitation on the search API that this uses, if there are more than 1000 public archived repos that
 // were created in the same time (to the second), this list will miss any repos that lie outside of the first 1000.
 func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan *githubResult) {
 	s.listSearch(ctx, "archived:true is:public", results)
