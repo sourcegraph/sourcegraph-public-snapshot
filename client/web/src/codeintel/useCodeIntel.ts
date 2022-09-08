@@ -86,7 +86,6 @@ export const useCodeIntel = ({
 }: UseCodeIntelParameters): UseCodeIntelResult => {
     const shouldMixPreciseAndSearchBasedReferences = (): boolean =>
         getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
-    console.log({ shouldMixPreciseAndSearchBasedReferences: shouldMixPreciseAndSearchBasedReferences() })
 
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
