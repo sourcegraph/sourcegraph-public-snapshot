@@ -2,30 +2,30 @@ package licensing
 
 // The list of plans.
 const (
-	// oldEnterpriseStarter is the old "Enterprise Starter" plan.
-	oldEnterpriseStarter Plan = "old-starter-0"
-	// oldEnterprise is the old "Enterprise" plan.
-	oldEnterprise Plan = "old-enterprise-0"
+	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
+	PlanOldEnterpriseStarter Plan = "old-starter-0"
+	// PlanOldEnterprise is the old "Enterprise" plan.
+	PlanOldEnterprise Plan = "old-enterprise-0"
 
 	// PlanTeam0 is the "Team" plan pre-4.0.
 	PlanTeam0 Plan = "team-0"
-	// enterprise0 is the "Enterprise" plan pre-4.0.
-	enterprise0 Plan = "enterprise-0"
+	// PlanEnterprise0 is the "Enterprise" plan pre-4.0.
+	PlanEnterprise0 Plan = "enterprise-0"
 
 	// PlanBusiness0 is the "Business" plan for 4.0.
 	PlanBusiness0 Plan = "business-0"
-	// enterprise1 is the "Enterprise" plan for 4.0.
-	enterprise1 Plan = "enterprise-1"
+	// PlanEnterprise1 is the "Enterprise" plan for 4.0.
+	PlanEnterprise1 Plan = "enterprise-1"
 )
 
 var allPlans = []Plan{
-	oldEnterpriseStarter,
-	oldEnterprise,
+	PlanOldEnterpriseStarter,
+	PlanOldEnterprise,
 	PlanTeam0,
-	enterprise0,
+	PlanEnterprise0,
 
 	PlanBusiness0,
-	enterprise1,
+	PlanEnterprise1,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -77,8 +77,8 @@ const (
 
 // planFeatures defines the features that are enabled for each plan.
 var planFeatures = map[Plan][]Feature{
-	oldEnterpriseStarter: {},
-	oldEnterprise: {
+	PlanOldEnterpriseStarter: {},
+	PlanOldEnterprise: {
 		FeatureSSO,
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
@@ -96,7 +96,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
 	},
-	enterprise0: {
+	PlanEnterprise0: {
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
@@ -109,7 +109,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureCodeInsights,
 		FeatureSSO,
 	},
-	enterprise1: {
+	PlanEnterprise1: {
 		FeatureACLs,
 		FeatureCampaigns,
 		FeatureCodeInsights,
