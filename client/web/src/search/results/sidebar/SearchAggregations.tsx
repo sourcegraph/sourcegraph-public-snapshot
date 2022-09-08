@@ -66,7 +66,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
 
     useEffect(
         function proactiveModePings() {
-            if (!proactive || loading || error || !data.searchQueryAggregate.aggregations) {
+            if (loading || error || !data.searchQueryAggregate.aggregations) {
                 return
             }
 
@@ -80,18 +80,27 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
             let pingType
 
             if (aggregationUnavailable) {
-                if (aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE) {
+                const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+                const noExtensionAvailable =
+                    aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+
+                if (proactive && extensionAvailable) {
                     pingType = GroupResultsPing.ProactiveLimitHit
                 }
-                if (aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE) {
+
+                if (noExtensionAvailable) {
                     pingType = GroupResultsPing.ExplicitLimitHit
                 }
             }
 
             if (aggregationAvailable) {
-                pingType = extendedTimeout
-                    ? GroupResultsPing.ExplicitLimitSuccess
-                    : GroupResultsPing.ProactiveLimitSuccess
+                if (proactive) {
+                    pingType = GroupResultsPing.ProactiveLimitSuccess
+                }
+
+                if (extendedTimeout) {
+                    pingType = GroupResultsPing.ExplicitLimitSuccess
+                }
             }
 
             if (pingType) {
@@ -198,3 +207,5 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         </article>
     )
 })
+
+SearchAggregations.displayName = 'SearchAggregations'
