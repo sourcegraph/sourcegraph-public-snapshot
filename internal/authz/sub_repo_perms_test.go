@@ -511,29 +511,18 @@ func TestSubRepoEnabled(t *testing.T) {
 	})
 }
 
-func TestRepoContentFromFileInfo(t *testing.T) {
-	repo := api.RepoName("my-repo")
+func TestFileInfoPath(t *testing.T) {
 	t.Run("adding trailing slash to directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "app",
 			Mode_: fs.ModeDir,
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "app/",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "app/", fileInfoPath(fi))
 	})
 	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "my-file.txt",
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "my-file.txt",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
 	})
 }

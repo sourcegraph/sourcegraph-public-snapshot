@@ -645,14 +645,35 @@ func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *a
 	return perms.Include(Read), nil
 }
 
-func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) ([]fs.FileInfo, error) {
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) (_ []fs.FileInfo, err error) {
+	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	} else if !doCheck {
+		return fis, nil
+	}
+
+	start := time.Now()
+	var checkPathPermsCount int
+	defer func() {
+		// we intentionally use the same metric, since we are essentially
+		// measuring the same operation.
+		metricFilterActorPathsLenTotal.Add(float64(checkPathPermsCount))
+		metricFilterActorPathsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+	}()
+
+	checkPathPerms, err := checker.FilePermissionsFunc(ctx, a.UID, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	}
+
 	filtered := make([]fs.FileInfo, 0, len(fis))
 	for _, fi := range fis {
-		include, err := FilterActorFileInfo(ctx, checker, a, repo, fi)
+		checkPathPermsCount++
+		perms, err := checkPathPerms(fileInfoPath(fi))
 		if err != nil {
 			return nil, err
 		}
-		if include {
+		if perms.Include(Read) {
 			filtered = append(filtered, fi)
 		}
 	}
@@ -660,7 +681,10 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 }
 
 func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
-	rc := repoContentFromFileInfo(repo, fi)
+	rc := RepoContent{
+		Repo: repo,
+		Path: fileInfoPath(fi),
+	}
 	perms, err := ActorPermissions(ctx, checker, a, rc)
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")
@@ -668,13 +692,11 @@ func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, 
 	return perms.Include(Read), nil
 }
 
-func repoContentFromFileInfo(repo api.RepoName, fi fs.FileInfo) RepoContent {
-	rc := RepoContent{
-		Repo: repo,
-		Path: fi.Name(),
-	}
+// fileInfoPath returns path for a fi as used by our sub repo filtering. If fi
+// is a dir, the path has a trailing slash.
+func fileInfoPath(fi fs.FileInfo) string {
 	if fi.IsDir() {
-		rc.Path += "/"
+		return fi.Name() + "/"
 	}
-	return rc
+	return fi.Name()
 }
