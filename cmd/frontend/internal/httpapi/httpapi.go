@@ -46,7 +46,7 @@ type Handlers struct {
 	GitLabWebhook             http.Handler
 	BitbucketServerWebhook    http.Handler
 	BitbucketCloudWebhook     http.Handler
-	BatchesFileHandler        http.Handler
+	BatchesChangesFileHandler http.Handler
 	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
 	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
 }
@@ -98,7 +98,7 @@ func NewHandler(
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
-	m.Get(apirouter.BatchesFile).Handler(trace.Route(handlers.BatchesFileHandler))
+	m.Get(apirouter.BatchesFile).Handler(trace.Route(handlers.BatchesChangesFileHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
