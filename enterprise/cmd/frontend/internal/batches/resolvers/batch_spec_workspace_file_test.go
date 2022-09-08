@@ -42,7 +42,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			getActual: func() (interface{}, error) {
 				return resolver.ID(), nil
 			},
-			expected: graphql.ID("V29ya3NwYWNlRmlsZToiOTg3eHl6Ig=="),
+			expected: graphql.ID("QmF0Y2hTcGVjV29ya3NwYWNlRmlsZToiOTg3eHl6Ig=="),
 		},
 		{
 			name: "Name",
