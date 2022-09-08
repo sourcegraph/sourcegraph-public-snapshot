@@ -91,7 +91,7 @@ func getStoreProvider(serverAddress string) (string, error) {
 		serverAddress == "https://docker.io" ||
 		serverAddress == "https://registry.hub.docker.com" ||
 		serverAddress == "https://index.docker.io/v2/" {
-		serverAddress = "https://index.docker.io/v1/"
+		serverAddress = "https://registry.hub.docker.com/v2"
 	}
 
 	homeDir, err := os.UserHomeDir()
