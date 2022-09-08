@@ -625,13 +625,6 @@ func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.List
 		},
 		BatchSpecRandID: r.batchSpec.RandID,
 	}
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
-		if err != nil {
-			return nil, err
-		}
-		opts.Cursor = cursor
-	}
 
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
