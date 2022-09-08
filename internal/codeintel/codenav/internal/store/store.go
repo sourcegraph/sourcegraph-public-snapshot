@@ -4,27 +4,25 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Store provides the interface for symbols storage.
+// Store provides the interface for codenav storage.
 type Store interface {
-	List(ctx context.Context, opts ListOpts) (symbols []shared.Symbol, err error)
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 }
 
-// store manages the symbols store.
+// store manages the codenav store.
 type store struct {
 	db         *basestore.Store
 	operations *operations
 }
 
-// New returns a new symbols store.
+// New returns a new codenav store.
 func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
@@ -32,41 +30,31 @@ func New(db database.DB, observationContext *observation.Context) Store {
 	}
 }
 
-// Transact returns a new symbols store that is a transaction on the given store.
-func (s *store) Transact(ctx context.Context) (*store, error) {
-	txBase, err := s.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (s *store) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	return &store{
-		db:         txBase,
-		operations: s.operations,
-	}, nil
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(languagesRequestedByQuery, userID)))
 }
 
-// ListOpts are options for listing symbols.
-type ListOpts struct {
-	Limit int
+const languagesRequestedByQuery = `
+-- source: internal/codeintel/codenav/internal/store/store.go:GetLanguagesRequestedBy
+SELECT language_id
+FROM codeintel_langugage_support_requests
+WHERE user_id = %s
+ORDER BY language_id
+`
+
+func (s *store) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(requestLanguageSupportQuery, userID, language))
 }
 
-// List returns the symbols in the store.
-func (s *store) List(ctx context.Context, opts ListOpts) (symbols []shared.Symbol, err error) {
-	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numCodeNav", len(symbols)),
-		}})
-	}()
-
-	// This is only a stub and will be replaced or significantly modified
-	// in https://github.com/sourcegraph/sourcegraph/issues/33374
-	_, _ = scanCodeNav(s.db.Query(ctx, sqlf.Sprintf(listQuery, opts.Limit)))
-	return nil, errors.Newf("unimplemented: symbols.store.List")
-}
-
-const listQuery = `
--- source: internal/codeintel/symbols/internal/store/store.go:List
-SELECT name FROM TODO
-LIMIT %d
+const requestLanguageSupportQuery = `
+-- source: internal/codeintel/codenav/internal/store/store.go:SetRequestLanguageSupport
+INSERT INTO codeintel_langugage_support_requests (user_id, language_id)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
 `

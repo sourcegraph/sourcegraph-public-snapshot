@@ -9,15 +9,14 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
-import { useInviteEmailToSourcegraph } from '../../auth/welcome/InviteCollaborators/useInviteEmailToSourcegraph'
 import { CopyableText } from '../../components/CopyableText'
-import { CollaboratorsFragment } from '../../graphql-operations'
+import { CollaboratorsFragment, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
 
 import styles from './CollaboratorsPanel.module.scss'
 
@@ -28,6 +27,13 @@ interface Props extends TelemetryProps {
 }
 
 const emailEnabled = window.context?.emailEnabled ?? false
+
+export interface InvitableCollaborator {
+    email: string
+    displayName: string
+    name: string
+    avatarURL: Maybe<string>
+}
 
 export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,

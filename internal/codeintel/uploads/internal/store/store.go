@@ -42,8 +42,12 @@ type Store interface {
 
 	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []shared.Upload, _ int, err error)
+	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) (ids []int, recordsScanned int, totalCount int, err error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
@@ -54,6 +58,7 @@ type Store interface {
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
 	// Dumps
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
@@ -68,6 +73,7 @@ type Store interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
 
 	// Audit Logs
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 

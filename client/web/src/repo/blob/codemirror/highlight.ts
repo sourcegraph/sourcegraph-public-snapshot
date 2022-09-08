@@ -1,7 +1,8 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
-import { Occurrence, SyntaxKind } from '../../../lsif/lsif-typed'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+
 import { BlobInfo } from '../Blob'
 
 /**

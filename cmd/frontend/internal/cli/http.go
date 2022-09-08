@@ -44,6 +44,8 @@ func newExternalHTTPHandler(
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) http.Handler {
+	logger := log.Scoped("external", "external http handlers")
+
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
@@ -60,8 +62,8 @@ func newExternalHTTPHandler(
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
-	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
+	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
+	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                        // API accepts access tokens
 	apiHandler = requestclient.HTTPMiddleware(apiHandler)
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
@@ -74,7 +76,6 @@ func newExternalHTTPHandler(
 	githubAppSetupHandler := newGitHubAppSetupHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	logger := log.Scoped("external", "external http handlers")
 	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
@@ -83,7 +84,7 @@ func newExternalHTTPHandler(
 	appHandler = featureflag.Middleware(db.FeatureFlags(), appHandler)
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
+	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
 	appHandler = requestclient.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
@@ -132,8 +133,10 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 // other internal services).
 func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
 	internalMux := http.NewServeMux()
+	logger := log.Scoped("internal", "internal http handlers")
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
+			logger,
 			featureflag.Middleware(db.FeatureFlags(),
 				internalhttpapi.NewInternalHandler(
 					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
@@ -149,7 +152,6 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	logger := log.Scoped("internal", "internal http handlers")
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("internal", h)
 	return h

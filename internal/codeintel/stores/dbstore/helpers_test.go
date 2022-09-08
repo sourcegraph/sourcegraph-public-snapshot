@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -22,15 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
-
-type printableRank struct{ value *int }
-
-func (r printableRank) String() string {
-	if r.value == nil {
-		return "nil"
-	}
-	return strconv.Itoa(*r.value)
-}
 
 // makeCommit formats an integer as a 40-character git commit hash.
 func makeCommit(i int) string {
@@ -106,64 +95,6 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error while inserting upload: %s", err)
-		}
-	}
-}
-
-func updateUploads(t testing.TB, db database.DB, uploads ...Upload) {
-	for _, upload := range uploads {
-		query := sqlf.Sprintf(`
-			UPDATE lsif_uploads
-			SET
-				commit = COALESCE(NULLIF(%s, ''), commit),
-				root = COALESCE(NULLIF(%s, ''), root),
-				uploaded_at = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestamptz), uploaded_at),
-				state = COALESCE(NULLIF(%s, ''), state),
-				failure_message  = COALESCE(%s, failure_message),
-				started_at = COALESCE(%s, started_at),
-				finished_at = COALESCE(%s, finished_at),
-				process_after = COALESCE(%s, process_after),
-				num_resets = COALESCE(NULLIF(%s, 0), num_resets),
-				num_failures = COALESCE(NULLIF(%s, 0), num_failures),
-				repository_id = COALESCE(NULLIF(%s, 0), repository_id),
-				indexer = COALESCE(NULLIF(%s, ''), indexer),
-				indexer_version = COALESCE(NULLIF(%s, ''), indexer_version),
-				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
-				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
-				upload_size = COALESCE(%s, upload_size),
-				associated_index_id = COALESCE(%s, associated_index_id)
-			WHERE id = %s
-		`,
-			upload.Commit,
-			upload.Root,
-			upload.UploadedAt,
-			upload.State,
-			upload.FailureMessage,
-			upload.StartedAt,
-			upload.FinishedAt,
-			upload.ProcessAfter,
-			upload.NumResets,
-			upload.NumFailures,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ID)
-
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while updating upload: %s", err)
-		}
-	}
-}
-
-func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
-	for _, upload := range uploads {
-		query := sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, upload)
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while deleting upload: %s", err)
 		}
 	}
 }
@@ -282,51 +213,6 @@ func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, upload
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while updating commit graph: %s", err)
 	}
-}
-
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
-func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
-	if len(links) == 0 {
-		return
-	}
-
-	var rows []*sqlf.Query
-	for commit, link := range links {
-		rows = append(rows, sqlf.Sprintf(
-			"(%s, %s, %s, %s)",
-			repositoryID,
-			dbutil.CommitBytea(commit),
-			dbutil.CommitBytea(link.AncestorCommit),
-			link.Distance,
-		))
-	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads_links (repository_id, commit_bytea, ancestor_commit_bytea, distance) VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating links: %s %s", err, query.Query(sqlf.PostgresBindVar))
-	}
-}
-
-func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
-	commitGraphView := commitgraph.NewCommitGraphView()
-	for _, upload := range uploads {
-		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
-	}
-
-	return commitGraphView
-}
-
-func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
-	for _, uploads := range uploadMetas {
-		sort.Slice(uploads, func(i, j int) bool {
-			return uploads[i].UploadID-uploads[j].UploadID < 0
-		})
-	}
-
-	return uploadMetas
 }
 
 func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {

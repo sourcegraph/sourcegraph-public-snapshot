@@ -338,6 +338,108 @@ An example of a subchart is shown in the [examples/subchart](https://github.com/
 
 More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
 
+### OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+#### Configure a tracing backend
+
+Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
+
+You can add the following values in your `override.yaml` to configure trace exporting:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        exporters:
+          ...
+
+        processors:
+          ...
+```
+
+As an example, to configure the collector to export to an external Jaeger instance, add the following to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override.yaml):
+
+```yaml
+openTelemetry:
+  gateway:
+    env:
+      JAEGER_HOST:
+        value: "http://your.jaeger.endpoint"
+    config:
+      traces:
+        exporters:
+          jaeger:
+            endpoint: "$JAEGER_HOST:14250"
+            tls:
+              insecure: true
+```
+
+#### Configure a tracing backend with TLS enabled
+
+If you require a TLS connection to export trace data, you need to first add the certificate data to a Secret. The following snippet demonstrates how you can achieve this:
+
+> WARNING: Do NOT commit the secret manifest into your Git repository unless you are okay with storing sensitive information in plaintext and your repository is private.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: otel-collector-exporters-tls
+data:
+  file.cert: "<.cert data>"
+  file.key: "<.key data>"
+```
+
+After applying the secret to your cluster, you can [override](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override-tls.yaml) the value `openTelemetry.gateway.config.traces.exportersTlsSecretName` to mount the certificate data in the Collector and instruct the exporter to use TLS:
+
+```yaml
+openTelemetry:
+  gateway:
+    env:
+      JAEGER_HOST:
+        value: "http://your.jaeger.endpoint"
+    config:
+      traces:
+        exportersTlsSecretName: otel-collector-exporters-tls
+        exporters:
+          jaeger:
+            endpoint: "$JAEGER_HOST:14250"
+            tls:
+              cert_file: /tls/file.cert
+              key_file: /tls/file.key
+```
+
+#### Configure trace sampling
+
+Review the [trace sampling documentation](../../observability/opentelemetry.md#sampling-traces) to understand how to configure sampling.
+
+Add your config to your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/opentelemetry-exporter/override-processor.yaml) as follows:
+
+```yaml
+openTelemetry:
+  gateway:
+    config:
+      traces:
+        processors:
+          probabilistic_sampler:
+            hash_seed: 22 # An integer used to compute the hash algorithm. Note that all collectors for a given tier (e.g. behind the same load balancer) should have the same hash_seed.
+            sampling_percentage: 10.0 # (default = 0): Percentage at which traces are sampled; >= 100 samples all traces
+```
+
+#### Enable the bundled Jaeger deployment
+
+Sourcegraph ships with a bundled Jaeger instance that is disabled by default. If you do not wish to make use of an external observability backend, you can enable this instance by adding the following to your overrides:
+
+```yaml
+jaeger:
+  enabled: true
+```
+
+This will also configure the OpenTelemetry Collector to export trace data to this instance. No further configuration is required.
+
 ## Cloud providers guides
 
 This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:

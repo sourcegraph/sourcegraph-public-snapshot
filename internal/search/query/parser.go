@@ -691,9 +691,9 @@ func (p *parser) parseQuoted(delimiter rune) (string, bool) {
 	}
 	p.pos += advance
 	if !p.done() {
-		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
+		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) && !p.match(RPAREN) {
 			p.pos = start // backtrack
-			// delimited value should be followed by whitespace
+			// delimited value should be followed by terminal (whitespace or closing paren).
 			return "", false
 		}
 	}

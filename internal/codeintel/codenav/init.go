@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -22,7 +23,7 @@ var (
 
 // GetService creates or returns an already-initialized symbols service. If the service is
 // new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver GitserverClient) *Service {
+func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver GitserverClient, symbolsClient *symbols.Client) *Service {
 	svcOnce.Do(func() {
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
@@ -34,7 +35,7 @@ func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver 
 
 		store := store.New(db, oc("store"))
 		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
-		svc = newService(store, lsifstore, uploadSvc, gitserver, oc("service"))
+		svc = newService(store, lsifstore, uploadSvc, gitserver, symbolsClient, oc("service"))
 	})
 
 	return svc

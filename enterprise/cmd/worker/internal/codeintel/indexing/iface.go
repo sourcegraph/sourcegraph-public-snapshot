@@ -21,12 +21,10 @@ import (
 
 type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
-	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 }
 
 type DBStoreShim struct {

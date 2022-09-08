@@ -16,7 +16,7 @@ import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '
 import { BlockType } from '../notebooks'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
+import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { percySnapshotWithVariants } from './utils'
@@ -181,8 +181,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             }),
         },
     }),
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
         node: notebookFixture(id, 'Notebook Title', [
             { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
