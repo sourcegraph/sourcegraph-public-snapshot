@@ -18,8 +18,8 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                 <H4 as={H3}>Batch Changes updates in version 4.0</H4>
                 <ul className="mb-0 pl-3">
                     <li>
-                        Code host connection tokens are no longer supported as a fallback method for syncing changesets in
-                        Batch Changes.
+                        Code host connection tokens are no longer supported as a fallback method for syncing changesets
+                        in Batch Changes.
                     </li>
                 </ul>
             </CardBody>
