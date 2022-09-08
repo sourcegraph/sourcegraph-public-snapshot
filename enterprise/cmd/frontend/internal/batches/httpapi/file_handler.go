@@ -172,7 +172,8 @@ func (h *FileHandler) upload(ctx context.Context, r *http.Request) (io.Reader, i
 	// When storing of files is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
-		if _, ok := err.(*http.MaxBytesError); ok {
+		// TODO: starting in Go 1.19, if the request payload is too large the custom error MaxBytesError is returned here
+		if strings.Contains(err.Error(), "request body too large") {
 			return nil, http.StatusBadRequest, errors.New("request payload exceeds 10MB limit")
 		} else {
 			return nil, http.StatusInternalServerError, errors.Wrap(err, "parsing request")
