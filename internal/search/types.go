@@ -364,7 +364,7 @@ type RepoOptions struct {
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
-	CommitAfter string
+	CommitAfter *query.RepoHasCommitAfterArgs
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
@@ -410,8 +410,9 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	if op.SearchContextSpec != "" {
 		add(otlog.String("searchContextSpec", op.SearchContextSpec))
 	}
-	if op.CommitAfter != "" {
-		add(otlog.String("commitAfter", op.CommitAfter))
+	if op.CommitAfter != nil {
+		add(otlog.String("commitAfter.time", op.CommitAfter.TimeRef))
+		add(otlog.Bool("commitAfter.negated", op.CommitAfter.Negated))
 	}
 	if op.Visibility != query.Any {
 		add(otlog.String("visibility", string(op.Visibility)))
