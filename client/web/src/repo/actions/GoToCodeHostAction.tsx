@@ -12,16 +12,12 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { useObservable, Icon, Link, ButtonLink, Tooltip, ButtonLinkProps } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
-import {
-    RepoHeaderActionAnchor,
-    RepoHeaderActionAnchorProps,
-    RepoHeaderActionMenuLink,
-} from '../components/RepoHeaderActions'
+import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
@@ -36,6 +32,8 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
     fetchFileExternalLinks: typeof fetchFileExternalLinks
 
     actionType?: 'nav' | 'dropdown'
+
+    as?: 'repoHeaderAction' | 'actionItemBarAction'
 }
 
 /**
@@ -128,6 +126,27 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     const descriptiveText = `View on ${displayName}`
 
+    const commonProps: Partial<ButtonLinkProps> = {
+        to: url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        id: TARGET_ID,
+        onClick,
+        onAuxClick: onClick,
+        className: 'test-go-to-code-host',
+        'aria-label': descriptiveText,
+    }
+
+    if (props.as === 'actionItemBarAction') {
+        return (
+            <Tooltip content={descriptiveText}>
+                <ButtonLink {...commonProps}>
+                    <Icon as={exportIcon} aria-hidden={true} />
+                </ButtonLink>
+            </Tooltip>
+        )
+    }
+
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
@@ -147,17 +166,6 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 <span>{descriptiveText}</span>
             </RepoHeaderActionMenuLink>
         )
-    }
-
-    const commonProps: Partial<RepoHeaderActionAnchorProps> = {
-        to: url,
-        target: '_blank',
-        rel: 'noopener noreferrer',
-        id: TARGET_ID,
-        onClick,
-        onAuxClick: onClick,
-        className: 'test-go-to-code-host',
-        'aria-label': descriptiveText,
     }
 
     return (

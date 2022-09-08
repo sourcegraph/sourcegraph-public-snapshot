@@ -27,6 +27,10 @@ import { ToggleBlameAction } from '../../repo/blame/ToggleBlameAction'
 import { useExperimentalFeatures } from '../../stores'
 
 import styles from './ActionItemsBar.module.scss'
+import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
+import { parseBrowserRepoURL } from '../../util/url'
+import { fetchFileExternalLinks } from '../../repo/backend'
+import { RepositoryFields } from '../../graphql-operations'
 
 const scrollButtonClassName = styles.scroll
 
@@ -174,6 +178,7 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 }
 
 export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+    repo?: RepositoryFields
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
 }
@@ -187,8 +192,11 @@ const actionItemClassName = classNames(
  * TODO: description
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
-    const { extensionsController } = props
+    const { extensionsController, location } = props
     const { isOpen, barReference } = props.useActionItemsBar()
+    const { repoName, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
+        location.pathname + location.search + location.hash
+    )
 
     const {
         carouselReference,
@@ -230,6 +238,18 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 )}
                 {extensionsAsCoreFeatures ? (
                     <>
+                        <GoToCodeHostAction
+                            as="actionItemBarAction"
+                            repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                            revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
+                            filePath={filePath}
+                            commitRange={commitRange}
+                            position={position}
+                            range={range}
+                            repoName={repoName}
+                            actionType="nav"
+                            fetchFileExternalLinks={fetchFileExternalLinks}
+                        />
                         <ToggleBlameAction location={props.location} />
                         <OpenInEditorActionItem platformContext={props.platformContext} />
                     </>

@@ -168,6 +168,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 <RepositoryFileTreePage {...props} />
 
                 <ActionItemsBar
+                    repo={props.repo}
                     useActionItemsBar={props.useActionItemsBar}
                     location={props.location}
                     extensionsController={props.extensionsController}
