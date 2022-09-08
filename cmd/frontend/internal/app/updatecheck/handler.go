@@ -207,6 +207,7 @@ type pingRequest struct {
 	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
@@ -319,6 +320,7 @@ type pingPayload struct {
 	CodeHostVersions              json.RawMessage `json:"code_host_versions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`

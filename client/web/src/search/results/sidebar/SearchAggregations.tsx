@@ -1,4 +1,4 @@
-import { FC, memo } from 'react'
+import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
@@ -47,6 +47,8 @@ interface SearchAggregationsProps extends TelemetryProps {
 export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
 
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
+
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
@@ -55,7 +57,13 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         aggregationMode,
         proactive,
         caseSensitive,
+        extendedTimeout,
     })
+
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
+
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
 
     const handleBarLinkClick = (query: string, index: number): void => {
         onQuerySubmit(query)
@@ -117,9 +125,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                         loading={loading}
                         error={error}
                         mode={aggregationMode}
+                        showLoading={extendedTimeout}
                         className={styles.chartContainer}
                         onBarLinkClick={handleBarLinkClick}
                         onBarHover={handleBarHover}
+                        onExtendTimeout={handleExtendTimeout}
                     />
 
                     <footer className={styles.actions}>

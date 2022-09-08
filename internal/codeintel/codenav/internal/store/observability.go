@@ -8,10 +8,8 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	list *observation.Operation
-
-	getReferenceIDs *observation.Operation
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -24,16 +22,14 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.store.%s", name),
+			Name:              fmt.Sprintf("codeintel.codenav.store.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
 	}
 
 	return &operations{
-		// Not used yet.
-		list: op("List"),
-
-		getReferenceIDs: op("GetReferenceIDs"),
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 	}
 }

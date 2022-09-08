@@ -6,9 +6,11 @@ import (
 	"time"
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -17,7 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SessionData struct {
@@ -37,12 +41,16 @@ type SessionIssuerHelper interface {
 }
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
-	logger = logger.Scoped("SessionIssuer", "validates a token and then sets up a session")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		span, ctx := trace.New(r.Context(), "oauth.SessionIssuer", "Handle")
+		defer span.Finish()
+
+		// Scopes logger to family from trace.New
+		logger := trace.Logger(ctx, logger)
 
 		token, err := goauth2.TokenFromContext(ctx)
 		if err != nil {
+			span.SetError(err)
 			logger.Error("OAuth failed: could not read token from context", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not read token from callback request.", http.StatusInternalServerError)
 			return
@@ -53,6 +61,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			expiryDuration = time.Until(token.Expiry)
 		}
 		if expiryDuration < 0 {
+			span.SetError(err)
 			logger.Error("OAuth failed: token was expired.")
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
 			return
@@ -60,16 +69,26 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 
 		encodedState, err := goauth2.StateFromContext(ctx)
 		if err != nil {
+			span.SetError(err)
 			logger.Error("OAuth failed: could not get state from context.", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
 			return
 		}
 		state, err := DecodeState(encodedState)
 		if err != nil {
+			span.SetError(err)
 			logger.Error("OAuth failed: could not decode state.", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
 			return
 		}
+		logger = logger.With(
+			log.String("ProviderID", state.ProviderID),
+			log.String("Op", string(state.Op)),
+		)
+		span.SetAttributes(
+			attribute.String("ProviderID", state.ProviderID),
+			attribute.String("Op", string(state.Op)),
+		)
 
 		// Delete state cookie (no longer needed, will be stale if user logs out and logs back in within 120s)
 		defer s.DeleteStateCookie(w)
@@ -77,12 +96,14 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		if state.Op == LoginStateOpCreateCodeHostConnection {
 			svc, safeErrMsg, err := s.CreateCodeHostConnection(ctx, token, state.ProviderID)
 			if err != nil {
+				span.SetError(errors.Wrap(err, safeErrMsg))
 				logger.Error("OAuth failed: error upserting code host connection from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
 
 			if err := backend.SyncExternalService(ctx, logger, svc, 5*time.Second, repoupdater.DefaultClient); err != nil {
+				span.SetError(err)
 				logger.Error("OAuth failed: error syncing external service", log.Error(err))
 				http.Error(w, "error syncing code host", http.StatusInternalServerError)
 				return
@@ -102,19 +123,22 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		anonymousId, _ := cookie.AnonymousUID(r)
 		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {
+			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 
-		user, err := db.Users().GetByID(r.Context(), actr.UID)
+		user, err := db.Users().GetByID(ctx, actr.UID)
 		if err != nil {
+			span.SetError(err)
 			logger.Error("OAuth failed: error retrieving user from database.", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return
 		}
 
 		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
+			span.SetError(err)
 			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return
@@ -123,6 +147,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		if err := session.SetData(w, r, sessionKey, s.SessionData(token)); err != nil {
 			// It's not fatal if this fails. It just means we won't be able to sign the user out of
 			// the OP.
+			span.AddEvent(err.Error()) // do not set error
 			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
 		}
 

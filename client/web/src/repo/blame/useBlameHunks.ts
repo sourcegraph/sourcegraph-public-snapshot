@@ -12,7 +12,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { GitBlameResult, GitBlameVariables } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -20,6 +19,7 @@ interface BlameHunkDisplayInfo {
     displayName: string
     username: string
     dateString: string
+    timestampString: string
     linkURL: string
     message: string
 }
@@ -31,11 +31,11 @@ export type BlameHunk = NonNullable<
 const fetchBlame = memoizeObservable(
     ({
         repoName,
-        commitID,
+        revision,
         filePath,
     }: {
         repoName: string
-        commitID: string
+        revision: string
         filePath: string
     }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
@@ -68,7 +68,7 @@ const fetchBlame = memoizeObservable(
                     }
                 }
             `,
-            { repo: repoName, rev: commitID, path: filePath }
+            { repo: repoName, rev: revision, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => repository?.commit?.blob?.blame)
@@ -87,6 +87,7 @@ const getDisplayInfoFromHunk = (
     const displayName = truncate(author.person.displayName, { length: 25 })
     const username = author.person.user ? `(${author.person.user.username}) ` : ''
     const dateString = formatDistanceStrict(new Date(author.date), now, { addSuffix: true })
+    const timestampString = new Date(author.date).toLocaleString()
     const linkURL = new URL(commit.url, sourcegraphURL).href
     const content = `${dateString} • ${username}${displayName} [${truncate(message, { length: 45 })}]`
 
@@ -94,6 +95,7 @@ const getDisplayInfoFromHunk = (
         displayName,
         username,
         dateString,
+        timestampString,
         linkURL,
         message: content,
     }
@@ -102,25 +104,23 @@ const getDisplayInfoFromHunk = (
 export const useBlameHunks = (
     {
         repoName,
-        commitID,
+        revision,
         filePath,
     }: {
         repoName: string
-        commitID: string
+        revision: string
         filePath: string
     },
     sourcegraphURL: string
 ): BlameHunk[] | undefined => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
-        useMemo(
-            () =>
-                extensionsAsCoreFeatures && isBlameVisible
-                    ? fetchBlame({ commitID, repoName, filePath })
-                    : of(undefined),
-            [extensionsAsCoreFeatures, isBlameVisible, commitID, repoName, filePath]
-        )
+        useMemo(() => (isBlameVisible ? fetchBlame({ revision, repoName, filePath }) : of(undefined)), [
+            isBlameVisible,
+            revision,
+            repoName,
+            filePath,
+        ])
     )
 
     const hunksWithDisplayInfo = useMemo(() => {

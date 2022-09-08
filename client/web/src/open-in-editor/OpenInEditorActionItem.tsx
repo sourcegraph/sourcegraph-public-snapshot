@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { Unsubscribable } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/out/src/platform/context'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { SimpleActionItem } from '../../../shared/src/actions/SimpleActionItem'
+import { eventLogger } from '../tracking/eventLogger'
 
 import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
@@ -99,13 +100,14 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                             key={editor.id}
                             tooltip={`Open file in ${editor?.name}`}
                             iconURL={`${assetsRoot}/img/editors/${editor.id}.svg`}
-                            onClick={() =>
+                            onClick={() => {
+                                eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,
                                     props.platformContext.sourcegraphURL,
                                     index
                                 )
-                            }
+                            }}
                         />
                     )
             )}

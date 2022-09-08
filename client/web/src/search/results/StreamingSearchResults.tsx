@@ -36,7 +36,7 @@ import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
-import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
+import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
 import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './components/aggregation'
 import { SearchAlert } from './SearchAlert'
@@ -77,7 +77,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const history = useHistory()
     // Feature flags
     // Log lucky search events. To be removed at latest by 12/2022.
-    const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
+    const [smartSearchEnabled] = useFeatureFlag('ab-lucky-search')
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -186,19 +186,19 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     }, [results, telemetryService])
 
     useEffect(() => {
-        if (luckySearchEnabled && results?.state === 'complete') {
+        if (smartSearchEnabled && results?.state === 'complete') {
             telemetryService.log('SearchResultsFetchedAuto')
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmptyAuto')
             }
         }
         if (
-            luckySearchEnabled &&
+            smartSearchEnabled &&
             results?.alert?.kind === 'lucky-search-queries' &&
             results?.alert?.title &&
             results.alert.proposedQueries
         ) {
-            const events = luckySearchEvent(
+            const events = smartSearchEvent(
                 results.alert.title,
                 results.alert.proposedQueries.map(entry => entry.description || '')
             )
@@ -206,7 +206,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 telemetryService.log(event)
             }
         }
-    }, [results, luckySearchEnabled, telemetryService])
+    }, [results, smartSearchEnabled, telemetryService])
 
     // Reset expanded state when new search is started
     useEffect(() => {
@@ -363,7 +363,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
 
-                        {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
+                        {results?.alert?.kind && <SmartSearch alert={results?.alert} />}
 
                         <GettingStartedTour.Info
                             className="mt-2 mb-3"
@@ -396,7 +396,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
-                            luckySearchEnabled={luckySearchEnabled}
+                            smartSearchEnabled={smartSearchEnabled}
                         />
                     </div>
                 </>
