@@ -1,8 +1,6 @@
 import * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
-import { Unsubscribable } from 'rxjs'
-
 import { isErrorLike } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -28,7 +26,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
 
     const [settingsCascadeOrError, setSettingsCascadeOrError] = useState<SettingsCascadeOrError | undefined>(undefined)
     const settings = !isErrorLike(settingsCascadeOrError?.final) ? settingsCascadeOrError?.final : undefined
-    const [settingSubscription, setSettingSubscription] = useState<Unsubscribable | null>(null)
     const userSettings = settingsCascadeOrError?.subjects
         ? settingsCascadeOrError.subjects[settingsCascadeOrError.subjects.length - 1]
         : undefined
@@ -48,31 +45,29 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
     useEffect(() => {
-        setSettingSubscription(
-            props.platformContext.settings.subscribe(settings => {
-                if (settings.final) {
-                    /* Migrate legacy settings if needed */
-                    const subject = settings.subjects ? settings.subjects[settings.subjects.length - 1] : undefined
-                    if (subject?.settings && !isErrorLike(subject.settings) && !subject.settings.openInEditor) {
-                        const migratedSettings = migrateLegacySettings(subject.settings)
-                        props.platformContext
-                            .updateSettings(subject.subject.id, JSON.stringify(migratedSettings, null, 4))
-                            .then(() => {
-                                console.log('Migrated items successfully.')
-                            })
-                            .catch(() => {
-                                // TODO: Update failed, handle this later
-                            })
-                    }
-                    setSettingsCascadeOrError(settings)
+        const settingSubscription = props.platformContext.settings.subscribe(settings => {
+            if (settings.final) {
+                /* Migrate legacy settings if needed */
+                const subject = settings.subjects ? settings.subjects[settings.subjects.length - 1] : undefined
+                if (subject?.settings && !isErrorLike(subject.settings) && !subject.settings.openInEditor) {
+                    const migratedSettings = migrateLegacySettings(subject.settings)
+                    props.platformContext
+                        .updateSettings(subject.subject.id, JSON.stringify(migratedSettings, null, 4))
+                        .then(() => {
+                            console.log('Migrated items successfully.')
+                        })
+                        .catch(() => {
+                            // TODO: Update failed, handle this later
+                        })
                 }
-            })
-        )
+                setSettingsCascadeOrError(settings)
+            }
+        })
 
         return () => {
             settingSubscription?.unsubscribe()
         }
-    }, [settingSubscription, props.platformContext.settings, props.platformContext])
+    }, [props.platformContext])
 
     const onSave = useCallback(
         async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
