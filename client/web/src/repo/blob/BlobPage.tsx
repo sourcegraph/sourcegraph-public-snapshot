@@ -165,7 +165,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      */
     const formattedBlobInfoOrError = useObservable(
         useMemo(() => {
-            if (!enableLazyBlobSyntaxHighlighting) {
+            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
+            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
+            if (!enableLazyBlobSyntaxHighlighting || enableCodeMirror) {
                 return of(undefined)
             }
 
@@ -197,7 +199,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
