@@ -147,11 +147,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             filePath={result.path}
                             revision={getRevision(result.branches, result.commit)}
                             repoName={result.repository}
-                            // PrefetchableFile adds an extra wrapper div, so we need to match the ResultContainer style.
-                            // Better approach would be to use `as` to avoid wrapping,
-                            // but that requires a larger refactor of the child components
-                            // than is worth doing right now for this experimental feature
+                            // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                            // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                            // child components than is worth doing right now for this experimental feature
                             className={resultContainerStyles.resultContainer}
+                            as="li"
                         >
                             <FileSearchResult
                                 index={index}
@@ -170,7 +170,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 hoverifier={hoverifier}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
-                                as="li"
                             />
                         </PrefetchableFile>
                     )
