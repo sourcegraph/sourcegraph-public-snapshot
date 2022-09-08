@@ -89,7 +89,7 @@ interface ReferencesPanelProps
     externalLocation: H.Location
 
     tokensHistory?: TokenHistoryEntry[]
-    resetHistoryTo: (idx: number) => void
+    selectHistoryEntry: (idx: number) => void
 }
 
 interface TokenHistoryEntry {
@@ -101,7 +101,8 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
     React.PropsWithChildren<ReferencesPanelProps>
 > = props => {
     const [tokensHistory, setTokensHistory] = useState<TokenHistoryEntry[]>([])
-    const resetHistoryTo = (idx: number) => setTokensHistory(old => old.slice(0, idx))
+    const selectHistoryEntry = (idx: number) => setTokensHistory(old => old.slice(0, idx))
+
     useEffect(() => {
         setTokensHistory([])
     }, [props.externalLocation.pathname, props.externalLocation.search, props.externalLocation.hash])
@@ -113,7 +114,7 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
             key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
             initialEntries={[props.externalLocation]}
         >
-            <ReferencesPanel {...props} tokensHistory={tokensHistory} resetHistoryTo={resetHistoryTo} />
+            <ReferencesPanel {...props} tokensHistory={tokensHistory} selectHistoryEntry={selectHistoryEntry} />
         </MemoryRouter>
     )
 }
@@ -175,8 +176,6 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         <SearchTokenFindingReferencesList
             {...props}
             token={token}
-            tokens={props.tokensHistory ?? []}
-            setTokensHistory={props.resetHistoryTo}
             isFork={data.isFork}
             isArchived={data.isArchived}
             fileContent={data.fileContent}
@@ -189,8 +188,6 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     isFork: boolean
     isArchived: boolean
     fileContent: string
-    tokens: TokenHistoryEntry[]
-    setTokensHistory: (idx: number) => void
 }
 
 const SearchTokenFindingReferencesList: React.FunctionComponent<
@@ -220,7 +217,6 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
         <ReferencesList
             {...props}
             token={props.token}
-            tokens={props.tokens}
             searchToken={tokenResult?.searchToken}
             spec={spec}
             fileContent={props.fileContent}
@@ -427,23 +423,22 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.panel)}>
             <div className={classNames('px-0', styles.leftSubPanel)}>
-                <div className={classNames('d-flex justify-content-start mt-2', styles.history)}>
-                    {props.tokensHistory &&
-                        props.tokensHistory.map((entry, idx) => (
+                {props.tokensHistory && (
+                    <div className={classNames('d-flex justify-content-start mt-1', styles.history)}>
+                        {props.tokensHistory?.map((entry, idx) => (
                             <ButtonLink
                                 variant="secondary"
                                 size="sm"
                                 to={entry.location}
                                 key={entry.searchToken}
                                 className="mr-1"
-                                onClick={() => {
-                                    props.setTokensHistory(idx)
-                                }}
+                                onClick={() => props.selectHistoryEntry(idx)}
                             >
-                                {entry.searchToken}
+                                <Code>{entry.searchToken}</Code>
                             </ButtonLink>
                         ))}
-                </div>
+                    </div>
+                )}
                 <div className={classNames('d-flex justify-content-start ', styles.filter)}>
                     <small>
                         <Icon
