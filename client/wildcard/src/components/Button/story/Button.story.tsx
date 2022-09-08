@@ -131,7 +131,6 @@ AllButtons.parameters = {
 type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const Group: Story = () => {
-    const [selectedButton, setSelectedButton] = useState(1)
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
     const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
 
