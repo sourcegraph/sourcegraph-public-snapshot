@@ -197,7 +197,9 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 	return false
 }
 
-func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<- SourceResult) {
+	defer close(results)
+
 	// "archived" label is a convention used at some customers for indicating a
 	// repository is archived (like github's archived state). This is not returned in
 	// the normal repository listing endpoints, so we need to fetch it separately.
@@ -214,18 +216,27 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	// g.SetLimit will not apply a limit for a negative value, but a value of 0 will effectively
 	// disable this method. To avoid operator error, we make an explicit check even though it may
 	// appear redundant - it could save us from a stressful issue in the future.
-	mc := s.config.RateLimit.MaxConcurrency
-	if s.config.RateLimit.MaxConcurrency > 0 {
-		s.logger.Info("bitbucketserver.listAllRepos setting max concurrency limit", log.Int("maxConcurrency", mc))
+	if s.config.RateLimit != nil {
+		mc := s.config.RateLimit.MaxConcurrency
 
-		// When SetLimit sets the maximum concurrency to a positive integer N, the N+1 call to g.Go
-		// will block unless a slot is available. As a result we **must** invoke g.Go inside a
-		// goroutine to avoid blocking. Otherwise, we will never reach the code path to read from
-		// the channel blocking the entire method call indefinitely.
-		g.SetLimit(mc)
+		if s.config.RateLimit.MaxConcurrency > 0 {
+			s.logger.Info("bitbucketserver.listAllRepos setting max concurrency limit", log.Int("maxConcurrency", mc))
+
+			// When SetLimit sets the maximum concurrency to a positive integer N, the N+1 call to g.Go
+			// will block unless a slot is available. As a result we **must** invoke g.Go inside a
+			// goroutine to avoid blocking. Otherwise, we will never reach the code path to read from
+			// the channel blocking the entire method call indefinitely.
+			// g.SetLimit(mc)
+		}
 	}
 
-	// Start a new goroutine "worker" for all repos explicitly added to the code host config.
+	// TODO
+	// Start a new "worker" for all repos explicitly added to the code host config. g.Go will
+	// return immediately even if MaxConcurrency is set to 1, since there are no invocations to g.Go
+	// before this point.
+	//
+	// Running this inside a goroutine has weird side effects that make
+	// TODO
 	go func() {
 		g.Go(func() error {
 			// Admins normally add to end of lists, so end of list most likely has new repos
@@ -241,19 +252,19 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 				projectKey, repoSlug := ps[0], ps[1]
 				repo, err := s.client.Repo(ctx, projectKey, repoSlug)
-				if err != nil {
-					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-					// 404 errors on external service config validation.
-					if bitbucketserver.IsNotFound(err) {
-						s.logger.Warn("bitbucketserver.listAllRepos - skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
-						continue
-					}
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if err != nil && bitbucketserver.IsNotFound(err) {
+					s.logger.Warn("bitbucketserver.listAllRepos - skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
+					continue
 				}
 
 				select {
 				case ch <- []*bitbucketserver.Repo{repo}:
 				case <-ctx.Done():
-					return errors.Wrap(ctx.Err(), "explicit repos worker")
+					if ctx.Err() != nil {
+						return errors.Wrap(ctx.Err(), "explicit repos worker")
+					}
 				}
 			}
 

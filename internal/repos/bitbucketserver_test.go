@@ -260,9 +260,9 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 			defer cancelFunction()
 
 			results := make(chan SourceResult, 10)
-			defer close(results)
 
 			s.ListRepos(ctxWithTimeout, results)
+			// close(results)
 			VerifyData(t, ctxWithTimeout, 4, results)
 		})
 	}
@@ -357,9 +357,9 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 				defer cancel()
 
 				results := make(chan SourceResult, 10)
-				defer close(results)
 
 				s.ListRepos(ctxWithTimeout, results)
+				// close(results)
 				VerifyData(t, ctxWithTimeout, tc.exp, results)
 			})
 		}
@@ -422,9 +422,10 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 			defer cancelFunction()
 
 			results := make(chan SourceResult, 20)
-			defer close(results)
+			// defer close(results)
 
 			s.ListRepos(ctxWithTimeout, results)
+			// close(results)
 			VerifyData(t, ctxWithTimeout, 4, results)
 		})
 	}
@@ -544,22 +545,38 @@ func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, resul
 		"SOURCEGRAPH/jsonrpc2":      {},
 	}
 
-	for {
-		select {
-		case res := <-results:
-			repoNameArr := strings.Split(string(res.Repo.Name), "/")
-			repoName := repoNameArr[1] + "/" + repoNameArr[2]
-			if _, ok := repoNameMap[repoName]; ok {
-				numReceivedFromResults++
-			} else {
-				t.Fatal(errors.New("wrong repo returned"))
-			}
-		case <-ctx.Done():
-			t.Fatal(errors.New("timeout!"))
-		default:
-			if numReceivedFromResults == numExpectedResults {
-				return
-			}
+	// for {
+	// 	select {
+	// 	case res := <-results:
+	// 		repoNameArr := strings.Split(string(res.Repo.Name), "/")
+	// 		repoName := repoNameArr[1] + "/" + repoNameArr[2]
+	// 		if _, ok := repoNameMap[repoName]; ok {
+	// 			numReceivedFromResults++
+	// 		} else {
+	// 			t.Fatal(errors.New("wrong repo returned"))
+	// 		}
+	// 	case <-ctx.Done():
+	// 		t.Fatal(errors.New("timeout!"))
+	// 	default:
+	// 		if numReceivedFromResults == numExpectedResults {
+	// 			return
+	// 		}
+	// 	}
+	// }
+
+	for res := range results {
+		repoNameArr := strings.Split(string(res.Repo.Name), "/")
+		repoName := repoNameArr[1] + "/" + repoNameArr[2]
+		if _, ok := repoNameMap[repoName]; ok {
+			numReceivedFromResults++
+		} else {
+			t.Fatal(errors.New("wrong repo returned"))
 		}
+
 	}
+
+	if numReceivedFromResults == numExpectedResults {
+		return
+	}
+
 }

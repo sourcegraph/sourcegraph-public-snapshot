@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,6 +58,8 @@ type Client struct {
 	// concept of rate limiting in HTTP response headers). Default limits are defined
 	// in extsvc.GetLimitFromConfig
 	rateLimit *ratelimit.InstrumentedLimiter
+
+	concurrentLimit *mutablelimiter.Limiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
@@ -105,7 +108,8 @@ func newClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		httpClient: httpClient,
 		URL:        u,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+		rateLimit:       ratelimit.DefaultRegistry.Get(urn),
+		concurrentLimit: mutablelimiter.New(config.RateLimit.MaxConcurrency),
 	}, nil
 }
 
@@ -956,6 +960,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err
+	}
+
+	ctx, cancel, err := c.concurrentLimit.Acquire(ctx)
+	if err != nil {
+		cancel()
+		// TODO: Maybe log?
 	}
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
