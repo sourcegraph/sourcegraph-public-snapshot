@@ -21,12 +21,13 @@ func init() {
 }
 
 func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
+	logger = logger.Scoped("githuboauth.middleware", "middleware that handles github oauth authentication")
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
-			return oauth.NewHandler(logger.Scoped("githuboauth.api", "api handler for github oauth authentication"), db, extsvc.TypeGitHub, authPrefix, true, next)
+			return oauth.NewHandler(logger.Scoped("api", "api handler for github oauth middleware"), db, extsvc.TypeGitHub, authPrefix, true, next)
 		},
 		App: func(next http.Handler) http.Handler {
-			return oauth.NewHandler(logger.Scoped("githuboauth.app", "app handler for github oauth authentication"), db, extsvc.TypeGitHub, authPrefix, false, next)
+			return oauth.NewHandler(logger.Scoped("app", "app handler for github oauth middleware"), db, extsvc.TypeGitHub, authPrefix, false, next)
 		},
 	}
 }

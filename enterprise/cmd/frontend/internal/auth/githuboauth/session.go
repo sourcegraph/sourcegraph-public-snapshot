@@ -128,7 +128,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				if err != nil {
 					// Only log a warning, since we still want to create the user account
 					// even if we fail to get installations.
-					s.logger.Warn("Could not get GitHub App installations", log.Error(err))
+					s.logger.Error("Could not get GitHub App installations", log.Error(err))
 				}
 				for _, installation := range installations {
 					accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)

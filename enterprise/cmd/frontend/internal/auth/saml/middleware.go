@@ -26,15 +26,16 @@ const authPrefix = auth.AuthURLPrefix + "/saml"
 //
 // 🚨 SECURITY
 func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
+	logger = logger.Scoped("saml.middleware", "middleware that handles SAML authentication")
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(logger.Scoped("saml.api", "auth middleware for SAML authentication"), db, w, r, next, true)
+				authHandler(logger.Scoped("saml.api", "api handler for SAML middleware"), db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(logger.Scoped("saml.app", "auth middleware for SAML authentication"), db, w, r, next, false)
+				authHandler(logger.Scoped("saml.app", "app handler for SAML middleware"), db, w, r, next, false)
 			})
 		},
 	}
@@ -142,8 +143,8 @@ func samlSPHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter
 			}
 
 			if !allowSignin(p, info.groups) {
-				groups := make([]string, len(info.groups))
-				for k, _ := range info.groups {
+				groups := make([]string, 0, len(info.groups))
+				for k := range info.groups {
 					groups = append(groups, k)
 				}
 				logger.Warn("Error authorizing SAML-authenticated user.", log.String("AccountID", info.spec.AccountID), log.Strings("Expected groups", p.config.AllowGroups), log.Strings("Got", groups))

@@ -118,7 +118,7 @@ func stateHandler(logger log.Logger, isLogin bool, providerID string, config gol
 			if isLogin {
 				redirect, err := getRedirect(req)
 				if err != nil {
-					logger.Error("Failed to parse URL from Referrer header", log.Error(err))
+					logger.Warn("Failed to parse URL from Referrer header", log.Error(err))
 					http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
 					return
 				}

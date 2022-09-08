@@ -21,9 +21,10 @@ const providerType = "http-header"
 //
 // See the "func middleware" docs for more information.
 func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
+	logger = logger.Scoped("httpheader.middleware", "middleware that checks for the auth proxy headers")
 	return &auth.Middleware{
-		API: middleware(logger.Scoped("httpheader.api", "middleware that checks for auth proxy headers"), db),
-		App: middleware(logger.Scoped("httpheader.app", "middleware that checks for auth proxy headers"), db),
+		API: middleware(logger.Scoped("api", "api handler for httpheader auth middleware"), db),
+		App: middleware(logger.Scoped("app", "app handler for httpheader auth middleware"), db),
 	}
 }
 

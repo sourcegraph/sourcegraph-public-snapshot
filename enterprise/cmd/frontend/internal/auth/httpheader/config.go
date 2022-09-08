@@ -30,7 +30,7 @@ func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
 func Init(logger log.Logger) {
 	conf.ContributeValidator(validateConfig)
 
-	logger = log.Scoped(pkgName, "HTTP header authentication config watch")
+	logger = logger.Scoped(pkgName, "HTTP header authentication config watch")
 	go func() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()

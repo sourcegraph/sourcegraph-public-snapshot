@@ -51,15 +51,16 @@ type userClaims struct {
 //
 // 🚨 SECURITY
 func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
+	logger = logger.Scoped("openidconnect.middleware", "middleware for openid connect authentication")
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(logger.Scoped("openidconnect.api", "OpenID Connect authentication middleware"), db, w, r, next, true)
+				handleOpenIDConnectAuth(logger.Scoped("api", "api handler for OpenID Connect authentication"), db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(logger.Scoped("openidconnect.app", "OpenID Connect authentication middleware"), db, w, r, next, false)
+				handleOpenIDConnectAuth(logger.Scoped("app", "app handler for OpenID Connect authentication middleware"), db, w, r, next, false)
 			})
 		},
 	}
