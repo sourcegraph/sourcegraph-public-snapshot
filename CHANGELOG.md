@@ -31,6 +31,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.43.2
+
+### Fixed
+
+- Fixed an issue causing context cancel error dumps when updating a code host config manually. [#40857](https://github.com/sourcegraph/sourcegraph/pull/41265)
+- Fixed non-critical errors stopping the repo-syncing process for Bitbucket projectKeys. [#40897](https://github.com/sourcegraph/sourcegraph/pull/40582)
+- Fixed an issue marking accounts as expired when the supplied Account ID list has no entries[#40860](https://github.com/sourcegraph/sourcegraph/pull/40860)
+
+## 3.43.1
+
+### Fixed
+
+- Fixed an infinite render loop on the batch changes detail page, causing the page to become unusable. [#40857](https://github.com/sourcegraph/sourcegraph/pull/40857)
+- Unable to pick the correct GitLab OAuth for user authentication and repository permissions syncing when the instance configures more than one GitLab OAuth authentication providers. [#40897](https://github.com/sourcegraph/sourcegraph/pull/40897)
+
 ## 3.43.0
 
 ### Added
