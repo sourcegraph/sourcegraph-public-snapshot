@@ -42,10 +42,14 @@ A link to the [exported trace](#tracing-backends) should be show up in the searc
 
 ![link to trace](https://user-images.githubusercontent.com/23356519/184953302-099bcb62-ccdb-4eed-be5d-801b7fe16d97.png)
 
+Note that getting a trace URL requires `urlTemplate` to be configured.
+
 ### Trace a GraphQL request
 
 To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
 The response headers of the response will now include an `x-trace` entry, which will have a URL the [exported trace](#tracing-backends).
+
+Note that getting a trace URL requires `urlTemplate` to be configured.
 
 ## Tracing backends
 
