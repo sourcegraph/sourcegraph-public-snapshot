@@ -53,6 +53,7 @@ func (r *RepoMatch) URL() *url.URL {
 
 func (r *RepoMatch) AppendMatches(src *RepoMatch) {
 	r.RepoNameMatches = append(r.RepoNameMatches, src.RepoNameMatches...)
+	r.DescriptionMatches = append(r.DescriptionMatches, src.DescriptionMatches...)
 }
 
 func (r *RepoMatch) Key() Key {
