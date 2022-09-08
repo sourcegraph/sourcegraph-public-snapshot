@@ -14,6 +14,18 @@ export function displayRepoName(repoName: string): string {
 }
 
 /**
+ * Returns the number of characters in the code host portion of the repository name
+ * (e.g. "github.com/sourcegraph/sourcegraph") returns 11, the length of "github.com/"
+ */
+export function codeHostSubstrLength(repoName: string): number {
+    const parts = repoName.split('/')
+    if (parts.length >= 3 && parts[0].includes('.')) {
+        return parts[0].length + 1 // add 1 to account for the trailing '/' in the code host name
+    }
+    return 0
+}
+
+/**
  * Splits the repository name into the dir and base components.
  */
 export function splitPath(path: string): [string, string] {

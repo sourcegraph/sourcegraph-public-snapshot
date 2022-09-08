@@ -40,7 +40,7 @@ func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind str
 
 	repo := TestRepoWithService(t, store, fmt.Sprintf("repo-%d", svc.ID), &svc)
 
-	repo.Sources[svc.URN()].CloneURL = "https://secrettoken@github.com/sourcegraph/sourcegraph"
+	repo.Sources[svc.URN()].CloneURL = "https://github.com/sourcegraph/sourcegraph"
 	return repo
 }
 
@@ -103,6 +103,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count in
 			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
 		}
 
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name))
+
 		rs = append(rs, r)
 	}
 
@@ -140,6 +142,8 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 				HTTPURLToRepo: fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name)),
 			},
 		}
+
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name))
 
 		rs = append(rs, r)
 	}
@@ -244,6 +248,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *type
 			Href: cloneBaseURL + "/" + string(r.Name),
 		})
 		r.Metadata = &metadata
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("%s/%s", cloneBaseURL, string(r.Name))
 		rs = append(rs, r)
 	}
 

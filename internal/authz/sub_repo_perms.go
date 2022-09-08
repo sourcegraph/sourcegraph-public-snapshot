@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -255,12 +254,19 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 		return nil, &ErrUnauthenticated{}
 	}
 
-	var (
-		once       sync.Once
-		rules      compiledRules
-		rulesExist bool
-		rulesErr   error
-	)
+	repoRules, err := s.getCompiledRules(ctx, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "compiling match rules")
+	}
+
+	rules, rulesExist := repoRules[repo]
+	if !rulesExist {
+		// If we make it this far it implies that we have access at the repo level.
+		// Having any empty set of rules here implies that we can access the whole repo.
+		// Repos that support sub-repo permissions will only have an entry in our
+		// repo_permissions table after all sub-repo permissions have been processed.
+		return filePermissionsFuncAllRead, nil
+	}
 
 	return func(path string) (Perms, error) {
 		// An empty path is equivalent to repo permissions so we can assume it has
@@ -268,34 +274,6 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 		if path == "" {
 			return Read, nil
 		}
-
-		once.Do(func() {
-			repoRules, err := s.getCompiledRules(ctx, userID)
-			if err != nil {
-				rulesErr = errors.Wrap(err, "compiling match rules")
-				return
-			}
-
-			rules, rulesExist = repoRules[repo]
-		})
-
-		if rulesErr != nil {
-			return None, rulesErr
-		} else if !rulesExist {
-			// If we make it this far it implies that we have access at the repo level.
-			// Having any empty set of rules here implies that we can access the whole repo.
-			// Repos that support sub-repo permissions will only have an entry in our
-			// repo_permissions table after all sub-repo permissions have been processed.
-			return Read, nil
-		}
-
-		// TODO(keegancsmith) I am preserving behaviour with all the code
-		// above here in this function. IE we are using a Once to lazily
-		// initialize rules, just in case passing in an empty path happens.
-		// I'd prefer to not check for empty path + remove lazily evaluation.
-		// Lets discuss if we can change this behaviour on the PR and
-		// follow-up. For now I'd rather preserve behaviour to prevent
-		// regressions.
 
 		// The current path needs to either be included or NOT excluded and we'll give
 		// preference to exclusion.

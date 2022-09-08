@@ -77,7 +77,7 @@ func NewMockChangesetSource() *MockChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (r0 *protocol.PushConfig, r1 error) {
+			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
 				return
 			},
 		},
@@ -134,7 +134,7 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+			defaultHook: func(*types.Repo) (*protocol.PushConfig, error) {
 				panic("unexpected invocation of MockChangesetSource.GitserverPushConfig")
 			},
 		},
@@ -539,24 +539,24 @@ func (c ChangesetSourceCreateCommentFuncCall) Results() []interface{} {
 // GitserverPushConfig method of the parent MockChangesetSource instance is
 // invoked.
 type ChangesetSourceGitserverPushConfigFunc struct {
-	defaultHook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
-	hooks       []func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	defaultHook func(*types.Repo) (*protocol.PushConfig, error)
+	hooks       []func(*types.Repo) (*protocol.PushConfig, error)
 	history     []ChangesetSourceGitserverPushConfigFuncCall
 	mutex       sync.Mutex
 }
 
 // GitserverPushConfig delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockChangesetSource) GitserverPushConfig(v0 context.Context, v1 database.ExternalServiceStore, v2 *types.Repo) (*protocol.PushConfig, error) {
-	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0, v1, v2)
-	m.GitserverPushConfigFunc.appendCall(ChangesetSourceGitserverPushConfigFuncCall{v0, v1, v2, r0, r1})
+func (m *MockChangesetSource) GitserverPushConfig(v0 *types.Repo) (*protocol.PushConfig, error) {
+	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0)
+	m.GitserverPushConfigFunc.appendCall(ChangesetSourceGitserverPushConfigFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GitserverPushConfig
 // method of the parent MockChangesetSource instance is invoked and the hook
 // queue is empty.
-func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -565,7 +565,7 @@ func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -574,19 +574,19 @@ func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultReturn(r0 *protocol.PushConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+	f.SetDefaultHook(func(*types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ChangesetSourceGitserverPushConfigFunc) PushReturn(r0 *protocol.PushConfig, r1 error) {
-	f.PushHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+	f.PushHook(func(*types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ChangesetSourceGitserverPushConfigFunc) nextHook() func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+func (f *ChangesetSourceGitserverPushConfigFunc) nextHook() func(*types.Repo) (*protocol.PushConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -622,13 +622,7 @@ func (f *ChangesetSourceGitserverPushConfigFunc) History() []ChangesetSourceGits
 type ChangesetSourceGitserverPushConfigFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 database.ExternalServiceStore
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *types.Repo
+	Arg0 *types.Repo
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.PushConfig
@@ -640,7 +634,7 @@ type ChangesetSourceGitserverPushConfigFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1367,7 +1361,7 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (r0 *protocol.PushConfig, r1 error) {
+			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
 				return
 			},
 		},
@@ -1435,7 +1429,7 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+			defaultHook: func(*types.Repo) (*protocol.PushConfig, error) {
 				panic("unexpected invocation of MockForkableChangesetSource.GitserverPushConfig")
 			},
 		},
@@ -2079,24 +2073,24 @@ func (c ForkableChangesetSourceGetUserForkFuncCall) Results() []interface{} {
 // when the GitserverPushConfig method of the parent
 // MockForkableChangesetSource instance is invoked.
 type ForkableChangesetSourceGitserverPushConfigFunc struct {
-	defaultHook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
-	hooks       []func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	defaultHook func(*types.Repo) (*protocol.PushConfig, error)
+	hooks       []func(*types.Repo) (*protocol.PushConfig, error)
 	history     []ForkableChangesetSourceGitserverPushConfigFuncCall
 	mutex       sync.Mutex
 }
 
 // GitserverPushConfig delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GitserverPushConfig(v0 context.Context, v1 database.ExternalServiceStore, v2 *types.Repo) (*protocol.PushConfig, error) {
-	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0, v1, v2)
-	m.GitserverPushConfigFunc.appendCall(ForkableChangesetSourceGitserverPushConfigFuncCall{v0, v1, v2, r0, r1})
+func (m *MockForkableChangesetSource) GitserverPushConfig(v0 *types.Repo) (*protocol.PushConfig, error) {
+	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0)
+	m.GitserverPushConfigFunc.appendCall(ForkableChangesetSourceGitserverPushConfigFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GitserverPushConfig
 // method of the parent MockForkableChangesetSource instance is invoked and
 // the hook queue is empty.
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -2105,7 +2099,7 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook fun
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2114,19 +2108,19 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultReturn(r0 *protocol.PushConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+	f.SetDefaultHook(func(*types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushReturn(r0 *protocol.PushConfig, r1 error) {
-	f.PushHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+	f.PushHook(func(*types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) nextHook() func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) nextHook() func(*types.Repo) (*protocol.PushConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2163,13 +2157,7 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) History() []ForkableCha
 type ForkableChangesetSourceGitserverPushConfigFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 database.ExternalServiceStore
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *types.Repo
+	Arg0 *types.Repo
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.PushConfig
@@ -2181,7 +2169,7 @@ type ForkableChangesetSourceGitserverPushConfigFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2849,9 +2837,6 @@ func (c ForkableChangesetSourceWithAuthenticatorFuncCall) Results() []interface{
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
 // used for unit testing.
 type MockSourcerStore struct {
-	// DatabaseDBFunc is an instance of a mock function object controlling
-	// the behavior of the method DatabaseDB.
-	DatabaseDBFunc *SourcerStoreDatabaseDBFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *SourcerStoreExternalServicesFunc
@@ -2876,11 +2861,6 @@ type MockSourcerStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockSourcerStore() *MockSourcerStore {
 	return &MockSourcerStore{
-		DatabaseDBFunc: &SourcerStoreDatabaseDBFunc{
-			defaultHook: func() (r0 database.DB) {
-				return
-			},
-		},
 		ExternalServicesFunc: &SourcerStoreExternalServicesFunc{
 			defaultHook: func() (r0 database.ExternalServiceStore) {
 				return
@@ -2918,11 +2898,6 @@ func NewMockSourcerStore() *MockSourcerStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockSourcerStore() *MockSourcerStore {
 	return &MockSourcerStore{
-		DatabaseDBFunc: &SourcerStoreDatabaseDBFunc{
-			defaultHook: func() database.DB {
-				panic("unexpected invocation of MockSourcerStore.DatabaseDB")
-			},
-		},
 		ExternalServicesFunc: &SourcerStoreExternalServicesFunc{
 			defaultHook: func() database.ExternalServiceStore {
 				panic("unexpected invocation of MockSourcerStore.ExternalServices")
@@ -2961,9 +2936,6 @@ func NewStrictMockSourcerStore() *MockSourcerStore {
 // overwritten.
 func NewMockSourcerStoreFrom(i SourcerStore) *MockSourcerStore {
 	return &MockSourcerStore{
-		DatabaseDBFunc: &SourcerStoreDatabaseDBFunc{
-			defaultHook: i.DatabaseDB,
-		},
 		ExternalServicesFunc: &SourcerStoreExternalServicesFunc{
 			defaultHook: i.ExternalServices,
 		},
@@ -2983,105 +2955,6 @@ func NewMockSourcerStoreFrom(i SourcerStore) *MockSourcerStore {
 			defaultHook: i.UserCredentials,
 		},
 	}
-}
-
-// SourcerStoreDatabaseDBFunc describes the behavior when the DatabaseDB
-// method of the parent MockSourcerStore instance is invoked.
-type SourcerStoreDatabaseDBFunc struct {
-	defaultHook func() database.DB
-	hooks       []func() database.DB
-	history     []SourcerStoreDatabaseDBFuncCall
-	mutex       sync.Mutex
-}
-
-// DatabaseDB delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSourcerStore) DatabaseDB() database.DB {
-	r0 := m.DatabaseDBFunc.nextHook()()
-	m.DatabaseDBFunc.appendCall(SourcerStoreDatabaseDBFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the DatabaseDB method of
-// the parent MockSourcerStore instance is invoked and the hook queue is
-// empty.
-func (f *SourcerStoreDatabaseDBFunc) SetDefaultHook(hook func() database.DB) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DatabaseDB method of the parent MockSourcerStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SourcerStoreDatabaseDBFunc) PushHook(hook func() database.DB) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SourcerStoreDatabaseDBFunc) SetDefaultReturn(r0 database.DB) {
-	f.SetDefaultHook(func() database.DB {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SourcerStoreDatabaseDBFunc) PushReturn(r0 database.DB) {
-	f.PushHook(func() database.DB {
-		return r0
-	})
-}
-
-func (f *SourcerStoreDatabaseDBFunc) nextHook() func() database.DB {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SourcerStoreDatabaseDBFunc) appendCall(r0 SourcerStoreDatabaseDBFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SourcerStoreDatabaseDBFuncCall objects
-// describing the invocations of this function.
-func (f *SourcerStoreDatabaseDBFunc) History() []SourcerStoreDatabaseDBFuncCall {
-	f.mutex.Lock()
-	history := make([]SourcerStoreDatabaseDBFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SourcerStoreDatabaseDBFuncCall is an object that describes an invocation
-// of method DatabaseDB on an instance of MockSourcerStore.
-type SourcerStoreDatabaseDBFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.DB
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SourcerStoreDatabaseDBFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SourcerStoreDatabaseDBFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // SourcerStoreExternalServicesFunc describes the behavior when the
