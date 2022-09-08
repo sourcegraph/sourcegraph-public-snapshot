@@ -41,13 +41,19 @@ var seriesCreationsSummaryQuery = `
 	WHERE %s
 `
 
+var (
+	searchGenerationType        = "SEARCH"
+	searchComputeGenerationType = "SEARCH_COMPUTE"
+	languageStatsGenerationType = "LANGUAGE_STATS"
+)
+
 func makeGenerationTypeField(generationType string) (string, error) {
 	switch generationType {
-	case "SEARCH":
+	case searchGenerationType:
 		return "search", nil
-	case "SEARCH_COMPUTE":
+	case searchComputeGenerationType:
 		return "search-compute", nil
-	case "LANGUAGE_STATS":
+	case languageStatsGenerationType:
 		return "language-stats", nil
 	default:
 		return "", errors.Newf("Unknown code insights generation type: %s", generationType)
@@ -70,6 +76,8 @@ func (c *CodeInsights) SeriesCreations(ctx context.Context, args *struct {
 		}
 		conds = append(conds, sqlf.Sprintf(`generation_method = %s`, generationType))
 		cacheGroupKey = fmt.Sprintf("%s:%s", cacheGroupKey, *args.GenerationType)
+	} else {
+		cacheGroupKey = fmt.Sprintf("%s:%s", cacheGroupKey, "ALL")
 	}
 
 	nodesQuery := sqlf.Sprintf(seriesCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
@@ -202,10 +210,31 @@ func (c *CodeInsights) InsightDataPointClicks() (*AnalyticsFetcher, error) {
 // Insights caching job entrypoint
 
 func (c *CodeInsights) CacheAll(ctx context.Context) error {
-	// TODO: make sure to add all entry points
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){c.InsightHovers, c.InsightDataPointClicks}
+	// Cache general insights stats based on AnalyticsFetcher
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){c.DashboardCreations, c.InsightHovers, c.InsightDataPointClicks}
 	for _, buildFetcher := range fetcherBuilders {
 		fetcher, err := buildFetcher()
+		if err != nil {
+			return err
+		}
+
+		if _, err := fetcher.Nodes(ctx); err != nil {
+			return err
+		}
+
+		if _, err := fetcher.Summary(ctx); err != nil {
+			return err
+		}
+	}
+
+	// Cache total insights count
+	if _, err := c.TotalInsightsCount(ctx); err != nil {
+		return err
+	}
+
+	// Cache series creation stats
+	for _, generationType := range []*string{nil, &searchComputeGenerationType, &searchGenerationType, &languageStatsGenerationType} {
+		fetcher, err := c.SeriesCreations(ctx, &struct{ GenerationType *string }{GenerationType: generationType})
 		if err != nil {
 			return err
 		}
