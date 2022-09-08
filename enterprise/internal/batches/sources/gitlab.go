@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -77,8 +76,8 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, store, repo, s.au)
+func (s GitLabSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

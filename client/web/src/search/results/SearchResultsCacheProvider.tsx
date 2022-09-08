@@ -14,6 +14,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { useExperimentalFeatures } from '../../stores'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined
@@ -54,6 +55,7 @@ export function useCachedSearchResults(
                 query,
                 extensionHostAPIPromise: extensionHostAPI,
                 enableGoImportsSearchQueryTransform,
+                eventLogger,
             }),
         [query, extensionHostAPI, enableGoImportsSearchQueryTransform]
     )

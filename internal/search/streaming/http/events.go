@@ -97,6 +97,7 @@ type EventRepoMatch struct {
 
 	RepositoryID       int32              `json:"repositoryID"`
 	Repository         string             `json:"repository"`
+	RepositoryMatches  []Range            `json:"repositoryMatches,omitempty"`
 	Branches           []string           `json:"branches,omitempty"`
 	RepoStars          int                `json:"repoStars,omitempty"`
 	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`

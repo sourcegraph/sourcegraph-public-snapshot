@@ -66,8 +66,7 @@ export const getConfiguredSideloadedExtension = (
     )
 
 /**
- * List of extensions migrated to the core workflow. These extensions should not be activated if
- * `extensionsAsCoreFeatures` experimental feature is enabled.
+ * List of extensions migrated to the core workflow.
  */
 export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set([
     'sourcegraph/git-extras',
@@ -103,15 +102,14 @@ export const getEnabledExtensions = once(
 
         return combineLatest([viewerConfiguredExtensions(context), sideloadedExtension, context.settings]).pipe(
             map(([configuredExtensions, sideloadedExtension, settings]) => {
-                const extensionsAsCoreFeatures =
-                    isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
                 const enableGoImportsSearchQueryTransform =
                     isSettingsValid(settings) &&
                     settings.final.experimentalFeatures?.enableGoImportsSearchQueryTransform
 
                 let enabled = configuredExtensions.filter(extension => {
-                    const extensionsAsCoreFeatureMigratedExtension =
-                        extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                    const extensionsAsCoreFeatureMigratedExtension = MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(
+                        extension.id
+                    )
                     // Ignore extensions migrated to the core workflow if the experimental feature is enabled
                     if (context.clientApplication === 'sourcegraph' && extensionsAsCoreFeatureMigratedExtension) {
                         return false

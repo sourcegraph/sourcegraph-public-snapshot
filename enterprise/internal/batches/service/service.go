@@ -1129,14 +1129,11 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	ctx, _, endObservation := s.operations.fetchUsernameForBitbucketServerToken.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &auth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return "", err
-	}
-	css, err = css.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
@@ -1171,14 +1168,11 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return err
-	}
-	css, err = css.WithAuthenticator(a)
 	if err != nil {
 		return err
 	}
