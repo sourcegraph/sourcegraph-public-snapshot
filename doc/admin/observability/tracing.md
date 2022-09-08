@@ -75,23 +75,23 @@ You can test the exporter by [tracing a search query](#trace-a-search-query).
 
 ### Jaeger
 
-To configure Jaeger, first ensure Jeager is running:
+There are two ways to export traces to Jaeger:
 
-* **Single Docker container:** Deploy a separate Jaeger instance and configure it with [Jaeger client environment variables](https://github.com/jaegertracing/jaeger-client-go#environment-variables).
-* **Docker Compose:** See the relevant [enable the bundled Jaeger deployment guide](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
-* **Kubernetes (with Helm)**: See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
-* **Kubernetes (without Helm):** See the relevant [enable the bundled Jaeger deployment guide](../deploy/kubernetes/operations.md#enable-the-bundled-jaeger-deployment)
+1. **Recommended:** Configuring the [OpenTelemetry Collector](opentelemetry.md) (`"type": "opentelemetry"` in `observability.tracing`) to [send traces to a Jaeger instance](opentelemetry.md#jaeger).
+2. Using the legacy `"type": "jaeger"` configuration in `observability.tracing` to send spans directly to Jaeger.
 
-The Jaeger UI should look something like this:
+We strongly recommend using option 1 to use Jaeger, which is supported via opt-in mechanisms for each of our core deployment methods - to learn more, refer to the [Jaeger exporter documentation](opentelemetry.md#jaeger).
 
-![Jaeger UI](https://user-images.githubusercontent.com/1646931/79700938-0586c600-824e-11ea-9c8c-a115df8b3a21.png)
+To use option 2 instead, which enables behaviour similar to how Sourcegraph exported traces before Sourcegraph 4.0, [Jaeger client environment variables](https://github.com/jaegertracing/jaeger-client-go#environment-variables) must be set on all services for traces to export to Jaeger correctly using `"observability.tracing": { "type": "jaeger" }`.
 
-Then, configure Jaeger as your tracing backend in site configuration:
+A mechanism within Sourcegraph is available to reverse-proxy a Jaeger instance by setting the `JAEGER_SERVER_URL` environment variable on the `frontend` service, which allows you to access Jaeger using `/-/debug/jaeger`.
+The Jaeger instance will also need `QUERY_BASE_PATH='/-/debug/jaeger'` to be configured.
+Once set up, you can use the following URL template for traces exported to Jaeger:
 
 ```json
 {
   "observability.tracing": {
-    "type": "jaeger",
+    // set "type" to "opentelemetry" for option 1, "jaeger" for option 2
     "urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
   }
 }
