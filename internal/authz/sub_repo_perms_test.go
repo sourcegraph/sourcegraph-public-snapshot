@@ -164,11 +164,13 @@ func TestFilterActorPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		if content.Path == "file1" {
-			return Read, nil
-		}
-		return None, nil
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			if path == "file1" {
+				return Read, nil
+			}
+			return None, nil
+		}, nil
 	})
 
 	filtered, err := FilterActorPaths(ctx, checker, a, repo, testPaths)
@@ -289,13 +291,15 @@ func TestCanReadAllPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		switch content.Path {
-		case "file1", "file2", "file3":
-			return Read, nil
-		default:
-			return None, nil
-		}
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			switch path {
+			case "file1", "file2", "file3":
+				return Read, nil
+			default:
+				return None, nil
+			}
+		}, nil
 	})
 
 	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)
@@ -507,29 +511,18 @@ func TestSubRepoEnabled(t *testing.T) {
 	})
 }
 
-func TestRepoContentFromFileInfo(t *testing.T) {
-	repo := api.RepoName("my-repo")
+func TestFileInfoPath(t *testing.T) {
 	t.Run("adding trailing slash to directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "app",
 			Mode_: fs.ModeDir,
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "app/",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "app/", fileInfoPath(fi))
 	})
 	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "my-file.txt",
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "my-file.txt",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
 	})
 }

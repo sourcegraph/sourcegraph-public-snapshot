@@ -8,6 +8,7 @@ import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionIt
 import { Icon } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
+import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from './useBlameVisibility'
 
 import styles from './ToggleBlameAction.module.scss'
@@ -23,7 +24,15 @@ export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location
 
     const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
-    const toggleBlameState = useCallback(() => setIsBlameVisible(!isBlameVisible), [isBlameVisible, setIsBlameVisible])
+    const toggleBlameState = useCallback(() => {
+        if (isBlameVisible) {
+            setIsBlameVisible(false)
+            eventLogger.log('GitBlameDisabled')
+        } else {
+            setIsBlameVisible(true)
+            eventLogger.log('GitBlameEnabled')
+        }
+    }, [isBlameVisible, setIsBlameVisible])
 
     if (!extensionsAsCoreFeatures) {
         return null

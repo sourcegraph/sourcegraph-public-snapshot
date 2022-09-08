@@ -6,9 +6,8 @@ import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/sr
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
-import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
-import { AggregationLimitLabel } from './AggregationLimitLabel'
-import { AggregationModeControls } from './AggregationModeControls'
+import { AggregationLimitLabel, AggregationModeControls } from './components'
+import { AggregationChartCard, getAggregationData } from './components/aggregation-chart-card/AggregationChartCard'
 import {
     isNonExhaustiveAggregationResults,
     useAggregationSearchMode,

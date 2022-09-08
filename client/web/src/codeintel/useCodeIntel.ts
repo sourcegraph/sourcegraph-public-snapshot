@@ -4,6 +4,7 @@ import { QueryResult } from '@apollo/client'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
@@ -16,7 +17,6 @@ import {
     LoadAdditionalImplementationsVariables,
 } from '../graphql-operations'
 
-import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildPreciseLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
@@ -86,6 +86,7 @@ export const useCodeIntel = ({
 }: UseCodeIntelParameters): UseCodeIntelResult => {
     const shouldMixPreciseAndSearchBasedReferences = (): boolean =>
         getSetting<boolean>('codeIntel.mixPreciseAndSearchBasedReferences', false)
+    console.log({ shouldMixPreciseAndSearchBasedReferences: shouldMixPreciseAndSearchBasedReferences() })
 
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 

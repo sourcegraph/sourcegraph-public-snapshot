@@ -265,7 +265,6 @@ var sg = &cli.App{
 		telemetryCommand,
 
 		// Dev environment
-		doctorCommand,
 		secretCommand,
 		setupCommand,
 
@@ -276,7 +275,7 @@ var sg = &cli.App{
 		liveCommand,
 		opsCommand,
 		auditCommand,
-		analyticsCommand,
+		pageCommand,
 
 		// Util
 		helpCommand,
@@ -285,7 +284,7 @@ var sg = &cli.App{
 		updateCommand,
 		installCommand,
 		funkyLogoCommand,
-		pageCommand,
+		analyticsCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {

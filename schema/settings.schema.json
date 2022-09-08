@@ -562,6 +562,42 @@
         }
       }
     },
+    "codeIntel.disableSearchBased": {
+      "description": "Never fall back to search-based code intelligence.",
+      "type": "boolean"
+    },
+    "codeIntel.traceExtension": {
+      "description": "Whether to enable trace logging on the extension.",
+      "type": "boolean"
+    },
+    "codeIntel.disableRangeQueries": {
+      "description": "Whether to fetch multiple precise definitions and references on hover.",
+      "type": "boolean"
+    },
+    "codeIntel.mixPreciseAndSearchBasedReferences": {
+      "description": "Whether to supplement precise references with search-based results.",
+      "type": "boolean"
+    },
+    "basicCodeIntel.includeForks": {
+      "description": "Whether to include forked repositories in search results.",
+      "type": "boolean"
+    },
+    "basicCodeIntel.includeArchives": {
+      "description": "Whether to include archived repositories in search results.",
+      "type": "boolean"
+    },
+    "basicCodeIntel.globalSearchesEnabled": {
+      "description": "Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.",
+      "type": "boolean"
+    },
+    "basicCodeIntel.indexOnly": {
+      "description": "Whether to use only indexed requests to the search API.",
+      "type": "boolean"
+    },
+    "basicCodeIntel.unindexedSearchTimeout": {
+      "description": "The timeout (in milliseconds) for un-indexed search requests.",
+      "type": "number"
+    },
     "codeIntelligence.autoIndexRepositoryGroups": {
       "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
       "type": "array",

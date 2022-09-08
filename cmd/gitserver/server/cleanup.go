@@ -179,7 +179,8 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		janitorTimer.Observe(time.Since(janitorStart).Seconds())
 	}()
 	defer janitorRunning.Set(0)
-	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
+
+	logger := s.Logger.Scoped("cleanup", "repositories cleanup operation")
 
 	knownGitServerShard := false
 	for _, addr := range gitServerAddrs.Addresses {
@@ -230,7 +231,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 			wrongShardRepoSize += size
 
 			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				s.Logger.Info(
+				logger.Info(
 					"removing repo cloned on the wrong shard",
 					log.String("dir", string(dir)),
 					log.String("target-shard", addr),
@@ -363,19 +364,19 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
-		subCleanupLogger := cleanupLogger.With(
+		recloneLogger := logger.With(
 			log.String("repo", string(repo)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
 
-		subCleanupLogger.Info("re-cloning expired repo")
+		recloneLogger.Info("re-cloning expired repo")
 
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
 		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			subCleanupLogger.Warn("setting backed off re-clone time failed", log.Error(err))
+			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
 		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
@@ -390,12 +391,12 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if _, err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if _, err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
@@ -408,7 +409,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 				return nil
 			}
 
-			_, err := removeFileOlderThan(path, time.Hour)
+			_, err := removeFileOlderThan(logger, path, time.Hour)
 			return err
 		}); err != nil {
 			multi = errors.Append(multi, err)
@@ -418,17 +419,17 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		// call for a 5GB bare repository takes less than 1 min. The lock is only held
 		// during a short period during this time. A 1-hour grace period is very
 		// conservative.
-		if _, err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
 		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
 		// time git gc uses internally.
 		gcPIDMaxAge := 24 * time.Hour
-		if foundStale, err := removeFileOlderThan(gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
+		if foundStale, err := removeFileOlderThan(logger, gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
 			multi = errors.Append(multi, err)
 		} else if foundStale {
-			cleanupLogger.Warn(
+			logger.Warn(
 				"removeStaleLocks found a stale gc.pid lockfile and removed it. This should not happen and points to a problem with garbage collection. Monitor the repo for possible corruption and verify if this error reoccurs",
 				log.String("path", string(gitDir)),
 				log.Duration("age", gcPIDMaxAge))
@@ -524,7 +525,10 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
-				cleanupLogger.Error("error running cleanup command", log.String("name", cfn.Name), log.String("repo", string(gitDir)), log.Error(err))
+				logger.Error("error running cleanup command",
+					log.String("name", cfn.Name),
+					log.String("repo", string(gitDir)),
+					log.Error(err))
 			}
 			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
@@ -534,18 +538,18 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		return filepath.SkipDir
 	})
 	if err != nil {
-		cleanupLogger.Error("error iterating over repositories", log.Error(err))
+		logger.Error("error iterating over repositories", log.Error(err))
 	}
 
 	if b, err := json.Marshal(stats); err != nil {
-		cleanupLogger.Error("failed to marshal periodic stats", log.Error(err))
+		logger.Error("failed to marshal periodic stats", log.Error(err))
 	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
-		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
+		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
 	err = s.setRepoSizes(context.Background(), repoToSize)
 	if err != nil {
-		cleanupLogger.Error("setting repo sizes", log.Error(err))
+		logger.Error("setting repo sizes", log.Error(err))
 	}
 
 	if s.DiskSizer == nil {
@@ -553,17 +557,17 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 	}
 	b, err := s.howManyBytesToFree()
 	if err != nil {
-		cleanupLogger.Error("ensuring free disk space", log.Error(err))
+		logger.Error("ensuring free disk space", log.Error(err))
 	}
 	if err := s.freeUpSpace(b); err != nil {
-		cleanupLogger.Error("error freeing up space", log.Error(err))
+		logger.Error("error freeing up space", log.Error(err))
 	}
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos
 // with actual sizes, but only up to 10,000 in one run.
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
-	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
+	logger := s.Logger.Scoped("setRepoSizes", "setRepoSizes does cleanup of database entries")
 
 	reposNumber := len(repoToSize)
 	if reposNumber == 0 {
@@ -1016,14 +1020,15 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
+func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) {
 	if !stdErrIndicatesCorruption(stderr) {
 		return
 	}
 
-	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
+	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
 
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
+	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
+		log.String("stderr", stderr))
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
@@ -1453,7 +1458,7 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
 // file is missing, no error is returned. The first argument indicates whether a
 // stale file was present.
-func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
+func removeFileOlderThan(logger log.Logger, path string, maxAge time.Duration) (bool, error) {
 	fi, err := os.Stat(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -1466,8 +1471,6 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 	if age < maxAge {
 		return false, nil
 	}
-
-	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
 
 	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
 	err = os.Remove(path)

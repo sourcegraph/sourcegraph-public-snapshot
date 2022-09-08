@@ -35,7 +35,7 @@ If you attempt to run a query for which a given mode is not supported, the toolt
 
 ### Timeout limits
 
-At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout.
+At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout. If the aggregation times out, you will be able to trigger a longer search with a 1-minute timeout by clicking `Run aggregation`. 
 
 ### Count limits
 
@@ -57,7 +57,7 @@ The side panel will display a maximum of 10 bars. If expanded, a maximum of 30 b
 
 Aggregations by capture group will match on the first capture group in the search query only. For example, for a query:
 
-```regexp
+```sgquery
 hello-(\w+)-(\w+)
 ```
 
@@ -79,6 +79,6 @@ Aggregations for structural searches are unlikely to complete within a 2-second 
 ### Standard searches with embedded regexp
 
 Standard searches with embedded regexp such as below do not support aggregation by capture group. This is because they are functionally similar to a query with an `or` operator.
-```regexp
+```sgquery
 database /(\w+)/
 ```
