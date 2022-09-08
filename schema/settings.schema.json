@@ -400,7 +400,7 @@
         "proactiveSearchResultsAggregations": {
           "description": "Search results aggregations are triggered automatically with a search.",
           "type": "boolean",
-          "default": "true",
+          "default": "false",
           "!go": {
             "pointer": true
           }
