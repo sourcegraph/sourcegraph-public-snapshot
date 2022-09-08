@@ -85,7 +85,7 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if responseBody != nil {
 		if _, err := io.Copy(w, responseBody); err != nil {
-			h.logger.Error("batches.httpapi: failed to write payload to client", sglog.Error(err))
+			h.logger.Error("failed to write payload to client", sglog.Error(err))
 		}
 	}
 }
