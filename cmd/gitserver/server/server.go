@@ -608,17 +608,21 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 }
 
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
+	logger := s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
+
 	for j := range jobs {
+		logger := logger.With(log.String("job.repo", string(j.repo)))
+
 		select {
 		case <-ctx.Done():
-			s.Logger.Error("cloneJobConsumer: ", log.Error(ctx.Err()))
+			logger.Error("context done", log.Error(ctx.Err()))
 			return
 		default:
 		}
 
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
-			s.Logger.Error("cloneJobConsumer: ", log.Error(err))
+			logger.Error("acquireCloneLimiter", log.Error(err))
 			continue
 		}
 
@@ -627,7 +631,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
 			if err != nil {
-				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
+				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
 			s.setLastErrorNonFatal(s.ctx, job.repo, err)
@@ -2063,6 +2067,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 }
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
+	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
+
 	defer lock.Release()
 	defer func() {
 		if err != nil {
@@ -2116,12 +2122,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	s.Logger.Info("cloning repo", log.String("repo", string(repo)), log.String("tmp", tmpPath), log.String("dst", dstPath))
+	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
 
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -2175,15 +2181,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting last fetch in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting repo size", log.Error(err))
 	}
 
-	s.Logger.Info("repo cloned", log.String("repo", string(repo)))
+	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
 	return nil
@@ -2191,10 +2197,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
 	var logFile *os.File
 	var err error
-	logger := log.Scoped("readCloneProgress", "scans the reader and saves the most recent line of output")
 
 	if conf.Get().CloneProgressLog {
 		logFile, err = os.CreateTemp("", "")
