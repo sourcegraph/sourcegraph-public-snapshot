@@ -3,6 +3,7 @@ import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 import { mdiPlay } from '@mdi/js'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { pluralize } from '@sourcegraph/common'
 import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text, Link, Tooltip, Button, Icon } from '@sourcegraph/wildcard'
@@ -175,7 +176,11 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
 
                 {!!missingCount && (
                     <Tooltip
-                        content={`There are ${missingCount} more groups that were not included in this aggregation.`}
+                        content={`There ${pluralize('is', missingCount, 'are')} ${missingCount} more ${pluralize(
+                            'group',
+                            missingCount,
+                            'groups'
+                        )} not shown.`}
                     >
                         <Text size="small" className={styles.missingLabelCount}>
                             +{missingCount}
