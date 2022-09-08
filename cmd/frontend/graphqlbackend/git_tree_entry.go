@@ -70,7 +70,7 @@ func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { retur
 func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
-func (r *GitTreeEntryResolver) ToWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 
