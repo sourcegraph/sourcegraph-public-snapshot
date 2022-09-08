@@ -36,50 +36,34 @@ type BatchesStore interface {
 }
 
 // NewFileHandler creates a new FileHandler.
-func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) http.Handler {
-	handler := &FileHandler{
+func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) *FileHandler {
+	return &FileHandler{
 		logger:     sglog.Scoped("FileHandler", "Batch Changes mounted file REST API handler"),
 		db:         db,
 		store:      store,
 		operations: operations,
 	}
-	return handler
 }
 
-const maxUploadSize = 10 << 20 // 10MB
+// Get retrieves the workspace file.
+func (h *FileHandler) Get() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responseBody, statusCode, err := h.get(r)
 
-func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handlerFunc fileHandlerFunc
-	switch r.Method {
-	case http.MethodGet:
-		handlerFunc = h.get
-	case http.MethodHead:
-		handlerFunc = h.exists
-	case http.MethodPost:
-		// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
-		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-		handlerFunc = h.upload
-	default:
-		handlerFunc = defaultFileHandlerFunc
-	}
-
-	responseBody, statusCode, err := handlerFunc(r)
-
-	if err != nil {
-		http.Error(w, err.Error(), statusCode)
-		return
-	}
-
-	w.WriteHeader(statusCode)
-
-	if responseBody != nil {
-		if _, err := io.Copy(w, responseBody); err != nil {
-			h.logger.Error("failed to write payload to client", sglog.Error(err))
+		if err != nil {
+			http.Error(w, err.Error(), statusCode)
+			return
 		}
-	}
-}
 
-type fileHandlerFunc = func(*http.Request) (io.Reader, int, error)
+		w.WriteHeader(statusCode)
+
+		if responseBody != nil {
+			if _, err := io.Copy(w, responseBody); err != nil {
+				h.logger.Error("failed to write payload to client", sglog.Error(err))
+			}
+		}
+	})
+}
 
 func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err error) {
 	ctx, _, endObservation := h.operations.get.With(r.Context(), &err, observation.Args{})
@@ -101,6 +85,20 @@ func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err err
 	}
 
 	return bytes.NewReader(file.Content), http.StatusOK, nil
+}
+
+// Exists checks if the workspace file exists.
+func (h *FileHandler) Exists() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, statusCode, err := h.exists(r)
+
+		if err != nil {
+			http.Error(w, err.Error(), statusCode)
+			return
+		}
+
+		w.WriteHeader(statusCode)
+	})
 }
 
 func (h *FileHandler) exists(r *http.Request) (_ io.Reader, statusCode int, err error) {
@@ -131,23 +129,34 @@ func (h *FileHandler) exists(r *http.Request) (_ io.Reader, statusCode int, err 
 }
 
 func getPathParts(r *http.Request) (string, string, error) {
-	path := mux.Vars(r)["path"]
-	parts := strings.Split(path, "/")
-	if len(parts) != 2 {
-		return "", "", errors.New("path incorrectly structured")
-	}
-
-	batchSpecRandID := parts[0]
+	batchSpecRandID := mux.Vars(r)["spec"]
 	if batchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
 
-	batchSpecWorkspaceFileRandID := parts[1]
+	batchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
 	if batchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
 	}
 
 	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
+}
+
+const maxUploadSize = 10 << 20 // 10MB
+
+// Upload uploads a workspace file associated with a batch spec.
+func (h *FileHandler) Upload() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+		_, statusCode, err := h.upload(r)
+
+		if err != nil {
+			http.Error(w, err.Error(), statusCode)
+			return
+		}
+
+		w.WriteHeader(statusCode)
+	})
 }
 
 const maxMemory = 1 << 20 // 1MB
@@ -160,7 +169,7 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 		}})
 	}()
 
-	specID := mux.Vars(r)["path"]
+	specID := mux.Vars(r)["spec"]
 	if specID == "" {
 		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
 	}

@@ -80,11 +80,10 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "Hello world!",
 		},
 		{
-			name:                 "Get file missing file id",
-			method:               http.MethodGet,
-			path:                 fmt.Sprintf("/files/batches/%s", batchSpecRandID),
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "path incorrectly structured\n",
+			name:               "Get file missing file id",
+			method:             http.MethodGet,
+			path:               fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			expectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "Failed to find file",
@@ -280,11 +279,10 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "checking file existence: failed to count\n",
 		},
 		{
-			name:                 "Missing file id",
-			method:               http.MethodHead,
-			path:                 fmt.Sprintf("/files/batches/%s", batchSpecRandID),
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "path incorrectly structured\n",
+			name:               "Missing file id",
+			method:             http.MethodHead,
+			path:               fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			expectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "File exceeds max limit",
@@ -332,7 +330,9 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 
 			// In order to get the mux variables from the path, setup mux routes
 			router := mux.NewRouter()
-			router.HandleFunc("/files/batches/{path:.*}", handler.ServeHTTP)
+			router.Methods(http.MethodGet).Path("/files/batches/{spec}/{file}").Handler(handler.Get())
+			router.Methods(http.MethodHead).Path("/files/batches/{spec}/{file}").Handler(handler.Exists())
+			router.Methods(http.MethodPost).Path("/files/batches/{spec}").Handler(handler.Upload())
 			router.ServeHTTP(w, r)
 
 			res := w.Result()
