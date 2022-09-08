@@ -317,17 +317,19 @@ export class SourcegraphWebApp extends React.Component<
                               .pipe(first())
                               .toPromise()
                         : Promise.resolve(false),
-            }).subscribe(({ parsedSearchURL, searchContextSpec, processedQuery }) => {
-                // Only override filters from URL if there is a search query
-                if (
-                    parsedSearchURL.query &&
-                    searchContextSpec &&
-                    searchContextSpec !== this.state.selectedSearchContextSpec
-                ) {
-                    this.setSelectedSearchContextSpec(searchContextSpec)
-                }
+            }).subscribe(parsedSearchURLAndContext => {
+                if (parsedSearchURLAndContext.query) {
+                    // Only override filters and update query from URL if there
+                    // is a search query.
+                    if (
+                        parsedSearchURLAndContext.searchContextSpec &&
+                        parsedSearchURLAndContext.searchContextSpec !== this.state.selectedSearchContextSpec
+                    ) {
+                        this.setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec)
+                    }
 
-                setQueryStateFromURL(parsedSearchURL, processedQuery)
+                    setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.processedQuery)
+                }
             })
         )
 

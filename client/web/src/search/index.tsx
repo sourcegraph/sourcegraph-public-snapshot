@@ -193,13 +193,26 @@ export interface SearchStreamingProps {
     ) => Observable<AggregateStreamingSearchResults>
 }
 
+interface ParsedSearchURLAndContext extends ParsedSearchURL {
+    /**
+     * Search context extracted from query.
+     */
+    searchContextSpec: string | undefined
+    /**
+     * Cleaned up query (if search contexts are enabled and URL query contains a
+     * search context, this property contains the query without the context
+     * filter)
+     */
+    processedQuery: string
+}
+
 /**
  * getQueryStateFromLocation listens to history changes (via the location
  * observable) and extracts search query information while also handling and
  * validating search context information.
  * It returns an observable that emits the parsed query information, the
  * extracted search context (if any) and a processed version of the query
- * (without context filter)
+ * (without context filter).
  */
 export function getQueryStateFromLocation({
     location,
@@ -216,22 +229,7 @@ export function getQueryStateFromLocation({
      * Resolves to true if the provided search context exists for the user.
      */
     isSearchContextAvailable: (searchContextSpec: string) => Promise<boolean>
-}): Observable<{
-    /**
-     * Query state from URL
-     */
-    parsedSearchURL: ParsedSearchURL
-    /**
-     * Search context extracted from query.
-     */
-    searchContextSpec: string | undefined
-    /**
-     * Cleaned up query (if search contexts are enabled and URL query contains a
-     * search context, this property contains the query without the context
-     * filter)
-     */
-    processedQuery: string
-}> {
+}): Observable<ParsedSearchURLAndContext> {
     // Memoized function to extract the `context:...` filter from a given
     // search query (avoids reparsing the query)
     const memoizedGetGlobalSearchContextSpec = memoize((query: string) => getGlobalSearchContextFilter(query))
@@ -255,17 +253,21 @@ export function getQueryStateFromLocation({
         // available.
         location.pipe(
             switchMap(
-                (location): Observable<[ReturnType<typeof parseSearchURL>, boolean]> => {
-                    const parsedQuery = parseSearchURL(location.search)
-                    return memoizedIsSearchContextAvailable(
-                        memoizedGetGlobalSearchContextSpec(parsedQuery.query ?? '')?.spec ?? ''
-                    ).pipe(map(isSearchContextAvailable => [parsedQuery, isSearchContextAvailable]))
+                (location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
+                    const parsedSearchURL = parseSearchURL(location.search)
+                    if (parsedSearchURL.query !== undefined) {
+                        return memoizedIsSearchContextAvailable(
+                            memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
+                        ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
+                    }
+                    return of({ parsedSearchURL, isSearchContextAvailable: false })
                 }
             )
         ),
         showSearchContext.pipe(distinctUntilChanged()),
     ]).pipe(
-        map(([[parsedSearchURL, isSearchContextAvailable], showSearchContext]) => {
+        map(([locationAndContextInformation, showSearchContext]) => {
+            const { parsedSearchURL, isSearchContextAvailable } = locationAndContextInformation
             const query = parsedSearchURL.query ?? ''
             const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)
             const cleanQuery =
@@ -275,7 +277,7 @@ export function getQueryStateFromLocation({
                     ? omitFilter(query, globalSearchContextSpec.filter)
                     : query
 
-            return { parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec, processedQuery: cleanQuery }
+            return { ...parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec, processedQuery: cleanQuery }
         })
     )
 }
