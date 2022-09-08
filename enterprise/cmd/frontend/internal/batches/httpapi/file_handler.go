@@ -261,7 +261,3 @@ func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.
 	}
 	return nil
 }
-
-func defaultFileHandlerFunc(_ *http.Request) (io.Reader, int, error) {
-	return nil, http.StatusMethodNotAllowed, nil
-}
