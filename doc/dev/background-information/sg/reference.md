@@ -113,6 +113,7 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
+* web-integration-build: Build web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -312,8 +313,9 @@ Available testsuites in `sg.config.yaml`:
 * client
 * docsite
 * web-e2e
-* web-regression
 * web-integration
+* web-integration:debug
+* web-regression
 
 ```sh
 # Run different test suites:
