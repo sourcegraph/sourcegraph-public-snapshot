@@ -34,7 +34,16 @@ export const WorkspacesStory: Story = () => (
     <WebStory>
         {props => (
             <MockedStoryProvider link={MOCKS}>
-                <Workspaces batchSpecID="1" selectedNode="workspace1" executionURL="" {...props} />
+                <Workspaces
+                    isWorkspaceDetailsOpen={false}
+                    setIsWorkspaceDetailsOpen={function (arg0: boolean): void {
+                        throw new Error('Function not implemented.')
+                    }}
+                    batchSpecID="1"
+                    selectedNode="workspace1"
+                    executionURL=""
+                    {...props}
+                />
             </MockedStoryProvider>
         )}
     </WebStory>
