@@ -1154,27 +1154,39 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 }
 
 func TestZoektQueryPatternsAsRegexps(t *testing.T) {
+	type input struct {
+		zoektQ                    zoektquery.Q
+		repoPatterns              []string
+		caseSensitiveRepoPatterns bool
+	}
+
 	tests := []struct {
 		name  string
-		input zoektquery.Q
+		input input
 		want  []*regexp.Regexp
 	}{
 		{
-			name:  "literal substring query",
-			input: &zoektquery.Substring{Pattern: "foobar"},
-			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
+			name: "literal substring query",
+			input: input{
+				zoektQ: &zoektquery.Substring{Pattern: "foobar"},
+			},
+			want: []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
 		},
 		{
-			name:  "regex query",
-			input: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
-			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
+			name: "regex query",
+			input: input{
+				zoektQ: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
+			},
+			want: []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
 		},
 		{
 			name: "and query",
-			input: zoektquery.NewAnd([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Substring{Pattern: "baz"},
-			}...),
+			input: input{
+				zoektQ: zoektquery.NewAnd([]zoektquery.Q{
+					&zoektquery.Substring{Pattern: "foobar"},
+					&zoektquery.Substring{Pattern: "baz"},
+				}...),
+			},
 			want: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)foobar`),
 				regexp.MustCompile(`(?i)baz`),
@@ -1182,10 +1194,12 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 		},
 		{
 			name: "or query",
-			input: zoektquery.NewOr([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Substring{Pattern: "baz"},
-			}...),
+			input: input{
+				zoektQ: zoektquery.NewOr([]zoektquery.Q{
+					&zoektquery.Substring{Pattern: "foobar"},
+					&zoektquery.Substring{Pattern: "baz"},
+				}...),
+			},
 			want: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)foobar`),
 				regexp.MustCompile(`(?i)baz`),
@@ -1193,10 +1207,12 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 		},
 		{
 			name: "literal and regex",
-			input: zoektquery.NewAnd([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
-			}...),
+			input: input{
+				zoektQ: zoektquery.NewAnd([]zoektquery.Q{
+					&zoektquery.Substring{Pattern: "foobar"},
+					&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+				}...),
+			},
 			want: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)foobar`),
 				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
@@ -1204,25 +1220,40 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 		},
 		{
 			name: "literal or regex",
-			input: zoektquery.NewOr([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
-			}...),
+			input: input{
+				zoektQ: zoektquery.NewOr([]zoektquery.Q{
+					&zoektquery.Substring{Pattern: "foobar"},
+					&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+				}...),
+			},
 			want: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)foobar`),
 				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
 			},
 		},
 		{
-			name:  "respect case sensitivity setting",
-			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
-			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+			name: "respect case sensitivity setting",
+			input: input{
+				zoektQ: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
+			},
+			want: []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+		},
+		{
+			name: "add repoPatterns too",
+			input: input{
+				zoektQ:       &zoektquery.Substring{Pattern: "match-against-this"},
+				repoPatterns: []string{"match-against-this-too"},
+			},
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)match-against-this`),
+				regexp.MustCompile(`(?i)match-against-this-too`),
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := zoektQueryPatternsAsRegexps(tc.input)
+			got := zoektQueryPatternsAsRegexps(tc.input.zoektQ, tc.input.repoPatterns, tc.input.caseSensitiveRepoPatterns)
 			require.Equal(t, tc.want, got)
 		})
 	}

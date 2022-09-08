@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -32,7 +33,7 @@ type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
-	PathRegexps []*regexp.Regexp // used for getting file path match ranges
+	TextPatternRegexps []*regexp.Regexp // used for getting file path and repo name match ranges
 
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these
@@ -203,7 +204,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
+			Results: convertMatches(repo, commit, &rev, searcherMatches, s.TextPatternRegexps, s.PatternInfo),
 		})
 	}
 
@@ -211,9 +212,18 @@ func (s *TextSearchJob) searchFilesInRepo(
 }
 
 // convert converts a set of searcher matches into []result.Match
-func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, pathRegexps []*regexp.Regexp) []result.Match {
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, textPatternRegexps []*regexp.Regexp, patternInfo *search.TextPatternInfo) []result.Match {
 	matches := make([]result.Match, 0, len(searcherMatches))
 	for _, fm := range searcherMatches {
+		if patternInfo.Select.Root() == filter.Repository {
+			matches = append(matches, &result.RepoMatch{
+				Name:            repo.Name,
+				ID:              repo.ID,
+				RepoNameMatches: protocolFileMatchFieldToMatchRanges(string(repo.Name), textPatternRegexps),
+			})
+			continue
+		}
+
 		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
 
 		for _, cm := range fm.ChunkMatches {
@@ -244,25 +254,6 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 			})
 		}
 
-		var pathMatches []result.Range
-		for _, pathRe := range pathRegexps {
-			pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
-			for _, sm := range pathSubmatches {
-				pathMatches = append(pathMatches, result.Range{
-					Start: result.Location{
-						Offset: sm[0],
-						Line:   0,
-						Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
-					},
-					End: result.Location{
-						Offset: sm[1],
-						Line:   0,
-						Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
-					},
-				})
-			}
-		}
-
 		matches = append(matches, &result.FileMatch{
 			File: result.File{
 				Path:     fm.Path,
@@ -271,9 +262,30 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				InputRev: rev,
 			},
 			ChunkMatches: chunkMatches,
-			PathMatches:  pathMatches,
+			PathMatches:  protocolFileMatchFieldToMatchRanges(fm.Path, textPatternRegexps),
 			LimitHit:     fm.LimitHit,
 		})
 	}
 	return matches
+}
+
+func protocolFileMatchFieldToMatchRanges(field string, textPatternRegexps []*regexp.Regexp) (res []result.Range) {
+	for _, pathRe := range textPatternRegexps {
+		pathSubmatches := pathRe.FindAllStringSubmatchIndex(field, -1)
+		for _, sm := range pathSubmatches {
+			res = append(res, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0,
+					Column: utf8.RuneCountInString(field[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(field[:sm[1]]),
+				},
+			})
+		}
+	}
+	return res
 }

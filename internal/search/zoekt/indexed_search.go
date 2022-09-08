@@ -331,7 +331,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	return nil
 }
 
-func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
+func sendMatches(event *zoekt.SearchResult, zoektQueryRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
 	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
@@ -361,8 +361,9 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 
 		if selector.Root() == filter.Repository {
 			matches = append(matches, &result.RepoMatch{
-				Name: repo.Name,
-				ID:   repo.ID,
+				Name:            repo.Name,
+				ID:              repo.ID,
+				RepoNameMatches: zoektFileMatchFieldToMatchRanges(string(repo.Name), zoektQueryRegexps),
 			})
 			continue
 		}
@@ -372,7 +373,7 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
-		pathMatches := zoektFileMatchToPathMatchRanges(&file, pathRegexps)
+		pathMatches := zoektFileMatchFieldToMatchRanges(file.FileName, zoektQueryRegexps)
 
 		for _, inputRev := range inputRevs {
 			inputRev := inputRev // copy so we can take the pointer
@@ -477,26 +478,26 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 	return cms
 }
 
-func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, pathRegexps []*regexp.Regexp) (pathMatchRanges []result.Range) {
+func zoektFileMatchFieldToMatchRanges(field string, pathRegexps []*regexp.Regexp) (res []result.Range) {
 	for _, re := range pathRegexps {
-		pathSubmatches := re.FindAllStringSubmatchIndex(file.FileName, -1)
+		pathSubmatches := re.FindAllStringSubmatchIndex(field, -1)
 		for _, sm := range pathSubmatches {
-			pathMatchRanges = append(pathMatchRanges, result.Range{
+			res = append(res, result.Range{
 				Start: result.Location{
 					Offset: sm[0],
 					Line:   0, // we can treat path matches as a single-line
-					Column: utf8.RuneCountInString(file.FileName[:sm[0]]),
+					Column: utf8.RuneCountInString(field[:sm[0]]),
 				},
 				End: result.Location{
 					Offset: sm[1],
 					Line:   0,
-					Column: utf8.RuneCountInString(file.FileName[:sm[1]]),
+					Column: utf8.RuneCountInString(field[:sm[1]]),
 				},
 			})
 		}
 	}
 
-	return pathMatchRanges
+	return res
 }
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
@@ -620,7 +621,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 type RepoSubsetTextSearchJob struct {
 	Repos             *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query             zoektquery.Q
-	ZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
+	ZoektQueryRegexps []*regexp.Regexp // used for getting file path and repo name match ranges
 	Typ               search.IndexedRequestType
 	FileMatchLimit    int32
 	Select            filter.SelectPath
@@ -682,7 +683,7 @@ type GlobalTextSearchJob struct {
 	GlobalZoektQuery        *GlobalZoektQuery
 	ZoektArgs               *search.ZoektParameters
 	RepoOpts                search.RepoOptions
-	GlobalZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
+	GlobalZoektQueryRegexps []*regexp.Regexp // used for getting file path and repo name match ranges
 }
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {

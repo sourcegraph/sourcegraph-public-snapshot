@@ -901,19 +901,17 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 	}
 }
 
-func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
+func TestZoektFileMatchFieldToMatchRanges(t *testing.T) {
 	zoektQueryRegexps := []*regexp.Regexp{regexp.MustCompile("python.*worker|stuff")}
 
 	cases := []struct {
 		name   string
-		input  *zoekt.FileMatch
+		input  string
 		output []result.Range
 	}{
 		{
-			name: "returns single path match range",
-			input: &zoekt.FileMatch{
-				FileName: "internal/python/foo/worker.py",
-			},
+			name:  "returns single match range",
+			input: "internal/python/foo/worker.py",
 			output: []result.Range{
 				{
 					Start: result.Location{Offset: 9, Line: 0, Column: 9},
@@ -922,10 +920,8 @@ func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
 			},
 		},
 		{
-			name: "returns multiple path match ranges",
-			input: &zoekt.FileMatch{
-				FileName: "internal/python/foo/worker/src/dev/python_stuff.py",
-			},
+			name:  "returns multiple match ranges",
+			input: "internal/python/foo/worker/src/dev/python_stuff.py",
 			output: []result.Range{
 				{
 					Start: result.Location{Offset: 9, Line: 0, Column: 9},
@@ -941,7 +937,7 @@ func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := zoektFileMatchToPathMatchRanges(tc.input, zoektQueryRegexps)
+			got := zoektFileMatchFieldToMatchRanges(tc.input, zoektQueryRegexps)
 			require.Equal(t, tc.output, got)
 		})
 	}

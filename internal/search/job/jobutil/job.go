@@ -312,12 +312,13 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
+				repoPatterns, _ := f.IncludeExcludeValues(query.FieldRepo)
 				searcherJob := &searcher.TextSearchJob{
-					PatternInfo:     patternInfo,
-					Indexed:         false,
-					UseFullDeadline: useFullDeadline,
-					Features:        *searchInputs.Features,
-					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
+					PatternInfo:        patternInfo,
+					Indexed:            false,
+					UseFullDeadline:    useFullDeadline,
+					Features:           *searchInputs.Features,
+					TextPatternRegexps: getPathRegexpsFromTextPatternInfo(patternInfo, repoPatterns),
 				}
 
 				addJob(&repoPagerJob{
@@ -465,7 +466,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	return NewParallelJob(allJobs...), nil
 }
 
-func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pathRegexps []*regexp.Regexp) {
+func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo, repoPatterns []string) (pathRegexps []*regexp.Regexp) {
 	for _, pattern := range patternInfo.IncludePatterns {
 		if patternInfo.IsRegExp {
 			if patternInfo.IsCaseSensitive {
@@ -478,6 +479,22 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(pattern)))
 			} else {
 				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(pattern)))
+			}
+		}
+	}
+
+	for _, rp := range repoPatterns {
+		if patternInfo.IsRegExp {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(rp))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+rp))
+			}
+		} else {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(rp)))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(rp)))
 			}
 		}
 	}
@@ -737,7 +754,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 			GlobalZoektQuery:        globalZoektQuery,
 			ZoektArgs:               zoektArgs,
 			RepoOpts:                b.repoOptions,
-			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
+			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query, b.repoOptions.RepoFilters, b.repoOptions.CaseSensitiveRepoFilters),
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
@@ -757,9 +774,10 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Select:         b.selector,
 		}, nil
 	case search.TextRequest:
+		repoPatterns, _ := b.query.IncludeExcludeValues(query.FieldRepo)
 		return &zoekt.RepoSubsetTextSearchJob{
 			Query:             zoektQuery,
-			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
+			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery, repoPatterns, b.query.IsCaseSensitive()),
 			Typ:               typ,
 			FileMatchLimit:    b.fileMatchLimit,
 			Select:            b.selector,
@@ -768,7 +786,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
 }
 
-func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
+func zoektQueryPatternsAsRegexps(q zoektquery.Q, repoPatterns []string, caseSensitiveRepoPatterns bool) (res []*regexp.Regexp) {
 	zoektquery.VisitAtoms(q, func(zoektQ zoektquery.Q) {
 		switch typedQ := zoektQ.(type) {
 		case *zoektquery.Regexp:
@@ -789,6 +807,17 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 			}
 		}
 	})
+
+	if caseSensitiveRepoPatterns {
+		for _, rp := range repoPatterns {
+			res = append(res, regexp.MustCompile(regexp.QuoteMeta(rp)))
+		}
+	} else {
+		for _, rp := range repoPatterns {
+			res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(rp)))
+		}
+	}
+
 	return res
 }
 
