@@ -20,33 +20,14 @@ interface LegacySettings {
  * Leaves the original Settings object unchanged.
  * Returns a shallow copy with the old settings removed and the new ones added.
  */
-export function migrateLegacySettings(settings: Settings): Settings {
+export function migrateLegacySettings(settings: Settings): EditorSettings | null {
     if (settings.openInEditor !== undefined) {
-        return settings
+        return null
     }
 
     // Migrate settings
     const legacySettings = readLegacySettingsForAllExtensions(settings)
-    const legacyEditorSettingsInNewFormat = convertLegacySettingsToNewFormat(legacySettings)
-    const newSettings: Settings = {
-        ...settings,
-        openInEditor: legacyEditorSettingsInNewFormat,
-    }
-
-    // Delete migrated legacy settings
-    for (const key of Object.keys(newSettings)) {
-        if (
-            key.startsWith('openineditor.') ||
-            key.startsWith('vscode.open.') ||
-            key.startsWith('openInIntellij.') ||
-            key.startsWith('openInWebstorm.') ||
-            key.startsWith('openInAtom.')
-        ) {
-            delete newSettings[key]
-        }
-    }
-
-    return newSettings
+    return convertLegacySettingsToNewFormat(legacySettings)
 }
 
 function convertLegacySettingsToNewFormat(legacySettings: LegacySettings): EditorSettings {

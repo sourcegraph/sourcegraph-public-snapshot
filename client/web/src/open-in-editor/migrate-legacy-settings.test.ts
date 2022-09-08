@@ -1,3 +1,5 @@
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { EditorSettings } from './editor-settings'
 import { migrateLegacySettings } from './migrate-legacy-settings'
 
@@ -5,9 +7,9 @@ describe('migrate legacy editor settings tests', () => {
     it('migrates one legacy editor setting', () => {
         const editorId = 'vscode'
         const newSettings = migrateLegacySettings({ 'openineditor.editor': editorId })
-        expect(newSettings).toHaveProperty(['openInEditor', 'editorIds'])
-        expect((newSettings.openInEditor as EditorSettings).editorIds).toHaveLength(1)
-        expect((newSettings.openInEditor as EditorSettings).editorIds?.[0]).toBe(editorId)
+        expect(newSettings).toHaveProperty(['editorIds'])
+        expect((newSettings as EditorSettings).editorIds).toHaveLength(1)
+        expect((newSettings as EditorSettings).editorIds?.[0]).toBe(editorId)
     })
 
     it('migrates all legacy editor settings', () => {
@@ -21,7 +23,7 @@ describe('migrate legacy editor settings tests', () => {
         const replacements = { abc: 'def' }
 
         // noinspection SpellCheckingInspection
-        const settings = {
+        const settings: Settings = {
             'openineditor.editor': editorId,
             'openineditor.customUrlPattern': customUrlPattern,
             'vscode.open.useMode': 'insiders',
@@ -34,31 +36,18 @@ describe('migrate legacy editor settings tests', () => {
             'vscode.open.replacements': replacements,
         }
 
-        const newSettings = migrateLegacySettings(settings)
+        const openInEditor = migrateLegacySettings(settings)
 
-        expect(newSettings).toHaveProperty('openInEditor')
-        expect((newSettings.openInEditor as EditorSettings).editorIds?.[0]).toBe(editorId)
-        expect(newSettings.openInEditor).toHaveProperty(['custom.urlPattern'], customUrlPattern)
-        expect(newSettings.openInEditor).toHaveProperty(['vscode.useInsiders'], true)
-        expect(newSettings.openInEditor).toHaveProperty(['vscode.remoteHostForSSH'], vscodeRemoteHost)
-        expect(newSettings.openInEditor).toHaveProperty(['jetbrains.forceApi'], 'builtInServer')
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.default'], basePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.linux'], linuxBasePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.mac'], macBasePath)
-        expect(newSettings.openInEditor).toHaveProperty(['projectPaths.windows'], windowsBasePath)
-        expect(newSettings.openInEditor).toHaveProperty('replacements', replacements)
-    })
-
-    it('retains unrelated settings', () => {
-        const someObject = { baz: 2 }
-        const newSettings = migrateLegacySettings({ foo: 1, bar: someObject, 'openineditor.editor': 'vscode' })
-        expect(newSettings).toHaveProperty('foo', 1)
-        expect(newSettings).toHaveProperty('bar', someObject)
-    })
-
-    it('deletes legacy settings', () => {
-        const newSettings = migrateLegacySettings({ 'openineditor.editor': 'vscode' })
-        expect(newSettings).not.toHaveProperty('openineditor.editor')
+        expect((openInEditor as EditorSettings).editorIds?.[0]).toBe(editorId)
+        expect(openInEditor).toHaveProperty(['custom.urlPattern'], customUrlPattern)
+        expect(openInEditor).toHaveProperty(['vscode.useInsiders'], true)
+        expect(openInEditor).toHaveProperty(['vscode.remoteHostForSSH'], vscodeRemoteHost)
+        expect(openInEditor).toHaveProperty(['jetbrains.forceApi'], 'builtInServer')
+        expect(openInEditor).toHaveProperty(['projectPaths.default'], basePath)
+        expect(openInEditor).toHaveProperty(['projectPaths.linux'], linuxBasePath)
+        expect(openInEditor).toHaveProperty(['projectPaths.mac'], macBasePath)
+        expect(openInEditor).toHaveProperty(['projectPaths.windows'], windowsBasePath)
+        expect(openInEditor).toHaveProperty('replacements', replacements)
     })
 
     it('doesn’t change the original settings object', () => {
@@ -72,18 +61,18 @@ describe('migrate legacy editor settings tests', () => {
 
     it('uses the right precedence', () => {
         const basePath = '/home/user/projects'
-        const newSettings = migrateLegacySettings({
+        const openInEditor = migrateLegacySettings({
             'vscode.open.basePath': '/home/user/projectsVsCode',
             'openineditor.basePath': basePath,
             'openInIntellij.basePath': '/home/user/projectsVsCode',
             'openInAtom.basePath': '/home/user/projectsVsCode',
         })
-        expect(newSettings).toHaveProperty(['openInEditor', 'projectPaths.default'], basePath)
+        expect(openInEditor).toHaveProperty(['projectPaths.default'], basePath)
     })
 
     it('doesn’t do anything if there are new settings available', () => {
         const originalSettings = { test: 1, 'openineditor.editor': 'vscode', openInEditor: {} }
         const newSettings = migrateLegacySettings(originalSettings)
-        expect(newSettings).toBe(originalSettings)
+        expect(newSettings).toBe(null)
     })
 })
