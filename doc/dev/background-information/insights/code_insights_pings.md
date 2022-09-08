@@ -11,6 +11,24 @@ We keep this docs page up to date because pings are a vital component of our pro
 
 ## Metrics
 
+<!-- 
+TEMPLATE 
+
+**Type:** FE/BE event
+
+**Intended purpose:** Why does this ping exist?
+
+**Functional implementation:** When does this event fire?
+
+**Other considerations:**
+
+- Aggregation: Frequency
+- Event Code:
+  - Link to a Sourcegraph search of this event code name
+- **Version added:** 
+- **Version(s) broken:** (only add if required, link to fix PR)
+-->
+
 ### Additions count, edits count, and removals count 
 
 **Type:** FE event
@@ -327,3 +345,21 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [InsightsPerDashboard](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsPerDashboard&patternType=literal)
 - **Version added:** 3.38
 <!-- - **Version(s) broken:**  -->
+
+## Search Results Aggregations Metrics
+
+### 
+
+**Type:** FE/BE event
+
+**Intended purpose:** Why does this ping exist?
+
+**Functional implementation:** When does this event fire?
+
+**Other considerations:**
+
+- Aggregation: Frequency
+- Event Code:
+  - Link to a Sourcegraph search of this event code name
+- **Version added:**
+- **Version(s) broken:** (only add if required)
