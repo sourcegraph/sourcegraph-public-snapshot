@@ -16,11 +16,11 @@
     // Release versions
     "previousRelease": "3.43.1",
     "upcomingRelease": "3.43.2",
-    "oneWorkingWeekBeforeRelease": "01 Setember 2022 12:00 IST",
-    "threeWorkingDaysBeforeRelease": "05 September 2022 12:00 IST",
-    "releaseDate": "08 September 2022 10:00 IST",
-    "oneWorkingDayAfterRelease": "09 September 2022 12:00 IST",
-    "oneWorkingWeekAfterRelease": "5 September 2022 12:00 PST",
+    "oneWorkingWeekBeforeRelease": "01 Setember 2022 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "05 September 2022 10:00 PST",
+    "releaseDate": "08 September 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "09 September 2022 10:00 PST",
+    "oneWorkingWeekAfterRelease": "5 September 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events
