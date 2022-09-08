@@ -20,7 +20,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
-- Code Insights: total count of insights 
+- Code Insights: total count of insights
 
 </details>
 
@@ -113,11 +113,11 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)
   - Total counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
-  - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+  - Weekly count of users that have created an insight, and count of users that have created their first insight this week
   - Weekly count of total and unique views to the `Create new insight`, `Create search insight`, and `Create language insight` pages
   - Weekly count of total and unique clicks of the `Create search insight`, `Create language usage insight`, and `Explore the extensions` buttons on the `Create new insight` page
   - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
-  - Total count of insights grouped by time interval (step size) in days  
+  - Total count of insights grouped by time interval (step size) in days
   - Total count of insights set organization visible grouped by insight type
   - Total count of insights grouped by presentation type, series type, and presentation-series type.
   - Weekly count of unique users that have viewed code insights in-product landing page
@@ -169,8 +169,18 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of total searches performed
   - Aggregate counts of current daily user state:
     - Count of users who installed the extension
-    - Count of users who uninstalled the extension 
+    - Count of users who uninstalled the extension
   - Aggregate count of current daily redirects from extension to Sourcegraph instance
+- Migrated extensions usage data
+  - Aggregate data of:
+    - Count interactions with the Git blame feature
+    - Count of unique users who interacted with the Git blame feature
+    - Count interactions with the open in editor feature
+    - Count of unique users who interacted with the open in editor feature
+    - Count interactions with the search exports feature
+    - Count of unique users who interacted with the search exports feature
+    - Count interactions with the go imports search query transformation feature
+    - Count of unique users who interacted with the go imports search query transformation feature
 
 </details>
 
@@ -196,7 +206,7 @@ It may happen that Sourcegraph will stop sending critical telemetry to Sourcegra
 Sourcegraph telemetry pings are handled by a goroutine running on Sourcegraphs frontend service called [`updatecheck`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?subtree=true), `updatecheck` is [started](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/cli/serve_cmd%5C.go+updatecheck.Start%28db%29&patternType=literal) on container startup and periodically requests a variety of queries be run in the `pgsql` database.
 
 
-### Misconfigured update.channel 
+### Misconfigured update.channel
 The most common scenario in which Sourcegraph stops sending pings is a change to the `update.channel` setting in an instance's [site config](https://docs.sourcegraph.com/admin/config/site_config)
 ```
 "update.channel": "release",
@@ -223,4 +233,4 @@ Example:
 
 If the `update.check` is running, and the site config is correctly configured, then it may be the case that `pgsql` is failing to return data from the SQL queries to the `frontend`. Check out the frontend logs for logs tagged [`telemetry: updatecheck failed`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+telemetry:+updatecheck+failed&patternType=literal).
 
-If issues persist, please reach out to a team member for support at support@sourcegraph.com 
+If issues persist, please reach out to a team member for support at support@sourcegraph.com

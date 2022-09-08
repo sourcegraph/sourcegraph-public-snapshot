@@ -377,6 +377,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </ul>
                     <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
                 </li>
+                <li>
+                    Migrated extensions data
+                    <ul>
+                        Aggregate data of:
+                        <li>
+                            <ul>Count interactions with the Git blame feature</ul>
+                            <ul>Count of unique users who interacted with the Git blame feature</ul>
+                            <ul>Count interactions with the open in editor feature</ul>
+                            <ul>Count of unique users who interacted with the open in editor feature</ul>
+                            <ul>Count interactions with the search exports feature</ul>
+                            <ul>Count of unique users who interacted with the search exports feature</ul>
+                            <ul>Count interactions with the go imports search query transformation feature</ul>
+                            <ul>
+                                Count of unique users who interacted with the go imports search query transformation
+                                feature
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <Text>All telemetry is disabled.</Text>
