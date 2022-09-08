@@ -198,8 +198,6 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<- SourceResult) {
-	defer close(results)
-
 	// "archived" label is a convention used at some customers for indicating a
 	// repository is archived (like github's archived state). This is not returned in
 	// the normal repository listing endpoints, so we need to fetch it separately.
@@ -229,6 +227,25 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<-
 			// g.SetLimit(mc)
 		}
 	}
+	// g.SetLimit(-1)
+
+	resultsDone := make(chan struct{})
+	// Wait for all the goroutines and close the channel so that the reader below can exit.
+	go func() {
+		// Block until all sync goroutines have completed.
+		seen := make(map[int]bool)
+		for repos := range ch {
+			for _, repo := range repos {
+				if !seen[repo.ID] && !s.excludes(repo) {
+					_, isArchived := archived[repo.ID]
+					newRepo := s.makeRepo(repo, isArchived)
+					results <- SourceResult{Source: s, Repo: newRepo}
+					seen[repo.ID] = true
+				}
+			}
+		}
+		close(resultsDone)
+	}()
 
 	// TODO
 	// Start a new "worker" for all repos explicitly added to the code host config. g.Go will
@@ -237,40 +254,38 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<-
 	//
 	// Running this inside a goroutine has weird side effects that make
 	// TODO
-	go func() {
-		g.Go(func() error {
-			// Admins normally add to end of lists, so end of list most likely has new repos
-			// => stream them first.
-			for i := len(s.config.Repos) - 1; i >= 0; i-- {
-				name := s.config.Repos[i]
-				ps := strings.SplitN(name, "/", 2)
-				if len(ps) != 2 {
-					// This is an invalid repo name but not a good enough reason to stop the sync
-					// completely. As a result log it and continue.
-					s.logger.Error(fmt.Sprintf("bitbucketserver.listAllRepos: invalid repo name %q", name))
-				}
-
-				projectKey, repoSlug := ps[0], ps[1]
-				repo, err := s.client.Repo(ctx, projectKey, repoSlug)
-				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-				// 404 errors on external service config validation.
-				if err != nil && bitbucketserver.IsNotFound(err) {
-					s.logger.Warn("bitbucketserver.listAllRepos - skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
-					continue
-				}
-
-				select {
-				case ch <- []*bitbucketserver.Repo{repo}:
-				case <-ctx.Done():
-					if ctx.Err() != nil {
-						return errors.Wrap(ctx.Err(), "explicit repos worker")
-					}
-				}
+	g.Go(func() error {
+		// Admins normally add to end of lists, so end of list most likely has new repos
+		// => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			name := s.config.Repos[i]
+			ps := strings.SplitN(name, "/", 2)
+			if len(ps) != 2 {
+				// This is an invalid repo name but not a good enough reason to stop the sync
+				// completely. As a result log it and continue.
+				s.logger.Error(fmt.Sprintf("bitbucketserver.listAllRepos: invalid repo name %q", name))
 			}
 
-			return nil
-		})
-	}()
+			projectKey, repoSlug := ps[0], ps[1]
+			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
+			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+			// 404 errors on external service config validation.
+			if err != nil && bitbucketserver.IsNotFound(err) {
+				s.logger.Warn("bitbucketserver.listAllRepos - skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
+				continue
+			}
+
+			select {
+			case ch <- []*bitbucketserver.Repo{repo}:
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					return errors.Wrap(ctx.Err(), "explicit repos worker")
+				}
+			}
+		}
+
+		return nil
+	})
 
 	// Start a new goroutine "worker" for every line in the repositoryQuery field of the code host
 	// config.
@@ -284,26 +299,24 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<-
 
 		// Copy to avoid the infamouse go-closure bug.
 		query := q
-		go func() {
-			g.Go(func() error {
-				next := &bitbucketserver.PageToken{Limit: 1000}
-				for next.HasMore() {
-					repos, page, err := s.client.Repos(ctx, next, query)
-					if err != nil {
-						return errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", query, next)
-					}
-
-					select {
-					case ch <- repos:
-						next = page
-					case <-ctx.Done():
-						return errors.Wrap(ctx.Err(), "repositoryQuery worker")
-					}
+		g.Go(func() error {
+			next := &bitbucketserver.PageToken{Limit: 1000}
+			for next.HasMore() {
+				repos, page, err := s.client.Repos(ctx, next, query)
+				if err != nil {
+					return errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", query, next)
 				}
 
-				return nil
-			})
-		}()
+				select {
+				case ch <- repos:
+					next = page
+				case <-ctx.Done():
+					return errors.Wrap(ctx.Err(), "repositoryQuery worker")
+				}
+			}
+
+			return nil
+		})
 	}
 
 	// Start a new goroutine "worker" for every project in the projectKeys field of the code host
@@ -311,49 +324,33 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan<-
 	for _, k := range s.config.ProjectKeys {
 		// Copy to avoid the infamouse go-closure bug.
 		key := k
-		go func() {
-			g.Go(func() error {
-				repos, err := s.client.ProjectRepos(ctx, key)
-				if err != nil {
-					// Getting a "fatal" error for a single project key is not a strong enough reason to
-					// stop syncing, instead log this error as a warning and write an empty repo list to the table.
-					//
-					// We cannot return this error since it will terminate all other goroutines in this
-					// group.
-					s.logger.Warn("bitbucketserver.listAllRepos: error with projectKey", log.String("projectKey", key), log.Error(err))
-				}
-
-				select {
-				case ch <- repos:
-				case <-ctx.Done():
-					return errors.Wrap(ctx.Err(), "projectKeys worker")
-				}
-
-				return nil
-			})
-		}()
-	}
-
-	// Wait for all the goroutines and close the channel so that the reader below can exit.
-	go func() {
-		if err := g.Wait(); err != nil {
-			s.logger.Error("bitbucketserver.listAllRepos failed", log.Error(err))
-		}
-
-		close(ch)
-	}()
-
-	// Block until all sync goroutines have completed.
-	seen := make(map[int]bool)
-	for repos := range ch {
-		for _, repo := range repos {
-			if !seen[repo.ID] && !s.excludes(repo) {
-				_, isArchived := archived[repo.ID]
-				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
-				seen[repo.ID] = true
+		g.Go(func() error {
+			repos, err := s.client.ProjectRepos(ctx, key)
+			if err != nil {
+				// Getting a "fatal" error for a single project key is not a strong enough reason to
+				// stop syncing, instead log this error as a warning and write an empty repo list to the table.
+				//
+				// We cannot return this error since it will terminate all other goroutines in this
+				// group.
+				s.logger.Warn("bitbucketserver.listAllRepos: error with projectKey", log.String("projectKey", key), log.Error(err))
 			}
-		}
+
+			select {
+			case ch <- repos:
+			case <-ctx.Done():
+				return errors.Wrap(ctx.Err(), "projectKeys worker")
+			}
+
+			return nil
+		})
 	}
+
+	if err := g.Wait(); err != nil {
+		s.logger.Error("bitbucketserver.listAllRepos failed", log.Error(err))
+	}
+
+	close(ch)
+	<-resultsDone
 
 	s.logger.Info("bitbucket.listAllRepos completed")
 }

@@ -359,7 +359,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 				results := make(chan SourceResult, 10)
 
 				s.ListRepos(ctxWithTimeout, results)
-				// close(results)
+				close(results)
 				VerifyData(t, ctxWithTimeout, tc.exp, results)
 			})
 		}
@@ -421,11 +421,10 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 			ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancelFunction()
 
-			results := make(chan SourceResult, 20)
-			// defer close(results)
+			results := make(chan SourceResult, 200)
 
 			s.ListRepos(ctxWithTimeout, results)
-			// close(results)
+			close(results)
 			VerifyData(t, ctxWithTimeout, 4, results)
 		})
 	}
@@ -545,38 +544,34 @@ func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, resul
 		"SOURCEGRAPH/jsonrpc2":      {},
 	}
 
-	// for {
-	// 	select {
-	// 	case res := <-results:
-	// 		repoNameArr := strings.Split(string(res.Repo.Name), "/")
-	// 		repoName := repoNameArr[1] + "/" + repoNameArr[2]
-	// 		if _, ok := repoNameMap[repoName]; ok {
-	// 			numReceivedFromResults++
-	// 		} else {
-	// 			t.Fatal(errors.New("wrong repo returned"))
-	// 		}
-	// 	case <-ctx.Done():
-	// 		t.Fatal(errors.New("timeout!"))
-	// 	default:
-	// 		if numReceivedFromResults == numExpectedResults {
-	// 			return
-	// 		}
-	// 	}
-	// }
-
-	for res := range results {
-		repoNameArr := strings.Split(string(res.Repo.Name), "/")
-		repoName := repoNameArr[1] + "/" + repoNameArr[2]
-		if _, ok := repoNameMap[repoName]; ok {
-			numReceivedFromResults++
-		} else {
-			t.Fatal(errors.New("wrong repo returned"))
+	for {
+		if numReceivedFromResults == numExpectedResults {
+			return
 		}
 
+		select {
+		case res := <-results:
+			repoNameArr := strings.Split(string(res.Repo.Name), "/")
+			repoName := repoNameArr[1] + "/" + repoNameArr[2]
+			if _, ok := repoNameMap[repoName]; ok {
+				numReceivedFromResults++
+			} else {
+				t.Fatal(errors.New("wrong repo returned"))
+			}
+		case <-ctx.Done():
+			t.Fatal(errors.New("timeout!"))
+		}
 	}
 
-	if numReceivedFromResults == numExpectedResults {
-		return
-	}
+	// for res := range results {
+	// 	repoNameArr := strings.Split(string(res.Repo.Name), "/")
+	// 	repoName := repoNameArr[1] + "/" + repoNameArr[2]
+	// 	if _, ok := repoNameMap[repoName]; ok {
+	// 		numReceivedFromResults++
+	// 	} else {
+	// 		t.Fatal(errors.New("wrong repo returned"))
+	// 	}
+
+	// }
 
 }

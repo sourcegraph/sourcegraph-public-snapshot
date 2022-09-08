@@ -108,8 +108,9 @@ func newClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		httpClient: httpClient,
 		URL:        u,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit:       ratelimit.DefaultRegistry.Get(urn),
-		concurrentLimit: mutablelimiter.New(config.RateLimit.MaxConcurrency),
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+		// TODO: fix this
+		concurrentLimit: mutablelimiter.New(99),
 	}, nil
 }
 
@@ -962,11 +963,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
-	ctx, cancel, err := c.concurrentLimit.Acquire(ctx)
-	if err != nil {
-		cancel()
-		// TODO: Maybe log?
-	}
+	// ctx, , err := c.concurrentLimit.Acquire(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// 	// cancel()
+	// 	// TODO: Maybe log?
+	// }
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
