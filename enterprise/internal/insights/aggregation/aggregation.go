@@ -33,72 +33,6 @@ type SearchResultsAggregator interface {
 type AggregationTabulator func(*AggregationMatchResult, error)
 type OnMatches func(matches []result.Match)
 
-type eventMatch struct {
-	Repo        string
-	RepoID      int32
-	Path        string
-	Commit      string
-	Author      string
-	Date        time.Time
-	Lang        string
-	ResultCount int
-	Content     []string
-}
-
-// NewEventEnvironment maps event matches into a consistent type
-func newEventMatch(event result.Match) *eventMatch {
-	switch match := event.(type) {
-	case *result.FileMatch:
-		lang, _ := enry.GetLanguageByExtension(match.Path)
-		content := make([]string, 0, len(match.ChunkMatches))
-		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
-			for _, cm := range match.ChunkMatches {
-				for _, range_ := range cm.Ranges {
-					content = append(content, chunkContent(cm, range_))
-				}
-			}
-		} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
-
-		} else { // This is a File match representing a whole file
-			content = append(content, match.Path)
-		}
-
-		return &eventMatch{
-			Repo:        string(match.Repo.Name),
-			RepoID:      int32(match.Repo.ID),
-			Path:        match.Path,
-			Lang:        lang,
-			ResultCount: match.ResultCount(),
-			Content:     content,
-		}
-	case *result.RepoMatch:
-		return &eventMatch{
-			Repo:        string(match.RepoName().Name),
-			RepoID:      int32(match.RepoName().ID),
-			ResultCount: 1,
-			Content:     []string{string(match.RepoName().Name)},
-		}
-	case *result.CommitMatch:
-		content := make([]string, 0, 1)
-		if match.DiffPreview != nil { // signals this is a Diff match
-			//TODO(insights): figure out extracting the right content for diff capture group matching
-		} else {
-			content = append(content, string(match.Commit.Message))
-		}
-
-		return &eventMatch{
-			Repo:        string(match.Repo.Name),
-			RepoID:      int32(match.Repo.ID),
-			Author:      match.Commit.Author.Name,
-			Date:        match.Commit.Author.Date,
-			ResultCount: 1,
-			Content:     content,
-		}
-	default:
-		return &eventMatch{}
-	}
-}
-
 type AggregationCountFunc func(result.Match) (map[MatchKey]int, error)
 type MatchKey struct {
 	Repo   string
@@ -107,49 +41,63 @@ type MatchKey struct {
 }
 
 func countRepo(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
-	if match.Repo != "" {
+	if r.RepoName().Name != "" {
 		return map[MatchKey]int{{
-			RepoID: match.RepoID,
-			Repo:   match.Repo,
-			Group:  match.Repo,
-		}: match.ResultCount}, nil
+			RepoID: int32(r.RepoName().ID),
+			Repo:   string(r.RepoName().Name),
+			Group:  string(r.RepoName().Name),
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
 func countLang(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
-	if match.Lang != "" {
+	var lang string
+	switch match := r.(type) {
+	case *result.FileMatch:
+		lang, _ = enry.GetLanguageByExtension(match.Path)
+	default:
+	}
+	if lang != "" {
 		return map[MatchKey]int{{
-			RepoID: match.RepoID,
-			Repo:   match.Repo,
-			Group:  match.Lang,
-		}: match.ResultCount}, nil
+			RepoID: int32(r.RepoName().ID),
+			Repo:   string(r.RepoName().Name),
+			Group:  lang,
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
 func countPath(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
-	if match.Path != "" {
+	var path string
+	switch match := r.(type) {
+	case *result.FileMatch:
+		path = match.Path
+	default:
+	}
+	if path != "" {
 		return map[MatchKey]int{{
-			RepoID: match.RepoID,
-			Repo:   match.Repo,
-			Group:  match.Path,
-		}: match.ResultCount}, nil
+			RepoID: int32(r.RepoName().ID),
+			Repo:   string(r.RepoName().Name),
+			Group:  path,
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
 func countAuthor(r result.Match) (map[MatchKey]int, error) {
-	match := newEventMatch(r)
-	if match.Author != "" {
+	var author string
+	switch match := r.(type) {
+	case *result.CommitMatch:
+		author = match.Commit.Author.Name
+	default:
+	}
+	if author != "" {
 		return map[MatchKey]int{{
-			RepoID: match.RepoID,
-			Repo:   match.Repo,
-			Group:  match.Author,
-		}: match.ResultCount}, nil
+			RepoID: int32(r.RepoName().ID),
+			Repo:   string(r.RepoName().Name),
+			Group:  author,
+		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
@@ -165,10 +113,10 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 	}
 
 	return func(r result.Match) (map[MatchKey]int, error) {
-		match := newEventMatch(r)
-		if len(match.Content) != 0 {
+		content := matchContent(r)
+		if len(content) != 0 {
 			matches := map[MatchKey]int{}
-			for _, contentPiece := range match.Content {
+			for _, contentPiece := range content {
 				for _, submatches := range regexp.FindAllStringSubmatchIndex(contentPiece, -1) {
 					contentMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), contentPiece)
 					for value, count := range contentMatches {
@@ -185,6 +133,36 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 		}
 		return nil, nil
 	}, nil
+}
+
+func matchContent(event result.Match) []string {
+	switch match := event.(type) {
+	case *result.FileMatch:
+		capacity := len(match.ChunkMatches)
+		var content = make([]string, 0, capacity)
+		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
+			for _, cm := range match.ChunkMatches {
+				for _, range_ := range cm.Ranges {
+					content = append(content, chunkContent(cm, range_))
+				}
+			}
+			return content
+		} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
+			return nil
+		} else { // This is a File match representing a whole file
+			return []string{match.Path}
+		}
+	case *result.RepoMatch:
+		return []string{string(match.RepoName().Name)}
+	case *result.CommitMatch:
+		if match.DiffPreview != nil { // signals this is a Diff match
+			return nil
+		} else {
+			return []string{string(match.Commit.Message)}
+		}
+	default:
+		return nil
+	}
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
@@ -260,9 +238,6 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 				// delegate error handling to the passed in tabulator
 				if err != nil {
 					r.tabulator(nil, err)
-					continue
-				}
-				if groups == nil {
 					continue
 				}
 				current, _ := combined[groupKey]

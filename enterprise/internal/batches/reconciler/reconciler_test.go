@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -135,7 +136,11 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &stesting.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &stesting.FakeChangesetSource{
+				Svc:                  extSvc,
+				FakeMetadata:         githubPR,
+				CurrentAuthenticator: &auth.OAuthBearerTokenWithSSH{},
+			}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.HeadRef
 				fakeSource.WantBaseRef = changesetSpec.BaseRef

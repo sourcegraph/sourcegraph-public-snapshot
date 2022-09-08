@@ -1006,7 +1006,7 @@ func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 

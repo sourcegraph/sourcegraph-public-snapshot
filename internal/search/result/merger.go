@@ -82,6 +82,8 @@ func (lm *merger) addMatch(m Match, source int) Match {
 		prev.match.(*FileMatch).AppendMatches(v)
 	case *CommitMatch:
 		prev.match.(*CommitMatch).AppendMatches(v)
+	case *RepoMatch:
+		prev.match.(*RepoMatch).AppendMatches(v)
 	}
 
 	// Mark the key as seen by this source

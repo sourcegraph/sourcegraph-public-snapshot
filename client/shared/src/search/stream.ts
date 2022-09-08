@@ -131,6 +131,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string

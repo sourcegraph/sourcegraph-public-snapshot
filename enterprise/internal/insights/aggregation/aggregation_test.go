@@ -99,6 +99,18 @@ func commitMatch(repo, author string, date time.Time, repoID, numRanges int32, c
 			Message:   gitdomain.Message(content),
 		},
 		Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
+		MessagePreview: &result.MatchedString{
+			Content: content,
+			MatchedRanges: result.Ranges{
+				{
+					Start: result.Location{Line: 1, Offset: 0, Column: 1},
+					End:   result.Location{Line: 1, Offset: 1, Column: 1},
+				},
+				{
+					Start: result.Location{Line: 2, Offset: 0, Column: 1},
+					End:   result.Location{Line: 2, Offset: 1, Column: 1},
+				}},
+		},
 	}
 }
 
@@ -176,7 +188,7 @@ func TestRepoAggregation(t *testing.T) {
 					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "a"),
 					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "b"),
 				}},
-			autogold.Want("Count repos on commit matches", map[string]int{"myRepo": 2}),
+			autogold.Want("Count repos on commit matches", map[string]int{"myRepo": 4}),
 		},
 		{
 			types.REPO_AGGREGATION_MODE,
@@ -213,7 +225,7 @@ func TestRepoAggregation(t *testing.T) {
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo", "author-b", 1),
 				}},
-			autogold.Want("Count repos on diff matches", map[string]int{"myRepo": 2}),
+			autogold.Want("Count repos on diff matches", map[string]int{"myRepo": 4}),
 		},
 		{
 			types.REPO_AGGREGATION_MODE,
@@ -222,7 +234,7 @@ func TestRepoAggregation(t *testing.T) {
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count multiple repos on diff matches", map[string]int{"myRepo": 1, "myRepo2": 1}),
+			autogold.Want("Count multiple repos on diff matches", map[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 	}
 	for _, tc := range testCases {
@@ -274,7 +286,7 @@ func TestAuthorAggregation(t *testing.T) {
 					commitMatch("repoB", "Author C", sampleDate, 2, 2, "a"),
 				},
 			},
-			autogold.Want("counts by author", map[string]int{"Author A": 1, "Author B": 2, "Author C": 1}),
+			autogold.Want("counts by author", map[string]int{"Author A": 2, "Author B": 4, "Author C": 2}),
 		},
 		{
 			types.AUTHOR_AGGREGATION_MODE,
@@ -284,7 +296,7 @@ func TestAuthorAggregation(t *testing.T) {
 					diffMatch("myRepo2", "author-a", 2),
 					diffMatch("myRepo2", "author-b", 2),
 				}},
-			autogold.Want("Count authors on diff matches", map[string]int{"author-a": 2, "author-b": 1}),
+			autogold.Want("Count authors on diff matches", map[string]int{"author-a": 4, "author-b": 2}),
 		},
 	}
 	for _, tc := range testCases {

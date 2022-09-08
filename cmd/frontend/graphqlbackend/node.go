@@ -284,7 +284,7 @@ func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolv
 	return n, ok
 }
 
-func (r *NodeResolver) ToWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	n, ok := r.Node.(BatchWorkspaceFileResolver)
 	return n, ok
 }

@@ -498,7 +498,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
-func TestBatchSpecResolver_Mounts(t *testing.T) {
+func TestBatchSpecResolver_Files(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -514,7 +514,7 @@ func TestBatchSpecResolver_Mounts(t *testing.T) {
 	}
 
 	after := "1"
-	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListWorkspaceFilesArgs{
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
 		First: int32(10),
 		After: &after,
 	})

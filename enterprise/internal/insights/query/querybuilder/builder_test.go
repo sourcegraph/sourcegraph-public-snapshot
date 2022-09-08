@@ -469,27 +469,27 @@ func Test_addAuthorFilter(t *testing.T) {
 		{
 			input:  "myquery repo:myrepo type:commit",
 			author: "santa",
-			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:(^santa$) myquery")),
+			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:^santa$ myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:commit",
 			author: "xtreme[username]",
-			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:(^xtreme\\[username\\]$) myquery")),
+			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:^xtreme\\[username\\]$ myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:commit author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:(^santa$) myquery")),
+			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:^santa$ myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:diff",
 			author: "santa",
-			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:(^santa$) myquery")),
+			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:^santa$ myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:diff author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:(^santa$) myquery")),
+			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:^santa$ myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:file author:claus",
@@ -504,7 +504,7 @@ func Test_addAuthorFilter(t *testing.T) {
 		{
 			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:asdf findme)",
 			author: "santa",
-			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:(^santa$) findme)")),
+			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:^santa$ findme)")),
 		},
 		{
 			input:  "insights type:commit",
@@ -533,17 +533,17 @@ func Test_addRepoFilter(t *testing.T) {
 		{
 			input: "myquery",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("no initial repo filter", BasicQuery("repo:(^github\\.com/sourcegraph/sourcegraph$) myquery")),
+			want:  autogold.Want("no initial repo filter", BasicQuery("repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
 		},
 		{
 			input: "myquery repo:supergreat",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:(^github\\.com/sourcegraph/sourcegraph$) myquery")),
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
 		},
 		{
 			input: "(myquery repo:supergreat) or (big repo:asdf)",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:(^github\\.com/sourcegraph/sourcegraph$) myquery OR repo:asdf repo:(^github\\.com/sourcegraph/sourcegraph$) big)")),
+			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery OR repo:asdf repo:^github\\.com/sourcegraph/sourcegraph$ big)")),
 		},
 	}
 	for _, test := range tests {
@@ -567,17 +567,17 @@ func Test_addFileFilter(t *testing.T) {
 		{
 			input: "myquery",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("no initial repo filter", BasicQuery("file:(^some/directory/file\\.md$) myquery")),
+			want:  autogold.Want("no initial repo filter", BasicQuery("file:^some/directory/file\\.md$ myquery")),
 		},
 		{
 			input: "myquery repo:supergreat",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:(^some/directory/file\\.md$) myquery")),
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:^some/directory/file\\.md$ myquery")),
 		},
 		{
 			input: "(myquery repo:supergreat file:abcdef) or (big repo:asdf)",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:(^some/directory/file\\.md$) myquery OR repo:asdf file:(^some/directory/file\\.md$) big)")),
+			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:^some/directory/file\\.md$ myquery OR repo:asdf file:^some/directory/file\\.md$ big)")),
 		},
 	}
 	for _, test := range tests {

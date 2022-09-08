@@ -42,7 +42,7 @@ export interface TemporarySettingsSchema {
         filePath: string
         author: string
     }
-    'search.results.collapseLuckySearch': boolean
+    'search.results.collapseSmartSearch': boolean
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean

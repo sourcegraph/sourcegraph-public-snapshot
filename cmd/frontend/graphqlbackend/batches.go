@@ -366,7 +366,7 @@ type BatchSpecResolver interface {
 
 	Source() string
 
-	Files(ctx context.Context, args *ListWorkspaceFilesArgs) (WorkspaceFileConnectionResolver, error)
+	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -596,7 +596,7 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
-type ListWorkspaceFilesArgs struct {
+type ListBatchSpecWorkspaceFilesArgs struct {
 	First int32
 	After *string
 }
@@ -670,7 +670,7 @@ type BatchSpecConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type WorkspaceFileConnectionResolver interface {
+type BatchSpecWorkspaceFileConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
@@ -696,7 +696,7 @@ type BatchWorkspaceFileResolver interface {
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 type CommonChangesetsStatsResolver interface {

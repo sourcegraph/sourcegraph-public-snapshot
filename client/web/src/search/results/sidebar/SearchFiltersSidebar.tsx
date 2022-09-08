@@ -64,11 +64,9 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
 
     // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const enableSearchAggregations = useExperimentalFeatures(
-        features => features.enableSearchResultsAggregations ?? false
-    )
-    const disableProactiveSearchAggregations = useExperimentalFeatures(
-        features => features.disableProactiveSearchAggregations ?? false
+    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? false)
+    const proactiveSearchAggregations = useExperimentalFeatures(
+        features => features.proactiveSearchResultsAggregations ?? true
     )
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
@@ -119,7 +117,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                     <SearchAggregations
                         query={submittedURLQuery}
                         patternType={patternType}
-                        proactive={!disableProactiveSearchAggregations}
+                        proactive={proactiveSearchAggregations}
                         caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}
