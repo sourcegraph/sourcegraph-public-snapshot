@@ -155,11 +155,6 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
-        exact: true,
-    },
-    {
         path: '/',
         render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
         exact: true,
