@@ -76,7 +76,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
-import { parseSearchURL, updateQueryStateFromLocation } from './search'
+import { parseSearchURL, getQueryStateFromLocation } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -89,6 +89,7 @@ import {
     observeStore,
     useExperimentalFeatures,
 } from './stores'
+import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -300,7 +301,7 @@ export class SourcegraphWebApp extends React.Component<
 
         // Update search query state whenever the URL changes
         this.subscriptions.add(
-            updateQueryStateFromLocation({
+            getQueryStateFromLocation({
                 location: observeLocation(history).pipe(startWith(history.location)),
                 showSearchContext: observeStore(useExperimentalFeatures).pipe(
                     // We use true here because search contexts are enabled by
@@ -315,7 +316,7 @@ export class SourcegraphWebApp extends React.Component<
                               .pipe(first())
                               .toPromise()
                         : Promise.resolve(false),
-            }).subscribe(({ parsedSearchURL, searchContextSpec }) => {
+            }).subscribe(({ parsedSearchURL, searchContextSpec, processedQuery }) => {
                 // Only override filters from URL if there is a search query
                 if (
                     parsedSearchURL.query &&
@@ -324,6 +325,8 @@ export class SourcegraphWebApp extends React.Component<
                 ) {
                     this.setSelectedSearchContextSpec(searchContextSpec)
                 }
+
+                setQueryStateFromURL(parsedSearchURL, processedQuery)
             })
         )
 

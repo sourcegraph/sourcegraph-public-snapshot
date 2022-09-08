@@ -5,10 +5,9 @@ import { first, startWith, tap, last } from 'rxjs/operators'
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 
 import { SearchPatternType } from '../graphql-operations'
-import { useNavbarQueryState } from '../stores'
 import { observeLocation } from '../util/location'
 
-import { parseSearchURL, repoFilterForRepoRevision, updateQueryStateFromLocation } from '.'
+import { parseSearchURL, repoFilterForRepoRevision, getQueryStateFromLocation } from '.'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),
@@ -177,83 +176,11 @@ describe('updateQueryStateFromURL', () => {
     const isSearchContextAvailable = () => Promise.resolve(true)
     const showSearchContext = of(false)
 
-    it('should update patternType if different between URL and context', () => {
-        const [location] = createHistoryObservable('q=r:golang/oauth2+test+f:travis&patternType=regexp')
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
-
-        return updateQueryStateFromLocation({
-            location: location.pipe(first()),
-            isSearchContextAvailable,
-            showSearchContext,
-        })
-            .pipe(
-                last(),
-                tap(() => {
-                    expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.regexp)
-                })
-            )
-            .toPromise()
-    })
-
-    it('should not update patternType if query is empty', () => {
-        const [location] = createHistoryObservable('q=&patternType=regexp')
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
-
-        return updateQueryStateFromLocation({
-            location: location.pipe(first()),
-            isSearchContextAvailable,
-            showSearchContext,
-        })
-            .pipe(
-                last(),
-                tap(() => {
-                    expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.standard)
-                })
-            )
-            .toPromise()
-    })
-
-    it('should update caseSensitive if different between URL and context', () => {
-        const [location] = createHistoryObservable('q=r:golang/oauth2+test+f:travis case:yes')
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
-
-        return updateQueryStateFromLocation({
-            location: location.pipe(first()),
-            isSearchContextAvailable,
-            showSearchContext,
-        })
-            .pipe(
-                last(),
-                tap(() => {
-                    expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(true)
-                })
-            )
-            .toPromise()
-    })
-
-    it('should not update caseSensitive from filter if query is empty', () => {
-        const [location] = createHistoryObservable('q=case:yes')
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
-
-        return updateQueryStateFromLocation({
-            location: location.pipe(first()),
-            isSearchContextAvailable,
-            showSearchContext,
-        })
-            .pipe(
-                last(),
-                tap(() => {
-                    expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
-                })
-            )
-            .toPromise()
-    })
-
     describe('search context', () => {
         it('should extract the search context from the query', () => {
             const [location] = createHistoryObservable('q=context:me+test')
 
-            return updateQueryStateFromLocation({
+            return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 isSearchContextAvailable,
                 showSearchContext,
@@ -270,15 +197,15 @@ describe('updateQueryStateFromURL', () => {
         it('remove the context filter from the URL if search contexts are enabled and available', () => {
             const [location] = createHistoryObservable('q=context:me+test')
 
-            return updateQueryStateFromLocation({
+            return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 isSearchContextAvailable: () => Promise.resolve(true),
                 showSearchContext: of(true),
             })
                 .pipe(
                     last(),
-                    tap(() => {
-                        expect(useNavbarQueryState.getState().queryState.query).toBe('test')
+                    tap(({ processedQuery }) => {
+                        expect(processedQuery).toBe('test')
                     })
                 )
                 .toPromise()
@@ -287,15 +214,15 @@ describe('updateQueryStateFromURL', () => {
         it('should not remove the context filter from the URL if search context is not available', () => {
             const [location] = createHistoryObservable('q=context:me+test')
 
-            return updateQueryStateFromLocation({
+            return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 showSearchContext: of(true),
                 isSearchContextAvailable: () => Promise.resolve(false),
             })
                 .pipe(
                     last(),
-                    tap(() => {
-                        expect(useNavbarQueryState.getState().queryState.query).toBe('context:me test')
+                    tap(({ processedQuery }) => {
+                        expect(processedQuery).toBe('context:me test')
                     })
                 )
                 .toPromise()
@@ -304,15 +231,15 @@ describe('updateQueryStateFromURL', () => {
         it('should not remove the context filter from the URL if search contexts are disabled', () => {
             const [location] = createHistoryObservable('q=context:me+test')
 
-            return updateQueryStateFromLocation({
+            return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 showSearchContext: of(false),
                 isSearchContextAvailable: () => Promise.resolve(true),
             })
                 .pipe(
                     last(),
-                    tap(() => {
-                        expect(useNavbarQueryState.getState().queryState.query).toBe('context:me test')
+                    tap(({ processedQuery }) => {
+                        expect(processedQuery).toBe('context:me test')
                     })
                 )
                 .toPromise()

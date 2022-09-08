@@ -16,6 +16,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
@@ -55,6 +56,44 @@ export function setSearchPatternType(searchPatternType: SearchPatternType): void
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
     useNavbarQueryState.setState({ searchCaseSensitivity })
+}
+
+/**
+ * Update or initialize query state related data from URL search parameters.
+ *
+ * @param parsedSearchURL contains the information extracted from a URL
+ * @param query can be used to specify the query to use when it differs from
+ * the one contained in the URL (e.g. when the context:... filter got removed)
+ */
+export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = parsedSearchURL.query ?? ''): void {
+    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
+        return
+    }
+
+    // This will be updated with the default in settings when the web app mounts.
+    const newState: Partial<
+        Pick<
+            NavbarQueryState,
+            'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+        >
+    > = {
+        queryState: { query },
+    }
+
+    if (parsedSearchURL.query) {
+        // Only update flags if the URL contains a search query.
+        newState.parametersSource = InitialParametersSource.URL
+        newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
+        if (parsedSearchURL.patternType !== undefined) {
+            newState.searchPatternType = parsedSearchURL.patternType
+        }
+    }
+
+    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
+
+    // The way Zustand is designed makes it difficult to build up a partial new
+    // state object, hence the cast to any here.
+    useNavbarQueryState.setState(newState as any)
 }
 
 /**
