@@ -1,16 +1,13 @@
-import { Location } from 'history'
-import { escapeRegExp, memoize } from 'lodash'
-import { combineLatest, from, Observable, of } from 'rxjs'
-import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { escapeRegExp } from 'lodash'
+import { Observable } from 'rxjs'
 
-import { memoizeObservable, replaceRange } from '@sourcegraph/common'
+import { replaceRange } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 /**
@@ -191,91 +188,4 @@ export interface SearchStreamingProps {
         queryObservable: Observable<string>,
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
-}
-
-/**
- * getQueryStateFromLocation listens to history changes (via the location
- * observable) and extracts search query information while also handling and
- * validating search context information.
- * It returns an observable that emits the parsed query information, the
- * extracted search context (if any) and a processed version of the query
- * (without context filter)
- */
-export function getQueryStateFromLocation({
-    location,
-    showSearchContext,
-    isSearchContextAvailable,
-}: {
-    location: Observable<Location>
-    /**
-     * Whether or not the search context should be shown or not. This is usually
-     * controlled by user settings.
-     */
-    showSearchContext: Observable<boolean>
-    /**
-     * Resolves to true if the provided search context exists for the user.
-     */
-    isSearchContextAvailable: (searchContextSpec: string) => Promise<boolean>
-}): Observable<{
-    /**
-     * Query state from URL
-     */
-    parsedSearchURL: ParsedSearchURL
-    /**
-     * Search context extracted from query.
-     */
-    searchContextSpec: string | undefined
-    /**
-     * Cleaned up query (if search contexts are enabled and URL query contains a
-     * search context, this property contains the query without the context
-     * filter)
-     */
-    processedQuery: string
-}> {
-    // Memoized function to extract the `context:...` filter from a given
-    // search query (avoids reparsing the query)
-    const memoizedGetGlobalSearchContextSpec = memoize((query: string) => getGlobalSearchContextFilter(query))
-
-    const memoizedIsSearchContextAvailable = memoizeObservable(
-        (spec: string) =>
-            spec
-                ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
-                  // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
-                  // user selects a search context from the dropdown.
-                  // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                  from(isSearchContextAvailable(spec)).pipe(startWith(true), distinctUntilChanged())
-                : of(false),
-        spec => spec ?? ''
-    )
-
-    // This subscription handles updating the global query state store from
-    // the URL.
-    return combineLatest([
-        // Extract information from URL and validate search context if
-        // available.
-        location.pipe(
-            switchMap(
-                (location): Observable<[ReturnType<typeof parseSearchURL>, boolean]> => {
-                    const parsedQuery = parseSearchURL(location.search)
-                    return memoizedIsSearchContextAvailable(
-                        memoizedGetGlobalSearchContextSpec(parsedQuery.query ?? '')?.spec ?? ''
-                    ).pipe(map(isSearchContextAvailable => [parsedQuery, isSearchContextAvailable]))
-                }
-            )
-        ),
-        showSearchContext.pipe(distinctUntilChanged()),
-    ]).pipe(
-        map(([[parsedSearchURL, isSearchContextAvailable], showSearchContext]) => {
-            const query = parsedSearchURL.query ?? ''
-            const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)
-            const cleanQuery =
-                // If a global search context spec is available to the user, we omit it from the
-                // query and move it to the search contexts dropdown
-                globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-                    ? omitFilter(query, globalSearchContextSpec.filter)
-                    : query
-
-            return { parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec, processedQuery: cleanQuery }
-        })
-    )
 }
