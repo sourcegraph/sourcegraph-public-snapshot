@@ -12,6 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/hexops/autogold v1.3.0
+	github.com/jedib0t/go-pretty/v6 v6.3.7
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51

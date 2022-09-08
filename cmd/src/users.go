@@ -20,6 +20,7 @@ The commands are:
 	get        gets a user
 	create     creates a user account
 	delete     deletes a user account
+	clean      deletes inactive users
 	tag        add/remove a tag on a user
 
 Use "src users [command] -h" for more information about a command.
@@ -57,7 +58,11 @@ fragment UserFields on User {
     }
     emails {
         email
-        verified
+		verified
+    }
+    usageStatistics {
+        lastActiveTime
+        lastActiveCodeHostIntegrationTime
     }
     url
 }
@@ -71,11 +76,17 @@ type User struct {
 	Organizations struct {
 		Nodes []Org
 	}
-	Emails []UserEmail
-	URL    string
+	Emails          []UserEmail
+	UsageStatistics UserUsageStatistics
+	URL             string
 }
 
 type UserEmail struct {
 	Email    string
 	Verified bool
+}
+
+type UserUsageStatistics struct {
+	LastActiveTime                    string
+	LastActiveCodeHostIntegrationTime string
 }
