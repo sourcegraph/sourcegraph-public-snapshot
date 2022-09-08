@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -93,7 +94,7 @@ func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err err
 // Exists checks if the workspace file exists.
 func (h *FileHandler) Exists() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, statusCode, err := h.exists(r)
+		statusCode, err := h.exists(r)
 
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
@@ -104,7 +105,7 @@ func (h *FileHandler) Exists() http.Handler {
 	})
 }
 
-func (h *FileHandler) exists(r *http.Request) (_ io.Reader, statusCode int, err error) {
+func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	ctx, _, endObservation := h.operations.exists.With(r.Context(), &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -115,19 +116,19 @@ func (h *FileHandler) exists(r *http.Request) (_ io.Reader, statusCode int, err 
 	// For now batchSpecID is only validation. When moving to the blob store, will need this to do queries.
 	_, fileID, err := getPathParts(r)
 	if err != nil {
-		return nil, http.StatusBadRequest, err
+		return http.StatusBadRequest, err
 	}
 
 	count, err := h.store.CountBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{RandID: fileID})
 	if err != nil {
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "checking file existence")
+		return http.StatusInternalServerError, errors.Wrap(err, "checking file existence")
 	}
 
 	// Either the count is 1 or zero.
 	if count == 1 {
-		return nil, http.StatusOK, nil
+		return http.StatusOK, nil
 	} else {
-		return nil, http.StatusNotFound, nil
+		return http.StatusNotFound, nil
 	}
 }
 
@@ -151,7 +152,7 @@ const maxUploadSize = 10 << 20 // 10MB
 func (h *FileHandler) Upload() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-		_, statusCode, err := h.upload(r)
+		responseBody, statusCode, err := h.upload(r)
 
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
@@ -159,12 +160,24 @@ func (h *FileHandler) Upload() http.Handler {
 		}
 
 		w.WriteHeader(statusCode)
+
+		if responseBody.Id != "" {
+			w.Header().Set("Content-Type", "application/json")
+
+			if err = json.NewEncoder(w).Encode(responseBody); err != nil {
+				h.logger.Error("failed to write json payload to client", sglog.Error(err))
+			}
+		}
 	})
+}
+
+type uploadResponse struct {
+	Id string `json:"id"`
 }
 
 const maxMemory = 1 << 20 // 1MB
 
-func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err error) {
+func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode int, err error) {
 	ctx, _, endObservation := h.operations.upload.With(r.Context(), &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -174,20 +187,20 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 
 	specID := mux.Vars(r)["spec"]
 	if specID == "" {
-		return nil, http.StatusBadRequest, errors.New("spec ID not provided")
+		return resp, http.StatusBadRequest, errors.New("spec ID not provided")
 	}
 
 	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
 	if err != nil {
 		if errors.Is(err, store.ErrNoResults) {
-			return nil, http.StatusNotFound, errors.New("batch spec does not exist")
+			return resp, http.StatusNotFound, errors.New("batch spec does not exist")
 		}
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
+		return resp, http.StatusInternalServerError, errors.Wrap(err, "looking up batch spec")
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batch spec can upload files.
 	if !isSiteAdminOrSameUser(ctx, h.logger, h.db, spec.UserID) {
-		return nil, http.StatusUnauthorized, nil
+		return resp, http.StatusUnauthorized, nil
 	}
 
 	// ParseMultipartForm parses the whole request body and stores the max size into memory. The rest of the body is
@@ -201,17 +214,20 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		// TODO: starting in Go 1.19, if the request payload is too large the custom error MaxBytesError is returned here
 		if strings.Contains(err.Error(), "request body too large") {
-			return nil, http.StatusBadRequest, errors.New("request payload exceeds 10MB limit")
+			return resp, http.StatusBadRequest, errors.New("request payload exceeds 10MB limit")
 		} else {
-			return nil, http.StatusInternalServerError, errors.Wrap(err, "parsing request")
+			return resp, http.StatusInternalServerError, errors.Wrap(err, "parsing request")
 		}
 	}
 
-	if err = h.uploadBatchSpecWorkspaceFile(ctx, r, spec); err != nil {
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "uploading file")
+	workspaceFileRandID, err := h.uploadBatchSpecWorkspaceFile(ctx, r, spec)
+	if err != nil {
+		return resp, http.StatusInternalServerError, errors.Wrap(err, "uploading file")
 	}
 
-	return nil, http.StatusOK, err
+	resp.Id = workspaceFileRandID
+
+	return resp, http.StatusOK, err
 }
 
 func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database.DB, userId int32) bool {
@@ -228,36 +244,37 @@ func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database
 	return user != nil && (user.SiteAdmin || user.ID == userId)
 }
 
-func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) error {
+func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) (string, error) {
 	modtime := r.Form.Get("filemod")
 	if modtime == "" {
-		return errors.New("missing file modification time")
+		return "", errors.New("missing file modification time")
 	}
 	modified, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", modtime)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	f, headers, err := r.FormFile("file")
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 
 	filePath := r.Form.Get("filepath")
 	content, err := io.ReadAll(f)
 	if err != nil {
-		return err
+		return "", err
 	}
-	if err = h.store.UpsertBatchSpecWorkspaceFile(ctx, &btypes.BatchSpecWorkspaceFile{
+	workspaceFile := &btypes.BatchSpecWorkspaceFile{
 		BatchSpecID: spec.ID,
 		FileName:    headers.Filename,
 		Path:        filePath,
 		Size:        headers.Size,
 		Content:     content,
 		ModifiedAt:  modified,
-	}); err != nil {
-		return err
 	}
-	return nil
+	if err = h.store.UpsertBatchSpecWorkspaceFile(ctx, workspaceFile); err != nil {
+		return "", err
+	}
+	return workspaceFile.RandID, nil
 }

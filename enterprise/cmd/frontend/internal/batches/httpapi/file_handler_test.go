@@ -124,11 +124,16 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockStore.
 					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(args mock.Arguments) {
+						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
+						workspaceFile.RandID = "abc"
+					}).
 					Return(nil).
 					Once()
 			},
-			userID:             creatorID,
-			expectedStatusCode: http.StatusOK,
+			userID:               creatorID,
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: "{\"id\":\"abc\"}\n",
 		},
 		{
 			name:   "Upload file as site admin",
@@ -143,11 +148,16 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockStore.
 					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(args mock.Arguments) {
+						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
+						workspaceFile.RandID = "abc"
+					}).
 					Return(nil).
 					Once()
 			},
-			userID:             adminID,
-			expectedStatusCode: http.StatusOK,
+			userID:               adminID,
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: "{\"id\":\"abc\"}\n",
 		},
 		{
 			name:   "Unauthorized upload",
