@@ -400,6 +400,7 @@ func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) (
 			&groupResultsPing.Count,
 			&groupResultsPing.AggregationMode,
 			&groupResultsPing.UIMode,
+			&groupResultsPing.BarIndex,
 		); err != nil {
 			return nil, err
 		}
@@ -545,7 +546,7 @@ GROUP BY argument;
 `
 
 const getGroupResultsSql = `
-SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode, argument::json->>'uiMode' as uiMode FROM event_logs
+SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode, argument::json->>'uiMode' as uiMode, argument::json->>'index' as bar_index FROM event_logs
 WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
 GROUP BY argument;
 `
