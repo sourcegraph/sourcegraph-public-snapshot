@@ -87,7 +87,6 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
             setLoadingDefinitions(true)
             searchBasedDefinitions(options)
                 .then(definitions => {
-                    console.log({ newstyle: definitions })
                     onDefinitions(definitions)
                     setLoadingDefinitions(false)
                 })

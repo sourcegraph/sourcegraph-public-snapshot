@@ -389,18 +389,18 @@
             "pointer": true
           }
         },
-        "enableSearchResultsAggregations": {
+        "searchResultsAggregations": {
           "description": "Display aggregations for your search results on the search screen.",
           "type": "boolean",
-          "default": "false",
+          "default": false,
           "!go": {
             "pointer": true
           }
         },
-        "disableProactiveSearchAggregations": {
-          "description": "Search results aggregations are not triggered automatically with a search.",
+        "proactiveSearchResultsAggregations": {
+          "description": "Search results aggregations are triggered automatically with a search.",
           "type": "boolean",
-          "default": "false",
+          "default": true,
           "!go": {
             "pointer": true
           }
