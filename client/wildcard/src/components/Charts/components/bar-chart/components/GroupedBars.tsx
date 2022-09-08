@@ -176,7 +176,7 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Da
     const isOneDatumCategory = category.data.length === 1
 
     if (isOneDatumCategory) {
-        return [category.data[0], category, 0]
+        return [category.data[0], category, categoryPossibleIndex]
     }
 
     const invertCategories = scaleBandInvert(xCategoriesScale)
