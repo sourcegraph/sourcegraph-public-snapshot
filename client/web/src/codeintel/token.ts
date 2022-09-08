@@ -1,6 +1,8 @@
+/* eslint-disable jsdoc/check-param-names */
 import { flatten } from 'lodash'
 
-import { BlockCommentStyle } from './language-specs/languagespec'
+import { BlockCommentStyle } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+
 /**
  * The default regex for characters allowed in an identifier. It works well for
  * C-like languages (C/C++, C#, Java, etc.) but not for languages that allow

@@ -15,8 +15,7 @@ func URL(traceID string, querier conftypes.SiteConfigQuerier) string {
 	c := querier.SiteConfig()
 	tracing := c.ObservabilityTracing
 	if tracing == nil || tracing.UrlTemplate == "" {
-		// Default template
-		return strings.TrimSuffix(c.ExternalURL, "/") + "/-/debug/jaeger/trace/" + traceID
+		return ""
 	}
 
 	tpl, err := template.New("traceURL").Parse(tracing.UrlTemplate)

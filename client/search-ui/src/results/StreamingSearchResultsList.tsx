@@ -31,7 +31,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { luckySearchClickedEvent } from '../util/events'
+import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -70,7 +70,7 @@ export interface StreamingSearchResultsListProps
     /**
      * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
      */
-    luckySearchEnabled?: boolean
+    smartSearchEnabled?: boolean
 
     prefetchFile?: FilePrefetcher
 
@@ -96,7 +96,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    luckySearchEnabled,
+    smartSearchEnabled: smartSearchEnabled,
     prefetchFile,
     prefetchFileEnabled,
 }) => {
@@ -112,17 +112,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (smartSearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
-                luckySearchEnabled &&
+                smartSearchEnabled &&
                 results?.alert?.kind === 'lucky-search-queries' &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
-                const event = luckySearchClickedEvent(
+                const event = smartSearchClickedEvent(
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
@@ -130,7 +130,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, luckySearchEnabled]
+        [telemetryService, results, smartSearchEnabled]
     )
 
     const renderResult = useCallback(

@@ -62,7 +62,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
                 outline={true}
                 as={Link}
             >
-                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph data
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repoName} />}

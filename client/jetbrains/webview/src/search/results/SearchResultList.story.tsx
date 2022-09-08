@@ -5,7 +5,7 @@ import { subMonths } from 'date-fns'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { SymbolKind } from '@sourcegraph/search'
-import { SearchMatch } from '@sourcegraph/shared/out/src/search/stream'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { applyTheme } from '..'

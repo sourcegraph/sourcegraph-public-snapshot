@@ -166,6 +166,10 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Set up local monitoring development](how-to/monitoring_local_dev.md)
 - [Set up local OpenTelemetry development](how-to/opentelemetry_local_dev.md)
 
+### Plans and licenses
+
+- [How to generate a license key for testing and debugging](how-to/generate_license_key_for_testing.md)
+
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)

@@ -781,4 +781,8 @@ func TestParseStandard(t *testing.T) {
 	t.Run("quoted patterns are still literal", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`"veneto"`)))
 	})
+
+	t.Run("parens around /.../", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
+	})
 }

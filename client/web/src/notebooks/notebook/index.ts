@@ -18,6 +18,7 @@ import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -161,6 +162,7 @@ export class Notebook {
                             query,
                             extensionHostAPIPromise: extensionHostAPI,
                             enableGoImportsSearchQueryTransform,
+                            eventLogger,
                         }),
                         {
                             version: LATEST_VERSION,
