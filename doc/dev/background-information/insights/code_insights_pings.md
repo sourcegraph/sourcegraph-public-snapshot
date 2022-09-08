@@ -25,7 +25,7 @@ TEMPLATE
 - Aggregation: Frequency
 - Event Code:
   - Link to a Sourcegraph search of this event code name
-- **Version added:** 
+- **Version added:** (link to PR)
 - **Version(s) broken:** (only add if required, link to fix PR)
 -->
 
@@ -348,18 +348,33 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ## Search Results Aggregations Metrics
 
-### 
+### Information icon hover
 
-**Type:** FE/BE event
+**Type:** FE event
 
-**Intended purpose:** Why does this ping exist?
+**Intended purpose:** To track interest in the feature.
 
-**Functional implementation:** When does this event fire?
+**Functional implementation:** This ping works by firing a telemetry evente on the client when a user hovers over the information icon.
 
-**Other considerations:**
+- Aggregation: Weekly
+- Event Codes: [WeeklyGroupResultsInfoIconHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsInfoIconHover&patternType=lucky)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
 
-- Aggregation: Frequency
-- Event Code:
-  - Link to a Sourcegraph search of this event code name
-- **Version added:**
-- **Version(s) broken:** (only add if required)
+
+### Sidebar and expanded view events
+
+**Type:** FE event
+
+**Intended purpose:** To track how users are using the different aggregation UI modes.
+
+**Functional implementation:** These pings work by firing telemetry events on the client when a user expands or collapses the sidebar or full view panel.
+
+**Other considerations**: For the full UI mode events we record which aggregation mode was toggled.
+
+- Aggregation: Weekly
+- Event Codes:
+  - [WeeklyGroupResultsOpenSection](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsOpenSection&patternType=lucky)
+  - [WeeklyGroupResultsCollapseSection](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsCollapseSection&patternType=lucky)
+  - [WeeklyGroupResultsExpandedViewOpen](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewOpen&patternType=lucky)
+  - [WeeklyGroupResultsExpandedViewCollapse](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsExpandedViewCollapse&patternType=lucky)
+- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
