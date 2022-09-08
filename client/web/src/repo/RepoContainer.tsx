@@ -68,7 +68,7 @@ import {
 } from './RepoRevisionContainer'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
-import { commitRevSpecPath, compareSpecPath } from './routes'
+import { compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -324,6 +324,12 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
+    // render go to the code host action on all the repo container routes and on all compare spec routes
+    const isGoToCodeHostActionVisible = useMemo(() => {
+        const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath]
+        return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
+    }, [props.repoContainerRoutes, props.match])
+
     if (isErrorLike(repoOrError)) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
@@ -410,7 +416,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController={extensionsController}
                 telemetryService={props.telemetryService}
             />
-            {getIsGoToCodeHostActionVisible(props.match) && (
+            {isGoToCodeHostActionVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={2}
@@ -523,12 +529,4 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
         matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
 
     return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
-}
-
-// Show go to the code host action only on commit and compare views. On the other views it's rendered in the actions sidebar.
-function getIsGoToCodeHostActionVisible(match: RepoContainerProps['match']): boolean {
-    return Boolean(
-        matchPath(match.url, { path: match.path + commitRevSpecPath }) ||
-            matchPath(match.url, { path: match.path + compareSpecPath })
-    )
 }

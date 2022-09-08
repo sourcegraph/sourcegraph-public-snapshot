@@ -41,12 +41,11 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
     'ActionItemsBar'
 )
 
-export const commitRevSpecPath = '/-/commit/:revspec+'
 export const compareSpecPath = '/-/compare/:spec*'
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
-        path: commitRevSpecPath,
+        path: '/-/commit/:revspec+',
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
