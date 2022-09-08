@@ -36,7 +36,7 @@ import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
-import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController.ts'
+import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
