@@ -209,7 +209,7 @@ func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database
 			return false
 		}
 
-		logger.Error("batches.httpapi: failed to get up current user", sglog.Error(err))
+		logger.Error("failed to get up current user", sglog.Error(err))
 		return false
 	}
 
