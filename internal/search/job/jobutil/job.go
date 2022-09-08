@@ -318,7 +318,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					Indexed:            false,
 					UseFullDeadline:    useFullDeadline,
 					Features:           *searchInputs.Features,
-					TextPatternRegexps: getPathRegexpsFromTextPatternInfo(patternInfo, repoPatterns),
+					TextPatternRegexps: textPatternRegexps(patternInfo, repoPatterns),
 				}
 
 				addJob(&repoPagerJob{
@@ -466,7 +466,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	return NewParallelJob(allJobs...), nil
 }
 
-func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo, repoPatterns []string) (pathRegexps []*regexp.Regexp) {
+func textPatternRegexps(patternInfo *search.TextPatternInfo, repoPatterns []string) (pathRegexps []*regexp.Regexp) {
 	for _, pattern := range patternInfo.IncludePatterns {
 		if patternInfo.IsRegExp {
 			if patternInfo.IsCaseSensitive {
