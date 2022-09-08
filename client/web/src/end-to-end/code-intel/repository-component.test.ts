@@ -208,7 +208,7 @@ describe('Repository component', () => {
             ).toEqual(2)
         })
 
-        test('responds to keyboard shortcuts', async () => {
+        test.skip('responds to keyboard shortcuts', async () => {
             const assertNumberRowsExpanded = async (expectedCount: number): Promise<void> => {
                 expect(
                     await driver.page.evaluate(
