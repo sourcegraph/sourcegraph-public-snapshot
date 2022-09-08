@@ -1847,7 +1847,7 @@ type SettingsExperimentalFeatures struct {
 	HomePanelsComputeSuggestions bool `json:"homePanelsComputeSuggestions,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
-	// ProactiveSearchResultsAggregations description: Search results aggregations are not triggered automatically with a search.
+	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
