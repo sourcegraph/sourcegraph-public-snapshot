@@ -49,6 +49,14 @@ All notable changes to Sourcegraph are documented in this file.
 - `file:contains()` has been removed from the list of valid predicates. `file:has.content()` and `file:contains.content()` remain, both of which work the same as `file:contains()` and are valid aliases of each other.
 - The single-container `sourcegraph/server` deployment no longer bundles a Jaeger instance. [#41244](https://github.com/sourcegraph/sourcegraph/pull/41244)
 
+## 3.43.2
+
+### Fixed
+
+- Fixed an issue causing context cancel error dumps when updating a code host config manually. [#40857](https://github.com/sourcegraph/sourcegraph/pull/41265)
+- Fixed non-critical errors stopping the repo-syncing process for Bitbucket projectKeys. [#40897](https://github.com/sourcegraph/sourcegraph/pull/40582)
+- Fixed an issue marking accounts as expired when the supplied Account ID list has no entries. [#40860](https://github.com/sourcegraph/sourcegraph/pull/40860)
+
 ## 3.43.1
 
 ### Fixed
