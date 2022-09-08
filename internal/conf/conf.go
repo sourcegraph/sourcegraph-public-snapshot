@@ -219,12 +219,12 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 		for {
 			config, err := c.Read(ctx)
 			if err != nil {
-				logger.Error("failed to read config from database, trying again in 1s", sglog.Error(err))
+				logger.Warn("failed to read config from database, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
-				logger.Error("failed to write site config file, trying again in 1s", sglog.Error(err))
+				logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
@@ -239,7 +239,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// we should propagate it to the database for them.
 			newFileContents, err := os.ReadFile(siteConfigEscapeHatchPath)
 			if err != nil {
-				logger.Error("failed to read site config from disk, trying again in 1s")
+				logger.Warn("failed to read site config from disk, trying again in 1s")
 				time.Sleep(1 * time.Second)
 				continue
 			}
@@ -247,14 +247,14 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				logger.Info("detected site config file edit, saving edit to database")
 				config, err := c.Read(ctx)
 				if err != nil {
-					logger.Error("failed to save edit to database, trying again in 1s (read error)", sglog.Error(err))
+					logger.Warn("failed to save edit to database, trying again in 1s (read error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
 				config.Site = string(newFileContents)
 				err = c.Write(ctx, config)
 				if err != nil {
-					logger.Error("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
+					logger.Warn("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
@@ -267,13 +267,13 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// process), and we should propagate it to the file on disk.
 			newDBConfig, err := c.Read(ctx)
 			if err != nil {
-				logger.Error("failed to read config from database(2), trying again in 1s (read error)", sglog.Error(err))
+				logger.Warn("failed to read config from database(2), trying again in 1s (read error)", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if newDBConfig.Site != lastKnownDBContents {
 				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
-					logger.Error("failed to write site config file, trying again in 1s", sglog.Error(err))
+					logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
