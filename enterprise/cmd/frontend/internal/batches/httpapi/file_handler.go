@@ -81,6 +81,9 @@ func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err err
 
 	file, err := h.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: fileID})
 	if err != nil {
+		if errors.Is(err, store.ErrNoResults) {
+			return nil, http.StatusNotFound, errors.New("batch spec does not exist")
+		}
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "retrieving file")
 	}
 
