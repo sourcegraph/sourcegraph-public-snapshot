@@ -41,9 +41,12 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
     'ActionItemsBar'
 )
 
+export const commitRevSpecPath = '/-/commit/:revspec+'
+export const compareSpecPath = '/-/compare/:spec*'
+
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
-        path: '/-/commit/:revspec+',
+        path: commitRevSpecPath,
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
@@ -56,6 +59,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                         useActionItemsBar={context.useActionItemsBar}
                         location={context.location}
                         telemetryService={context.telemetryService}
+                        source="commit"
                     />
                 )}
             </RepoRevisionWrapper>
@@ -78,7 +82,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         ),
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
@@ -91,6 +95,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                         useActionItemsBar={context.useActionItemsBar}
                         location={context.location}
                         telemetryService={context.telemetryService}
+                        source="compare"
                     />
                 )}
             </RepoRevisionWrapper>
@@ -136,6 +141,7 @@ export const RepoCommits: React.FunctionComponent<
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
         '',
+        '/-/:objectType(blob|tree)/:filePath*',
         '/-/docs/tab/:pathID*',
         '/-/commits/tab',
         '/-/branch/tab',
@@ -157,28 +163,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     })),
     {
-        path: '/-/:objectType(blob|tree)/:filePath*',
-        render: (props: RepositoryFileTreePageProps) => (
-            <TraceSpanProvider
-                name="RepositoryFileTreePage"
-                attributes={{
-                    objectType: props.match.params.objectType,
-                }}
-            >
-                <RepositoryFileTreePage {...props} />
-
-                <ActionItemsBar
-                    repo={props.repo}
-                    useActionItemsBar={props.useActionItemsBar}
-                    location={props.location}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
-                />
-            </TraceSpanProvider>
-        ),
-    },
-    {
         path: '/-/commits',
         render: RepoCommits,
     },
@@ -193,7 +177,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repoName}>
@@ -206,6 +190,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         useActionItemsBar={context.useActionItemsBar}
                         location={context.location}
                         telemetryService={context.telemetryService}
+                        source="compare"
                     />
                 )}
             </RepoRevisionWrapper>

@@ -68,6 +68,7 @@ import {
 } from './RepoRevisionContainer'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { commitRevSpecPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -524,8 +525,10 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
     return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
 }
 
-// Go to the code host action is rendered in the actions sidebar on blob and tree views.
-// No need to duplicate it in the repo header.
+// Show go to the code host action only on commit and compare views. On the other views it's rendered in the actions sidebar.
 function getIsGoToCodeHostActionVisible(match: RepoContainerProps['match']): boolean {
-    return !matchPath(match.url, { path: `${match.path}/-/(blob|tree)` })
+    return Boolean(
+        matchPath(match.url, { path: match.path + commitRevSpecPath }) ||
+            matchPath(match.url, { path: match.path + compareSpecPath })
+    )
 }

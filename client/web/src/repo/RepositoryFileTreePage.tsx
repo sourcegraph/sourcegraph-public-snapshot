@@ -9,6 +9,7 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -135,6 +136,14 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                     </ErrorBoundary>
                 </BlobStatusBarContainer>
             )}
+            <ActionItemsBar
+                repo={repo}
+                useActionItemsBar={context.useActionItemsBar}
+                location={context.location}
+                extensionsController={context.extensionsController}
+                platformContext={context.platformContext}
+                telemetryService={context.telemetryService}
+            />
         </>
     )
 }
