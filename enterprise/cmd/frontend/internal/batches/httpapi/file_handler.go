@@ -175,7 +175,7 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 		return nil, http.StatusUnauthorized, nil
 	}
 
-	// ParseMultipartForm parses the whole request body and store the max size into memory. The rest of the body is
+	// ParseMultipartForm parses the whole request body and stores the max size into memory. The rest of the body is
 	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
 	//
 	// When storing of files is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
