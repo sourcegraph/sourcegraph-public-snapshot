@@ -2149,7 +2149,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	}
 
 	// Update the last-changed stamp.
-	if err := setLastChanged(tmp); err != nil {
+	if err := setLastChanged(logger, tmp); err != nil {
 		return errors.Wrapf(err, "failed to update last changed time")
 	}
 
@@ -2508,7 +2508,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 
 	// Update the last-changed stamp on disk.
-	if err := setLastChanged(dir); err != nil {
+	if err := setLastChanged(logger, dir); err != nil {
 		logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
 	}
 
@@ -2659,7 +2659,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 // an empty repository (not an error) or some kind of actual error
 // that is possibly causing our data to be incorrect, which should
 // be reported.
-func setLastChanged(dir GitDir) error {
+func setLastChanged(logger log.Logger, dir GitDir) error {
 	hashFile := dir.Path("sg_refhash")
 
 	hash, err := computeRefHash(dir)
@@ -2671,7 +2671,7 @@ func setLastChanged(dir GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp = computeLatestCommitTimestamp(dir)
+		stamp = computeLatestCommitTimestamp(logger, dir)
 	}
 
 	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)
@@ -2693,8 +2693,10 @@ func setLastChanged(dir GitDir) error {
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
 // future, or there is any error, time.Now is returned.
-func computeLatestCommitTimestamp(dir GitDir) time.Time {
-	logger := log.Scoped("computeLatestCommitTimestamp", "eturns the timestamp of the most recent commit if any")
+func computeLatestCommitTimestamp(logger log.Logger, dir GitDir) time.Time {
+	logger = logger.Scoped("computeLatestCommitTimestamp", "compute the timestamp of the most recent commit").
+		With(log.String("repo", string(dir)))
+
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	dir.Set(cmd)
@@ -2702,7 +2704,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", log.String("repo", string(dir)), log.Error(err))
+		logger.Warn("failed to execute, defaulting to time.Now", log.Error(err))
 		return now
 	}
 
@@ -2716,7 +2718,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", log.String("repo", string(dir)), log.String("timestamp", string(words[0])))
+		logger.Warn("ignoring corrupted timestamp, defaulting to time.Now", log.String("timestamp", string(words[0])))
 		return now
 	}
 	stamp := time.Unix(epoch, 0)
