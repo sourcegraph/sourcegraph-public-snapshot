@@ -20,6 +20,8 @@ export interface SearchFilterSectionProps {
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
 
+    forcedRender?: boolean
+
     /**
      * Shown when the built-in search doesn't find any results.
      */
@@ -58,6 +60,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         children = [],
         className,
         showSearch = false,
+        forcedRender = true,
         onToggle,
         startCollapsed,
         minItems = 0,
@@ -163,7 +166,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     />
                 </CollapseHeader>
 
-                <CollapsePanel>
+                <CollapsePanel forcedRender={forcedRender}>
                     <div
                         className={classNames(
                             'pb-4',
