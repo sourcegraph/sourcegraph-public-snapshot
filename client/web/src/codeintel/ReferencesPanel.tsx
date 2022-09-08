@@ -39,6 +39,7 @@ import {
     CardHeader,
     useDebounce,
     Button,
+    ButtonLink,
     Input,
     Icon,
     Badge,
@@ -86,20 +87,36 @@ interface ReferencesPanelProps
      */
     externalHistory: H.History
     externalLocation: H.Location
+
+    tokensHistory?: TokenHistoryEntry[]
+    resetHistoryTo: (idx: number) => void
+}
+
+interface TokenHistoryEntry {
+    searchToken: string
+    location: string
 }
 
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
     React.PropsWithChildren<ReferencesPanelProps>
-> = props => (
-    // TODO: this won't be working with Router V6
-    <MemoryRouter
-        // Force router to remount the Panel when external location changes
-        key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
-        initialEntries={[props.externalLocation]}
-    >
-        <ReferencesPanel {...props} />
-    </MemoryRouter>
-)
+> = props => {
+    const [tokensHistory, setTokensHistory] = useState<TokenHistoryEntry[]>([])
+    const resetHistoryTo = (idx: number) => setTokensHistory(old => old.slice(0, idx))
+    useEffect(() => {
+        setTokensHistory([])
+    }, [props.externalLocation.pathname, props.externalLocation.search, props.externalLocation.hash])
+
+    return (
+        // TODO: this won't be working with Router V6
+        <MemoryRouter
+            // Force router to remount the Panel when external location changes
+            key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
+            initialEntries={[props.externalLocation]}
+        >
+            <ReferencesPanel {...props} tokensHistory={tokensHistory} resetHistoryTo={resetHistoryTo} />
+        </MemoryRouter>
+    )
+}
 
 const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
     const location = useLocation()
@@ -158,6 +175,8 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         <SearchTokenFindingReferencesList
             {...props}
             token={token}
+            tokens={props.tokensHistory ?? []}
+            setTokensHistory={props.resetHistoryTo}
             isFork={data.isFork}
             isArchived={data.isArchived}
             fileContent={data.fileContent}
@@ -170,6 +189,8 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     isFork: boolean
     isArchived: boolean
     fileContent: string
+    tokens: TokenHistoryEntry[]
+    setTokensHistory: (idx: number) => void
 }
 
 const SearchTokenFindingReferencesList: React.FunctionComponent<
@@ -195,11 +216,11 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             </div>
         )
     }
-
     return (
         <ReferencesList
             {...props}
             token={props.token}
+            tokens={props.tokens}
             searchToken={tokenResult?.searchToken}
             spec={spec}
             fileContent={props.fileContent}
@@ -228,8 +249,18 @@ export const ReferencesList: React.FunctionComponent<
         }
     >
 > = props => {
+    const location = useLocation()
+
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
+
+    useEffect(() => {
+        console.log(location)
+        if (props.tokensHistory) {
+            const { hash, pathname, search } = location
+            props.tokensHistory.push({ searchToken: props.searchToken, location: `${pathname}${search}${hash}` })
+        }
+    }, [props.tokensHistory, location, props.searchToken])
 
     useEffect(() => {
         setFilter(undefined)
@@ -354,7 +385,6 @@ export const ReferencesList: React.FunctionComponent<
 
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
-    const location = useLocation()
     const initialCollapseState = useMemo((): Record<string, boolean> => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
         const state = {
@@ -397,7 +427,24 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.panel)}>
             <div className={classNames('px-0', styles.leftSubPanel)}>
-                <div className={classNames('d-flex justify-content-start mt-2', styles.filter)}>
+                <div className={classNames('d-flex justify-content-start mt-2', styles.history)}>
+                    {props.tokensHistory &&
+                        props.tokensHistory.map((entry, idx) => (
+                            <ButtonLink
+                                variant="secondary"
+                                size="sm"
+                                to={entry.location}
+                                key={entry.searchToken}
+                                className="mr-1"
+                                onClick={() => {
+                                    props.setTokensHistory(idx)
+                                }}
+                            >
+                                {entry.searchToken}
+                            </ButtonLink>
+                        ))}
+                </div>
+                <div className={classNames('d-flex justify-content-start ', styles.filter)}>
                     <small>
                         <Icon
                             aria-hidden={true}

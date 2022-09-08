@@ -1,3 +1,11 @@
+$history-height: 2rem;
+
+.history {
+    height: $history-height;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
 $filter-input-height: 2.5rem;
 
 .filter {
@@ -225,7 +233,7 @@ $card-header-height: 1.5rem;
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - #{$filter-input-height} - #{$card-header-height});
+    height: calc(100% - #{$history-height} - #{$filter-input-height} - #{$card-header-height});
     overflow: auto;
 }
 
