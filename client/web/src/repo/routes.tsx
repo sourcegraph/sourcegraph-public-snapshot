@@ -138,10 +138,14 @@ export const RepoCommits: React.FunctionComponent<
     Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
 > = ({ revision, repo, ...context }) => <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
 
+const blobPath = '/-/:objectType(blob)/:filePath*'
+const treePath = '/-/:objectType(tree)/:filePath*'
+
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
         '',
-        '/-/:objectType(blob|tree)/:filePath*',
+        blobPath,
+        treePath,
         '/-/docs/tab/:pathID*',
         '/-/commits/tab',
         '/-/branch/tab',
@@ -159,6 +163,15 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 }}
             >
                 <RepositoryFileTreePage {...props} />
+                <ActionItemsBar
+                    repo={props.repo}
+                    useActionItemsBar={props.useActionItemsBar}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                    source={routePath === blobPath ? 'blob' : undefined}
+                />
             </TraceSpanProvider>
         ),
     })),
