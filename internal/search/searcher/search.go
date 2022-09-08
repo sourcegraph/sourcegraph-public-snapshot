@@ -145,6 +145,7 @@ func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 			otlog.Bool("useFullDeadline", s.UseFullDeadline),
 			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
 			otlog.Int("numRepos", len(s.Repos)),
+			otlog.Object("textPatternRegexps", s.TextPatternRegexps),
 		)
 		fallthrough
 	case job.VerbosityBasic:
