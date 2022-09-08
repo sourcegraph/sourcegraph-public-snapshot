@@ -3,7 +3,8 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
+import { delay, repeatWhen } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { hasProperty } from '@sourcegraph/common'
@@ -20,6 +21,7 @@ import {
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceResult,
     ExternalServiceVariables,
+    ExternalServiceSyncJobState,
 } from '../../graphql-operations'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { LoaderButton } from '../LoaderButton'
@@ -32,6 +34,7 @@ import {
     queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     useUpdateExternalService,
     FETCH_EXTERNAL_SERVICE,
+    useCancelExternalServiceSync,
 } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
@@ -235,7 +238,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
 
 interface ExternalServiceSyncJobsListProps {
     externalServiceID: Scalars['ID']
-    updates: Observable<void>
+    updates: Subject<void>
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -251,7 +254,7 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
             queryExternalServiceSyncJobs({
                 first: args.first ?? null,
                 externalService: externalServiceID,
-            }),
+            }).pipe(repeatWhen(obs => obs.pipe(delay(1500)))),
         [externalServiceID, queryExternalServiceSyncJobs]
     )
 
@@ -272,7 +275,7 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
                 pluralNoun="sync jobs"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceSyncJobNode}
-                nodeComponentProps={{}}
+                nodeComponentProps={{ onUpdate: updates }}
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
                 history={history}
@@ -285,47 +288,79 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
 
 interface ExternalServiceSyncJobNodeProps {
     node: ExternalServiceSyncJobListFields
+    onUpdate: Subject<void>
 }
 
-const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node }) => (
-    <li className="list-group-item py-3">
-        <div className="d-flex align-items-center justify-content-between">
-            <div className="flex-shrink-0 mr-2">
-                <Badge>{node.state}</Badge>
-            </div>
-            <div className="flex-shrink-0">
-                {node.startedAt && (
-                    <>
-                        {node.finishedAt === null && <>Running since </>}
-                        {node.finishedAt !== null && <>Ran for </>}
-                        <Duration
-                            start={node.startedAt}
-                            end={node.finishedAt ?? undefined}
-                            stableWidth={false}
-                            className="d-inline"
-                        />
-                    </>
-                )}
-            </div>
-            <div className="text-right flex-grow-1">
-                <div>
-                    {node.startedAt === null && 'Not started yet'}
-                    {node.startedAt !== null && (
+const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node, onUpdate }) => {
+    const [
+        cancelExternalServiceSync,
+        { error: cancelSyncJobError, loading: cancelSyncJobLoading },
+    ] = useCancelExternalServiceSync()
+
+    const cancelJob = useCallback(
+        () =>
+            cancelExternalServiceSync({ variables: { id: node.id } }).then(() => {
+                onUpdate.next()
+                // Optimistically set state.
+                node.state = ExternalServiceSyncJobState.CANCELING
+            }),
+        [cancelExternalServiceSync, node, onUpdate]
+    )
+
+    return (
+        <li className="list-group-item py-3">
+            <div className="d-flex align-items-center justify-content-between">
+                <div className="flex-shrink-0 mr-2">
+                    <Badge>{node.state}</Badge>
+                </div>
+                <div className="flex-shrink-0">
+                    {node.startedAt && (
                         <>
-                            Started <Timestamp date={node.startedAt} />
+                            {node.finishedAt === null && <>Running since </>}
+                            {node.finishedAt !== null && <>Ran for </>}
+                            <Duration
+                                start={node.startedAt}
+                                end={node.finishedAt ?? undefined}
+                                stableWidth={false}
+                                className="d-inline"
+                            />
+                            {node.state === ExternalServiceSyncJobState.QUEUED ||
+                                (node.state === ExternalServiceSyncJobState.PROCESSING && (
+                                    <LoaderButton
+                                        label="Cancel"
+                                        alwaysShowLabel={true}
+                                        variant="danger"
+                                        outline={true}
+                                        size="sm"
+                                        onClick={cancelJob}
+                                        loading={cancelSyncJobLoading}
+                                        disabled={cancelSyncJobLoading}
+                                    />
+                                ))}
+                            {cancelSyncJobError && <ErrorAlert error={cancelSyncJobError} />}
                         </>
                     )}
                 </div>
-                <div>
-                    {node.finishedAt === null && 'Not finished yet'}
-                    {node.finishedAt !== null && (
-                        <>
-                            Finished <Timestamp date={node.finishedAt} />
-                        </>
-                    )}
+                <div className="text-right flex-grow-1">
+                    <div>
+                        {node.startedAt === null && 'Not started yet'}
+                        {node.startedAt !== null && (
+                            <>
+                                Started <Timestamp date={node.startedAt} />
+                            </>
+                        )}
+                    </div>
+                    <div>
+                        {node.finishedAt === null && 'Not finished yet'}
+                        {node.finishedAt !== null && (
+                            <>
+                                Finished <Timestamp date={node.finishedAt} />
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
-        {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
-    </li>
-)
+            {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+        </li>
+    )
+}

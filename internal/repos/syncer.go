@@ -123,6 +123,10 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(50 * time.Second):
+	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
 }
