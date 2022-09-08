@@ -63,13 +63,13 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:               "Method not allowed",
 			method:             http.MethodPatch,
-			path:               fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:               fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			expectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "Get file",
 			method: http.MethodGet,
-			path:   fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			mockInvokes: func() {
 				mockStore.
 					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
@@ -82,13 +82,13 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:               "Get file missing file id",
 			method:             http.MethodGet,
-			path:               fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:               fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			expectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "Failed to find file",
 			method: http.MethodGet,
-			path:   fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			mockInvokes: func() {
 				mockStore.
 					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
@@ -101,7 +101,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
@@ -120,7 +120,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload file as site admin",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
@@ -139,7 +139,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Unauthorized upload",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
@@ -154,7 +154,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload has invalid content type",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return nil, "application/json"
 			},
@@ -170,7 +170,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload failed to lookup batch spec",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
@@ -185,7 +185,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload missing filemod",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				body := &bytes.Buffer{}
 				w := multipart.NewWriter(body)
@@ -204,7 +204,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Upload missing file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				body := &bytes.Buffer{}
 				w := multipart.NewWriter(body)
@@ -224,7 +224,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "Failed to create batch spec workspace file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
@@ -244,7 +244,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "File Exists",
 			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			mockInvokes: func() {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
@@ -256,7 +256,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "File Does Not Exists",
 			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			mockInvokes: func() {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
@@ -268,7 +268,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:   "File Exists Error",
 			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batches/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
 			mockInvokes: func() {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
@@ -281,13 +281,13 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		{
 			name:               "Missing file id",
 			method:             http.MethodHead,
-			path:               fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:               fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			expectedStatusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:   "File exceeds max limit",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batches/%s", batchSpecRandID),
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
 			requestBody: func() (io.Reader, string) {
 				body := &bytes.Buffer{}
 				w := multipart.NewWriter(body)
@@ -330,9 +330,9 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 
 			// In order to get the mux variables from the path, setup mux routes
 			router := mux.NewRouter()
-			router.Methods(http.MethodGet).Path("/files/batches/{spec}/{file}").Handler(handler.Get())
-			router.Methods(http.MethodHead).Path("/files/batches/{spec}/{file}").Handler(handler.Exists())
-			router.Methods(http.MethodPost).Path("/files/batches/{spec}").Handler(handler.Upload())
+			router.Methods(http.MethodGet).Path("/files/batch-changes/{spec}/{file}").Handler(handler.Get())
+			router.Methods(http.MethodHead).Path("/files/batch-changes/{spec}/{file}").Handler(handler.Exists())
+			router.Methods(http.MethodPost).Path("/files/batch-changes/{spec}").Handler(handler.Upload())
 			router.ServeHTTP(w, r)
 
 			res := w.Result()

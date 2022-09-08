@@ -39,7 +39,7 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		base.Path("/files/batches/{path:.*}").Methods("GET", "HEAD").Handler(batchesMountHandler)
+		base.Path("/files/batch-changes/{path:.*}").Methods("GET", "HEAD").Handler(batchesMountHandler)
 
 		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
 	}
