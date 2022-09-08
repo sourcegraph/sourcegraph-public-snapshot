@@ -23,7 +23,7 @@ export interface ImplementationsResponse {
 }
 
 const implementationsQuery = gql`
-    query Implementations(
+    query LegacyImplementations(
         $repository: String!
         $commit: String!
         $path: String!

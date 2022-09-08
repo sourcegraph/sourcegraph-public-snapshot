@@ -25,7 +25,13 @@ export interface HoverPayload {
 }
 
 const definitionAndHoverQuery = gql`
-    query DefinitionAndHover($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
+    query LegacyDefinitionAndHover(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+    ) {
         repository(name: $repository) {
             commit(rev: $commit) {
                 blob(path: $path) {

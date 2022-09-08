@@ -20,7 +20,7 @@ export const stencil = async (
 }
 
 const stencilQuery = gql`
-    query Stencil($repository: String!, $commit: String!, $path: String!) {
+    query LegacyStencil($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
             commit(rev: $commit) {
                 blob(path: $path) {

@@ -118,7 +118,7 @@ export class API {
      */
     private async hasForkField(): Promise<boolean> {
         const introspectionQuery = gql`
-            query RepositoryIntrospection {
+            query LegacyRepositoryIntrospection {
                 __type(name: "Repository") {
                     fields {
                         name
@@ -143,7 +143,7 @@ export class API {
      */
     public async hasImplementationsField(): Promise<boolean> {
         const introspectionQuery = gql`
-            query ImplementationsIntrospectionQuery {
+            query LegacyImplementationsIntrospectionQuery {
                 __type(name: "GitBlobLSIFData") {
                     fields {
                         name
@@ -169,7 +169,7 @@ export class API {
      */
     public hasLocalCodeIntelField = once(async () => {
         const introspectionQuery = gql`
-            query LocalCodeIntelIntrospectionQuery {
+            query LegacyLocalCodeIntelIntrospectionQuery {
                 __type(name: "GitBlob") {
                     fields {
                         name
@@ -194,7 +194,7 @@ export class API {
      */
     public hasSymbolInfo = once(async () => {
         const introspectionQuery = gql`
-            query SymbolInfoIntrospectionQuery {
+            query LegacySymbolInfoIntrospectionQuery {
                 __type(name: "GitBlob") {
                     fields {
                         name
@@ -219,7 +219,7 @@ export class API {
      */
     public hasSymbolLocationRange = once(async () => {
         const introspectionQuery = gql`
-            query SymbolLocationRangeIntrospectionQuery {
+            query LegacySymbolLocationRangeIntrospectionQuery {
                 __type(name: "SymbolLocation") {
                     fields {
                         name
@@ -316,7 +316,7 @@ export class API {
      */
     public async resolveRev(repoName: string, revision: string): Promise<string | undefined> {
         const query = gql`
-            query ResolveRev($repoName: String!, $rev: String!) {
+            query LegacyResolveRev($repoName: String!, $rev: String!) {
                 repository(name: $repoName) {
                     commit(rev: $rev) {
                         oid
@@ -345,7 +345,7 @@ export class API {
      */
     public async findReposViaSearch(searchQuery: string): Promise<string[]> {
         const query = gql`
-            query CodeIntelSearch($query: String!) {
+            query LegacyCodeIntelSearch($query: String!) {
                 search(query: $query) {
                     results {
                         results {
@@ -381,7 +381,7 @@ export class API {
      */
     public async getExtensionManifests(): Promise<string[]> {
         const query = gql`
-            query ExtensionManifests {
+            query LegacyExtensionManifests {
                 extensionRegistry {
                     extensions {
                         nodes {
@@ -414,7 +414,7 @@ export class API {
      */
     public async productVersion(): Promise<string> {
         const query = gql`
-            query ProductVersion {
+            query LegacyProductVersion {
                 site {
                     productVersion
                 }
@@ -438,7 +438,7 @@ export class API {
      */
     public async getUser(): Promise<string | undefined> {
         const query = gql`
-            query CurrentUser {
+            query LegacyCurrentUser {
                 currentUser {
                     id
                 }
@@ -461,7 +461,7 @@ export class API {
      */
     public async createAccessToken(user: string, note: string): Promise<string> {
         const query = gql`
-            mutation CreateAccessToken($user: ID!, $note: String!, $scopes: [String!]!) {
+            mutation LegacyCreateAccessToken($user: ID!, $note: String!, $scopes: [String!]!) {
                 createAccessToken(user: $user, note: $note, scopes: $scopes) {
                     token
                 }
@@ -494,7 +494,7 @@ export class API {
      */
     public async getFileContent(repo: string, revision: string, path: string): Promise<string | undefined> {
         const query = gql`
-            query FileContent($repo: String!, $rev: String!, $path: String!) {
+            query LegacyFileContent($repo: String!, $rev: String!, $path: String!) {
                 repository(name: $repo) {
                     commit(rev: $rev) {
                         file(path: $path) {
@@ -550,7 +550,7 @@ export class API {
      */
     public async hasStencils(): Promise<boolean> {
         const introspectionQuery = gql`
-            query StencilIntrospectionQuery {
+            query LegacyStencilIntrospectionQuery {
                 __type(name: "GitBlobLSIFData") {
                     fields {
                         name

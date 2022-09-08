@@ -23,7 +23,7 @@ export interface ReferencesResponse {
 }
 
 const referencesQuery = gql`
-    query References(
+    query LegacyReferences(
         $repository: String!
         $commit: String!
         $path: String!

@@ -260,7 +260,7 @@ const rangesQuery = (hasImplementationsField: boolean): string => {
     }
 
     return gql`
-    query Ranges($repository: String!, $commit: String!, $path: String!, $startLine: Int!, $endLine: Int!) {
+    query LegacyRanges($repository: String!, $commit: String!, $path: String!, $startLine: Int!, $endLine: Int!) {
         repository(name: $repository) {
             commit(rev: $commit) {
                 blob(path: $path) {
