@@ -42,15 +42,16 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
             seriesCreations,
             insightHovers,
             insightDataPointClicks,
-            insightCreations,
+            totalInsightsCount,
             dashboardCreations,
         } = data.site.analytics.codeInsights
+
         const legends: ValueLegendListProps['items'] = [
             {
-                value: insightCreations.summary.totalCount,
-                description: 'Insights created',
+                value: seriesCreations.summary.totalCount,
+                description: 'Series created',
                 color: 'var(--cyan)',
-                tooltip: 'TODO:',
+                tooltip: 'The number of insight series created during the timeframe.',
             },
             {
                 value:
@@ -59,7 +60,10 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                         : insightHovers.summary.totalRegisteredUsers,
                 description: aggregation.selected === 'count' ? 'Insight hovers' : 'Users hovering insights',
                 color: 'var(--orange)',
-                tooltip: 'TODO:',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? 'The number of insight datapoint hovers during the timeframe.'
+                        : 'The number of users hovering over insight data points during the timeframe.',
             },
             {
                 value:
@@ -68,21 +72,22 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                         : insightDataPointClicks.summary.totalRegisteredUsers,
                 description: aggregation.selected === 'count' ? 'Datapoint clicks' : 'Users clicking datapoints',
                 color: 'var(--purple)',
-                tooltip: 'TODO:',
-            },
-            {
-                value: seriesCreations.summary.totalCount,
-                description: 'Series created',
-                color: 'var(--black)',
-                position: 'right',
-                tooltip: 'TODO:',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? 'The number of insight datapoint clicks during the timeframe.'
+                        : 'The number of users clicking on insight data points during the timeframe.',
             },
             {
                 value: dashboardCreations.summary.totalCount,
                 description: 'Dashboards created',
-                color: 'var(--black)',
                 position: 'right',
-                tooltip: 'TODO:',
+                tooltip: 'The number of dashboards created during the timeframe.',
+            },
+            {
+                value: totalInsightsCount,
+                description: 'Total insights',
+                position: 'right',
+                tooltip: 'The number of currently existing insights.',
             },
         ]
 
@@ -93,13 +98,13 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { insightCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { seriesCreations, insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
         const activities: Series<StandardDatum>[] = [
             {
-                id: 'insight-creations',
-                name: 'Insights created',
+                id: 'series-creations',
+                name: 'Series created',
                 color: 'var(--cyan)',
-                data: insightCreations.nodes.map(
+                data: seriesCreations.nodes.map(
                     node => ({
                         date: new Date(node.date),
                         value: node.count,
@@ -241,7 +246,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
             </Card>
             <Text className="font-italic text-center mt-2">
-                Some metrics are generated from entries in the event logs table and are updated every 24 hours..
+                Some metrics are generated from entries in the event logs table and are updated every 24 hours.
             </Text>
         </>
     )

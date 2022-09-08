@@ -130,60 +130,27 @@ func (c *CodeInsights) DashboardCreations() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
-// Insights:InsightCreations
+// Insights:TotalInsightsCount
 
-var insightCTEQueryFragment = `
-WITH insights AS (
-    SELECT
-		v.id as insight_id,
-		MIN(s.created_at) as created_at
-	FROM insight_view v
-        INNER JOIN insight_view_series vs ON vs.insight_view_id = v.id
-        INNER JOIN insight_series s ON s.id = vs.insight_series_id
-    GROUP BY v.id
-)
-`
+func (c *CodeInsights) TotalInsightsCount(ctx context.Context) (*float64, error) {
+	cacheKey := "Insights:TotalInsightsCount"
+	if c.Cache {
+		if totalCount, err := getItemFromCache[float64](cacheKey); err == nil {
+			return totalCount, nil
+		}
+	}
 
-var insightCreationNodesQuery = insightCTEQueryFragment + `
-	SELECT
-		%s AS date,
-		COUNT(DISTINCT insight_id) AS count,
-		-- Add empty columns to reuse AnalyticsFetcher
-		0 as unique_users,
-		0 as registered_users
-		FROM insights
-	WHERE %s
-	GROUP BY date
-`
-
-var insightCreationsSummaryQuery = insightCTEQueryFragment + `
-	SELECT
-		COUNT(DISTINCT insight_id) AS count,
-		-- Add empty columns to reuse AnalyticsFetcher
-		0 as unique_users,
-		0 as registered_users
-	FROM insights
-	WHERE %s
-`
-
-func (c *CodeInsights) InsightCreations() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "created_at")
-	if err != nil {
+	var totalCount float64
+	query := `SELECT COUNT (distinct id) AS total_count FROM insight_view`
+	if err := c.DB.QueryRowContext(ctx, query).Scan(&totalCount); err != nil {
 		return nil, err
 	}
-	conds := []*sqlf.Query{sqlf.Sprintf(`created_at %s`, dateBetweenCond)}
-	nodesQuery := sqlf.Sprintf(insightCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
-	summaryQuery := sqlf.Sprintf(insightCreationsSummaryQuery, sqlf.Join(conds, "AND"))
 
-	return &AnalyticsFetcher{
-		db:           c.DB,
-		dateRange:    c.DateRange,
-		grouping:     c.Grouping,
-		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Insights:InsightCreations",
-		cache:        c.Cache,
-	}, nil
+	if _, err := setItemToCache(cacheKey, &totalCount); err != nil {
+		return nil, err
+	}
+
+	return &totalCount, nil
 }
 
 // Insights:Hovers

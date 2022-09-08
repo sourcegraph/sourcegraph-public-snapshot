@@ -14,15 +14,34 @@ const analyticsStatItemFragment = gql`
     }
 `
 
+const analyticsInsightStatItemFragment = gql`
+    fragment AnalyticsInsightStatItemFragment on AnalyticsInsightStatItem {
+        nodes {
+            date
+            count
+        }
+        summary {
+            totalCount
+        }
+    }
+`
+
 export const INSIGHTS_STATISTICS = gql`
     query InsightsStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
                     seriesCreations {
-                        summary {
-                            totalCount
-                        }
+                        ...AnalyticsInsightStatItemFragment
+                    }
+                    dashboardCreations {
+                        ...AnalyticsInsightStatItemFragment
+                    }
+                    insightHovers {
+                        ...AnalyticsStatItemFragment
+                    }
+                    insightDataPointClicks {
+                        ...AnalyticsStatItemFragment
                     }
                     searchSeriesCreations: seriesCreations(generationType: SEARCH) {
                         summary {
@@ -39,29 +58,11 @@ export const INSIGHTS_STATISTICS = gql`
                             totalCount
                         }
                     }
-                    insightHovers {
-                        ...AnalyticsStatItemFragment
-                    }
-                    insightDataPointClicks {
-                        ...AnalyticsStatItemFragment
-                    }
-                    dashboardCreations {
-                        summary {
-                            totalCount
-                        }
-                    }
-                    insightCreations {
-                        summary {
-                            totalCount
-                        }
-                        nodes {
-                            date
-                            count
-                        }
-                    }
+                    totalInsightsCount
                 }
             }
         }
     }
     ${analyticsStatItemFragment}
+    ${analyticsInsightStatItemFragment}
 `

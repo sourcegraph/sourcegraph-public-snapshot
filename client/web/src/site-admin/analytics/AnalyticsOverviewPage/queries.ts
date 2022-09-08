@@ -156,11 +156,6 @@ export const OVERVIEW_DEV_TIME_SAVED = gql`
                             totalCount
                         }
                     }
-                    insightCreations {
-                        summary {
-                            totalCount
-                        }
-                    }
                 }
             }
         }

@@ -6437,7 +6437,7 @@ Code insights analytics.
 type AnalyticsCodesInsightsResult {
     insightHovers: AnalyticsStatItem!
     insightDataPointClicks: AnalyticsStatItem!
-    insightCreations: AnalyticsInsightStatItem!
+    totalInsightsCount: Float
     seriesCreations(generationType: AnalyticsInsightSeriesGenerationType): AnalyticsInsightStatItem!
     dashboardCreations: AnalyticsInsightStatItem!
 }
