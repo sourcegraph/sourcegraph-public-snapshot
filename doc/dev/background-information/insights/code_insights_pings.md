@@ -4,13 +4,6 @@ Code Insights pings allow us to quantitatively measure the usage and success of 
 
 We keep this docs page up to date because pings are a vital component of our product knowledge and prioritization process, and a broken or incorrect ping impacts 3-5 months of data (because that's how long a fix takes to propagate).
 
-## Terminology
-
-- **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in the `event_logs` table. These typically represent user actions, such as hovers.
-- **BE capture** - pings that our BE sends to the ping store by checking/selecting data from database tables. Our backend periodically sends these pings to the `event_logs` table. These typically represent absolute counts across the entire instance. 
-
-## Metrics
-
 <!-- 
 TEMPLATE 
 
@@ -20,14 +13,20 @@ TEMPLATE
 
 **Functional implementation:** When does this event fire?
 
-**Other considerations:**
+**Other considerations:** Anything worth noting.
 
-- Aggregation: Frequency
-- Event Code:
-  - Link to a Sourcegraph search of this event code name
+- Aggregation: e.g. total, weekly
+- Event Code: link to a Sourcegraph search of this event code name
 - **Version added:** (link to PR)
 - **Version(s) broken:** (only add if required, link to fix PR)
 -->
+
+## Terminology
+
+- **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in the `event_logs` table. These typically represent user actions, such as hovers.
+- **BE capture** - pings that our BE sends to the ping store by checking/selecting data from database tables. Our backend periodically sends these pings to the `event_logs` table. These typically represent absolute counts across the entire instance. 
+
+## Metrics
 
 ### Additions count, edits count, and removals count 
 
