@@ -1113,14 +1113,14 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:   `repo contains file but not content`,
-				query:  `repo:contains.file(go\.mod) -repo:contains.content(go-diff)`,
+				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
 				counts: counts{Repo: 1},
 			},
 			{
 				name: `repo does not contain file, but search for another file`,
 				// reader_util_test.go exists in go-diff
 				// appdash.go exists in appdash
-				query:  `-repo:contains.file(reader_util_test.go) file:appdash.go`,
+				query:  `-repo:contains.path(reader_util_test.go) file:appdash.go`,
 				counts: counts{File: 1},
 			},
 			{
