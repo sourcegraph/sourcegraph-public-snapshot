@@ -69,7 +69,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 					allowOrgs:    p.AllowOrgs,
 					allowOrgsMap: p.AllowOrgsMap,
 				}, sessionKey),
-				http.HandlerFunc(failureHandler(logger)),
+				failureHandler(logger),
 			)
 		},
 	}), messages
