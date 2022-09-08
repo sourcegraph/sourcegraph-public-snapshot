@@ -38,7 +38,7 @@ type BatchesStore interface {
 // NewFileHandler creates a new FileHandler.
 func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) http.Handler {
 	handler := &FileHandler{
-		logger:     sglog.Scoped("FileHandler", ""),
+		logger:     sglog.Scoped("FileHandler", "Batch Changes mounted file REST API handler"),
 		db:         db,
 		store:      store,
 		operations: operations,
