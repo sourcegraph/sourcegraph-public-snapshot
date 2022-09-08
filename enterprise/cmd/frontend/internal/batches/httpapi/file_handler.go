@@ -176,9 +176,12 @@ func (h *FileHandler) upload(r *http.Request) (_ io.Reader, statusCode int, err 
 	}
 
 	// ParseMultipartForm parses the whole request body and stores the max size into memory. The rest of the body is
-	// stored in temporary files on disk. We need to do this since we are using Postgres and the column is bytea.
+	// stored in temporary files on disk. The reason for parsing the whole request in one go is because data cannot be
+	// "streamed" or "appended" to the bytea type column. Data for the bytea column must be inserted in one go.
 	//
-	// When storing of files is moved to use the blob store (MinIO/S3/GCS), we can stream the parts instead.
+	// When we move to using a blob store (MinIO/S3/GCS), we can stream the parts instead. This means we won't need to
+	// parse the entire request body up front. We will be able to iterate over and write the parts/chunks one at a time
+	// - thus avoiding putting everything into memory.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		// TODO: starting in Go 1.19, if the request payload is too large the custom error MaxBytesError is returned here
