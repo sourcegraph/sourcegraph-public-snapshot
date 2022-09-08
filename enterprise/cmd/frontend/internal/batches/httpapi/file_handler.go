@@ -69,7 +69,6 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case http.MethodPost:
 			// Prevent client from uploading files that are too large. This is also enforced on the src-cli side as well.
 			r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-			//h.upload(w, r)
 			handlerFunc = h.upload
 		default:
 			return nil, http.StatusMethodNotAllowed, nil
