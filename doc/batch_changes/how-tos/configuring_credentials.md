@@ -74,7 +74,9 @@ The code host's indicator should revert to the empty red circle once the token i
 
 Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens for publishing changesets.
 
-Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If it is not configured, webhooks will be the only source of updates.
+However, currently a global service account token is required for [importing existing changesets](./tracking_existing_changesets.md) on your code hosts into batch changes.
+
+Additionally, if you have not [configured webhooks](../../admin/config/batch_changes.md#incoming-webhooks) from your code host,  Sourcegraph requires a global service account keep changesets up to date.
 
 If [forks are enabled](../../admin/config/batch_changes.md#forks), then note that repositories will also be forked into the service account.
 
