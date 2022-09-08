@@ -1,6 +1,10 @@
 # Running batch changes server-side
 
-<aside class="experimental">This feature is in beta.</aside>
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span> <strong>This feature is currently in beta.</strong>
+</p>
+</aside>
 
 By default, Batch Changes uses a command line interface in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
@@ -28,18 +32,18 @@ Make sure that [executors are deployed and are online](../../admin/deploy_execut
 
 This feature is experimental. In particular, it comes with the following limitations, that we plan to resolve before GA.
 
-- Running batch changes server-side requires setting up executors. Executors are only available as a self-hosted offering. This means we cannot offer managed executors at this time. Managed instances customers can still run batch changes server-side by setting up executors on their own infrastructure.
+- Running batch changes server-side requires setting up executors. Executors are configured ready-to-use on Sourcegraph Cloud.
 - The execution UX is work in progress and will change a lot before the GA release.
 - Documentation is minimal and will change a lot before the GA release.
 - Running batch changes server-side will be limited to user namespaces in this release.
 - The newly introduced APIs for server-side are still experimental and will likely change as we evolve the product towards GA.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).
 
-Running batch changes server-side has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
+Running batch changes server-side has been tested to run a simple 45k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
 Feedback on running batch changes server-side is very welcome, feel free to open an [issue](https://github.com/sourcegraph/sourcegraph/issues), reach out through your usual support channel, or send a [direct message](https://twitter.com/MaloMarrec).
 
-### Note for Apple M1 Mac users
+### Note for Apple Silicon Mac users
 
 By default, docker on mac will build docker images for `linux/arm64`, which will result in errors when running server-side because executors provide `linux/amd64` hosts. If you're creating your own images to run in batch changes, this can be a problem. Use the `--platform linux/amd64` flag with `docker build` to build images compatible with the server-side host.
 

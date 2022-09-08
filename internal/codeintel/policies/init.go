@@ -3,8 +3,8 @@ package policies
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -26,7 +26,7 @@ func GetService(db database.DB, uploadSvc UploadService, gitserver GitserverClie
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
 				Logger:     log.Scoped("policies."+name, "codeintel policies "+name),
-				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 				Registerer: prometheus.DefaultRegisterer,
 			}
 		}

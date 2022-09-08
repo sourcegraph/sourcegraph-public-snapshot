@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -62,22 +63,49 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		return err
 	}
 
-	siteConfig := conf.Get().SiteConfiguration
-	maxQueueDepth := 24
-	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil && siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
-	}
-
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
 		endpoints = append(endpoints, endpoint)
 	}
 
+	maxQueueDepth, maxReorderDuration := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
+
 	// resultQueue is used to re-order results by priority.
+	var mu sync.Mutex
 	resultQueue := newResultQueue(maxQueueDepth, endpoints)
 
+	// Flush the queue latest after maxReorderDuration. The longer
+	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
+	// put on frontend. maxReorderDuration is effectively the budget we give each
+	// Zoekt to produce its highest ranking result. It should be large enough to
+	// give each Zoekt the chance to search at least 1 maximum size simple shard
+	// plus time spent on network.
+	//
+	// At the same time maxReorderDuration guarantees a minimum response time. It
+	// protects us from waiting on slow Zoekts for too long.
+	//
+	// maxReorderDuration and maxQueueDepth are tightly connected: If the queue is
+	// too short we will always flush before reaching maxReorderDuration and if the
+	// queue is too long we risk OOMs of frontend for queries with a lot of results.
+	//
+	// maxQueueDepth should be chosen as large as possible given the available
+	// resources.
+	if maxReorderDuration > 0 {
+		done := make(chan struct{})
+		defer close(done)
+
+		go func() {
+			select {
+			case <-done:
+			case <-time.After(maxReorderDuration):
+				mu.Lock()
+				resultQueue.FlushAll(streamer)
+				mu.Unlock()
+			}
+		}()
+	}
+
 	// During rebalancing a repository can appear on more than one replica.
-	var mu sync.Mutex
 	dedupper := dedupper{}
 
 	// GobCache exists so we only pay the cost of marshalling a query once
@@ -125,6 +153,23 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	resultQueue.FlushAll(streamer)
 
 	return nil
+}
+
+func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration) {
+	// defaults
+	maxQueueDepth = 24
+	maxReorderDuration = 0
+
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return
+	}
+
+	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
+		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+	}
+
+	maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+	return
 }
 
 // The results from each endpoint are mostly sorted by priority, with bounded

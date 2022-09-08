@@ -33,7 +33,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/code-graph',
         exact: false,
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryCodeIntelArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -43,7 +43,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/batch-changes',
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryBatchChangesArea {...context} />
             </RepositoryGitDataContainer>
         ),

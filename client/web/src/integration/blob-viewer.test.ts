@@ -13,8 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
@@ -46,8 +45,7 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-        ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+        ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
@@ -297,8 +295,11 @@ describe('Blob viewer', () => {
 
         /**
          * This test is meant to prevent regression: https://github.com/sourcegraph/sourcegraph/pull/15099
+         *
+         * TODO(philipp-spiess): This test no longer works after enabling the migrated git blame
+         * extension. We can remove it once we remove the extension support completely.
          */
-        it('adds and clears line decoration attachments properly', async () => {
+        it.skip('adds and clears line decoration attachments properly', async () => {
             const mockExtensions: MockExtension[] = [
                 {
                     id: 'test',
@@ -950,7 +951,7 @@ describe('Blob viewer', () => {
                     },
                 }),
                 TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, files),
-                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl, commitID),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl, commitID),
                 HighlightedFile: ({ filePath }) => ({
                     repository: {
                         commit: {

@@ -3,6 +3,8 @@ package store
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -15,6 +17,7 @@ type operations struct {
 
 	// Indexes
 	insertIndex                    *observation.Operation
+	indexesInserted                prometheus.Counter
 	getIndexes                     *observation.Operation
 	getIndexByID                   *observation.Operation
 	getIndexesByIDs                *observation.Operation
@@ -45,6 +48,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
+	indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_codeintel_dbstore_indexes_inserted",
+		Help: "The number of codeintel index records inserted.",
+	})
+	observationContext.Registerer.MustRegister(indexesInsertedCounter)
+
 	return &operations{
 		// Commits
 		getStaleSourcedCommits: op("StaleSourcedCommits"),
@@ -53,6 +62,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Indexes
 		insertIndex:                    op("InsertIndex"),
+		indexesInserted:                indexesInsertedCounter,
 		getIndexes:                     op("GetIndexes"),
 		getIndexByID:                   op("GetIndexByID"),
 		getIndexesByIDs:                op("GetIndexesByIDs"),

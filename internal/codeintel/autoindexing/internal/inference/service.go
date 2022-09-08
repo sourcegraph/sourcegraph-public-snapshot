@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -49,6 +50,14 @@ type invocationFunctionTable struct {
 	linearize    func(recognizer *luatypes.Recognizer) []*luatypes.Recognizer
 	callback     func(recognizer *luatypes.Recognizer) *baselua.LFunction
 	scanLuaValue func(value baselua.LValue) ([]indexJobOrHint, error)
+}
+
+type LimitError struct {
+	description string
+}
+
+func (e LimitError) Error() string {
+	return e.description
 }
 
 func newService(
@@ -378,10 +387,22 @@ func (s *Service) resolveFileContents(
 		}
 
 		if len(contentsByPath) >= s.maximumFilesWithContentCount {
-			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
+			return nil, LimitError{
+				description: fmt.Sprintf(
+					"inference limit: requested content for more than %d (%d) files",
+					s.maximumFilesWithContentCount,
+					len(contentsByPath),
+				),
+			}
 		}
 		if int(header.Size) > s.maximumFileWithContentSizeBytes {
-			return nil, errors.Newf("inference limit: requested content for a file larger than %d bytes", s.maximumFileWithContentSizeBytes)
+			return nil, LimitError{
+				description: fmt.Sprintf(
+					"inference limit: requested content for a file larger than %d (%d) bytes",
+					s.maximumFileWithContentSizeBytes,
+					int(header.Size),
+				),
+			}
 		}
 
 		var buf bytes.Buffer

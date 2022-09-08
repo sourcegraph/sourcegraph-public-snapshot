@@ -37,7 +37,7 @@ type Context struct {
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Logger: log.Scoped("TestContext", ""), Registerer: metrics.TestRegisterer}
+var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
 
 type ErrorFilterBehaviour uint8
 
@@ -48,8 +48,12 @@ const (
 	EmitForTraces
 	EmitForHoney
 
-	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
+	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
 )
+
+func (b ErrorFilterBehaviour) Without(e ErrorFilterBehaviour) ErrorFilterBehaviour {
+	return b ^ e
+}
 
 // Op configures an Operation instance.
 type Op struct {
@@ -287,13 +291,13 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
-	if traceContext := trace.Context(ctx); traceContext != nil {
+	if traceContext := trace.Context(ctx); traceContext.TraceID != "" {
 		event.AddField("trace.trace_id", traceContext.TraceID)
 		event.AddField("trace.span_id", traceContext.SpanID)
-		if parentTraceContext != nil {
+		if parentTraceContext.SpanID != "" {
 			event.AddField("trace.parent_id", parentTraceContext.SpanID)
 		}
-		logger = logger.WithTrace(*traceContext)
+		logger = logger.WithTrace(traceContext)
 	}
 
 	trLogger := &traceLogger{

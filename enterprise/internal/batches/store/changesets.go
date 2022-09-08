@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -1180,7 +1181,10 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	case extsvc.TypeGitLab:
 		t.Metadata = new(gitlab.MergeRequest)
 	case extsvc.TypeBitbucketCloud:
-		t.Metadata = new(bbcs.AnnotatedPullRequest)
+		m := new(bbcs.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")
 	}

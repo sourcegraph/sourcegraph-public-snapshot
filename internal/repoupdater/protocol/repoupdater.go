@@ -261,8 +261,6 @@ type PermsSyncResponse struct {
 // updating an external service so that admins don't have to wait until the next sync
 // run to see their repos being synced.
 type ExternalServiceSyncRequest struct {
-	// TODO(eseliger): We can remove this after the 3.43 release, it's for backwards compatibility only.
-	ExternalService   api.ExternalService
 	ExternalServiceID int64
 }
 

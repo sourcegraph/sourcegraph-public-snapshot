@@ -3,9 +3,8 @@ package repos_test
 import (
 	"testing"
 
-	"github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/log/logtest"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -58,7 +57,7 @@ func TestIntegration(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 			store.SetMetrics(repos.NewStoreMetrics())
-			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
+			store.SetTracer(trace.Tracer{TracerProvider: otel.GetTracerProvider()})
 
 			tc.test(store)(t)
 		})

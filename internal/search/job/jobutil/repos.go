@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
@@ -21,6 +22,7 @@ import (
 type RepoSearchJob struct {
 	RepoOpts            search.RepoOptions
 	DescriptionPatterns []*regexp.Regexp
+	RepoNamePatterns    []*regexp.Regexp // used for getting repo name match ranges
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -41,7 +43,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		}
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(page.RepoRevs, descriptionMatches),
+			Results: repoRevsToRepoMatches(page.RepoRevs, s.RepoNamePatterns, descriptionMatches),
 		})
 
 		return nil
@@ -117,14 +119,19 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, repoNameRegexps []*regexp.Regexp, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
+
 	for _, r := range repos {
+		// Get repo name matches once per repo
+		repoNameMatches := repoMatchRanges(string(r.Repo.Name), repoNameRegexps)
+
 		for _, rev := range r.Revs {
 			rm := result.RepoMatch{
-				Name: r.Repo.Name,
-				ID:   r.Repo.ID,
-				Rev:  rev,
+				Name:            r.Repo.Name,
+				ID:              r.Repo.ID,
+				Rev:             rev,
+				RepoNameMatches: repoNameMatches,
 			}
 			if ranges, ok := descriptionMatches[r.Repo.ID]; ok {
 				rm.DescriptionMatches = ranges
@@ -133,4 +140,36 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatch
 		}
 	}
 	return matches
+}
+
+func repoMatchRanges(repoName string, repoNameRegexps []*regexp.Regexp) (res []result.Range) {
+	// Remove code host from repo name (e.g. remove "github.com/")
+	// The code host is removed from the repo name before being displayed in the client (see function `displayRepoName()`)
+	// so this is needed to ensure the repo name match ranges are highlighted correctly in the client.
+	// This is not ideal, but works for now.
+	parts := strings.Split(repoName, "/")
+	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
+		parts = parts[1:]
+	}
+	simplifiedRepoName := strings.Join(parts, "/")
+
+	for _, repoNameRe := range repoNameRegexps {
+		submatches := repoNameRe.FindAllStringSubmatchIndex(simplifiedRepoName, -1)
+		for _, sm := range submatches {
+			res = append(res, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0, // we can treat repo names as single-line
+					Column: utf8.RuneCountInString(simplifiedRepoName[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(simplifiedRepoName[:sm[1]]),
+				},
+			})
+		}
+	}
+
+	return res
 }

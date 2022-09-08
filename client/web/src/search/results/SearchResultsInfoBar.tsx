@@ -295,7 +295,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    {extensionsController !== null ? (
+                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <ActionsContainer
                             {...props}
                             extensionsController={extensionsController}
@@ -358,7 +358,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
-                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                             onClick={
                                                 createActionButton.eventToLog
                                                     ? () => {

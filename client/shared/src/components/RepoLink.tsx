@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { LinkOrSpan } from './LinkOrSpan'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
@@ -45,18 +45,14 @@ export const RepoLink: React.FunctionComponent<React.PropsWithChildren<Props>> =
 }) => {
     const [repoBase, repoName] = splitPath(displayRepoName(fullRepoName))
     const children = (
-        <span className={className || ''}>
-            {' '}
+        <span className={className}>
             {repoBase ? `${repoBase}/` : null}
             <span className={repoClassName}>{repoName}</span>
         </span>
     )
-    if (to === null) {
-        return children
-    }
     return (
-        <Link className={className || ''} to={to} onClick={onClick}>
+        <LinkOrSpan className={className} to={to} onClick={onClick}>
             {children}
-        </Link>
+        </LinkOrSpan>
     )
 }

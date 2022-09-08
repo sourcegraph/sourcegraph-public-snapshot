@@ -6,7 +6,7 @@ If you're not ready to migrate completely to `internal/observation`, you can con
 - [How to add logging](add_logging.md)
 - [How to add monitoring](add_monitoring.md)
 - [Set up local monitoring development](monitoring_local_dev.md)
-- [Set up local OpenTelemetry development](otel_local_dev.md)
+- [Set up local OpenTelemetry development](opentelemetry_local_dev.md)
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
@@ -25,7 +25,7 @@ The high-level ideas behind the [`internal/observation` package](https://sourceg
 ```go
 observationContext := observation.Context{
     Logger:     log.Scoped("my-scope", "a simple description"),
-    Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+    Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
     Registerer: prometheus.DefaultRegisterer,
 }
 

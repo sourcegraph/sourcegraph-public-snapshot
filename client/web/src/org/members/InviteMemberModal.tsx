@@ -1,4 +1,4 @@
-import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
@@ -151,7 +151,6 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
-    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent<React.PropsWithChildren<unknown>>
     initiallyOpened?: boolean
     eventLoggerEventName?: string
 }
@@ -160,7 +159,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
 > = (props: InviteMemberModalButtonProps) => {
     const query = useQueryStringParameters()
     const showBetaBanner = !!query.get('openBetaBanner')
-    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props
+    const { orgName, orgId, onInviteSent, triggerLabel, initiallyOpened, eventLoggerEventName, ...rest } = props
     const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
@@ -176,7 +175,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
 
     return (
         <>
-            <Button {...rest} onClick={onInviteClick} as={as as any} size="sm">
+            <Button {...rest} onClick={onInviteClick} size="sm">
                 {triggerLabel || 'Invite member'}
             </Button>
 

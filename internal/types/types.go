@@ -680,29 +680,6 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
-	rawConfig, err := e.Config.Decrypt(ctx)
-	if err != nil {
-		return api.ExternalService{}, err
-	}
-
-	return api.ExternalService{
-		ID:              e.ID,
-		Kind:            e.Kind,
-		DisplayName:     e.DisplayName,
-		Config:          rawConfig,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		DeletedAt:       e.DeletedAt,
-		LastSyncAt:      e.LastSyncAt,
-		NextSyncAt:      e.NextSyncAt,
-		NamespaceUserID: e.NamespaceUserID,
-		NamespaceOrgID:  e.NamespaceOrgID,
-		Unrestricted:    e.Unrestricted,
-		CloudDefault:    e.CloudDefault,
-	}, nil
-}
-
 // ExternalServices is a utility type with convenience methods for operating on
 // lists of ExternalServices.
 type ExternalServices []*ExternalService
@@ -1304,6 +1281,36 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+}
+
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1411,31 +1418,51 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
-	WeeklyInsightsPageViews                      *int32
-	WeeklyStandaloneInsightPageViews             *int32
-	WeeklyStandaloneDashboardClicks              *int32
-	WeeklyStandaloneEditClicks                   *int32
-	WeeklyInsightsGetStartedPageViews            *int32
-	WeeklyInsightsUniquePageViews                *int32
-	WeeklyInsightsGetStartedUniquePageViews      *int32
-	WeeklyStandaloneInsightUniquePageViews       *int32
-	WeeklyStandaloneInsightUniqueDashboardClicks *int32
-	WeeklyStandaloneInsightUniqueEditClicks      *int32
-	WeeklyInsightConfigureClick                  *int32
-	WeeklyInsightAddMoreClick                    *int32
-	WeekStart                                    time.Time
-	WeeklyInsightCreators                        *int32
-	WeeklyFirstTimeInsightCreators               *int32
-	WeeklyAggregatedUsage                        []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab                []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab            []InsightGetStartedTabClickPing
-	InsightTimeIntervals                         []InsightTimeIntervalPing
-	InsightOrgVisible                            []OrgVisibleInsightPing
-	InsightTotalCounts                           InsightTotalCounts
-	TotalOrgsWithDashboard                       *int32
-	TotalDashboardCount                          *int32
-	InsightsPerDashboard                         InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
+	WeeklyInsightsPageViews                        *int32
+	WeeklyStandaloneInsightPageViews               *int32
+	WeeklyStandaloneDashboardClicks                *int32
+	WeeklyStandaloneEditClicks                     *int32
+	WeeklyInsightsGetStartedPageViews              *int32
+	WeeklyInsightsUniquePageViews                  *int32
+	WeeklyInsightsGetStartedUniquePageViews        *int32
+	WeeklyStandaloneInsightUniquePageViews         *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
+	WeeklyStandaloneInsightUniqueEditClicks        *int32
+	WeeklyInsightConfigureClick                    *int32
+	WeeklyInsightAddMoreClick                      *int32
+	WeekStart                                      time.Time
+	WeeklyInsightCreators                          *int32
+	WeeklyFirstTimeInsightCreators                 *int32
+	WeeklyAggregatedUsage                          []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
+	InsightTimeIntervals                           []InsightTimeIntervalPing
+	InsightOrgVisible                              []OrgVisibleInsightPing
+	InsightTotalCounts                             InsightTotalCounts
+	TotalOrgsWithDashboard                         *int32
+	TotalDashboardCount                            *int32
+	InsightsPerDashboard                           InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                  *int32
+	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsInfoIconHover                *int32
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover                []GroupResultPing
+	WeeklyGroupResultsChartBarClick                []GroupResultPing
+	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -145,7 +145,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 
 func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.NewRegistry(),
 	}
 	extSvcStore := db.ExternalServices()

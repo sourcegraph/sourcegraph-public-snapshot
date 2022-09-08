@@ -12,7 +12,6 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -30,7 +29,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { luckySearchClickedEvent } from '../util/events'
+import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -48,14 +47,11 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
-    /** Render prop for `<SearchUserNeedsCodeHost>`  */
-    renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -72,7 +68,7 @@ export interface StreamingSearchResultsListProps
     /**
      * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
      */
-    luckySearchEnabled?: boolean
+    smartSearchEnabled?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -86,17 +82,15 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    authenticatedUser,
     showSearchContext,
     assetsRoot,
-    renderSearchUserNeedsCodeHost,
     platformContext,
     extensionsController,
     hoverifier,
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    luckySearchEnabled,
+    smartSearchEnabled: smartSearchEnabled,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -110,17 +104,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (smartSearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
-                luckySearchEnabled &&
+                smartSearchEnabled &&
                 results?.alert?.kind === 'lucky-search-queries' &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
-                const event = luckySearchClickedEvent(
+                const event = smartSearchClickedEvent(
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
@@ -128,7 +122,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, luckySearchEnabled]
+        [telemetryService, results, smartSearchEnabled]
     )
 
     const renderResult = useCallback(
@@ -199,17 +193,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
     return (
         <>
-            <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
-                <div className="align-self-stretch">
-                    {renderSearchUserNeedsCodeHost &&
-                        isSourcegraphDotCom &&
-                        searchContextsEnabled &&
-                        authenticatedUser &&
-                        results?.state === 'complete' &&
-                        results?.results.length === 0 &&
-                        renderSearchUserNeedsCodeHost(authenticatedUser)}
-                </div>
-            </div>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"

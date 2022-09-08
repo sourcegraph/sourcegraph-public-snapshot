@@ -1,6 +1,10 @@
+import path from 'path'
+
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import webpack, { StatsOptions } from 'webpack'
+
+import { STATIC_ASSETS_PATH } from '../paths'
 
 export const getTerserPlugin = (): TerserPlugin =>
     new TerserPlugin({
@@ -46,7 +50,9 @@ const STATOSCOPE_STATS: StatsOptions = {
     performance: true, // info about oversized assets
 }
 
-export const getStatoscopePlugin = (): StatoscopeWebpackPlugin =>
+export const getStatoscopePlugin = (name = '[name]'): StatoscopeWebpackPlugin =>
     new StatoscopeWebpackPlugin({
         statsOptions: STATOSCOPE_STATS as Record<string, unknown>,
+        saveStatsTo: path.join(STATIC_ASSETS_PATH, `stats-${name}-[hash].json`),
+        saveReportTo: path.join(STATIC_ASSETS_PATH, `report-${name}-[hash].html`),
     })

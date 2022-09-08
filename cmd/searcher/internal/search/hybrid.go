@@ -339,8 +339,5 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 // logWithTrace is a helper which returns l.WithTrace if there is a
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
-	if tc := trace.Context(ctx); tc != nil {
-		return l.WithTrace(*tc)
-	}
-	return l
+	return l.WithTrace(trace.Context(ctx))
 }

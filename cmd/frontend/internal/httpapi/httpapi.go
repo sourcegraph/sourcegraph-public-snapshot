@@ -42,13 +42,15 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook             webhooks.Registerer
-	GitLabWebhook             http.Handler
-	BitbucketServerWebhook    http.Handler
-	BitbucketCloudWebhook     http.Handler
-	BatchesMountHandler       http.Handler
-	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
+	GitHubWebhook                   webhooks.Registerer
+	GitLabWebhook                   http.Handler
+	BitbucketServerWebhook          http.Handler
+	BitbucketCloudWebhook           http.Handler
+	BatchesChangesFileGetHandler    http.Handler
+	BatchesChangesFileExistsHandler http.Handler
+	BatchesChangesFileUploadHandler http.Handler
+	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
+	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -98,8 +100,9 @@ func NewHandler(
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
-	m.Get(apirouter.BatchesMountUpload).Handler(trace.Route(handlers.BatchesMountHandler))
-	m.Get(apirouter.BatchesMountRetrieval).Handler(trace.Route(handlers.BatchesMountHandler))
+	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
+	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
+	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
@@ -107,7 +110,7 @@ func NewHandler(
 	ghSync.Register(&gh)
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))

@@ -12,8 +12,9 @@ func CodeIntelAutoIndexing() *monitoring.Dashboard {
 		Description: "The service at `internal/codeintel/autoindexing`.",
 		Variables:   []monitoring.ContainerVariable{},
 		Groups: []monitoring.Group{
+			shared.CodeIntelligence.NewAutoindexingSummaryGroup(""),
 			shared.CodeIntelligence.NewAutoindexingServiceGroup(""),
-			shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup(""),
+			// shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewAutoindexingStoreGroup(""),
 			shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup(""),
 			shared.CodeIntelligence.NewLuasandboxServiceGroup(""),

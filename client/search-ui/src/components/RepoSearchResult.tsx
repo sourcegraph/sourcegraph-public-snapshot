@@ -33,7 +33,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     index,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const containerElement = useRef<HTMLDivElement>(null)
+    const repoDescriptionElement = useRef<HTMLDivElement>(null)
+    const repoNameElement = useRef<HTMLAnchorElement>(null)
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
@@ -44,7 +45,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
                 )}
             >
-                <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                <Link to={getRepoMatchUrl(result)} ref={repoNameElement}>
+                    {displayRepoName(getRepoMatchLabel(result))}
+                </Link>
             </span>
         </div>
     )
@@ -108,7 +111,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div className={styles.dividerVertical} />
                         <div>
                             <small>
-                                <em ref={containerElement}>
+                                <em ref={repoDescriptionElement}>
                                     {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
                                         ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
                                         : result.description}
@@ -122,16 +125,33 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     )
 
     useEffect((): void => {
-        if (containerElement.current && result.descriptionMatches) {
-            for (const range of result.descriptionMatches) {
+        if (repoNameElement.current && result.repositoryMatches) {
+            for (const range of result.repositoryMatches) {
                 highlightNode(
-                    containerElement.current as HTMLElement,
+                    repoNameElement.current as HTMLElement,
                     range.start.column,
                     range.end.column - range.start.column
                 )
             }
         }
-    }, [result.description, result.descriptionMatches, containerElement])
+
+        if (repoDescriptionElement.current && result.descriptionMatches) {
+            for (const range of result.descriptionMatches) {
+                highlightNode(
+                    repoDescriptionElement.current as HTMLElement,
+                    range.start.column,
+                    range.end.column - range.start.column
+                )
+            }
+        }
+    }, [
+        result,
+        result.repositoryMatches,
+        repoNameElement,
+        result.description,
+        result.descriptionMatches,
+        repoDescriptionElement,
+    ])
 
     return (
         <ResultContainer

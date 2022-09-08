@@ -149,7 +149,8 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 	if args.Pattern != "" {
 		pattern = args.Pattern
 	}
-	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
+
+	documents, totalCount, err := r.resolver.UploadsResolver().GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 }
 
 func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAuditLogsResolver, error) {
-	logs, err := r.resolver.AuditLogsForUpload(ctx, r.upload.ID)
+	logs, err := r.resolver.UploadsResolver().GetAuditLogsForUpload(ctx, r.upload.ID)
 	if err != nil {
 		return nil, err
 	}

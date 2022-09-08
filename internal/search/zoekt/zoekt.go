@@ -42,6 +42,10 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}
 	noOpAnyChar(re)
 
+	// OptimizeRegexp currently only converts capture groups into non-capture
+	// groups (faster for stdlib regexp to execute).
+	re = zoektquery.OptimizeRegexp(re, regexpFlags)
+
 	// zoekt decides to use its literal optimization at the query parser
 	// level, so we check if our regex can just be a literal.
 	if re.Op == syntax.OpLiteral {

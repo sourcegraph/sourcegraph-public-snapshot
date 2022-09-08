@@ -2,6 +2,16 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <DocumentFragment>
+  <p
+    class="mx-3 mt-3"
+  >
+    Found 2 results from 2 repositories.
+  </p>
+  <h3
+    class="h3 mx-3"
+  >
+    Some results skipped:
+  </h3>
   <div
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >

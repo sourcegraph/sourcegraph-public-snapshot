@@ -37,7 +37,7 @@ func (m *SSHMigrator) Interval() time.Duration { return time.Second * 5 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.
-func (m *SSHMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *SSHMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(sshMigratorProgressQuery, "batches", "batches")))
 	return progress, err
 }

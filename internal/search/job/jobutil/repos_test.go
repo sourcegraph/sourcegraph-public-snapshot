@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -157,6 +158,93 @@ func Test_descriptionMatchRanges(t *testing.T) {
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("unexpected results (-want +got)\n%s", diff)
 			}
+		})
+	}
+}
+
+func TestRepoMatchRanges(t *testing.T) {
+	repoNameRegexps := []*regexp.Regexp{
+		regexp.MustCompile(`(?i)(?:misery).*?(?:business)`),
+		regexp.MustCompile(`(?i)(?:brick).*?(?:by).*?(?:boring).*?(?:brick)`),
+	}
+
+	tests := []struct {
+		name  string
+		input string
+		want  []result.Range
+	}{
+		{
+			name:  "single repo name match range",
+			input: "2007/riot/misery-business",
+			want: []result.Range{
+				{
+					Start: result.Location{
+						Offset: 10,
+						Line:   0,
+						Column: 10,
+					},
+					End: result.Location{
+						Offset: 25,
+						Line:   0,
+						Column: 25,
+					},
+				},
+			},
+		},
+		{
+			name:  "multiple match ranges",
+			input: "greatest-hits/miseryBusiness/crushcrushcrush/brickByBoringBrick",
+			want: []result.Range{
+				{
+					Start: result.Location{
+						Offset: 14,
+						Line:   0,
+						Column: 14,
+					},
+					End: result.Location{
+						Offset: 28,
+						Line:   0,
+						Column: 28,
+					},
+				},
+				{
+					Start: result.Location{
+						Offset: 45,
+						Line:   0,
+						Column: 45,
+					},
+					End: result.Location{
+						Offset: 63,
+						Line:   0,
+						Column: 63,
+					},
+				},
+			},
+		},
+		{
+			name:  "strips code host from repo name before matching",
+			input: "github.com/paramore/riot/tracklist/4-misery-business/5-when-it-rains",
+			want: []result.Range{
+				{
+					Start: result.Location{
+						Offset: 26,
+						Line:   0,
+						Column: 26,
+					},
+					End: result.Location{
+						Offset: 41,
+						Line:   0,
+						Column: 41,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := repoMatchRanges(tc.input, repoNameRegexps)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

@@ -185,7 +185,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     isLightTheme={props.isLightTheme}
                 />
             </section>
-            {extensionsController !== null ? (
+            {extensionsController !== null && window.context.enableLegacyExtensions ? (
                 <ActionsContainer
                     {...props}
                     extensionsController={extensionsController}

@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
 type auditLogColumnChangeResolver struct {
@@ -26,7 +26,7 @@ func (r *auditLogColumnChangeResolver) New() *string {
 }
 
 type lsifUploadsAuditLogResolver struct {
-	log dbstore.UploadLog
+	log uploadsShared.UploadLog
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }

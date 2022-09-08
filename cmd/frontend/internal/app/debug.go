@@ -286,7 +286,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 		logger.Error("unable to parse OTLP export target")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL=http/json`)
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
 			w.WriteHeader(http.StatusNotFound)
 		})
 		return

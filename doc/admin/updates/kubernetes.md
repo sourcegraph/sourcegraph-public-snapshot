@@ -6,7 +6,7 @@
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, to upgrade your instance refer to either:
+3. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
     * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
     * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
 
@@ -14,12 +14,19 @@
 
 ## Unreleased
 
-<!-- Add changes changes to this section before release. -->'
+* `jaeger-agent` sidecars have been removed in favor of an  [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. See [Configure a tracing backend section.](#configure-a-tracing-backend)
+* Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/kubernetes/configure.md#configure-a-tracing-backend) to configure.
+* The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.
+
+<!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
+## 3.42 -> 3.43.1
 
-## 3.42 -> 3.43
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
 
 ## 3.41 -> 3.42.2
 

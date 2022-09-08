@@ -76,7 +76,7 @@ Sourcegraph is most useful when it's at your fingertips. Our [integrations](../.
 
 ![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
 
-For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_search_engine.md).
+For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_extension/how-tos/browser_search_engine.md).
 
 ## 5. Measure success
 

@@ -1,7 +1,12 @@
 import { Meta, Story } from '@storybook/react'
+import { ParentSize } from '@visx/responsive'
+import { ResizableBox } from 'react-resizable'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { Badge } from '../../../Badge'
+import { H2, Text } from '../../../Typography'
 
 import { BarChart } from './BarChart'
 
@@ -54,6 +59,51 @@ const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
     },
 ]
 
+const getValue = (datum: LanguageUsageDatum) => datum.value
+const getColor = (datum: LanguageUsageDatum) => datum.fill
+const getLink = (datum: LanguageUsageDatum) => datum.linkURL
+const getName = (datum: LanguageUsageDatum) => datum.name
+const getGroup = (datum: LanguageUsageDatum) => datum.group
+
+export const BarChartDemo: Story = () => (
+    <main
+        style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            rowGap: 40,
+            columnGap: 20,
+            paddingBottom: 40,
+        }}
+    >
+        <PlainBarChartExample />
+        <GroupedBarExample />
+        <StackedBarExample />
+        <ManyBarsExample />
+    </main>
+)
+
+const PlainBarChartExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Plain bar chart</H2>
+
+        <Text>
+            By default bar chart uses a bar name as a group name, so in this example, each bar has its own group (each
+            bar is independent). See grouped bar example for bars grouping.
+        </Text>
+
+        <BarChart
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_DATA}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumLink={getLink}
+            getDatumHover={datum => `custom text for ${datum.name}`}
+        />
+    </section>
+)
+
 const LANGUAGE_USAGE_GROUPED_BY_REPO_DATA: LanguageUsageDatum[] = [
     {
         group: 'Sourcegraph',
@@ -105,7 +155,6 @@ const LANGUAGE_USAGE_GROUPED_BY_REPO_DATA: LanguageUsageDatum[] = [
         linkURL: 'https://en.wikipedia.org/wiki/HTML',
     },
     {
-        // group: 'About',
         name: 'Markdown',
         value: 300,
         fill: '#083fa1',
@@ -113,14 +162,33 @@ const LANGUAGE_USAGE_GROUPED_BY_REPO_DATA: LanguageUsageDatum[] = [
     },
 ]
 
-const getValue = (datum: LanguageUsageDatum) => datum.value
-const getColor = (datum: LanguageUsageDatum) => datum.fill
-const getLink = (datum: LanguageUsageDatum) => datum.linkURL
-const getName = (datum: LanguageUsageDatum) => datum.name
-const getGroup = (datum: LanguageUsageDatum) => datum.group
+const GroupedBarExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Grouped bar chart</H2>
 
-export const BarChartVitrina: Story = () => (
-    <div className="d-flex flex-wrap" style={{ gap: 20 }}>
+        <Text>It's possible to group (categories) bars by group name. You can do it with the `getCategory` prop.</Text>
+
+        <BarChart
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
+            getCategory={getGroup}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumLink={getLink}
+        />
+    </section>
+)
+
+const StackedBarExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Stacked bar chart</H2>
+
+        <Text>
+            <Badge variant="merged">Experimental</Badge> You can stack bars which are placed in one category (group).
+        </Text>
+
         <BarChart
             width={400}
             height={400}
@@ -131,26 +199,84 @@ export const BarChartVitrina: Story = () => (
             getDatumLink={getLink}
             getDatumHover={datum => `custom text for ${datum.name}`}
         />
-        <BarChart
-            width={400}
-            height={400}
-            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
-            getCategory={getGroup}
-            getDatumName={getName}
-            getDatumValue={getValue}
-            getDatumColor={getColor}
-            getDatumLink={getLink}
-        />
-        <BarChart
-            stacked={true}
-            width={400}
-            height={400}
-            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
-            getCategory={getGroup}
-            getDatumName={getName}
-            getDatumValue={getValue}
-            getDatumColor={getColor}
-            getDatumLink={getLink}
-        />
-    </div>
+    </section>
+)
+
+const MANY_LANGUAGES_DATA: LanguageUsageDatum[] = [
+    {
+        name: 'JavaScript',
+        value: 422,
+        fill: '#f1e05a',
+        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
+    },
+    {
+        name: 'CSS',
+        value: 273,
+        fill: '#563d7c',
+        linkURL: 'https://en.wikipedia.org/wiki/CSS',
+    },
+    {
+        name: 'HTML',
+        value: 129,
+        fill: '#e34c26',
+        linkURL: 'https://en.wikipedia.org/wiki/HTML',
+    },
+    {
+        name: 'Julia',
+        value: 40,
+        fill: '#268ee3',
+        linkURL: 'https://en.wikipedia.org/wiki/Julia',
+    },
+    {
+        name: 'Rust',
+        value: 35,
+        fill: '#e37b26',
+        linkURL: 'https://en.wikipedia.org/wiki/rust',
+    },
+    {
+        name: 'C#',
+        value: 32,
+        fill: '#ad26e3',
+        linkURL: 'https://en.wikipedia.org/wiki/c#',
+    },
+    {
+        name: 'C++',
+        value: 30,
+        fill: '#e32626',
+        linkURL: 'https://en.wikipedia.org/wiki/c++',
+    },
+    {
+        name: 'Markdown',
+        value: 20,
+        fill: '#083fa1',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+]
+
+const ManyBarsExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Smart labels UI</H2>
+
+        <Text style={{ maxWidth: 400, minWidth: 400 }}>
+            <Badge variant="merged">Experimental</Badge> Try to resize charts (drag bottom right corner), note that
+            labels rotate if they don't have enough space.
+        </Text>
+
+        <ResizableBox width={400} height={400} axis="both" minConstraints={[200, 200]} className="p-3">
+            <ParentSize debounceTime={0}>
+                {parent => (
+                    <BarChart
+                        width={parent.width}
+                        height={parent.height}
+                        data={MANY_LANGUAGES_DATA}
+                        getDatumName={getName}
+                        getDatumValue={getValue}
+                        getDatumColor={getColor}
+                        getDatumLink={getLink}
+                        getDatumHover={datum => `custom text for ${datum.name}`}
+                    />
+                )}
+            </ParentSize>
+        </ResizableBox>
+    </section>
 )

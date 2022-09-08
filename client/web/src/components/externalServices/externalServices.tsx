@@ -32,7 +32,7 @@ import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
-import { EditorAction } from '../../site-admin/configHelpers'
+import { EditorAction } from '../../settings/EditorActionsGroup'
 import { PerforceIcon } from '../PerforceIcon'
 
 /**

@@ -7,6 +7,8 @@ import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { IQuery, SearchResult } from '@sourcegraph/shared/src/schema'
 
+import { eventLogger } from '../../tracking/eventLogger'
+
 interface ExportSearchResultsConfig extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query: string
 }
@@ -142,6 +144,7 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
             onCompleted: data => {
                 const results = data.search?.results.results
                 if (!results?.length || !results[0]) {
+                    eventLogger.log('SearchExportFailed')
                     throw new Error('No results to be exported.')
                 }
                 const content = searchResultsToFileContent(results, sourcegraphURL)
@@ -154,6 +157,7 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
                 a.style.display = 'none'
                 a.download = downloadFilename
                 a.click()
+                eventLogger.log('SearchExportPerformed', { count: results.length }, { count: results.length })
 
                 // cleanup
                 a.remove()

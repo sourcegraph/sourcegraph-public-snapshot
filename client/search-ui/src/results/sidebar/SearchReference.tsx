@@ -33,8 +33,8 @@ import {
     Text,
 } from '@sourcegraph/wildcard'
 
+import sidebarStyles from './SearchFilterSection.module.scss'
 import styles from './SearchReference.module.scss'
-import sidebarStyles from './SearchSidebarSection.module.scss'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
@@ -561,7 +561,7 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                    <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                         <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>

@@ -22,8 +22,8 @@ func TestLocationsCountMigrator(t *testing.T) {
 	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250)
 	serializer := newSerializer()
 
-	assertProgress := func(expectedProgress float64) {
-		if progress, err := migrator.Progress(context.Background()); err != nil {
+	assertProgress := func(expectedProgress float64, applyReverse bool) {
+		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
 			t.Fatalf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
 			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
@@ -64,27 +64,27 @@ func TestLocationsCountMigrator(t *testing.T) {
 		}
 	}
 
-	assertProgress(0)
+	assertProgress(0, false)
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(0.5)
+	assertProgress(0.5, false)
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1)
+	assertProgress(1, false)
 
 	assertCounts(expectedCounts)
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.5)
+	assertProgress(0.5, true)
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0)
+	assertProgress(0, true)
 }

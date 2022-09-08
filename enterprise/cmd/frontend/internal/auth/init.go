@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
@@ -23,12 +24,13 @@ import (
 )
 
 // Init must be called by the frontend to initialize the auth middlewares.
-func Init(db database.DB) {
+func Init(logger log.Logger, db database.DB) {
+	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
 	openidconnect.Init()
 	saml.Init()
 	httpheader.Init()
-	githuboauth.Init(db)
-	gitlaboauth.Init(db)
+	githuboauth.Init(logger, db)
+	gitlaboauth.Init(logger, db)
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(

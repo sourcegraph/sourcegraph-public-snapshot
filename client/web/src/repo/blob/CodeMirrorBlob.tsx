@@ -13,14 +13,9 @@ import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQue
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
-
-import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import {
-    enableExtensionsDecorationsColumnView as enableColumnView,
-    showTextDocumentDecorations,
-} from './codemirror/decorations'
+import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
@@ -44,6 +39,9 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-bg)',
         },
         '.selected-line': {
+            backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.cm-gutters': {
@@ -97,10 +95,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ariaLabel,
         role,
         extensionsController,
-        settingsCascade,
         location,
         history,
-        blameDecorations: blameTextDocumentDecorations,
+        blameHunks,
 
         // Reference panel specific props
         disableStatusBar,
@@ -117,27 +114,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
     const settings = useMemo(
-        () => [
-            wrapCode ? EditorView.lineWrapping : [],
-            EditorView.darkTheme.of(isLightTheme === false),
-            enableColumnView.of(enableExtensionsDecorationsColumnView),
-        ],
-        [wrapCode, isLightTheme, enableExtensionsDecorationsColumnView]
+        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
+        [wrapCode, isLightTheme]
     )
 
     const blameDecorations = useMemo(
-        () =>
-            blameTextDocumentDecorations
-                ? [
-                      // Force column view if blameDecorations is set
-                      enableColumnView.of(true),
-                      showTextDocumentDecorations.of([[blameDecorationType, blameTextDocumentDecorations]]),
-                  ]
-                : [],
+        () => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []),
 
-        [blameTextDocumentDecorations]
+        [blameHunks]
     )
 
     // Keep history and location in a ref so that we can use the latest value in

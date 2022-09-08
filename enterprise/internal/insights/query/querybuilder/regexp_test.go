@@ -236,4 +236,12 @@ func TestReplace_Invalid(t *testing.T) {
 		_, err := NewPatternReplacer("asdf", query.SearchTypeStandard)
 		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
 	})
+	t.Run("no pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("", query.SearchTypeRegex)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
+	t.Run("filters with no pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("repo:repoA rev:3.40.0", query.SearchTypeStandard)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
 }

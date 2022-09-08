@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import * as H from 'history'
 import { EMPTY, from, ReplaySubject, Subscription } from 'rxjs'
@@ -59,7 +59,7 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
 /**
  * A React hook that registers panel views for the blob.
  */
-export function useBlobPanelViews({
+function useBlobPanelViews({
     extensionsController,
     activation,
     repoName,
@@ -205,4 +205,13 @@ function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOr
         return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
     return false
+}
+
+/**
+ * Registers built-in tabbed panel views and renders `null`.
+ */
+export const BlobPanel: React.FunctionComponent<Props> = props => {
+    useBlobPanelViews(props)
+
+    return null
 }

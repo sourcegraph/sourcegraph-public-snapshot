@@ -14,7 +14,7 @@ export const SELECT_SIZES = ['sm', 'lg'] as const
 export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSelectElement>> &
     React.RefAttributes<HTMLSelectElement> & {
         /**
-         * Use the Bootstrap custom <select> styles
+         * Use the global `custom-select` class.
          */
         isCustomStyle?: boolean
         /**
@@ -36,7 +36,7 @@ export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSe
     }
 
 /**
- * Returns the Bootstrap specific style to differentiate between native and custom <select> styles.
+ * Returns the global CSS class to differentiate between native and custom <select> styles.
  */
 export const getSelectStyles = ({
     isCustomStyle,

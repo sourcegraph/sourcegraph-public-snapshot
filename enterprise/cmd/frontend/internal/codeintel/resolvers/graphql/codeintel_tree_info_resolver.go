@@ -47,9 +47,9 @@ func NewCodeIntelTreeInfoResolver(
 
 func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]gql.GitTreeSearchBasedCoverage, error) {
 	langMapping := make(map[string][]string)
-
+	codeNavResolver := r.resolver.CodeNavResolver()
 	for _, file := range r.files {
-		ok, lang, err := r.resolver.SupportedByCtags(ctx, file, r.repo.Name)
+		ok, lang, err := codeNavResolver.GetSupportedByCtags(ctx, file, r.repo.Name)
 		if err != nil {
 			return nil, err
 		}

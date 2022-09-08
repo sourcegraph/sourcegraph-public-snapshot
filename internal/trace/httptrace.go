@@ -160,10 +160,10 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		// get trace ID
 		trace := Context(ctx)
 		var traceURL string
-		if trace != nil && trace.TraceID != "" {
+		if trace.TraceID != "" {
 			traceURL = URL(trace.TraceID, siteConfig)
 			rw.Header().Set("X-Trace", traceURL)
-			logger = logger.WithTrace(*trace)
+			logger = logger.WithTrace(trace)
 		}
 
 		ctx = opentracing.ContextWithSpan(ctx, span)

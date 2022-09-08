@@ -200,9 +200,9 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 #### Release Steps
 
 1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
-2. Run `yarn --cwd client/vscode release:$RELEASE_TYPE` in the root directory
+2. Run `yarn workspace @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
    - $RELEASE_TYPE: major, minor, patch, pre
-     - Example: `yarn --cwd client/vscode release:patch`
+     - Example: `yarn workspace @sourcegraph/vscode run release:patch`
    - This command will:
      - Update the package.json file with the next version number
      - Update the changelog format by listing everything under `Unreleased` to the updated version number

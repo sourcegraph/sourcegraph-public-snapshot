@@ -1,11 +1,5 @@
 @import './colors.scss';
-@import './border-radius.scss';
 @import './variables.scss';
-
-// Bootstrap configuration before Bootstrap is imported
-$border-radius: var(--border-radius);
-$border-radius-sm: var(--border-radius);
-$border-radius-lg: var(--border-radius);
 
 $box-shadow: var(--box-shadow);
 
@@ -60,19 +54,12 @@ $custom-select-feedback-icon-size: 0;
 // Disable all Bootstrap transitions
 $enable-transitions: false;
 
-/* stylelint-disable @sourcegraph/no-restricted-imports */
-// Apply static variables before Bootstrap imports.
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/reboot';
-@import 'bootstrap/scss/utilities';
-
-/* stylelint-enable @sourcegraph/no-restricted-imports */
-
+@import './functions.scss';
+@import './mixins.scss';
+@import './reboot';
+@import './utilities';
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
-@import './background';
 @import './dropdown';
 @import './meter';
 @import './popover';
@@ -88,10 +75,6 @@ $enable-transitions: false;
 @import './progress';
 @import './collapse';
 @import './grid';
-
-* {
-    box-sizing: border-box;
-}
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
 // https://github.com/WICG/focus-visible because few browsers support :focus-visible.
