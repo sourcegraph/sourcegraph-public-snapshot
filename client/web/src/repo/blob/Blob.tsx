@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -117,6 +117,7 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    navigateToLineOnAnyClick?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -125,6 +126,7 @@ export interface BlobProps
     ariaLabel?: string
 
     blameHunks?: BlameHunk[]
+    renderLineButtons?: boolean
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -440,7 +442,14 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        if (position && !('character' in position)) {
+                        const notBlankSpace = position && !('character' in position)
+                        if (position && props.nav) {
+                            const entry: H.LocationDescriptor<unknown> = {
+                                ...location,
+                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                            }
+                            props.nav(props.history.createHref(entry))
+                        } else if (position && (props.navigateToLineOnAnyClick || notBlankSpace)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
                             updateBrowserHistoryIfChanged(
@@ -790,6 +799,27 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
+    if (props.navigateToLineOnAnyClick) {
+        // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickab.e
+        useLayoutEffect(() => {
+            const subscription = codeViewElements.subscribe(codeView => {
+                if (codeView) {
+                    const table = codeView.firstElementChild as HTMLTableElement
+                    for (const row of table.rows) {
+                        if (row.cells.length === 0) {
+                            continue
+                        }
+                        row.className = styles.clickableRow
+                    }
+                }
+            })
+
+            return () => {
+                subscription.unsubscribe()
+            }
+        }, [codeViewElements])
+    }
+
     const logEventOnCopy = useCallback(() => {
         props.telemetryService.log(...codeCopiedEvent('blob'))
     }, [props.telemetryService])
@@ -812,7 +842,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         __html: blobInfo.html,
                     }}
                 />
-                {hoverState.hoverOverlayProps && extensionsController !== null && (
+                {!props.navigateToLineOnAnyClick && hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}

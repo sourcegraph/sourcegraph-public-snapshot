@@ -9,7 +9,12 @@ import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
-import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import {
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+    LineOrPositionOrRange,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -103,6 +108,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         disableStatusBar,
         disableDecorations,
         onHandleFuzzyFinder,
+        navigateToLineOnAnyClick,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -110,6 +116,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -148,11 +155,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
         }
 
-        updateBrowserHistoryIfChanged(
-            historyRef.current,
-            locationRef.current,
-            addLineRangeQueryParameter(parameters, query)
-        )
+        const newSearchParameters = addLineRangeQueryParameter(parameters, query)
+        if (props.nav) {
+            props.nav(
+                historyRef.current.createHref({
+                    ...locationRef.current,
+                    search: formatSearchParameters(newSearchParameters),
+                })
+            )
+        } else {
+            updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+        }
     }, [])
 
     const extensions = useMemo(
@@ -162,7 +175,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            extensionsController !== null
+            extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,

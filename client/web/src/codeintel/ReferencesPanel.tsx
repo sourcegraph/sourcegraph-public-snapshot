@@ -4,8 +4,9 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutlin
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import { MemoryRouter, useHistory, useLocation } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 
+import { Position } from '@sourcegraph/extension-api-classes'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
@@ -49,6 +50,7 @@ import {
     H4,
     Text,
     Tooltip,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -69,6 +71,9 @@ import { isDefined } from './util/helpers'
 import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+function localStorageKeyFromToken(token: Token): string {
+    return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
+}
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
@@ -284,47 +289,62 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
-    // activeLocation is the location that is selected/clicked in the list of
-    // definitions/references/implementations.
-    const [activeLocation, setActiveLocation] = useState<Location>()
-    const isActiveLocation = (location: Location): boolean =>
-        activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
+    const panelHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
 
-    // When the token for which we display data changed, we want to reset
-    // activeLocation.
-    // But only if we are not re-rendering with different token and the code
-    // blob already open.
-    useEffect(() => {
-        if (!props.jumpToFirst) {
-            setActiveLocation(undefined)
-        }
-    }, [props.jumpToFirst, props.token])
+    // This is the history of the panel, that is inside a memory router
+    // const panelHistory = useHistory()
+    const [activeUrl, setActiveUrl] = useSessionStorage<string | undefined>(
+        'sideblob-active-url' + localStorageKeyFromToken(props.token),
+        undefined
+    )
+    // activeLocation is the location that is selected/clicked in the list of
+    // definitions/references/implementations.
+    const setActiveLocation = (location: Location | undefined): void => {
+        setActiveUrl(location?.url)
+    }
+
+    const sideblob = useMemo(() => parseSideBlobProps(activeUrl), [activeUrl])
+
+    if (activeUrl) {
+        // NOTE(olafurpg) I tried wrapping this step inside `useEffect()` but it stopped working.
+        panelHistory.replace(activeUrl)
+    }
+
+    const isActiveLocation = (location: Location): boolean =>
+        (sideblob?.position &&
+            location.range &&
+            sideblob.repository === location.repo &&
+            sideblob.file === location.file &&
+            sideblob.commitID === location.commitID &&
+            sideblob.position.line === location.range.start.line) ||
+        false
 
     // If props.jumpToFirst is true and we finished loading (and have
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            blobMemoryHistory.push(definitions[0].url, { syncToPanel: false })
-            setActiveLocation(definitions[0])
+            setActiveUrl(definitions[0].url)
         }
-    }, [blobMemoryHistory, props.jumpToFirst, definitions])
+    }, [panelHistory, props.jumpToFirst, definitions])
 
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
-        if (location) {
-            blobMemoryHistory.push(location.url, { syncToPanel: false })
-        }
         setActiveLocation(location)
     }
 
-    // This is the history of the panel, that is inside a memory router
-    const panelHistory = useHistory()
+    // useEffect(
+    //     () =>
+    //         panelHistory.listen(location => {
+    //             setActiveUrl(panelHistory.createHref(location))
+    //         }),
+    //     [history]
+    // )
+
     // When we user clicks on a token *inside* the code blob on the right, we
     // update the history for the panel itself, which is inside a memory router.
     //
@@ -336,16 +356,8 @@ export const ReferencesList: React.FunctionComponent<
     // '?jumpToFirst=true' causes the panel to select the first reference and
     // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        // If we're going to navigate inside the same file in the same repo we
-        // can optimistically jump to that position in the code blob.
-        if (activeLocation !== undefined) {
-            const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url, { syncToPanel: false })
-            }
-        }
-
-        panelHistory.push(appendJumpToFirstQueryParameter(url))
+        setActiveUrl(url)
+        props.externalHistory.push(url)
     }
 
     const navigateToUrl = (url: string): void => {
@@ -369,16 +381,14 @@ export const ReferencesList: React.FunctionComponent<
         }
         return state
     }, [location])
-    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+    const [collapsed, setCollapsed] = useSessionStorage<Record<string, boolean>>(
+        'sideblob-collapse-state-' + localStorageKeyFromToken(props.token),
+        initialCollapseState
+    )
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
-
-    // But when the input changes, we reset the collapse state
-    useEffect(() => {
-        setCollapsed(initialCollapseState)
-    }, [props.token, initialCollapseState])
 
     if (loading && !data) {
         return <LoadingCodeIntel />
@@ -461,7 +471,7 @@ export const ReferencesList: React.FunctionComponent<
                     )}
                 </div>
             </div>
-            {activeLocation !== undefined && (
+            {sideblob && (
                 <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
@@ -482,24 +492,24 @@ export const ReferencesList: React.FunctionComponent<
                                 </Button>
                             </Tooltip>
                             <Link
-                                to={activeLocation.url}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(activeLocation.url)
-                                }}
+                                to={activeUrl || ''}
+                                // onClick={event => {
+                                //     event.preventDefault()
+                                //     navigateToUrl(sideblob.activeUrl)
+                                // }}
                                 className={styles.sideBlobFilename}
                             >
-                                {activeLocation.file}{' '}
+                                {sideblob.file}{' '}
                             </Link>
                         </small>
                     </CardHeader>
                     <SideBlob
                         {...props}
+                        {...sideblob}
                         blobNav={onBlobNav}
-                        history={blobMemoryHistory}
+                        history={panelHistory}
                         panelHistory={panelHistory}
-                        location={blobMemoryHistory.location}
-                        activeLocation={activeLocation}
+                        location={panelHistory.location}
                     />
                 </div>
             )}
@@ -602,42 +612,64 @@ const CollapsibleLocationList: React.FunctionComponent<
     )
 }
 
-const SideBlob: React.FunctionComponent<
-    React.PropsWithChildren<
-        ReferencesPanelProps & {
-            activeLocation: Location
+interface SideBlobProps extends ReferencesPanelProps {
+    repository: string
+    commitID: string
+    file: string
+    position?: Position
+    location: H.Location<BlobMemoryHistoryState>
+    history: H.History<BlobMemoryHistoryState>
+    blobNav: (url: string) => void
+    panelHistory: H.History
+}
 
-            location: H.Location<BlobMemoryHistoryState>
-            history: H.History<BlobMemoryHistoryState>
-            blobNav: (url: string) => void
-            panelHistory: H.History
+function parseSideBlobProps(
+    activeUrl: string | undefined
+): Pick<SideBlobProps, 'repository' | 'commitID' | 'file' | 'position'> | undefined {
+    if (!activeUrl) {
+        return undefined
+    }
+    try {
+        const url = parseBrowserRepoURL(activeUrl)
+        if (!url.repoName || !url.filePath) {
+            return undefined
         }
-    >
-> = props => {
-    const { history, panelHistory } = props
+
+        const position = url.position
+            ? new Position(Math.max(url.position.line - 1), Math.max(0, url.position.character - 1))
+            : undefined
+        return { repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position: position }
+    } catch (error) {
+        console.error(`failed to parse activeURL ${activeUrl}`, error)
+        return undefined
+    }
+}
+
+const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
+    // const { history, panelHistory } = props
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
 
-    // When using CodeMirror we have to forward history entries to the panel's
-    // router. That's because the CodeMirror <-> React integration uses its own
-    // Router and so clicks on <Link />s are not caught by the panel's router
-    // context.
-    useEffect(
-        () =>
-            history.listen((location, method) => {
-                if (useCodeMirror && location.state?.syncToPanel !== false) {
-                    switch (method) {
-                        case 'PUSH':
-                            panelHistory.push(location)
-                            break
-                        case 'REPLACE':
-                            panelHistory.replace(location)
-                            break
-                    }
-                }
-            }),
-        [useCodeMirror, history, panelHistory]
-    )
+    // // When using CodeMirror we have to forward history entries to the panel's
+    // // router. That's because the CodeMirror <-> React integration uses its own
+    // // Router and so clicks on <Link />s are not caught by the panel's router
+    // // context.
+    // useEffect(
+    //     () =>
+    //         history.listen((location, method) => {
+    //             if (useCodeMirror && location.state?.syncToPanel !== false) {
+    //                 switch (method) {
+    //                     case 'PUSH':
+    //                         panelHistory.push(location)
+    //                         break
+    //                     case 'REPLACE':
+    //                         panelHistory.replace(location)
+    //                         break
+    //                 }
+    //             }
+    //         }),
+    //     [useCodeMirror, history, panelHistory]
+    // )
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
@@ -645,9 +677,9 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
-            repository: props.activeLocation.repo,
-            commit: props.activeLocation.commitID,
-            path: props.activeLocation.file,
+            repository: props.repository,
+            commit: props.commitID,
+            path: props.file,
             format: highlightFormat,
             html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
         },
@@ -664,7 +696,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <Text alignment="center" className="text-muted">
                     <i>
-                        Loading <Code>{props.activeLocation.file}</Code>...
+                        Loading <Code>{props.file}</Code>...
                     </i>
                 </Text>
             </>
@@ -676,7 +708,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <Text className="text-danger">
-                    Loading <Code>{props.activeLocation.file}</Code> failed:
+                    Loading <Code>{props.file}</Code> failed:
                 </Text>
                 <pre>{error.message}</pre>
             </div>
@@ -696,20 +728,21 @@ const SideBlob: React.FunctionComponent<
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            history={props.history}
+            history={props.externalHistory}
             location={props.location}
             disableStatusBar={true}
             disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
+            navigateToLineOnAnyClick={true}
             blobInfo={{
                 html: html ?? '',
                 lsif: lsif ?? '',
-                content: props.activeLocation.content,
-                filePath: props.activeLocation.file,
-                repoName: props.activeLocation.repo,
-                commitID: props.activeLocation.commitID,
-                revision: props.activeLocation.commitID,
+                content: data?.repository?.commit?.blob?.content ?? '',
+                filePath: props.file,
+                repoName: props.repository,
+                commitID: props.commitID,
+                revision: props.commitID,
                 mode: 'lspmode',
             }}
         />
@@ -827,7 +860,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
@@ -1006,12 +1039,4 @@ export const appendJumpToFirstQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('jumpToFirst', 'true')
     return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
-
-const tokenFromUrl = (url: string): { repoName: string; commitID?: string; filePath?: string } => {
-    const parsed = new URL(url, window.location.href)
-
-    const { filePath, repoName, commitID } = parseBrowserRepoURL(parsed.pathname)
-
-    return { repoName, filePath, commitID }
 }

@@ -60,7 +60,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             const endLine = range.endLine ?? range.line
             const from = Math.min(range.line, endLine)
-            const to = from === endLine ? range.line : endLine
+            const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
 
             const builder = new RangeSetBuilder<Decoration>()
 
@@ -159,12 +159,9 @@ export function selectableLineNumbers(config: {
             domEventHandlers: {
                 mousedown(view, block, event) {
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
 
                     view.dispatch({
-                        effects: (event as MouseEvent).shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        effects: (event as MouseEvent).shiftKey ? setEndLine.of(line) : setSelectedLines.of({ line }),
                         annotations: lineSelectionSource.of('gutter'),
                     })
 
@@ -253,8 +250,4 @@ function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boole
         from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||
         to.top <= view.scrollDOM.scrollTop
     )
-}
-
-function isSingleLine(range: SelectedLineRange): boolean {
-    return !!range && (!range.endLine || range.line === range.endLine)
 }

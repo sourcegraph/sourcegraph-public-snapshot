@@ -198,7 +198,6 @@ export function injectNewCodeintel(
             return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
         },
         getLocations(id, parameters) {
-            console.log({ id })
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
         },
         getDefinition(parameters) {
