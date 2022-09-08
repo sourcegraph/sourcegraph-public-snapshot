@@ -16,7 +16,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { ParsedSearchURL } from '../search'
+import { parseSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
@@ -59,13 +59,9 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
 }
 
 /**
- * Update or initialize query state related data from URL search parameters.
- *
- * @param parsedSearchURL contains the information extracted from a URL
- * @param query can be used to specify the query to use when it differs from
- * the one contained in the URL (e.g. when the context:... filter got removed)
+ * Update or initialize query state related data from URL search parameters
  */
-export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = parsedSearchURL.query ?? ''): void {
+export function setQueryStateFromURL(urlParameters: string): void {
     if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
         return
     }
@@ -74,11 +70,11 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     const newState: Partial<
         Pick<
             NavbarQueryState,
-            'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+            'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
         >
-    > = {
-        queryState: { query },
-    }
+    > = {}
+
+    const parsedSearchURL = parseSearchURL(urlParameters)
 
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
