@@ -141,7 +141,7 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
     if (trimmedInstalledTag !== latestTag) {
         try {
             console.log('Uprading src-cli to the latest version.')
-            execa.sync('brew', ['upgrade', 'src-cli'])
+            // execa.sync('brew', ['upgrade', 'src-cli'])
         } catch (error) {
             console.log('Trouble upgrading src-cli:', error)
             process.exit(1)
