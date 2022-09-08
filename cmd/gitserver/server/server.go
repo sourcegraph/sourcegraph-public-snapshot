@@ -2139,7 +2139,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, tmp, syncer, repo, remoteURL); err != nil {
 		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2446,6 +2446,8 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
 func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
+	logger := s.Logger.Scoped("backgroundRepoUpdate", "")
+
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
@@ -2496,8 +2498,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
-		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+	if err := setHEAD(ctx, logger, dir, syncer, repo, remoteURL); err != nil {
+		logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2507,18 +2509,18 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(dir); err != nil {
-		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	return nil
@@ -2576,14 +2578,13 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
 
 	// Fallback to git's default branch name if git remote show fails.
 	headBranch := "master"
-	logger := log.Scoped("setHEAD", "configures git repo defaults (such as what HEAD is) which are needed for git commands to work.")
 
 	// try to fetch HEAD from origin
 	cmd, err := syncer.RemoteShowCommand(ctx, remoteURL)
