@@ -327,7 +327,12 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
 			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
 			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
-			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.AnnotatedCmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles), bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					IncludeNames:    true,
+					MultiJobContext: "puppeteer",
+				},
+			}),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }

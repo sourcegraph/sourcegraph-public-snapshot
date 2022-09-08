@@ -358,7 +358,15 @@
           }
         },
         "enableSidebarFilePrefetch": {
-          "description": "Pre-fetch plaintext file revisions from sidebar on hover.",
+          "description": "Pre-fetch plaintext file revisions from sidebar on hover/focus.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSearchFilePrefetch": {
+          "description": "Pre-fetch plaintext file revisions from search results on hover/focus.",
           "type": "boolean",
           "default": false,
           "!go": {

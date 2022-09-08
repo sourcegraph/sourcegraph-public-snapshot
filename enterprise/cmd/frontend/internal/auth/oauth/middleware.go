@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -37,11 +38,13 @@ import (
 
 func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
+	traceFamily := fmt.Sprintf("oauth.%s", serviceType)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or
 		// redirecting.
-		span, ctx := trace.New(r.Context(), "oauth.Middleware", "Handle")
+		span, ctx := trace.New(r.Context(), traceFamily, "Middleware.Handle")
+		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
 
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {

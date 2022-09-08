@@ -16,6 +16,7 @@ type RepoMatch struct {
 	Rev string
 
 	DescriptionMatches []Range
+	RepoNameMatches    []Range
 }
 
 func (r RepoMatch) RepoName() types.MinimalRepo {
@@ -48,6 +49,11 @@ func (r *RepoMatch) URL() *url.URL {
 		path += "@" + r.Rev
 	}
 	return &url.URL{Path: path}
+}
+
+func (r *RepoMatch) AppendMatches(src *RepoMatch) {
+	r.RepoNameMatches = append(r.RepoNameMatches, src.RepoNameMatches...)
+	r.DescriptionMatches = append(r.DescriptionMatches, src.DescriptionMatches...)
 }
 
 func (r *RepoMatch) Key() Key {

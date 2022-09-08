@@ -95,6 +95,31 @@ export const Simple: Story = () => {
                     </>
                 )}
             </Collapse>
+
+            <H2 className="my-3">Without forced CollapsePanel rendering</H2>
+            <Collapse>
+                {({ isOpen }) => (
+                    <>
+                        <CollapseHeader
+                            as={Button}
+                            aria-label={isOpen ? 'Expand' : 'Collapse'}
+                            outline={true}
+                            variant="secondary"
+                            className="w-50"
+                        >
+                            Collapsable
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                className="mr-1"
+                            />
+                        </CollapseHeader>
+                        <CollapsePanel forcedRender={false} className="w-50">
+                            <Input placeholder="testing this one" />
+                        </CollapsePanel>
+                    </>
+                )}
+            </Collapse>
         </div>
     )
 }

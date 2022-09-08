@@ -10,12 +10,13 @@ import { NavLink } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
-import { PrefetchableFile } from '../repo/blob/PrefetchableFile'
+import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -75,10 +76,11 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         customIconPath,
     } = props
 
-    const { commitID, repoName } = useTreeRootContext()
+    const { revision, repoName } = useTreeRootContext()
     const isSidebarFilePrefetchEnabled = useExperimentalFeatures(
         features => features.enableSidebarFilePrefetch ?? false
     )
+    const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -131,8 +133,14 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     ) : (
                         <PrefetchableFile
                             isPrefetchEnabled={isSidebarFilePrefetchEnabled && !isActive && !isGoUpTreeLink}
+                            prefetch={params =>
+                                fetchBlob({
+                                    ...params,
+                                    format: prefetchBlobFormat,
+                                })
+                            }
                             isSelected={isSelected}
-                            revision={commitID}
+                            revision={revision}
                             repoName={repoName}
                             filePath={entryInfo.path}
                             as={TreeLayerRowContentsLink}
