@@ -9,9 +9,9 @@ import { Icon } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
-import { useBlameVisibility } from './useBlameVisibility'
+import { useBlameVisibility } from '../blame/useBlameVisibility'
 
-import styles from './ToggleBlameAction.module.scss'
+import styles from '../blame/ToggleBlameAction.module.scss'
 
 export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location }) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
