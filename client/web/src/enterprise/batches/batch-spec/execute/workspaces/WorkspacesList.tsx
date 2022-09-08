@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { useHistory } from 'react-router'
 
@@ -26,14 +26,27 @@ export interface WorkspacesListProps {
     selectedNode?: Scalars['ID']
     /** The URL path to the execution page this workspaces list is shown on. */
     executionURL: string
+    isWorkspaceDetailsOpen: boolean
+    setIsWorkspaceDetailsOpen: (state: boolean) => void
 }
 
 export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<WorkspacesListProps>> = ({
     workspacesConnection: { connection, error, loading, hasNextPage, fetchMore },
     selectedNode,
     executionURL,
+    isWorkspaceDetailsOpen,
+    setIsWorkspaceDetailsOpen,
 }) => {
     const history = useHistory()
+    const onSelected = useCallback(
+        (nodeId: string) => {
+            if (isWorkspaceDetailsOpen) {
+                setIsWorkspaceDetailsOpen(false)
+            }
+            history.push(`${executionURL}/execution/workspaces/${nodeId}`)
+        },
+        [isWorkspaceDetailsOpen, history, executionURL, setIsWorkspaceDetailsOpen]
+    )
 
     return (
         <ConnectionContainer>
@@ -44,7 +57,7 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
                         key={node.id}
                         workspace={node}
                         isSelected={node.id === selectedNode}
-                        onSelect={() => history.push(`${executionURL}/execution/workspaces/${node.id}`)}
+                        onSelect={() => onSelected(node.id)}
                     />
                 ))}
             </ConnectionList>

@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
@@ -60,9 +59,9 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
     queryBatchSpecWorkspaceStepFileDiffs,
     queryChangesetSpecFileDiffs,
 }) {
-    const history = useHistory()
+    const [isWorkspaceDetailsOpen, setIsWorkspaceDetailsOpen] = useState(false)
 
-    const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
+    const deselectWorkspace = useCallback(() => setIsWorkspaceDetailsOpen(true), [])
 
     const videoRef = useRef<HTMLVideoElement | null>(null)
     // Pause the execution animation loop when the batch spec stops executing.
@@ -80,12 +79,14 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                     batchSpecID={batchSpec.id}
                     selectedNode={selectedWorkspaceID}
                     executionURL={batchSpec.executionURL}
+                    isWorkspaceDetailsOpen={isWorkspaceDetailsOpen}
+                    setIsWorkspaceDetailsOpen={setIsWorkspaceDetailsOpen}
                 />
                 <Card className="w-100 overflow-auto flex-grow-1">
                     {/* This is necessary to prevent the margin collapse on `Card` */}
                     <div className="w-100">
                         <CardBody>
-                            {selectedWorkspaceID ? (
+                            {selectedWorkspaceID && !isWorkspaceDetailsOpen ? (
                                 <WorkspaceDetails
                                     id={selectedWorkspaceID}
                                     isLightTheme={isLightTheme}

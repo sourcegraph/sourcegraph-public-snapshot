@@ -15,12 +15,16 @@ export interface WorkspacesProps {
     selectedNode?: Scalars['ID']
     /** The URL path to the execution page this workspaces list is shown on. */
     executionURL: string
+    isWorkspaceDetailsOpen: boolean
+    setIsWorkspaceDetailsOpen: (arg0: boolean) => void
 }
 
 export const Workspaces: React.FunctionComponent<React.PropsWithChildren<WorkspacesProps>> = ({
     batchSpecID,
     selectedNode,
     executionURL,
+    isWorkspaceDetailsOpen,
+    setIsWorkspaceDetailsOpen,
 }) => {
     const [filters, setFilters] = useState<WorkspaceFilters>()
     const workspacesConnection = useWorkspacesListConnection(
@@ -38,6 +42,8 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                     workspacesConnection={workspacesConnection}
                     selectedNode={selectedNode}
                     executionURL={executionURL}
+                    isWorkspaceDetailsOpen={isWorkspaceDetailsOpen}
+                    setIsWorkspaceDetailsOpen={setIsWorkspaceDetailsOpen}
                 />
             </div>
         </div>
