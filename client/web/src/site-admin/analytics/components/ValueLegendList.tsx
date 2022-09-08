@@ -10,17 +10,24 @@ import { formatNumber } from '../utils'
 import styles from './index.module.scss'
 
 interface ValueLegendItemProps {
-    color: string
+    color?: string
     description: string
-    value: number
+    value: number | string
     tooltip?: string
+    className?: string
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description, tooltip }) => {
-    const formattedNumber = useMemo(() => formatNumber(value), [value])
+export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
+    value,
+    color = 'var(--body-color)',
+    description,
+    tooltip,
+    className,
+}) => {
+    const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
     return (
-        <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
+        <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
             <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
                 <span style={{ color }} className={styles.count}>
                     {formattedNumber}

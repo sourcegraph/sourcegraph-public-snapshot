@@ -62,34 +62,29 @@ const LineDecorator = React.memo<LineDecoratorProps>(
                             const style = decorationStyleForTheme(decoration, isLightTheme)
                             let decorated = false
 
-                            if (style.backgroundColor) {
-                                const codeCell = row.querySelector<HTMLTableCellElement>('td.code')
-
-                                if (codeCell) {
-                                    // if no extra columns between the code and the line number highlight the whole line
-                                    if (codeCell.previousElementSibling?.matches('[data-line]')) {
-                                        row.style.backgroundColor = style.backgroundColor
+                            const codeCell = row.querySelector<HTMLTableCellElement>('td.code')
+                            if (codeCell) {
+                                for (const property of [
+                                    'backgroundColor',
+                                    'border',
+                                    'borderColor',
+                                    'borderWidth',
+                                ] as const) {
+                                    const value = style[property]
+                                    if (value) {
+                                        /**
+                                         * Highlight only the cell with code, but not the one with line number:
+                                         * git blame cell may be rendered between the line cell and the code cell and
+                                         * we don't want to style it as well.
+                                         */
+                                        codeCell.style[property] = value
                                         decorated = true
-                                    } else {
-                                        codeCell.style.backgroundColor = style.backgroundColor
+                                    }
+
+                                    if (decorated) {
+                                        decoratedElements.push(codeCell)
                                     }
                                 }
-                            }
-
-                            if (style.border) {
-                                row.style.border = style.border
-                                decorated = true
-                            }
-                            if (style.borderColor) {
-                                row.style.borderColor = style.borderColor
-                                decorated = true
-                            }
-                            if (style.borderWidth) {
-                                row.style.borderWidth = style.borderWidth
-                                decorated = true
-                            }
-                            if (decorated) {
-                                decoratedElements.push(row)
                             }
                         }
                     } else {
@@ -109,6 +104,7 @@ const LineDecorator = React.memo<LineDecoratorProps>(
                     // code view ref passed `null`, so element is leaving DOM
                     innerPortalNode?.remove()
                     for (const element of decoratedElements) {
+                        // TODO: return the previous value of the property instead of resetting it
                         element.style.backgroundColor = ''
                         element.style.border = ''
                         element.style.borderColor = ''

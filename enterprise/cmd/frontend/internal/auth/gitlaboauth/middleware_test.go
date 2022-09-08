@@ -295,7 +295,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		ClientID:     clientID,
 		Type:         extsvc.TypeGitLab,
 	}}
-	mp.Provider, problems = parseProvider(db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
+	mp.Provider, problems = parseProvider(logtest.Scoped(t), db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

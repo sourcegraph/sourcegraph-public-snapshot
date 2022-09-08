@@ -65,6 +65,8 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 		return nil, err
 	}
 
+	s.operations.indexesInserted.Add(float64(len(ids)))
+
 	return tx.GetIndexesByIDs(ctx, ids...)
 }
 

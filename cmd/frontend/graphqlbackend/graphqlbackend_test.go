@@ -16,6 +16,8 @@ import (
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,9 +27,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/log/logtest"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+		log.SetOutput(io.Discard)
+		logtest.InitWithLevel(m, sglog.LevelNone)
+	} else {
+		logtest.Init(m)
+	}
+	os.Exit(m.Run())
+}
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
 	tests := [][3]string{
@@ -127,15 +139,6 @@ func TestResolverTo(t *testing.T) {
 			t.Errorf("expected treeEntry to be tree")
 		}
 	})
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-		log.SetOutput(io.Discard)
-	}
-	os.Exit(m.Run())
 }
 
 func TestAffiliatedRepositories(t *testing.T) {

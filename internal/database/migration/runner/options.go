@@ -30,6 +30,11 @@ type Options struct {
 	// a short development loop where the user can re-apply the `up` command without having to
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
+
+	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log in the
+	// specific case when the _next_ migration application is the only pending migration. This
+	// is meant to enable interruptable upgrades.
+	IgnoreSinglePendingLog bool
 }
 
 type PrivilegedMode uint

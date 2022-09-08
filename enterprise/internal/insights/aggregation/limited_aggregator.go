@@ -17,6 +17,8 @@ func NewLimitedAggregator(bufferSize int) LimitedAggregator {
 	}
 }
 
+// limitedAggregator is not thread safe and uses no locks over the map of results when performing reads/writes.
+// Use it accordingly.
 type limitedAggregator struct {
 	resultBufferSize int
 	smallestResult   *Aggregate

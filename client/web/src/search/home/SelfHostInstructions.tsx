@@ -15,7 +15,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
     telemetryService,
 }) => {
     const dockerCommand =
-        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.43.0'
+        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.43.1'
 
     const copyTooltip = 'Copy command'
     const copyCompletedTooltip = 'Copied!'

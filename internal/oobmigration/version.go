@@ -74,7 +74,7 @@ func (v Version) Previous() (Version, bool) {
 // An error is returned if the interval would be empty.
 func UpgradeRange(from, to Version) ([]Version, error) {
 	if CompareVersions(from, to) != VersionOrderBefore {
-		return nil, errors.Newf("invalid range (from=%s > to=%s)", from, to)
+		return nil, errors.Newf("invalid range (from=%s >= to=%s)", from, to)
 	}
 
 	var versions []Version

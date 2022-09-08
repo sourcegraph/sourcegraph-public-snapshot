@@ -36,7 +36,7 @@ func NewMockMigrator() *MockMigrator {
 			},
 		},
 		ProgressFunc: &MigratorProgressFunc{
-			defaultHook: func(context.Context) (r0 float64, r1 error) {
+			defaultHook: func(context.Context, bool) (r0 float64, r1 error) {
 				return
 			},
 		},
@@ -58,7 +58,7 @@ func NewStrictMockMigrator() *MockMigrator {
 			},
 		},
 		ProgressFunc: &MigratorProgressFunc{
-			defaultHook: func(context.Context) (float64, error) {
+			defaultHook: func(context.Context, bool) (float64, error) {
 				panic("unexpected invocation of MockMigrator.Progress")
 			},
 		},
@@ -190,23 +190,23 @@ func (c MigratorDownFuncCall) Results() []interface{} {
 // MigratorProgressFunc describes the behavior when the Progress method of
 // the parent MockMigrator instance is invoked.
 type MigratorProgressFunc struct {
-	defaultHook func(context.Context) (float64, error)
-	hooks       []func(context.Context) (float64, error)
+	defaultHook func(context.Context, bool) (float64, error)
+	hooks       []func(context.Context, bool) (float64, error)
 	history     []MigratorProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // Progress delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockMigrator) Progress(v0 context.Context) (float64, error) {
-	r0, r1 := m.ProgressFunc.nextHook()(v0)
-	m.ProgressFunc.appendCall(MigratorProgressFuncCall{v0, r0, r1})
+func (m *MockMigrator) Progress(v0 context.Context, v1 bool) (float64, error) {
+	r0, r1 := m.ProgressFunc.nextHook()(v0, v1)
+	m.ProgressFunc.appendCall(MigratorProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Progress method of
 // the parent MockMigrator instance is invoked and the hook queue is empty.
-func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context) (float64, error)) {
+func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context, bool) (float64, error)) {
 	f.defaultHook = hook
 }
 
@@ -214,7 +214,7 @@ func (f *MigratorProgressFunc) SetDefaultHook(hook func(context.Context) (float6
 // Progress method of the parent MockMigrator instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *MigratorProgressFunc) PushHook(hook func(context.Context) (float64, error)) {
+func (f *MigratorProgressFunc) PushHook(hook func(context.Context, bool) (float64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -223,19 +223,19 @@ func (f *MigratorProgressFunc) PushHook(hook func(context.Context) (float64, err
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *MigratorProgressFunc) SetDefaultReturn(r0 float64, r1 error) {
-	f.SetDefaultHook(func(context.Context) (float64, error) {
+	f.SetDefaultHook(func(context.Context, bool) (float64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *MigratorProgressFunc) PushReturn(r0 float64, r1 error) {
-	f.PushHook(func(context.Context) (float64, error) {
+	f.PushHook(func(context.Context, bool) (float64, error) {
 		return r0, r1
 	})
 }
 
-func (f *MigratorProgressFunc) nextHook() func(context.Context) (float64, error) {
+func (f *MigratorProgressFunc) nextHook() func(context.Context, bool) (float64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -271,6 +271,9 @@ type MigratorProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 float64
@@ -282,7 +285,7 @@ type MigratorProgressFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c MigratorProgressFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -399,12 +402,21 @@ type MockStoreIface struct {
 	// AddErrorFunc is an instance of a mock function object controlling the
 	// behavior of the method AddError.
 	AddErrorFunc *StoreIfaceAddErrorFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *StoreIfaceDoneFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreIfaceListFunc
 	// SynchronizeMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method SynchronizeMetadata.
 	SynchronizeMetadataFunc *StoreIfaceSynchronizeMetadataFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *StoreIfaceTransactFunc
+	// UpdateDirectionFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateDirection.
+	UpdateDirectionFunc *StoreIfaceUpdateDirectionFunc
 	// UpdateProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateProgress.
 	UpdateProgressFunc *StoreIfaceUpdateProgressFunc
@@ -419,6 +431,11 @@ func NewMockStoreIface() *MockStoreIface {
 				return
 			},
 		},
+		DoneFunc: &StoreIfaceDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
 		ListFunc: &StoreIfaceListFunc{
 			defaultHook: func(context.Context) (r0 []Migration, r1 error) {
 				return
@@ -426,6 +443,16 @@ func NewMockStoreIface() *MockStoreIface {
 		},
 		SynchronizeMetadataFunc: &StoreIfaceSynchronizeMetadataFunc{
 			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		TransactFunc: &StoreIfaceTransactFunc{
+			defaultHook: func(context.Context) (r0 storeIface, r1 error) {
+				return
+			},
+		},
+		UpdateDirectionFunc: &StoreIfaceUpdateDirectionFunc{
+			defaultHook: func(context.Context, int, bool) (r0 error) {
 				return
 			},
 		},
@@ -446,6 +473,11 @@ func NewStrictMockStoreIface() *MockStoreIface {
 				panic("unexpected invocation of MockStoreIface.AddError")
 			},
 		},
+		DoneFunc: &StoreIfaceDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockStoreIface.Done")
+			},
+		},
 		ListFunc: &StoreIfaceListFunc{
 			defaultHook: func(context.Context) ([]Migration, error) {
 				panic("unexpected invocation of MockStoreIface.List")
@@ -454,6 +486,16 @@ func NewStrictMockStoreIface() *MockStoreIface {
 		SynchronizeMetadataFunc: &StoreIfaceSynchronizeMetadataFunc{
 			defaultHook: func(context.Context) error {
 				panic("unexpected invocation of MockStoreIface.SynchronizeMetadata")
+			},
+		},
+		TransactFunc: &StoreIfaceTransactFunc{
+			defaultHook: func(context.Context) (storeIface, error) {
+				panic("unexpected invocation of MockStoreIface.Transact")
+			},
+		},
+		UpdateDirectionFunc: &StoreIfaceUpdateDirectionFunc{
+			defaultHook: func(context.Context, int, bool) error {
+				panic("unexpected invocation of MockStoreIface.UpdateDirection")
 			},
 		},
 		UpdateProgressFunc: &StoreIfaceUpdateProgressFunc{
@@ -469,8 +511,11 @@ func NewStrictMockStoreIface() *MockStoreIface {
 // redefined here as it is unexported in the source package.
 type surrogateMockStoreIface interface {
 	AddError(context.Context, int, string) error
+	Done(error) error
 	List(context.Context) ([]Migration, error)
 	SynchronizeMetadata(context.Context) error
+	Transact(context.Context) (storeIface, error)
+	UpdateDirection(context.Context, int, bool) error
 	UpdateProgress(context.Context, int, float64) error
 }
 
@@ -481,11 +526,20 @@ func NewMockStoreIfaceFrom(i surrogateMockStoreIface) *MockStoreIface {
 		AddErrorFunc: &StoreIfaceAddErrorFunc{
 			defaultHook: i.AddError,
 		},
+		DoneFunc: &StoreIfaceDoneFunc{
+			defaultHook: i.Done,
+		},
 		ListFunc: &StoreIfaceListFunc{
 			defaultHook: i.List,
 		},
 		SynchronizeMetadataFunc: &StoreIfaceSynchronizeMetadataFunc{
 			defaultHook: i.SynchronizeMetadata,
+		},
+		TransactFunc: &StoreIfaceTransactFunc{
+			defaultHook: i.Transact,
+		},
+		UpdateDirectionFunc: &StoreIfaceUpdateDirectionFunc{
+			defaultHook: i.UpdateDirection,
 		},
 		UpdateProgressFunc: &StoreIfaceUpdateProgressFunc{
 			defaultHook: i.UpdateProgress,
@@ -598,6 +652,107 @@ func (c StoreIfaceAddErrorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreIfaceAddErrorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreIfaceDoneFunc describes the behavior when the Done method of the
+// parent MockStoreIface instance is invoked.
+type StoreIfaceDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []StoreIfaceDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStoreIface) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(StoreIfaceDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockStoreIface instance is invoked and the hook queue is empty.
+func (f *StoreIfaceDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockStoreIface instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreIfaceDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreIfaceDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreIfaceDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *StoreIfaceDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreIfaceDoneFunc) appendCall(r0 StoreIfaceDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreIfaceDoneFuncCall objects describing
+// the invocations of this function.
+func (f *StoreIfaceDoneFunc) History() []StoreIfaceDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreIfaceDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreIfaceDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockStoreIface.
+type StoreIfaceDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreIfaceDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreIfaceDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -806,6 +961,219 @@ func (c StoreIfaceSynchronizeMetadataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreIfaceSynchronizeMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreIfaceTransactFunc describes the behavior when the Transact method of
+// the parent MockStoreIface instance is invoked.
+type StoreIfaceTransactFunc struct {
+	defaultHook func(context.Context) (storeIface, error)
+	hooks       []func(context.Context) (storeIface, error)
+	history     []StoreIfaceTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStoreIface) Transact(v0 context.Context) (storeIface, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(StoreIfaceTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockStoreIface instance is invoked and the hook queue is
+// empty.
+func (f *StoreIfaceTransactFunc) SetDefaultHook(hook func(context.Context) (storeIface, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockStoreIface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreIfaceTransactFunc) PushHook(hook func(context.Context) (storeIface, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreIfaceTransactFunc) SetDefaultReturn(r0 storeIface, r1 error) {
+	f.SetDefaultHook(func(context.Context) (storeIface, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreIfaceTransactFunc) PushReturn(r0 storeIface, r1 error) {
+	f.PushHook(func(context.Context) (storeIface, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreIfaceTransactFunc) nextHook() func(context.Context) (storeIface, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreIfaceTransactFunc) appendCall(r0 StoreIfaceTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreIfaceTransactFuncCall objects
+// describing the invocations of this function.
+func (f *StoreIfaceTransactFunc) History() []StoreIfaceTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreIfaceTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreIfaceTransactFuncCall is an object that describes an invocation of
+// method Transact on an instance of MockStoreIface.
+type StoreIfaceTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 storeIface
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreIfaceTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreIfaceTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreIfaceUpdateDirectionFunc describes the behavior when the
+// UpdateDirection method of the parent MockStoreIface instance is invoked.
+type StoreIfaceUpdateDirectionFunc struct {
+	defaultHook func(context.Context, int, bool) error
+	hooks       []func(context.Context, int, bool) error
+	history     []StoreIfaceUpdateDirectionFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateDirection delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStoreIface) UpdateDirection(v0 context.Context, v1 int, v2 bool) error {
+	r0 := m.UpdateDirectionFunc.nextHook()(v0, v1, v2)
+	m.UpdateDirectionFunc.appendCall(StoreIfaceUpdateDirectionFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateDirection
+// method of the parent MockStoreIface instance is invoked and the hook
+// queue is empty.
+func (f *StoreIfaceUpdateDirectionFunc) SetDefaultHook(hook func(context.Context, int, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateDirection method of the parent MockStoreIface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreIfaceUpdateDirectionFunc) PushHook(hook func(context.Context, int, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreIfaceUpdateDirectionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreIfaceUpdateDirectionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, bool) error {
+		return r0
+	})
+}
+
+func (f *StoreIfaceUpdateDirectionFunc) nextHook() func(context.Context, int, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreIfaceUpdateDirectionFunc) appendCall(r0 StoreIfaceUpdateDirectionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreIfaceUpdateDirectionFuncCall objects
+// describing the invocations of this function.
+func (f *StoreIfaceUpdateDirectionFunc) History() []StoreIfaceUpdateDirectionFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreIfaceUpdateDirectionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreIfaceUpdateDirectionFuncCall is an object that describes an
+// invocation of method UpdateDirection on an instance of MockStoreIface.
+type StoreIfaceUpdateDirectionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreIfaceUpdateDirectionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreIfaceUpdateDirectionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

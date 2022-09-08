@@ -152,6 +152,25 @@ func TestRun(t *testing.T) {
 		}
 	})
 
+	t.Run("upgrade (dirty database, ignore single pending log)", func(t *testing.T) {
+		store := testStoreWithVersion(10003, false)
+		store.VersionsFunc.SetDefaultHook(func(ctx context.Context) ([]int, []int, []int, error) {
+			return nil, []int{10001}, nil, nil
+		})
+
+		if err := makeTestRunner(t, store).Run(ctx, Options{
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+			IgnoreSinglePendingLog: true,
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+	})
+
 	t.Run("upgrade (dirty database/dead migrations)", func(t *testing.T) {
 		store := testStoreWithVersion(10003, true)
 		store.VersionsFunc.SetDefaultReturn(nil, []int{10003}, nil, nil)

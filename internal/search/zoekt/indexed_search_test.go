@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -895,6 +896,52 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			got := zoektFileMatchToMultilineMatches(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
+
+func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
+	zoektQueryRegexps := []*regexp.Regexp{regexp.MustCompile("python.*worker|stuff")}
+
+	cases := []struct {
+		name   string
+		input  *zoekt.FileMatch
+		output []result.Range
+	}{
+		{
+			name: "returns single path match range",
+			input: &zoekt.FileMatch{
+				FileName: "internal/python/foo/worker.py",
+			},
+			output: []result.Range{
+				{
+					Start: result.Location{Offset: 9, Line: 0, Column: 9},
+					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+				},
+			},
+		},
+		{
+			name: "returns multiple path match ranges",
+			input: &zoekt.FileMatch{
+				FileName: "internal/python/foo/worker/src/dev/python_stuff.py",
+			},
+			output: []result.Range{
+				{
+					Start: result.Location{Offset: 9, Line: 0, Column: 9},
+					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+				},
+				{
+					Start: result.Location{Offset: 42, Line: 0, Column: 42},
+					End:   result.Location{Offset: 47, Line: 0, Column: 47},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := zoektFileMatchToPathMatchRanges(tc.input, zoektQueryRegexps)
 			require.Equal(t, tc.output, got)
 		})
 	}

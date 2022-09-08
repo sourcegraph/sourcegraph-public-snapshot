@@ -119,6 +119,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                     listClassName="list-group list-group-flush mb-0"
                     noun="code host"
                     pluralNoun="code hosts"
+                    withCenteredSummary={true}
                     queryConnection={queryConnection}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={{
@@ -128,7 +129,6 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         afterDeleteRoute,
                     }}
                     hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
                     cursorPaging={true}
                     updates={updates}
                     history={history}

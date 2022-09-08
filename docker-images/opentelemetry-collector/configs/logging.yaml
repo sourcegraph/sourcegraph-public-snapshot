@@ -8,7 +8,10 @@ receivers:
 
 exporters:
   logging:
-    loglevel: info
+    # If you want to see the contents of spans in output, you can set logLevel to 'debug',
+    # but you probably want to configure another exporter - this is mostly here becasue
+    # we're not allowed to configure no exporters.
+    loglevel: warn
     sampling_initial: 5
     sampling_thereafter: 200
 

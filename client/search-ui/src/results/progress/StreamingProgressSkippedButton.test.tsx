@@ -19,18 +19,6 @@ describe('StreamingProgressSkippedButton', () => {
         })
     })
 
-    it('should not show if no skipped items', () => {
-        const progress: Progress = {
-            durationMs: 0,
-            matchCount: 0,
-            skipped: [],
-        }
-
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(screen.queryByTestId('streaming-progress-skipped')).not.toBeInTheDocument()
-        expect(screen.queryByTestId('streaming-progress-skipped-popover')).not.toBeInTheDocument()
-    })
-
     it('should be in info state with only info items', () => {
         const progress: Progress = {
             durationMs: 1500,

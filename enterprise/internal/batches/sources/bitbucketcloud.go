@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -57,8 +56,8 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s BitbucketCloudSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, store, repo, s.client.Authenticator())
+func (s BitbucketCloudSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.client.Authenticator())
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the

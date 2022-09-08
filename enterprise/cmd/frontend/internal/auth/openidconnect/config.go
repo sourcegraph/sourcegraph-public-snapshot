@@ -58,17 +58,23 @@ func Init() {
 	logger := log.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
 		conf.Watch(func() {
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Warn("Check license for SSO (OpenID Connect)", log.Error(err))
+
+			ps := getProviders()
+			if len(ps) == 0 {
 				providers.Update(pkgName, nil)
 				return
 			}
 
-			ps := getProviders()
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Error("Check license for SSO (OpenID Connect)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
 			for _, p := range ps {
 				go func(p providers.Provider) {
 					if err := p.Refresh(context.Background()); err != nil {
-						log15.Error("Error prefetching OpenID Connect service provider metadata.", "error", err)
+						logger.Error("Error prefetching OpenID Connect service provider metadata.", log.Error(err))
 					}
 				}(p)
 			}

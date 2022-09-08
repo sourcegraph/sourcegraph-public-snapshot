@@ -3,8 +3,8 @@ package autoindexing
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -36,7 +36,7 @@ func GetService(db database.DB, uploadSvc shared.UploadService, gitserver shared
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
 				Logger:     log.Scoped("autoindexing."+name, "autoindexing "+name),
-				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 				Registerer: prometheus.DefaultRegisterer,
 			}
 		}

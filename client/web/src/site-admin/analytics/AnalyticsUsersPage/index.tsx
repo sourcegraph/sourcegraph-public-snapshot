@@ -22,7 +22,7 @@ import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 import { USERS_STATISTICS } from './queries'
 
 export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'registeredUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
             dateRange: dateRange.value,
@@ -39,10 +39,10 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         const { users } = data.site.analytics
         const legends: ValueLegendListProps['items'] = [
             {
-                value: users.activity.summary.totalUniqueUsers,
+                value: users.activity.summary.totalRegisteredUsers,
                 description: 'Active users',
                 color: 'var(--purple)',
-                tooltip: 'Users using the application in the selected timeframe.',
+                tooltip: 'Currently registered users using the application in the selected timeframe.',
             },
             {
                 value: data.users.totalCount,

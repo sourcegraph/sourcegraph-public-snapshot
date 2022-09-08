@@ -11,6 +11,7 @@
     },
   },
   "include": ["**/*", ".*"],
+  "exclude": ["out", "node_modules"],
   "references": [
     {
       "path": "../common",

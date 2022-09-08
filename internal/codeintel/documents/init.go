@@ -3,8 +3,8 @@ package documents
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -25,14 +25,14 @@ func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
 		storeObservationCtx := &observation.Context{
 			Logger:     log.Scoped("documents.store", "codeintel documents store"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		store := store.New(db, storeObservationCtx)
 
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("documents.service", "codeintel documents service"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		svc = newService(store, observationContext)

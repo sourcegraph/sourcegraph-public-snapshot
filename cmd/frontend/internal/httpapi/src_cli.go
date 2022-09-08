@@ -173,7 +173,9 @@ func (h *srcCliVersionHandler) handleDownload(w http.ResponseWriter, r *http.Req
 }
 
 func (h *srcCliVersionHandler) handleVersion(w http.ResponseWriter) {
-	writeJSON(w, h.Version())
+	writeJSON(w, struct {
+		Version string `json:"version"`
+	}{Version: h.Version()})
 }
 
 func isExpectedRelease(filename string) bool {

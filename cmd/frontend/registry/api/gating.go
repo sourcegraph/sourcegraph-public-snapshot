@@ -2,6 +2,8 @@ package api
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ExtensionRegistryReadEnabled() error {
@@ -15,11 +17,10 @@ func ExtensionRegistryReadEnabled() error {
 }
 
 func ExtensionRegistryWriteEnabled() error {
-	// @TODO(@philipp-spiess): Enable this once we shipped a fix for #40085 and make the flag dynamic
-	// cfg := conf.Get()
-	// if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableLegacyExtensions == false {
-	// 	return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
-	// }
+	cfg := conf.Get()
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableLegacyExtensions != nil && *cfg.ExperimentalFeatures.EnableLegacyExtensions == false {
+		return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
+	}
 
 	// @TODO(@philipp-spiess): Change the default when we roll out 4.0
 	return nil

@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-func apply(input string, transform transform) string {
+func apply(input string, transform []transform) string {
 	type want struct {
 		Input string
 		Query string
@@ -28,7 +28,7 @@ func apply(input string, transform transform) string {
 }
 
 func Test_unquotePatterns(t *testing.T) {
-	rule := transform{unquotePatterns}
+	rule := []transform{unquotePatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -48,7 +48,7 @@ func Test_unquotePatterns(t *testing.T) {
 }
 
 func Test_unorderedPatterns(t *testing.T) {
-	rule := transform{unorderedPatterns}
+	rule := []transform{unorderedPatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -66,7 +66,7 @@ func Test_unorderedPatterns(t *testing.T) {
 }
 
 func Test_langPatterns(t *testing.T) {
-	rule := transform{langPatterns}
+	rule := []transform{langPatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -85,7 +85,7 @@ func Test_langPatterns(t *testing.T) {
 }
 
 func Test_symbolPatterns(t *testing.T) {
-	rule := transform{symbolPatterns}
+	rule := []transform{symbolPatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -104,7 +104,7 @@ func Test_symbolPatterns(t *testing.T) {
 }
 
 func Test_typePatterns(t *testing.T) {
-	rule := transform{typePatterns}
+	rule := []transform{typePatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -124,7 +124,7 @@ func Test_typePatterns(t *testing.T) {
 }
 
 func Test_regexpPatterns(t *testing.T) {
-	rule := transform{regexpPatterns}
+	rule := []transform{regexpPatterns}
 	test := func(input string) string {
 		return apply(input, rule)
 	}
@@ -144,7 +144,7 @@ func Test_regexpPatterns(t *testing.T) {
 }
 
 func Test_patternsToCodeHostFilters(t *testing.T) {
-	rule := transform{patternsToCodeHostFilters}
+	rule := []transform{patternsToCodeHostFilters}
 	test := func(input string) string {
 		return apply(input, rule)
 	}

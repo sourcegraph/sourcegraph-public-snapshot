@@ -57,6 +57,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexByID:                   op("GetIndexByID"),
 		getIndexesByIDs:                op("GetIndexesByIDs"),
 		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
 		deleteIndexByID:                op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 		queueIndex:                     op("QueueIndex"),

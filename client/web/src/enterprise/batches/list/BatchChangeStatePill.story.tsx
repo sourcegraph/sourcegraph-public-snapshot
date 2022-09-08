@@ -49,7 +49,7 @@ export const BatchChangeStatePillStory: Story = () => (
         {props => (
             <div className="d-flex flex-column align-items-start">
                 {STATE_COMBINATIONS.map(({ state, latestExecutionState, currentSpecID, latestSpecID }) => (
-                    <React.Fragment key={`${state}-${latestExecutionState || ''}`}>
+                    <React.Fragment key={`${state}-${latestExecutionState || ''}-${currentSpecID}-${latestSpecID}`}>
                         <H3>
                             {upperFirst(state.toLowerCase())}
                             {latestExecutionState ? `, ${upperFirst(latestExecutionState.toLowerCase())}` : ''}

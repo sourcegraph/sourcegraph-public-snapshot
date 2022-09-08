@@ -601,6 +601,9 @@ body > #page > main > #content {
 .markdown-body aside.experimental {
     border-color: var(--experimental-color);
 }
+.markdown-body aside.beta {
+    border-color: var(--beta-color);
+}
 
 .markdown-body table {
     display: block;

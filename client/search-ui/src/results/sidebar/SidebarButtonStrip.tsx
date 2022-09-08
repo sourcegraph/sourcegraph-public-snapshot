@@ -28,7 +28,7 @@ export const SidebarButtonStrip: React.FunctionComponent<{ className?: string }>
     )
 
     return (
-        <div className={classNames(styles.strip, className)}>
+        <div role="tablist" className={classNames(styles.strip, className)}>
             {tabs.map(({ tab, icon, name }) => (
                 <Tooltip key={tab} content={name} placement="left">
                     <Button

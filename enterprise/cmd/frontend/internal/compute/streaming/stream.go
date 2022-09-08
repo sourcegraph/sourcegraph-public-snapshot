@@ -164,9 +164,9 @@ LOOP:
 		})
 	}
 	if alert != nil {
-		var pqs []streamhttp.ProposedQuery
+		var pqs []streamhttp.QueryDescription
 		for _, pq := range alert.ProposedQueries {
-			pqs = append(pqs, streamhttp.ProposedQuery{
+			pqs = append(pqs, streamhttp.QueryDescription{
 				Description: pq.Description,
 				Query:       pq.QueryString(),
 			})

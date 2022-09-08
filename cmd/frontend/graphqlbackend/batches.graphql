@@ -3251,16 +3251,16 @@ type BatchSpec implements Node {
     """
     The files that are mounted in the steps of a batch spec.
     """
-    files (
+    files(
         """
-        Returns the first n mounts from the list.
+        Returns the first n files from the list.
         """
         first: Int = 50
         """
         Opaque pagination cursor.
         """
         after: String
-    ): WorkspaceFileConnection
+    ): BatchSpecWorkspaceFileConnection
 }
 
 """
@@ -3522,9 +3522,9 @@ input ChangesetSpecPublicationStateInput {
 """
 A list of BatchSpecMounts.
 """
-type WorkspaceFileConnection {
+type BatchSpecWorkspaceFileConnection {
     """
-    The total number of mounts.
+    The total number of files.
     """
     totalCount: Int!
     """
@@ -3532,17 +3532,17 @@ type WorkspaceFileConnection {
     """
     pageInfo: PageInfo!
     """
-    A list of mounts in a batch spec.
+    A list of workspace files in a batch spec.
     """
-    nodes: [WorkspaceFile!]!
+    nodes: [BatchSpecWorkspaceFile!]!
 }
 
 """
 The metadata of a file being used in a batch spec step.
 """
-type WorkspaceFile implements File2 & Node {
+type BatchSpecWorkspaceFile implements File2 & Node {
     """
-    The ID of the mount.
+    The ID of the file.
     """
     id: ID!
     """
@@ -3606,7 +3606,7 @@ type WorkspaceFile implements File2 & Node {
     highlight(
         disableTimeout: Boolean!
         isLightTheme: Boolean
-        @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML

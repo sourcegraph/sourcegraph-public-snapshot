@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
-import { isEqual, sortBy } from 'lodash'
+import { isEqual } from 'lodash'
 import {
     BehaviorSubject,
     combineLatest,
@@ -31,7 +31,6 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -59,11 +58,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import {
-    createDecorationType,
-    DecorationMapByLine,
-    groupDecorationsByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -91,10 +86,10 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
+import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import { ColumnDecorator } from './ColumnDecorator'
+import { BlameColumn } from './BlameColumn'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
@@ -103,8 +98,6 @@ import styles from './Blob.module.scss'
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
-
-export const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -131,7 +124,7 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
-    blameDecorations?: TextDocumentDecoration[]
+    blameHunks?: BlameHunk[]
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -319,9 +312,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const [decorationsOrError, setDecorationsOrError] = useState<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][] | Error | undefined
-    >()
+    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -659,27 +650,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
-
-    // Memoize column and inline decorations to avoid clearing and setting decorations
-    // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
-    const decorations: {
-        column: [TextDocumentDecorationType, DecorationMapByLine][]
-        inline: DecorationMapByLine
-    } = useMemo(() => {
-        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
-        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
-            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
-
-        if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            return groupDecorations(decorationsOrError, enableExtensionsDecorationsColumnView, {
-                column: columnWithBlame,
-                inline: [],
-            })
-        }
-
-        return { column: columnWithBlame, inline: new Map() }
-    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
+    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
+    // decorations haven't changed.
+    const groupedDecorations = useMemo(
+        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
+        [decorationsOrError]
+    )
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -787,19 +763,23 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
 
-                if (firstRow && !firstRow.querySelector('.top-spacer')) {
+                if (firstRow) {
                     for (const cell of firstRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('top-spacer')
-                        cell.prepend(spacer)
+                        if (!cell.querySelector('.top-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('top-spacer')
+                            cell.prepend(spacer)
+                        }
                     }
                 }
 
-                if (lastRow && !lastRow.querySelector('.bottom-spacer')) {
+                if (lastRow) {
                     for (const cell of lastRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('bottom-spacer')
-                        cell.append(spacer)
+                        if (!cell.querySelector('.bottom-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('bottom-spacer')
+                            cell.append(spacer)
+                        }
                     }
                 }
             }
@@ -844,34 +824,27 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {decorations.column.map(([{ extensionID }, items]) => (
-                    <ColumnDecorator
-                        key={extensionID}
-                        isLightTheme={isLightTheme}
-                        extensionID={extensionID!}
-                        decorations={items}
-                        codeViewElements={codeViewElements}
-                    />
-                ))}
+                {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
 
-                {iterate(decorations.inline)
-                    .map(([line, items]) => {
-                        const portalID = toPortalID(line)
-                        return (
-                            <LineDecorator
-                                isLightTheme={isLightTheme}
-                                key={`${portalID}-${blobInfo.filePath}`}
-                                portalID={portalID}
-                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                line={line}
-                                decorations={items}
-                                codeViewElements={codeViewElements}
-                            />
-                        )
-                    })
-                    .toArray()}
+                {groupedDecorations &&
+                    iterate(groupedDecorations)
+                        .map(([line, items]) => {
+                            const portalID = toPortalID(line)
+                            return (
+                                <LineDecorator
+                                    isLightTheme={isLightTheme}
+                                    key={`${portalID}-${blobInfo.filePath}`}
+                                    portalID={portalID}
+                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                    line={line}
+                                    decorations={items}
+                                    codeViewElements={codeViewElements}
+                                />
+                            )
+                        })
+                        .toArray()}
             </div>
-            {!props.disableStatusBar && extensionsController !== null && (
+            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
                     extensionsController={extensionsController}
@@ -934,33 +907,5 @@ export function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
-    }
-}
-
-export function groupDecorations(
-    decorations: [TextDocumentDecorationType, TextDocumentDecoration[]][],
-    enableExtensionsDecorationsColumnView: boolean,
-    initialValue: { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: TextDocumentDecoration[] } = {
-        column: [],
-        inline: [],
-    }
-): { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: DecorationMapByLine } {
-    const { column, inline } = decorations.reduce((accumulator, [type, items]) => {
-        if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-            const groupedByLine = groupDecorationsByLine(items)
-            if (groupedByLine.size > 0) {
-                accumulator.column.push([type, groupedByLine])
-            }
-        } else {
-            accumulator.inline.push(...items)
-        }
-
-        return accumulator
-    }, initialValue)
-
-    return {
-        // if extension contributes with a few decoration types let them go one by one
-        column: sortBy(column, ([{ extensionID }]) => extensionID),
-        inline: groupDecorationsByLine(inline),
     }
 }

@@ -14,6 +14,7 @@ interface TimeSavedCalculatorGroupItem {
     label: string
     value: number
     minPerItem: number
+    onMinPerItemChange?: (minPerItem: number) => void
     description: string
     percentage?: number
     hoursSaved?: number
@@ -65,6 +66,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     const updateMinPerItem = (index: number, minPerItem: number): void => {
         const updatedItems = [...memoizedItems]
         updatedItems[index] = { ...memoizedItems[index], minPerItem }
+        updatedItems[index].onMinPerItemChange?.(minPerItem)
 
         setMemoizedItems(calculateHoursSaved(updatedItems))
     }

@@ -15,7 +15,7 @@ interface Metrics {
     count_select_symbol?: number
     count_select_commit_diff_added?: number
     count_select_commit_diff_removed?: number
-    count_repo_contains?: number
+    count_repo_contains_path?: number
     count_repo_contains_file?: number
     count_repo_contains_content?: number
     count_repo_contains_commit_after?: number
@@ -41,7 +41,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
     let count_select_symbol = 0
     let count_select_commit_diff_added = 0
     let count_select_commit_diff_removed = 0
-    let count_repo_contains = 0
+    let count_repo_contains_path = 0
     let count_repo_contains_file = 0
     let count_repo_contains_content = 0
     let count_repo_contains_commit_after = 0
@@ -121,8 +121,8 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                             continue
                         }
                         switch (predicate.path.join('.')) {
-                            case 'contains':
-                                count_repo_contains += 1
+                            case 'contains.path':
+                                count_repo_contains_path += 1
                                 break
                             case 'contains.file':
                                 count_repo_contains_file += 1
@@ -164,7 +164,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
         count_select_commit_diff_added: nonzero(count_select_commit_diff_added),
         count_select_commit_diff_removed: nonzero(count_select_commit_diff_removed),
         // RFC 384: predicate usage
-        count_repo_contains: nonzero(count_repo_contains),
+        count_repo_contains_path: nonzero(count_repo_contains_path),
         count_repo_contains_file: nonzero(count_repo_contains_file),
         count_repo_contains_content: nonzero(count_repo_contains_content),
         count_repo_contains_commit_after: nonzero(count_repo_contains_commit_after),

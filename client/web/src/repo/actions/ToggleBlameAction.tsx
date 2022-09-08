@@ -1,27 +1,38 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../stores'
+import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
-export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown' }> = ({ actionType }) => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; filePath: string }> = ({
+    actionType,
+    filePath,
+}) => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
+
+    // Turn off visibility when the file path changes.
+    useEffect(() => {
+        setIsBlameVisible(false)
+    }, [filePath, setIsBlameVisible])
 
     const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
-    const toggleBlameState = useCallback(() => setIsBlameVisible(isVisible => !isVisible), [setIsBlameVisible])
-
-    if (!extensionsAsCoreFeatures) {
-        return null
-    }
+    const toggleBlameState = useCallback(() => {
+        if (isBlameVisible) {
+            setIsBlameVisible(false)
+            eventLogger.log('GitBlameDisabled')
+        } else {
+            setIsBlameVisible(true)
+            eventLogger.log('GitBlameEnabled')
+        }
+    }, [isBlameVisible, setIsBlameVisible])
 
     if (actionType === 'dropdown') {
         return (

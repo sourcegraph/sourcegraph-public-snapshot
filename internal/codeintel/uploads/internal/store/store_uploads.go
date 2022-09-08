@@ -193,6 +193,236 @@ WHERE
 	%s
 `
 
+// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
+func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return shared.Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.db.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
+}
+
+const getUploadByIDQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadByID
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	repo.name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
+`
+
+// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, err
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%d", id))
+	}
+
+	return scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+}
+
+const getUploadsByIDsQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadsByIDs
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	repo.name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
+`
+
+// GetRecentUploadsSummary returns a set of "interesting" uploads for the repository with the given identifeir.
+// The return value is a list of uploads grouped by root and indexer. In each group, the set of uploads should
+// include the set of unprocessed records as well as the latest finished record. These values allow users to
+// quickly determine if a particular root/indexer pair is up-to-date or having issues processing.
+func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error) {
+	ctx, logger, endObservation := s.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	uploads, err := scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(recentUploadsSummaryQuery, repositoryID, repositoryID)))
+	if err != nil {
+		return nil, err
+	}
+	logger.Log(log.Int("numUploads", len(uploads)))
+
+	groupedUploads := make([]shared.UploadsWithRepositoryNamespace, 1, len(uploads)+1)
+	for _, index := range uploads {
+		if last := groupedUploads[len(groupedUploads)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
+			groupedUploads = append(groupedUploads, shared.UploadsWithRepositoryNamespace{
+				Root:    index.Root,
+				Indexer: index.Indexer,
+			})
+		}
+
+		n := len(groupedUploads)
+		groupedUploads[n-1].Uploads = append(groupedUploads[n-1].Uploads, index)
+	}
+
+	return groupedUploads[1:], nil
+}
+
+const recentUploadsSummaryQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:RecentUploadsSummary
+WITH ranked_completed AS (
+	SELECT
+		u.id,
+		u.root,
+		u.indexer,
+		u.finished_at,
+		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+	FROM lsif_uploads u
+	WHERE
+		u.repository_id = %s AND
+		u.state NOT IN ('uploading', 'queued', 'processing', 'deleted')
+),
+latest_uploads AS (
+	SELECT u.id, u.root, u.indexer, u.uploaded_at
+	FROM lsif_uploads u
+	WHERE
+		u.id IN (
+			SELECT rc.id
+			FROM ranked_completed rc
+			WHERE rc.rank = 1
+		)
+	ORDER BY u.root, u.indexer
+),
+new_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE
+		u.repository_id = %s AND
+		u.state IN ('uploading', 'queued', 'processing') AND
+		u.uploaded_at >= (
+			SELECT lu.uploaded_at
+			FROM latest_uploads lu
+			WHERE
+				lu.root = u.root AND
+				lu.indexer = u.indexer
+			-- condition passes when latest_uploads is empty
+			UNION SELECT u.queued_at LIMIT 1
+		)
+)
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads_with_repository_name u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+WHERE u.id IN (
+	SELECT lu.id FROM latest_uploads lu
+	UNION
+	SELECT nu.id FROM new_uploads nu
+)
+ORDER BY u.root, u.indexer
+`
+
+// GetLastUploadRetentionScanForRepository returns the last timestamp, if any, that the repository with the
+// given identifier was considered for upload expiration checks.
+func (s *store) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	t, ok, err := basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(lastUploadRetentionScanForRepositoryQuery, repositoryID)))
+	if !ok {
+		return nil, err
+	}
+
+	return &t, nil
+}
+
+const lastUploadRetentionScanForRepositoryQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:LastUploadRetentionScanForRepository
+SELECT last_retention_scan_at FROM lsif_last_retention_scan WHERE repository_id = %s
+`
+
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
 // and the upload and index records for that repository being deleted.
 const DeletedRepositoryGracePeriod = time.Minute * 30
@@ -406,6 +636,42 @@ WITH locked_uploads AS (
 	ORDER BY u.id FOR UPDATE
 )
 DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+`
+
+// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
+// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
+// the background.
+func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
+	defer unset(ctx)
+
+	repositoryID, deleted, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
+	if err != nil {
+		return false, err
+	}
+	if !deleted {
+		return false, nil
+	}
+
+	if err := tx.SetRepositoryAsDirty(ctx, repositoryID); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+const deleteUploadByIDQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
+UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
 `
 
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload

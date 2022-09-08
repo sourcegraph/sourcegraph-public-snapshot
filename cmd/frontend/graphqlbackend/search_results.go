@@ -636,6 +636,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		return nil, err // sparkline generation failed, so don't cache.
 	}
 	stats = &searchResultsStats{
+		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,

@@ -32,6 +32,10 @@ $gray-08: #343a4d;
 // Exception that's used in $theme-colors.
 $gray-09: #262b38;
 
+// light and dark colors used in `$theme-colors` -> `bg-*`
+$gray-100: #f8f9fa;
+$gray-800: #343a40;
+
 // Core semantic base colors.
 $primary: $blue;
 $secondary: $gray-08;
@@ -40,9 +44,19 @@ $info: $cyan;
 $warning: $yellow;
 $danger: $red;
 $merged: $purple;
+$light: $gray-100;
+$dark: $gray-800;
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
+    'primary': $primary,
+    'secondary': $secondary,
+    'success': $success,
+    'info': $info,
+    'warning': $warning,
+    'danger': $danger,
+    'light': $light,
+    'dark': $dark,
     'merged': $merged,
 );
 

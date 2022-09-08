@@ -84,7 +84,7 @@ const getTickXLabelProps: TickLabelProps<Date> = (value, index, values): Partial
     textAnchor: 'middle',
 })
 
-interface AxisBottomProps extends OwnSharedAxisProps {
+export interface AxisBottomProps extends OwnSharedAxisProps {
     width: number
 }
 

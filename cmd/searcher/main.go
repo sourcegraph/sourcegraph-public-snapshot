@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -36,11 +36,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -135,7 +135,7 @@ func run(logger log.Logger) error {
 	storeObservationContext := &observation.Context{
 		// Explicitly don't scope Store logger under the parent logger
 		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -181,9 +181,9 @@ func run(logger log.Logger) error {
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
+	handler := actor.HTTPMiddleware(logger, service)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

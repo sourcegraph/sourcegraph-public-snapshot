@@ -40,7 +40,7 @@ const SimpleChartTemplate: Story<TemplateProps> = args => (
         {parent => (
             <SvgRoot width={parent.width} height={parent.height} xScale={args.xScale} yScale={args.yScale}>
                 <SvgAxisLeft />
-                <SvgAxisBottom tickFormat={args.formatXLabel} pixelsPerTick={args.pixelsPerXTick} />
+                <SvgAxisBottom tickFormat={args.formatXLabel} pixelsPerTick={args.pixelsPerXTick} maxRotateAngle={90} />
 
                 <SvgContent>
                     {({ content }) => <rect fill={args.color} width={content.width} height={content.height} />}
@@ -64,7 +64,7 @@ export const SmartAxisDemo: Story = args => (
                 clamp: true,
             })}
             formatXLabel={formatDateTick}
-            pixelsPerXTick={20}
+            pixelsPerXTick={30}
             color="darkslateblue"
         />
 

@@ -3,8 +3,8 @@ package dependencies
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -25,7 +25,7 @@ func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
 		storeObservationCtx := &observation.Context{
 			Logger:     log.Scoped("dependencies.store", "dependencies store"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		var store store.Store = store.New(db, storeObservationCtx)

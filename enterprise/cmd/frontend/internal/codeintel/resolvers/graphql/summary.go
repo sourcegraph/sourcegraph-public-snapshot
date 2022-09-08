@@ -6,6 +6,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -14,7 +15,7 @@ type repositorySummaryResolver struct {
 	db               database.DB
 	resolver         resolvers.Resolver
 	gitserver        GitserverClient
-	summary          resolvers.RepositorySummary
+	summary          RepositorySummary
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
@@ -24,7 +25,7 @@ func NewRepositorySummaryResolver(
 	db database.DB,
 	resolver resolvers.Resolver,
 	gitserver GitserverClient,
-	summary resolvers.RepositorySummary,
+	summary RepositorySummary,
 	prefetcher *Prefetcher,
 	locationResolver *CachedLocationResolver,
 	errTracer *observation.ErrCollector,
@@ -44,7 +45,8 @@ func (r *repositorySummaryResolver) RecentUploads() []gql.LSIFUploadsWithReposit
 	resolvers := make([]gql.LSIFUploadsWithRepositoryNamespaceResolver, 0, len(r.summary.RecentUploads))
 	for _, upload := range r.summary.RecentUploads {
 		uploadResolvers := make([]gql.LSIFUploadResolver, 0, len(upload.Uploads))
-		for _, upload := range upload.Uploads {
+		for _, u := range upload.Uploads {
+			upload := convertSharedUploadsToDBStoreUploads(u)
 			uploadResolvers = append(uploadResolvers, NewUploadResolver(r.db, r.gitserver, r.resolver, upload, r.prefetcher, r.locationResolver, r.errTracer))
 		}
 
@@ -78,12 +80,12 @@ func (r *repositorySummaryResolver) LastIndexScan() *gql.DateTime {
 }
 
 type LSIFUploadsWithRepositoryNamespaceResolver struct {
-	uploadsSummary  dbstore.UploadsWithRepositoryNamespace
+	uploadsSummary  uploadsShared.UploadsWithRepositoryNamespace
 	uploadResolvers []gql.LSIFUploadResolver
 }
 
 func NewLSIFUploadsWithRepositoryNamespaceResolver(
-	uploadsSummary dbstore.UploadsWithRepositoryNamespace,
+	uploadsSummary uploadsShared.UploadsWithRepositoryNamespace,
 	uploadResolvers []gql.LSIFUploadResolver,
 ) gql.LSIFUploadsWithRepositoryNamespaceResolver {
 	return &LSIFUploadsWithRepositoryNamespaceResolver{
