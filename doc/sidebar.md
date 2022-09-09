@@ -63,6 +63,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [FAQ](admin/faq.md)
   - [Troubleshooting](admin/troubleshooting.md)
   - [How-to guides](admin/how-to/index.md)
+  - [Pricing](admin/pricing.md)
 - [Development](dev/index.md)
   - [Setup](dev/setup/index.md)
   - [How-to guides](dev/how-to/index.md)
