@@ -20,7 +20,6 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
@@ -42,6 +41,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
+    setSidebarCollapsed: (collapsed: boolean) => void
 }
 
 export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
@@ -56,6 +56,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         aggregationUIMode,
         onNavbarQueryChange,
         onSearchSubmit,
+        setSidebarCollapsed,
         telemetryService,
         settingsCascade,
         children,
@@ -68,7 +69,6 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const proactiveSearchAggregations = useExperimentalFeatures(
         features => features.proactiveSearchResultsAggregations ?? true
     )
-    const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
@@ -105,7 +105,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     return (
-        <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
+        <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
             {children}
 
             {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
