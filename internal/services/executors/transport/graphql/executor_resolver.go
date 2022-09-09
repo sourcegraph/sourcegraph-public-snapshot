@@ -44,19 +44,19 @@ func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor
 
 func (e *ExecutorResolver) IsOutdated() (bool, error) {
 	ev := e.executor.ExecutorVersion
-    if !e.Active() {
-        return false, nil
-    }
+	if !e.Active() {
+		return false, nil
+	}
 	return isExecutorOutdated(ev)
 }
 
-func isExecutorOutdated(ev string, active bool) (bool, error) {
+func isExecutorOutdated(ev string) (bool, error) {
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
 	isSgDev := sv != "" && version.IsDev(sv)
 
-	if !active || isSgDev || isExecutorDev {
+	if isSgDev || isExecutorDev {
 		return false, nil
 	}
 
