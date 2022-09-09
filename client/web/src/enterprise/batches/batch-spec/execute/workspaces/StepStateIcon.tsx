@@ -41,7 +41,9 @@ export const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<Step
     return (
         <div className="d-flex flex-shrink-0">
             <Tooltip content={label} placement="bottom">
-                <Icon className={classNameVariant} aria-label={label} as={IconElement} />
+                <span>
+                    <Icon className={classNameVariant} aria-label={label} as={IconElement} />
+                </span>
             </Tooltip>
         </div>
     )
