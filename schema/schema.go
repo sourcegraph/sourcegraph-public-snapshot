@@ -1851,6 +1851,8 @@ type SettingsExperimentalFeatures struct {
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
+	// ProactiveSearchResultsAggregationsLimit description: Limits the number of results requested for proactive search aggregations.
+	ProactiveSearchResultsAggregationsLimit int `json:"proactiveSearchResultsAggregationsLimit,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.

@@ -404,6 +404,13 @@
           "!go": {
             "pointer": true
           }
+        },
+        "proactiveSearchResultsAggregationsLimit": {
+          "description": "Limits the number of results requested for proactive search aggregations.",
+          "type": "integer",
+          "default": 50000,
+          "minimum": 500,
+          "maximum": 250000
         }
       },
       "group": "Experimental"
