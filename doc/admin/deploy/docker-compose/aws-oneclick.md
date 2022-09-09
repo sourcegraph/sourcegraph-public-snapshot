@@ -17,24 +17,22 @@ title: AWS one-click
 }
 </style>
 
-# AWS One-Click Installation
+# AWS One-Click Installation for Sourcegraph
 
-With just a few clicks, a verified and pre-configured Sourcegraph instance will be created with:
+In one-clicks, a verified and pre-configured Sourcegraph instance will be launched with:
 
 - Latest version of Sourcegraph
-- EBS Volumes with 200GB of storage (configurable)
-- Security group with the following rules:
-      -  Default HTTP rule: port range 80, source 0.0.0.0/0, ::/0
-      -  Default HTTPS rule: port range 443, source 0.0.0.0/0, ::/0
-      -  Default SSH rule: port range 22, source 0.0.0.0/0, ::/0
+- A EBS Volume as the root disk with 50GB of storage
+- A configurable EBS Volume as the data store with 500GB of storage
+- Security group with default rules: `HTTP(port 80), HTTPS(port 443), and SSH(port 22)`
 
-You will only need to choose your VPC and SSH key-pair to get started.
+You will only need to choose your `Virtual Private Cloud (VPC)` and `SSH Key-Pair` to get started.
 
 ---
 
 ## Steps
 
-1. Choose an AWS Region in which Sourcegraph is available using the launcher below
+1. Choose an AWS Region in the launcher below
 2. Click on the `Launch Stack` button
 3. Select or create a new Key Pair for connecting to your instance securely
 

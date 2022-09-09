@@ -71,6 +71,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - <br/>
-- [★ Getting Started](index.md)
+- [★ Get Started](index.md)
 - [★ Search query syntax](code_search/reference/queries.md)
-- [★ API](api/index.md)
+- [★ Sourcegraph API](api/index.md)
+- [★ Changelog](CHANGELOG.md)

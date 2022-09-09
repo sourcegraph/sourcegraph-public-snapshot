@@ -1,5 +1,5 @@
 ---
-title: Deploy Sourcegraph
+title: Get Started
 ---
 
 <style>
@@ -7,6 +7,7 @@ title: Deploy Sourcegraph
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1em;
+    margin-bottom: 1em;
   }
   .app-btn {
     cursor: pointer;
@@ -33,21 +34,33 @@ title: Deploy Sourcegraph
   }
 </style>
 
-# Deploy Sourcegraph
+# Get Started
+
+## Deploy Sourcegraph
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-## Recommended
+### Recommended
 
 <form class="grid">
+  <!-- Sourcegraph Cloud -->
   <button class="app-btn btn" formaction="cloud">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
   </button>
 </form>
+<form class="grid">
+  <!-- AWS AMI -->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-ami">
+    <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
+    <h3>AWS AMI</h3>
+    <span class="badge badge-warning">Coming soon</span>
+    <p>Launch a Sourcegraph instance from an AWS image</p>
+  </button>
+</form>
 
-## Self-hosted
+### Self-hosted
 
 <form class="grid">
   <!-- AWS -->
@@ -57,10 +70,11 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <p>Deploy manually onto AWS EC2</p>
   </button>
   <!-- AWS One Click-->
-  <button class="app-btn btn" formaction="/admin/deploy/aws-oneclick">
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
     <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
     <h3>AWS One-Click</h3>
-    <p>Deploy onto AWS in one click</p>
+    <span class="badge badge-warning">Coming soon</span> 
+    <!-- <p>Deploy onto AWS in one click</p> -->
   </button>
   <!-- Azure -->
   <button class="app-btn btn" formaction="/admin/deploy/kubernetes/azure">
@@ -100,7 +114,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </button>
 </form>
 
-## Local machine
+### Local machine
 
 <form class="grid">
   <button class="app-btn btn" formaction="/admin/deploy/docker-single-container">
@@ -113,24 +127,26 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ---
 
-## Get started
+## Quickstart
 
-- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
-- [Using Sourcegraph](getting-started/index.md)
-- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
-- [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
-- [Chrome and Firefox browser extensions](integration/browser_extension.md)
-- Reference:
-  - [Query syntax reference](code_search/reference/queries.md)
-  - [API documentation](api/index.md)
-- [Sourcegraph AWS launch stack](admin/deploy/aws-oneclick.md)
+- [Learn Sourcegraph](getting-started/index.md) 
+  - Sourcegraph 101: how to use Sourcegraph
+- [Tour Sourcegraph](getting-started/tour.md)
+  - Take a tour of Sourcegraph’s features using real-world examples and use cases
+- [Trial Sourcegraph](adopt/trial/index.md) 
+  - Start a Sourcegraph trail at your company
+- [Sourcegraph AWS launch stack](admin/deploy/docker-compose/aws-oneclick.md) 
+  - Launch a Sourcegraph instance in one-click
 
-### Other links
+## Community
 
-- [Sourcegraph changelog](./CHANGELOG.md)
-- [Sourcegraph handbook](https://handbook.sourcegraph.com/)
-- [Sourcegraph blog](https://about.sourcegraph.com/blog/)
-- [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
+- [Blog](https://about.sourcegraph.com/blog/)
+- [Discord](https://discord.gg/s2qDtYGnAE) 
+- [Twitter](https://twitter.com/sourcegraph)
+- [Handbook](https://handbook.sourcegraph.com/)
+
+## Support
+
 - [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
 - [Request a demo](https://about.sourcegraph.com/demo)
 - [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)
