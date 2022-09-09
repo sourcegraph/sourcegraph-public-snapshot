@@ -90,8 +90,6 @@ type Client struct {
 // the organization assigned to buildkiteOrg.
 // If there is no token assigned yet, it will be asked to the user.
 func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
-
-	//token, err := retrieveToken(ctx, out)
 	store, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, err
