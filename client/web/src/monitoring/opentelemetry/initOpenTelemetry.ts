@@ -21,7 +21,7 @@ import {
 } from '@sourcegraph/observability-client'
 
 export function initOpenTelemetry(): void {
-    const { openTelemetry, externalURL } = window.context
+    const { openTelemetry, externalURL, version } = window.context
 
     /**
      * OpenTelemetry is enabled only if
@@ -36,6 +36,7 @@ export function initOpenTelemetry(): void {
         const provider = new WebTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'web-app',
+                [SemanticResourceAttributes.SERVICE_VERSION]: version,
             }),
         })
 
