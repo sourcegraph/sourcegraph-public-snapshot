@@ -426,7 +426,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     {({ actionType }) => (
                         <GoToCodeHostAction
                             key="go-to-code-host"
-                            as="repoHeaderAction"
+                            source="repoHeader"
                             repo={repoOrError}
                             // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
                             revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}

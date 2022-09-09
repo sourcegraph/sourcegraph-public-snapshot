@@ -34,7 +34,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 
     actionType?: 'nav' | 'dropdown'
 
-    as?: 'repoHeaderAction' | 'actionItemBarAction'
+    source?: 'repoHeader' | 'actionItemsBar'
 }
 
 /**
@@ -138,7 +138,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
         'aria-label': descriptiveText,
     }
 
-    if (props.as === 'actionItemBarAction') {
+    if (props.source === 'actionItemsBar') {
         return (
             <SimpleActionItem tooltip={descriptiveText} {...commonProps}>
                 <Icon as={exportIcon} aria-hidden={true} />
