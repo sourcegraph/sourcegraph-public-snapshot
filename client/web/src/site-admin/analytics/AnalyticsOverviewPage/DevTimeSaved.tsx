@@ -38,7 +38,11 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
     }
 
     if (loading || !data) {
-        return <LoadingSpinner />
+        return (
+            <div className="d-flex justify-content-center">
+                <LoadingSpinner />
+            </div>
+        )
     }
 
     const { search, codeIntel, batchChanges, notebooks, extensions, users } = data.site.analytics
