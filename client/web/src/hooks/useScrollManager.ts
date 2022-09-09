@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { debounce } from 'lodash'
-import { useLocation } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 
 /**
  * Object containing maps of saved scroll locations for each path name, which are keyed by the scrollable container they belong to.
@@ -20,6 +20,7 @@ const SCROLL_RETRY_TIMEOUT = 3000
 
 export function useScrollManager(containerKey: string, containerRef: React.RefObject<HTMLElement>): void {
     const { pathname } = useLocation()
+    const { action } = useHistory()
 
     // Set up the maps for this containerKey if they haven't been created yet
     useEffect(() => {
@@ -30,7 +31,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
         if (!CACHED_SCROLL_ATTEMPTS[containerKey]) {
             CACHED_SCROLL_ATTEMPTS[containerKey] = new Map<string, MutationObserverPromise>()
         }
-    })
+    }, [containerKey])
 
     // Attach scroll listener, make sure to detach on unmount
     useEffect(() => {
@@ -58,7 +59,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
 
         // Attempt a scroll if we have a saved position for the pathname; if the scroll doesn't work, set up an observer to
         // retry up until a given timeout
-        if (SAVED_SCROLL_POSITIONS[containerKey].has(pathname)) {
+        if (action === 'POP' && SAVED_SCROLL_POSITIONS[containerKey].has(pathname)) {
             const scrollPosition = SAVED_SCROLL_POSITIONS[containerKey].get(pathname) ?? 0
 
             const attemptScroll = (): boolean => {
