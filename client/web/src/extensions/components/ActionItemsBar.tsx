@@ -189,7 +189,7 @@ const actionItemClassName = classNames(
 )
 
 /**
- * TODO: description
+ * Renders extensions (both migrated to the core workflow and legacy) actions items in the sidebar.
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
     const { extensionsController, location, source } = props
