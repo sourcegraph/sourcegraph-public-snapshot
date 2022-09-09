@@ -39,12 +39,12 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
-func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int) (BasicQuery, error) {
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
 
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
-			Value:      "all",
+			Value:      count,
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},

@@ -23,3 +23,7 @@ declare module '*.worker.ts' {
  * Set by shared/dev/jest-environment.js
  */
 declare var jsdom: import('jsdom').JSDOM
+
+interface Window {
+    context?: any
+}
