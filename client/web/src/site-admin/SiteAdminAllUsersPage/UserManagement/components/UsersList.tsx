@@ -180,11 +180,10 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     const onLimitChange = useCallback((newLimit: number) => setFilters({ limit: newLimit.toString() }), [setFilters])
 
     const users = (data || previousData)?.site.users
-    const onPreviousPage = useCallback(() => setFilters({ offset: Math.max(0, offset - limit).toString() }), [
-        limit,
-        offset,
-        setFilters,
-    ])
+    const onPreviousPage = useCallback(
+        () => setFilters({ offset: Math.max(0, offset - limit).toString() }),
+        [limit, offset, setFilters]
+    )
     const onNextPage = useCallback(() => {
         const newOffset = offset + limit
         if (users?.totalCount && users?.totalCount >= newOffset) {
@@ -450,8 +449,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                         ]}
                         note={
                             <Text as="span">
-                                Note: Events is the count of{' '}
-                                <Link to="/help/admin/pricing">all billable events</Link>{' '}
+                                Note: Events is the count of <Link to="/help/admin/pricing">all billable events</Link>{' '}
                                 which equate to billable usage.
                             </Text>
                         }
