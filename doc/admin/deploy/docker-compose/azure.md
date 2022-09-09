@@ -92,10 +92,13 @@ DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
 ################## NO CHANGES REQUIRED FROM THIS POINT ONWARD ##################
 # STARTUP SCRIPT FOR SETTING UP AN AZURE INSTANCE WITH DOCKER COMPOSE
 ###############################################################################
-PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
+# Define variables
+DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 DOCKER_COMPOSE_VERSION='1.29.2'
-DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
+DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
+PERSISTENT_DISK_LABEL='sgdocker'
 # Install git
 sudo apt-get update -y
 sudo apt-get install -y git
@@ -105,15 +108,14 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
 # Format (if necessary) and mount persistent disk for instance data
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
-if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
-then
+if [ "${device_fs}" == "" ]; then ## only format the volume if it isn't already formatted
     sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${PERSISTENT_DISK_DEVICE_NAME}"
+    sudo e2label "${PERSISTENT_DISK_DEVICE_NAME}" "${PERSISTENT_DISK_LABEL}"
 fi
 sudo mkdir -p "${DOCKER_DATA_ROOT}"
 sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
-# Mount data disk on reboots using UUID
-DISK_UUID=$(sudo blkid -s UUID -o value "${PERSISTENT_DISK_DEVICE_NAME}")
-sudo echo "UUID=${DISK_UUID}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" >> '/etc/fstab'
+# Mount data disk on reboots
+sudo echo "LABEL=${PERSISTENT_DISK_LABEL}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" | sudo tee -a /etc/fstab
 umount "${DOCKER_DATA_ROOT}"
 mount -a
 # Install Docker
@@ -127,13 +129,10 @@ apt-get install -y docker-ce docker-ce-cli containerd.io
 # Install jq for scripting
 sudo apt-get update -y
 sudo apt-get install -y jq
-# Edit Docker storage directory to mounted volume
-DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
 ## Initialize the config file with empty json if it doesn't exist
-if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
-then
+if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]; then # Edit Docker storage directory to mounted volume
     mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
-    echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
+    echo '{}' >"${DOCKER_DAEMON_CONFIG_FILE}"
 fi
 ## Point Docker's 'data-root' to our mounted disk
 tmp_config=$(mktemp)
@@ -160,6 +159,15 @@ docker-compose up -d --remove-orphans
   - Look for the **Public IP address** in your Virtual Machine dashboard under *Networking* in the *Properties* tab
 
 It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+
+You can monitor the status of the startup script by SSHing into the instance to run the following diagnostic commands:
+
+```bash
+# Follow the status of the user data script you provided earlier
+tail -c +0 -f /var/log/syslog | grep cloud-init
+# (Once the user data script completes) monitor the health of the "sourcegraph-frontend" container
+docker ps --filter="name=sourcegraph-frontend-0"
+```
 
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 
