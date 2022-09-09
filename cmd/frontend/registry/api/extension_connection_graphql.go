@@ -135,7 +135,7 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			})
 		}
 
-		allowedExtensions := ExtensionRegistryListAllowedExtension()
+		allowedExtensions := ExtensionRegistryListAllowedExtensions()
 		if allowedExtensions != nil {
 			filteredExtensions := []graphqlbackend.RegistryExtension{}
 			for i := range r.registryExtensions {
