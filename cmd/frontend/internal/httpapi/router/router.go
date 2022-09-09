@@ -58,8 +58,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
-	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
+	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
