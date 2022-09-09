@@ -5,7 +5,6 @@ import {
     findLineKeyInSearchParameters,
     formatSearchParameters,
     LineOrPositionOrRange,
-    replaceRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
@@ -15,7 +14,7 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
-import { appendContextFilter } from '../search/query/transformer'
+import { appendContextFilter, omitFilter } from '../search/query/transformer'
 
 export interface RepoSpec {
     /**
@@ -538,9 +537,8 @@ export function buildSearchURLQuery(
 
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value) {
-        const { start, end } = globalPatternType.range
         patternTypeParameter = globalPatternType.value.value
-        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
+        queryParameter = omitFilter(queryParameter, globalPatternType)
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
@@ -548,7 +546,7 @@ export function buildSearchURLQuery(
         // When case:value is explicit in the query, override any previous value of caseParameter.
         const globalCaseParameterValue = globalCase.value.value
         caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
-        queryParameter = replaceRange(queryParameter, globalCase.range)
+        queryParameter = omitFilter(queryParameter, globalCase)
     }
 
     if (searchContextSpec) {
