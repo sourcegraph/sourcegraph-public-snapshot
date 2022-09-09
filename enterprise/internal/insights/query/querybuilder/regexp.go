@@ -3,8 +3,6 @@ package querybuilder
 import (
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
@@ -123,11 +121,7 @@ var ptn = regexp.MustCompile(`[^\\]\/`)
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
 	if r.needsSlashEscape {
-		log15.Info("prior", "r", replacement)
 		replacement = strings.ReplaceAll(replacement, `/`, `\/`)
-		// replacement = ptn.ReplaceAllString(replacement, `$1\/`)
-		log15.Info("after", "r", replacement)
-
 	}
 
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
