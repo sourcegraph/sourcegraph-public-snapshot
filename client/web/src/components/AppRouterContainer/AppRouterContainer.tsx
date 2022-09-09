@@ -2,7 +2,7 @@ import React, { HTMLAttributes, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { useScrollManager } from '../../hooks/useScrollManager'
+import { useScrollManager } from '../../hooks'
 
 import styles from './AppRouterContainer.module.scss'
 

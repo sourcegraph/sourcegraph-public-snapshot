@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 
 import { debounce } from 'lodash'
-import { useHistory, useLocation } from 'react-router'
+import { useHistory } from 'react-router'
+
+import {
+    MutationObserverError,
+    MutationObserverPromise,
+    mutationObserverWithTimeout,
+} from './mutationObserverWithTimeout'
 
 /**
  * Object containing maps of saved scroll locations for each path name, which are keyed by the scrollable container they belong to.
@@ -18,9 +24,14 @@ const CACHED_SCROLL_ATTEMPTS: { [k: string]: Map<string, MutationObserverPromise
 /** The length of the timeout in milliseconds until we stop trying to scroll. */
 const SCROLL_RETRY_TIMEOUT = 3000
 
+/**
+ * This hook will preserve the scroll state of a provided container between history changes ("forward" and "back" navigation, specifically).
+ *
+ * @param containerKey A unique key to identify the container where scrolling will be managed. Usually the component name.
+ * @param containerRef A React ref object of the container where scrolling will be managed.
+ */
 export function useScrollManager(containerKey: string, containerRef: React.RefObject<HTMLElement>): void {
-    const { pathname } = useLocation()
-    const { action } = useHistory()
+    const { action, location } = useHistory()
 
     // Set up the maps for this containerKey if they haven't been created yet
     useEffect(() => {
@@ -39,18 +50,19 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
 
         const saveScrollPosition = debounce(() => {
             if (container) {
-                console.log(`Saving position '${container.scrollTop}' for pathname '${pathname}'`)
-                SAVED_SCROLL_POSITIONS[containerKey].set(pathname, container.scrollTop)
+                SAVED_SCROLL_POSITIONS[containerKey].set(location.pathname, container.scrollTop)
             }
         }, 200)
 
         container?.addEventListener('scroll', saveScrollPosition)
 
         return () => container?.removeEventListener('scroll', saveScrollPosition)
-    }, [pathname, containerKey, containerRef])
+    }, [location.pathname, containerKey, containerRef])
 
     // Handle changes to pathname and try to scroll to the saved position at that path, if it exists
     useEffect(() => {
+        const { pathname } = location
+
         // Cancel any existing cached scroll attempts for this pathname
         if (CACHED_SCROLL_ATTEMPTS[containerKey].has(pathname)) {
             CACHED_SCROLL_ATTEMPTS[containerKey].get(pathname)?.cancel()
@@ -68,7 +80,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
             }
 
             if (!attemptScroll()) {
-                const promiseToCache = observerPromiseWithTimeout(
+                const promiseToCache = mutationObserverWithTimeout(
                     attemptScroll,
                     SCROLL_RETRY_TIMEOUT,
                     containerRef.current
@@ -89,77 +101,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
                     })
             }
         }
-        // This genuinely should only run when pathname changes, other dependencies should not change
+        // This should only run when `pathname`/`action` change; ignore changes to `containerKey` or `containerRef` as those should not trigger a scroll restoration
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pathname])
-}
-
-class MutationObserverPromise extends Promise<unknown> {
-    public cancel: () => void = () => {}
-}
-
-class MutationObserverError extends Error {
-    public cancelled = false
-    public timedOut = false
-}
-
-/**
- * Wraps a MutationObserver with a cancellable promise that will reject if the specified timeout is reached or
- * the promise is canceled.
- *
- * @param callback The function that will be used to mutate the DOM and check for success.
- * @param timeout How long to attempt retrying this mutation.
- * @param node The node that will be observed.
- */
-function observerPromiseWithTimeout(
-    callback: () => boolean,
-    timeout: number,
-    node: HTMLElement | null
-): MutationObserverPromise {
-    let cancel: () => void
-
-    const result = new MutationObserverPromise((resolve, reject) => {
-        let success: boolean
-
-        const observer = buildMutationObserver(() => {
-            if (!success && (success = callback())) {
-                cancel()
-                resolve(success)
-            }
-        }, node ?? document)
-
-        cancel = () => {
-            observer.disconnect()
-            clearTimeout(timeoutId)
-            if (!success) {
-                const reason = new MutationObserverError('MutationObserver cancelled')
-                reason.cancelled = true
-                reject(reason)
-            }
-        }
-
-        const timeoutId = setTimeout(() => {
-            observer.disconnect()
-            clearTimeout(timeoutId)
-            if (!success) {
-                const reason = new MutationObserverError('MutationObserver timed out')
-                reason.timedOut = true
-                reject(reason)
-            }
-        }, timeout)
-    })
-
-    result.cancel = cancel
-    return result
-}
-
-/** Sets up a MutationObserver and beings observing. */
-function buildMutationObserver(callback: () => void, node: HTMLElement | Document): MutationObserver {
-    const observer = new MutationObserver(callback)
-    observer.observe(node, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-    })
-    return observer
+    }, [location.pathname, action])
 }
