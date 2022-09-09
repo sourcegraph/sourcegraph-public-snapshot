@@ -114,6 +114,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                     onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
