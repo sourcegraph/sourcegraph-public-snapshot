@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A new [multi-version upgrade](https://docs.sourcegraph.com/admin/updates#multi-version-upgrades) process now allows Sourcegraph instances to upgrade more than a single minor version. Instances at version 3.20 or later can now jump directly to 4.0. [#40628](https://github.com/sourcegraph/sourcegraph/pull/40628)
 - Matching ranges in file paths are now highlighted for path results and content results. Matching paths in repository names are now highlighted for repository results. [#41296](https://github.com/sourcegraph/sourcegraph/pull/41296) [#41385](https://github.com/sourcegraph/sourcegraph/pull/41385) [#41470](https://github.com/sourcegraph/sourcegraph/pull/41470)
 - Aggregations by repository, file, author, and capture group are now provided for search results. [#39643](https://github.com/sourcegraph/sourcegraph/issues/39643)
+- Negation support for the search predicates `-repo:has.path()` and `-repo:has.content()`. [#40283](https://github.com/sourcegraph/sourcegraph/pull/40283)
 
 ### Changed
 
@@ -48,6 +49,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Quick links will no longer be shown on the homepage or search sidebar if the "Simple UI" toggle is enabled and will be removed entirely in a future release. The `quicklink` setting is now marked as deprecated. [#40750](https://github.com/sourcegraph/sourcegraph/pull/40750)
 - `file:contains()` has been removed from the list of valid predicates. `file:has.content()` and `file:contains.content()` remain, both of which work the same as `file:contains()` and are valid aliases of each other.
 - The single-container `sourcegraph/server` deployment no longer bundles a Jaeger instance. [#41244](https://github.com/sourcegraph/sourcegraph/pull/41244)
+
+## 3.43.2
+
+### Fixed
+
+- Fixed an issue causing context cancel error dumps when updating a code host config manually. [#40857](https://github.com/sourcegraph/sourcegraph/pull/41265)
+- Fixed non-critical errors stopping the repo-syncing process for Bitbucket projectKeys. [#40897](https://github.com/sourcegraph/sourcegraph/pull/40582)
+- Fixed an issue marking accounts as expired when the supplied Account ID list has no entries. [#40860](https://github.com/sourcegraph/sourcegraph/pull/40860)
 
 ## 3.43.1
 
