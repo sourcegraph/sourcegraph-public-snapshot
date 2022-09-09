@@ -124,7 +124,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode)
 	if err != nil {
-		r.getLogger().Error("no aggregation count func for mode", log.String("mode", string(aggregationMode)), log.Error(err))
+		r.getLogger().Error("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
 		return &searchAggregationResultResolver{
 			resolver: newSearchAggregationNotAvailableResolver(
 				notAvailableReason{reason: unknowAggregationModeMsg, reasonType: types.ERROR_OCCURRED},
