@@ -26,6 +26,8 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
     caseSensitive: false,
+    setSidebarCollapsed: noop,
+    sidebarCollapsed: false,
 }
 
 const renderSearchResultsInfoBar = (
