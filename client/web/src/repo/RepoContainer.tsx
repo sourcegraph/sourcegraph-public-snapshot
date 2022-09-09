@@ -6,7 +6,7 @@ import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -68,6 +68,7 @@ import {
 } from './RepoRevisionContainer'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { commitsPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -323,6 +324,12 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
+    // render go to the code host action on all the repo container routes and on all compare spec routes
+    const isGoToCodeHostActionVisible = useMemo(() => {
+        const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
+        return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
+    }, [props.repoContainerRoutes, props.match])
+
     if (isErrorLike(repoOrError)) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
@@ -409,29 +416,32 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController={extensionsController}
                 telemetryService={props.telemetryService}
             />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={2}
-                id="go-to-code-host"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <GoToCodeHostAction
-                        key="go-to-code-host"
-                        repo={repoOrError}
-                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                        revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
-                        filePath={filePath}
-                        commitRange={commitRange}
-                        position={position}
-                        range={range}
-                        externalLinks={externalLinks}
-                        fetchFileExternalLinks={fetchFileExternalLinks}
-                        actionType={actionType}
-                        repoName={repoName}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
+            {isGoToCodeHostActionVisible && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={2}
+                    id="go-to-code-host"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            source="repoHeader"
+                            repo={repoOrError}
+                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                            revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
+                            filePath={filePath}
+                            commitRange={commitRange}
+                            position={position}
+                            range={range}
+                            externalLinks={externalLinks}
+                            fetchFileExternalLinks={fetchFileExternalLinks}
+                            actionType={actionType}
+                            repoName={repoName}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             {isCodeIntelRepositoryBadgeVisible && (
                 <RepoHeaderContributionPortal

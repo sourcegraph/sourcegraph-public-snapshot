@@ -2992,6 +2992,10 @@ type MirrorRepositoryInfo {
     The last error message, if any, returned when fetching or cloning the repo
     """
     lastError: String
+    """
+    The byte size of the repo.
+    """
+    byteSize: Int!
 }
 
 """

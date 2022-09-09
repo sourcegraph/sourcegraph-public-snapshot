@@ -6,8 +6,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "test": "yarn run -T jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression integration",
-    "task:mocha": "yarn run -T cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --config ../../.mocharc.js",
-    "test:regression": "yarn run task:mocha './src/regression/**/*.test.ts'",
+    "task:mocha": "yarn run -T cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha",
+    "test:regression": "yarn run task:mocha './src/regression/**/*.test.ts' --exit",
     "test:regression:codeintel": "yarn task:mocha ./src/regression/codeintel.test.ts",
     "test:regression:config-settings": "yarn task:mocha ./src/regression/config-settings.test.ts",
     "test:regression:core": "yarn task:mocha ./src/regression/core.test.ts",

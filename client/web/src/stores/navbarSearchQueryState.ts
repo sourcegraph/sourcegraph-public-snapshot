@@ -76,9 +76,7 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
             NavbarQueryState,
             'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
         >
-    > = {
-        queryState: { query },
-    }
+    > = {}
 
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
@@ -87,9 +85,9 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         if (parsedSearchURL.patternType !== undefined) {
             newState.searchPatternType = parsedSearchURL.patternType
         }
+        newState.queryState = { query }
+        newState.searchQueryFromURL = parsedSearchURL.query
     }
-
-    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
 
     // The way Zustand is designed makes it difficult to build up a partial new
     // state object, hence the cast to any here.

@@ -94,13 +94,25 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		done := make(chan struct{})
 		defer close(done)
 
+		// we can race with done being closed and as such call FlushAll after
+		// the return of the function. So track if the function has exited.
+		searchDone := false
+		defer func() {
+			mu.Lock()
+			searchDone = true
+			mu.Unlock()
+		}()
+
 		go func() {
 			select {
 			case <-done:
 			case <-time.After(maxReorderDuration):
 				mu.Lock()
+				defer mu.Unlock()
+				if searchDone {
+					return
+				}
 				resultQueue.FlushAll(streamer)
-				mu.Unlock()
 			}
 		}()
 	}
@@ -150,7 +162,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		return errs
 	}
 
+	mu.Lock()
 	resultQueue.FlushAll(streamer)
+	mu.Unlock()
 
 	return nil
 }
