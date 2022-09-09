@@ -1,7 +1,7 @@
 /**
  * The following code was adapted from react-scroll-manager: https://github.com/trevorr/react-scroll-manager/blob/master/src/timedMutationObserver.js
  *
- * react-scroll-manager is availabe under the ISC License:
+ * react-scroll-manager is available under the ISC License:
  *
  * ISC License
  *
