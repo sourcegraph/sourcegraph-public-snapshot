@@ -331,6 +331,7 @@ export const mockWorkspace = (
 export const QUEUED_WORKSPACE = mockWorkspace(1, {
     state: BatchSpecWorkspaceState.QUEUED,
     placeInQueue: 2,
+    placeInGlobalQueue: 4,
     startedAt: null,
     finishedAt: null,
     diffStat: null,
