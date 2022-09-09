@@ -19,9 +19,9 @@ We may continue adding new aggregation categories, like date and code host, base
 
 ## Feature visibility
 
-You can turn the aggregations on with the experimental feature setting: `enableSearchResultsAggregations`
+You can turn the aggregations on with the experimental feature setting: `searchResultsAggregations`
 
-You can turn off just the proactive aggregations with the setting: `disableProactiveSearchAggregations`
+You can turn off just the proactive aggregations by setting `proactiveSearchResultsAggregations` to `false`.
 
 ## Drilldowns 
 

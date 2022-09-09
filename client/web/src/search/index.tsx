@@ -1,13 +1,13 @@
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { replaceRange } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 /**
@@ -79,7 +79,7 @@ export function parseSearchURL(
     const globalPatternType = findFilter(queryInput, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        queryInput = replaceRange(queryInput, globalPatternType.range)
+        queryInput = omitFilter(queryInput, globalPatternType)
         patternTypeInput = globalPatternType.value.value as SearchPatternType
     }
 
@@ -93,7 +93,7 @@ export function parseSearchURL(
     const globalCase = findFilter(query, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        query = replaceRange(query, globalCase.range)
+        query = omitFilter(query, globalCase)
 
         if (discreteValueAliases.yes.includes(globalCase.value.value)) {
             caseSensitive = true

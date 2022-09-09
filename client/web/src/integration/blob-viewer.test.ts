@@ -295,8 +295,11 @@ describe('Blob viewer', () => {
 
         /**
          * This test is meant to prevent regression: https://github.com/sourcegraph/sourcegraph/pull/15099
+         *
+         * TODO(philipp-spiess): This test no longer works after enabling the migrated git blame
+         * extension. We can remove it once we remove the extension support completely.
          */
-        it('adds and clears line decoration attachments properly', async () => {
+        it.skip('adds and clears line decoration attachments properly', async () => {
             const mockExtensions: MockExtension[] = [
                 {
                     id: 'test',

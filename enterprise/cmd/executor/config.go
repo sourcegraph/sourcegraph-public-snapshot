@@ -84,6 +84,9 @@ func (c *Config) Validate() error {
 		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
 		c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
 	}
+	if c.QueueName != "batches" && c.QueueName != "codeintel" {
+		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
 
 	return c.BaseConfig.Validate()
 }

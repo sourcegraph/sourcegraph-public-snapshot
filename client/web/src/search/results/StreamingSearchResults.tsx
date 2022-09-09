@@ -31,6 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
+import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
@@ -80,6 +81,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [smartSearchEnabled] = useFeatureFlag('ab-lucky-search')
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const prefetchBlobFormat = usePrefetchBlobFormat()
+
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Global state
@@ -397,6 +401,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             smartSearchEnabled={smartSearchEnabled}
+                            prefetchFileEnabled={prefetchFileEnabled}
+                            prefetchFile={params =>
+                                fetchBlob({
+                                    ...params,
+                                    format: prefetchBlobFormat,
+                                })
+                            }
                         />
                     </div>
                 </>
