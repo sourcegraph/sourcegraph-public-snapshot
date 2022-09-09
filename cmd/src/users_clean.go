@@ -67,7 +67,6 @@ query {
 		if ok, err := cfg.apiClient(apiFlags, flagSet.Output()).NewRequest(currentUserQuery, nil).DoRaw(context.Background(), &currentUserResult); err != nil || !ok {
 			return err
 		}
-		fmt.Println(currentUserResult)
 
 		usersQuery := `
 query Users() {
@@ -88,7 +87,6 @@ query Users() {
 		if ok, err := client.NewRequest(usersQuery, nil).Do(ctx, &usersResult); err != nil || !ok {
 			return err
 		}
-		fmt.Println(usersResult)
 
 		usersToDelete := make([]UserToDelete, 0)
 		for _, user := range usersResult.Users.Nodes {
