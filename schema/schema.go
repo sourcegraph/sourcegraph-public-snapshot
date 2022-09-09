@@ -1733,6 +1733,8 @@ type Settings struct {
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsAggregationsExtendedTimeout description: The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds
+	InsightsAggregationsExtendedTimeout int `json:"insights.aggregations.extendedTimeout,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
 	InsightsAllrepos map[string]BackendInsight `json:"insights.allrepos,omitempty"`
 	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards

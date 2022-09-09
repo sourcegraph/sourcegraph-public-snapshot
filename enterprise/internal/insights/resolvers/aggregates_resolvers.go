@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -22,9 +24,9 @@ import (
 )
 
 const (
-	defaultAggregationBufferSize   = 500
-	defaultSearchTimeLimitSeconds  = 2
-	extendedSearchTimeLimitSeconds = 60
+	defaultAggregationBufferSize          = 500
+	defaultSearchTimeLimitSeconds         = 2
+	extendedSearchTimeLimitSecondsDefault = 55
 )
 
 // Possible reasons that grouping is disabled
@@ -94,7 +96,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	searchTimelimit := defaultSearchTimeLimitSeconds
 	if args.ExtendedTimeout {
-		searchTimelimit = extendedSearchTimeLimitSeconds
+		searchTimelimit = getExtendedTimeout(ctx, r.postgresDB)
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
@@ -166,6 +168,27 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		results:      results,
 		isExhaustive: cappedAggregator.OtherCounts().GroupCount == 0,
 	}}, nil
+}
+
+func getExtendedTimeout(ctx context.Context, db database.DB) int {
+	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
+
+	min := func(x, y int) int {
+		if x < y {
+			return x
+		}
+		return y
+	}
+
+	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
+	if err != nil || settings == nil {
+		return extendedSearchTimeLimitSecondsDefault
+	}
+	val := settings.InsightsAggregationsExtendedTimeout
+	if val > 0 {
+		return min(searchLimit, val)
+	}
+	return extendedSearchTimeLimitSecondsDefault
 }
 
 // getDefaultAggregationMode returns a default aggregation mode for a potential query

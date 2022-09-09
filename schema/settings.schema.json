@@ -819,6 +819,12 @@
       "additionalProperties": {
         "$ref": "#/definitions/InsightDashboard"
       }
+    },
+    "insights.aggregations.extendedTimeout": {
+      "description": "The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 55
     }
   },
   "definitions": {
