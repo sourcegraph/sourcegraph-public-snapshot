@@ -19,14 +19,14 @@ title: AWS one-click
 
 # AWS One-Click Installation for Sourcegraph
 
-In one-clicks, a verified and pre-configured Sourcegraph instance will be launched with:
+Launch a verified and pre-configured Sourcegraph instance with the following:
 
-- Latest version of Sourcegraph
-- A EBS Volume as the root disk with 50GB of storage
-- A configurable EBS Volume as the data store with 500GB of storage
+- Root EBS volume with 50GB of storage
+- Additional EBS volume with 500GB of storage, for storing code and search indices
 - Security group with default rules: `HTTP(port 80), HTTPS(port 443), and SSH(port 22)`
+- The latest version of Sourcegraph
 
-You will only need to choose your `Virtual Private Cloud (VPC)` and `SSH Key-Pair` to get started.
+You only need to choose your VPC and SSH Key-Pair to get started.
 
 ---
 
@@ -37,7 +37,7 @@ You will only need to choose your `Virtual Private Cloud (VPC)` and `SSH Key-Pai
 3. Select or create a new Key Pair for connecting to your instance securely
 
 ## Launcher
-<span class="badge badge-warning">Coming soon</span> Set up a Sourcegraph instance in one-click!
+<span class="badge badge-warning">Coming soon</span> Set up a Sourcegraph instance in one click
 <!-- ref: https://aws.amazon.com/blogs/devops/construct-your-own-launch-stack-url/ -->
 <form class="launcher" name="launcher" action="" target="_blank">
   <select name="region" disabled>
@@ -52,4 +52,4 @@ You will only need to choose your `Virtual Private Cloud (VPC)` and `SSH Key-Pai
   <input class="submit-btn" formaction="https://console.aws.amazon.com/cloudformation/home" type="image" alt="aws-oneclick-button" src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png" disabled/>
 </form>
 
-> NOTE: Once the instance has been created, Retool will be running at your server’s IP address, which allows you to navigate to your newly created Sourcegraph instance in your browser. You can also find the URL for your Sourcegraph instance in the 'Outputs' section of the Stack.
+> NOTE: Once the instance has been created, Sourcegraph will be running at your server’s IP address, which allows you to navigate to your newly created Sourcegraph instance in your browser. You can also find the URL for your Sourcegraph instance in the 'Outputs' section of the Stack.
