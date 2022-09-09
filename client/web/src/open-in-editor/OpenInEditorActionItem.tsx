@@ -17,6 +17,8 @@ import { migrateLegacySettings } from './migrate-legacy-settings'
 import { OpenInEditorPopover } from './OpenInEditorPopover'
 import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
+import styles from './OpenInEditorActionItem.module.scss'
+
 export interface OpenInEditorActionItemProps {
     platformContext: PlatformContext
     assetsRoot?: string
@@ -83,8 +85,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                         <SimpleActionItem
                             key={editor.id}
                             tooltip={`Open file in ${editor?.name}`}
-                            iconURL={`${assetsRoot}/img/editors/${editor.id}.svg`}
-                            onClick={() => {
+                            onSelect={() => {
                                 eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,
@@ -92,19 +93,26 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                     index
                                 )
                             }}
-                        />
+                        >
+                            <img
+                                src={`${assetsRoot}/img/editors/${editor.id}.svg`}
+                                alt={`Open file in ${editor?.name}`}
+                                className={styles.icon}
+                            />
+                        </SimpleActionItem>
                     )
             )}
         </>
     ) : (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger as="div">
-                <SimpleActionItem
-                    tooltip="Set your preferred editor"
-                    isActive={popoverOpen}
-                    iconURL={`${assetsRoot}/img/open-in-editor.svg`}
-                    onClick={togglePopover}
-                />
+                <SimpleActionItem tooltip="Set your preferred editor" isActive={popoverOpen} onSelect={togglePopover}>
+                    <img
+                        src={`${assetsRoot}/img/open-in-editor.svg`}
+                        alt="Set your preferred editor"
+                        className={styles.icon}
+                    />
+                </SimpleActionItem>
             </PopoverTrigger>
             <PopoverContent position={Position.leftStart} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
                 <OpenInEditorPopover

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
+import { mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline, mdiChevronDoubleDown } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -22,7 +22,12 @@ import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable 
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { RepositoryFields } from '../../graphql-operations'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
+import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
+import { fetchFileExternalLinks } from '../../repo/backend'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -172,8 +177,10 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 }
 
 export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+    repo?: RepositoryFields
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
+    source?: 'compare' | 'commit' | 'blob'
 }
 
 const actionItemClassName = classNames(
@@ -182,11 +189,14 @@ const actionItemClassName = classNames(
 )
 
 /**
- * TODO: description
+ * Renders extensions (both migrated to the core workflow and legacy) actions items in the sidebar.
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
-    const { extensionsController } = props
+    const { extensionsController, location, source } = props
     const { isOpen, barReference } = props.useActionItemsBar()
+    const { repoName, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
+        location.pathname + location.search + location.hash
+    )
 
     const {
         carouselReference,
@@ -224,7 +234,29 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
-                <OpenInEditorActionItem platformContext={props.platformContext} />
+
+                {source !== 'compare' && source !== 'commit' && (
+                    <GoToCodeHostAction
+                        source="actionItemsBar"
+                        repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
+                        filePath={filePath}
+                        commitRange={commitRange}
+                        position={position}
+                        range={range}
+                        repoName={repoName}
+                        actionType="nav"
+                        fetchFileExternalLinks={fetchFileExternalLinks}
+                    />
+                )}
+
+                {source === 'blob' && (
+                    <>
+                        <ToggleBlameAction location={props.location} />
+                        <OpenInEditorActionItem platformContext={props.platformContext} />
+                    </>
+                )}
+
                 {extensionsController !== null ? (
                     <ActionsContainer
                         menu={ContributableMenu.EditorTitle}
@@ -368,7 +400,14 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                                         svgPath={mdiChevronDoubleUp}
                                     />
                                 ) : (
-                                    <Icon aria-hidden={true} svgPath={mdiPuzzleOutline} />
+                                    <Icon
+                                        aria-hidden={true}
+                                        svgPath={
+                                            window.context.enableLegacyExtensions
+                                                ? mdiPuzzleOutline
+                                                : mdiChevronDoubleDown
+                                        }
+                                    />
                                 )}
                                 {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
                             </ButtonLink>
