@@ -72,7 +72,7 @@ func ExtensionRegistryReadEnabled() error {
 // to keep the behavior of being able to list all extensions there.
 //
 // This method returns nil if all extensions are allowed to be listed.
-func ExtensionRegistryListAllowedExtension() map[string]bool {
+func ExtensionRegistryListAllowedExtensions() map[string]bool {
 	err := ExtensionRegistryReadEnabled()
 
 	if err != nil {
