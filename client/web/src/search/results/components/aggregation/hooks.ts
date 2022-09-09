@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
@@ -280,7 +280,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         }
     )
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         // If query, pattern type or extendedTimeout have been changed we should "reset" our assumptions
         // about calculated aggregation mode and make another api call to determine it
         setState(state => ({ ...state, calculatedMode: null }))
