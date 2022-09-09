@@ -88,7 +88,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	}
 	// It should not be possible for the getNotAvailableReason to return an err without giving a reason but leaving a fallback here incase.
 	if err != nil {
-		r.getLogger().Warn("unable to determine why aggregation not possible", log.String("mode", string(aggregationMode)), log.Error(err))
+		r.getLogger().Warn("unable to determine why aggregation is unavailable", log.String("mode", string(aggregationMode)), log.Error(err))
 		return nil, err
 	}
 
