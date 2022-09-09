@@ -115,3 +115,30 @@ func (codeInsights) NewInsightsQueryRunnerStoreGroup(containerName string) monit
 		},
 	})
 }
+
+func (codeInsights) NewSearchAggregationsGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "insights_aggregations",
+				MetricDescriptionRoot: "search aggregations",
+				By:                    []string{"op", "extended_mode"},
+			},
+			Namespace:       "search aggregations",
+			DescriptionRoot: "proactive and expanded search aggregations",
+			Hidden:          true,
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
