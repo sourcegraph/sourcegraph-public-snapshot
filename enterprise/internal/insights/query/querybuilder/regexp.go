@@ -3,6 +3,8 @@ package querybuilder
 import (
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
@@ -117,7 +119,17 @@ type PatternReplacer interface {
 	HasCaptureGroups() bool
 }
 
+var ptn = regexp.MustCompile(`[^\\]\/`)
+
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
+	if r.needsSlashEscape {
+		log15.Info("prior", "r", replacement)
+		replacement = strings.ReplaceAll(replacement, `/`, `\/`)
+		// replacement = ptn.ReplaceAllString(replacement, `$1\/`)
+		log15.Info("after", "r", replacement)
+
+	}
+
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
 		return searchquery.Pattern{
 			Value:      replacement,
@@ -130,9 +142,10 @@ func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) 
 }
 
 type regexpReplacer struct {
-	original searchquery.Plan
-	pattern  string
-	groups   []group
+	original         searchquery.Plan
+	pattern          string
+	groups           []group
+	needsSlashEscape bool
 }
 
 func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
@@ -164,12 +177,23 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		return nil, errors.Wrap(err, "failed to parse search query")
 	}
 	var patterns []searchquery.Pattern
+	needsSlashEscape := false
 	searchquery.VisitPattern(plan.ToQ(), func(value string, negated bool, annotation searchquery.Annotation) {
+		if searchType == searchquery.SearchTypeRegex {
+			// because patternType:regexp implicitly escapes slashes in the regular expression we need to translate the pattern into
+			// a compatible pattern with `patternType:standard`, ie. escape the slashes. We need to do this _before_ the replacement
+			// otherwise we may accidentally double escape in places we don't intend.
+			if ptn.MatchString(value) {
+				// the given search pattern is _not_ already escaped, therefore escape it!
+				needsSlashEscape = true
+			}
+		}
 		patterns = append(patterns, searchquery.Pattern{
 			Value:      value,
 			Negated:    negated,
 			Annotation: annotation,
 		})
+
 	})
 	if len(patterns) > 1 {
 		return nil, MultiplePatternErr
@@ -185,5 +209,5 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 	}
 
 	regexpGroups := findGroups(pattern.Value)
-	return &regexpReplacer{original: plan, groups: regexpGroups, pattern: pattern.Value}, nil
+	return &regexpReplacer{original: plan, groups: regexpGroups, pattern: pattern.Value, needsSlashEscape: needsSlashEscape}, nil
 }
