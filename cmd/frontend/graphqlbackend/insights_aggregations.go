@@ -18,7 +18,7 @@ type SearchQueryAggregateResolver interface {
 
 type AggregationModeAvailabilityResolver interface {
 	Mode() string //ENUM
-	Available() (bool, error)
+	Available() bool
 	ReasonUnavailable() (*string, error)
 }
 

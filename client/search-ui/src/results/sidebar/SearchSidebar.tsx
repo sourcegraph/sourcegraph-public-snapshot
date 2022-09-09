@@ -97,6 +97,7 @@ export const SearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props =>
 interface SearchSidebarSectionProps
     extends Omit<ComponentProps<typeof SearchFilterSection>, 'startCollapsed' | 'onToggle'> {
     sectionId: SectionID
+    onToggle?: (open: boolean) => void
 }
 
 /**
@@ -104,14 +105,22 @@ interface SearchSidebarSectionProps
  * and persist expand/collapse state with temporal settings.
  */
 export const SearchSidebarSection: FC<SearchSidebarSectionProps> = props => {
-    const { className, sectionId, ...attributes } = props
+    const { className, sectionId, onToggle, ...attributes } = props
     const { collapsedSections, persistToggleState } = useContext(SearchSidebarContext)
+
+    const handleToggle = useCallback(
+        (id: string, open: boolean) => {
+            onToggle?.(open)
+            persistToggleState(id, open)
+        },
+        [onToggle, persistToggleState]
+    )
 
     return (
         <SearchFilterSection
             sectionId={sectionId}
             startCollapsed={collapsedSections?.[sectionId]}
-            onToggle={persistToggleState}
+            onToggle={handleToggle}
             className={classNames(className, styles.item)}
             {...attributes}
         />

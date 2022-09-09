@@ -124,22 +124,6 @@ export const NoResults: Story = () => {
 
 NoResults.storyName = 'no results'
 
-export const SearchWithQuotes: Story = () => {
-    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis "test"' })
-
-    return (
-        <WebStory>
-            {() => (
-                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                    <StreamingSearchResults {...defaultProps} />
-                </SearchQueryStateStoreProvider>
-            )}
-        </WebStory>
-    )
-}
-
-SearchWithQuotes.storyName = 'search with quotes'
-
 export const DidYouMean: Story = () => {
     useNavbarQueryState.setState({ searchQueryFromURL: 'javascript test' })
 

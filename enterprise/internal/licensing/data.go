@@ -35,9 +35,13 @@ const (
 	// OAuth, GitLab OAuth, SAML, and OpenID.
 	FeatureSSO Feature = "sso"
 
-	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
-	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
+	// FeatureACLs is whether the Background Permissions Syncing may be be used for
+	// setting repository permissions.
 	FeatureACLs Feature = "acls"
+
+	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
+	// setting repository permissions.
+	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
 	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
@@ -77,6 +81,7 @@ var planFeatures = map[Plan][]Feature{
 	oldEnterprise: {
 		FeatureSSO,
 		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
 		FeatureBranding,
@@ -87,22 +92,29 @@ var planFeatures = map[Plan][]Feature{
 		FeatureCodeInsights,
 	},
 	PlanTeam0: {
+		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
 	},
 	enterprise0: {
+		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
 	},
 
 	PlanBusiness0: {
+		FeatureACLs,
 		FeatureCampaigns,
 		FeatureBatchChanges,
-		FeatureSSO,
 		FeatureCodeInsights,
+		FeatureSSO,
 	},
 	enterprise1: {
+		FeatureACLs,
 		FeatureCampaigns,
-		FeatureBatchChanges,
-		FeatureSSO,
 		FeatureCodeInsights,
+		FeatureBatchChanges,
+		FeatureExplicitPermissionsAPI,
+		FeatureSSO,
 	},
 }

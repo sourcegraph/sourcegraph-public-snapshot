@@ -147,8 +147,8 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btnBlock"
-              href=""
+              class="anchorLink btn btnSecondary btnBlock"
+              href="/.auth/github/login?pc=f00bar"
             >
               <svg
                 aria-hidden="true"
@@ -323,8 +323,8 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btnBlock"
-              href=""
+              class="anchorLink btn btnSecondary btnBlock"
+              href="/.auth/github/login?pc=f00bar"
             >
               <svg
                 aria-hidden="true"

@@ -221,10 +221,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case runtype.ExecutorPatchNoTest:
+		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildExecutor(c, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			buildExecutor(c, true),
 			buildExecutorDockerMirror(c),
+			wait,
+			publishFinalDockerImage(c, executorVMImage),
+			publishExecutor(c, true),
 			publishExecutorDockerMirror(c),
 		)
 

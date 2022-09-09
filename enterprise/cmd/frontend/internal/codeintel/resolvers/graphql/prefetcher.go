@@ -71,10 +71,12 @@ func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (store.Upload, b
 	}
 	sort.Ints(ids)
 
-	uploads, err := p.resolver.GetUploadsByIDs(ctx, ids...)
+	u, err := p.resolver.UploadsResolver().GetUploadsByIDs(ctx, ids...)
 	if err != nil {
 		return store.Upload{}, false, err
 	}
+
+	uploads := convertSharedUploadsListToDBStoreUploadsList(u)
 	for _, upload := range uploads {
 		p.uploadCache[upload.ID] = upload
 	}

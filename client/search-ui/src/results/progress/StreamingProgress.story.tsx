@@ -2,8 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import { spy } from 'sinon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
-import { H1, H2 } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { StreamingProgress } from './StreamingProgress'
 
@@ -305,20 +304,6 @@ const render = () => (
     </>
 )
 
-export const StreamingProgressStory: Story = () => (
-    <BrandedStory>
-        {() => (
-            <>
-                {render()}
-                <MockTemporarySettings settings={{ 'coreWorkflowImprovements.enabled': true }}>
-                    <>
-                        <H1>With simple UI enabled</H1>
-                        {render()}
-                    </>
-                </MockTemporarySettings>
-            </>
-        )}
-    </BrandedStory>
-)
+export const StreamingProgressStory: Story = () => <BrandedStory>{() => <>{render()}</>}</BrandedStory>
 
 StreamingProgressStory.storyName = 'StreamingProgress'

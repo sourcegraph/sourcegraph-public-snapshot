@@ -7,6 +7,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 
 /**
  * Makes sure that default values are applied consistently for the cache key and the `fetchBlob` function.
@@ -29,14 +30,14 @@ function fetchBlobCacheKey(options: FetchBlobOptions): string {
 
 interface FetchBlobOptions {
     repoName: string
-    commitID: string
+    revision: string
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, commitID, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
@@ -48,14 +49,14 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
         gql`
             query Blob(
                 $repoName: String!
-                $commitID: String!
+                $revision: String!
                 $filePath: String!
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
             ) {
                 repository(name: $repoName) {
-                    commit(rev: $commitID) {
+                    commit(rev: $revision) {
                         file(path: $filePath) {
                             ...BlobFileFields
                         }
@@ -73,7 +74,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, commitID, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
@@ -84,3 +85,37 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
         })
     )
 }, fetchBlobCacheKey)
+
+/**
+ * Returns the preferred blob prefetch format.
+ *
+ * Note: This format should match the format used when the blob is 'normally' fetched. E.g. in `BlobPage.tsx`.
+ */
+export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableLazyHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
+
+    /**
+     * Highlighted blobs (Fast)
+     *
+     * TODO: For large files, `PLAINTEXT` can still be faster, this is another potential UX improvement.
+     * Outstanding issue before this can be enabled: https://github.com/sourcegraph/sourcegraph/issues/41413
+     */
+    if (enableCodeMirror) {
+        return HighlightResponseFormat.JSON_SCIP
+    }
+
+    /**
+     * Plaintext blobs (Fast)
+     */
+    if (enableLazyHighlighting) {
+        return HighlightResponseFormat.HTML_PLAINTEXT
+    }
+
+    /**
+     * Highlighted blobs (Slow)
+     */
+    return HighlightResponseFormat.HTML_HIGHLIGHT
+}

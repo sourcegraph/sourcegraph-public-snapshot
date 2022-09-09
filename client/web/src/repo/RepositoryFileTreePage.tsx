@@ -6,9 +6,9 @@ import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -36,13 +36,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const {
-        repo,
-        resolvedRev: { commitID, defaultBranch },
-        match,
-        globbing,
-        ...context
-    } = props
+    const { repo, resolvedRev, repoName, match, globbing, ...context } = props
 
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
@@ -50,7 +44,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
     // Redirect tree and blob routes pointing to the root to the repo page
     if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
-        return <Redirect to={toRepoURL({ repoName: repo.name, revision: context.revision })} />
+        return <Redirect to={toRepoURL({ repoName, revision: context.revision })} />
     }
 
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
@@ -85,7 +79,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     }
 
     const repoRevisionProps = {
-        commitID,
+        commitID: resolvedRev?.commitID,
         filePath,
         globbing,
     }
@@ -95,11 +89,11 @@ export const RepositoryFileTreePage: React.FunctionComponent<
             <RepoRevisionSidebar
                 {...context}
                 {...repoRevisionProps}
-                repoID={repo.id}
-                repoName={repo.name}
+                repoID={repo?.id}
+                repoName={repoName}
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
-                defaultBranch={defaultBranch || 'HEAD'}
+                defaultBranch={resolvedRev?.defaultBranch || 'HEAD'}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
@@ -112,9 +106,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                 <BlobPage
                                     {...context}
                                     {...repoRevisionProps}
-                                    repoID={repo.id}
-                                    repoName={repo.name}
-                                    repoUrl={repo.url}
+                                    repoID={repo?.id}
+                                    repoName={repoName}
+                                    repoUrl={repo?.url}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
@@ -122,26 +116,25 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
                             </TraceSpanProvider>
-                        ) : (
+                        ) : resolvedRev ? (
+                            // TODO: see if we can render without resolvedRev.commitID
                             <TreePage
                                 {...props}
-                                {...repoRevisionProps}
+                                commitID={context.revision}
+                                filePath={filePath}
+                                globbing={globbing}
                                 repo={repo}
+                                repoName={repoName}
                                 match={match}
                                 useActionItemsBar={context.useActionItemsBar}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                             />
+                        ) : (
+                            <LoadingSpinner />
                         )}
                     </ErrorBoundary>
                 </BlobStatusBarContainer>
             )}
-            <ActionItemsBar
-                useActionItemsBar={context.useActionItemsBar}
-                location={context.location}
-                extensionsController={context.extensionsController}
-                platformContext={context.platformContext}
-                telemetryService={context.telemetryService}
-            />
         </>
     )
 }

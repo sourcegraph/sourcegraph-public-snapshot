@@ -16,7 +16,6 @@ import {
 
 import {
     Button,
-    Calendar,
     Container,
     Icon,
     Popover,
@@ -26,6 +25,8 @@ import {
     Checkbox,
     Tooltip,
 } from '@sourcegraph/wildcard'
+
+import { Calendar } from './Calendar'
 
 import styles from './DateRangeSelect.module.scss'
 

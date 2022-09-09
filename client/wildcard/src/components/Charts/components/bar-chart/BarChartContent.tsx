@@ -29,7 +29,8 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarClick: (event: MouseEvent, datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
+    onBarHover?: (datum: Datum) => void
 }
 
 export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): ReactElement {
@@ -48,6 +49,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         getDatumColor,
         getDatumLink,
         onBarClick,
+        onBarHover,
         ...attributes
     } = props
 
@@ -55,6 +57,11 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
     const [activeSegment, setActiveSegment] = useState<ActiveSegment<Datum> | null>(null)
 
     const withActiveLink = activeSegment?.datum ? getDatumLink(activeSegment?.datum) : null
+
+    const handleBarHover = (datum: Datum, category: Category<Datum>): void => {
+        setActiveSegment({ datum, category })
+        onBarHover?.(datum)
+    }
 
     return (
         <Group
@@ -72,7 +79,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                     getDatumValue={getDatumValue}
                     getDatumColor={getDatumColor}
                     height={+height}
-                    onBarHover={(datum, category) => setActiveSegment({ datum, category })}
+                    onBarHover={handleBarHover}
                     onBarLeave={() => setActiveSegment(null)}
                     onBarClick={onBarClick}
                 />
@@ -89,7 +96,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                     getDatumLink={getDatumLink}
                     height={+height}
                     width={+width}
-                    onBarHover={(datum, category) => setActiveSegment({ datum, category })}
+                    onBarHover={handleBarHover}
                     onBarLeave={() => setActiveSegment(null)}
                     onBarClick={onBarClick}
                 />

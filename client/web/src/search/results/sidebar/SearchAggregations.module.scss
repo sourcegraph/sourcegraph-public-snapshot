@@ -5,10 +5,10 @@
 }
 
 .chart-container {
-    min-height: 12.75rem;
-    max-height: 12.75rem;
+    min-height: 11.375rem;
+    max-height: 11.375rem;
     width: 100%;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .actions {
@@ -16,6 +16,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .details-action {

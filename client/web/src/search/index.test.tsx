@@ -12,7 +12,7 @@ describe('search/index', () => {
         expect(
             parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard&case=yes')
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
@@ -20,7 +20,7 @@ describe('search/index', () => {
         expect(
             parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=standard&case=yes')
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
@@ -28,13 +28,13 @@ describe('search/index', () => {
         expect(
             parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+patternType:regexp&patternType=literal&case=yes')
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard')).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
@@ -44,7 +44,7 @@ describe('search/index', () => {
                 'q=TEST+repo:sourcegraph/sourcegraph+case:no+patternType:regexp&patternType=literal&case=yes'
             )
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
         })
@@ -62,7 +62,7 @@ describe('search/index', () => {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
@@ -72,7 +72,7 @@ describe('search/index', () => {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
@@ -82,7 +82,7 @@ describe('search/index', () => {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
         })
@@ -92,7 +92,7 @@ describe('search/index', () => {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
@@ -103,7 +103,7 @@ describe('search/index', () => {
                 { appendCaseFilter: true }
             )
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  ',
+            query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
         })

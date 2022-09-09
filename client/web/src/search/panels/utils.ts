@@ -1,8 +1,9 @@
 import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
-import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { EventLogResult } from '../backend'
+
+import { InvitableCollaborator } from './CollaboratorsPanel'
 
 export const authUser: AuthenticatedUser & { namespaceName: string } = {
     __typename: 'User',

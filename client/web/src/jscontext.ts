@@ -10,7 +10,7 @@ export interface AuthProvider {
     serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
     displayName: string
     isBuiltin: boolean
-    authenticationURL?: string
+    authenticationURL: string
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {

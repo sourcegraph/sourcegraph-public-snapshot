@@ -45,6 +45,14 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 		return nil, errors.Wrap(err, "loading repo statistics")
 	}
 
+	if stats.FailedFetch > 0 {
+		messages = append(messages, StatusMessage{
+			SyncError: &SyncError{
+				Message: fmt.Sprintf("%d %s failed last attempt to sync content from code host", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
+			},
+		})
+	}
+
 	if uncloned := stats.NotCloned + stats.Cloning; uncloned > 0 {
 		var sentences []string
 		if stats.NotCloned > 0 {
@@ -56,14 +64,6 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
 				Message: strings.Join(sentences, " "),
-			},
-		})
-	}
-
-	if stats.FailedFetch > 0 {
-		messages = append(messages, StatusMessage{
-			SyncError: &SyncError{
-				Message: fmt.Sprintf("%d %s could not be synced", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
 			},
 		})
 	}

@@ -11,3 +11,15 @@
 .username-column {
     max-width: 10rem;
 }
+
+.visible-actions-on-hover {
+    .actions-button {
+        visibility: hidden;
+    }
+
+    &:hover {
+        .actions-button {
+            visibility: visible;
+        }
+    }
+}

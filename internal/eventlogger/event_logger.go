@@ -19,6 +19,25 @@ type TelemetryRequest struct {
 	PublicArgument json.RawMessage
 }
 
+// List of events that don't meet the criteria of "active" usage of Sourcegraph.
+// These are mostly actions taken by signed-out users.
+var NonActiveUserEvents = []string{
+	"ViewSignIn",
+	"ViewSignUp",
+	"SignOutAttempted",
+	"SignOutFailed",
+	"SignOutSucceeded",
+	"SignInAttempted",
+	"SignInFailed",
+	"SignInSucceeded",
+	"PasswordResetRequested",
+	"PasswordRandomized",
+	"PasswordChanged",
+	"EmailVerified",
+	"ExternalAuthSignupFailed",
+	"ExternalAuthSignupSucceeded",
+}
+
 // LogEvent sends a payload representing an event to the api/telemetry endpoint.
 //
 // This method should be invoked after the frontend service has started. It is

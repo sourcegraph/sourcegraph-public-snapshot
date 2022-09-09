@@ -96,7 +96,7 @@ export const OVERVIEW_STATISTICS = gql`
                 users(dateRange: $dateRange, grouping: WEEKLY) {
                     activity {
                         summary {
-                            totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                 }

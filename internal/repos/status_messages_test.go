@@ -169,7 +169,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "1 repository could not be synced",
+						Message: "1 repository failed last attempt to sync content from code host",
 					},
 				},
 			},
@@ -185,7 +185,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "2 repositories could not be synced",
+						Message: "2 repositories failed last attempt to sync content from code host",
 					},
 				},
 			},

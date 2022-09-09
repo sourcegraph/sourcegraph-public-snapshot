@@ -242,11 +242,11 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
                         <div className={classNames(styles.statsBox, 'p-4 mb-3')}>
                             <div className="d-flex">
                                 <ValueLegendItem
-                                    value={data.site.analytics.users.activity.summary.totalUniqueUsers}
+                                    value={data.site.analytics.users.activity.summary.totalRegisteredUsers}
                                     className={classNames('flex-1', styles.borderRight)}
                                     description="Active Users"
                                     color="var(--body-color)"
-                                    tooltip="Users using the application in the selected timeframe."
+                                    tooltip="Currently registered users using the application in the selected timeframe."
                                 />
                                 <ValueLegendItem
                                     value={totalEvents}

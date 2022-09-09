@@ -99,7 +99,7 @@ Clone the forked repository to your local machine.
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.43.1"
+  export SOURCEGRAPH_VERSION="v3.43.2"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

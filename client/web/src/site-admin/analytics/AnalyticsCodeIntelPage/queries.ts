@@ -5,11 +5,11 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
@@ -54,6 +54,19 @@ export const CODEINTEL_STATISTICS = gql`
                             totalCount
                         }
                     }
+                }
+                codeIntelByLanguage(dateRange: $dateRange) {
+                    language
+                    precision
+                    count
+                }
+                codeIntelTopRepositories(dateRange: $dateRange) {
+                    name
+                    language
+                    kind
+                    precision
+                    events
+                    hasPrecise
                 }
             }
         }

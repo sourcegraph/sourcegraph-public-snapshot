@@ -20,6 +20,63 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
+func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
+	if err != nil {
+		return Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
+}
+
+const getUploadByIDQuery = `
+-- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadByID
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	repo.name,
+	u.indexer,
+	u.indexer_version,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank,
+	u.uncompressed_size
+FROM lsif_uploads u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
+`
+
+const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+
+const uploadRankQueryFragment = `
+SELECT
+	r.id,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
+FROM lsif_uploads_with_repository_name r
+WHERE r.state = 'queued'
+`
+
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
@@ -88,165 +145,8 @@ func scanUpload(s dbutil.Scanner) (upload Upload, _ error) {
 	return upload, nil
 }
 
-func scanUploadWithCount(s dbutil.Scanner) (upload Upload, count int, _ error) {
-	var rawUploadedParts []sql.NullInt32
-	if err := s.Scan(
-		&upload.ID,
-		&upload.Commit,
-		&upload.Root,
-		&upload.VisibleAtTip,
-		&upload.UploadedAt,
-		&upload.State,
-		&upload.FailureMessage,
-		&upload.StartedAt,
-		&upload.FinishedAt,
-		&upload.ProcessAfter,
-		&upload.NumResets,
-		&upload.NumFailures,
-		&upload.RepositoryID,
-		&upload.RepositoryName,
-		&upload.Indexer,
-		&dbutil.NullString{S: &upload.IndexerVersion},
-		&upload.NumParts,
-		pq.Array(&rawUploadedParts),
-		&upload.UploadSize,
-		&upload.AssociatedIndexID,
-		&upload.Rank,
-		&upload.UncompressedSize,
-		&count,
-	); err != nil {
-		return upload, 0, err
-	}
-
-	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
-	for _, uploadedPart := range rawUploadedParts {
-		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
-	}
-
-	return upload, count, nil
-}
-
-// scanUploads scans a slice of uploads from the return value of `*Store.query`.
-var scanUploads = basestore.NewSliceScanner(scanUpload)
-
-var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
-
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
-
-// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
-	if err != nil {
-		return Upload{}, false, err
-	}
-
-	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
-}
-
-const uploadRankQueryFragment = `
-SELECT
-	r.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
-FROM lsif_uploads_with_repository_name r
-WHERE r.state = 'queued'
-`
-
-const getUploadByIDQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:GetUploadByID
-SELECT
-	u.id,
-	u.commit,
-	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
-	u.num_resets,
-	u.num_failures,
-	u.repository_id,
-	repo.name,
-	u.indexer,
-	u.indexer_version,
-	u.num_parts,
-	u.uploaded_parts,
-	u.upload_size,
-	u.associated_index_id,
-	s.rank,
-	u.uncompressed_size
-FROM lsif_uploads u
-LEFT JOIN (` + uploadRankQueryFragment + `) s
-ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
-`
-
-const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
-
-// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
-// have a corresponding element in the returned list.
-func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, err error) {
-	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("ids", intsToString(ids)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
-	if err != nil {
-		return nil, err
-	}
-
-	queries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%d", id))
-	}
-
-	return scanUploads(s.Store.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
-}
-
-const getUploadsByIDsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:GetUploadsByIDs
-SELECT
-	u.id,
-	u.commit,
-	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
-	u.num_resets,
-	u.num_failures,
-	u.repository_id,
-	repo.name,
-	u.indexer,
-	u.indexer_version,
-	u.num_parts,
-	u.uploaded_parts,
-	u.upload_size,
-	u.associated_index_id,
-	s.rank,
-	u.uncompressed_size
-FROM lsif_uploads u
-LEFT JOIN (` + uploadRankQueryFragment + `) s
-ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
-`
 
 type GetUploadsOptions struct {
 	RepositoryID            int
@@ -269,332 +169,6 @@ type GetUploadsOptions struct {
 	// after this upload was processed. This condition helps us filter out new uploads
 	// that we might later mistake for unreachable.
 	InCommitGraph bool
-}
-
-// GetUploads returns a list of uploads and the total count of records matching the given conditions.
-func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
-		log.String("term", opts.Term),
-		log.Bool("visibleAtTip", opts.VisibleAtTip),
-		log.Int("dependencyOf", opts.DependencyOf),
-		log.Int("dependentOf", opts.DependentOf),
-		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
-		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
-		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
-		log.Bool("inCommitGraph", opts.InCommitGraph),
-		log.Bool("allowExpired", opts.AllowExpired),
-		log.Bool("oldestFirst", opts.OldestFirst),
-		log.Int("limit", opts.Limit),
-		log.Int("offset", opts.Offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	conds := make([]*sqlf.Query, 0, 12)
-	cteDefinitions := make([]cteDefinition, 0, 3)
-	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")
-
-	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
-
-	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
-	}
-	if opts.Term != "" {
-		conds = append(conds, makeSearchCondition(opts.Term))
-	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
-	} else if !allowDeletedUploads {
-		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
-	}
-	if opts.VisibleAtTip {
-		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
-	}
-	if opts.DependencyOf != 0 {
-		cteDefinitions = append(cteDefinitions, cteDefinition{
-			name:       "ranked_dependencies",
-			definition: sqlf.Sprintf(rankedDependencyCandidateCTEQuery, sqlf.Sprintf("r.dump_id = %s", opts.DependencyOf)),
-		})
-
-		// Limit results to the set of uploads canonically providing packages referenced by the given upload identifier
-		// (opts.DependencyOf). We do this by selecting the top ranked values in the CTE defined above, which are the
-		// referenced package providers grouped by package name, version, repository, and root.
-		conds = append(conds, sqlf.Sprintf(`u.id IN (SELECT rd.pkg_id FROM ranked_dependencies rd WHERE rd.rank = 1)`))
-	}
-	if opts.DependentOf != 0 {
-		cteCondition := sqlf.Sprintf(`(p.scheme, p.name, p.version) IN (
-			SELECT p.scheme, p.name, p.version
-			FROM lsif_packages p
-			WHERE p.dump_id = %s
-		)`, opts.DependentOf)
-
-		cteDefinitions = append(cteDefinitions, cteDefinition{
-			name:       "ranked_dependents",
-			definition: sqlf.Sprintf(rankedDependentCandidateCTEQuery, cteCondition),
-		})
-
-		// Limit results to the set of uploads that reference the target upload if it canonically provides the
-		// matching package. If the target upload does not canonically provide a package, the results will contain
-		// no dependent uploads.
-		conds = append(conds, sqlf.Sprintf(`u.id IN (
-			SELECT r.dump_id
-			FROM ranked_dependents rd
-			JOIN lsif_references r ON r.scheme = rd.scheme
-				AND r.name = rd.name
-				AND r.version = rd.version
-				AND r.dump_id != rd.pkg_id
-			WHERE rd.pkg_id = %s AND rd.rank = 1
-		)`, opts.DependentOf))
-	}
-
-	if allowDeletedUploads {
-		cteDefinitions = append(cteDefinitions, cteDefinition{
-			name:       "deleted_uploads",
-			definition: sqlf.Sprintf(deletedUploadsFromAuditLogsCTEQuery),
-		})
-
-		sourceTableExpr = sqlf.Sprintf(`(
-			SELECT
-				id,
-				commit,
-				root,
-				uploaded_at,
-				state,
-				failure_message,
-				started_at,
-				finished_at,
-				process_after,
-				num_resets,
-				num_failures,
-				repository_id,
-				indexer,
-				indexer_version,
-				num_parts,
-				uploaded_parts,
-				upload_size,
-				associated_index_id,
-				expired,
-				uncompressed_size
-			FROM lsif_uploads
-			UNION ALL
-			SELECT *
-			FROM deleted_uploads
-		) AS u`)
-	}
-
-	if opts.UploadedBefore != nil {
-		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
-	}
-	if opts.UploadedAfter != nil {
-		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
-	}
-	if opts.InCommitGraph {
-		conds = append(conds, sqlf.Sprintf("u.finished_at < (SELECT updated_at FROM lsif_dirty_repositories ldr WHERE ldr.repository_id = u.repository_id)"))
-	}
-	if opts.LastRetentionScanBefore != nil {
-		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))
-	}
-	if !opts.AllowExpired {
-		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
-	}
-	if !opts.AllowDeletedRepo {
-		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
-	}
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.Store))
-	if err != nil {
-		return nil, 0, err
-	}
-	conds = append(conds, authzConds)
-
-	var orderExpression *sqlf.Query
-	if opts.OldestFirst {
-		orderExpression = sqlf.Sprintf("uploaded_at, id DESC")
-	} else {
-		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
-	}
-
-	uploads, totalCount, err := scanUploadsWithCount(tx.Store.Query(ctx, sqlf.Sprintf(
-		getUploadsQuery,
-		buildCTEPrefix(cteDefinitions),
-		sourceTableExpr,
-		sqlf.Join(conds, " AND "),
-		orderExpression,
-		opts.Limit,
-		opts.Offset,
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.Log(
-		log.Int("totalCount", totalCount),
-		log.Int("numUploads", len(uploads)),
-	)
-
-	return uploads, totalCount, nil
-}
-
-type cteDefinition struct {
-	name       string
-	definition *sqlf.Query
-}
-
-func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
-	if len(cteDefinitions) == 0 {
-		return sqlf.Sprintf("")
-	}
-
-	cteQueries := make([]*sqlf.Query, 0, len(cteDefinitions))
-	for _, cte := range cteDefinitions {
-		cteQueries = append(cteQueries, sqlf.Sprintf("%s AS (%s)", sqlf.Sprintf(cte.name), cte.definition))
-	}
-
-	return sqlf.Sprintf("WITH\n%s", sqlf.Join(cteQueries, ",\n"))
-}
-
-const getUploadsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:GetUploads
-%s -- Dynamic CTE definitions for use in the WHERE clause
-SELECT
-	u.id,
-	u.commit,
-	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
-	u.num_resets,
-	u.num_failures,
-	u.repository_id,
-	repo.name,
-	u.indexer,
-	u.indexer_version,
-	u.num_parts,
-	u.uploaded_parts,
-	u.upload_size,
-	u.associated_index_id,
-	s.rank,
-	u.uncompressed_size,
-	COUNT(*) OVER() AS count
-FROM %s
-LEFT JOIN (` + uploadRankQueryFragment + `) s
-ON u.id = s.id
-JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY %s LIMIT %d OFFSET %d
-`
-
-const deletedUploadsFromAuditLogsCTEQuery = `
-SELECT
-	DISTINCT ON(s.upload_id) s.upload_id AS id, au.commit, au.root,
-	au.uploaded_at, 'deleted' AS state,
-	snapshot->'failure_message' AS failure_message,
-	(snapshot->'started_at')::timestamptz AS started_at,
-	(snapshot->'finished_at')::timestamptz AS finished_at,
-	(snapshot->'process_after')::timestamptz AS process_after,
-	COALESCE((snapshot->'num_resets')::integer, -1) AS num_resets,
-	COALESCE((snapshot->'num_failures')::integer, -1) AS num_failures,
-	au.repository_id,
-	au.indexer, au.indexer_version,
-	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
-	NULL::integer[] as uploaded_parts,
-	au.upload_size, au.associated_index_id,
-	COALESCE((snapshot->'expired')::boolean, false) AS expired,
-	NULL::bigint AS uncompressed_size
-FROM (
-	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
-	FROM lsif_uploads_audit_logs
-	WHERE record_deleted_at IS NOT NULL
-	GROUP BY upload_id
-) AS s
-JOIN lsif_uploads_audit_logs au ON au.upload_id = s.upload_id
-`
-
-const rankedDependencyCandidateCTEQuery = `
-SELECT
-	p.dump_id as pkg_id,
-	r.dump_id as ref_id,
-	-- Rank each upload providing the same package from the same directory
-	-- within a repository by commit date. We'll choose the oldest commit
-	-- date as the canonical choice and ignore the uploads for younger
-	-- commits providing the same package.
-	` + packageRankingQueryFragment + ` AS rank
-FROM lsif_uploads u
-JOIN lsif_packages p ON p.dump_id = u.id
-JOIN lsif_references r ON r.scheme = p.scheme
-	AND r.name = p.name
-	AND r.version = p.version
-	AND r.dump_id != p.dump_id
-WHERE
-	-- Don't match deleted uploads
-	u.state = 'completed' AND
-	%s
-`
-
-const rankedDependentCandidateCTEQuery = `
-SELECT
-	p.dump_id as pkg_id,
-	p.scheme as scheme,
-	p.name as name,
-	p.version as version,
-	-- Rank each upload providing the same package from the same directory
-	-- within a repository by commit date. We'll choose the oldest commit
-	-- date as the canonical choice and ignore the uploads for younger
-	-- commits providing the same package.
-	` + packageRankingQueryFragment + ` AS rank
-FROM lsif_uploads u
-JOIN lsif_packages p ON p.dump_id = u.id
-WHERE
-	-- Don't match deleted uploads
-	u.state = 'completed' AND
-	%s
-`
-
-// makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
-func makeSearchCondition(term string) *sqlf.Query {
-	searchableColumns := []string{
-		"u.commit",
-		"u.root",
-		"(u.state)::text",
-		"u.failure_message",
-		"repo.name",
-		"u.indexer",
-		"u.indexer_version",
-	}
-
-	var termConds []*sqlf.Query
-	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
-	}
-
-	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
-}
-
-// makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
-func makeStateCondition(state string) *sqlf.Query {
-	states := make([]string, 0, 2)
-	if state == "errored" || state == "failed" {
-		// Treat errored and failed states as equivalent
-		states = append(states, "errored", "failed")
-	} else {
-		states = append(states, state)
-	}
-
-	queries := make([]*sqlf.Query, 0, len(states))
-	for _, state := range states {
-		queries = append(queries, sqlf.Sprintf("u.state = %s", state))
-	}
-
-	return sqlf.Sprintf("(%s)", sqlf.Join(queries, " OR "))
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
@@ -733,44 +307,6 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf("u.uncompressed_size"),
 }
-
-// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
-// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
-// the background.
-func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
-	defer unset(ctx)
-
-	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
-	if err != nil {
-		return false, err
-	}
-	if !deleted {
-		return false, nil
-	}
-
-	if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-const deleteUploadByIDQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
-UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
-`
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
@@ -1175,14 +711,6 @@ func intsToString(vs []int) string {
 	return strings.Join(strs, ", ")
 }
 
-func nilTimeToString(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-
-	return t.String()
-}
-
 // LastUploadRetentionScanForRepository returns the last timestamp, if any, that the repository with the
 // given identifier was considered for upload expiration checks.
 func (s *Store) LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
@@ -1202,117 +730,4 @@ func (s *Store) LastUploadRetentionScanForRepository(ctx context.Context, reposi
 const lastUploadRetentionScanForRepositoryQuery = `
 -- source: internal/codeintel/stores/dbstore/uploads.go:LastUploadRetentionScanForRepository
 SELECT last_retention_scan_at FROM lsif_last_retention_scan WHERE repository_id = %s
-`
-
-type UploadsWithRepositoryNamespace struct {
-	Root    string
-	Indexer string
-	Uploads []Upload
-}
-
-// RecentUploadsSummary returns a set of "interesting" uploads for the repository with the given identifeir.
-// The return value is a list of uploads grouped by root and indexer. In each group, the set of uploads should
-// include the set of unprocessed records as well as the latest finished record. These values allow users to
-// quickly determine if a particular root/indexer pair is up-to-date or having issues processing.
-func (s *Store) RecentUploadsSummary(ctx context.Context, repositoryID int) (upload []UploadsWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.recentUploadsSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	uploads, err := scanUploads(s.Query(ctx, sqlf.Sprintf(recentUploadsSummaryQuery, repositoryID, repositoryID)))
-	if err != nil {
-		return nil, err
-	}
-	logger.Log(log.Int("numUploads", len(uploads)))
-
-	groupedUploads := make([]UploadsWithRepositoryNamespace, 1, len(uploads)+1)
-	for _, index := range uploads {
-		if last := groupedUploads[len(groupedUploads)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
-			groupedUploads = append(groupedUploads, UploadsWithRepositoryNamespace{
-				Root:    index.Root,
-				Indexer: index.Indexer,
-			})
-		}
-
-		n := len(groupedUploads)
-		groupedUploads[n-1].Uploads = append(groupedUploads[n-1].Uploads, index)
-	}
-
-	return groupedUploads[1:], nil
-}
-
-const recentUploadsSummaryQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:RecentUploadsSummary
-WITH ranked_completed AS (
-	SELECT
-		u.id,
-		u.root,
-		u.indexer,
-		u.finished_at,
-		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
-	FROM lsif_uploads u
-	WHERE
-		u.repository_id = %s AND
-		u.state NOT IN ('uploading', 'queued', 'processing', 'deleted')
-),
-latest_uploads AS (
-	SELECT u.id, u.root, u.indexer, u.uploaded_at
-	FROM lsif_uploads u
-	WHERE
-		u.id IN (
-			SELECT rc.id
-			FROM ranked_completed rc
-			WHERE rc.rank = 1
-		)
-	ORDER BY u.root, u.indexer
-),
-new_uploads AS (
-	SELECT u.id
-	FROM lsif_uploads u
-	WHERE
-		u.repository_id = %s AND
-		u.state IN ('uploading', 'queued', 'processing') AND
-		u.uploaded_at >= (
-			SELECT lu.uploaded_at
-			FROM latest_uploads lu
-			WHERE
-				lu.root = u.root AND
-				lu.indexer = u.indexer
-			-- condition passes when latest_uploads is empty
-			UNION SELECT u.queued_at LIMIT 1
-		)
-)
-SELECT
-	u.id,
-	u.commit,
-	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
-	u.num_resets,
-	u.num_failures,
-	u.repository_id,
-	u.repository_name,
-	u.indexer,
-	u.indexer_version,
-	u.num_parts,
-	u.uploaded_parts,
-	u.upload_size,
-	u.associated_index_id,
-	s.rank,
-	u.uncompressed_size
-FROM lsif_uploads_with_repository_name u
-LEFT JOIN (` + uploadRankQueryFragment + `) s
-ON u.id = s.id
-WHERE u.id IN (
-	SELECT lu.id FROM latest_uploads lu
-	UNION
-	SELECT nu.id FROM new_uploads nu
-)
-ORDER BY u.root, u.indexer
 `

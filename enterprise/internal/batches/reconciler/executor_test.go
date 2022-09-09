@@ -606,6 +606,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Err:                     tc.sourcerErr,
 				ChangesetExists:         tc.alreadyExists,
 				IsArchivedPushErrorTrue: tc.isRepoArchived,
+				CurrentAuthenticator:    &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "token"}},
 			}
 
 			if tc.sourcerMetadata != nil {
@@ -829,162 +830,34 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
-	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
-
-	admin := bt.CreateTestUser(t, db, true)
-	user := bt.CreateTestUser(t, db, false)
-
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, 0)
-	adminBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
-	userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
-
-	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 0,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if fakeSource.CurrentAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
-		}
-	})
-
-	t.Run("imported changeset uses site-credential when exists", func(t *testing.T) {
-		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "batch_changes_site_credentials")
-		})
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 0,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
-		}
-	})
-
-	t.Run("owned by missing batch change", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: 1234,
-		}, repo)
+	t.Run("handles ErrMissingCredentials", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrMissingCredentials, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-	})
-
-	t.Run("owned by admin user without credential", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: adminBatchChange.ID,
-		}, repo)
-		if !errors.Is(err, errMissingCredentials{repo: string(repo.Name)}) {
-			t.Fatalf("unexpected error %v", err)
+		if have, want := err.Error(), `user does not have a valid credential for repository "test"`; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
-
-	t.Run("owned by normal user without credential", func(t *testing.T) {
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
-		}, repo)
+	t.Run("handles ErrNoSSHCredential", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrNoSSHCredential, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-	})
-
-	t.Run("owned by admin user with credential", func(t *testing.T) {
-		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              admin.ID,
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
-		}
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: adminBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
+		if have, want := err.Error(), "The used credential doesn't support SSH pushes, but the repo requires pushing over SSH."; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
-
-	t.Run("owned by normal user with credential", func(t *testing.T) {
-		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              user.ID,
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
+	t.Run("handles ErrNoPushCredentials", func(t *testing.T) {
+		sourcer := stesting.NewFakeSourcer(sources.ErrNoPushCredentials{CredentialsType: "*auth.OAuthBearerTokenWithSSH"}, &stesting.FakeChangesetSource{})
+		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+		if err == nil {
+			t.Error("unexpected nil error")
 		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "user_credentials")
-		})
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
-		}
-	})
-
-	t.Run("owned by user without credential falls back to site-credential", func(t *testing.T) {
-		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-		}, token); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			bt.TruncateTables(t, db, "batch_changes_site_credentials")
-		})
-
-		fakeSource := &stesting.FakeChangesetSource{}
-		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
-			OwnedByBatchChangeID: userBatchChange.ID,
-		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
-			t.Errorf("unexpected authenticator:\n%s", diff)
+		if have, want := err.Error(), "cannot use credentials of type *auth.OAuthBearerTokenWithSSH to push commits"; have != want {
+			t.Errorf("invalid error returned: have=%q want=%q", have, want)
 		}
 	})
 }
@@ -1018,16 +891,16 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		user           *types.User
 		extSvc         *types.ExternalService
 		repo           *types.Repo
-		credentials    auth.Authenticator
+		credential     auth.Authenticator
 		wantErr        bool
 		wantPushConfig *gitprotocol.PushConfig
 	}{
 		{
-			name:        "github OAuthBearerToken",
-			user:        user,
-			extSvc:      gitHubExtSvc,
-			repo:        gitHubRepo,
-			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			name:       "github OAuthBearerToken",
+			user:       user,
+			extSvc:     gitHubExtSvc,
+			repo:       gitHubRepo,
+			credential: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://my-secret-github-token@github.com/sourcegraph/" + string(gitHubRepo.Name),
 			},
@@ -1047,11 +920,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:        "gitlab OAuthBearerToken",
-			user:        user,
-			extSvc:      gitLabExtSvc,
-			repo:        gitLabRepo,
-			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			name:       "gitlab OAuthBearerToken",
+			user:       user,
+			extSvc:     gitLabExtSvc,
+			repo:       gitLabRepo,
+			credential: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
 			},
@@ -1071,11 +944,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:        "bitbucketServer BasicAuth",
-			user:        user,
-			extSvc:      bbsExtSvc,
-			repo:        bbsRepo,
-			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
+			name:       "bitbucketServer BasicAuth",
+			user:       user,
+			extSvc:     bbsExtSvc,
+			repo:       bbsRepo,
+			credential: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
 			},
@@ -1113,7 +986,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:   admin,
 			extSvc: bbsSSHExtsvc,
 			repo:   bbsSSHRepo,
-			credentials: &auth.OAuthBearerTokenWithSSH{
+			credential: &auth.OAuthBearerTokenWithSSH{
 				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
 				PrivateKey:       "private key",
 				PublicKey:        "public key",
@@ -1126,24 +999,24 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
-			name:        "ssh clone URL non-SSH credential",
-			user:        admin,
-			extSvc:      bbsSSHExtsvc,
-			repo:        bbsSSHRepo,
-			credentials: &auth.OAuthBearerToken{Token: "test"},
-			wantErr:     true,
+			name:       "ssh clone URL non-SSH credential",
+			user:       admin,
+			extSvc:     bbsSSHExtsvc,
+			repo:       bbsSSHRepo,
+			credential: &auth.OAuthBearerToken{Token: "test"},
+			wantErr:    true,
 		},
 	}
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.credentials != nil {
+			if tt.credential != nil {
 				cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainBatches,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
-				}, tt.credentials)
+				}, tt.credential)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1165,7 +1038,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			})
 
 			gitClient := &bt.FakeGitserverClient{ResponseErr: nil}
-			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc}
+			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(

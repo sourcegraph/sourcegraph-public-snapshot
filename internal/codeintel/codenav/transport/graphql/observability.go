@@ -14,7 +14,6 @@ import (
 )
 
 type operations struct {
-	symbol          *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -23,7 +22,10 @@ type operations struct {
 	stencil         *observation.Operation
 	ranges          *observation.Operation
 
+	getSupportedByCtags        *observation.Operation
 	getGitBlobLSIFDataResolver *observation.Operation
+	getLanguagesRequestedBy    *observation.Operation
+	setRequestLanguageSupport  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -43,9 +45,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		symbol: op("Symbol"),
-		hover:  op("Hover"),
-
+		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
 		implementations: op("Implementations"),
@@ -53,7 +53,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
 
+		getSupportedByCtags:        op("GetSupportedByCtags"),
 		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
+		getLanguagesRequestedBy:    op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport:  op("SetRequestLanguageSupport"),
 	}
 }
 

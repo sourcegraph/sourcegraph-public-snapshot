@@ -192,8 +192,14 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
         return <></>
     }
 
-    const nextVersion = parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
-    const previousVersion = parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
+    const nextVersion =
+        productVersion.major === 3 && productVersion.minor === 43
+            ? parseVersion('4.0.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
+    const previousVersion =
+        productVersion.major === 4 && productVersion.minor === 0
+            ? parseVersion('3.43.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
 
     const invalidMigrations = migrationsInvalidForVersion(migrations, productVersion)
     const invalidMigrationsAfterUpgrade = migrationsInvalidForVersion(migrations, nextVersion)

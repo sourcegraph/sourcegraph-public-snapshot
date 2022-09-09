@@ -16,17 +16,29 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../tracking/eventLogger'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
-let timeoutId: NodeJS.Timeout | null = null
-const resetTimeout = (): void => {
-    if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
+let closeTimeoutId: NodeJS.Timeout | null = null
+const resetCloseTimeout = (): void => {
+    if (closeTimeoutId) {
+        clearTimeout(closeTimeoutId)
+        closeTimeoutId = null
     }
+}
+let openTimeoutId: NodeJS.Timeout | null = null
+const resetOpenTimeout = (): void => {
+    if (openTimeoutId) {
+        clearTimeout(openTimeoutId)
+        openTimeoutId = null
+    }
+}
+const resetAllTimeouts = (): void => {
+    resetOpenTimeout()
+    resetCloseTimeout()
 }
 
 const usePopover = ({
@@ -43,8 +55,8 @@ const usePopover = ({
     isOpen: boolean
     open: () => void
     close: () => void
+    openWithTimeout: () => void
     closeWithTimeout: () => void
-    resetCloseTimeout: () => void
 } => {
     const popoverId = useObservable(currentPopoverId)
 
@@ -62,7 +74,7 @@ const usePopover = ({
     }, [isOpen, onOpen, onClose])
 
     const open = useCallback(() => {
-        resetTimeout()
+        resetCloseTimeout()
         currentPopoverId.next(id)
     }, [id])
 
@@ -72,11 +84,21 @@ const usePopover = ({
         }
     }, [id])
 
+    const openWithTimeout = useCallback(() => {
+        if (currentPopoverId.getValue() === null) {
+            open()
+            return
+        }
+        resetOpenTimeout()
+        openTimeoutId = setTimeout(open, timeout)
+    }, [open, timeout])
+
     const closeWithTimeout = useCallback(() => {
-        timeoutId = setTimeout(close, timeout)
+        resetCloseTimeout()
+        closeTimeoutId = setTimeout(close, timeout)
     }, [close, timeout])
 
-    return { isOpen, open, close, closeWithTimeout, resetCloseTimeout: resetTimeout }
+    return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
 export const BlameDecoration: React.FunctionComponent<{
@@ -86,11 +108,14 @@ export const BlameDecoration: React.FunctionComponent<{
     onDeselect?: (line: number) => void
 }> = ({ line, blameHunk, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
-    const onOpen = useCallback(() => onSelect?.(line), [onSelect, line])
+    const onOpen = useCallback(() => {
+        onSelect?.(line)
+        eventLogger.log('GitBlamePopupViewed')
+    }, [onSelect, line])
     const onClose = useCallback(() => onDeselect?.(line), [onDeselect, line])
-    const { isOpen, open, close, closeWithTimeout, resetCloseTimeout } = usePopover({
+    const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,
-        timeout: 1000,
+        timeout: 250,
         onOpen,
         onClose,
     })
@@ -114,7 +139,7 @@ export const BlameDecoration: React.FunctionComponent<{
                 className={classNames(styles.popoverTrigger, 'px-2')}
                 onFocus={open}
                 onBlur={close}
-                onMouseEnter={open}
+                onMouseEnter={openWithTimeout}
                 onMouseLeave={closeWithTimeout}
             >
                 <span
@@ -128,23 +153,28 @@ export const BlameDecoration: React.FunctionComponent<{
                 targetPadding={createRectangle(0, 0, 8, 8)}
                 position={Position.topStart}
                 focusLocked={false}
-                onMouseEnter={resetCloseTimeout}
+                onMouseEnter={resetAllTimeouts}
                 onMouseLeave={close}
                 className={styles.popoverContent}
             >
                 <div className="py-1">
-                    <div className="py-2 px-3">
+                    <div className={classNames(styles.head, 'px-3 my-2')}>
                         <span className={styles.author}>{blameHunk.displayInfo.displayName}</span>{' '}
-                        {blameHunk.displayInfo.dateString}
+                        {blameHunk.displayInfo.timestampString}
                     </div>
-                    <hr className={styles.separator} />
-                    <div className="py-2 px-3 d-flex align-items-center">
-                        <Icon aria-hidden={true} as={SourceCommitIcon} className="mr-2 flex-shrink-0" />
+                    <hr className={classNames(styles.separator, 'm-0')} />
+                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
+                        <Icon
+                            aria-hidden={true}
+                            as={SourceCommitIcon}
+                            className={classNames('mr-2 flex-shrink-0', styles.icon)}
+                        />
                         <Link
                             to={blameHunk.displayInfo.linkURL}
                             target="_blank"
                             rel="noreferrer noopener"
                             className={styles.link}
+                            onClick={logCommitClick}
                         >
                             {blameHunk.message}
                         </Link>
@@ -153,4 +183,8 @@ export const BlameDecoration: React.FunctionComponent<{
             </PopoverContent>
         </Popover>
     )
+}
+
+const logCommitClick = (): void => {
+    eventLogger.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
 }

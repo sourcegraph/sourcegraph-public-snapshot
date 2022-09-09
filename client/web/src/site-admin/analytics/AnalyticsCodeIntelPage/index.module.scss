@@ -7,3 +7,33 @@
     padding-right: 4rem;
     margin-top: 1.5rem;
 }
+
+.events {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.chart {
+    width: 15rem;
+}
+
+.percent-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.percent {
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+.repos {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
+    align-items: center;
+    padding-left: 2rem;
+}

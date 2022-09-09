@@ -14,11 +14,11 @@ export const USERS_STATISTICS = gql`
                         nodes {
                             date
                             count
-                            uniqueUsers
+                            registeredUsers
                         }
                         summary {
                             totalCount
-                            totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                     frequencies {

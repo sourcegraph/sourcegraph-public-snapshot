@@ -1255,7 +1255,7 @@ type Query {
         """
         notIndexed: Boolean = true
         """
-        Include repositories that have encountered errors when cloning or fetching
+        Include only repositories that have encountered errors when cloning or fetching
         """
         failedFetch: Boolean = false
         """
@@ -5050,43 +5050,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-    """
-    Repositories from external services owned by this user.
-    """
-    repositories(
-        """
-        Returns the first n repositories from the list.
-        """
-        first: Int
-        """
-        Return repositories whose names match the query.
-        """
-        query: String
-        """
-        An opaque cursor that is used for pagination.
-        """
-        after: String
-        """
-        Include cloned repositories.
-        """
-        cloned: Boolean = true
-        """
-        Include repositories that are not yet cloned and for which cloning is not in progress.
-        """
-        notCloned: Boolean = true
-        """
-        Include repositories that have a text search index.
-        """
-        indexed: Boolean = true
-        """
-        Include repositories that do not have a text search index.
-        """
-        notIndexed: Boolean = true
-        """
-        Only include repositories from this external service.
-        """
-        externalServiceID: ID
-    ): RepositoryConnection!
 
     """
     publicRepositories returns the repos listed in user_public_repos for this user
@@ -6350,6 +6313,54 @@ type AnalyticsCodeIntelResult {
 }
 
 """
+CodeIntelByLanguage analytics.
+"""
+type AnalyticsCodeIntelByLanguageResult {
+    """
+    Language
+    """
+    language: String!
+    """
+    Precision
+    """
+    precision: String!
+    """
+    Count
+    """
+    count: Float!
+}
+
+"""
+CodeIntelTopRepositories analytics.
+"""
+type AnalyticsCodeIntelRepositoryResult {
+    """
+    Repository name
+    """
+    name: String!
+    """
+    Language
+    """
+    language: String!
+    """
+    Event kind
+    """
+    kind: String!
+    """
+    Event precision (either "search-based" or "precise")
+    """
+    precision: String!
+    """
+    Event count
+    """
+    events: Float!
+    """
+    Has precise
+    """
+    hasPrecise: Boolean!
+}
+
+"""
 Repositories summary.
 """
 type AnalyticsReposSummartResult {
@@ -6416,6 +6427,14 @@ type Analytics {
     Code-intelligence statistics.
     """
     codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
+    """
+    Code-intelligence statistics grouped by language and precision.
+    """
+    codeIntelByLanguage(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelByLanguageResult!]!
+    """
+    Top repositories by code-intelligence events.
+    """
+    codeIntelTopRepositories(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelRepositoryResult!]!
     """
     Repositories summary statistics.
     """
