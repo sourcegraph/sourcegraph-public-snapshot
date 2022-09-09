@@ -60,7 +60,7 @@ func (w firecrackerWorkspace) Remove(ctx context.Context) {
 		// cleanup doesn't fail the execution job. We can deal with it separately.
 		handle.Finalize(0)
 	} else {
-		fmt.Fprintf(handle, "Preserving workspace as per config")
+		fmt.Fprintf(handle, "Preserving workspace files (block device: %s, loop file: %s) as per config", w.blockDevice, w.loopPath)
 		handle.Finalize(0)
 	}
 }
@@ -83,7 +83,7 @@ func (w dockerWorkspace) Remove(ctx context.Context) {
 		}
 
 	} else {
-		fmt.Fprintf(handle, "Preserving workspace as per config")
+		fmt.Fprintf(handle, "Preserving workspace (%s) as per config", w.workspaceDir)
 		handle.Finalize(0)
 	}
 }
@@ -99,7 +99,13 @@ func (h *handler) prepareWorkspace(
 	commandLogger command.Logger,
 ) (workspace *Workspace, err error) {
 	if h.options.FirecrackerOptions.Enabled {
-		loopFileName, tmpMountDir, blockDevice, err := setupLoopDevice(ctx, job.ID, h.options.ResourceOptions.DiskSpace, h.options.KeepWorkspaces, commandLogger)
+		loopFileName, tmpMountDir, blockDevice, err := setupLoopDevice(
+			ctx,
+			job.ID,
+			h.options.ResourceOptions.DiskSpace,
+			h.options.KeepWorkspaces,
+			commandLogger,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -354,7 +360,7 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	return urlx, nil
 }
 
-// makeTempFile defaults to makeTemporaryDirectory and can be replaced for testing
+// makeTempFile defaults to makeTemporaryFile and can be replaced for testing
 // with determinstic workspace/scripts directories.
 var makeTempFile = makeTemporaryFile
 
