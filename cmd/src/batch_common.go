@@ -137,7 +137,7 @@ func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batc
 
 	flagSet.BoolVar(
 		&caf.cleanArchives, "clean-archives", true,
-		"If true, deletes downloaded repository archives after executing batch spec steps.",
+		"If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly.",
 	)
 
 	flagSet.BoolVar(
