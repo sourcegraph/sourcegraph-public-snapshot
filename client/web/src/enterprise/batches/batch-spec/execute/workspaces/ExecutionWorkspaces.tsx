@@ -63,7 +63,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
     const history = useHistory()
 
     const deselectWorkspace = useCallback(() => {
-        history.replace({ ...history.location, pathname: `${batchSpec.executionURL}/execution` })
+        history.push({ ...history.location, pathname: `${batchSpec.executionURL}/execution` })
     }, [batchSpec.executionURL, history])
 
     const videoRef = useRef<HTMLVideoElement | null>(null)
