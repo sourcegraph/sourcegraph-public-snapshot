@@ -211,7 +211,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
             <Alert variant="warning" className="mt-3">
                 <Text className="m-0">{node.hostname} is outdated.</Text>
                 <Text className="m-0">
-                    Please upgrade this executor to a version compatible with your Sourcegraph version.
+                    Please <Link to="http://localhost:5080/admin/deploy_executors" target="_blank" rel="noopener">upgrade this executor</Link> to a version compatible with your Sourcegraph version.
                 </Text>
             </Alert>
         )}
