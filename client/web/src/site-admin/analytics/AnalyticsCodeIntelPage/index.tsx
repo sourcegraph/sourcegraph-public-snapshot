@@ -145,11 +145,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
         const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
             page: 'CodeIntel',
-            label: 'Intel events',
+            label: 'Navigation events',
             dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code navigation to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
@@ -161,28 +161,28 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
-                    label: 'Code intel on code hosts <br/> via the browser extension',
+                    label: 'Code navigation on code hosts <br/> via the browser extension',
                     minPerItem: kindToMinPerItem.codeHost,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
                     value: codeHostEvents.summary.totalCount,
                     description:
-                        'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
+                        'Navigation events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
-                    label: 'Cross repository <br/> code intel events',
+                    label: 'Cross repository <br/> code navigation events',
                     minPerItem: kindToMinPerItem.crossRepo,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                        'Cross repository code navigation identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
                 {
-                    label: 'Precise code intel*',
+                    label: 'Precise code navigation*',
                     minPerItem: kindToMinPerItem.precise,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, precise: minPerItem })),
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
+                        'Compiler-accurate code navigation takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
         }
@@ -290,7 +290,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Code navigation</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
@@ -332,12 +332,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         {repos && (
                             <Text as="li">
                                 <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
-                                precise code intel.{' '}
+                                precise code navigation.{' '}
                                 <AnchorLink
                                     to="/help/code_navigation/explanations/precise_code_intelligence"
                                     target="_blank"
                                 >
-                                    Learn how to improve precise code intel coverage.
+                                    Learn how to improve precise code navigation coverage.
                                 </AnchorLink>
                             </Text>
                         )}
@@ -400,7 +400,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
-                <br />* Calculated from precise code intel events
+                <br />* Calculated from precise code navigation events
             </Text>
         </>
     )
