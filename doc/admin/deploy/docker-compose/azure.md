@@ -5,7 +5,7 @@ This guide will take you through how to set up a Sourcegraph instance on an Azur
 ## Prerequisites
 
 - Determine the instance type and resource requirements for your Sourcegraph instance referring to the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-critical">RECOMMENDED</span> Follow our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to create your own customized copy of the Sourcegraph Docker Compose deployment repository with `release branch` set up
+- <span class="badge badge-note">RECOMMENDED</span> Follow our [Docker Compose installation guide](https://docs.sourcegraph.com/admin/deploy/docker-compose#installation) to create your own customized copy of the Sourcegraph Docker Compose deployment repository with `release branch` set up
 
 ---
 
@@ -33,7 +33,7 @@ In the [Azure Quickstart Center](https://portal.azure.com/?quickstart=true#view/
 
 #### Disks > Data disks
 
-Click `Create and attach a new disk` to create two disks:
+Click `Create and attach a new disk` to create **two** disks:
 
 * **Disk 1** - storage for root
    - `Source type:` None (empty disk)
@@ -71,36 +71,39 @@ Click `Create and attach a new disk` to create two disks:
 #### Advanced
 
 * Enable `user data`
-* Copy and paste the *Startup script* below in the **Custom data** and **User Data** text boxes
-  * <span class="badge badge-warning">IMPORTANT</span> Update the *startup script* with the information of your fork and release branch **if deploying from a fork of the reference repository**
-    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
-    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#step-3-configure-the-release-branch) the revision is the `release` branch
+* In the **Custom data** and **User Data** text boxes, copy and paste the [startup script](#startup-script) from below 
+
+<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized copy of the deployment repository:**
+
+- Update the *startup script* with the information of your **fork** and **release branch**:
+  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your fork
+  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision (branch) containing your customizations to the base Sourcegraph Docker Compose YAML.
+
+##### Startup script
 
 ```bash
 #!/usr/bin/env bash
-
 set -euxo pipefail
-
-# Update these variables with the correct values from your fork!
+###############################################################################
+# ACTION REQUIRED: REPLACE THE URL AND REVISION WITH YOUR DEPLOYMENT REPO INFO
+###############################################################################
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
-
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
+################## NO CHANGES REQUIRED FROM THIS POINT ONWARD ##################
+# STARTUP SCRIPT FOR SETTING UP AN AZURE INSTANCE WITH DOCKER COMPOSE
+###############################################################################
 PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
-
 DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
-
 # Install git
 sudo apt-get update -y
 sudo apt-get install -y git
-
 # Clone Docker Compose definition
 git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
-
-# Format (if necessary) and mount GCP persistent disk
+# Format (if necessary) and mount persistent disk for instance data
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
 if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
 then
@@ -108,13 +111,11 @@ then
 fi
 sudo mkdir -p "${DOCKER_DATA_ROOT}"
 sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
-
-# Mount GCP disk on reboots
+# Mount data disk on reboots using UUID
 DISK_UUID=$(sudo blkid -s UUID -o value "${PERSISTENT_DISK_DEVICE_NAME}")
 sudo echo "UUID=${DISK_UUID}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" >> '/etc/fstab'
 umount "${DOCKER_DATA_ROOT}"
 mount -a
-
 # Install Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt-get update -y
@@ -123,36 +124,31 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update -y
 apt-cache policy docker-ce
 apt-get install -y docker-ce docker-ce-cli containerd.io
-
 # Install jq for scripting
 sudo apt-get update -y
 sudo apt-get install -y jq
-
 # Edit Docker storage directory to mounted volume
 DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
-
-## initialize the config file with empty json if it doesn't exist
+## Initialize the config file with empty json if it doesn't exist
 if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
 then
     mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
     echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
 fi
-
-## update Docker's 'data-root' to point to our mounted disk
+## Point Docker's 'data-root' to our mounted disk
 tmp_config=$(mktemp)
 trap "rm -f ${tmp_config}" EXIT
-sudo cat "${DOCKER_DAEMON_CONFIG_FILE}" | sudo jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
-sudo cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
-
-## finally, restart Docker daemon to pick up our changes
+sudo cat "${DOCKER_DAEMON_CONFIG_FILE}" | sudo jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' >"${tmp_config}"
+sudo cat "${tmp_config}" >"${DOCKER_DAEMON_CONFIG_FILE}"
+## Enable Docker at startup
+sudo systemctl enable docker
+# Restart Docker daemon to pick up our changes
 sudo systemctl restart --now docker
-
 # Install Docker Compose
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
-
-# Run Sourcegraph. Restart the containers upon reboot.
+# Run Sourcegraph
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
