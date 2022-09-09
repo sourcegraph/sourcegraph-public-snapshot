@@ -210,5 +210,10 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
             decorations: manager => manager.decorations,
         }),
         decorationGutters.of([]),
+        EditorView.theme({
+            [`.${blameColumnStyles.decoration}`]: {
+                width: '240px',
+            },
+        }),
     ],
 })

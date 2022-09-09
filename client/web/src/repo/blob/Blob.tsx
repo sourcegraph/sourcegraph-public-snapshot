@@ -824,7 +824,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
+                <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />
 
                 {groupedDecorations &&
                     iterate(groupedDecorations)

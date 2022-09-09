@@ -10,7 +10,7 @@ import { BlameDecoration } from './BlameDecoration'
 import styles from './BlameColumn.module.scss'
 
 interface ColumnDecoratorProps {
-    blameHunks: BlameHunk[]
+    blameHunks?: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -91,7 +91,7 @@ export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements,
                         }
                     }
 
-                    const currentLineDecorations = blameHunks.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cell and corresponding blame hunk (or undefined if no blame hunk)
                     addedCells.push([cell, currentLineDecorations])
