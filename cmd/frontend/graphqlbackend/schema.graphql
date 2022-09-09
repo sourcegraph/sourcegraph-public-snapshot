@@ -3461,10 +3461,6 @@ type DiffStat {
     """
     added: Int!
     """
-    Number of changes.
-    """
-    changed: Int!
-    """
     Number of deletions.
     """
     deleted: Int!

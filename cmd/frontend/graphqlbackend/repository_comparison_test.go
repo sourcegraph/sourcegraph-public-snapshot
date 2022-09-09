@@ -207,7 +207,7 @@ func TestRepositoryComparison(t *testing.T) {
 			}
 
 			want := "2 added, 7 changed, 1 deleted"
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
+			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
 			}
 		})
@@ -269,7 +269,7 @@ func TestRepositoryComparison(t *testing.T) {
 			if haveStat == nil {
 				t.Fatalf("no diff stat")
 			}
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", haveStat.Added(), haveStat.Changed(), haveStat.Deleted()); have != wantStat {
+			if have := fmt.Sprintf("%d added, %d deleted", haveStat.Added(), haveStat.Deleted()); have != wantStat {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
 			}
 
