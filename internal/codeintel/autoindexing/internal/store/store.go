@@ -33,6 +33,10 @@ type Store interface {
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
+
+	// GetUnsafeDB returns the underlying database handle. This is used by the
+	// resolvers that have the old convention of using the database handle directly.
+	GetUnsafeDB() database.DB
 }
 
 // store manages the autoindexing store.
@@ -62,4 +66,10 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 		db:         tx,
 		operations: s.operations,
 	}, nil
+}
+
+// GetUnsafeDB returns the underlying database handle. This is used by the
+// resolvers that have the old convention of using the database handle directly.
+func (s *store) GetUnsafeDB() database.DB {
+	return database.NewDBWith(s.logger, s.db)
 }

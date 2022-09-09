@@ -9,6 +9,7 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	codeintelType "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -48,12 +49,12 @@ type AutoIndexingResolver interface {
 }
 
 type UploadsResolver interface {
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []uploadsShared.Upload, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []codeintelType.Upload, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadsShared.UploadsWithRepositoryNamespace, err error)
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []uploadsShared.UploadLog, err error)
-	UploadsConnectionResolverFromFactory(opts uploadsShared.GetUploadsOptions) *uploadsgraphql.UploadsResolver
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []codeintelType.UploadLog, err error)
+	UploadsConnectionResolverFromFactory(opts codeintelType.GetUploadsOptions) *uploadsgraphql.UploadsResolver
 	CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *uploadsgraphql.CommitGraphResolver
 }

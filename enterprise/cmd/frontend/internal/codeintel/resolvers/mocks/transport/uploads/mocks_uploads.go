@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	graphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 )
@@ -69,7 +70,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetAuditLogsForUploadFunc: &ResolverGetAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 []shared.UploadLog, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []types.UploadLog, r1 error) {
 				return
 			},
 		},
@@ -94,12 +95,12 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []shared.Upload, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
 				return
 			},
 		},
 		UploadsConnectionResolverFromFactoryFunc: &ResolverUploadsConnectionResolverFromFactoryFunc{
-			defaultHook: func(shared.GetUploadsOptions) (r0 *graphql.UploadsResolver) {
+			defaultHook: func(types.GetUploadsOptions) (r0 *graphql.UploadsResolver) {
 				return
 			},
 		},
@@ -121,7 +122,7 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		GetAuditLogsForUploadFunc: &ResolverGetAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) ([]shared.UploadLog, error) {
+			defaultHook: func(context.Context, int) ([]types.UploadLog, error) {
 				panic("unexpected invocation of MockResolver.GetAuditLogsForUpload")
 			},
 		},
@@ -146,12 +147,12 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]shared.Upload, error) {
+			defaultHook: func(context.Context, ...int) ([]types.Upload, error) {
 				panic("unexpected invocation of MockResolver.GetUploadsByIDs")
 			},
 		},
 		UploadsConnectionResolverFromFactoryFunc: &ResolverUploadsConnectionResolverFromFactoryFunc{
-			defaultHook: func(shared.GetUploadsOptions) *graphql.UploadsResolver {
+			defaultHook: func(types.GetUploadsOptions) *graphql.UploadsResolver {
 				panic("unexpected invocation of MockResolver.UploadsConnectionResolverFromFactory")
 			},
 		},
@@ -413,15 +414,15 @@ func (c ResolverDeleteUploadByIDFuncCall) Results() []interface{} {
 // GetAuditLogsForUpload method of the parent MockResolver instance is
 // invoked.
 type ResolverGetAuditLogsForUploadFunc struct {
-	defaultHook func(context.Context, int) ([]shared.UploadLog, error)
-	hooks       []func(context.Context, int) ([]shared.UploadLog, error)
+	defaultHook func(context.Context, int) ([]types.UploadLog, error)
+	hooks       []func(context.Context, int) ([]types.UploadLog, error)
 	history     []ResolverGetAuditLogsForUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // GetAuditLogsForUpload delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockResolver) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]shared.UploadLog, error) {
+func (m *MockResolver) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]types.UploadLog, error) {
 	r0, r1 := m.GetAuditLogsForUploadFunc.nextHook()(v0, v1)
 	m.GetAuditLogsForUploadFunc.appendCall(ResolverGetAuditLogsForUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -430,7 +431,7 @@ func (m *MockResolver) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]shar
 // SetDefaultHook sets function that is called when the
 // GetAuditLogsForUpload method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]types.UploadLog, error)) {
 	f.defaultHook = hook
 }
 
@@ -438,7 +439,7 @@ func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Con
 // GetAuditLogsForUpload method of the parent MockResolver instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ResolverGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+func (f *ResolverGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]types.UploadLog, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -446,20 +447,20 @@ func (f *ResolverGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []shared.UploadLog, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared.UploadLog, error) {
+func (f *ResolverGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []types.UploadLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]types.UploadLog, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverGetAuditLogsForUploadFunc) PushReturn(r0 []shared.UploadLog, r1 error) {
-	f.PushHook(func(context.Context, int) ([]shared.UploadLog, error) {
+func (f *ResolverGetAuditLogsForUploadFunc) PushReturn(r0 []types.UploadLog, r1 error) {
+	f.PushHook(func(context.Context, int) ([]types.UploadLog, error) {
 		return r0, r1
 	})
 }
 
-func (f *ResolverGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]shared.UploadLog, error) {
+func (f *ResolverGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]types.UploadLog, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -501,7 +502,7 @@ type ResolverGetAuditLogsForUploadFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.UploadLog
+	Result0 []types.UploadLog
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -983,15 +984,15 @@ func (c ResolverGetUploadDocumentsForPathFuncCall) Results() []interface{} {
 // ResolverGetUploadsByIDsFunc describes the behavior when the
 // GetUploadsByIDs method of the parent MockResolver instance is invoked.
 type ResolverGetUploadsByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]shared.Upload, error)
-	hooks       []func(context.Context, ...int) ([]shared.Upload, error)
+	defaultHook func(context.Context, ...int) ([]types.Upload, error)
+	hooks       []func(context.Context, ...int) ([]types.Upload, error)
 	history     []ResolverGetUploadsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadsByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockResolver) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]shared.Upload, error) {
+func (m *MockResolver) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]types.Upload, error) {
 	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
 	m.GetUploadsByIDsFunc.appendCall(ResolverGetUploadsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1000,7 +1001,7 @@ func (m *MockResolver) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]shared.
 // SetDefaultHook sets function that is called when the GetUploadsByIDs
 // method of the parent MockResolver instance is invoked and the hook queue
 // is empty.
-func (f *ResolverGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
+func (f *ResolverGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
 	f.defaultHook = hook
 }
 
@@ -1008,7 +1009,7 @@ func (f *ResolverGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, 
 // GetUploadsByIDs method of the parent MockResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ResolverGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
+func (f *ResolverGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1016,20 +1017,20 @@ func (f *ResolverGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverGetUploadsByIDsFunc) SetDefaultReturn(r0 []shared.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *ResolverGetUploadsByIDsFunc) SetDefaultReturn(r0 []types.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]types.Upload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverGetUploadsByIDsFunc) PushReturn(r0 []shared.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *ResolverGetUploadsByIDsFunc) PushReturn(r0 []types.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]types.Upload, error) {
 		return r0, r1
 	})
 }
 
-func (f *ResolverGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *ResolverGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Upload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1070,7 +1071,7 @@ type ResolverGetUploadsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Upload
+	Result0 []types.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1099,8 +1100,8 @@ func (c ResolverGetUploadsByIDsFuncCall) Results() []interface{} {
 // when the UploadsConnectionResolverFromFactory method of the parent
 // MockResolver instance is invoked.
 type ResolverUploadsConnectionResolverFromFactoryFunc struct {
-	defaultHook func(shared.GetUploadsOptions) *graphql.UploadsResolver
-	hooks       []func(shared.GetUploadsOptions) *graphql.UploadsResolver
+	defaultHook func(types.GetUploadsOptions) *graphql.UploadsResolver
+	hooks       []func(types.GetUploadsOptions) *graphql.UploadsResolver
 	history     []ResolverUploadsConnectionResolverFromFactoryFuncCall
 	mutex       sync.Mutex
 }
@@ -1108,7 +1109,7 @@ type ResolverUploadsConnectionResolverFromFactoryFunc struct {
 // UploadsConnectionResolverFromFactory delegates to the next hook function
 // in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockResolver) UploadsConnectionResolverFromFactory(v0 shared.GetUploadsOptions) *graphql.UploadsResolver {
+func (m *MockResolver) UploadsConnectionResolverFromFactory(v0 types.GetUploadsOptions) *graphql.UploadsResolver {
 	r0 := m.UploadsConnectionResolverFromFactoryFunc.nextHook()(v0)
 	m.UploadsConnectionResolverFromFactoryFunc.appendCall(ResolverUploadsConnectionResolverFromFactoryFuncCall{v0, r0})
 	return r0
@@ -1117,7 +1118,7 @@ func (m *MockResolver) UploadsConnectionResolverFromFactory(v0 shared.GetUploads
 // SetDefaultHook sets function that is called when the
 // UploadsConnectionResolverFromFactory method of the parent MockResolver
 // instance is invoked and the hook queue is empty.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultHook(hook func(shared.GetUploadsOptions) *graphql.UploadsResolver) {
+func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultHook(hook func(types.GetUploadsOptions) *graphql.UploadsResolver) {
 	f.defaultHook = hook
 }
 
@@ -1126,7 +1127,7 @@ func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultHook(hook f
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushHook(hook func(shared.GetUploadsOptions) *graphql.UploadsResolver) {
+func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushHook(hook func(types.GetUploadsOptions) *graphql.UploadsResolver) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1135,19 +1136,19 @@ func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushHook(hook func(sh
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultReturn(r0 *graphql.UploadsResolver) {
-	f.SetDefaultHook(func(shared.GetUploadsOptions) *graphql.UploadsResolver {
+	f.SetDefaultHook(func(types.GetUploadsOptions) *graphql.UploadsResolver {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushReturn(r0 *graphql.UploadsResolver) {
-	f.PushHook(func(shared.GetUploadsOptions) *graphql.UploadsResolver {
+	f.PushHook(func(types.GetUploadsOptions) *graphql.UploadsResolver {
 		return r0
 	})
 }
 
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) nextHook() func(shared.GetUploadsOptions) *graphql.UploadsResolver {
+func (f *ResolverUploadsConnectionResolverFromFactoryFunc) nextHook() func(types.GetUploadsOptions) *graphql.UploadsResolver {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1184,7 +1185,7 @@ func (f *ResolverUploadsConnectionResolverFromFactoryFunc) History() []ResolverU
 type ResolverUploadsConnectionResolverFromFactoryFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 shared.GetUploadsOptions
+	Arg0 types.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *graphql.UploadsResolver

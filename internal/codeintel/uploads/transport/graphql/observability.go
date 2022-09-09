@@ -15,6 +15,8 @@ type operations struct {
 	getAuditLogsForUpload                   *observation.Operation
 	getRecentUploadsSummary                 *observation.Operation
 	getLastUploadRetentionScanForRepository *observation.Operation
+
+	lsifUploadByID *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {

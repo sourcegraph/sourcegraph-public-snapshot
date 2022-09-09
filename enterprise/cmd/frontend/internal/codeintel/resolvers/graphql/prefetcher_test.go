@@ -11,7 +11,7 @@ import (
 	uploadtransportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	uploadshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -26,7 +26,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-	sharedUpload := map[int]uploadshared.Upload{
+	sharedUpload := map[int]types.Upload{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
@@ -35,8 +35,8 @@ func TestPrefetcherUploads(t *testing.T) {
 	}
 	mockUploadResolver := uploadtransportmocks.NewMockResolver()
 	mockResolver.UploadsResolverFunc.SetDefaultReturn(mockUploadResolver)
-	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]uploadshared.Upload, error) {
-		matching := make([]uploadshared.Upload, 0, len(ids))
+	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Upload, error) {
+		matching := make([]types.Upload, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, sharedUpload[id])
 		}

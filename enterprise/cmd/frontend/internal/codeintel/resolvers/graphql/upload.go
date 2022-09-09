@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -168,7 +169,8 @@ func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAudit
 	}
 
 	resolvers := make([]gql.LSIFUploadsAuditLogsResolver, 0, len(logs))
-	for _, log := range logs {
+	for _, l := range logs {
+		log := uploadsShared.UploadLog(l)
 		resolvers = append(resolvers, &lsifUploadsAuditLogResolver{log})
 	}
 

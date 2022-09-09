@@ -35,7 +35,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
-	uploadResolver := uploadgraphql.New(services.UploadSvc, oc("upload"))
+	uploadResolver := uploadgraphql.New(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
 
 	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver)
 

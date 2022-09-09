@@ -2,16 +2,20 @@ package autoindexing
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -41,6 +45,12 @@ type service interface {
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
+
+	// Tags
+	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
+
+	// Utilities
+	GetUnsafeDB() database.DB
 }
 
 type Service struct {
@@ -201,6 +211,19 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
+}
+
+func (s *Service) GetUnsafeDB() database.DB {
+	return s.store.GetUnsafeDB()
+}
+
+func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.String("repo", string(repo)), traceLog.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty

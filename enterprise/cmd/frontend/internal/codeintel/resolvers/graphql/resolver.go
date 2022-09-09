@@ -16,8 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -415,7 +414,7 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		pageSize = int(*args.First)
 	}
 
-	opts := shared.GetConfigurationPoliciesOptions{
+	opts := types.GetConfigurationPoliciesOptions{
 		Limit:  pageSize,
 		Offset: offset,
 	}
@@ -478,11 +477,11 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	opts := shared.ConfigurationPolicy{
+	opts := types.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      shared.GitObjectType(args.Type),
+		Type:                      types.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -524,11 +523,11 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	opts := shared.ConfigurationPolicy{
+	opts := types.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      shared.GitObjectType(args.Type),
+		Type:                      types.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -734,7 +733,7 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 		return nil, err
 	}
 
-	namesByRev, err := policyResolver.GetPreviewGitObjectFilter(ctx, int(repositoryID), shared.GitObjectType(args.Type), args.Pattern)
+	namesByRev, err := policyResolver.GetPreviewGitObjectFilter(ctx, int(repositoryID), types.GitObjectType(args.Type), args.Pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -758,17 +757,17 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (uploadsShared.GetUploadsOptions, error) {
+func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (types.GetUploadsOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return uploadsShared.GetUploadsOptions{}, err
+		return types.GetUploadsOptions{}, err
 	}
 
 	var dependencyOf int64
 	if args.DependencyOf != nil {
 		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
 		if err != nil {
-			return uploadsShared.GetUploadsOptions{}, err
+			return types.GetUploadsOptions{}, err
 		}
 	}
 
@@ -776,16 +775,16 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (uploadsSha
 	if args.DependentOf != nil {
 		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
 		if err != nil {
-			return uploadsShared.GetUploadsOptions{}, err
+			return types.GetUploadsOptions{}, err
 		}
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return uploadsShared.GetUploadsOptions{}, err
+		return types.GetUploadsOptions{}, err
 	}
 
-	return uploadsShared.GetUploadsOptions{
+	return types.GetUploadsOptions{
 		RepositoryID:       repositoryID,
 		State:              strings.ToLower(derefString(args.State, "")),
 		Term:               derefString(args.Query, ""),

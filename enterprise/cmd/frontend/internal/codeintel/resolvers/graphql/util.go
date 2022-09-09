@@ -5,11 +5,10 @@ import (
 
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	policiesShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -81,7 +80,7 @@ func convertPosition(line, character int) lsp.Position {
 	return lsp.Position{Line: line, Character: character}
 }
 
-func sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies []policiesShared.ConfigurationPolicy) []store.ConfigurationPolicy {
+func sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies []types.ConfigurationPolicy) []store.ConfigurationPolicy {
 	storePolicies := make([]store.ConfigurationPolicy, 0, len(policies))
 	for _, p := range policies {
 		storePolicies = append(storePolicies, sharedConfigurationPoliciesToStoreConfigurationPolicies(p))
@@ -89,7 +88,7 @@ func sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies []
 	return storePolicies
 }
 
-func sharedConfigurationPoliciesToStoreConfigurationPolicies(p policiesShared.ConfigurationPolicy) store.ConfigurationPolicy {
+func sharedConfigurationPoliciesToStoreConfigurationPolicies(p types.ConfigurationPolicy) store.ConfigurationPolicy {
 	return store.ConfigurationPolicy{
 		ID:                        p.ID,
 		RepositoryID:              p.RepositoryID,
@@ -207,8 +206,8 @@ func uploadLocationToAdjustedLocations(location []shared.UploadLocation) []Adjus
 	return uploadLocation
 }
 
-func sharedPoliciesUploadsToStoreUpload(dump store.Upload) policiesShared.Upload {
-	return policiesShared.Upload{
+func sharedPoliciesUploadsToStoreUpload(dump store.Upload) types.Upload {
+	return types.Upload{
 		ID:                dump.ID,
 		Commit:            dump.Commit,
 		Root:              dump.Root,
@@ -233,7 +232,7 @@ func sharedPoliciesUploadsToStoreUpload(dump store.Upload) policiesShared.Upload
 	}
 }
 
-func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.RetentionPolicyMatchCandidate) []RetentionPolicyMatchCandidate {
+func sharedRetentionPolicyToStoreRetentionPolicy(policy []types.RetentionPolicyMatchCandidate) []RetentionPolicyMatchCandidate {
 	retentionPolicy := make([]RetentionPolicyMatchCandidate, 0, len(policy))
 	for _, p := range policy {
 		r := RetentionPolicyMatchCandidate{
@@ -371,7 +370,7 @@ func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNa
 	}
 }
 
-func convertSharedUploadsToDBStoreUploads(u uploadsShared.Upload) store.Upload {
+func convertSharedUploadsToDBStoreUploads(u types.Upload) store.Upload {
 	return store.Upload{
 		ID:                u.ID,
 		Commit:            u.Commit,
@@ -398,7 +397,7 @@ func convertSharedUploadsToDBStoreUploads(u uploadsShared.Upload) store.Upload {
 	}
 }
 
-func convertSharedUploadsListToDBStoreUploadsList(u []uploadsShared.Upload) []store.Upload {
+func convertSharedUploadsListToDBStoreUploadsList(u []types.Upload) []store.Upload {
 	uploads := make([]store.Upload, 0, len(u))
 	for _, upload := range u {
 		uploads = append(uploads, convertSharedUploadsToDBStoreUploads(upload))

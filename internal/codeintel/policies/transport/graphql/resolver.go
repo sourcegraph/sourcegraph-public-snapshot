@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -12,11 +13,11 @@ type Resolver interface {
 }
 
 type resolver struct {
-	svc        Service
+	svc        *policies.Service
 	operations *operations
 }
 
-func New(svc Service, observationContext *observation.Context) Resolver {
+func New(svc *policies.Service, observationContext *observation.Context) Resolver {
 	return &resolver{
 		svc:        svc,
 		operations: newOperations(observationContext),

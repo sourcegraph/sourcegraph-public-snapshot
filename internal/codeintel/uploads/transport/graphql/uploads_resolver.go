@@ -5,18 +5,18 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
 // UploadsResolver wraps store.GetUploads so that the underlying function can be
 // invoked lazily and its results memoized.
 type UploadsResolver struct {
 	svc  *uploads.Service
-	opts shared.GetUploadsOptions
+	opts types.GetUploadsOptions
 	once sync.Once
 
-	Uploads    []shared.Upload
+	Uploads    []types.Upload
 	TotalCount int
 	NextOffset *int
 	err        error
@@ -24,7 +24,7 @@ type UploadsResolver struct {
 
 // NewUploadsResolver creates a new UploadsResolver which wil invoke store.GetUploads
 // with the given options.
-func NewUploadsResolver(svc *uploads.Service, opts shared.GetUploadsOptions) *UploadsResolver {
+func NewUploadsResolver(svc *uploads.Service, opts types.GetUploadsOptions) *UploadsResolver {
 	return &UploadsResolver{svc: svc, opts: opts}
 }
 

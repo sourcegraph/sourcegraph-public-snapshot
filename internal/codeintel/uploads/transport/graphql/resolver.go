@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared-resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -14,7 +17,7 @@ import (
 
 type Resolver interface {
 	// Uploads
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
@@ -22,27 +25,31 @@ type Resolver interface {
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
 	// Audit Logs
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 
 	// Uploads Connection Factory
-	UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver
+	UploadsConnectionResolverFromFactory(opts types.GetUploadsOptions) *UploadsResolver
 
 	// Commit Graph Resolver Factory
 	CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *CommitGraphResolver
 }
 type resolver struct {
-	svc        *uploads.Service
-	operations *operations
+	svc            *uploads.Service
+	autoindexer    AutoIndexingService
+	policyResolver PolicyResolver
+	operations     *operations
 }
 
-func New(svc *uploads.Service, observationContext *observation.Context) Resolver {
+func New(svc *uploads.Service, autoindexer AutoIndexingService, policyResolver PolicyResolver, observationContext *observation.Context) Resolver {
 	return &resolver{
-		svc:        svc,
-		operations: newOperations(observationContext),
+		svc:            svc,
+		autoindexer:    autoindexer,
+		policyResolver: policyResolver,
+		operations:     newOperations(observationContext),
 	}
 }
 
-func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
 	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))},
 	})
@@ -96,7 +103,7 @@ func (r *resolver) DeleteUploadByID(ctx context.Context, id int) (_ bool, err er
 	return r.svc.DeleteUploadByID(ctx, id)
 }
 
-func (r *resolver) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error) {
+func (r *resolver) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error) {
 	ctx, _, endObservation := r.operations.getAuditLogsForUpload.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("uploadID", uploadID)},
 	})
@@ -105,7 +112,7 @@ func (r *resolver) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ [
 	return r.svc.GetAuditLogsForUpload(ctx, uploadID)
 }
 
-func (r *resolver) UploadsConnectionResolverFromFactory(opts shared.GetUploadsOptions) *UploadsResolver {
+func (r *resolver) UploadsConnectionResolverFromFactory(opts types.GetUploadsOptions) *UploadsResolver {
 	return NewUploadsResolver(r.svc, opts)
 }
 
@@ -116,4 +123,28 @@ func (r *resolver) CommitGraphResolverFromFactory(ctx context.Context, repositor
 	}
 
 	return NewCommitGraphResolver(stale, updatedAt)
+}
+
+// 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
+func (r *resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolvers.LSIFUploadResolver, err error) {
+	ctx, traceErrs, endObservation := r.operations.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("uploadID", string(id)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	uploadID, err := unmarshalLSIFUploadGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := resolvers.NewPrefetcher(r.autoindexer, r.svc)
+
+	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	return resolvers.NewUploadResolver(r.svc, r.autoindexer, r.policyResolver, upload, prefetcher, traceErrs), nil
 }
