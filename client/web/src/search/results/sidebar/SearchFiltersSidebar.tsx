@@ -64,7 +64,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
 
     // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? false)
+    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
     const proactiveSearchAggregations = useExperimentalFeatures(
         features => features.proactiveSearchResultsAggregations ?? true
     )
