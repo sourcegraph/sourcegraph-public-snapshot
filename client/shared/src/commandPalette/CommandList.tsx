@@ -6,9 +6,6 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
 import { from, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
@@ -16,7 +13,17 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner, Icon, Label, Input } from '@sourcegraph/wildcard'
+import {
+    ButtonProps,
+    LoadingSpinner,
+    Icon,
+    Label,
+    Input,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Button
+} from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -382,6 +389,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
+
     // Capture active element on open in order to restore focus on close.
     const originallyFocusedElement = useMemo(() => {
         if (isOpen && document.activeElement instanceof HTMLElement) {
@@ -394,6 +402,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
         originallyFocusedElement?.focus()
         setIsOpen(false)
     }, [originallyFocusedElement])
+
     const toggleIsOpen = useCallback(() => {
         if (isOpen) {
             originallyFocusedElement?.focus()
@@ -406,38 +415,29 @@ export const CommandListPopoverButton: React.FunctionComponent<
     const MenuDropdownIcon = (): JSX.Element => (
         <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
     )
+
     return (
-        <Button
-            as={buttonElement}
-            role="button"
-            id={id}
-            onClick={toggleIsOpen}
-            className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
-            variant={variant}
-            aria-label="Command list"
-        >
-            <Icon size="md" aria-hidden={true} svgPath={mdiConsole} />
-
-            {showCaret && <MenuDropdownIcon />}
-
-            {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
-            <TooltipPopoverWrapper
-                isOpen={isOpen}
-                toggle={toggleIsOpen}
-                popperClassName={popoverClassName}
-                innerClassName={classNames('popover-inner', popoverInnerClassName)}
-                placement="bottom-end"
-                target={id}
-                trigger="legacy"
-                delay={0}
-                fade={false}
-                hideArrow={true}
+        <Popover isOpen={isOpen} onOpenChange={toggleIsOpen}>
+            <PopoverTrigger
+                as={Button}
+                id={id}
+                role="button"
+                aria-label="Command list"
+                variant={variant}
+                className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
+                onClick={toggleIsOpen}
             >
+                <Icon size="md" aria-hidden={true} svgPath={mdiConsole} />
+                {showCaret && <MenuDropdownIcon />}
+            </PopoverTrigger>
+
+            <PopoverContent>
                 <CommandList {...props} onSelect={close} />
-            </TooltipPopoverWrapper>
-            {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
-            ))}
-        </Button>
+
+                {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
+                ))}
+            </PopoverContent>
+        </Popover>
     )
 }
