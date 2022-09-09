@@ -56,7 +56,7 @@ describe('GlobalNavbar', () => {
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
         window.context = {
-            enableLegacyExtensions: true,
+            enableLegacyExtensions: false,
         } as any
     })
     afterEach(() => {
