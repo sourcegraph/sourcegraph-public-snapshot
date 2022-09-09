@@ -21,6 +21,7 @@ import {
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
+    ExecutorCompatibility,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
@@ -309,7 +310,7 @@ export const mockWorkspace = (
         igniteVersion: '',
         lastSeenAt: subMinutes(now, 2).toISOString(),
         os: 'darwin',
-        isOutdated: false,
+        compatibility: ExecutorCompatibility.UPTODATE,
         queueName: 'batches',
         srcCliVersion: '3.38.0',
         __typename: 'Executor',
