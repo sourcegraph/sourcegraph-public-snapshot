@@ -185,7 +185,6 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         offset,
         setFilters,
     ])
-    )
     const onNextPage = useCallback(() => {
         const newOffset = offset + limit
         if (users?.totalCount && users?.totalCount >= newOffset) {
