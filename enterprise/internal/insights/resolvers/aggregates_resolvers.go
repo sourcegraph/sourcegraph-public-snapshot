@@ -3,8 +3,11 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 
@@ -55,6 +58,7 @@ type searchAggregateResolver struct {
 	searchQuery string
 	patternType string
 	logger      log.Logger
+	operations  *aggregationsOperations
 }
 
 func (r *searchAggregateResolver) getLogger() log.Logger {
@@ -72,7 +76,16 @@ func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphq
 	return resolvers
 }
 
-func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (graphqlbackend.SearchAggregationResultResolver, error) {
+func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (_ graphqlbackend.SearchAggregationResultResolver, err error) {
+	var aggregationMode types.SearchAggregationMode
+
+	ctx, _, endObservation := r.operations.aggregations.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{strconv.FormatBool(args.ExtendedTimeout)},
+	})
+	defer func() {
+		endObservation(1, observation.Args{MetricLabelValues: []string{string(aggregationMode)}})
+	}()
+
 	// Steps:
 	// 1. - If no mode get the default mode
 	// 2. - Validate mode is supported (if in default mode this is done in that step)
@@ -80,7 +93,6 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	// 3. - Run Search
 	// 4. - Check search for errors/alerts
 	// 5 -  Generate correct resolver pass search results if valid
-	var aggregationMode types.SearchAggregationMode
 	if args.Mode == nil {
 		aggregationMode = getDefaultAggregationMode(r.searchQuery, r.patternType)
 	} else {
