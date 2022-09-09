@@ -52,6 +52,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Quick links will no longer be shown on the homepage or search sidebar if the "Simple UI" toggle is enabled and will be removed entirely in a future release. The `quicklink` setting is now marked as deprecated. [#40750](https://github.com/sourcegraph/sourcegraph/pull/40750)
 - `file:contains()` has been removed from the list of valid predicates. `file:has.content()` and `file:contains.content()` remain, both of which work the same as `file:contains()` and are valid aliases of each other.
 - The single-container `sourcegraph/server` deployment no longer bundles a Jaeger instance. [#41244](https://github.com/sourcegraph/sourcegraph/pull/41244)
+- The following previously-deprecated fields have been removed from the Batch Changes GraphQL API: `GitBranchChangesetDescription.headRepository`, `BatchChange.initialApplier`, `BatchChange.specCreator`, `Changeset.publicationState`, `Changeset.reconcilerState`, `Changeset.externalState`.
 
 ## 3.43.2
 
