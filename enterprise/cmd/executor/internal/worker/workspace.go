@@ -23,6 +23,71 @@ const SchemeExecutorToken = "token-executor"
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
 var gitStdEnv = []string{"GIT_TERMINAL_PROMPT=0"}
 
+type Workspace struct {
+	// Path represents the block device path when firecracker is enabled and the
+	// directory when firecracker is disabled where the workspace is configured.
+	Path string
+	// ScriptFilenames holds the ordered set of script filenames to be invoked.
+	ScriptFilenames []string
+	// Inner holds a handle to perform cleanup of the workspace after processing.
+	Inner interface{ Remove(context.Context) }
+}
+
+type firecrackerWorkspace struct {
+	keepWorkspaces        bool
+	loopPath, blockDevice string
+	commandLogger         command.Logger
+}
+
+func (w firecrackerWorkspace) Remove(ctx context.Context) {
+	handle := w.commandLogger.Log("teardown.fs", nil)
+	defer handle.Close()
+
+	if !w.keepWorkspaces {
+		fmt.Fprintf(handle, "Removing loop device %s\n", w.loopPath)
+
+		cmd := exec.CommandContext(ctx, "losetup", "--detach", w.blockDevice)
+		out, err := cmd.CombinedOutput()
+		if err != nil || cmd.ProcessState.ExitCode() != 0 {
+			fmt.Fprintf(handle, "Command 'losetup --detach' exited with non-zero exit code: %q", out)
+		}
+
+		if err := os.Remove(w.loopPath); err != nil {
+			fmt.Fprintf(handle, "Error removing loop device: %v", err)
+		}
+
+		// We always finish this with exit code 0 even if it errored, because workspace
+		// cleanup doesn't fail the execution job. We can deal with it separately.
+		handle.Finalize(0)
+	} else {
+		fmt.Fprintf(handle, "Preserving workspace as per config")
+		handle.Finalize(0)
+	}
+}
+
+type dockerWorkspace struct {
+	keepWorkspaces bool
+	workspaceDir   string
+	commandLogger  command.Logger
+}
+
+func (w dockerWorkspace) Remove(ctx context.Context) {
+	handle := w.commandLogger.Log("teardown.fs", nil)
+	defer handle.Close()
+
+	if !w.keepWorkspaces {
+		fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
+
+		if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
+			fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+		}
+
+	} else {
+		fmt.Fprintf(handle, "Preserving workspace as per config")
+		handle.Finalize(0)
+	}
+}
+
 // prepareWorkspace creates and returns a temporary directory in which acts the workspace
 // while processing a single job. It is up to the caller to ensure that this directory is
 // removed after the job has finished processing. If a repository name is supplied, then
@@ -32,40 +97,80 @@ func (h *handler) prepareWorkspace(
 	commandRunner command.Runner,
 	job executor.Job,
 	commandLogger command.Logger,
-) (workspaceDir string, scriptPaths []string, cleanup func(), err error) {
-	// only used when firecracker is enabled
-	var loopFileName string
-
+) (workspace *Workspace, err error) {
 	if h.options.FirecrackerOptions.Enabled {
-		var postInit func(*string)
-		loopFileName, workspaceDir, postInit, err = setupLoopDevice(ctx, job.ID, h.options.ResourceOptions.DiskSpace, h.options.KeepWorkspaces, commandLogger)
+		loopFileName, tmpMountDir, blockDevice, err := setupLoopDevice(ctx, job.ID, h.options.ResourceOptions.DiskSpace, h.options.KeepWorkspaces, commandLogger)
 		if err != nil {
-			return "", nil, nil, err
-		}
-		defer postInit(&workspaceDir)
-	} else {
-		workspaceDir, err = makeTempDirectory("workspace-" + strconv.Itoa(job.ID))
-		if err != nil {
-			return "", nil, nil, err
+			return nil, err
 		}
 		defer func() {
-			if err != nil {
-				os.RemoveAll(workspaceDir)
+			if !h.options.KeepWorkspaces {
+				syscall.Unmount(tmpMountDir, 0)
+				os.RemoveAll(tmpMountDir)
 			}
 		}()
+
+		scriptPaths, err := h.prepareCloneAndScripts(ctx, job, tmpMountDir, commandRunner, commandLogger)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Workspace{
+			Path:            blockDevice,
+			ScriptFilenames: scriptPaths,
+			Inner: firecrackerWorkspace{
+				keepWorkspaces: h.options.KeepWorkspaces,
+				loopPath:       loopFileName,
+				blockDevice:    blockDevice,
+				commandLogger:  commandLogger,
+			},
+		}, err
 	}
 
+	workspaceDir, err := makeTempDirectory("workspace-" + strconv.Itoa(job.ID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(workspaceDir)
+		}
+	}()
+
+	scriptPaths, err := h.prepareCloneAndScripts(ctx, job, workspaceDir, commandRunner, commandLogger)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Workspace{
+		Path:            workspaceDir,
+		ScriptFilenames: scriptPaths,
+		Inner: dockerWorkspace{
+			keepWorkspaces: h.options.KeepWorkspaces,
+			workspaceDir:   workspaceDir,
+			commandLogger:  commandLogger,
+		},
+	}, nil
+}
+
+func (h *handler) prepareCloneAndScripts(
+	ctx context.Context,
+	job executor.Job,
+	workspaceDir string,
+	commandRunner command.Runner,
+	commandLogger command.Logger,
+) ([]string, error) {
 	if job.RepositoryName != "" {
 		repoPath := workspaceDir
 		if job.RepositoryDirectory != "" {
 			repoPath = filepath.Join(workspaceDir, job.RepositoryDirectory)
 
 			if !strings.HasPrefix(repoPath, workspaceDir) {
-				return "", nil, nil, errors.Newf("invalid repo path %q not a subdirectory of %q", repoPath, workspaceDir)
+				return nil, errors.Newf("invalid repo path %q not a subdirectory of %q", repoPath, workspaceDir)
 			}
 
 			if err := os.MkdirAll(repoPath, os.ModePerm); err != nil {
-				return "", nil, nil, errors.Wrap(err, "creating repo directory")
+				return nil, errors.Wrap(err, "creating repo directory")
 			}
 		}
 
@@ -75,7 +180,7 @@ func (h *handler) prepareWorkspace(
 			job.RepositoryName,
 		)
 		if err != nil {
-			return "", nil, nil, err
+			return nil, err
 		}
 
 		authorizationOption := fmt.Sprintf(
@@ -191,14 +296,14 @@ func (h *handler) prepareWorkspace(
 
 		for _, spec := range gitCommands {
 			if err := commandRunner.Run(ctx, spec); err != nil {
-				return "", nil, nil, errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
+				return nil, errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
 			}
 		}
 	}
 
 	// Create the scripts path.
 	if err := os.MkdirAll(filepath.Join(workspaceDir, command.ScriptsPath), os.ModePerm); err != nil {
-		return "", nil, nil, errors.Wrap(err, "creating script path")
+		return nil, errors.Wrap(err, "creating script path")
 	}
 
 	// Construct a map from filenames to file content that should be accessible to jobs
@@ -209,10 +314,10 @@ func (h *handler) prepareWorkspace(
 	for relativePath, content := range job.VirtualMachineFiles {
 		path, err := filepath.Abs(filepath.Join(workspaceDir, relativePath))
 		if err != nil {
-			return "", nil, nil, err
+			return nil, err
 		}
 		if !strings.HasPrefix(path, workspaceDir) {
-			return "", nil, nil, errors.Errorf("refusing to write outside of working directory")
+			return nil, errors.Errorf("refusing to write outside of working directory")
 		}
 
 		workspaceFileContentsByPath[path] = []byte(content)
@@ -228,42 +333,10 @@ func (h *handler) prepareWorkspace(
 	}
 
 	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
-		return "", nil, nil, errors.Wrap(err, "failed to write virtual machine files")
+		return nil, errors.Wrap(err, "failed to write virtual machine files")
 	}
 
-	return workspaceDir, scriptNames, func() {
-		handle := commandLogger.Log("teardown.fs", nil)
-		defer handle.Close()
-
-		if !h.options.KeepWorkspaces {
-			if h.options.FirecrackerOptions.Enabled {
-				fmt.Fprintf(handle, "Removing loop device %s\n", loopFileName)
-
-				cmd := exec.CommandContext(ctx, "losetup", "--detach", workspaceDir)
-				out, err := cmd.CombinedOutput()
-				if err != nil || cmd.ProcessState.ExitCode() != 0 {
-					fmt.Fprintf(handle, "Command 'losetup --detach' exited with non-zero exit code: %q", out)
-				}
-
-				if err := os.Remove(loopFileName); err != nil {
-					fmt.Fprintf(handle, "Error removing loop device: %v", err)
-				}
-			} else {
-				fmt.Fprintf(handle, "Removing %s\n", workspaceDir)
-
-				if rmErr := os.RemoveAll(workspaceDir); rmErr != nil {
-					fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
-				}
-			}
-
-			// We always finish this with exit code 0 even if it errored, because workspace
-			// cleanup doesn't fail the execution job. We can deal with it separately.
-			handle.Finalize(0)
-		} else {
-			fmt.Fprintf(handle, "Preserving workspace as per config")
-			handle.Finalize(0)
-		}
-	}, nil
+	return scriptNames, nil
 }
 
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {
@@ -369,7 +442,7 @@ func setupLoopDevice(
 	diskSpace string,
 	keepWorkspaces bool,
 	commandLogger command.Logger,
-) (loopFileName, workspaceDir string, cleanup func(*string), err error) {
+) (loopFileName, tmpMountDir, blockDevice string, err error) {
 	handle := commandLogger.Log("setup.fs.workspace", nil)
 	defer func() {
 		if err != nil {
@@ -382,7 +455,7 @@ func setupLoopDevice(
 
 	tempFile, err := makeTempFile("workspace-loop-" + strconv.Itoa(jobID))
 	if err != nil {
-		return "", "", nil, err
+		return "", "", "", err
 	}
 	loopFileName = tempFile.Name()
 
@@ -396,11 +469,11 @@ func setupLoopDevice(
 
 	diskSize, err := datasize.ParseString(diskSpace)
 	if err != nil {
-		return "", "", nil, errors.Wrapf(err, "invalid disk size provided: %q", diskSpace)
+		return "", "", "", errors.Wrapf(err, "invalid disk size provided: %q", diskSpace)
 	}
 
 	if err := tempFile.Truncate(int64(diskSize.Bytes())); err != nil {
-		return "", "", nil, errors.Wrapf(err, "failed to make backing file sparse with %d bytes", diskSize.Bytes())
+		return "", "", "", errors.Wrapf(err, "failed to make backing file sparse with %d bytes", diskSize.Bytes())
 	}
 
 	fmt.Fprintf(handle, "Created sparse file of size %s from %q\n", diskSize.HumanReadable(), loopFileName)
@@ -410,42 +483,36 @@ func setupLoopDevice(
 	cmd := exec.CommandContext(ctx, "mkfs.ext4", loopFileName)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", "", nil, errors.Newf("failed to create ext4 filesystem in backing file: %q", out)
+		return "", "", "", errors.Newf("failed to create ext4 filesystem in backing file: %q", out)
 	}
 
 	mkfsOutput := "stderr: " + strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", "\nstderr: ")
 	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q:\n%s\n", loopFileName, mkfsOutput)
 
-	workspaceDir, err = makeTempDirectory("workspace-mount-" + strconv.Itoa(jobID))
+	tmpMountDir, err = makeTempDirectory("workspace-mount-" + strconv.Itoa(jobID))
 	if err != nil {
-		return "", "", nil, err
+		return "", "", "", err
 	}
 
-	fmt.Fprintf(handle, "Created temporary workspace mount location at %q\n", workspaceDir)
+	fmt.Fprintf(handle, "Created temporary workspace mount location at %q\n", tmpMountDir)
 
 	cmd = exec.CommandContext(ctx, "losetup", "--find", "--show", loopFileName)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
-		return "", "", nil, errors.Newf("failed to create loop device: %q", out)
+		return "", "", "", errors.Newf("failed to create loop device: %q", out)
 	}
 
-	blockDevice := strings.TrimSpace(string(out))
+	blockDevice = strings.TrimSpace(string(out))
 
 	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, loopFileName)
 
 	// replace with exec.Command("mount") ?
-	if err = syscall.Mount(blockDevice, workspaceDir, "ext4", 0, ""); err != nil {
+	if err = syscall.Mount(blockDevice, tmpMountDir, "ext4", 0, ""); err != nil {
 		if !keepWorkspaces {
-			os.RemoveAll(workspaceDir)
+			os.RemoveAll(tmpMountDir)
 		}
-		return "", "", nil, errors.Newf("failed to mount loop device %q to %q: %v", loopFileName, workspaceDir, err)
+		return "", "", "", errors.Newf("failed to mount loop device %q to %q: %v", loopFileName, tmpMountDir, err)
 	}
 
-	return loopFileName, workspaceDir, func(outDir *string) {
-		*outDir = blockDevice
-		if !keepWorkspaces {
-			syscall.Unmount(workspaceDir, 0)
-			os.RemoveAll(workspaceDir)
-		}
-	}, nil
+	return loopFileName, tmpMountDir, blockDevice, nil
 }
