@@ -70,11 +70,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			query = *args2.Query
 		}
 
-		// Verify that the instance has extensions enabled
-		if r.err = ExtensionRegistryReadEnabled(); r.err != nil {
-			return
-		}
-
 		// Query local registry extensions.
 		var local []graphqlbackend.RegistryExtension
 		if r.args.Local && ListLocalRegistryExtensions != nil {
@@ -138,6 +133,18 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 				_, pj := set[r.registryExtensions[j].ExtensionID()]
 				return pi && !pj
 			})
+		}
+
+		allowedExtensions := ExtensionRegistryListAllowedExtension()
+		if allowedExtensions != nil {
+			filteredExtensions := []graphqlbackend.RegistryExtension{}
+			for i := range r.registryExtensions {
+				ext := r.registryExtensions[i]
+				if _, ok := allowedExtensions[ext.ExtensionID()]; ok {
+					filteredExtensions = append(filteredExtensions, ext)
+				}
+			}
+			r.registryExtensions = filteredExtensions
 		}
 	})
 	return r.registryExtensions, r.err
