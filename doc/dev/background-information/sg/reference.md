@@ -113,6 +113,7 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
+* web-integration-build: Build web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -310,17 +311,18 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* client-e2e
-* client-regression
 * docsite
+* web-e2e
 * web-integration
+* web-integration:debug
+* web-regression
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
 $ sg test client
-$ sg test client-e2e
+$ sg test web-e2e
 
 # List available test suites:
 $ sg test -help

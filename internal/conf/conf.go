@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/jsonx"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -212,18 +212,19 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	var (
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
+		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
 		// First, ensure we populate the file with what is currently in the DB.
 		for {
 			config, err := c.Read(ctx)
 			if err != nil {
-				log15.Error("config: failed to read config from database, trying again in 1s", "error", err)
+				logger.Warn("failed to read config from database, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
-				log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+				logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
@@ -238,22 +239,22 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// we should propagate it to the database for them.
 			newFileContents, err := os.ReadFile(siteConfigEscapeHatchPath)
 			if err != nil {
-				log15.Error("config: failed to read site config from disk, trying again in 1s", "path", siteConfigEscapeHatchPath)
+				logger.Warn("failed to read site config from disk, trying again in 1s")
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if string(newFileContents) != lastKnownFileContents {
-				log15.Info("config: detected site config file edit, saving edit to database", "path", siteConfigEscapeHatchPath)
+				logger.Info("detected site config file edit, saving edit to database")
 				config, err := c.Read(ctx)
 				if err != nil {
-					log15.Error("config: failed to save edit to database, trying again in 1s (read error)", "error", err)
+					logger.Warn("failed to save edit to database, trying again in 1s (read error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
 				config.Site = string(newFileContents)
 				err = c.Write(ctx, config)
 				if err != nil {
-					log15.Error("config: failed to save edit to database, trying again in 1s (write error)", "error", err)
+					logger.Warn("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}
@@ -266,13 +267,13 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			// process), and we should propagate it to the file on disk.
 			newDBConfig, err := c.Read(ctx)
 			if err != nil {
-				log15.Error("config: failed to read config from database(2), trying again in 1s (read error)", "error", err)
+				logger.Warn("failed to read config from database(2), trying again in 1s (read error)", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			if newDBConfig.Site != lastKnownDBContents {
 				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
-					log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+					logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue
 				}

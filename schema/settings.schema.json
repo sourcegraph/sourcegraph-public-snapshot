@@ -352,7 +352,7 @@
         "enableLazyBlobSyntaxHighlighting": {
           "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -360,7 +360,7 @@
         "enableSidebarFilePrefetch": {
           "description": "Pre-fetch plaintext file revisions from sidebar on hover/focus.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -368,7 +368,7 @@
         "enableSearchFilePrefetch": {
           "description": "Pre-fetch plaintext file revisions from search results on hover/focus.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -376,7 +376,7 @@
         "enableLazyFileResultSyntaxHighlighting": {
           "description": "Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
