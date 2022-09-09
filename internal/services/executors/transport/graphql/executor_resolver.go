@@ -42,22 +42,23 @@ func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVe
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
 
-func (e *ExecutorResolver) IsOutdated() (bool, error) {
+func (e *ExecutorResolver) Compatibility() (string, error) {
 	ev := e.executor.ExecutorVersion
 	if !e.Active() {
-		return false, nil
+		return UpToDateCompatibility.ToGraphQL(), nil
 	}
-	return isExecutorOutdated(ev)
+	return calculateExecutorCompatibility(ev)
 }
 
-func isExecutorOutdated(ev string) (bool, error) {
+func calculateExecutorCompatibility(ev string) (string, error) {
+	var compatibility ExecutorCompaitibility = UpToDateCompatibility
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
 	isSgDev := sv != "" && version.IsDev(sv)
 
 	if isSgDev || isExecutorDev {
-		return false, nil
+		return compatibility.ToGraphQL(), nil
 	}
 
 	r := regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
@@ -68,31 +69,46 @@ func isExecutorOutdated(ev string) (bool, error) {
 
 		st, err := time.Parse(layout, svm[1])
 		if err != nil {
-			return false, err
+			return compatibility.ToGraphQL(), err
 		}
 
 		et, err := time.Parse(layout, evm[1])
 		if err != nil {
-			return false, err
+			return compatibility.ToGraphQL(), err
 		}
 
-		return et.Before(st), nil
+		if et.Before(st) {
+			compatibility = OutdatedCompatibilty
+		} else if et.After(st) {
+			compatibility = TooNewCompatibility
+		}
+
+		return compatibility.ToGraphQL(), nil
 	}
 
 	s, err := semver.NewVersion(sv)
 	if err != nil {
-		return false, err
+		return compatibility.ToGraphQL(), err
 	}
 
 	e, err := semver.NewVersion(ev)
 	if err != nil {
-		return true, err
+		return compatibility.ToGraphQL(), err
 	}
 
-	// it's okay for an executor to be one version behind the sourcegraph version.
+	// it's okay for an executor to be one version behind or ahead of the sourcegraph version.
 	iev := e.IncMinor()
 
-	return s.GreaterThan(&iev), nil
+	isv := s.IncMinor()
+	// dev, err := semver.NewVersion(fmt.Sprintf("%d.%d.%d", e.Major(), e.Minor() - 1, e.Patch()))
+
+	if s.GreaterThan(&iev) {
+		compatibility = OutdatedCompatibilty
+	} else if isv.LessThan(e) {
+		compatibility = TooNewCompatibility
+	}
+
+	return compatibility.ToGraphQL(), nil
 }
 
 // DateTime implements the DateTime GraphQL scalar type.
