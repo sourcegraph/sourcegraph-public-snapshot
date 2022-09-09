@@ -72,7 +72,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <!-- <p>Deploy onto AWS in one click</p> -->
   </button>
   <!-- Azure -->
-  <button class="app-btn btn" formaction="/admin/deploy/kubernetes/azure">
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/azure">
     <img alt="azure-logo" src="https://user-images.githubusercontent.com/1646931/187978161-771cfb91-6cb3-4f00-befd-657502b95ed4.png"/>
     <h3>Azure</h3>
     <p>Deploy onto Microsoft Azure</p>

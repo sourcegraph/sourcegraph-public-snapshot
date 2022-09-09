@@ -90,31 +90,29 @@ set -euxo pipefail
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
 ################## NO CHANGES REQUIRED FROM THIS POINT ONWARD ##################
-# STARTUP SCRIPT FOR SETTING UP AN AZURE INSTANCE WITH DOCKER COMPOSE
-###############################################################################
 # Define variables
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 DOCKER_COMPOSE_VERSION='1.29.2'
 DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
 PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
-PERSISTENT_DISK_LABEL='sgdocker'
+PERSISTENT_DISK_LABEL='sourcegraph'
 # Install git
 sudo apt-get update -y
 sudo apt-get install -y git
-# Clone Docker Compose definition
+# Clone the deployment repository
 git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
-# Format (if necessary) and mount persistent disk for instance data
+# Format (if unformatted) and mount persistent disk for docker instance data
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
-if [ "${device_fs}" == "" ]; then ## only format the volume if it isn't already formatted
+if [ "${device_fs}" == "" ]; then
     sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${PERSISTENT_DISK_DEVICE_NAME}"
     sudo e2label "${PERSISTENT_DISK_DEVICE_NAME}" "${PERSISTENT_DISK_LABEL}"
 fi
 sudo mkdir -p "${DOCKER_DATA_ROOT}"
 sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
-# Mount data disk on reboots
+# Mount data disk on reboots by linking disk label to data root path
 sudo echo "LABEL=${PERSISTENT_DISK_LABEL}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" | sudo tee -a /etc/fstab
 umount "${DOCKER_DATA_ROOT}"
 mount -a
@@ -134,14 +132,14 @@ if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]; then # Edit Docker storage directory
     mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
     echo '{}' >"${DOCKER_DAEMON_CONFIG_FILE}"
 fi
-## Point Docker's 'data-root' to our mounted disk
+## Point Docker's 'data-root' to the mounted disk
 tmp_config=$(mktemp)
 trap "rm -f ${tmp_config}" EXIT
 sudo cat "${DOCKER_DAEMON_CONFIG_FILE}" | sudo jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' >"${tmp_config}"
 sudo cat "${tmp_config}" >"${DOCKER_DAEMON_CONFIG_FILE}"
 ## Enable Docker at startup
 sudo systemctl enable docker
-# Restart Docker daemon to pick up our changes
+# Restart Docker daemon to pick up new changes
 sudo systemctl restart --now docker
 # Install Docker Compose
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
