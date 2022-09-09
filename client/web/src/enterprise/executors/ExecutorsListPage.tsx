@@ -130,7 +130,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                         <Text className="m-0">{node.hostname} is outdated.</Text>
                         <Text className="m-0">
                             Please{' '}
-                            <Link to="https://docs.sourcegraph.com/admin/deploy_executors" target="_blank" rel="noopener">
+                            <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
                                 upgrade this executor
                             </Link>{' '}
                             to a version compatible with your Sourcegraph version.
@@ -143,9 +143,10 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                         <Text className="m-0">Your sourcegraph instance is out of date.</Text>
                         <Text className="m-0">
                             Please{' '}
-                            <Link to="https://docs.sourcegraph.com/admin/updates" target="_blank" rel="noopener">
+                            <Link to="/help/admin/updates" target="_blank" rel="noopener">
                                 upgrade your sourcegraph instance
-                            </Link>.
+                            </Link>
+                            .
                         </Text>
                     </Alert>
                 )
