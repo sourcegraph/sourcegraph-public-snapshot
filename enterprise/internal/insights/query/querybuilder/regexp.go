@@ -1,6 +1,7 @@
 package querybuilder
 
 import (
+	"fmt"
 	"strings"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -120,8 +121,10 @@ type PatternReplacer interface {
 var ptn = regexp.MustCompile(`[^\\]\/`)
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
+	fmt.Println(replacement)
 	if r.needsSlashEscape {
 		replacement = strings.ReplaceAll(replacement, `/`, `\/`)
+		fmt.Println(replacement)
 	}
 
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
@@ -171,17 +174,8 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		return nil, errors.Wrap(err, "failed to parse search query")
 	}
 	var patterns []searchquery.Pattern
-	needsSlashEscape := false
+
 	searchquery.VisitPattern(plan.ToQ(), func(value string, negated bool, annotation searchquery.Annotation) {
-		if searchType == searchquery.SearchTypeRegex {
-			// because patternType:regexp implicitly escapes slashes in the regular expression we need to translate the pattern into
-			// a compatible pattern with `patternType:standard`, ie. escape the slashes. We need to do this _before_ the replacement
-			// otherwise we may accidentally double escape in places we don't intend.
-			if ptn.MatchString(value) {
-				// the given search pattern is _not_ already escaped, therefore escape it!
-				needsSlashEscape = true
-			}
-		}
 		patterns = append(patterns, searchquery.Pattern{
 			Value:      value,
 			Negated:    negated,
@@ -197,9 +191,17 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		return nil, UnsupportedPatternTypeErr
 	}
 
+	needsSlashEscape := true
 	pattern := patterns[0]
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
 		return nil, UnsupportedPatternTypeErr
+	} else if !ptn.MatchString(pattern.Value) {
+		// because regexp annotated patterns implicitly escapes slashes in the regular expression we need to translate the pattern into
+		// a compatible pattern with `patternType:standard`, ie. escape the slashes `/`. We need to do this _before_ the replacement
+		// otherwise we may accidentally double escape in places we don't intend. However, if the string was already escaped we don't
+		// want to re-escape because it will break the semantic of the query. This means the only time we _don't_ escape slashes
+		// is if we detect a pattern that has an escaped slash.
+		needsSlashEscape = false
 	}
 
 	regexpGroups := findGroups(pattern.Value)

@@ -227,6 +227,12 @@ func TestReplace_Valid(t *testing.T) {
 			want:        autogold.Want("ensure queries from type regex to type standard work with replacement special characters (slashes are escaped)", BasicQuery(`/(?:\/sourcegraph\/)/`)),
 			searchType:  query.SearchTypeRegex,
 		},
+		{
+			query:       `/<title>(.*)<\/title>/`,
+			replacement: "findme",
+			want:        autogold.Want("ensure queries from type standard slashes are escaped properly", BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			searchType:  query.SearchTypeStandard,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
