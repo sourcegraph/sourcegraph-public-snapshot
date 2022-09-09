@@ -36,7 +36,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
     const history = useHistory()
     const location = useLocation()
 
-    const [filters, setFilters] = useState<WorkspaceFilters>()
+    const [filters, setFilters] = useState<WorkspaceFilters>({ state: null, search: null })
 
     const queryWorkspacesListConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -44,10 +44,10 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                 batchSpecID,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                search: filters?.search ?? null,
-                state: filters?.state ?? null,
+                search: filters.search ?? null,
+                state: filters.state ?? null,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))),
-        [batchSpecID, filters, queryWorkspacesList]
+        [batchSpecID, filters.search, filters.state, queryWorkspacesList]
     )
 
     return (
