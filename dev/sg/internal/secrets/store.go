@@ -146,14 +146,14 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 	}
 
 	if err != nil {
-		errMessaage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
+		errMessage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
 			secret.Name, secret.Project)
 		// Some secret providers use their respective CLI, if not found the user might not
 		// have run 'sg setup' to set up the relevant tool.
 		if strings.Contains(err.Error(), "command not found") {
-			errMessaage += "- you may need to run 'sg setup' again"
+			errMessage += "- you may need to run 'sg setup' again"
 		}
-		return "", errors.Wrap(err, errMessaage)
+		return "", errors.Wrap(err, errMessage)
 	}
 
 	// Return and persist the fetched secret
