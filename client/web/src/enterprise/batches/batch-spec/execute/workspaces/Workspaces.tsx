@@ -10,7 +10,7 @@ import {
     HiddenBatchSpecWorkspaceListFields,
 } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { queryWorkspacesList } from '../backend'
+import { queryWorkspacesList as _queryWorkspacesList } from '../backend'
 
 import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'
 import { WorkspacesListItem, WorkspacesListItemProps } from './WorkspacesListItem'
@@ -23,12 +23,15 @@ export interface WorkspacesProps {
     selectedNode?: Scalars['ID']
     /** The URL path to the execution page this workspaces list is shown on. */
     executionURL: string
+    /** For testing only. */
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const Workspaces: React.FunctionComponent<React.PropsWithChildren<WorkspacesProps>> = ({
     batchSpecID,
     selectedNode,
     executionURL,
+    queryWorkspacesList = _queryWorkspacesList,
 }) => {
     const history = useHistory()
     const location = useLocation()
@@ -44,7 +47,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                 search: filters?.search ?? null,
                 state: filters?.state ?? null,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))),
-        [batchSpecID, filters]
+        [batchSpecID, filters, queryWorkspacesList]
     )
 
     return (

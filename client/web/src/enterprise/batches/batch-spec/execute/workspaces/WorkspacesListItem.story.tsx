@@ -9,7 +9,7 @@ import { WorkspacesListItem } from './WorkspacesListItem'
 const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
 
 const config: Meta = {
-    title: 'web/batches/batch-spec/execute/workspaces/WorkspacesList',
+    title: 'web/batches/batch-spec/execute/workspaces',
     decorators: [decorator],
 }
 
