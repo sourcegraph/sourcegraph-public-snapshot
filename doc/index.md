@@ -40,6 +40,10 @@ title: Get Started
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
+* For most customers, we recommend Sourcegraph Cloud, a single-tenant, auto-managed, and auto-upgrading option.
+* For customers that desire to self-host, we recommend one of the single-node deployment options.
+* For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch via Discord or email if you pursue this option.
+
 ### Recommended
 
 <form class="grid">
@@ -50,15 +54,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
   </button>
 </form>
-<form class="grid">
-  <!-- AWS AMI -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-ami">
-    <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
-    <h3>AWS AMI</h3>
-    <span class="badge badge-warning">Coming soon</span>
-    <p>Launch a Sourcegraph instance from an AWS image</p>
-  </button>
-</form>
 
 ### Self-hosted
 
@@ -67,7 +62,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws">
     <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
     <h3>AWS</h3>
-    <p>Deploy manually onto AWS EC2</p>
+    <p>Deploy onto AWS EC2</p>
   </button>
   <!-- AWS One Click-->
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
@@ -100,17 +95,18 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <h3>Google Cloud</h3>
     <p>Deploy onto Google Cloud (GCP)</p>
   </button>
-  <!-- Kubernetes -->
-  <button class="app-btn btn" formaction="/admin/deploy/kubernetes">
-    <img alt="kubernetes-logo" src="https://user-images.githubusercontent.com/1646931/187978853-ee9efe0b-a18c-45a1-8375-c6c29647342a.png"/>
-    <h3>Kubernetes</h3>
-    <p><strong>Enterprise-only</strong>. Helm Chart and Kustomize Overlays supported</p>
-  </button>
   <!-- Others -->
   <button class="app-btn btn" formaction="/admin/deploy">
     <img alt="private-cloud-logo" src="https://user-images.githubusercontent.com/1646931/187978634-6c4b2d06-2808-497d-8069-7adbee5bc703.png"/>
     <h3>Private cloud</h3>
     <p>Deploy into a generic cloud environment</p>
+  </button>
+  <!-- Kubernetes -->
+  <button class="app-btn btn" formaction="/admin/deploy/kubernetes">
+    <img alt="kubernetes-logo" src="https://user-images.githubusercontent.com/1646931/187978853-ee9efe0b-a18c-45a1-8375-c6c29647342a.png"/>
+    <h3>Kubernetes</h3>
+    <p><strong>Enterprise-only</strong></p>
+	<p>Deploy a multi-node cluster</p>
   </button>
 </form>
 
