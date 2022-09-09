@@ -43,7 +43,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                 after: args.after ?? null,
                 search: filters?.search ?? null,
                 state: filters?.state ?? null,
-            }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+            }).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))),
         [batchSpecID, filters]
     )
 
@@ -52,6 +52,9 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
             <WorkspacesListHeader>Workspaces</WorkspacesListHeader>
             <WorkspaceFilterRow onFiltersChange={setFilters} />
             <div className={styles.listContainer}>
+                {/* We need to use FilteredConnection over the new composable API here because we
+                still have to use observables for this connection query. See query docstring for
+                more details. */}
                 <FilteredConnection<
                     VisibleBatchSpecWorkspaceListFields | HiddenBatchSpecWorkspaceListFields,
                     Omit<WorkspacesListItemProps, 'node'>
@@ -65,7 +68,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                     hideSearch={true}
                     history={history}
                     location={location}
-                    defaultFirst={5}
+                    defaultFirst={20}
                     noun="workspace"
                     pluralNoun="workspaces"
                     useURLQuery={true}
