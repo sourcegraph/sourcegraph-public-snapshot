@@ -1,7 +1,6 @@
 package querybuilder
 
 import (
-	"fmt"
 	"strings"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -121,10 +120,8 @@ type PatternReplacer interface {
 var ptn = regexp.MustCompile(`[^\\]\/`)
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
-	fmt.Println(replacement)
 	if r.needsSlashEscape {
 		replacement = strings.ReplaceAll(replacement, `/`, `\/`)
-		fmt.Println(replacement)
 	}
 
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
