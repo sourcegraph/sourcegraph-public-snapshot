@@ -2,6 +2,7 @@ package init
 
 import (
 	"context"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
