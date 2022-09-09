@@ -481,7 +481,3 @@ func Test_buildDrilldownQuery(t *testing.T) {
 		})
 	}
 }
-
-func TestThing(t *testing.T) {
-
-}
