@@ -152,9 +152,10 @@ docker-compose up -d --remove-orphans
 
 ## Deploy
 
-1. Click **Review + create** to review the configurations and make sure the validation has passed before creating the instance 
-1. Navigate to the public IP address assigned to your instance to visit your newly created Sourcegraph instance
-  - Look for the **Public IP address** in your Virtual Machine dashboard under *Networking* in the *Properties* tab
+1. Click **Review + create** to create the instance
+  - Please review the configurations and make sure the validation has passed before creating the instance 
+2. Navigate to the `public IP address` assigned to your instance to visit your newly created instance
+  - Look for the `Public IP address` in your Virtual Machine dashboard under *Networking* in the *Properties* tab
 
 It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
 
@@ -173,13 +174,13 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 ## Upgrade
 
-Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions on updating your Sourcegraph instance.
+Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions on upgrades.
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The startup script [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the disk that is attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`).
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The startup script [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the disk that is attached to the instance (mounted at `/mnt/docker-data` --volumes are all stored inside `/mnt/docker-data/volumes`).
 
 
-* (**recommended**) The most straightforward method to [backup the data](https://docs.microsoft.com/en-us/azure/virtual-machines/backup-and-disaster-recovery-for-azure-iaas-disks) or [enable incremental snapshot](https://docs.microsoft.com/en-us/azure/virtual-machines/disks-incremental-snapshots?tabs=azure-cli).
+* The most straightforward method to [backup the data](https://docs.microsoft.com/en-us/azure/virtual-machines/backup-and-disaster-recovery-for-azure-iaas-disks) is to [enable incremental snapshot](https://docs.microsoft.com/en-us/azure/virtual-machines/disks-incremental-snapshots?tabs=azure-cli)
 
-* Using an external Postgres instance lets a service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) take care of backing up all of Sourcegraph's user data for you. If the EC2 instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
+* <span class="badge badge-note">RECOMMENDED</span> Using an external Postgres service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) takes care of backing up all the user data for you. If the Sourcegraph instance ever dies or gets destroyed, creating a fresh new instance connected to the old external Postgres service will get Sourcegraph back to its previous state
