@@ -139,6 +139,7 @@ export const RepoCommits: React.FunctionComponent<
 
 const blobPath = '/-/:objectType(blob)/:filePath*'
 const treePath = '/-/:objectType(tree)/:filePath*'
+export const commitsPath = '/-/commits'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
@@ -175,7 +176,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     })),
     {
-        path: '/-/commits',
+        path: commitsPath,
         render: RepoCommits,
     },
     {
