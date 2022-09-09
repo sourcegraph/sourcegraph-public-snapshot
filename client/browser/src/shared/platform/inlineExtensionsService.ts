@@ -10,7 +10,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensions from '../../../code-intel-extensions.json'
 import { isExtension } from '../context'
 
-const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false
 
 /**
  * Determine which extensions should be loaded:
@@ -37,7 +37,10 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
             }
 
             try {
-                return result.data.site.enableLegacyExtensions
+                const enableLegacyExtensions = result.data.site.enableLegacyExtensions
+                return typeof enableLegacyExtensions === 'undefined'
+                    ? DEFAULT_ENABLE_LEGACY_EXTENSIONS
+                    : enableLegacyExtensions
             } catch {
                 return DEFAULT_ENABLE_LEGACY_EXTENSIONS
             }

@@ -41,7 +41,7 @@ const renderSearchResultsInfoBar = (
 describe('SearchResultsInfoBar', () => {
     beforeAll(() => {
         window.context = {
-            enableLegacyExtensions: true,
+            enableLegacyExtensions: false,
         } as any
     })
 
