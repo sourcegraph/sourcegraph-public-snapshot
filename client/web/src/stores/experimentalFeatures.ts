@@ -19,6 +19,10 @@ const defaultSettings: SettingsExperimentalFeatures = {
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
     editor: 'codemirror6',
+    enableLazyBlobSyntaxHighlighting: true,
+    enableLazyFileResultSyntaxHighlighting: true,
+    enableSearchFilePrefetch: true,
+    enableSidebarFilePrefetch: true,
 }
 
 export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))
