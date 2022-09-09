@@ -117,7 +117,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	tabulationErrors := []error{}
 	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
 		if err != nil {
-			r.getLogger().Error("unable to aggregate results", log.Error(err))
+			r.getLogger().Debug("unable to aggregate results", log.Error(err))
 			tabulationErrors = append(tabulationErrors, err)
 			return
 		}
