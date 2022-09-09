@@ -155,6 +155,7 @@ func TestWorkerConcurrent(t *testing.T) {
 	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {
 		name := fmt.Sprintf("numHandlers=%d", numHandlers)
 
+		numHandlers := numHandlers // capture range variable
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

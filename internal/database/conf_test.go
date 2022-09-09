@@ -164,6 +164,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			},
 		},
 	} {
+		test := test // capture range variable
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			db := NewDB(logger, dbtest.NewDB(logger, t))
