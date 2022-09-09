@@ -67,6 +67,11 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            nodes: [],
+            totalCount: 0,
+        },
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
