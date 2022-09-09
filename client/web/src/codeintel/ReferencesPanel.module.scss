@@ -96,6 +96,14 @@
 }
 
 .location {
+    display: flex;
+    flex-direction: column;
+    min-height: 18px;
+
+    &:not(:last-child) > button {
+        border-bottom: 1px solid var(--body-bg);
+    }
+
     button {
         padding-top: 0;
         padding-bottom: 0;
@@ -107,8 +115,9 @@
         // Avoid line number and filename getting put on different lines
         white-space: nowrap;
         padding-left: 0;
-        border: none;
         font-family: 'SF Mono', monospace;
+
+        border: none;
     }
 
     button:hover {
@@ -134,20 +143,18 @@
     }
 
     &--link {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
         color: inherit;
 
-        &--line-number {
-            font-family: 'SF Mono', monospace;
-            font-weight: 400;
-            color: var(--line-number-color);
-            min-width: 2.5rem;
-            text-align: right;
-            display: inline-block;
-            margin-right: 0.5rem;
+        &--code-excerpt {
+            flex: 1;
+            width: 100%;
 
-            font-style: normal;
-            font-size: 0.75rem;
-            line-height: 136%;
+            :global(.line) {
+                min-width: 2.5rem;
+            }
         }
     }
 }

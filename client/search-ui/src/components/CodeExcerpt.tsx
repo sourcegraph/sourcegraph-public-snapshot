@@ -20,6 +20,13 @@ import { Icon, Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
 
+export interface Shape {
+    top?: number
+    left?: number
+    bottom?: number
+    right?: number
+}
+
 export interface FetchFileParameters {
     repoName: string
     commitID: string
@@ -48,6 +55,7 @@ interface Props extends Repo {
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    visibilityOffset?: Shape
     onCopy?: () => void
 }
 
@@ -99,7 +107,7 @@ const domFunctions: DOMFunctions = {
 }
 
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
-const visibilitySensorOffset = { bottom: -500 }
+const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
 
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
@@ -113,6 +121,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     highlightRanges,
     viewerUpdates,
     hoverifier,
+    visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
 }) => {
@@ -207,7 +216,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     }, [hoverifier, tableContainerElements, viewerUpdates])
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
+        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
             <Code
                 data-testid="code-excerpt"
                 onCopy={onCopy}
