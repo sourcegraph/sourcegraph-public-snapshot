@@ -53,8 +53,6 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
             history.replace({ ...history.location, search: searchParameters.toString() })
         }
 
-        console.log(searchParameters.toString(), 'filter row')
-
         // Update the filters in the parent component.
         onFiltersChange({
             state: state || null,
