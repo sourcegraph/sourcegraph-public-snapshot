@@ -236,6 +236,8 @@ func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeou
 		return false, notAvailableReason{reason: shardTimeoutMsg, reasonType: reasonType}
 	}
 
+	// This is a protective feature to limit the number of results proactive aggregations could process
+	// It behaves like a timeout so the user has an option to re-run with the extended timeout that has no result limit
 	if !runningWithExtendedTimeout && resultLimitHit {
 		return false, notAvailableReason{reason: proactiveResultLimitMsg, reasonType: types.TIMEOUT_EXTENSION_AVAILABLE}
 	}
