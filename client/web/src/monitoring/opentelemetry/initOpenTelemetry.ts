@@ -33,15 +33,16 @@ export function initOpenTelemetry(): void {
      *
      */
     if (openTelemetry?.endpoint && (process.env.NODE_ENV === 'production' || process.env.ENABLE_OPEN_TELEMETRY)) {
-        const provider = new WebTracerProvider({
-            resource: new Resource({
-                [SemanticResourceAttributes.SERVICE_NAME]: 'web-app',
-                [SemanticResourceAttributes.SERVICE_VERSION]: version,
-            }),
+        const url = getTracingURL(openTelemetry.endpoint, externalURL)
+        const resource = new Resource({
+            [SemanticResourceAttributes.SERVICE_NAME]: 'web-app',
+            [SemanticResourceAttributes.SERVICE_VERSION]: version,
         })
 
-        const collectorExporter = new OTLPTraceExporter({ url: getTracingURL(openTelemetry.endpoint, externalURL) })
+        console.debug('Enabling OpenTelemetry', { url, resource })
 
+        const provider = new WebTracerProvider({ resource })
+        const collectorExporter = new OTLPTraceExporter({ url })
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
         provider.addSpanProcessor(new SharedSpanStoreProcessor())
         provider.addSpanProcessor(new ClientAttributesSpanProcessor(window.context.version))
