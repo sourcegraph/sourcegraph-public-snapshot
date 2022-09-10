@@ -35,7 +35,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
         state
         diffStat {
             added
-            changed
             deleted
         }
         placeInQueue
@@ -103,7 +102,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
         run
         diffStat {
             added
-            changed
             deleted
         }
         container
@@ -152,7 +150,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
                     headRef
                     diffStat {
                         added
-                        changed
                         deleted
                     }
                 }
@@ -405,7 +402,6 @@ export const BATCH_SPEC_WORKSPACES = gql`
         state
         diffStat {
             added
-            changed
             deleted
         }
         placeInQueue
