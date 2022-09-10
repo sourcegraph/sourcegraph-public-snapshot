@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Negation support for the search predicates `-repo:has.path()` and `-repo:has.content()`. [#40283](https://github.com/sourcegraph/sourcegraph/pull/40283)
 - Experimental clientside OpenTelemetry can now be enabled with `"observability.client": { "openTelemetry": "/-/debug/otlp" }`, which sends OpenTelemetry to the new [bundled OpenTelemetry Collector](https://docs.sourcegraph.com/admin/observability/opentelemetry). [#37907](https://github.com/sourcegraph/sourcegraph/issues/37907)
 - The modified/changed field is removed from Diff Stats. Only `added` and `deleted` fields are returned from DiffStats. [#40454](https://github.com/sourcegraph/sourcegraph/pull/40454)
+- DiffStats no longer return the changed/modified. Only `added` and `deleted` fields are returned when displaying Diffs. [#40454](https://github.com/sourcegraph/sourcegraph/pull/40454)
 
 ### Changed
 
