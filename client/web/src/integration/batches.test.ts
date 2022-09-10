@@ -121,9 +121,8 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                     },
                 ],
                 stat: {
-                    added: 10,
-                    changed: 3,
-                    deleted: 8,
+                    added: 13,
+                    deleted: 11,
                 },
             },
         ],
