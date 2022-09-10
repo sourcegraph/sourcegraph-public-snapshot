@@ -24,6 +24,18 @@ All notable changes to `src-cli` are documented in this file.
 
 - Removed git sub-repo support when serving git repos as it introduced a huge performance hit. [#810](https://github.com/sourcegraph/src-cli/pull/810)
 
+## 3.43.2
+
+### Added
+
+- `src users cleanup` has been added. [#826](https://github.com/sourcegraph/src-cli/pull/826)
+
+## 3.43.1
+
+### Changed
+
+- `src extensions` subcommands are now deprecated, and will be removed in Sourcegraph 4.0.
+
 ## 3.43.0
 
 ### Changed
