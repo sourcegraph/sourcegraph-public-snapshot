@@ -1659,7 +1659,6 @@ query($batchChange: ID!, $reviewState: ChangesetReviewState, $checkState: Change
 
       diffStat {
         added
-        changed
         deleted
       }
     }

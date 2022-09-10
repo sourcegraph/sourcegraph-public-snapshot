@@ -615,9 +615,8 @@ index e5af166..d44c3fc 100644
  Line 9
  Line 10
 `),
-				DiffStatAdded:     1,
-				DiffStatChanged:   2,
-				DiffStatDeleted:   1,
+				DiffStatAdded:     3,
+				DiffStatDeleted:   3,
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "d34db33f",

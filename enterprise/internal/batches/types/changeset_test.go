@@ -35,7 +35,6 @@ func TestChangeset_Clone(t *testing.T) {
 func TestChangeset_DiffStat(t *testing.T) {
 	var (
 		added   int32 = 77
-		changed int32 = 88
 		deleted int32 = 99
 	)
 
@@ -46,13 +45,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 		"added missing": {
 			c: Changeset{
 				DiffStatAdded:   nil,
-				DiffStatDeleted: &deleted,
-			},
-			want: nil,
-		},
-		"changed missing": {
-			c: Changeset{
-				DiffStatAdded:   &added,
 				DiffStatDeleted: &deleted,
 			},
 			want: nil,
@@ -71,7 +63,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 			},
 			want: &diff.Stat{
 				Added:   added,
-				Changed: changed,
 				Deleted: deleted,
 			},
 		},
