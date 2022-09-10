@@ -304,7 +304,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 <ActionsNavItems
                                     {...props}
                                     extensionsController={extensionsController}
-                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // TODO remove references to global branded classes from shared, get class name from prop
                                     // This is okay for now because the Panel is currently only used in the webapp
                                     listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                                     listItemClass="px-2 mx-2"

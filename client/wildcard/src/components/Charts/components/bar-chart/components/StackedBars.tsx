@@ -16,7 +16,7 @@ interface StackedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumColor: (datum: Datum) => string | undefined
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
-    onBarClick: (event: MouseEvent, datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
 }
 
 export function StackedBars<Datum>(props: StackedBarsProps<Datum>): ReactElement {
@@ -60,7 +60,7 @@ export function StackedBars<Datum>(props: StackedBarsProps<Datum>): ReactElement
                                 bottom={isFirstBar}
                                 top={isLastBar}
                                 onMouseEnter={() => onBarHover(stackedDatum.datum, category)}
-                                onClick={event => onBarClick(event, stackedDatum.datum)}
+                                onClick={event => onBarClick(event, stackedDatum.datum, index)}
                                 onMouseLeave={onBarLeave}
                             />
                         )

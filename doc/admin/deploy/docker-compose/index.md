@@ -5,6 +5,7 @@ Setting up Docker applications with [multiple containers](https://www.docker.com
 This guide will take you through how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. You can also follow one of the available *cloud-specific guides* listed below to prepare and install Sourcegraph on a supported cloud environment:
 
 - [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+- [Deploy Sourcegraph with Docker Compose on Azure](../../deploy/docker-compose/azure.md)
 - [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
 - [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
 
@@ -94,7 +95,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.43.1"
+  export SOURCEGRAPH_VERSION="v3.43.2"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

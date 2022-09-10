@@ -5,7 +5,7 @@ export IGNITE_VERSION=v0.10.4
 export CNI_VERSION=v0.9.1
 export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
 export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
-export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
+export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
 export NODE_EXPORTER_VERSION=1.2.2
 export NODE_EXPORTER_ADDR="127.0.0.1:9100"
 
@@ -195,13 +195,13 @@ function install_src_cli() {
   rm -rf src-cli.tar.gz
 }
 
-## Build the ignite-ubuntu image for use in firecracker.
+## Build the sourcegraph/executor-vm image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
-  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/executor-vm
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
-  # Remove intermediate layers and base image used in ignite-ubuntu.
+  # Remove intermediate layers and base image used in executor-vm.
   docker system prune --force
 }
 
@@ -345,7 +345,7 @@ function cleanup() {
 # Prerequisites
 if [ "${PLATFORM_TYPE}" == "gcp" ]; then
   install_ops_agent
-else
+elif [ "${PLATFORM_TYPE}" == "aws" ]; then
   install_cloudwatch_agent
 fi
 install_docker

@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
@@ -316,6 +317,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
+					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
 				}
 
 				addJob(&repoPagerJob{
@@ -440,9 +442,20 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						descriptionPatterns = append(descriptionPatterns, regexp.MustCompile(`(?is)`+pat))
 					}
 
+					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
+					for _, repoFilter := range repoOptions.RepoFilters {
+						if repoOptions.CaseSensitiveRepoFilters {
+							// escaping regexp meta characters in literal patterns is handled by call to PatternString() above
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter))
+						} else {
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilter))
+						}
+					}
+
 					addJob(&RepoSearchJob{
 						RepoOpts:            repoOptions,
 						DescriptionPatterns: descriptionPatterns,
+						RepoNamePatterns:    repoNamePatterns,
 					})
 				}
 			}
@@ -450,6 +463,42 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	}
 
 	return NewParallelJob(allJobs...), nil
+}
+
+func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pathRegexps []*regexp.Regexp) {
+	for _, pattern := range patternInfo.IncludePatterns {
+		if patternInfo.IsRegExp {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			}
+		} else {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(pattern)))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(pattern)))
+			}
+		}
+	}
+
+	if patternInfo.PatternMatchesPath {
+		if patternInfo.IsRegExp {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(patternInfo.Pattern))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+patternInfo.Pattern))
+			}
+		} else {
+			if patternInfo.IsCaseSensitive {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(regexp.QuoteMeta(patternInfo.Pattern)))
+			} else {
+				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(patternInfo.Pattern)))
+			}
+		}
+	}
+
+	return pathRegexps
 }
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
@@ -685,9 +734,10 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
-			GlobalZoektQuery: globalZoektQuery,
-			ZoektArgs:        zoektArgs,
-			RepoOpts:         b.repoOptions,
+			GlobalZoektQuery:        globalZoektQuery,
+			ZoektArgs:               zoektArgs,
+			RepoOpts:                b.repoOptions,
+			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
@@ -708,13 +758,38 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
-			Query:          zoektQuery,
-			Typ:            typ,
-			FileMatchLimit: b.fileMatchLimit,
-			Select:         b.selector,
+			Query:             zoektQuery,
+			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
+			Typ:               typ,
+			FileMatchLimit:    b.fileMatchLimit,
+			Select:            b.selector,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
+}
+
+func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
+	zoektquery.VisitAtoms(q, func(zoektQ zoektquery.Q) {
+		switch typedQ := zoektQ.(type) {
+		case *zoektquery.Regexp:
+			if !typedQ.Content {
+				if typedQ.CaseSensitive {
+					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
+				} else {
+					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+				}
+			}
+		case *zoektquery.Substring:
+			if !typedQ.Content {
+				if typedQ.CaseSensitive {
+					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
+				} else {
+					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+				}
+			}
+		}
+	})
+	return res
 }
 
 func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {

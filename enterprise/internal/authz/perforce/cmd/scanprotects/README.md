@@ -12,6 +12,12 @@ The intention is to pipe the output of `p4 protects` into this tool:
 p4 protects -u USER | ./scanprotects -d "//some/test/depot/"
 ```
 
+Note that the output is in JSON format and only a couple of fields are necessary so for best results you should pipe through jq:
+
+```
+p4 protects -u USER | ./scanprotects -d "//some/test/depot/" |& jq '{"Body": .Body, "Attributes": .Attributes}'
+```
+
 ## Example output
 
 ```

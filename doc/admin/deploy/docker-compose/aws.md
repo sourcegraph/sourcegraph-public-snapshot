@@ -66,16 +66,15 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 
 set -euxo pipefail
 
-# 🚨 Update these variables with the correct values from your fork!
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
-
-# IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 EBS_VOLUME_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
+
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
 
 # Install git
 yum update -y

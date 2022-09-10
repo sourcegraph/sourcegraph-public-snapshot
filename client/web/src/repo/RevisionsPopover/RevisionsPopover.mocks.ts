@@ -16,7 +16,7 @@ import { RevisionsPopoverProps } from './RevisionsPopover'
 import { REPOSITORY_GIT_COMMIT } from './RevisionsPopoverCommits'
 
 export const MOCK_PROPS: RevisionsPopoverProps = {
-    repo: 'some-repo-id',
+    repoId: 'some-repo-id',
     repoName: 'testorg/testrepo',
     defaultBranch: 'main',
     currentRev: 'main',
@@ -83,7 +83,7 @@ const branchesMock: MockedResponse<RepositoryGitRefsResult> = {
         variables: {
             query: '',
             first: 50,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_BRANCH,
             withBehindAhead: false,
         },
@@ -186,7 +186,7 @@ const tagsMock: MockedResponse<RepositoryGitRefsResult> = {
         variables: {
             query: '',
             first: 50,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_TAG,
             withBehindAhead: false,
         },
@@ -264,7 +264,7 @@ const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
         variables: {
             query: '',
             first: 15,
-            repo: MOCK_PROPS.repo,
+            repo: MOCK_PROPS.repoId,
             revision: MOCK_PROPS.currentRev,
         },
     },

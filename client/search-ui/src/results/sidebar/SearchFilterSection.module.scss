@@ -9,6 +9,13 @@
         padding: 0;
     }
 
+    &__header {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
     &__collapse-button {
         display: flex;
         align-items: center;

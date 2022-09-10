@@ -1,7 +1,5 @@
 # Configuring credentials
 
-> NOTE: This page describes functionality added in Sourcegraph 3.22. Older Sourcegraph versions only allow batch changes to be applied and managed by site admins.
-
 Interacting with a code host (such as creating, updating, or syncing changesets) is made possible by configuring an access token for that code host. Sourcegraph uses these tokens to manage changesets on your behalf, and with your specific permissions.
 
 ## Requirements
@@ -11,11 +9,10 @@ Interacting with a code host (such as creating, updating, or syncing changesets)
 
 ## Types of access tokens used by Batch Changes
 
-There are three types of access token that can be configured for use with Batch Changes:
+There are two types of access token that can be configured for use with Batch Changes:
 
 1. [**Personal access token**](#personal-access-tokens) - A token set by an individual Batch Changes user for their personal code host user account.
-1. [**Global service account token**](#global-service-account-tokens) (*Admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured.
-1. [**Sourcegraph code host connection token**](#code-host-connection-tokens) (*Admins only*) - A token that is typically set when connecting Sourcegraph to a code host for the first time and is used across the entire Sourcegraph instance. **Using the code host connection token with Batch Changes will be deprecated in the future.**
+1. [**Global service account token**](#global-service-account-tokens) (*Admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured. These are also required for [importing changesets](./tracking_existing_changesets.md) and syncing changeset state from the code host when webhooks are not configured.
 
 Different tokens are used for different types of operations, as is illustrated in the hierarchy table below.
 
@@ -25,24 +22,22 @@ Different tokens are used for different types of operations, as is illustrated i
 
 🔴  **Unsupported** - Sourcegraph cannot use this token for this operation.
 
-Operation | [Personal Access Token](#personal-access-tokens) | [Global Service Account Token](#global-service-account-tokens) | [Code Host Connection Token](#code-host-connection-tokens)
---------- | :-: | :-: | :-:
-Pushing a branch with the changes | 🟢 | 🟡 | 🔴
-[Publishing a changeset](./publishing_changesets.md) | 🟢 | 🟡 | 🔴
-Updating a changeset | 🟢 | 🟡 | 🔴
-Closing a changeset | 🟢 | 🟡 | 🔴
-[Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢 | 🟡
-Syncing a changeset | 🟢 | 🟡 | 🟡
+Operation | [Personal Access Token](#personal-access-tokens) | [Global Service Account Token](#global-service-account-tokens)
+--------- | :-: | :-:
+Pushing a branch with the changes | 🟢 | 🟡
+[Publishing a changeset](./publishing_changesets.md) | 🟢 | 🟡
+Updating a changeset | 🟢 | 🟡
+Closing a changeset | 🟢 | 🟡
+[Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢
+Syncing a changeset | 🔴 | 🟢
 
 When writing a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
-
-> WARNING: Using the code host connection token with Batch Changes will be deprecated in the future; therefore, we highly recommend that admins configure a global service account token for Batch Changes instead.
 
 ## Personal access tokens
 
 ### Do I need to add a personal access token?
 
-Personal access tokens are not required if a global access token has also been configured, but users should add one if they want Sourcegraph to create changesets under their name.
+Personal access tokens are not strictly required if a global access token has also been configured, but users should add one if they want Sourcegraph to create changesets under their name.
 
 > NOTE: Commit author is determined by your spec file or local git config at the time of running `src batch [apply|preview]`, completely independent from code host credentials.
 
@@ -75,13 +70,13 @@ The code host's indicator should revert to the empty red circle once the token i
 
 ## Global service account tokens
 
-> NOTE: This section describes functionality added in Sourcegraph 3.27, and which is only accessible to **site administrators**.
-
 ### Do I need to add a global service account token?
 
-Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens.
+Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens for publishing changesets.
 
-Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If no global service account token is set, we can currently fall back to the [token configured for the code host connection](#code-host-connection-tokens). However, this fallback will be deprecated in the future, so for this reason we highly recommend setting up a global service account.
+However, currently a global service account token is required for [importing existing changesets](./tracking_existing_changesets.md) on your code hosts into batch changes.
+
+Additionally, if you have not [configured webhooks](../../admin/config/batch_changes.md#incoming-webhooks) from your code host,  Sourcegraph requires a global service account keep changesets up to date.
 
 If [forks are enabled](../../admin/config/batch_changes.md#forks), then note that repositories will also be forked into the service account.
 
@@ -99,14 +94,6 @@ Code hosts with tokens configured are indicated by a green tick to the left of t
 ### Removing a token
 
 To remove a token, navigate back to the same section of the site admin area, then click **Remove**. The code host's indicator should revert to the empty red circle once the token is removed.
-
-## Code host connection tokens
-
-> WARNING: Using code host connection tokens with Batch Changes will be deprecated and removed in future versions of Sourcegraph.
-
-[Code host connection tokens](../../admin/external_service.md) are typically configured the first time a site administrator is connecting Sourcegraph to the external code host. Within Batch Changes, they are only used for syncing and importing changesets when a global service account token is not configured.
-
-> NOTE: Prior to Sourcegraph 3.29, admin users were also able to use the code host connection token as a fallback for other Batch Changes operations, such as creating and updating changesets. However, non-admin users were unable to apply batch changes without another form of access token being configured.
 
 ## Creating a code host token
 

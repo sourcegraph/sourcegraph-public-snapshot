@@ -64,7 +64,7 @@ export interface ActionsNavItemsProps
 }
 
 /**
- * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
+ * Renders the actions as a fragment of <li class="nav-item"> elements, for use in with <ul
  * class="nav"> or <ul class="navbar-nav">.
  */
 export const ActionsNavItems: React.FunctionComponent<React.PropsWithChildren<ActionsNavItemsProps>> = props => {

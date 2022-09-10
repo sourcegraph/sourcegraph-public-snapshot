@@ -77,7 +77,7 @@ func extractPattern(basic *query.Basic) (*query.Pattern, error) {
 	return pattern, nil
 }
 
-func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) map[string]int {
+func fromRegexpMatches(submatches []int, namedGroups []string, content string) map[string]int {
 	counts := map[string]int{}
 
 	if len(submatches) >= 4 {

@@ -26,12 +26,14 @@ export default config
 const defaultProps: SearchFiltersSidebarProps = {
     liveQuery: '',
     submittedURLQuery: '',
+    caseSensitive: false,
     patternType: SearchPatternType.literal,
     onNavbarQueryChange: () => {},
     onSearchSubmit: () => {},
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    setSidebarCollapsed: () => {},
 }
 
 const quicklinks: QuickLink[] = [

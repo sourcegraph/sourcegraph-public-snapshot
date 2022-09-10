@@ -39,12 +39,12 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
-func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int) (BasicQuery, error) {
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
 
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
-			Value:      "all",
+			Value:      count,
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},
@@ -256,7 +256,7 @@ func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldAuthor,
-			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(author)),
+			Value:      buildFilterText(author),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
@@ -274,6 +274,14 @@ func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
 }
 
+func buildFilterText(raw string) string {
+	quoted := regexp.QuoteMeta(raw)
+	if strings.Contains(raw, " ") {
+		return fmt.Sprintf("(^%s$)", quoted)
+	}
+	return fmt.Sprintf("^%s$", quoted)
+}
+
 func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -285,11 +293,38 @@ func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) 
 		modified = append(modified, basic.Parameters...)
 		modified = append(modified, searchquery.Parameter{
 			Field:      field,
-			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(value)),
+			Value:      buildFilterText(value),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
 		return basic.MapParameters(modified)
+	})
+	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
+}
+
+func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
+	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", err
+	}
+
+	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		params := make([]searchquery.Parameter, 0, len(basic.Parameters))
+		for _, parameter := range basic.Parameters {
+			if parameter.Field == searchquery.FieldCase {
+				continue
+			}
+			params = append(params, parameter)
+		}
+
+		params = append(params, searchquery.Parameter{
+			Field:      searchquery.FieldCase,
+			Value:      "yes",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		})
+
+		return basic.MapParameters(params)
 	})
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }

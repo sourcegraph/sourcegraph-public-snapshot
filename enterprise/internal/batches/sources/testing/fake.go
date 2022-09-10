@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -31,11 +30,11 @@ func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore,
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForRepo(ctx context.Context, tx sources.SourcerStore, repo *types.Repo) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid int32, repo *types.Repo) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -297,8 +296,8 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Chan
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return sources.GitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
+func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return sources.GitserverPushConfig(repo, s.CurrentAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {

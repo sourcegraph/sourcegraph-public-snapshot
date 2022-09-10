@@ -30,7 +30,7 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -61,7 +61,7 @@ interface RepositoryCompareAreaProps
         ThemeProps,
         SettingsCascadeProps,
         BreadcrumbSetters {
-    repo: RepositoryFields
+    repo?: RepositoryFields
     history: H.History
 }
 
@@ -178,6 +178,10 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
         let spec: { base: string | null; head: string | null } | null | undefined
         if (this.props.match.params.spec) {
             spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
+        }
+
+        if (!this.props.repo) {
+            return <LoadingSpinner />
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {

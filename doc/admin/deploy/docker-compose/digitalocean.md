@@ -56,16 +56,15 @@ First, [create a new Digital Ocean Droplet](https://cloud.digitalocean.com/dropl
 
 set -euxo pipefail
 
-# 🚨 Update these variables with the correct values from your fork!
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.1'
-
-# IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 PERSISTENT_DISK_DEVICE_NAME='/dev/sda'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
+
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
 
 # Install git
 sudo apt-get update -y

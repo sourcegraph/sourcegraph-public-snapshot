@@ -76,6 +76,8 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.type",
 }
 
+var oneGigabyte = 1000000000
+
 // CreateChangesetSpec creates the given ChangesetSpecs.
 func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
 	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -105,6 +107,13 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				if err != nil {
 					return err
 				}
+			}
+
+			// We check if the resulting diff is greater than 1GB, since the limit
+			// for the diff column (which is bytea) is 1GB
+			if len(c.Diff) > oneGigabyte {
+				link := "https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges"
+				return errors.Errorf("The changeset patch generated is over the size limit. You can make use of [transformChanges](%s) to break down the changesets into smaller pieces.", link)
 			}
 
 			if err := inserter.Insert(
@@ -422,7 +431,7 @@ ORDER BY repo_id ASC, head_ref ASC
 `
 
 func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
-	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listChangesetSpecsWithConflictingHeadRef.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)

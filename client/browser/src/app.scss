@@ -31,11 +31,9 @@ $line-height-base: (20/14);
     }
 }
 
-/* stylelint-disable @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-/* stylelint-enable @sourcegraph/no-restricted-imports */
+@import '../../branded/src/global-styles/functions.scss';
+@import '../../branded/src/global-styles/variables.scss';
+@import '../../branded/src/global-styles/mixins.scss';
 @import '../../branded/src/global-styles/utilities/text';
 @import '../../branded/src/global-styles/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';

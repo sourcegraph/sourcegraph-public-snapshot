@@ -6,7 +6,7 @@ import { RepositoryFields } from '../../graphql-operations'
 import { RepositoryReleasesTagsPage } from '../releases/RepositoryReleasesTagsPage'
 
 interface Props {
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
     history: H.History
     location: H.Location
 }

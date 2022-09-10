@@ -1,8 +1,9 @@
-import { FC } from 'react'
+import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import {
@@ -14,11 +15,12 @@ import {
     useAggregationUIMode,
     useSearchAggregationData,
     isNonExhaustiveAggregationResults,
+    GroupResultsPing,
 } from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'
 
-interface SearchAggregationsProps {
+interface SearchAggregationsProps extends TelemetryProps {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -32,6 +34,8 @@ interface SearchAggregationsProps {
     /** Whether to proactively load and display search aggregations */
     proactive: boolean
 
+    caseSensitive: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected
@@ -40,8 +44,10 @@ interface SearchAggregationsProps {
     onQuerySubmit: (newQuery: string) => void
 }
 
-export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { query, patternType, proactive, onQuerySubmit } = props
+export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
+    const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
+
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -50,17 +56,70 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
         patternType,
         aggregationMode,
         proactive,
-        limit: 10,
+        caseSensitive,
+        extendedTimeout,
     })
+
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
+
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
+
+    const handleBarLinkClick = (query: string, index: number): void => {
+        // Clearing the aggregation mode on drill down would provide a better experience
+        // in most cases and preserve the desired behavior of the capture group search
+        // when the original query had multiple capture groups
+        setAggregationMode(null)
+
+        onQuerySubmit(query)
+        telemetryService.log(
+            GroupResultsPing.ChartBarClick,
+            { aggregationMode, index, uiMode: 'sidebar' },
+            { aggregationMode, index, uiMode: 'sidebar' }
+        )
+    }
+
+    const handleBarHover = (): void => {
+        telemetryService.log(
+            GroupResultsPing.ChartBarHover,
+            { aggregationMode, uiMode: 'sidebar' },
+            { aggregationMode, uiMode: 'sidebar' }
+        )
+    }
+
+    const handleExpandClick = (): void => {
+        setAggregationUIMode(AggregationUIMode.SearchPage)
+        telemetryService.log(GroupResultsPing.ExpandFullViewPanel, { aggregationMode }, { aggregationMode })
+    }
+
+    const handleAggregationModeChange = (mode: SearchAggregationMode): void => {
+        setAggregationMode(mode)
+        telemetryService.log(
+            GroupResultsPing.ModeClick,
+            { aggregationMode: mode, uiMode: 'sidebar' },
+            { aggregationMode: mode, uiMode: 'sidebar' }
+        )
+    }
+
+    const handleAggregationModeHover = (aggregationMode: SearchAggregationMode, available: boolean): void => {
+        if (!available) {
+            telemetryService.log(
+                GroupResultsPing.ModeDisabledHover,
+                { aggregationMode, uiMode: 'sidebar' },
+                { aggregationMode, uiMode: 'sidebar' }
+            )
+        }
+    }
 
     return (
         <article className="pt-2">
             <AggregationModeControls
+                availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
                 mode={aggregationMode}
-                availability={data?.searchQueryAggregate?.modeAvailability}
                 size="sm"
-                onModeChange={setAggregationMode}
+                onModeChange={handleAggregationModeChange}
+                onModeHover={handleAggregationModeHover}
             />
 
             {(proactive || aggregationMode !== null) && (
@@ -71,8 +130,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                         loading={loading}
                         error={error}
                         mode={aggregationMode}
+                        showLoading={extendedTimeout}
                         className={styles.chartContainer}
-                        onBarLinkClick={onQuerySubmit}
+                        onBarLinkClick={handleBarLinkClick}
+                        onBarHover={handleBarHover}
+                        onExtendTimeout={handleExtendTimeout}
                     />
 
                     <footer className={styles.actions}>
@@ -82,7 +144,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                             outline={true}
                             className={styles.detailsAction}
                             data-testid="expand-aggregation-ui"
-                            onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
+                            onClick={handleExpandClick}
                         >
                             <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
                         </Button>
@@ -93,4 +155,4 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             )}
         </article>
     )
-}
+})

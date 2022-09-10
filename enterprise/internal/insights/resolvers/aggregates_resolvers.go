@@ -3,16 +3,22 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -21,9 +27,11 @@ import (
 )
 
 const (
-	defaultAggregationBufferSize   = 500
-	defaultSearchTimeLimitSeconds  = 2
-	extendedSearchTimeLimitSeconds = 60
+	defaultAggregationBufferSize          = 500
+	defaultSearchTimeLimitSeconds         = 2
+	extendedSearchTimeLimitSecondsDefault = 55
+	defaultproactiveResultsLimit          = 50000
+	maxProactiveResultsLimit              = 200000
 )
 
 // Possible reasons that grouping is disabled
@@ -37,6 +45,7 @@ const cgUnsupportedSelectFmt = `Grouping by capture group is not available for s
 // Possible reasons that grouping would fail
 const shardTimeoutMsg = "The query was unable to complete in the allocated time."
 const generalTimeoutMsg = "The query was unable to complete in the allocated time."
+const proactiveResultLimitMsg = "The query exceeded the number of results allowed over this time period."
 
 // These should be very rare
 const unknowAggregationModeMsg = "The requested grouping is not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
@@ -48,6 +57,15 @@ type searchAggregateResolver struct {
 
 	searchQuery string
 	patternType string
+	logger      log.Logger
+	operations  *aggregationsOperations
+}
+
+func (r *searchAggregateResolver) getLogger() log.Logger {
+	if r.logger == nil {
+		r.logger = log.Scoped("searchAggregations", "")
+	}
+	return r.logger
 }
 
 func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphqlbackend.AggregationModeAvailabilityResolver {
@@ -58,7 +76,16 @@ func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphq
 	return resolvers
 }
 
-func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (graphqlbackend.SearchAggregationResultResolver, error) {
+func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (_ graphqlbackend.SearchAggregationResultResolver, err error) {
+	var aggregationMode types.SearchAggregationMode
+
+	ctx, _, endObservation := r.operations.aggregations.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{strconv.FormatBool(args.ExtendedTimeout)},
+	})
+	defer func() {
+		endObservation(1, observation.Args{MetricLabelValues: []string{string(aggregationMode)}})
+	}()
+
 	// Steps:
 	// 1. - If no mode get the default mode
 	// 2. - Validate mode is supported (if in default mode this is done in that step)
@@ -66,7 +93,6 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	// 3. - Run Search
 	// 4. - Check search for errors/alerts
 	// 5 -  Generate correct resolver pass search results if valid
-	var aggregationMode types.SearchAggregationMode
 	if args.Mode == nil {
 		aggregationMode = getDefaultAggregationMode(r.searchQuery, r.patternType)
 	} else {
@@ -79,18 +105,22 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	}
 	// It should not be possible for the getNotAvailableReason to return an err without giving a reason but leaving a fallback here incase.
 	if err != nil {
+		r.getLogger().Warn("unable to determine why aggregation is unavailable", log.String("mode", string(aggregationMode)), log.Error(err))
 		return nil, err
 	}
-
+	proactiveLimit := getProactiveResultLimit()
+	countValue := fmt.Sprintf("%d", proactiveLimit)
 	searchTimelimit := defaultSearchTimeLimitSeconds
 	if args.ExtendedTimeout {
-		searchTimelimit = extendedSearchTimeLimitSeconds
+		searchTimelimit = getExtendedTimeout(ctx, r.postgresDB)
+		countValue = "all"
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
 	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
-	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1)
+	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue)
 	if err != nil {
+		r.getLogger().Info("unable to build aggregation query", log.Error(err))
 		return &searchAggregationResultResolver{
 			resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: unableToModifyQueryMsg, reasonType: types.ERROR_OCCURRED}, aggregationMode),
 		}, nil
@@ -104,6 +134,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	tabulationErrors := []error{}
 	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
 		if err != nil {
+			r.getLogger().Debug("unable to aggregate results", log.Error(err))
 			tabulationErrors = append(tabulationErrors, err)
 			return
 		}
@@ -112,6 +143,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode)
 	if err != nil {
+		r.getLogger().Error("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
 		return &searchAggregationResultResolver{
 			resolver: newSearchAggregationNotAvailableResolver(
 				notAvailableReason{reason: unknowAggregationModeMsg, reasonType: types.ERROR_OCCURRED},
@@ -122,22 +154,24 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
 	defer cancelReqContext()
 	searchClient := streaming.NewInsightsSearchClient(r.postgresDB)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithProgress(ctx, tabulationFunc, countingFunc, r.postgresDB)
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB)
 
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
+			r.getLogger().Info("aggregation search did not complete in time", log.String("mode", string(aggregationMode)), log.Bool("extendedTimeout", args.ExtendedTimeout))
 			reasonType := types.TIMEOUT_EXTENSION_AVAILABLE
 			if args.ExtendedTimeout {
 				reasonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
 			}
 			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: generalTimeoutMsg, reasonType: reasonType}, aggregationMode)}, nil
 		} else {
+			r.getLogger().Error("unable to run aggregation search", log.String("mode", string(aggregationMode)), log.Error(err))
 			return nil, err
 		}
 	}
 
-	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred(), args.ExtendedTimeout)
+	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred(), args.ExtendedTimeout, searchResultsAggregator.ResultLimitHit(proactiveLimit))
 	if !successful {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
@@ -151,6 +185,35 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		results:      results,
 		isExhaustive: cappedAggregator.OtherCounts().GroupCount == 0,
 	}}, nil
+}
+
+func getProactiveResultLimit() int {
+	configLimit := conf.Get().InsightsAggregationsProactiveResultLimit
+	if configLimit <= 0 {
+		configLimit = defaultproactiveResultsLimit
+	}
+	return min(configLimit, maxProactiveResultsLimit)
+
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+func getExtendedTimeout(ctx context.Context, db database.DB) int {
+	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
+
+	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
+	if err != nil || settings == nil {
+		return extendedSearchTimeLimitSecondsDefault
+	}
+	val := settings.InsightsAggregationsExtendedTimeout
+	if val > 0 {
+		return min(searchLimit, val)
+	}
+	return extendedSearchTimeLimitSecondsDefault
 }
 
 // getDefaultAggregationMode returns a default aggregation mode for a potential query
@@ -173,7 +236,7 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 	return types.REPO_AGGREGATION_MODE
 }
 
-func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccurred, runningWithExtendedTimeout bool) (bool, notAvailableReason) {
+func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccurred, runningWithExtendedTimeout, resultLimitHit bool) (bool, notAvailableReason) {
 	if len(tabulationErrors) > 0 {
 		return false, notAvailableReason{reason: unableToCountGroupsMsg, reasonType: types.ERROR_OCCURRED}
 	}
@@ -184,6 +247,12 @@ func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeou
 		}
 		return false, notAvailableReason{reason: shardTimeoutMsg, reasonType: reasonType}
 	}
+
+	// This is a protective feature to limit the number of results proactive aggregations could process
+	// It behaves like a timeout so the user has an option to re-run with the extended timeout that has no result limit
+	if !runningWithExtendedTimeout && resultLimitHit {
+		return false, notAvailableReason{reason: proactiveResultLimitMsg, reasonType: types.TIMEOUT_EXTENSION_AVAILABLE}
+	}
 	return true, notAvailableReason{}
 }
 
@@ -191,6 +260,7 @@ type aggregationResults struct {
 	groups           []graphqlbackend.AggregationGroup
 	otherResultCount int
 	otherGroupCount  int
+	totalCount       uint32
 }
 
 type AggregationGroup struct {
@@ -214,6 +284,7 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
 	otherResults := aggregator.OtherCounts().ResultCount
 	otherGroups := aggregator.OtherCounts().GroupCount
+	var totalCount uint32
 
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
@@ -232,12 +303,14 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 			otherGroups++
 			otherResults += sorted[i].Count
 		}
+		totalCount += uint32(sorted[i].Count)
 	}
 
 	return aggregationResults{
 		groups:           groups,
 		otherResultCount: int(otherResults),
 		otherGroupCount:  int(otherGroups),
+		totalCount:       totalCount,
 	}
 }
 
@@ -255,13 +328,16 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 	return string(r.mode)
 }
 
-func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
+func (r *aggregationModeAvailabilityResolver) Available() bool {
 	canAggregateByFunc := getAggregateBy(r.mode)
 	if canAggregateByFunc == nil {
-		return false, nil
+		return false
 	}
 	available, _, err := canAggregateByFunc(r.searchQuery, r.patternType)
-	return available, err
+	if err != nil {
+		return false
+	}
+	return available
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
@@ -390,9 +466,11 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 
 	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// At the moment we don't allow capture group aggregation for path, repo, diff or commit searches
-	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}}
-	notAllowedFieldTypeValues := map[string]struct{}{"repo": {}, "path": {}, "commit": {}, "diff": {}}
+
+	// Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
+	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
+	// At the moment we don't allow capture group aggregation for diff or symbol searches
+	notAllowedFieldTypeValues := map[string]struct{}{"diff": {}, "symbol": {}}
 	for _, parameter := range parameters {
 		paramValue := strings.ToLower(parameter.Value)
 		_, notAllowedSelect := notAllowedSelectValues[paramValue]
@@ -503,6 +581,7 @@ func (r *searchAggregationModeResultResolver) Mode() (string, error) {
 }
 
 func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string, drilldown string, patternType string) (string, error) {
+	caseSensitive := false
 	var modifierFunc func(querybuilder.BasicQuery, string) (querybuilder.BasicQuery, error)
 	switch mode {
 	case types.REPO_AGGREGATION_MODE:
@@ -523,10 +602,17 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
 			return replacer.Replace(s)
 		}
+		caseSensitive = true
 	default:
 		return "", errors.New("unsupported aggregation mode")
 	}
 
 	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
+	if err != nil {
+		return "", err
+	}
+	if caseSensitive {
+		newQuery, err = querybuilder.SetCaseSensitivity(newQuery, true)
+	}
 	return string(newQuery), err
 }

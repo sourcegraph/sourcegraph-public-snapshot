@@ -9,12 +9,14 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -285,6 +287,53 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	_, err = searcher.List(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("List: expected error")
+	}
+}
+
+func TestResultQueueSettingsFromConfig(t *testing.T) {
+	queueDepth := 96
+
+	cases := []struct {
+		name                   string
+		siteConfig             schema.SiteConfiguration
+		wantMaxQueueDepth      int
+		wantMaxReorderDuration time.Duration
+	}{
+		{
+			name:              "defaults",
+			siteConfig:        schema.SiteConfiguration{},
+			wantMaxQueueDepth: 24,
+		},
+		{
+			name: "MaxReorderDurationMS",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderDurationMS: 5,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxReorderDuration: 5 * time.Millisecond,
+		},
+		{
+
+			name: "MaxReorderQueueSize",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderQueueSize: &queueDepth,
+			}}},
+			wantMaxQueueDepth: 96,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			haveMaxQueueDepth, haveMaxReorderDuration := resultQueueSettingsFromConfig(tt.siteConfig)
+
+			if haveMaxQueueDepth != tt.wantMaxQueueDepth {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, haveMaxQueueDepth)
+			}
+
+			if haveMaxReorderDuration != tt.wantMaxReorderDuration {
+				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, haveMaxReorderDuration)
+			}
+		})
 	}
 }
 

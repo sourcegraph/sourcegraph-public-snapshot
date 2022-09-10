@@ -1,6 +1,6 @@
 golang 1.18.1
 nodejs 16.7.0
-# We're using yarn classic to isntall yarn 3.x as defined in package.json
+# We're using yarn classic to install yarn 3.x as defined in package.json
 yarn 1.22.19
 fd 7.4.0
 shfmt 3.5.0

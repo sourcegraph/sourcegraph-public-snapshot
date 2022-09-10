@@ -34,6 +34,7 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
@@ -44,6 +45,7 @@ export interface PathMatch {
 export interface ContentMatch {
     type: 'content'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
@@ -129,6 +131,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string

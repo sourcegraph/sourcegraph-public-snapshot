@@ -88,7 +88,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/search',
         },
         {
-            label: 'Code intel',
+            label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
         },
         {
