@@ -43,7 +43,7 @@ interface SearchSidebarViewProps
 export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
     ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
         const history = useHistory()
-        const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+        const [, setCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
         // TODO: Get rid of Zustand create store since this is no longer needed after sidebar decoupling
         const useSearchQueryState: SearchQueryStateStore = useMemo(
@@ -157,7 +157,7 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
         const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
 
         return (
-            <SearchSidebar onClose={() => setSelectedTab(null)} className={styles.sidebarContainer}>
+            <SearchSidebar onClose={() => setCollapsed(true)} className={styles.sidebarContainer}>
                 <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
                     {getDynamicFilterLinks(
                         filters,

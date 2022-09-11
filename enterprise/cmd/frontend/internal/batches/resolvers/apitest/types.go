@@ -316,8 +316,7 @@ type ChangesetSpecDescription struct {
 	ExternalID     string
 	BaseRef        string
 
-	HeadRepository Repository
-	HeadRef        string
+	HeadRef string
 
 	Title string
 	Body  string

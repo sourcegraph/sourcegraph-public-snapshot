@@ -451,7 +451,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                         note={
                             <Text as="span">
                                 Note: Events is the count of{' '}
-                                <Link to="/help/admin/faq#how-are-active-users-calculated">all billable events</Link>{' '}
+                                <Link to="/help/admin/pricing">all billable events</Link>{' '}
                                 which equate to billable usage.
                             </Text>
                         }

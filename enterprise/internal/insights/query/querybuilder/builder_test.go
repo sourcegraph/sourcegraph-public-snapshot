@@ -432,28 +432,38 @@ func TestAggregationQuery(t *testing.T) {
 	tests := []struct {
 		name       string
 		inputQuery string
+		count      string
 		want       autogold.Value
 	}{
 		{
 			inputQuery: `test`,
+			count:      "all",
 			want:       autogold.Want("basic query", BasicQuery("count:all timeout:2s test")),
 		},
 		{
 			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo)`,
+			count:      "all",
 			want:       autogold.Want("multiplan query", BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
 		},
 		{
 			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo) count:2000`,
+			count:      "all",
 			want:       autogold.Want("multiplan query overwrite", BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
 		},
 		{
 			inputQuery: `test count:1000`,
+			count:      "all",
 			want:       autogold.Want("overwrite existing", BasicQuery("count:all timeout:2s test")),
+		},
+		{
+			inputQuery: `test count:1000`,
+			count:      "50000",
+			want:       autogold.Want("overwrite existing", BasicQuery("count:50000 timeout:2s test")),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, _ := AggregationQuery(BasicQuery(test.inputQuery), 2)
+			got, _ := AggregationQuery(BasicQuery(test.inputQuery), 2, test.count)
 			test.want.Equal(t, got)
 
 		})
