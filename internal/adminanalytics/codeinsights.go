@@ -2,12 +2,10 @@ package adminanalytics
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CodeInsights struct {
@@ -15,83 +13,6 @@ type CodeInsights struct {
 	Grouping  string
 	DB        database.DB
 	Cache     bool
-}
-
-// Insights:SeriesCreations
-
-var seriesCreationNodesQuery = `
-	SELECT
-		%s AS date,
-		COUNT(DISTINCT id) AS count,
-		-- Add empty columns to reuse AnalyticsFetcher
-		0 as unique_users,
-		0 as registered_users
-	FROM insight_series
-	WHERE %s
-	GROUP BY date
-`
-
-var seriesCreationsSummaryQuery = `
-	SELECT
-		COUNT(DISTINCT id) AS total_count,
-		-- Add empty columns to reuse AnalyticsFetcher
-		0 as total_unique_users,
-		0 as total_registered_users
-	FROM insight_series
-	WHERE %s
-`
-
-var (
-	searchGenerationType        = "SEARCH"
-	searchComputeGenerationType = "SEARCH_COMPUTE"
-	languageStatsGenerationType = "LANGUAGE_STATS"
-)
-
-func makeGenerationTypeField(generationType string) (string, error) {
-	switch generationType {
-	case searchGenerationType:
-		return "search", nil
-	case searchComputeGenerationType:
-		return "search-compute", nil
-	case languageStatsGenerationType:
-		return "language-stats", nil
-	default:
-		return "", errors.Newf("Unknown code insights generation type: %s", generationType)
-	}
-}
-
-func (c *CodeInsights) SeriesCreations(ctx context.Context, args *struct {
-	GenerationType *string
-}) (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(c.DateRange, c.Grouping, "created_at")
-	if err != nil {
-		return nil, err
-	}
-	conds := []*sqlf.Query{sqlf.Sprintf(`created_at %s`, dateBetweenCond)}
-	cacheGroupKey := "Insights:SeriesCreations"
-	if args.GenerationType != nil {
-		generationType, err := makeGenerationTypeField(*args.GenerationType)
-		if err != nil {
-			return nil, err
-		}
-		conds = append(conds, sqlf.Sprintf(`generation_method = %s`, generationType))
-		cacheGroupKey = fmt.Sprintf("%s:%s", cacheGroupKey, *args.GenerationType)
-	} else {
-		cacheGroupKey = fmt.Sprintf("%s:%s", cacheGroupKey, "ALL")
-	}
-
-	nodesQuery := sqlf.Sprintf(seriesCreationNodesQuery, dateTruncExp, sqlf.Join(conds, "AND"))
-	summaryQuery := sqlf.Sprintf(seriesCreationsSummaryQuery, sqlf.Join(conds, "AND"))
-
-	return &AnalyticsFetcher{
-		db:           c.DB,
-		dateRange:    c.DateRange,
-		grouping:     c.Grouping,
-		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        cacheGroupKey,
-		cache:        c.Cache,
-	}, nil
 }
 
 // Insights:DashboardCreations
@@ -232,20 +153,5 @@ func (c *CodeInsights) CacheAll(ctx context.Context) error {
 		return err
 	}
 
-	// Cache series creation stats
-	for _, generationType := range []*string{nil, &searchComputeGenerationType, &searchGenerationType, &languageStatsGenerationType} {
-		fetcher, err := c.SeriesCreations(ctx, &struct{ GenerationType *string }{GenerationType: generationType})
-		if err != nil {
-			return err
-		}
-
-		if _, err := fetcher.Nodes(ctx); err != nil {
-			return err
-		}
-
-		if _, err := fetcher.Summary(ctx); err != nil {
-			return err
-		}
-	}
 	return nil
 }

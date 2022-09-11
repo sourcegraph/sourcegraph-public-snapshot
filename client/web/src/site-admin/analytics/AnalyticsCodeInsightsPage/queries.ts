@@ -31,9 +31,6 @@ export const INSIGHTS_STATISTICS = gql`
         site {
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
-                    seriesCreations {
-                        ...AnalyticsInsightStatItemFragment
-                    }
                     dashboardCreations {
                         ...AnalyticsInsightStatItemFragment
                     }
@@ -42,21 +39,6 @@ export const INSIGHTS_STATISTICS = gql`
                     }
                     insightDataPointClicks {
                         ...AnalyticsStatItemFragment
-                    }
-                    searchSeriesCreations: seriesCreations(generationType: SEARCH) {
-                        summary {
-                            totalCount
-                        }
-                    }
-                    languageSeriesCreations: seriesCreations(generationType: LANGUAGE_STATS) {
-                        summary {
-                            totalCount
-                        }
-                    }
-                    computeSeriesCreations: seriesCreations(generationType: SEARCH_COMPUTE) {
-                        summary {
-                            totalCount
-                        }
                     }
                     totalInsightsCount
                 }

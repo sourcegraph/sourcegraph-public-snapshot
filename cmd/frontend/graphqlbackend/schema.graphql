@@ -6450,15 +6450,6 @@ type AnalyticsInsightStatItemSummary {
 }
 
 """
-Insight Series generation type enum.
-"""
-enum AnalyticsInsightSeriesGenerationType {
-    SEARCH
-    SEARCH_COMPUTE
-    LANGUAGE_STATS
-}
-
-"""
 Code insights analytics.
 """
 type AnalyticsCodesInsightsResult {
@@ -6474,10 +6465,6 @@ type AnalyticsCodesInsightsResult {
     The number of currently existing insights.
     """
     totalInsightsCount: Float
-    """
-    Insight series creation statistics.
-    """
-    seriesCreations(generationType: AnalyticsInsightSeriesGenerationType): AnalyticsInsightStatItem!
     """
     Insight dashboard creation statistics.
     """
