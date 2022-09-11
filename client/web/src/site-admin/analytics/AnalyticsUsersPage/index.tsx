@@ -2,7 +2,6 @@ import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
@@ -21,7 +20,9 @@ import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 
-export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+import styles from './AnalyticsUsersPage.module.scss'
+
+export const AnalyticsUsersPage: React.FunctionComponent<{}> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'registeredUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
@@ -163,9 +164,9 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                     {summary && (
                         <ChartContainer
                             title="Average user activity by period"
-                            className="mb-5"
                             labelX="Average DAU/WAU/MAU"
                             labelY="Unique users"
+                            className={classNames(styles.barChart, 'mb-5')}
                         >
                             {width => (
                                 <BarChart
@@ -174,26 +175,29 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                                     data={summary}
                                     getDatumName={datum => datum.label}
                                     getDatumValue={datum => datum.value}
-                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                    getDatumColor={() => 'var(--bar-color)'}
+                                    getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                 />
                             )}
                         </ChartContainer>
                     )}
                     {frequencies && (
                         <ChartContainer
-                            className="mb-5"
                             title="Frequency of use"
                             labelX="Days used"
                             labelY="Unique users"
+                            className={classNames(styles.barChart, 'mb-5')}
                         >
                             {width => (
                                 <BarChart
                                     width={isWideScreen ? 540 : width}
                                     height={300}
                                     data={frequencies}
+                                    pixelsPerXTick={20}
                                     getDatumName={datum => datum.label}
                                     getDatumValue={datum => datum.value}
-                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                    getDatumColor={() => 'var(--bar-color)'}
+                                    getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                 />
                             )}
                         </ChartContainer>
