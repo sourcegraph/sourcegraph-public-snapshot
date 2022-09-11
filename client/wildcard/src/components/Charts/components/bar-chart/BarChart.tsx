@@ -28,6 +28,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
 
     onDatumHover?: (datum: Datum) => void
 }
@@ -50,6 +51,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
         onDatumLinkClick,
@@ -118,6 +120,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         getDatumName={getDatumName}
                         getDatumValue={getDatumValue}
                         getDatumColor={getDatumColor}
+                        getDatumFadeColor={getDatumFadeColor}
                         getDatumLink={getDatumLink}
                         onBarClick={handleBarClick}
                         onBarHover={onDatumHover}
