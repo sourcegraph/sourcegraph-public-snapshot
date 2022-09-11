@@ -14,37 +14,30 @@ const analyticsStatItemFragment = gql`
     }
 `
 
-const analyticsInsightStatItemFragment = gql`
-    fragment AnalyticsInsightStatItemFragment on AnalyticsInsightStatItem {
-        nodes {
-            date
-            count
-        }
-        summary {
-            totalCount
-        }
-    }
-`
-
 export const INSIGHTS_STATISTICS = gql`
     query InsightsStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
-                    dashboardCreations {
-                        ...AnalyticsInsightStatItemFragment
-                    }
                     insightHovers {
                         ...AnalyticsStatItemFragment
                     }
                     insightDataPointClicks {
                         ...AnalyticsStatItemFragment
                     }
-                    totalInsightsCount
                 }
+            }
+        }
+        insightViews {
+            nodes {
+                id
+            }
+        }
+        insightsDashboards {
+            nodes {
+                id
             }
         }
     }
     ${analyticsStatItemFragment}
-    ${analyticsInsightStatItemFragment}
 `

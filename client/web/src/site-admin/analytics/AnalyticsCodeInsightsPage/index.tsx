@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect } from 'react'
 
 import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
@@ -37,7 +37,7 @@ export const calculateMinutesSaved = (data: typeof MinutesSaved): number =>
     data.LanguageSeries * MinutesSaved.LanguageSeries +
     data.ComputeSeries * MinutesSaved.ComputeSeries
 
-export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
+export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentProps> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Insights', aggregation: 'count' })
     const { data, error, loading } = useQuery<InsightsStatisticsResult, InsightsStatisticsVariables>(
         INSIGHTS_STATISTICS,
@@ -56,12 +56,8 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const {
-            insightHovers,
-            insightDataPointClicks,
-            totalInsightsCount,
-            dashboardCreations,
-        } = data.site.analytics.codeInsights
+        const { insightHovers, insightDataPointClicks } = data.site.analytics.codeInsights
+        const { insightViews, insightsDashboards } = data
 
         const legends: ValueLegendListProps['items'] = [
             {
@@ -89,16 +85,16 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                         : 'The number of users clicking on insight data points during the timeframe.',
             },
             {
-                value: dashboardCreations.summary.totalCount,
-                description: 'Dashboards created',
-                position: 'right',
-                tooltip: 'The number of dashboards created during the timeframe.',
-            },
-            {
-                value: totalInsightsCount ?? '-',
+                value: insightViews.nodes.length,
                 description: 'Total insights',
                 position: 'right',
                 tooltip: 'The number of currently existing insights.',
+            },
+            {
+                value: insightsDashboards.nodes.length,
+                description: 'Total dashboards',
+                position: 'right',
+                tooltip: 'The number of currently existing insight dashboards.',
             },
         ]
 
@@ -143,8 +139,6 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
 
         return activities
     }, [data, aggregation.selected, dateRange.value])
-
-    const [kindToMinPerItem, setKindToMinPerItem] = useState<typeof MinutesSaved>(MinutesSaved)
 
     if (error) {
         throw error
