@@ -16,8 +16,8 @@ import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-
 import { useChartFilters } from '../useChartFilters'
+
 import { DevTimeSaved } from './DevTimeSaved'
 import { OVERVIEW_STATISTICS } from './queries'
 import { Sidebar } from './Sidebar'
