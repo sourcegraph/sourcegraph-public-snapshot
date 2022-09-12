@@ -22,7 +22,7 @@ import {
     Popover,
     PopoverTrigger,
     PopoverContent,
-    Button
+    Button,
 } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'

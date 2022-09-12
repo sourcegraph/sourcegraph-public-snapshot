@@ -66,13 +66,7 @@ const ShareOptionComponent: React.FunctionComponent<
 }
 
 export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps> = props => {
-    const {
-        isSourcegraphDotCom,
-        telemetryService,
-        authenticatedUser,
-        selectedShareOption,
-        onSelectShareOption
-    } = props
+    const { isSourcegraphDotCom, telemetryService, authenticatedUser, selectedShareOption, onSelectShareOption } = props
 
     const handleTriggerClick = (): void => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
@@ -111,7 +105,7 @@ export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps>
                 className={styles.button}
                 onClick={handleTriggerClick}
             >
-                { isOpen =>
+                {isOpen => (
                     <>
                         <span className="d-flex align-items-center">
                             <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
@@ -124,7 +118,7 @@ export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps>
                             )}
                         </span>
                     </>
-                }
+                )}
             </MenuButton>
 
             <MenuList>
