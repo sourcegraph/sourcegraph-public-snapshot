@@ -5931,11 +5931,7 @@ with your code hosts connections or networking issues affecting communication wi
 <details>
 <summary>Technical details</summary>
 
-Custom alert query: `
-		(sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) OR vector(0)) == 0
-			AND
-		(sum by (queue)(src_executor_total{job=~"^sourcegraph-executors.*"})) > 0
-	`
+Custom alert query: `(sum(src_executor_processor_handlers{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{foo="bar",job=~"^sourcegraph-executors.*"})) > 0`
 
 </details>
 
@@ -5968,7 +5964,7 @@ Custom alert query: `
 <details>
 <summary>Technical details</summary>
 
-Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100`
+Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100`
 
 </details>
 

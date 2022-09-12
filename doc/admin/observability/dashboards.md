@@ -27,7 +27,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_search_streaming_latency_seconds_bucket{foo="bar",source="browser"}[5m])))`
 
 </details>
 
@@ -46,7 +46,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le) (rate(src_search_streaming_latency_seconds_bucket{foo="bar",source="browser"}[5m])))`
 
 </details>
 
@@ -65,7 +65,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100010`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`
+Query: `(sum(increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser",status="timeout"}[5m])) + sum(increase(src_graphql_search_response{alert_type="timed_out",foo="bar",request_name!="CodeIntelSearch",source="browser",status="alert"}[5m]))) / sum(increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -84,7 +84,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100011`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(status) (increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -103,7 +103,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100012`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(status) (increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -122,7 +122,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100013`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",foo="bar",request_name!="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name!="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -141,7 +141,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100020`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`
+Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{foo="bar",route!="blob",route!="raw",route!~"graphql.*"}[10m])))`
 
 </details>
 
@@ -160,7 +160,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100021`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`
+Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{foo="bar",route="blob"}[10m])))`
 
 </details>
 
@@ -181,7 +181,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",foo="bar",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))`
 
 </details>
 
@@ -200,7 +200,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",foo="bar",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))`
 
 </details>
 
@@ -219,7 +219,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`
+Query: `(sum(increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser",status="timeout"}[5m])) + sum(increase(src_graphql_search_response{alert_type="timed_out",foo="bar",request_name="CodeIntelSearch",source="browser",status="alert"}[5m]))) / sum(increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -238,7 +238,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(status) (increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -257,7 +257,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(status) (increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) * 100`
 
 </details>
 
@@ -276,7 +276,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100113`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`
+Query: `sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out",foo="bar",request_name="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{foo="bar",request_name="CodeIntelSearch",source="browser"}[5m])) * 100`
 
 </details>
 
@@ -297,7 +297,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",foo="bar",source="other",type="Search"}[5m])))`
 
 </details>
 
@@ -316,7 +316,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",foo="bar",source="other",type="Search"}[5m])))`
 
 </details>
 
@@ -335,7 +335,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100210`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`
+Query: `sum by(status) (increase(src_graphql_search_response{foo="bar",source="other",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{foo="bar",source="other"}[5m]))`
 
 </details>
 
@@ -354,7 +354,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100211`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m])) / sum(increase(src_graphql_search_response{source="other"}[5m]))`
+Query: `sum(increase(src_graphql_search_response{foo="bar",source="other",status="partial_timeout"}[5m])) / sum(increase(src_graphql_search_response{foo="bar",source="other"}[5m]))`
 
 </details>
 
@@ -373,7 +373,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100212`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{status="alert",source="other"}[5m]))`
+Query: `sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",foo="bar",source="other",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{foo="bar",source="other",status="alert"}[5m]))`
 
 </details>
 
@@ -394,7 +394,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_resolvers_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_resolvers_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -413,7 +413,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_resolvers_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_resolvers_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -432,7 +432,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100302`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -451,7 +451,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_resolvers_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_resolvers_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -470,7 +470,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_resolvers_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_resolvers_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -489,7 +489,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_resolvers_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_resolvers_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -508,7 +508,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100312`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -527,7 +527,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_resolvers_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_resolvers_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_resolvers_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_resolvers_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -548,7 +548,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindex_enqueuer_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindex_enqueuer_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -567,7 +567,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -586,7 +586,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -605,7 +605,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_autoindex_enqueuer_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_autoindex_enqueuer_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -624,7 +624,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindex_enqueuer_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -643,7 +643,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -662,7 +662,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -681,7 +681,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindex_enqueuer_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_autoindex_enqueuer_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_autoindex_enqueuer_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -702,7 +702,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -721,7 +721,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -740,7 +740,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -759,7 +759,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -778,7 +778,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -797,7 +797,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -816,7 +816,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -835,7 +835,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -856,7 +856,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -875,7 +875,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_index_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_workerutil_dbworker_store_codeintel_index_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -894,7 +894,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100602`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -913,7 +913,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100603`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_index_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_index_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -934,7 +934,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -953,7 +953,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -972,7 +972,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100702`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -991,7 +991,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100703`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1010,7 +1010,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100710`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1029,7 +1029,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100711`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1048,7 +1048,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100712`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1067,7 +1067,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100713`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1088,7 +1088,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1107,7 +1107,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100801`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1126,7 +1126,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100802`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1145,7 +1145,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100803`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1164,7 +1164,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100810`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1183,7 +1183,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100811`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1202,7 +1202,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100812`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1221,7 +1221,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100813`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_gitserver_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1242,7 +1242,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100900`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_repoupdater_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1261,7 +1261,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100901`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_repoupdater_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1280,7 +1280,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100902`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1299,7 +1299,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100903`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_repoupdater_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_repoupdater_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1318,7 +1318,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100910`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1337,7 +1337,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100911`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_repoupdater_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1356,7 +1356,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100912`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1375,7 +1375,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100913`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_repoupdater_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_repoupdater_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1396,7 +1396,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploadstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1415,7 +1415,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploadstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1434,7 +1434,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101002`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1453,7 +1453,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101003`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_uploadstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_uploadstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1472,7 +1472,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101010`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1491,7 +1491,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101011`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploadstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1510,7 +1510,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101012`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1529,7 +1529,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101013`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_uploadstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_uploadstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1550,7 +1550,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependencies_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependencies_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1569,7 +1569,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dependencies_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dependencies_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1588,7 +1588,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101102`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1607,7 +1607,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101103`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_dependencies_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_dependencies_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1626,7 +1626,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dependencies_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dependencies_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1645,7 +1645,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101111`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dependencies_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_dependencies_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1664,7 +1664,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1683,7 +1683,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101113`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_dependencies_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_dependencies_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_dependencies_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_dependencies_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1704,7 +1704,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lockfiles_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_lockfiles_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1723,7 +1723,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lockfiles_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_lockfiles_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1742,7 +1742,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101202`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1761,7 +1761,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101203`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_lockfiles_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_lockfiles_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1780,7 +1780,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101210`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lockfiles_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lockfiles_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1799,7 +1799,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101211`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lockfiles_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_lockfiles_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1818,7 +1818,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101212`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1837,7 +1837,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101213`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_lockfiles_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_codeintel_lockfiles_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_codeintel_lockfiles_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1858,7 +1858,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_client_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_gitserver_client_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1877,7 +1877,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_gitserver_client_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1896,7 +1896,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101302`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1915,7 +1915,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_gitserver_client_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_gitserver_client_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -1934,7 +1934,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_client_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_gitserver_client_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1953,7 +1953,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_gitserver_client_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -1972,7 +1972,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101312`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1991,7 +1991,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_gitserver_client_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_gitserver_client_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_gitserver_client_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2012,7 +2012,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2031,7 +2031,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2050,7 +2050,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2069,7 +2069,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_batches_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_batches_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2088,7 +2088,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2107,7 +2107,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -2126,7 +2126,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2145,7 +2145,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_batches_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2166,7 +2166,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_batches_service_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2185,7 +2185,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2204,7 +2204,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2223,7 +2223,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_batches_service_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_batches_service_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2242,7 +2242,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2261,7 +2261,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_service_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -2280,7 +2280,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2299,7 +2299,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_batches_service_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_batches_service_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2320,7 +2320,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2339,7 +2339,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101601`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -2358,7 +2358,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101602`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -2377,7 +2377,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101603`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -2398,7 +2398,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_total{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_oobmigration_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m]))`
 
 </details>
 
@@ -2417,7 +2417,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101701`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_oobmigration_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m]))`
 
 </details>
 
@@ -2436,7 +2436,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101702`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_errors_total{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m]))`
 
 </details>
 
@@ -2455,7 +2455,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101703`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_errors_total{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_oobmigration_total{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_oobmigration_errors_total{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m])) / (sum(increase(src_oobmigration_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m])) + sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="up"}[5m]))) * 100`
 
 </details>
 
@@ -2476,7 +2476,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_total{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_oobmigration_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m]))`
 
 </details>
 
@@ -2495,7 +2495,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101801`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_oobmigration_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m]))`
 
 </details>
 
@@ -2514,7 +2514,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101802`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m]))`
 
 </details>
 
@@ -2533,7 +2533,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101803`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_oobmigration_total{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m])) / (sum(increase(src_oobmigration_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m])) + sum(increase(src_oobmigration_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*",op="down"}[5m]))) * 100`
 
 </details>
 
@@ -2554,7 +2554,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`
+Query: `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2..",foo="bar"}[5m])) / ignoring(code) group_left() sum(increase(src_zoekt_request_duration_seconds_count{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -2573,7 +2573,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101901`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`
+Query: `sum by(code) (increase(searcher_service_request_total{code!~"2..",foo="bar"}[5m])) / ignoring(code) group_left() sum(increase(searcher_service_request_total{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -2592,7 +2592,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101902`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar"}[5m])) / ignoring(code) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -2611,7 +2611,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101910`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, category) (rate(src_gitserver_request_duration_seconds_bucket{foo="bar",job=~"(sourcegraph-)?frontend"}[5m])))`
 
 </details>
 
@@ -2630,7 +2630,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101911`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`
+Query: `sum by(category) (increase(src_gitserver_request_duration_seconds_count{code!~"2..",foo="bar",job=~"(sourcegraph-)?frontend"}[5m])) / ignoring(code) group_left() sum by(category) (increase(src_gitserver_request_duration_seconds_count{foo="bar",job=~"(sourcegraph-)?frontend"}[5m])) * 100`
 
 </details>
 
@@ -2649,7 +2649,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101920`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(owner) (observability_test_metric_warning)`
+Query: `max by(owner) (observability_test_metric_warning{foo="bar"})`
 
 </details>
 
@@ -2668,7 +2668,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101921`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(owner) (observability_test_metric_critical)`
+Query: `max by(owner) (observability_test_metric_critical{foo="bar"})`
 
 </details>
 
@@ -2691,7 +2691,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))`
+Query: `sum(irate(src_http_request_duration_seconds_count{foo="bar",method="post",route="sign-in"}[5m]))`
 
 </details>
 
@@ -2712,7 +2712,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102001`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_http_request_duration_seconds_bucket{foo="bar",method="post",route="sign-in"}[5m])))`
 
 </details>
 
@@ -2733,7 +2733,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102002`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))*100`
+Query: `sum by(code) (irate(src_http_request_duration_seconds_count{foo="bar",method="post",route="sign-in"}[5m])) / ignoring(code) group_left() sum(irate(src_http_request_duration_seconds_count{foo="bar",method="post",route="sign-in"}[5m])) * 100`
 
 </details>
 
@@ -2754,7 +2754,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102010`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))`
+Query: `sum(irate(src_http_request_duration_seconds_count{foo="bar",method="post",route="sign-up"}[5m]))`
 
 </details>
 
@@ -2775,7 +2775,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102011`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_http_request_duration_seconds_bucket{foo="bar",method="post",route="sign-up"}[5m])))`
 
 </details>
 
@@ -2796,7 +2796,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102012`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`
+Query: `sum by(code) (irate(src_http_request_duration_seconds_count{foo="bar",method="post",route="sign-up"}[5m])) / ignoring(code) group_left() sum(irate(src_http_request_duration_seconds_count{foo="bar",route="sign-out"}[5m])) * 100`
 
 </details>
 
@@ -2817,7 +2817,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102020`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))`
+Query: `sum(irate(src_http_request_duration_seconds_count{foo="bar",route="sign-out"}[5m]))`
 
 </details>
 
@@ -2838,7 +2838,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102021`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-out"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_http_request_duration_seconds_bucket{foo="bar",route="sign-out"}[5m])))`
 
 </details>
 
@@ -2859,7 +2859,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102022`
 <details>
 <summary>Technical details</summary>
 
-Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`
+Query: `sum by(code) (irate(src_http_request_duration_seconds_count{foo="bar",route="sign-out"}[5m])) / ignoring(code) group_left() sum(irate(src_http_request_duration_seconds_count{foo="bar",route="sign-out"}[5m])) * 100`
 
 </details>
 
@@ -2880,7 +2880,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102030`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`
+Query: `sum(rate(src_frontend_account_failed_sign_in_attempts_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -2901,7 +2901,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102031`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_frontend_account_lockouts_total[1m]))`
+Query: `sum(rate(src_frontend_account_lockouts_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -2924,7 +2924,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrganizationMembers"}[5m]))`
 
 </details>
 
@@ -2945,7 +2945,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="OrganizationMembers"}[5m])))`
 
 </details>
 
@@ -2966,7 +2966,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102102`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrganizationMembers",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrganizationMembers"}[5m])) * 100`
 
 </details>
 
@@ -2987,7 +2987,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="CreateOrganization"}[5m]))`
 
 </details>
 
@@ -3008,7 +3008,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102111`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="CreateOrganization"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="CreateOrganization"}[5m])))`
 
 </details>
 
@@ -3029,7 +3029,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="CreateOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="CreateOrganization",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="CreateOrganization"}[5m])) * 100`
 
 </details>
 
@@ -3050,7 +3050,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102120`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RemoveUserFromOrganization"}[5m]))`
 
 </details>
 
@@ -3071,7 +3071,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102121`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RemoveUserFromOrganization"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="RemoveUserFromOrganization"}[5m])))`
 
 </details>
 
@@ -3092,7 +3092,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102122`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RemoveUserFromOrganization",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RemoveUserFromOrganization"}[5m])) * 100`
 
 </details>
 
@@ -3113,7 +3113,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102130`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="InviteUserToOrganization"}[5m]))`
 
 </details>
 
@@ -3134,7 +3134,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102131`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="InviteUserToOrganization"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="InviteUserToOrganization"}[5m])))`
 
 </details>
 
@@ -3155,7 +3155,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102132`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="InviteUserToOrganization",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="InviteUserToOrganization"}[5m])) * 100`
 
 </details>
 
@@ -3176,7 +3176,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102140`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RespondToOrganizationInvitation"}[5m]))`
 
 </details>
 
@@ -3197,7 +3197,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102141`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RespondToOrganizationInvitation"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="RespondToOrganizationInvitation"}[5m])))`
 
 </details>
 
@@ -3218,7 +3218,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102142`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RespondToOrganizationInvitation",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="RespondToOrganizationInvitation"}[5m])) * 100`
 
 </details>
 
@@ -3239,7 +3239,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102150`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrgRepositories"}[5m]))`
 
 </details>
 
@@ -3260,7 +3260,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102151`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrgRepositories"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum by(le) (rate(src_graphql_request_duration_seconds_bucket{foo="bar",route="OrgRepositories"}[5m])))`
 
 </details>
 
@@ -3281,7 +3281,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102152`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgRepositories",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))*100`
+Query: `sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrgRepositories",success="false"}[5m])) / sum(irate(src_graphql_request_duration_seconds_count{foo="bar",route="OrgRepositories"}[5m])) * 100`
 
 </details>
 
@@ -3302,7 +3302,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_cloudkms_cryptographic_total[1m]))`
+Query: `sum(increase(src_cloudkms_cryptographic_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -3323,7 +3323,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102201`
 <details>
 <summary>Technical details</summary>
 
-Query: `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`
+Query: `min by(kubernetes_name) (src_encryption_cache_hit_total{foo="bar"} / (src_encryption_cache_hit_total{foo="bar"} + src_encryption_cache_miss_total{foo="bar"}))`
 
 </details>
 
@@ -3344,7 +3344,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102202`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`
+Query: `sum by(kubernetes_name) (irate(src_encryption_cache_eviction_total{foo="bar"}[5m]))`
 
 </details>
 
@@ -3365,7 +3365,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="frontend"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="frontend",foo="bar"})`
 
 </details>
 
@@ -3384,7 +3384,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="frontend"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="frontend",foo="bar"})`
 
 </details>
 
@@ -3403,7 +3403,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="frontend"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="frontend",foo="bar"})`
 
 </details>
 
@@ -3422,7 +3422,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="frontend"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="frontend",foo="bar"})`
 
 </details>
 
@@ -3441,7 +3441,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102320`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend",foo="bar"}[5m]))`
 
 </details>
 
@@ -3460,7 +3460,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="frontend"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="frontend",foo="bar"}[5m]))`
 
 </details>
 
@@ -3479,7 +3479,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102331`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="frontend"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="frontend",foo="bar"}[5m]))`
 
 </details>
 
@@ -3498,7 +3498,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102332`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="frontend"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="frontend",foo="bar"}[5m]))`
 
 </details>
 
@@ -3529,7 +3529,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400`
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}) > 60)`
 
 </details>
 
@@ -3548,7 +3548,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401`
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}`
 
 </details>
 
@@ -3567,7 +3567,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402`
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}`
 
 </details>
 
@@ -3589,7 +3589,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(frontend|sourcegraph-frontend).*"}[1h]) + rate(container_fs_writes_total{name=~"^(frontend|sourcegraph-frontend).*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[1h]))`
 
 </details>
 
@@ -3610,7 +3610,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500`
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[1d])`
 
 </details>
 
@@ -3629,7 +3629,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102501`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[1d])`
 
 </details>
 
@@ -3648,7 +3648,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102510`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[5m])`
 
 </details>
 
@@ -3667,7 +3667,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102511`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend).*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"}[5m])`
 
 </details>
 
@@ -3689,7 +3689,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102512`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend).*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^(frontend|sourcegraph-frontend).*"})`
 
 </details>
 
@@ -3712,7 +3712,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102600`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*(frontend|sourcegraph-frontend)"})`
 
 </details>
 
@@ -3731,7 +3731,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102601`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-frontend)"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*(frontend|sourcegraph-frontend)"})`
 
 </details>
 
@@ -3752,7 +3752,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (app) (up{app=~".*(frontend|sourcegraph-frontend)"}) * 100`
+Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)",foo="bar"}) / count by(app) (up{app=~".*(frontend|sourcegraph-frontend)",foo="bar"}) * 100`
 
 </details>
 
@@ -3775,7 +3775,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))`
+Query: `sum by(type) (rate(src_search_ranking_result_clicked_sum{foo="bar"}[6h])) / sum by(type) (rate(src_search_ranking_result_clicked_count{foo="bar"}[6h]))`
 
 </details>
 
@@ -3796,7 +3796,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801`
 <details>
 <summary>Technical details</summary>
 
-Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)`
+Query: `round(sum(increase(src_search_ranking_result_clicked_sum{foo="bar",type="commit"}[6h])) / sum(increase(src_search_ranking_result_clicked_sum{foo="bar"}[6h])) * 100)`
 
 </details>
 
@@ -3819,7 +3819,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102900`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[2h])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[2h]))`
+Query: `sum(rate(src_search_response_latency_seconds_sum{foo="bar",source=~"searchblitz.*",status="success"}[2h])) / sum(rate(src_search_response_latency_seconds_count{foo="bar",source=~"searchblitz.*",status="success"}[2h]))`
 
 </details>
 
@@ -3840,7 +3840,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102901`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[2h]))`
+Query: `sum(rate(src_search_streaming_latency_seconds_sum{foo="bar",source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{foo="bar",source=~"searchblitz.*"}[2h]))`
 
 </details>
 
@@ -3861,7 +3861,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102910`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_response_latency_seconds_bucket{foo="bar",source=~"searchblitz.*",status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
@@ -3882,7 +3882,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102911`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_streaming_latency_seconds_bucket{foo="bar",source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
@@ -3903,7 +3903,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102920`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source)`
+Query: `sum by(source) (rate(src_search_response_latency_seconds_sum{foo="bar",source=~"searchblitz.*",status="success"}[1m])) / sum by(source) (rate(src_search_response_latency_seconds_count{foo="bar",source=~"searchblitz.*",status="success"}[1m]))`
 
 </details>
 
@@ -3924,7 +3924,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102921`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source)`
+Query: `sum by(source) (rate(src_search_streaming_latency_seconds_sum{foo="bar",source=~"searchblitz.*"}[1m])) / sum by(source) (rate(src_search_streaming_latency_seconds_count{foo="bar",source=~"searchblitz.*"}[1m]))`
 
 </details>
 
@@ -3945,7 +3945,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102930`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.9, sum by(le, source) (rate(src_search_response_latency_seconds_bucket{foo="bar",source=~"searchblitz.*",status="success"}[1m])))`
 
 </details>
 
@@ -3966,7 +3966,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102931`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.9, sum by(le, source) (rate(src_search_streaming_latency_seconds_bucket{foo="bar",source=~"searchblitz.*"}[1m])))`
 
 </details>
 
@@ -3987,7 +3987,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102940`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.9, sum by(le, source) (rate(src_search_response_latency_seconds_bucket{foo="bar",source=~"searchblitz.*",status!="success"}[1m])))`
 
 </details>
 
@@ -4008,7 +4008,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102950`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.75, sum by(le, source) (rate(src_search_response_latency_seconds_bucket{foo="bar",source=~"searchblitz.*",status="success"}[1m])))`
 
 </details>
 
@@ -4029,7 +4029,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102951`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.75, sum by(le, source) (rate(src_search_streaming_latency_seconds_bucket{foo="bar",source=~"searchblitz.*"}[1m])))`
 
 </details>
 
@@ -4050,7 +4050,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102960`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))`
+Query: `histogram_quantile(0.75, sum by(le, source) (rate(src_search_response_latency_seconds_bucket{foo="bar",source=~"searchblitz.*",status!="success"}[1m])))`
 
 </details>
 
@@ -4071,7 +4071,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102970`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[$sentinel_sampling_duration])) by (status)`
+Query: `sum by(status) (rate(src_graphql_search_response{foo="bar",source=~"searchblitz.*",status!="success"}[1m]))`
 
 </details>
 
@@ -4092,7 +4092,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_insights_aggregations_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -4111,7 +4111,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_insights_aggregations_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(le) (rate(src_insights_aggregations_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -4130,7 +4130,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103002`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -4149,7 +4149,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103003`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_insights_aggregations_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -4168,7 +4168,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103010`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op, extended_mode) (increase(src_insights_aggregations_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -4187,7 +4187,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103011`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op,extended_mode)(rate(src_insights_aggregations_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op, extended_mode) (rate(src_insights_aggregations_duration_seconds_bucket{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
@@ -4206,7 +4206,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103012`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by(op, extended_mode) (increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -4225,7 +4225,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103013`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op,extended_mode)(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by(op, extended_mode) (increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by(op, extended_mode) (increase(src_insights_aggregations_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by(op, extended_mode) (increase(src_insights_aggregations_errors_total{foo="bar",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -4252,7 +4252,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`})`
+Query: `sum by(container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"})`
 
 </details>
 
@@ -4273,7 +4273,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `go_goroutines{app="gitserver", instance=~`${shard:regex}`}`
+Query: `go_goroutines{app="gitserver",foo="bar",instance=~"${shard:regex}"}`
 
 </details>
 
@@ -4294,7 +4294,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)`
+Query: `sum by(container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m])) * 100)`
 
 </details>
 
@@ -4315,7 +4315,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -4334,7 +4334,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10002
 <details>
 <summary>Technical details</summary>
 
-Query: `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`
+Query: `(src_gitserver_disk_space_available{foo="bar"} / src_gitserver_disk_space_total{foo="bar"}) * 100`
 
 </details>
 
@@ -4355,7 +4355,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10003
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_container_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver"}[5m]))`
+Query: `sum by(container_label_io_kubernetes_container_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -4376,7 +4376,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10003
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_container_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver"}[5m]))`
+Query: `sum by(container_label_io_kubernetes_container_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -4397,7 +4397,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10004
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -4418,7 +4418,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10004
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -4439,7 +4439,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10005
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -4460,7 +4460,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10005
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name="gitserver",container_label_io_kubernetes_pod_name=~"${shard:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -4481,7 +4481,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10006
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance, cmd) (src_gitserver_exec_running{instance=~`${shard:regex}`})`
+Query: `sum by(instance, cmd) (src_gitserver_exec_running{foo="bar",instance=~"${shard:regex}"})`
 
 </details>
 
@@ -4502,7 +4502,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10006
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))`
+Query: `sum by(cmd) (rate(src_gitserver_exec_duration_seconds_count{foo="bar"}[5m]))`
 
 </details>
 
@@ -4521,7 +4521,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10007
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_gitserver_clone_queue)`
+Query: `sum(src_gitserver_clone_queue{foo="bar"})`
 
 </details>
 
@@ -4540,7 +4540,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10007
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_gitserver_lsremote_queue)`
+Query: `sum(src_gitserver_lsremote_queue{foo="bar"})`
 
 </details>
 
@@ -4567,7 +4567,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10008
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_gitserver_echo_duration_seconds)`
+Query: `max(src_gitserver_echo_duration_seconds{foo="bar"})`
 
 </details>
 
@@ -4586,7 +4586,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10008
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="gitserver"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="gitserver"}[5m]))`
 
 </details>
 
@@ -4607,7 +4607,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_api_total{job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_gitserver_api_total{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4626,7 +4626,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_gitserver_api_duration_seconds_bucket{job=~"^gitserver.*"}[5m]))`
+Query: `sum by(le) (rate(src_gitserver_api_duration_seconds_bucket{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4645,7 +4645,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4664,7 +4664,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m])) / (sum(increase(src_gitserver_api_total{job=~"^gitserver.*"}[5m])) + sum(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum(increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m])) / (sum(increase(src_gitserver_api_total{foo="bar",job=~"^gitserver.*"}[5m])) + sum(increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m]))) * 100`
 
 </details>
 
@@ -4683,7 +4683,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10011
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_api_total{job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_gitserver_api_total{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4702,7 +4702,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10011
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_gitserver_api_duration_seconds_bucket{job=~"^gitserver.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_gitserver_api_duration_seconds_bucket{foo="bar",job=~"^gitserver.*"}[5m])))`
 
 </details>
 
@@ -4721,7 +4721,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10011
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4740,7 +4740,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10011
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m])) / (sum by (op)(increase(src_gitserver_api_total{job=~"^gitserver.*"}[5m])) + sum by (op)(increase(src_gitserver_api_errors_total{job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m])) / (sum by(op) (increase(src_gitserver_api_total{foo="bar",job=~"^gitserver.*"}[5m])) + sum by(op) (increase(src_gitserver_api_errors_total{foo="bar",job=~"^gitserver.*"}[5m]))) * 100`
 
 </details>
 
@@ -4761,7 +4761,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10020
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batch_log_semaphore_wait_duration_seconds_bucket{job=~"^gitserver.*"}[5m]))`
+Query: `sum by(le) (rate(src_batch_log_semaphore_wait_duration_seconds_bucket{foo="bar",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4784,7 +4784,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`false`}[5m])) by (le))`
+Query: `histogram_quantile(0.95, sum by(le) (rate(src_gitserver_gitservice_duration_seconds_bucket{error="false",foo="bar",type="gitserver"}[5m])))`
 
 </details>
 
@@ -4805,7 +4805,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`false`, instance=~`${shard:regex}`}[5m])) by (le, instance))`
+Query: `histogram_quantile(0.95, sum by(le, instance) (rate(src_gitserver_gitservice_duration_seconds_bucket{error="false",foo="bar",instance=~"${shard:regex}",type="gitserver"}[5m])))`
 
 </details>
 
@@ -4826,7 +4826,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10031
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`true`}[5m])) by (le))`
+Query: `histogram_quantile(0.95, sum by(le) (rate(src_gitserver_gitservice_duration_seconds_bucket{error="true",foo="bar",type="gitserver"}[5m])))`
 
 </details>
 
@@ -4847,7 +4847,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10031
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`true`, instance=~`${shard:regex}`}[5m])) by (le, instance))`
+Query: `histogram_quantile(0.95, sum by(le, instance) (rate(src_gitserver_gitservice_duration_seconds_bucket{error="true",foo="bar",instance=~"${shard:regex}",type="gitserver"}[5m])))`
 
 </details>
 
@@ -4868,7 +4868,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10032
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`false`}[5m]))`
+Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{error="false",foo="bar",type="gitserver"}[5m]))`
 
 </details>
 
@@ -4889,7 +4889,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10032
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`false`, instance=~`${shard:regex}`}[5m]))`
+Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{error="false",foo="bar",instance=~"${shard:regex}",type="gitserver"}[5m]))`
 
 </details>
 
@@ -4910,7 +4910,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10033
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`true`}[5m]))`
+Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{error="true",foo="bar",type="gitserver"}[5m]))`
 
 </details>
 
@@ -4931,7 +4931,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10033
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`true`, instance=~`${shard:regex}`}[5m]))`
+Query: `sum(rate(src_gitserver_gitservice_duration_seconds_count{error="true",foo="bar",instance=~"${shard:regex}",type="gitserver"}[5m]))`
 
 </details>
 
@@ -4952,7 +4952,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10034
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_gitserver_gitservice_running{type=`gitserver`})`
+Query: `sum(src_gitserver_gitservice_running{foo="bar",type="gitserver"})`
 
 </details>
 
@@ -4973,7 +4973,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10034
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_gitserver_gitservice_running{type=`gitserver`, instance=~`${shard:regex}`}) by (instance)`
+Query: `sum by(instance) (src_gitserver_gitservice_running{foo="bar",instance=~"${shard:regex}",type="gitserver"})`
 
 </details>
 
@@ -4996,7 +4996,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10040
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (src_gitserver_janitor_running)`
+Query: `max by(instance) (src_gitserver_janitor_running{foo="bar"})`
 
 </details>
 
@@ -5017,7 +5017,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10041
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_seconds_bucket[5m])) by (le, job_name))`
+Query: `histogram_quantile(0.95, sum by(le, job_name) (rate(src_gitserver_janitor_job_duration_seconds_bucket{foo="bar"}[5m])))`
 
 </details>
 
@@ -5038,7 +5038,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10042
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`
+Query: `sum by(job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{foo="bar",success="false"}[5m]))`
 
 </details>
 
@@ -5059,7 +5059,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10043
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))`
+Query: `sum by(instance) (rate(src_gitserver_repos_removed_disk_pressure{foo="bar"}[5m]))`
 
 </details>
 
@@ -5080,7 +5080,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10044
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))`
+Query: `sum by(instance) (increase(src_gitserver_non_existing_repos_removed{foo="bar"}[5m]))`
 
 </details>
 
@@ -5101,7 +5101,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10045
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`
+Query: `sum by(reason) (rate(src_gitserver_maintenance_status{foo="bar",success="true"}[1h]))`
 
 </details>
 
@@ -5122,7 +5122,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10046
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (skipped) (rate(src_gitserver_prune_status{success="true"}[1h]))`
+Query: `sum by(skipped) (rate(src_gitserver_prune_status{foo="bar",success="true"}[1h]))`
 
 </details>
 
@@ -5145,7 +5145,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_gitserver_search_latency_seconds_sum[5m]) / rate(src_gitserver_search_latency_seconds_count[5m])`
+Query: `rate(src_gitserver_search_latency_seconds_sum{foo="bar"}[5m]) / rate(src_gitserver_search_latency_seconds_count{foo="bar"}[5m])`
 
 </details>
 
@@ -5166,7 +5166,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_gitserver_search_duration_seconds_sum[5m]) / rate(src_gitserver_search_duration_seconds_count[5m])`
+Query: `rate(src_gitserver_search_duration_seconds_sum{foo="bar"}[5m]) / rate(src_gitserver_search_duration_seconds_count{foo="bar"}[5m])`
 
 </details>
 
@@ -5187,7 +5187,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10051
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_gitserver_search_latency_seconds_count{instance=~`${shard:regex}`}[5m])`
+Query: `rate(src_gitserver_search_latency_seconds_count{foo="bar",instance=~"${shard:regex}"}[5m])`
 
 </details>
 
@@ -5208,7 +5208,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10051
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex}`})`
+Query: `sum by(instance) (src_gitserver_search_running{foo="bar",instance=~"${shard:regex}"})`
 
 </details>
 
@@ -5229,7 +5229,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_codeintel_coursier_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5248,7 +5248,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_coursier_duration_seconds_bucket{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5267,7 +5267,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5286,7 +5286,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) / (sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) + sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) / (sum(increase(src_codeintel_coursier_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) + sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -5305,7 +5305,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_coursier_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5324,7 +5324,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_coursier_duration_seconds_bucket{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])))`
 
 </details>
 
@@ -5343,7 +5343,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5362,7 +5362,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) / (sum by (op)(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) + sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) / (sum by(op) (increase(src_codeintel_coursier_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) + sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -5383,7 +5383,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_codeintel_npm_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5402,7 +5402,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_npm_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_npm_duration_seconds_bucket{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5421,7 +5421,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5440,7 +5440,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) / (sum(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) + sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) / (sum(increase(src_codeintel_npm_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) + sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -5459,7 +5459,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_npm_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5478,7 +5478,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_npm_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_npm_duration_seconds_bucket{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])))`
 
 </details>
 
@@ -5497,7 +5497,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -5516,7 +5516,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) / (sum by (op)(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^gitserver.*"}[5m])) + sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gitserver.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) / (sum by(op) (increase(src_codeintel_npm_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m])) + sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^gitserver.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -5539,7 +5539,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="gitserver",code=~"2.."}[5m]))`
+Query: `sum by(route) (rate(src_http_request_duration_seconds_count{app="gitserver",code=~"2..",foo="bar"}[5m]))`
 
 </details>
 
@@ -5560,7 +5560,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="gitserver",code!~"2.."}[5m]))`
+Query: `sum by(route) (rate(src_http_request_duration_seconds_count{app="gitserver",code!~"2..",foo="bar"}[5m]))`
 
 </details>
 
@@ -5581,7 +5581,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="gitserver"}[5m]))`
+Query: `sum by(code) (rate(src_http_request_duration_seconds_count{app="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -5602,7 +5602,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app="gitserver",code=~"2.."}[5m])) by (le, route))`
+Query: `histogram_quantile(0.95, sum by(le, route) (rate(src_http_request_duration_seconds_bucket{app="gitserver",code=~"2..",foo="bar"}[5m])))`
 
 </details>
 
@@ -5623,7 +5623,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app="gitserver",code!~"2.."}[5m])) by (le, route))`
+Query: `histogram_quantile(0.95, sum by(le, route) (rate(src_http_request_duration_seconds_bucket{app="gitserver",code!~"2..",foo="bar"}[5m])))`
 
 </details>
 
@@ -5644,7 +5644,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10090
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="gitserver"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="gitserver",foo="bar"})`
 
 </details>
 
@@ -5663,7 +5663,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10090
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="gitserver"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="gitserver",foo="bar"})`
 
 </details>
 
@@ -5682,7 +5682,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10091
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="gitserver"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="gitserver",foo="bar"})`
 
 </details>
 
@@ -5701,7 +5701,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10091
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="gitserver"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="gitserver",foo="bar"})`
 
 </details>
 
@@ -5720,7 +5720,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10092
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -5739,7 +5739,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10093
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="gitserver"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -5758,7 +5758,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10093
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="gitserver"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -5777,7 +5777,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10093
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="gitserver"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="gitserver",foo="bar"}[5m]))`
 
 </details>
 
@@ -5808,7 +5808,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^gitserver.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^gitserver.*"}) > 60)`
 
 </details>
 
@@ -5827,7 +5827,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^gitserver.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^gitserver.*"}`
 
 </details>
 
@@ -5846,7 +5846,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^gitserver.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^gitserver.*"}`
 
 </details>
 
@@ -5868,7 +5868,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^gitserver.*"}[1h]) + rate(container_fs_writes_total{name=~"^gitserver.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^gitserver.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^gitserver.*"}[1h]))`
 
 </details>
 
@@ -5889,7 +5889,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10110
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^gitserver.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^gitserver.*"}[1d])`
 
 </details>
 
@@ -5910,7 +5910,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10110
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^gitserver.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^gitserver.*"}[1d])`
 
 </details>
 
@@ -5929,7 +5929,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10111
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^gitserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^gitserver.*"}[5m])`
 
 </details>
 
@@ -5950,7 +5950,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10111
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^gitserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^gitserver.*"}[5m])`
 
 </details>
 
@@ -5972,7 +5972,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10111
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^gitserver.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^gitserver.*"})`
 
 </details>
 
@@ -5995,7 +5995,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10120
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*gitserver"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*gitserver"})`
 
 </details>
 
@@ -6014,7 +6014,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10120
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*gitserver"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*gitserver"})`
 
 </details>
 
@@ -6035,7 +6035,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10130
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitserver"}) * 100`
+Query: `sum by(app) (up{app=~".*gitserver",foo="bar"}) / count by(app) (up{app=~".*gitserver",foo="bar"}) * 100`
 
 </details>
 
@@ -6062,7 +6062,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(github_proxy_waiting_requests)`
+Query: `max(github_proxy_waiting_requests{foo="bar"})`
 
 </details>
 
@@ -6093,7 +6093,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^github-proxy.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^github-proxy.*"}) > 60)`
 
 </details>
 
@@ -6112,7 +6112,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}`
 
 </details>
 
@@ -6131,7 +6131,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}`
 
 </details>
 
@@ -6153,7 +6153,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^github-proxy.*"}[1h]) + rate(container_fs_writes_total{name=~"^github-proxy.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^github-proxy.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^github-proxy.*"}[1h]))`
 
 </details>
 
@@ -6174,7 +6174,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}[1d])`
 
 </details>
 
@@ -6193,7 +6193,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}[1d])`
 
 </details>
 
@@ -6212,7 +6212,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}[5m])`
 
 </details>
 
@@ -6231,7 +6231,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^github-proxy.*"}[5m])`
 
 </details>
 
@@ -6253,7 +6253,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^github-proxy.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^github-proxy.*"})`
 
 </details>
 
@@ -6276,7 +6276,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*github-proxy"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*github-proxy"})`
 
 </details>
 
@@ -6295,7 +6295,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*github-proxy"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*github-proxy"})`
 
 </details>
 
@@ -6316,7 +6316,7 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100`
+Query: `sum by(app) (up{app=~".*github-proxy",foo="bar"}) / count by(app) (up{app=~".*github-proxy",foo="bar"}) * 100`
 
 </details>
 
@@ -6341,7 +6341,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`
+Query: `sum by(job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin",foo="bar"}) or sum by(job) (pg_stat_activity_count{datname!~"template.*|cloudsqladmin",foo="bar",job="codeinsights-db"})`
 
 </details>
 
@@ -6360,7 +6360,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`
+Query: `sum by(job) (pg_stat_activity_count{foo="bar"}) / (sum by(job) (pg_settings_max_connections{foo="bar"}) - sum by(job) (pg_settings_superuser_reserved_connections{foo="bar"})) * 100`
 
 </details>
 
@@ -6379,7 +6379,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100002`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",job!="codeintel-db"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`
+Query: `sum by(job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",foo="bar",job!="codeintel-db"}) or sum by(job) (pg_stat_activity_max_tx_duration{datname!~"template.*|cloudsqladmin",foo="bar",job="codeinsights-db"})`
 
 </details>
 
@@ -6402,7 +6402,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `pg_up`
+Query: `pg_up{foo="bar"}`
 
 </details>
 
@@ -6423,7 +6423,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (relname)(pg_invalid_index_count)`
+Query: `max by(relname) (pg_invalid_index_count{foo="bar"})`
 
 </details>
 
@@ -6444,7 +6444,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `pg_exporter_last_scrape_error`
+Query: `pg_exporter_last_scrape_error{foo="bar"}`
 
 </details>
 
@@ -6465,7 +6465,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `pg_sg_migration_status`
+Query: `pg_sg_migration_status{foo="bar"}`
 
 </details>
 
@@ -6488,7 +6488,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (relname)(pg_table_bloat_size)`
+Query: `max by(relname) (pg_table_bloat_size{foo="bar"})`
 
 </details>
 
@@ -6509,7 +6509,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (relname)(pg_table_bloat_ratio) * 100`
+Query: `max by(relname) (pg_table_bloat_ratio{foo="bar"}) * 100`
 
 </details>
 
@@ -6530,7 +6530,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100210`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (relname)(pg_index_bloat_size)`
+Query: `max by(relname) (pg_index_bloat_size{foo="bar"})`
 
 </details>
 
@@ -6551,7 +6551,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100211`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (relname)(pg_index_bloat_ratio) * 100`
+Query: `max by(relname) (pg_index_bloat_ratio{foo="bar"}) * 100`
 
 </details>
 
@@ -6572,7 +6572,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
 
 </details>
 
@@ -6591,7 +6591,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
 
 </details>
 
@@ -6610,7 +6610,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
 
 </details>
 
@@ -6629,7 +6629,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
 
 </details>
 
@@ -6651,7 +6651,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100312`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(pgsql|codeintel-db|codeinsights).*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^(pgsql|codeintel-db|codeinsights).*"})`
 
 </details>
 
@@ -6672,7 +6672,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) * 100`
+Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)",foo="bar"}) / count by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)",foo="bar"}) * 100`
 
 </details>
 
@@ -6699,7 +6699,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_upload_total{job=~"^precise-code-intel-worker.*"})`
+Query: `max(src_codeintel_upload_total{foo="bar",job=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -6724,7 +6724,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_upload_total{job=~"^precise-code-intel-worker.*"}[30m])) / sum(increase(src_codeintel_upload_processor_total{job=~"^precise-code-intel-worker.*"}[30m]))`
+Query: `sum(increase(src_codeintel_upload_total{foo="bar",job=~"^precise-code-intel-worker.*"}[30m])) / sum(increase(src_codeintel_upload_processor_total{foo="bar",job=~"^precise-code-intel-worker.*"}[30m]))`
 
 </details>
 
@@ -6743,7 +6743,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})`
+Query: `max(src_codeintel_upload_queued_duration_seconds_total{foo="bar",job=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -6764,7 +6764,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_codeintel_upload_processor_handlers{job=~"^precise-code-intel-worker.*"})`
+Query: `sum(src_codeintel_upload_processor_handlers{foo="bar",job=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -6783,7 +6783,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(instance) (src_codeintel_upload_processor_upload_size)`
+Query: `sum by(instance) (src_codeintel_upload_processor_upload_size{foo="bar"})`
 
 </details>
 
@@ -6802,7 +6802,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_upload_processor_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_upload_processor_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6821,7 +6821,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_upload_processor_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_upload_processor_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6840,7 +6840,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_upload_processor_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_upload_processor_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6859,7 +6859,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_upload_processor_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_upload_processor_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_upload_processor_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_upload_processor_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_upload_processor_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_upload_processor_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -6880,7 +6880,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6899,7 +6899,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6918,7 +6918,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6937,7 +6937,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -6956,7 +6956,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -6975,7 +6975,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
@@ -6994,7 +6994,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7013,7 +7013,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7034,7 +7034,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7053,7 +7053,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7072,7 +7072,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7091,7 +7091,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7110,7 +7110,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7129,7 +7129,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
@@ -7148,7 +7148,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7167,7 +7167,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7188,7 +7188,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7207,7 +7207,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7226,7 +7226,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7245,7 +7245,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_upload_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_upload_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_upload_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7266,7 +7266,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7285,7 +7285,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7304,7 +7304,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7323,7 +7323,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7342,7 +7342,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7361,7 +7361,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
@@ -7380,7 +7380,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7399,7 +7399,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_gitserver_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7420,7 +7420,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploadstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7439,7 +7439,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploadstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7458,7 +7458,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7477,7 +7477,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_uploadstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_uploadstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7496,7 +7496,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7515,7 +7515,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploadstore_duration_seconds_bucket{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
@@ -7534,7 +7534,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -7553,7 +7553,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploadstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_uploadstore_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m])) + sum by(op) (increase(src_codeintel_uploadstore_errors_total{foo="bar",job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7574,7 +7574,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="precise-code-intel-worker"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="precise-code-intel-worker"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="precise-code-intel-worker"}[5m]))`
 
 </details>
 
@@ -7595,7 +7595,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="precise-code-intel-worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="precise-code-intel-worker",foo="bar"})`
 
 </details>
 
@@ -7614,7 +7614,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="precise-code-intel-worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="precise-code-intel-worker",foo="bar"})`
 
 </details>
 
@@ -7633,7 +7633,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="precise-code-intel-worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="precise-code-intel-worker",foo="bar"})`
 
 </details>
 
@@ -7652,7 +7652,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="precise-code-intel-worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="precise-code-intel-worker",foo="bar"})`
 
 </details>
 
@@ -7671,7 +7671,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -7690,7 +7690,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="precise-code-intel-worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="precise-code-intel-worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -7709,7 +7709,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="precise-code-intel-worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="precise-code-intel-worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -7728,7 +7728,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="precise-code-intel-worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="precise-code-intel-worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -7759,7 +7759,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^precise-code-intel-worker.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^precise-code-intel-worker.*"}) > 60)`
 
 </details>
 
@@ -7778,7 +7778,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^precise-code-intel-worker.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}`
 
 </details>
 
@@ -7797,7 +7797,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^precise-code-intel-worker.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}`
 
 </details>
 
@@ -7819,7 +7819,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^precise-code-intel-worker.*"}[1h]) + rate(container_fs_writes_total{name=~"^precise-code-intel-worker.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^precise-code-intel-worker.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^precise-code-intel-worker.*"}[1h]))`
 
 </details>
 
@@ -7840,7 +7840,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^precise-code-intel-worker.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}[1d])`
 
 </details>
 
@@ -7859,7 +7859,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^precise-code-intel-worker.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}[1d])`
 
 </details>
 
@@ -7878,7 +7878,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^precise-code-intel-worker.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}[5m])`
 
 </details>
 
@@ -7897,7 +7897,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^precise-code-intel-worker.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^precise-code-intel-worker.*"}[5m])`
 
 </details>
 
@@ -7919,7 +7919,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^precise-code-intel-worker.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -7942,7 +7942,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*precise-code-intel-worker"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*precise-code-intel-worker"})`
 
 </details>
 
@@ -7961,7 +7961,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*precise-code-intel-worker"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*precise-code-intel-worker"})`
 
 </details>
 
@@ -7982,7 +7982,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*precise-code-intel-worker"}) / count by (app) (up{app=~".*precise-code-intel-worker"}) * 100`
+Query: `sum by(app) (up{app=~".*precise-code-intel-worker",foo="bar"}) / count by(app) (up{app=~".*precise-code-intel-worker",foo="bar"}) * 100`
 
 </details>
 
@@ -8011,7 +8011,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100000` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `redis_up{app="redis-store"}`
+Query: `redis_up{app="redis-store",foo="bar"}`
 
 </details>
 
@@ -8034,7 +8034,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100100` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `redis_up{app="redis-cache"}`
+Query: `redis_up{app="redis-cache",foo="bar"}`
 
 </details>
 
@@ -8055,7 +8055,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100200` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^redis-cache.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^redis-cache.*"}[1d])`
 
 </details>
 
@@ -8074,7 +8074,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100201` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-cache.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^redis-cache.*"}[1d])`
 
 </details>
 
@@ -8093,7 +8093,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100210` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redis-cache.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^redis-cache.*"}[5m])`
 
 </details>
 
@@ -8112,7 +8112,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100211` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-cache.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^redis-cache.*"}[5m])`
 
 </details>
 
@@ -8134,7 +8134,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100212` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^redis-cache.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^redis-cache.*"})`
 
 </details>
 
@@ -8155,7 +8155,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100300` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^redis-store.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^redis-store.*"}[1d])`
 
 </details>
 
@@ -8174,7 +8174,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100301` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-store.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^redis-store.*"}[1d])`
 
 </details>
 
@@ -8193,7 +8193,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100310` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redis-store.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^redis-store.*"}[5m])`
 
 </details>
 
@@ -8212,7 +8212,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100311` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-store.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^redis-store.*"}[5m])`
 
 </details>
 
@@ -8234,7 +8234,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100312` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^redis-store.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^redis-store.*"})`
 
 </details>
 
@@ -8255,7 +8255,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100400` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*redis-cache"}) / count by (app) (up{app=~".*redis-cache"}) * 100`
+Query: `sum by(app) (up{app=~".*redis-cache",foo="bar"}) / count by(app) (up{app=~".*redis-cache",foo="bar"}) * 100`
 
 </details>
 
@@ -8276,7 +8276,7 @@ To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100500` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*redis-store"}) / count by (app) (up{app=~".*redis-store"}) * 100`
+Query: `sum by(app) (up{app=~".*redis-store",foo="bar"}) / count by(app) (up{app=~".*redis-store",foo="bar"}) * 100`
 
 </details>
 
@@ -8305,7 +8305,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (job_name) (src_worker_jobs{job="worker"})`
+Query: `sum by(job_name) (src_worker_jobs{foo="bar",job="worker"})`
 
 </details>
 
@@ -8324,7 +8324,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-upload-janitor"})`
+Query: `sum(src_worker_jobs{foo="bar",job="worker",job_name="codeintel-upload-janitor"})`
 
 </details>
 
@@ -8343,7 +8343,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph-updater"})`
+Query: `sum(src_worker_jobs{foo="bar",job="worker",job_name="codeintel-commitgraph-updater"})`
 
 </details>
 
@@ -8362,7 +8362,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-scheduler"})`
+Query: `sum(src_worker_jobs{foo="bar",job="worker",job_name="codeintel-autoindexing-scheduler"})`
 
 </details>
 
@@ -8385,7 +8385,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100100` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`
+Query: `(max by(tableName) (src_records_encrypted_at_rest_total{foo="bar"})) / ((max by(tableName) (src_records_encrypted_at_rest_total{foo="bar"})) + (max by(tableName) (src_records_unencrypted_at_rest_total{foo="bar"}))) * 100`
 
 </details>
 
@@ -8406,7 +8406,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (tableName)(increase(src_records_encrypted_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(tableName) (increase(src_records_encrypted_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8427,7 +8427,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (tableName)(increase(src_records_decrypted_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(tableName) (increase(src_records_decrypted_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8448,7 +8448,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100103` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_record_encryption_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_record_encryption_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8469,7 +8469,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100200` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_total{job=~"^worker.*"})`
+Query: `max(src_codeintel_commit_graph_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -8494,7 +8494,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^worker.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^worker.*"}[30m]))`
+Query: `sum(increase(src_codeintel_commit_graph_total{foo="bar",job=~"^worker.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{foo="bar",job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -8513,7 +8513,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100202` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})`
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -8534,7 +8534,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100300` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_processor_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_commit_graph_processor_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8553,7 +8553,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100301` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_commit_graph_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_commit_graph_processor_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8572,7 +8572,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100302` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8591,7 +8591,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100303` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_commit_graph_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_commit_graph_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_commit_graph_processor_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_commit_graph_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -8612,7 +8612,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100400` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_dependency_index_total{job=~"^worker.*"})`
+Query: `max(src_codeintel_dependency_index_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -8637,7 +8637,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100401` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_index_total{job=~"^worker.*"}[30m])) / sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worker.*"}[30m]))`
+Query: `sum(increase(src_codeintel_dependency_index_total{foo="bar",job=~"^worker.*"}[30m])) / sum(increase(src_codeintel_dependency_index_processor_total{foo="bar",job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -8656,7 +8656,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100402` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_dependency_index_queued_duration_seconds_total{job=~"^worker.*"})`
+Query: `max(src_codeintel_dependency_index_queued_duration_seconds_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -8677,7 +8677,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100500` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_codeintel_dependency_index_processor_handlers{job=~"^worker.*"})`
+Query: `sum(src_codeintel_dependency_index_processor_handlers{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -8696,7 +8696,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100510` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependency_index_processor_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8715,7 +8715,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100511` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dependency_index_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dependency_index_processor_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8734,7 +8734,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100512` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8753,7 +8753,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100513` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dependency_index_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dependency_index_processor_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dependency_index_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -8776,7 +8776,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100600` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8797,7 +8797,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100601` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8818,7 +8818,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100602` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8839,7 +8839,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100603` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8860,7 +8860,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100610` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_removed_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8881,7 +8881,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100611` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_records_removed_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8902,7 +8902,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100612` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_uploads_purged_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8923,7 +8923,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100613` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_documentation_search_records_removed_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_documentation_search_records_removed_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8944,7 +8944,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100620` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8965,7 +8965,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100621` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8986,7 +8986,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100700` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[10m]))`
+Query: `sum(increase(src_codeintel_index_scheduler_total{foo="bar",job=~"^worker.*"}[10m]))`
 
 </details>
 
@@ -9005,7 +9005,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100701` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_index_scheduler_duration_seconds_bucket{job=~"^worker.*"}[10m]))`
+Query: `sum by(le) (rate(src_codeintel_index_scheduler_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[10m]))`
 
 </details>
 
@@ -9024,7 +9024,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100702` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m]))`
+Query: `sum(increase(src_codeintel_index_scheduler_errors_total{foo="bar",job=~"^worker.*"}[10m]))`
 
 </details>
 
@@ -9043,7 +9043,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100703` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_index_scheduler_errors_total{foo="bar",job=~"^worker.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{foo="bar",job=~"^worker.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{foo="bar",job=~"^worker.*"}[10m]))) * 100`
 
 </details>
 
@@ -9064,7 +9064,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100800` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9083,7 +9083,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100801` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9102,7 +9102,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100802` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9121,7 +9121,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100803` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9140,7 +9140,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100810` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9159,7 +9159,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100811` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_dbstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -9178,7 +9178,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100812` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9197,7 +9197,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100813` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_dbstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_codeintel_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9218,7 +9218,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100900` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9237,7 +9237,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100901` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9256,7 +9256,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100902` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9275,7 +9275,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100903` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9294,7 +9294,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100910` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9313,7 +9313,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100911` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_lsifstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -9332,7 +9332,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100912` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9351,7 +9351,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100913` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_lsifstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_codeintel_lsifstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9372,7 +9372,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9391,7 +9391,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101001` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9410,7 +9410,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101002` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9429,7 +9429,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101003` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_total{job=~"^worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9450,7 +9450,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101100` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9469,7 +9469,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9488,7 +9488,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101102` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9507,7 +9507,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101103` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_gitserver_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9526,7 +9526,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101110` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9545,7 +9545,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101111` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_gitserver_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -9564,7 +9564,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101112` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9583,7 +9583,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101113` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_gitserver_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_codeintel_gitserver_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9604,7 +9604,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101200` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_repoupdater_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9623,7 +9623,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_repoupdater_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9642,7 +9642,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101202` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9661,7 +9661,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101203` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_repoupdater_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9680,7 +9680,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101210` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9699,7 +9699,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101211` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_repoupdater_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -9718,7 +9718,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101212` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9737,7 +9737,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101213` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_codeintel_repoupdater_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_codeintel_repoupdater_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9758,7 +9758,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101300` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependency_repos_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9777,7 +9777,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101301` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dependency_repos_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_dependency_repos_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9796,7 +9796,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101302` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9815,7 +9815,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101303` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dependency_repos_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9834,7 +9834,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101310` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(scheme, new) (increase(src_codeintel_dependency_repos_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9853,7 +9853,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101311` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,scheme,new)(rate(src_codeintel_dependency_repos_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, scheme, new) (rate(src_codeintel_dependency_repos_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -9872,7 +9872,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101312` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(scheme, new) (increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9891,7 +9891,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101313` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m])) / (sum by (scheme,new)(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m])) + sum by (scheme,new)(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(scheme, new) (increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(scheme, new) (increase(src_codeintel_dependency_repos_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(scheme, new) (increase(src_codeintel_dependency_repos_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9912,7 +9912,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101400` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9931,7 +9931,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101401` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9950,7 +9950,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101402` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9969,7 +9969,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101403` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_batches_dbstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9988,7 +9988,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101410` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10007,7 +10007,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101411` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10026,7 +10026,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101412` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10045,7 +10045,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101413` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10066,7 +10066,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101500` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_batches_service_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10085,7 +10085,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101501` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10104,7 +10104,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101502` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10123,7 +10123,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101503` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_batches_service_total{job=~"^worker.*"}[5m])) + sum(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_batches_service_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10142,7 +10142,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101510` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10161,7 +10161,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101511` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_service_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10180,7 +10180,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101512` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10199,7 +10199,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101513` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_batches_service_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10220,7 +10220,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101600` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10239,7 +10239,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101601` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10258,7 +10258,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101602` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10277,7 +10277,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101603` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10298,7 +10298,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101700` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_bulk_worker_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10317,7 +10317,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101701` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_batches_bulk_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_batches_bulk_worker_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10336,7 +10336,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101702` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10355,7 +10355,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101703` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_batches_bulk_worker_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_batches_bulk_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10376,7 +10376,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101800` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10395,7 +10395,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101801` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_batches_reconciler_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_batches_reconciler_worker_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10414,7 +10414,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101802` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10433,7 +10433,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101803` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_batches_reconciler_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10454,7 +10454,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101900` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10473,7 +10473,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101901` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -10492,7 +10492,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101902` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10511,7 +10511,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101903` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_batch_spec_workspace_execution_worker_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10532,7 +10532,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_record_resets_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10551,7 +10551,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102001` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_record_reset_failures_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10570,7 +10570,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102002` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_record_reset_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10591,7 +10591,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102100` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_record_resets_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10610,7 +10610,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_record_reset_failures_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10629,7 +10629,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102102` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_record_reset_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10650,7 +10650,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102200` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_dependency_index_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_dependency_index_record_resets_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10669,7 +10669,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_failures_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10688,7 +10688,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102202` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10709,7 +10709,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102300` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_query_runner_worker_total{job=~"^worker.*"})`
+Query: `max(src_query_runner_worker_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -10734,7 +10734,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102301` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_total{job=~"^worker.*"}[30m])) / sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[30m]))`
+Query: `sum(increase(src_query_runner_worker_total{foo="bar",job=~"^worker.*"}[30m])) / sum(increase(src_query_runner_worker_processor_total{foo="bar",job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -10755,7 +10755,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102400` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_query_runner_worker_processor_handlers{job=~"^worker.*"})`
+Query: `sum(src_query_runner_worker_processor_handlers{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -10774,7 +10774,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102410` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_processor_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10793,7 +10793,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102411` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_query_runner_worker_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_query_runner_worker_processor_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10812,7 +10812,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102412` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10831,7 +10831,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102413` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_query_runner_worker_processor_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_query_runner_worker_processor_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10852,7 +10852,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102500` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_resets_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10871,7 +10871,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102501` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_reset_failures_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10890,7 +10890,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102502` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_query_runner_worker_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_reset_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10911,7 +10911,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102600` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10930,7 +10930,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102601` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10949,7 +10949,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102602` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10968,7 +10968,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102603` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -10987,7 +10987,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102610` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -11006,7 +11006,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102611` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -11025,7 +11025,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102612` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -11044,7 +11044,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102613` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -11067,7 +11067,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102700` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_query_runner_worker_total{job=~"^worker.*"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1`
+Query: `max(src_query_runner_worker_total{foo="bar",job=~"^worker.*"}) > 0 and on(job) sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{foo="bar",job=~"^worker.*",op="Dequeue"}[5m])) < 1`
 
 </details>
 
@@ -11088,7 +11088,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102800` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="worker",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="worker"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="worker"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="worker"}[5m]))`
 
 </details>
 
@@ -11109,7 +11109,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102900` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="worker",foo="bar"})`
 
 </details>
 
@@ -11128,7 +11128,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102901` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="worker",foo="bar"})`
 
 </details>
 
@@ -11147,7 +11147,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102910` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="worker",foo="bar"})`
 
 </details>
 
@@ -11166,7 +11166,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102911` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="worker"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="worker",foo="bar"})`
 
 </details>
 
@@ -11185,7 +11185,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102920` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -11204,7 +11204,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102930` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -11223,7 +11223,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102931` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -11242,7 +11242,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102932` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="worker"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="worker",foo="bar"}[5m]))`
 
 </details>
 
@@ -11273,7 +11273,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^worker.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^worker.*"}) > 60)`
 
 </details>
 
@@ -11292,7 +11292,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103001` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^worker.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^worker.*"}`
 
 </details>
 
@@ -11311,7 +11311,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103002` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^worker.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^worker.*"}`
 
 </details>
 
@@ -11333,7 +11333,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103003` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^worker.*"}[1h]) + rate(container_fs_writes_total{name=~"^worker.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^worker.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^worker.*"}[1h]))`
 
 </details>
 
@@ -11354,7 +11354,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103100` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^worker.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^worker.*"}[1d])`
 
 </details>
 
@@ -11373,7 +11373,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^worker.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^worker.*"}[1d])`
 
 </details>
 
@@ -11392,7 +11392,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103110` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^worker.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^worker.*"}[5m])`
 
 </details>
 
@@ -11411,7 +11411,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103111` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^worker.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^worker.*"}[5m])`
 
 </details>
 
@@ -11433,7 +11433,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103112` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^worker.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^worker.*"})`
 
 </details>
 
@@ -11456,7 +11456,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103200` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*worker"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*worker"})`
 
 </details>
 
@@ -11475,7 +11475,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*worker"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*worker"})`
 
 </details>
 
@@ -11496,7 +11496,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103300` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*worker"}) / count by (app) (up{app=~".*worker"}) * 100`
+Query: `sum by(app) (up{app=~".*worker",foo="bar"}) / count by(app) (up{app=~".*worker",foo="bar"}) * 100`
 
 </details>
 
@@ -11526,7 +11526,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`
+Query: `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time{foo="bar"})`
 
 </details>
 
@@ -11545,7 +11545,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_max_sync_backoff)`
+Query: `max(src_repoupdater_max_sync_backoff{foo="bar"})`
 
 </details>
 
@@ -11564,7 +11564,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="invalid_npm_path",reason!="internal_rate_limit"}[5m]))`
+Query: `max by(family) (rate(src_repoupdater_syncer_sync_errors_total{foo="bar",owner!="user",reason!="internal_rate_limit",reason!="invalid_npm_path"}[5m]))`
 
 </details>
 
@@ -11583,7 +11583,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[9h0m0s]))`
+Query: `max by(family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService",foo="bar"}[9h]))`
 
 </details>
 
@@ -11602,7 +11602,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, max by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))`
+Query: `histogram_quantile(0.95, max by(le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket{foo="bar"}[1m])))`
 
 </details>
 
@@ -11621,7 +11621,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))`
+Query: `histogram_quantile(0.95, max by(le) (rate(src_repoupdater_source_duration_seconds_bucket{foo="bar"}[1m])))`
 
 </details>
 
@@ -11640,7 +11640,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_syncer_synced_repos_total[1m]))`
+Query: `max(rate(src_repoupdater_syncer_synced_repos_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -11659,7 +11659,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_source_repos_total[1m]))`
+Query: `max(rate(src_repoupdater_source_repos_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -11678,7 +11678,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_user_repos_total)`
+Query: `max(src_repoupdater_user_repos_total{foo="bar"})`
 
 </details>
 
@@ -11697,7 +11697,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_purge_failed[1m]))`
+Query: `max(rate(src_repoupdater_purge_failed{foo="bar"}[1m]))`
 
 </details>
 
@@ -11716,7 +11716,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_sched_auto_fetch[1m]))`
+Query: `max(rate(src_repoupdater_sched_auto_fetch{foo="bar"}[1m]))`
 
 </details>
 
@@ -11738,7 +11738,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_sched_manual_fetch[1m]))`
+Query: `max(rate(src_repoupdater_sched_manual_fetch{foo="bar"}[1m]))`
 
 </details>
 
@@ -11757,7 +11757,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_sched_known_repos)`
+Query: `max(src_repoupdater_sched_known_repos{foo="bar"})`
 
 </details>
 
@@ -11776,7 +11776,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`
+Query: `max(deriv(src_repoupdater_sched_update_queue_length{foo="bar"}[5m]))`
 
 </details>
 
@@ -11795,7 +11795,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_sched_loops[1m]))`
+Query: `max(rate(src_repoupdater_sched_loops{foo="bar"}[1m]))`
 
 </details>
 
@@ -11814,7 +11814,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_stale_repos)`
+Query: `max(src_repoupdater_stale_repos{foo="bar"})`
 
 </details>
 
@@ -11833,7 +11833,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_sched_error[1m]))`
+Query: `max(rate(src_repoupdater_sched_error{foo="bar"}[1m]))`
 
 </details>
 
@@ -11854,7 +11854,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`
+Query: `max by(type) (src_repoupdater_perms_syncer_perms_gap_seconds{foo="bar"})`
 
 </details>
 
@@ -11873,7 +11873,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
+Query: `max by(type) (src_repoupdater_perms_syncer_stale_perms{foo="bar"})`
 
 </details>
 
@@ -11892,7 +11892,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
+Query: `max by(type) (src_repoupdater_perms_syncer_no_perms{foo="bar"})`
 
 </details>
 
@@ -11911,7 +11911,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
+Query: `max by(type) (src_repoupdater_perms_syncer_outdated_perms{foo="bar"})`
 
 </details>
 
@@ -11930,7 +11930,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`
+Query: `histogram_quantile(0.95, max by(le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket{foo="bar"}[1m])))`
 
 </details>
 
@@ -11949,7 +11949,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_perms_syncer_queue_size)`
+Query: `max(src_repoupdater_perms_syncer_queue_size{foo="bar"})`
 
 </details>
 
@@ -11968,7 +11968,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`
+Query: `max by(type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total{foo="bar"}[1m])))`
 
 </details>
 
@@ -11990,7 +11990,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`
+Query: `max(rate(src_repoupdater_perms_syncer_schedule_repos_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -12011,7 +12011,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_external_services_total)`
+Query: `max(src_repoupdater_external_services_total{foo="bar"})`
 
 </details>
 
@@ -12030,7 +12030,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_user_external_services_total)`
+Query: `max(src_repoupdater_user_external_services_total{foo="bar"})`
 
 </details>
 
@@ -12049,7 +12049,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_queued_sync_jobs_total)`
+Query: `max(src_repoupdater_queued_sync_jobs_total{foo="bar"})`
 
 </details>
 
@@ -12068,7 +12068,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_completed_sync_jobs_total)`
+Query: `max(src_repoupdater_completed_sync_jobs_total{foo="bar"})`
 
 </details>
 
@@ -12087,7 +12087,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_repoupdater_errored_sync_jobs_percentage)`
+Query: `max(src_repoupdater_errored_sync_jobs_percentage{foo="bar"})`
 
 </details>
 
@@ -12106,7 +12106,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`
+Query: `max by(name) (src_github_rate_limit_remaining_v2{foo="bar",resource="graphql"})`
 
 </details>
 
@@ -12125,7 +12125,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`
+Query: `max by(name) (src_github_rate_limit_remaining_v2{foo="bar",resource="rest"})`
 
 </details>
 
@@ -12144,7 +12144,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`
+Query: `max by(name) (src_github_rate_limit_remaining_v2{foo="bar",resource="search"})`
 
 </details>
 
@@ -12165,7 +12165,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="graphql"}[5m]))`
+Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{foo="bar",resource="graphql"}[5m]))`
 
 </details>
 
@@ -12186,7 +12186,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`
+Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{foo="bar",resource="rest"}[5m]))`
 
 </details>
 
@@ -12207,7 +12207,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="search"}[5m]))`
+Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{foo="bar",resource="search"}[5m]))`
 
 </details>
 
@@ -12226,7 +12226,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})`
+Query: `max by(name) (src_gitlab_rate_limit_remaining{foo="bar",resource="rest"})`
 
 </details>
 
@@ -12247,7 +12247,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`
+Query: `max by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{foo="bar",resource="rest"}[5m]))`
 
 </details>
 
@@ -12268,7 +12268,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_internal_rate_limit_wait_duration_bucket{failed="false"}[5m])) by (le, urn))`
+Query: `histogram_quantile(0.95, sum by(le, urn) (rate(src_internal_rate_limit_wait_duration_bucket{failed="false",foo="bar"}[5m])))`
 
 </details>
 
@@ -12289,7 +12289,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true"}[5m]))`
+Query: `sum by(urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true",foo="bar"}[5m]))`
 
 </details>
 
@@ -12310,7 +12310,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12329,7 +12329,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12348,7 +12348,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12367,7 +12367,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m])) / (sum(increase(src_batches_dbstore_total{job=~"^repo-updater.*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m])) / (sum(increase(src_batches_dbstore_total{foo="bar",job=~"^repo-updater.*"}[5m])) + sum(increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))) * 100`
 
 </details>
 
@@ -12386,7 +12386,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12405,7 +12405,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^repo-updater.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_dbstore_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*"}[5m])))`
 
 </details>
 
@@ -12424,7 +12424,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12443,7 +12443,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m])) / (sum by (op)(increase(src_batches_dbstore_total{job=~"^repo-updater.*"}[5m])) + sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m])) / (sum by(op) (increase(src_batches_dbstore_total{foo="bar",job=~"^repo-updater.*"}[5m])) + sum by(op) (increase(src_batches_dbstore_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))) * 100`
 
 </details>
 
@@ -12464,7 +12464,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_batches_service_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12483,7 +12483,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(le) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12502,7 +12502,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12521,7 +12521,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m])) / (sum(increase(src_batches_service_total{job=~"^repo-updater.*"}[5m])) + sum(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum(increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m])) / (sum(increase(src_batches_service_total{foo="bar",job=~"^repo-updater.*"}[5m])) + sum(increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))) * 100`
 
 </details>
 
@@ -12540,7 +12540,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12559,7 +12559,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_service_duration_seconds_bucket{job=~"^repo-updater.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_batches_service_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*"}[5m])))`
 
 </details>
 
@@ -12578,7 +12578,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -12597,7 +12597,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m])) / (sum by (op)(increase(src_batches_service_total{job=~"^repo-updater.*"}[5m])) + sum by (op)(increase(src_batches_service_errors_total{job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m])) / (sum by(op) (increase(src_batches_service_total{foo="bar",job=~"^repo-updater.*"}[5m])) + sum by(op) (increase(src_batches_service_errors_total{foo="bar",job=~"^repo-updater.*"}[5m]))) * 100`
 
 </details>
 
@@ -12618,7 +12618,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_codeintel_coursier_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12637,7 +12637,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_coursier_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12656,7 +12656,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12675,7 +12675,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) / (sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) + sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) / (sum(increase(src_codeintel_coursier_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) + sum(increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -12694,7 +12694,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_coursier_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12713,7 +12713,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_coursier_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])))`
 
 </details>
 
@@ -12732,7 +12732,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12751,7 +12751,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) / (sum by (op)(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) + sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) / (sum by(op) (increase(src_codeintel_coursier_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) + sum by(op) (increase(src_codeintel_coursier_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -12772,7 +12772,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_codeintel_npm_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12791,7 +12791,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_npm_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_npm_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12810,7 +12810,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12829,7 +12829,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) / (sum(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) + sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) / (sum(increase(src_codeintel_npm_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) + sum(increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -12848,7 +12848,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_npm_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12867,7 +12867,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_npm_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_npm_duration_seconds_bucket{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])))`
 
 </details>
 
@@ -12886,7 +12886,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))`
 
 </details>
 
@@ -12905,7 +12905,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) / (sum by (op)(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^repo-updater.*"}[5m])) + sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^repo-updater.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) / (sum by(op) (increase(src_codeintel_npm_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m])) + sum by(op) (increase(src_codeintel_npm_errors_total{foo="bar",job=~"^repo-updater.*",op!="RunCommand"}[5m]))) * 100`
 
 </details>
 
@@ -12928,7 +12928,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="repo-updater",code=~"2.."}[5m]))`
+Query: `sum by(route) (rate(src_http_request_duration_seconds_count{app="repo-updater",code=~"2..",foo="bar"}[5m]))`
 
 </details>
 
@@ -12949,7 +12949,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="repo-updater",code!~"2.."}[5m]))`
+Query: `sum by(route) (rate(src_http_request_duration_seconds_count{app="repo-updater",code!~"2..",foo="bar"}[5m]))`
 
 </details>
 
@@ -12970,7 +12970,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="repo-updater"}[5m]))`
+Query: `sum by(code) (rate(src_http_request_duration_seconds_count{app="repo-updater",foo="bar"}[5m]))`
 
 </details>
 
@@ -12991,7 +12991,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app="repo-updater",code=~"2.."}[5m])) by (le, route))`
+Query: `histogram_quantile(0.95, sum by(le, route) (rate(src_http_request_duration_seconds_bucket{app="repo-updater",code=~"2..",foo="bar"}[5m])))`
 
 </details>
 
@@ -13012,7 +13012,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app="repo-updater",code!~"2.."}[5m])) by (le, route))`
+Query: `histogram_quantile(0.95, sum by(le, route) (rate(src_http_request_duration_seconds_bucket{app="repo-updater",code!~"2..",foo="bar"}[5m])))`
 
 </details>
 
@@ -13033,7 +13033,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="repo-updater",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="repo-updater"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="repo-updater"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="repo-updater"}[5m]))`
 
 </details>
 
@@ -13054,7 +13054,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="repo-updater"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="repo-updater",foo="bar"})`
 
 </details>
 
@@ -13073,7 +13073,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="repo-updater"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="repo-updater",foo="bar"})`
 
 </details>
 
@@ -13092,7 +13092,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="repo-updater"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="repo-updater",foo="bar"})`
 
 </details>
 
@@ -13111,7 +13111,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="repo-updater"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="repo-updater",foo="bar"})`
 
 </details>
 
@@ -13130,7 +13130,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater",foo="bar"}[5m]))`
 
 </details>
 
@@ -13149,7 +13149,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="repo-updater"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="repo-updater",foo="bar"}[5m]))`
 
 </details>
 
@@ -13168,7 +13168,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="repo-updater"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="repo-updater",foo="bar"}[5m]))`
 
 </details>
 
@@ -13187,7 +13187,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="repo-updater"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="repo-updater",foo="bar"}[5m]))`
 
 </details>
 
@@ -13218,7 +13218,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^repo-updater.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^repo-updater.*"}) > 60)`
 
 </details>
 
@@ -13237,7 +13237,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^repo-updater.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}`
 
 </details>
 
@@ -13256,7 +13256,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^repo-updater.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}`
 
 </details>
 
@@ -13278,7 +13278,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^repo-updater.*"}[1h]) + rate(container_fs_writes_total{name=~"^repo-updater.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^repo-updater.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^repo-updater.*"}[1h]))`
 
 </details>
 
@@ -13299,7 +13299,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^repo-updater.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}[1d])`
 
 </details>
 
@@ -13318,7 +13318,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^repo-updater.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}[1d])`
 
 </details>
 
@@ -13337,7 +13337,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^repo-updater.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}[5m])`
 
 </details>
 
@@ -13356,7 +13356,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^repo-updater.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^repo-updater.*"}[5m])`
 
 </details>
 
@@ -13378,7 +13378,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^repo-updater.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^repo-updater.*"})`
 
 </details>
 
@@ -13401,7 +13401,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*repo-updater"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*repo-updater"})`
 
 </details>
 
@@ -13420,7 +13420,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*repo-updater"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*repo-updater"})`
 
 </details>
 
@@ -13441,7 +13441,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*repo-updater"}) / count by (app) (up{app=~".*repo-updater"}) * 100`
+Query: `sum by(app) (up{app=~".*repo-updater",foo="bar"}) / count by(app) (up{app=~".*repo-updater",foo="bar"}) * 100`
 
 </details>
 
@@ -13466,7 +13466,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`
+Query: `sum by(code) (increase(searcher_service_request_total{code!="200",code!="canceled",foo="bar"}[5m])) / ignoring(code) group_left() sum(increase(searcher_service_request_total{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -13485,7 +13485,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
+Query: `sum by(instance) (rate(searcher_service_request_total{foo="bar"}[10m]))`
 
 </details>
 
@@ -13506,7 +13506,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="searcher"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="searcher",foo="bar"})`
 
 </details>
 
@@ -13525,7 +13525,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="searcher"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="searcher",foo="bar"})`
 
 </details>
 
@@ -13544,7 +13544,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="searcher"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="searcher",foo="bar"})`
 
 </details>
 
@@ -13563,7 +13563,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="searcher"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="searcher",foo="bar"})`
 
 </details>
 
@@ -13582,7 +13582,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher",foo="bar"}[5m]))`
 
 </details>
 
@@ -13601,7 +13601,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="searcher"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="searcher",foo="bar"}[5m]))`
 
 </details>
 
@@ -13620,7 +13620,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="searcher"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="searcher",foo="bar"}[5m]))`
 
 </details>
 
@@ -13639,7 +13639,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100132`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="searcher"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="searcher",foo="bar"}[5m]))`
 
 </details>
 
@@ -13660,7 +13660,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="searcher",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="searcher"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="searcher"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="searcher"}[5m]))`
 
 </details>
 
@@ -13691,7 +13691,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^searcher.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^searcher.*"}) > 60)`
 
 </details>
 
@@ -13710,7 +13710,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^searcher.*"}`
 
 </details>
 
@@ -13729,7 +13729,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100302`
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^searcher.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^searcher.*"}`
 
 </details>
 
@@ -13751,7 +13751,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^searcher.*"}[1h]) + rate(container_fs_writes_total{name=~"^searcher.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^searcher.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^searcher.*"}[1h]))`
 
 </details>
 
@@ -13772,7 +13772,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^searcher.*"}[1d])`
 
 </details>
 
@@ -13791,7 +13791,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^searcher.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^searcher.*"}[1d])`
 
 </details>
 
@@ -13810,7 +13810,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^searcher.*"}[5m])`
 
 </details>
 
@@ -13829,7 +13829,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^searcher.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^searcher.*"}[5m])`
 
 </details>
 
@@ -13851,7 +13851,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^searcher.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^searcher.*"})`
 
 </details>
 
@@ -13874,7 +13874,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*searcher"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*searcher"})`
 
 </details>
 
@@ -13893,7 +13893,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*searcher"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*searcher"})`
 
 </details>
 
@@ -13914,7 +13914,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*searcher"}) / count by (app) (up{app=~".*searcher"}) * 100`
+Query: `sum by(app) (up{app=~".*searcher",foo="bar"}) / count by(app) (up{app=~".*searcher",foo="bar"}) * 100`
 
 </details>
 
@@ -13941,7 +13941,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100000` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_api_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -13960,7 +13960,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100001` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_symbols_api_duration_seconds_bucket{job=~"^symbols.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_symbols_api_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -13979,7 +13979,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100002` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -13998,7 +13998,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100003` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_api_total{foo="bar",job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14017,7 +14017,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100010` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op, parseAmount) (increase(src_codeintel_symbols_api_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14036,7 +14036,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100011` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op,parseAmount)(rate(src_codeintel_symbols_api_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op, parseAmount) (rate(src_codeintel_symbols_api_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m])))`
 
 </details>
 
@@ -14055,7 +14055,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100012` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op, parseAmount) (increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14074,7 +14074,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100013` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op,parseAmount)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m])) + sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum by(op, parseAmount) (increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum by(op, parseAmount) (increase(src_codeintel_symbols_api_total{foo="bar",job=~"^symbols.*"}[5m])) + sum by(op, parseAmount) (increase(src_codeintel_symbols_api_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14095,7 +14095,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100100` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_symbols_parsing{job=~"^symbols.*"})`
+Query: `max(src_codeintel_symbols_parsing{foo="bar",job=~"^symbols.*"})`
 
 </details>
 
@@ -14114,7 +14114,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100101` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_symbols_parse_queue_size{job=~"^symbols.*"})`
+Query: `max(src_codeintel_symbols_parse_queue_size{foo="bar",job=~"^symbols.*"})`
 
 </details>
 
@@ -14133,7 +14133,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100102` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_symbols_parse_queue_timeouts_total{job=~"^symbols.*"})`
+Query: `max(src_codeintel_symbols_parse_queue_timeouts_total{foo="bar",job=~"^symbols.*"})`
 
 </details>
 
@@ -14152,7 +14152,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100103` o
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_codeintel_symbols_parse_failed_total{job=~"^symbols.*"}[5m])`
+Query: `rate(src_codeintel_symbols_parse_failed_total{foo="bar",job=~"^symbols.*"}[5m])`
 
 </details>
 
@@ -14171,7 +14171,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100110` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_parser_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_parser_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14190,7 +14190,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100111` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_symbols_parser_duration_seconds_bucket{job=~"^symbols.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_symbols_parser_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14209,7 +14209,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100112` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14228,7 +14228,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100113` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_parser_total{job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_parser_total{foo="bar",job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14247,7 +14247,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100120` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_parser_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_parser_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14266,7 +14266,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100121` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_symbols_parser_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_symbols_parser_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m])))`
 
 </details>
 
@@ -14285,7 +14285,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100122` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14304,7 +14304,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100123` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op)(increase(src_codeintel_symbols_parser_total{job=~"^symbols.*"}[5m])) + sum by (op)(increase(src_codeintel_symbols_parser_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum by(op) (increase(src_codeintel_symbols_parser_total{foo="bar",job=~"^symbols.*"}[5m])) + sum by(op) (increase(src_codeintel_symbols_parser_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14327,7 +14327,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100200` o
 <details>
 <summary>Technical details</summary>
 
-Query: `src_codeintel_symbols_store_cache_size_bytes`
+Query: `src_codeintel_symbols_store_cache_size_bytes{foo="bar"}`
 
 </details>
 
@@ -14348,7 +14348,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100201` o
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_codeintel_symbols_store_evictions_total[5m])`
+Query: `rate(src_codeintel_symbols_store_evictions_total{foo="bar"}[5m])`
 
 </details>
 
@@ -14369,7 +14369,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100202` o
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_codeintel_symbols_store_errors_total[5m])`
+Query: `rate(src_codeintel_symbols_store_errors_total{foo="bar"}[5m])`
 
 </details>
 
@@ -14390,7 +14390,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100300` o
 <details>
 <summary>Technical details</summary>
 
-Query: `src_codeintel_symbols_fetching`
+Query: `src_codeintel_symbols_fetching{foo="bar"}`
 
 </details>
 
@@ -14409,7 +14409,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100301` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_symbols_fetch_queue_size{job=~"^symbols.*"})`
+Query: `max(src_codeintel_symbols_fetch_queue_size{foo="bar",job=~"^symbols.*"})`
 
 </details>
 
@@ -14428,7 +14428,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100310` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_repository_fetcher_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_repository_fetcher_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14447,7 +14447,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100311` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_symbols_repository_fetcher_duration_seconds_bucket{job=~"^symbols.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_symbols_repository_fetcher_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14466,7 +14466,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100312` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14485,7 +14485,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100313` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_repository_fetcher_total{job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_repository_fetcher_total{foo="bar",job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14504,7 +14504,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100320` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_repository_fetcher_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_repository_fetcher_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14523,7 +14523,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100321` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_symbols_repository_fetcher_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_symbols_repository_fetcher_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m])))`
 
 </details>
 
@@ -14542,7 +14542,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100322` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14561,7 +14561,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100323` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op)(increase(src_codeintel_symbols_repository_fetcher_total{job=~"^symbols.*"}[5m])) + sum by (op)(increase(src_codeintel_symbols_repository_fetcher_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum by(op) (increase(src_codeintel_symbols_repository_fetcher_total{foo="bar",job=~"^symbols.*"}[5m])) + sum by(op) (increase(src_codeintel_symbols_repository_fetcher_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14582,7 +14582,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100400` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_gitserver_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_gitserver_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14601,7 +14601,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100401` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_symbols_gitserver_duration_seconds_bucket{job=~"^symbols.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_symbols_gitserver_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14620,7 +14620,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100402` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum(increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14639,7 +14639,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100403` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_gitserver_total{job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum(increase(src_codeintel_symbols_gitserver_total{foo="bar",job=~"^symbols.*"}[5m])) + sum(increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14658,7 +14658,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100410` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_gitserver_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14677,7 +14677,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100411` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_symbols_gitserver_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_symbols_gitserver_duration_seconds_bucket{foo="bar",job=~"^symbols.*"}[5m])))`
 
 </details>
 
@@ -14696,7 +14696,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100412` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -14715,7 +14715,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100413` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op)(increase(src_codeintel_symbols_gitserver_total{job=~"^symbols.*"}[5m])) + sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m])) / (sum by(op) (increase(src_codeintel_symbols_gitserver_total{foo="bar",job=~"^symbols.*"}[5m])) + sum by(op) (increase(src_codeintel_symbols_gitserver_errors_total{foo="bar",job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
@@ -14736,7 +14736,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="symbols"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_max_open{app_name="symbols",foo="bar"})`
 
 </details>
 
@@ -14755,7 +14755,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="symbols"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_open{app_name="symbols",foo="bar"})`
 
 </details>
 
@@ -14774,7 +14774,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100510` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="symbols"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_in_use{app_name="symbols",foo="bar"})`
 
 </details>
 
@@ -14793,7 +14793,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="symbols"})`
+Query: `sum by(app_name, db_name) (src_pgsql_conns_idle{app_name="symbols",foo="bar"})`
 
 </details>
 
@@ -14812,7 +14812,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols",foo="bar"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols",foo="bar"}[5m]))`
 
 </details>
 
@@ -14831,7 +14831,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="symbols"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name="symbols",foo="bar"}[5m]))`
 
 </details>
 
@@ -14850,7 +14850,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100531` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="symbols"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name="symbols",foo="bar"}[5m]))`
 
 </details>
 
@@ -14869,7 +14869,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100532` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="symbols"}[5m]))`
+Query: `sum by(app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name="symbols",foo="bar"}[5m]))`
 
 </details>
 
@@ -14890,7 +14890,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100600` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="symbols",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="symbols"}[5m]))`
+Query: `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",foo="bar",job="symbols"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{foo="bar",job="symbols"}[5m]))`
 
 </details>
 
@@ -14921,7 +14921,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100700` o
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^symbols.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^symbols.*"}) > 60)`
 
 </details>
 
@@ -14940,7 +14940,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100701` o
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^symbols.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^symbols.*"}`
 
 </details>
 
@@ -14959,7 +14959,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100702` o
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^symbols.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^symbols.*"}`
 
 </details>
 
@@ -14981,7 +14981,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100703` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^symbols.*"}[1h]) + rate(container_fs_writes_total{name=~"^symbols.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^symbols.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^symbols.*"}[1h]))`
 
 </details>
 
@@ -15002,7 +15002,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100800` o
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^symbols.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^symbols.*"}[1d])`
 
 </details>
 
@@ -15021,7 +15021,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100801` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^symbols.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^symbols.*"}[1d])`
 
 </details>
 
@@ -15040,7 +15040,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100810` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^symbols.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^symbols.*"}[5m])`
 
 </details>
 
@@ -15059,7 +15059,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100811` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^symbols.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^symbols.*"}[5m])`
 
 </details>
 
@@ -15081,7 +15081,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100812` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^symbols.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^symbols.*"})`
 
 </details>
 
@@ -15104,7 +15104,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100900` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*symbols"})`
+Query: `max by(instance) (go_goroutines{foo="bar",job=~".*symbols"})`
 
 </details>
 
@@ -15123,7 +15123,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100901` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*symbols"})`
+Query: `max by(instance) (go_gc_duration_seconds{foo="bar",job=~".*symbols"})`
 
 </details>
 
@@ -15144,7 +15144,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=101000` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*symbols"}) / count by (app) (up{app=~".*symbols"}) * 100`
+Query: `sum by(app) (up{app=~".*symbols",foo="bar"}) / count by(app) (up{app=~".*symbols",foo="bar"}) * 100`
 
 </details>
 
@@ -15169,7 +15169,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_syntax_highlighting_requests{status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`
+Query: `sum(increase(src_syntax_highlighting_requests{foo="bar",status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -15188,7 +15188,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`
+Query: `sum(increase(src_syntax_highlighting_requests{foo="bar",status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -15207,7 +15207,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_syntax_highlighting_requests{status="panic"}[5m]))`
+Query: `sum(increase(src_syntax_highlighting_requests{foo="bar",status="panic"}[5m]))`
 
 </details>
 
@@ -15226,7 +15226,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]))`
+Query: `sum(increase(src_syntax_highlighting_requests{foo="bar",status="hss_worker_timeout"}[5m]))`
 
 </details>
 
@@ -15257,7 +15257,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^syntect-server.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^syntect-server.*"}) > 60)`
 
 </details>
 
@@ -15276,7 +15276,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^syntect-server.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}`
 
 </details>
 
@@ -15295,7 +15295,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^syntect-server.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}`
 
 </details>
 
@@ -15317,7 +15317,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^syntect-server.*"}[1h]) + rate(container_fs_writes_total{name=~"^syntect-server.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^syntect-server.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^syntect-server.*"}[1h]))`
 
 </details>
 
@@ -15338,7 +15338,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^syntect-server.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}[1d])`
 
 </details>
 
@@ -15357,7 +15357,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^syntect-server.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}[1d])`
 
 </details>
 
@@ -15376,7 +15376,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^syntect-server.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}[5m])`
 
 </details>
 
@@ -15395,7 +15395,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^syntect-server.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^syntect-server.*"}[5m])`
 
 </details>
 
@@ -15417,7 +15417,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^syntect-server.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^syntect-server.*"})`
 
 </details>
 
@@ -15438,7 +15438,7 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*syntect-server"}) / count by (app) (up{app=~".*syntect-server"}) * 100`
+Query: `sum by(app) (up{app=~".*syntect-server",foo="bar"}) / count by(app) (up{app=~".*syntect-server",foo="bar"}) * 100`
 
 </details>
 
@@ -15472,7 +15472,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100000` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_num_assigned)`
+Query: `sum(index_num_assigned{foo="bar"})`
 
 </details>
 
@@ -15500,7 +15500,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100001` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
+Query: `sum by(instance) (index_num_assigned{foo="bar",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -15521,7 +15521,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100010` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(index_num_stopped_tracking_total[5m]))`
+Query: `sum(increase(index_num_stopped_tracking_total{foo="bar"}[5m]))`
 
 </details>
 
@@ -15542,7 +15542,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100011` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))`
+Query: `sum by(instance) (increase(index_num_stopped_tracking_total{foo="bar",instance=~"${instance:regex}"}[5m]))`
 
 </details>
 
@@ -15561,7 +15561,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`
+Query: `sum(rate(resolve_revision_seconds_sum{foo="bar"}[5m])) / sum(rate(resolve_revision_seconds_count{foo="bar"}[5m]))`
 
 </details>
 
@@ -15588,7 +15588,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(get_index_options_error_total[5m]))`
+Query: `sum(increase(get_index_options_error_total{foo="bar"}[5m]))`
 
 </details>
 
@@ -15609,7 +15609,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`
+Query: `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2..",foo="bar"}[5m])) / ignoring(code) group_left() sum(increase(src_zoekt_request_duration_seconds_count{foo="bar"}[5m])) * 100`
 
 </details>
 
@@ -15637,7 +15637,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (type, state) (zoekt_shards_sched)`
+Query: `sum by(type, state) (zoekt_shards_sched{foo="bar"})`
 
 </details>
 
@@ -15665,7 +15665,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (type, state) (rate(zoekt_shards_sched[5m]))`
+Query: `sum by(type, state) (rate(zoekt_shards_sched{foo="bar"}[5m]))`
 
 </details>
 
@@ -15688,7 +15688,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100200` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="true"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, name) (rate(index_fetch_seconds_bucket{foo="bar",success="true"}[5m])))`
 
 </details>
 
@@ -15709,7 +15709,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100201` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="false"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, name) (rate(index_fetch_seconds_bucket{foo="bar",success="false"}[5m])))`
 
 </details>
 
@@ -15741,7 +15741,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100300` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (state) (increase(index_repo_seconds_count[5m]))`
+Query: `sum by(state) (increase(index_repo_seconds_count{foo="bar"}[5m]))`
 
 </details>
 
@@ -15773,7 +15773,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100301` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${instance:regex}`}[5m]))`
+Query: `sum by(instance, state) (increase(index_repo_seconds_count{foo="bar",instance=~"${instance:regex}"}[5m]))`
 
 </details>
 
@@ -15794,7 +15794,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100310` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`
+Query: `sum by(le, state) (increase(index_repo_seconds_bucket{foo="bar",state="success"}[2h3m]))`
 
 </details>
 
@@ -15815,7 +15815,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100311` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`
+Query: `sum by(le, state) (increase(index_repo_seconds_bucket{foo="bar",state="fail"}[2h3m]))`
 
 </details>
 
@@ -15838,7 +15838,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100320` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="success"}[5m])))`
 
 </details>
 
@@ -15861,7 +15861,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100321` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="success"}[5m])))`
 
 </details>
 
@@ -15884,7 +15884,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100322` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state="success"}[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="success"}[5m])))`
 
 </details>
 
@@ -15907,7 +15907,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100330` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="success"}[5m])))`
 
 </details>
 
@@ -15930,7 +15930,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100331` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="success"}[5m])))`
 
 </details>
 
@@ -15953,7 +15953,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100332` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state="success",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="success"}[5m])))`
 
 </details>
 
@@ -15976,7 +15976,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100340` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="fail"}[5m])))`
 
 </details>
 
@@ -15999,7 +15999,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100341` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="fail"}[5m])))`
 
 </details>
 
@@ -16022,7 +16022,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100342` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state="fail"}[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, name) (rate(index_repo_seconds_bucket{foo="bar",state="fail"}[5m])))`
 
 </details>
 
@@ -16045,7 +16045,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100350` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="fail"}[5m])))`
 
 </details>
 
@@ -16068,7 +16068,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100351` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="fail"}[5m])))`
 
 </details>
 
@@ -16091,7 +16091,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100352` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state="fail",instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, instance) (rate(index_repo_seconds_bucket{foo="bar",instance=~"${instance:regex}",state="fail"}[5m])))`
 
 </details>
 
@@ -16114,7 +16114,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100400` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_queue_len)`
+Query: `sum(index_queue_len{foo="bar"})`
 
 </details>
 
@@ -16135,7 +16135,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100401` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `index_queue_len{instance=~`${instance:regex}`}`
+Query: `index_queue_len{foo="bar",instance=~"${instance:regex}"}`
 
 </details>
 
@@ -16160,7 +16160,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100410` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))`
+Query: `sum by(le) (increase(index_queue_age_seconds_bucket{foo="bar"}[2h3m]))`
 
 </details>
 
@@ -16189,7 +16189,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100420` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+Query: `histogram_quantile(0.999, sum by(le, name) (rate(index_queue_age_seconds_bucket{foo="bar"}[5m])))`
 
 </details>
 
@@ -16216,7 +16216,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100421` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, name) (rate(index_queue_age_seconds_bucket{foo="bar"}[5m])))`
 
 </details>
 
@@ -16243,7 +16243,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100422` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, name) (rate(index_queue_age_seconds_bucket{foo="bar"}[5m])))`
 
 </details>
 
@@ -16272,7 +16272,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100430` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.999, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.999, sum by(le, instance) (rate(index_queue_age_seconds_bucket{foo="bar",instance=~"${instance:regex}"}[5m])))`
 
 </details>
 
@@ -16299,7 +16299,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100431` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.9, sum by(le, instance) (rate(index_queue_age_seconds_bucket{foo="bar",instance=~"${instance:regex}"}[5m])))`
 
 </details>
 
@@ -16326,7 +16326,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100432` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))`
+Query: `histogram_quantile(0.75, sum by(le, instance) (rate(index_queue_age_seconds_bucket{foo="bar",instance=~"${instance:regex}"}[5m])))`
 
 </details>
 
@@ -16351,7 +16351,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100500` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_number_compound_shards) by (app)`
+Query: `sum by(app) (index_number_compound_shards{foo="bar"})`
 
 </details>
 
@@ -16374,7 +16374,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100501` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)`
+Query: `sum by(instance) (index_number_compound_shards{foo="bar",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -16398,7 +16398,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100510` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false"}[1h]))`
+Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="false",foo="bar"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false",foo="bar"}[1h]))`
 
 </details>
 
@@ -16421,7 +16421,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100511` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true"}[1h]))`
+Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="true",foo="bar"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true",foo="bar"}[1h]))`
 
 </details>
 
@@ -16442,7 +16442,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100520` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) by (app)`
+Query: `sum by(app) (index_shard_merging_duration_seconds_count{error="true",foo="bar"})`
 
 </details>
 
@@ -16463,7 +16463,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100521` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error="true"}) by (instance)`
+Query: `sum by(instance) (index_shard_merging_duration_seconds_count{error="true",foo="bar",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -16484,7 +16484,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100530` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (index_shard_merging_running{instance=~`${instance:regex}`})`
+Query: `max by(instance) (index_shard_merging_running{foo="bar",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -16505,7 +16505,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100531` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})`
+Query: `max by(instance) (index_vacuum_running{foo="bar",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -16528,7 +16528,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100600` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`.*indexed-search.*`}[5m]))`
+Query: `sum(rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~".*indexed-search.*",foo="bar"}[5m]))`
 
 </details>
 
@@ -16549,7 +16549,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100601` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16570,7 +16570,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100610` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`.*indexed-search.*`}[5m]))`
+Query: `sum(rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~".*indexed-search.*",foo="bar"}[5m]))`
 
 </details>
 
@@ -16591,7 +16591,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100611` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16612,7 +16612,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100620` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16633,7 +16633,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100621` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16654,7 +16654,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100622` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16675,7 +16675,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100623` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+Query: `sum by(container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~"${instance:regex}",foo="bar"}[5m]))`
 
 </details>
 
@@ -16706,7 +16706,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100700` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^zoekt-indexserver.*"}) > 60)`
 
 </details>
 
@@ -16725,7 +16725,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100701` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}`
 
 </details>
 
@@ -16744,7 +16744,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100702` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}`
 
 </details>
 
@@ -16766,7 +16766,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100703` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-indexserver.*"}[1h]) + rate(container_fs_writes_total{name=~"^zoekt-indexserver.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^zoekt-indexserver.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^zoekt-indexserver.*"}[1h]))`
 
 </details>
 
@@ -16797,7 +16797,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-webserver.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^zoekt-webserver.*"}) > 60)`
 
 </details>
 
@@ -16816,7 +16816,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}`
 
 </details>
 
@@ -16835,7 +16835,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100802` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-webserver.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}`
 
 </details>
 
@@ -16857,7 +16857,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100803` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-webserver.*"}[1h]) + rate(container_fs_writes_total{name=~"^zoekt-webserver.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^zoekt-webserver.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^zoekt-webserver.*"}[1h]))`
 
 </details>
 
@@ -16878,7 +16878,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}[1d])`
 
 </details>
 
@@ -16897,7 +16897,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}[1d])`
 
 </details>
 
@@ -16916,7 +16916,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100910` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}[5m])`
 
 </details>
 
@@ -16935,7 +16935,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100911` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-indexserver.*"}[5m])`
 
 </details>
 
@@ -16957,7 +16957,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100912` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^zoekt-indexserver.*"})`
 
 </details>
 
@@ -16978,7 +16978,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101000` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}[1d])`
 
 </details>
 
@@ -16997,7 +16997,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101001` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-webserver.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}[1d])`
 
 </details>
 
@@ -17016,7 +17016,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101010` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}[5m])`
 
 </details>
 
@@ -17035,7 +17035,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101011` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-webserver.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^zoekt-webserver.*"}[5m])`
 
 </details>
 
@@ -17057,7 +17057,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101012` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^zoekt-webserver.*"})`
 
 </details>
 
@@ -17078,7 +17078,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101100` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*indexed-search"}) / count by (app) (up{app=~".*indexed-search"}) * 100`
+Query: `sum by(app) (up{app=~".*indexed-search",foo="bar"}) / count by(app) (up{app=~".*indexed-search",foo="bar"}) * 100`
 
 </details>
 
@@ -17110,7 +17110,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))`
+Query: `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds{foo="bar"}[10m]))`
 
 </details>
 
@@ -17131,7 +17131,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`
+Query: `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total{foo="bar"}[5m]))`
 
 </details>
 
@@ -17152,7 +17152,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))`
+Query: `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum{foo="bar"}[1m]))`
 
 </details>
 
@@ -17171,7 +17171,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`
+Query: `sum by(integration) (rate(alertmanager_notifications_failed_total{foo="bar"}[1m]))`
 
 </details>
 
@@ -17194,7 +17194,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `prometheus_config_last_reload_successful`
+Query: `prometheus_config_last_reload_successful{foo="bar"}`
 
 </details>
 
@@ -17215,7 +17215,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `alertmanager_config_last_reload_successful`
+Query: `alertmanager_config_last_reload_successful{foo="bar"}`
 
 </details>
 
@@ -17234,7 +17234,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`
+Query: `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total",foo="bar"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`
 
 </details>
 
@@ -17253,7 +17253,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `increase(prometheus_target_scrapes_exceeded_sample_limit_total[10m])`
+Query: `increase(prometheus_target_scrapes_exceeded_sample_limit_total{foo="bar"}[10m])`
 
 </details>
 
@@ -17272,7 +17272,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[10m])`
+Query: `increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{foo="bar"}[10m])`
 
 </details>
 
@@ -17303,7 +17303,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^prometheus.*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^prometheus.*"}) > 60)`
 
 </details>
 
@@ -17322,7 +17322,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^prometheus.*"}`
 
 </details>
 
@@ -17341,7 +17341,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^prometheus.*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^prometheus.*"}`
 
 </details>
 
@@ -17363,7 +17363,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) + rate(container_fs_writes_total{name=~"^prometheus.*"}[1h]))`
+Query: `sum by(name) (rate(container_fs_reads_total{foo="bar",name=~"^prometheus.*"}[1h]) + rate(container_fs_writes_total{foo="bar",name=~"^prometheus.*"}[1h]))`
 
 </details>
 
@@ -17384,7 +17384,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^prometheus.*"}[1d])`
 
 </details>
 
@@ -17403,7 +17403,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^prometheus.*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^prometheus.*"}[1d])`
 
 </details>
 
@@ -17422,7 +17422,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^prometheus.*"}[5m])`
 
 </details>
 
@@ -17441,7 +17441,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^prometheus.*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^prometheus.*"}[5m])`
 
 </details>
 
@@ -17463,7 +17463,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^prometheus.*"})`
 
 </details>
 
@@ -17484,7 +17484,7 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*prometheus"}) / count by (app) (up{app=~".*prometheus"}) * 100`
+Query: `sum by(app) (up{app=~".*prometheus",foo="bar"}) / count by(app) (up{app=~".*prometheus",foo="bar"}) * 100`
 
 </details>
 
@@ -17511,7 +17511,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (queue)(src_executor_total{queue=~"$queue",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
+Query: `max by(queue) (src_executor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-$queue|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"$queue"})`
 
 </details>
 
@@ -17536,7 +17536,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (queue)(increase(src_executor_total{queue=~"$queue",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m])) / sum by (queue)(increase(src_executor_processor_total{queue=~"$queue",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m]))`
+Query: `sum by(queue) (increase(src_executor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-$queue|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"$queue"}[30m])) / sum by(queue) (increase(src_executor_processor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-$queue|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"$queue"}[30m]))`
 
 </details>
 
@@ -17555,7 +17555,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100002`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (queue)(src_executor_queued_duration_seconds_total{queue=~"$queue",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
+Query: `max by(queue) (src_executor_queued_duration_seconds_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-$queue|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"$queue"})`
 
 </details>
 
@@ -17576,7 +17576,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})`
+Query: `sum(src_executor_processor_handlers{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})`
 
 </details>
 
@@ -17595,7 +17595,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_executor_processor_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17614,7 +17614,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(le) (rate(src_executor_processor_duration_seconds_bucket{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17633,7 +17633,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_executor_processor_errors_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17652,7 +17652,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100113`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_executor_processor_errors_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_executor_processor_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_executor_processor_errors_total{foo="bar",queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17673,7 +17673,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17692,7 +17692,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(le) (rate(src_apiworker_apiclient_duration_seconds_bucket{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17711,7 +17711,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100202`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17730,7 +17730,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100203`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17749,7 +17749,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100210`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_apiclient_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17768,7 +17768,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100211`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_apiworker_apiclient_duration_seconds_bucket{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -17787,7 +17787,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100212`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17806,7 +17806,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100213`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by(op) (increase(src_apiworker_apiclient_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by(op) (increase(src_apiworker_apiclient_errors_total{foo="bar",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17827,7 +17827,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17846,7 +17846,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(le) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17865,7 +17865,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100302`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17884,7 +17884,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100303`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17903,7 +17903,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17922,7 +17922,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -17941,7 +17941,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100312`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17960,7 +17960,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17981,7 +17981,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18000,7 +18000,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(le) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18019,7 +18019,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18038,7 +18038,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -18057,7 +18057,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18076,7 +18076,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -18095,7 +18095,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18114,7 +18114,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -18135,7 +18135,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18154,7 +18154,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(le) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18173,7 +18173,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18192,7 +18192,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -18211,7 +18211,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18230,7 +18230,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_apiworker_command_duration_seconds_bucket{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -18249,7 +18249,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18268,7 +18268,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by(op) (increase(src_apiworker_command_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by(op) (increase(src_apiworker_command_errors_total{foo="bar",op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -18290,7 +18290,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode!~"(idle|iowait)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode="system",sg_instance=~"$instance"}) by (sg_instance) * 100`
+Query: `sum by(sg_instance) (rate(node_cpu_seconds_total{foo="bar",mode!~"(idle|iowait)",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])) / count by(sg_instance) (node_cpu_seconds_total{foo="bar",mode="system",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}) * 100`
 
 </details>
 
@@ -18310,7 +18310,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])`
 
 </details>
 
@@ -18330,7 +18330,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100610`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}) by (sg_instance)) * 100`
+Query: `(1 - sum by(sg_instance) (node_memory_MemAvailable_bytes{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}) / sum by(sg_instance) (node_memory_MemTotal_bytes{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"})) * 100`
 
 </details>
 
@@ -18350,7 +18350,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100611`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgsteal_direct{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgsteal_file{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgsteal_kswapd{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])) / (rate(node_vmstat_pgscan_anon{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgscan_direct{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgscan_file{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]) + rate(node_vmstat_pgscan_kswapd{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])) * 100`
 
 </details>
 
@@ -18370,7 +18370,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100612`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])`
 
 </details>
 
@@ -18390,7 +18390,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100620`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
+Query: `sum by(sg_instance, disk) (label_replace(label_replace(rate(node_disk_io_time_seconds_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) * 100`
 
 </details>
 
@@ -18410,7 +18410,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100621`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
+Query: `sum by(sg_instance, disk) (label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*"))`
 
 </details>
 
@@ -18430,7 +18430,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100622`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])`
 
 </details>
 
@@ -18450,7 +18450,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100630`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum by(sg_instance) (rate(node_network_receive_bytes_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])) * 8`
 
 </details>
 
@@ -18470,7 +18470,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100631`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_receive_drop_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]))`
 
 </details>
 
@@ -18490,7 +18490,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100632`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_receive_errs_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]))`
 
 </details>
 
@@ -18510,7 +18510,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100640`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum by(sg_instance) (rate(node_network_transmit_bytes_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m])) * 8`
 
 </details>
 
@@ -18530,7 +18530,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100641`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_transmit_drop_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]))`
 
 </details>
 
@@ -18550,7 +18550,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100642`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_transmit_errs_total{foo="bar",sg_instance=~"$instance",sg_job=~"sourcegraph-executors"}[2h3m]))`
 
 </details>
 
@@ -18572,7 +18572,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode!~"(idle|iowait)",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode="system",sg_instance=~"docker-registry"}) by (sg_instance) * 100`
+Query: `sum by(sg_instance) (rate(node_cpu_seconds_total{foo="bar",mode!~"(idle|iowait)",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])) / count by(sg_instance) (node_cpu_seconds_total{foo="bar",mode="system",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}) * 100`
 
 </details>
 
@@ -18592,7 +18592,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])`
 
 </details>
 
@@ -18612,7 +18612,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100710`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance)) * 100`
+Query: `(1 - sum by(sg_instance) (node_memory_MemAvailable_bytes{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}) / sum by(sg_instance) (node_memory_MemTotal_bytes{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"})) * 100`
 
 </details>
 
@@ -18632,7 +18632,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100711`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgsteal_direct{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgsteal_file{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgsteal_kswapd{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])) / (rate(node_vmstat_pgscan_anon{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgscan_direct{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgscan_file{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]) + rate(node_vmstat_pgscan_kswapd{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])) * 100`
 
 </details>
 
@@ -18652,7 +18652,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100712`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])`
 
 </details>
 
@@ -18672,7 +18672,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100720`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
+Query: `sum by(sg_instance, disk) (label_replace(label_replace(rate(node_disk_io_time_seconds_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) * 100`
 
 </details>
 
@@ -18692,7 +18692,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100721`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
+Query: `sum by(sg_instance, disk) (label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*"))`
 
 </details>
 
@@ -18712,7 +18712,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100722`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])`
 
 </details>
 
@@ -18732,7 +18732,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100730`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum by(sg_instance) (rate(node_network_receive_bytes_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])) * 8`
 
 </details>
 
@@ -18752,7 +18752,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100731`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_receive_drop_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]))`
 
 </details>
 
@@ -18772,7 +18772,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100732`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_receive_errs_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]))`
 
 </details>
 
@@ -18792,7 +18792,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100740`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum by(sg_instance) (rate(node_network_transmit_bytes_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m])) * 8`
 
 </details>
 
@@ -18812,7 +18812,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100741`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_transmit_drop_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]))`
 
 </details>
 
@@ -18832,7 +18832,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100742`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
+Query: `sum by(sg_instance) (rate(node_network_transmit_errs_total{foo="bar",sg_instance=~"docker-registry",sg_job=~"sourcegraph-executors-registry"}[2h3m]))`
 
 </details>
 
@@ -18855,7 +18855,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(sg_instance) (go_goroutines{sg_job=~".*sourcegraph-executors"})`
+Query: `max by(sg_instance) (go_goroutines{foo="bar",sg_job=~".*sourcegraph-executors"})`
 
 </details>
 
@@ -18874,7 +18874,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*sourcegraph-executors"})`
+Query: `max by(sg_instance) (go_gc_duration_seconds{foo="bar",sg_job=~".*sourcegraph-executors"})`
 
 </details>
 
@@ -18903,7 +18903,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
 
 </details>
 
@@ -18924,7 +18924,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
 
 </details>
 
@@ -18947,7 +18947,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -18968,7 +18968,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -18990,7 +18990,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) >= 1`
+Query: `max by(name) (container_oom_events_total{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) >= 1`
 
 </details>
 
@@ -19012,7 +19012,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{foo="bar",name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) > 60)`
 
 </details>
 
@@ -19039,7 +19039,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_indexes_inserted[5m]))`
+Query: `sum(increase(src_codeintel_dbstore_indexes_inserted{foo="bar"}[5m]))`
 
 </details>
 
@@ -19058,7 +19058,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{job=~"^.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_index_scheduler_errors_total{foo="bar",job=~"^.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{foo="bar",job=~"^.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{foo="bar",job=~"^.*"}[10m]))) * 100`
 
 </details>
 
@@ -19077,7 +19077,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (queue)(src_executor_total{queue=~"codeintel",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
+Query: `max by(queue) (src_executor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"codeintel"})`
 
 </details>
 
@@ -19102,7 +19102,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (queue)(increase(src_executor_total{queue=~"codeintel",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m])) / sum by (queue)(increase(src_executor_processor_total{queue=~"codeintel",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m]))`
+Query: `sum by(queue) (increase(src_executor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"codeintel"}[30m])) / sum by(queue) (increase(src_executor_processor_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"codeintel"}[30m]))`
 
 </details>
 
@@ -19121,7 +19121,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (queue)(src_executor_queued_duration_seconds_total{queue=~"codeintel",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
+Query: `max by(queue) (src_executor_queued_duration_seconds_total{foo="bar",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*",queue=~"codeintel"})`
 
 </details>
 
@@ -19142,7 +19142,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19161,7 +19161,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_autoindexing_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19180,7 +19180,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19199,7 +19199,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19218,7 +19218,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19237,7 +19237,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_autoindexing_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -19256,7 +19256,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19275,7 +19275,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_autoindexing_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_autoindexing_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19296,7 +19296,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19315,7 +19315,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_autoindexing_store_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19334,7 +19334,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19353,7 +19353,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19372,7 +19372,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_store_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19391,7 +19391,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_autoindexing_store_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -19410,7 +19410,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19429,7 +19429,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_autoindexing_store_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_autoindexing_store_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19450,7 +19450,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19469,7 +19469,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19488,7 +19488,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19507,7 +19507,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19526,7 +19526,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_inference_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19545,7 +19545,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -19564,7 +19564,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19583,7 +19583,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_autoindexing_inference_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_autoindexing_inference_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19604,7 +19604,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19623,7 +19623,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_luasandbox_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19642,7 +19642,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19661,7 +19661,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19680,7 +19680,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_luasandbox_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19699,7 +19699,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_luasandbox_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -19718,7 +19718,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19737,7 +19737,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_luasandbox_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_luasandbox_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19764,7 +19764,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19783,7 +19783,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploads_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19802,7 +19802,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19821,7 +19821,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19840,7 +19840,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19859,7 +19859,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploads_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -19878,7 +19878,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19897,7 +19897,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_uploads_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_uploads_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19918,7 +19918,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19937,7 +19937,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploads_store_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19956,7 +19956,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -19975,7 +19975,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -19994,7 +19994,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_store_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20013,7 +20013,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploads_store_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -20032,7 +20032,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20051,7 +20051,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_uploads_store_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_uploads_store_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -20072,7 +20072,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20091,7 +20091,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20110,7 +20110,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20129,7 +20129,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -20148,7 +20148,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_graphql_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20167,7 +20167,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -20186,7 +20186,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20205,7 +20205,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_uploads_transport_graphql_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_uploads_transport_graphql_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -20226,7 +20226,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20245,7 +20245,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum by(le) (rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20264,7 +20264,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20283,7 +20283,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{foo="bar",job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -20302,7 +20302,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_http_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20321,7 +20321,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{foo="bar",job=~"^.*"}[5m])))`
 
 </details>
 
@@ -20340,7 +20340,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20359,7 +20359,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m])) / (sum by(op) (increase(src_codeintel_uploads_transport_http_total{foo="bar",job=~"^.*"}[5m])) + sum by(op) (increase(src_codeintel_uploads_transport_http_errors_total{foo="bar",job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -20382,7 +20382,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_removed_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20403,7 +20403,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_records_removed_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20424,7 +20424,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_uploads_purged_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20445,7 +20445,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20466,7 +20466,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20487,7 +20487,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_total{foo="bar",job=~"^.*"})`
 
 </details>
 
@@ -20512,7 +20512,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^.*"}[30m]))`
+Query: `sum(increase(src_codeintel_commit_graph_total{foo="bar",job=~"^.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{foo="bar",job=~"^.*"}[30m]))`
 
 </details>
 
@@ -20531,7 +20531,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{foo="bar",job=~"^.*"})`
 
 </details>
 
@@ -20554,7 +20554,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20575,7 +20575,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20596,7 +20596,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20617,7 +20617,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20646,7 +20646,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_policies_updated_total_total{foo="bar",job=~"^.*"}[5m]))`
 
 </details>
 
@@ -20673,7 +20673,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetry_job_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetry_job_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -20692,7 +20692,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_telemetry_job_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum by(le) (rate(src_telemetry_job_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -20711,7 +20711,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -20730,7 +20730,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum(increase(src_telemetry_job_total{foo="bar",job=~"^worker.*"}[5m])) + sum(increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -20749,7 +20749,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_telemetry_job_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_telemetry_job_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -20768,7 +20768,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_telemetry_job_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum by(le, op) (rate(src_telemetry_job_duration_seconds_bucket{foo="bar",job=~"^worker.*"}[5m])))`
 
 </details>
 
@@ -20787,7 +20787,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by(op) (increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -20806,7 +20806,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by(op) (increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_telemetry_job_total{foo="bar",job=~"^worker.*"}[5m])) + sum by(op) (increase(src_telemetry_job_errors_total{foo="bar",job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -20827,7 +20827,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_telemetry_job_queue_size_total{job=~"^worker.*"})`
+Query: `max(src_telemetry_job_queue_size_total{foo="bar",job=~"^worker.*"})`
 
 </details>
 
@@ -20852,7 +20852,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10010
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetry_job_queue_size_total{job=~"^worker.*"}[30m])) / sum(increase(src_telemetry_job_queue_size_processor_total{job=~"^worker.*"}[30m]))`
+Query: `sum(increase(src_telemetry_job_queue_size_total{foo="bar",job=~"^worker.*"}[30m])) / sum(increase(src_telemetry_job_queue_size_processor_total{foo="bar",job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -20873,7 +20873,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10020
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() src_telemetry_job_max_throughput * 100`
+Query: `rate(src_telemetry_job_total{foo="bar",op="SendEvents"}[1h]) / on() group_right() src_telemetry_job_max_throughput{foo="bar"} * 100`
 
 </details>
 
