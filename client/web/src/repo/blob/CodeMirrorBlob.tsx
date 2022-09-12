@@ -97,7 +97,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         location,
         history,
-        isBlameVisible,
         blameHunks,
 
         // Reference panel specific props
