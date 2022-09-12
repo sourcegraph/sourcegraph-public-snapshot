@@ -1,13 +1,13 @@
-import React, { useMemo } from 'react'
+import React, { ReactNode, useMemo } from 'react'
 
 import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 import { uniqueId } from 'lodash'
 
 import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
-import { PopoverTrigger } from '../Popover'
+import { PopoverTrigger, PopoverTriggerProps } from '../Popover'
 
-export type MenuButtonProps = Omit<ButtonProps, 'as'>
+export interface MenuButtonProps extends Omit<ButtonProps, 'as' | 'children'>, PopoverTriggerProps {}
 
 /**
  * Wraps a styled Wildcard `<Button />` component that can
@@ -23,12 +23,17 @@ export const MenuButton = React.forwardRef(({ children, id, ...props }, referenc
     // We unset aria-controls as it causes accessibility issues if the Menu is not yet rendered in the DOM.
     // aria-controls has low support across screen readers so this shouldn't be an issue: https://github.com/w3c/aria/issues/995
     return (
-        <ReachMenuButton ref={reference} as={PopoverTriggerButton} id={uniqueMenuId} {...props} aria-controls="">
-            {children}
+        <ReachMenuButton ref={reference} as={PopoverTriggerButton} id={uniqueMenuId} aria-controls="" {...props}>
+            {
+                // Cast to ReactNode since ReachMenuButton enforces its own children component which is a plain ReactNode
+                // But in our case children could be either ReactNode or render props since override component PopoverTrigger
+                // supports it.
+                children as ReactNode
+            }
         </ReachMenuButton>
     )
 }) as ForwardReferenceComponent<'button', MenuButtonProps>
 
 const PopoverTriggerButton = React.forwardRef((props, reference) => (
     <PopoverTrigger ref={reference} as={Button} {...props} />
-)) as ForwardReferenceComponent<'button', ButtonProps>
+)) as ForwardReferenceComponent<'button', ButtonProps & PopoverTriggerProps>
