@@ -477,7 +477,7 @@ func setupLoopDevice(
 	fmt.Fprintf(handle, "Created backing workspace file at %q\n", loopFileName)
 
 	defer func() {
-		if err != nil && !keepWorkspaces {
+		if !keepWorkspaces {
 			os.Remove(tempFile.Name())
 		}
 	}()

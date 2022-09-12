@@ -114,7 +114,7 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 }
 
 func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
-	copyfiles := make([]string, 0, 2)
+	copyfiles := make([]string, 0, 1)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
