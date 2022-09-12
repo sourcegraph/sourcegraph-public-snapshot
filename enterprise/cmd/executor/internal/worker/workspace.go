@@ -23,23 +23,31 @@ const SchemeExecutorToken = "token-executor"
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
 var gitStdEnv = []string{"GIT_TERMINAL_PROMPT=0"}
 
-type Workspace struct {
+type Workspace interface {
 	// Path represents the block device path when firecracker is enabled and the
 	// directory when firecracker is disabled where the workspace is configured.
-	Path string
+	Path() string
 	// ScriptFilenames holds the ordered set of script filenames to be invoked.
-	ScriptFilenames []string
-	// Inner holds a handle to perform cleanup of the workspace after processing.
-	Inner interface{ Remove(context.Context) }
+	ScriptFilenames() []string
+	Remove(ctx context.Context) error
 }
 
 type firecrackerWorkspace struct {
+	path                  string
+	scriptFilenames       []string
 	keepWorkspaces        bool
 	loopPath, blockDevice string
 	commandLogger         command.Logger
 }
 
-func (w firecrackerWorkspace) Remove(ctx context.Context) {
+func (w firecrackerWorkspace) Path() string {
+	return w.path
+}
+func (w firecrackerWorkspace) ScriptFilenames() []string {
+	return w.scriptFilenames
+}
+
+func (w firecrackerWorkspace) Remove(ctx context.Context) error {
 	handle := w.commandLogger.Log("teardown.fs", nil)
 	defer handle.Close()
 
@@ -63,15 +71,26 @@ func (w firecrackerWorkspace) Remove(ctx context.Context) {
 		fmt.Fprintf(handle, "Preserving workspace files (block device: %s, loop file: %s) as per config", w.blockDevice, w.loopPath)
 		handle.Finalize(0)
 	}
+
+	return nil
 }
 
 type dockerWorkspace struct {
-	keepWorkspaces bool
-	workspaceDir   string
-	commandLogger  command.Logger
+	path            string
+	scriptFilenames []string
+	keepWorkspaces  bool
+	workspaceDir    string
+	commandLogger   command.Logger
 }
 
-func (w dockerWorkspace) Remove(ctx context.Context) {
+func (w dockerWorkspace) Path() string {
+	return w.path
+}
+func (w dockerWorkspace) ScriptFilenames() []string {
+	return w.scriptFilenames
+}
+
+func (w dockerWorkspace) Remove(ctx context.Context) error {
 	handle := w.commandLogger.Log("teardown.fs", nil)
 	defer handle.Close()
 
@@ -86,6 +105,8 @@ func (w dockerWorkspace) Remove(ctx context.Context) {
 		fmt.Fprintf(handle, "Preserving workspace (%s) as per config", w.workspaceDir)
 		handle.Finalize(0)
 	}
+
+	return nil
 }
 
 // prepareWorkspace creates and returns a temporary directory in which acts the workspace
@@ -97,7 +118,7 @@ func (h *handler) prepareWorkspace(
 	commandRunner command.Runner,
 	job executor.Job,
 	commandLogger command.Logger,
-) (workspace *Workspace, err error) {
+) (workspace Workspace, err error) {
 	if h.options.FirecrackerOptions.Enabled {
 		loopFileName, tmpMountDir, blockDevice, err := setupLoopDevice(
 			ctx,
@@ -121,15 +142,13 @@ func (h *handler) prepareWorkspace(
 			return nil, err
 		}
 
-		return &Workspace{
-			Path:            blockDevice,
-			ScriptFilenames: scriptPaths,
-			Inner: firecrackerWorkspace{
-				keepWorkspaces: h.options.KeepWorkspaces,
-				loopPath:       loopFileName,
-				blockDevice:    blockDevice,
-				commandLogger:  commandLogger,
-			},
+		return &firecrackerWorkspace{
+			path:            blockDevice,
+			scriptFilenames: scriptPaths,
+			keepWorkspaces:  h.options.KeepWorkspaces,
+			loopPath:        loopFileName,
+			blockDevice:     blockDevice,
+			commandLogger:   commandLogger,
 		}, err
 	}
 
@@ -148,14 +167,12 @@ func (h *handler) prepareWorkspace(
 		return nil, err
 	}
 
-	return &Workspace{
-		Path:            workspaceDir,
-		ScriptFilenames: scriptPaths,
-		Inner: dockerWorkspace{
-			keepWorkspaces: h.options.KeepWorkspaces,
-			workspaceDir:   workspaceDir,
-			commandLogger:  commandLogger,
-		},
+	return &dockerWorkspace{
+		path:            workspaceDir,
+		scriptFilenames: scriptPaths,
+		keepWorkspaces:  h.options.KeepWorkspaces,
+		workspaceDir:    workspaceDir,
+		commandLogger:   commandLogger,
 	}, nil
 }
 
