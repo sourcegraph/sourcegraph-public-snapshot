@@ -9,10 +9,13 @@ package on
 // mostly exposed in OnResult:
 //
 // RepoID:   An opaque identifier used to identify unique repositories. This
-//           must be able to be used as a map key.
+//
+//	must be able to be used as a map key.
+//
 // Revision: An object that identifies the specific revision. There are no
-//           requirements for this type, as it will be returned as-is in
-//           Revisions().
+//
+//	requirements for this type, as it will be returned as-is in
+//	Revisions().
 type RepoRevisionAggregator struct {
 	results []*RuleRevisions
 }

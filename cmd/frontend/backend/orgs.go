@@ -15,8 +15,9 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 // CheckOrgAccessOrSiteAdmin returns an error if:
 // (1) if we are on Cloud instance and the user is not a member of the organization
 // (2) if we are NOT on Cloud and
-//    (a) the user is not a member of the organization
-//    (b) the user is not a site admin
+//
+//	(a) the user is not a member of the organization
+//	(b) the user is not a site admin
 //
 // It is used when an action on an org can only be performed by the
 // organization's members, (or site-admins - not on Cloud).

@@ -46,10 +46,10 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 //
 // We use an LRU to do cache eviction:
 //
-//  * When to evict is based on the total size of *.zip on disk.
-//  * What to evict uses the LRU algorithm.
-//  * We touch files when opening them, so can do LRU based on file
-//    modification times.
+//   - When to evict is based on the total size of *.zip on disk.
+//   - What to evict uses the LRU algorithm.
+//   - We touch files when opening them, so can do LRU based on file
+//     modification times.
 //
 // Note: The store fetches tarballs but stores zips. We want to be able to
 // filter which files we cache, so we need a format that supports streaming

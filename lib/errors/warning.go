@@ -45,13 +45,14 @@ var _ Warning = (*warning)(nil)
 //
 // var ref errors.Warning
 // err := someFunctionThatReturnsAWarningErrorOrACriticalError()
-// if err != nil && errors.As(err, &ref) {
-//     log.Warnf("failed to do X: %v", err)
-// }
 //
-// if err != nil {
-//     return err
-// }
+//	if err != nil && errors.As(err, &ref) {
+//	    log.Warnf("failed to do X: %v", err)
+//	}
+//
+//	if err != nil {
+//	    return err
+//	}
 func NewWarningError(err error) *warning {
 	return &warning{
 		error: err,

@@ -88,27 +88,29 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // For all mandatory methods the sqlHooks driver is used. For the optional methods namely Ping, ResetSession and CheckNamedValue
 // (which the sqlHooks driver does not implement), extendedConn goes to the original default driver.
 //
-//                             Ping()
-//                             ResetSession()
-//                             CheckNamedValue()
-//                    ┌──────────────────────────────┐
-//                    │                              │
-//                    │                              │
-//                    │                              │
+//	         Ping()
+//	         ResetSession()
+//	         CheckNamedValue()
+//	┌──────────────────────────────┐
+//	│                              │
+//	│                              │
+//	│                              │
+//
 // ┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
 // │       │   │            │   │        │     │             │
 // │otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
 // │       │   │            │   │        │     │             │
 // └─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
-//   │           │                │              │
-//   │           │                │              │Implements all SQL driver methods
-//   │           │                │
-//   │           │                │Only implements mandatory ones
-//   │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
-//   │           │
-//   │           │Implement all SQL driver methods
-//   │
-//   │Expects all SQL driver methods
+//
+//	│           │                │              │
+//	│           │                │              │Implements all SQL driver methods
+//	│           │                │
+//	│           │                │Only implements mandatory ones
+//	│           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
+//	│           │
+//	│           │Implement all SQL driver methods
+//	│
+//	│Expects all SQL driver methods
 //
 // A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
 type extendedDriver struct {
