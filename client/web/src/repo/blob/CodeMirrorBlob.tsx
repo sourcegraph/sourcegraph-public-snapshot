@@ -222,7 +222,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Update blame information
     useEffect(() => {
         if (editor) {
-            console.log('reconfigure', blameDecorations)
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
         }
         // editor is not provided because this should only be triggered after the
