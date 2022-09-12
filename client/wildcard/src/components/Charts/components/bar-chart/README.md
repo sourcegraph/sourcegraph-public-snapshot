@@ -10,9 +10,9 @@ component it has a few UI features that are already implemented inside the compo
   - Stacked bars
 - **Smart axis components**. Smart axes adjust label UI based on chart size. Small charts
   rotate their labels in order to avoid visual collisions between labels
-- **Smart active/non-active bar colors**. The bar chart has a smart colour calculation
-  algorithm that produces dimmed colours as you hover one of the bars (it has a limitation though,
-  see the section about colours below)
+- **Smart active/non-active bar colors**. The bar chart has a smart color calculation
+  algorithm that produces dimmed colors as you hover one of the bars (it has a limitation though,
+  see the section about colors below)
 
 ## Colors
 
