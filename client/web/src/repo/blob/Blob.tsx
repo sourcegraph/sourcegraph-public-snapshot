@@ -124,6 +124,7 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    isBlameVisible: boolean
     blameHunks?: BlameHunk[]
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
@@ -824,7 +825,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />
+                <BlameColumn
+                    isBlameVisible={props.isBlameVisible}
+                    blameHunks={props.blameHunks}
+                    codeViewElements={codeViewElements}
+                />
 
                 {groupedDecorations &&
                     iterate(groupedDecorations)
