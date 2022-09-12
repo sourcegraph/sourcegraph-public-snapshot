@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A new [multi-version upgrade](https://docs.sourcegraph.com/admin/updates#multi-version-upgrades) process now allows Sourcegraph instances to upgrade more than a single minor version. Instances at version 3.20 or later can now jump directly to 4.0. [#40628](https://github.com/sourcegraph/sourcegraph/pull/40628)
 - Matching ranges in file paths are now highlighted for path results and content results. Matching paths in repository names are now highlighted for repository results. [#41296](https://github.com/sourcegraph/sourcegraph/pull/41296) [#41385](https://github.com/sourcegraph/sourcegraph/pull/41385) [#41470](https://github.com/sourcegraph/sourcegraph/pull/41470)
 - Aggregations by repository, file, author, and capture group are now provided for search results. [#39643](https://github.com/sourcegraph/sourcegraph/issues/39643)
+- Blob views and search results are now lazily syntax highlighted for better performance. [#39563](https://github.com/sourcegraph/sourcegraph/pull/39563) [#40263](https://github.com/sourcegraph/sourcegraph/pull/40263)
+- File links in both the search results and the blob sidebar and now prefetched on hover or focus. [#40354](https://github.com/sourcegraph/sourcegraph/pull/40354) [#41420](https://github.com/sourcegraph/sourcegraph/pull/41420)
 - Negation support for the search predicates `-repo:has.path()` and `-repo:has.content()`. [#40283](https://github.com/sourcegraph/sourcegraph/pull/40283)
 
 ### Changed
@@ -38,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The recommended [src-cli](https://github.com/sourcegraph/src-cli) version is now reported consistently. [#39468](https://github.com/sourcegraph/sourcegraph/issues/39468)
 - A performance issue affecting structural search causing results to not stream. It is much faster now. [#40872](https://github.com/sourcegraph/sourcegraph/pull/40872)
 - An issue where the saved search input box reports an invalid pattern type for `standard`, which is now valid. [#41068](https://github.com/sourcegraph/sourcegraph/pull/41068)
+- Git will now respect system certificate authorities when specifying `certificates` for the `tls.external` site configuration. [#38128](https://github.com/sourcegraph/sourcegraph/issues/38128)
 - Fixed a bug where setting `"observability.tracing": {}` would disable tracing, when the intended behaviour is to default to tracing with `"sampling": "selective"` enabled by default. [#41242](https://github.com/sourcegraph/sourcegraph/pull/41242)
 - The performance, stability, and latency of search predicates like `repo:has.file()`, `repo:has.content()`, and `file:has.content()` have been dramatically improved. [#418](https://github.com/sourcegraph/zoekt/pull/418), [#40239](https://github.com/sourcegraph/sourcegraph/pull/40239), [#38988](https://github.com/sourcegraph/sourcegraph/pull/38988), [#39501](https://github.com/sourcegraph/sourcegraph/pull/39501)
 - A search query issue where quoted patterns inside parenthesized expressions would be interpreted incorrectly. [#41455](https://github.com/sourcegraph/sourcegraph/pull/41455)
@@ -49,6 +52,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Quick links will no longer be shown on the homepage or search sidebar if the "Simple UI" toggle is enabled and will be removed entirely in a future release. The `quicklink` setting is now marked as deprecated. [#40750](https://github.com/sourcegraph/sourcegraph/pull/40750)
 - `file:contains()` has been removed from the list of valid predicates. `file:has.content()` and `file:contains.content()` remain, both of which work the same as `file:contains()` and are valid aliases of each other.
 - The single-container `sourcegraph/server` deployment no longer bundles a Jaeger instance. [#41244](https://github.com/sourcegraph/sourcegraph/pull/41244)
+- The following previously-deprecated fields have been removed from the Batch Changes GraphQL API: `GitBranchChangesetDescription.headRepository`, `BatchChange.initialApplier`, `BatchChange.specCreator`, `Changeset.publicationState`, `Changeset.reconcilerState`, `Changeset.externalState`.
 
 ## 3.43.2
 

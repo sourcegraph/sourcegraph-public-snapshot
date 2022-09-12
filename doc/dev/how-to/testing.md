@@ -199,21 +199,20 @@ The integration test suite for the webapp can be found in [`web/src/integration`
 
 Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
 
-#### Running client integration tests
+#### Running integration tests
 
 To run integration tests for the web app:
 
-1. Run `INTEGRATION_TESTS=true yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-    - Alternatively, `INTEGRATION_TESTS=true yarn build-web` will only build a bundle once.
-1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
-1. Run `yarn test-integration` in the repository root to run the tests.
+1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+    - Alternatively, `sg run web-integration-build` will only build a bundle once.
+1. Run `sg test web-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
 To run a specific web app integration test in the debug mode:
 
 1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
-2. Run `yarn test-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
+2. Run `sg test web-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
 
 See the above sections for more details on how to debug the tests, which applies to both integration and end-to-end tests.
 
@@ -279,7 +278,7 @@ TAG=insiders sg run server
 In the repository root:
 
 ```
-GH_TOKEN=XXX sg test client-e2e
+GH_TOKEN=XXX sg test web-e2e
 ```
 
 You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
@@ -288,7 +287,7 @@ If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will
 If you run the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test client-e2e
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test web-e2e
 ```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
@@ -301,13 +300,13 @@ This will open Chromium, add a code host, clone repositories, and execute the e2
 4. Run in the repository root:
 
 ```
-GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
 ```
 
 And if you're running the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
 ```
 
 Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.

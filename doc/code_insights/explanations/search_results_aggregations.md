@@ -39,7 +39,7 @@ At the moment all aggregations search queries are run with a 2-second timeout, e
 
 ### Count limits
 
-At the moment all aggregations search queries are run with `count:all`, even if your search specified a count. 
+Aggregation search queries that run proactively are run with `count:50000` this default can be changed using the site setting `insights.aggregations.proactiveResultLimit`. If the number of results exceeds this limit the user can choose to explictly run the aggreation.  Aggregations that are explictly run use `count:all`.
 
 ### Best effort aggregation
 

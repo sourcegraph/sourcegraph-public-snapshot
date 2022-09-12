@@ -212,8 +212,26 @@ func TestReplace_Valid(t *testing.T) {
 		{
 			query:       `\/insi(g)ht[s]\/`,
 			replacement: "ggg",
-			want:        autogold.Want("escaped slashes in regexp with group", BasicQuery("/\\/insi(?:ggg)ht[s]\\//")),
+			want:        autogold.Want("ensure queries from type regex to type standard with preescaped slashes", BasicQuery(`/\/insi(?:ggg)ht[s]\//`)),
 			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       `<title>(.*)</title>`,
+			replacement: "findme",
+			want:        autogold.Want("ensure queries from type regex to type standard work (slashes are escaped)", BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       `(/\w+/)`,
+			replacement: `/sourcegraph/`,
+			want:        autogold.Want("ensure queries from type regex to type standard work with replacement special characters (slashes are escaped)", BasicQuery(`/(?:\/sourcegraph\/)/`)),
+			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       `/<title>(.*)<\/title>/`,
+			replacement: "findme",
+			want:        autogold.Want("ensure queries from type standard slashes are escaped properly", BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			searchType:  query.SearchTypeStandard,
 		},
 	}
 	for _, test := range tests {
