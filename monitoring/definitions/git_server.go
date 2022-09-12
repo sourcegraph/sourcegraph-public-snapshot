@@ -27,8 +27,9 @@ func GitServer() *monitoring.Dashboard {
 			{
 				Label: "Shard",
 				Name:  "shard",
-				OptionsQuery: monitoring.ContainerVariableOptionsQuery{
-					Query:         "label_values(src_gitserver_exec_running, instance)",
+				OptionsLabel: monitoring.ContainerVariableOptionsLabel{
+					Query:         "src_gitserver_exec_running",
+					Label:         "instance",
 					ExampleOption: "gitserver-0:6060",
 				},
 				Multi: true,
