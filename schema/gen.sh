@@ -14,10 +14,4 @@ schemas="$(ls -- *.schema.json | grep -v json-schema-draft)"
 # shellcheck disable=SC2086
 "$GOBIN"/go-jsonschema-compiler -o schema.go -pkg schema $schemas
 
-stringdata() {
-  # shellcheck disable=SC2039
-  target="${1/.schema.json/_stringdata.go}"
-  "$GOBIN"/stringdata -i "$1" -name "$2" -pkg schema -o "$target"
-}
-
 gofmt -s -w ./*.go
