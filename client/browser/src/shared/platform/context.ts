@@ -4,7 +4,7 @@ import { map, switchMap } from 'rxjs/operators'
 import { asError, LocalStorageSubject } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -53,7 +53,7 @@ export function createPlatformContext(
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): BrowserPlatformContext {
-    const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
+    const updatedViewerSettings = new ReplaySubject<ISettingsCascade | null>(1)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
     const shouldUseInlineExtensionsObservable = shouldUseInlineExtensions(requestGraphQL)
@@ -87,7 +87,7 @@ export function createPlatformContext(
                     console.warn(
                         `Could not fetch Sourcegraph settings from ${sourcegraphURL} because user is not signed into Sourcegraph`
                     )
-                    updatedViewerSettings.next({ final: '{}', subjects: [] })
+                    updatedViewerSettings.next(null)
                 } else {
                     throw error
                 }

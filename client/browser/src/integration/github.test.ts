@@ -52,10 +52,11 @@ describe('GitHub', () => {
         })
 
         testContext.overrideGraphQL({
-            ViewerConfiguration: () => ({
-                viewerConfiguration: {
+            ViewerSettings: () => ({
+                viewerSettings: {
                     subjects: [],
                     merged: { contents: '', messages: [] },
+                    final: '',
                 },
             }),
             ResolveRev: () => ({
@@ -165,8 +166,8 @@ describe('GitHub', () => {
             extensions: extensionSettings,
         }
         testContext.overrideGraphQL({
-            ViewerConfiguration: () => ({
-                viewerConfiguration: {
+            ViewerSettings: () => ({
+                viewerSettings: {
                     subjects: [
                         {
                             __typename: 'User',
@@ -182,6 +183,7 @@ describe('GitHub', () => {
                         },
                     ],
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
+                    final: JSON.stringify(userSettings),
                 },
             }),
             UserSettingsURL: () => ({
@@ -332,8 +334,8 @@ describe('GitHub', () => {
                     extensions: extensionSettings,
                 }
                 testContext.overrideGraphQL({
-                    ViewerConfiguration: () => ({
-                        viewerConfiguration: {
+                    ViewerSettings: () => ({
+                        viewerSettings: {
                             subjects: [
                                 {
                                     __typename: 'User',
@@ -349,6 +351,7 @@ describe('GitHub', () => {
                                 },
                             ],
                             merged: { contents: JSON.stringify(userSettings), messages: [] },
+                            final: JSON.stringify(userSettings),
                         },
                     }),
                     Extensions,
@@ -657,8 +660,8 @@ describe('GitHub', () => {
                     extensions: extensionSettings,
                 }
                 testContext.overrideGraphQL({
-                    ViewerConfiguration: () => ({
-                        viewerConfiguration: {
+                    ViewerSettings: () => ({
+                        viewerSettings: {
                             subjects: [
                                 {
                                     __typename: 'User',
@@ -674,6 +677,7 @@ describe('GitHub', () => {
                                 },
                             ],
                             merged: { contents: JSON.stringify(userSettings), messages: [] },
+                            final: JSON.stringify(userSettings),
                         },
                     }),
                     RepositoryComparisonDiff: () => ({

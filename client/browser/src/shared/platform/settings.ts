@@ -3,10 +3,12 @@ import { from, fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
+import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
+import { ViewerSettingsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import {
     mergeSettings,
     SettingsCascade,
@@ -94,77 +96,30 @@ export function mergeCascades(
     }
 }
 
-// This is a fragment on the DEPRECATED GraphQL API type ConfigurationCascade (not SettingsCascade) for backcompat.
-const configurationCascadeFragment = gql`
-    fragment ConfigurationCascadeFields on ConfigurationCascade {
-        subjects {
-            __typename
-            ... on Org {
-                id
-                name
-                displayName
-            }
-            ... on User {
-                id
-                username
-                displayName
-            }
-            ... on Site {
-                id
-                siteID
-            }
-            latestSettings {
-                id
-                contents
-            }
-            settingsURL
-            viewerCanAdminister
-        }
-        merged {
-            contents
-            messages
-        }
-    }
-`
-
 /**
  * Fetches the settings cascade for the viewer.
- *
- * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
-export function fetchViewerSettings(
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
+export function fetchViewerSettings(requestGraphQL: PlatformContext['requestGraphQL']): Observable<ISettingsCascade> {
     return from(
-        requestGraphQL<GQL.IQuery>({
-            request: gql`
-                query ViewerConfiguration {
-                    viewerConfiguration {
-                        ...ConfigurationCascadeFields
-                    }
-                }
-                ${configurationCascadeFragment}
-            `,
+        requestGraphQL<ViewerSettingsResult>({
+            request: viewerSettingsQuery,
             variables: {},
             mightContainPrivateInfo: false,
         })
     ).pipe(
         map(dataOrThrowErrors),
-        map(({ viewerConfiguration }) => {
-            if (!viewerConfiguration) {
-                throw new Error('fetchViewerSettings: empty viewerConfiguration')
+        map(({ viewerSettings }) => {
+            if (!viewerSettings) {
+                throw new Error('fetchViewerSettings: empty viewerSettings')
             }
 
-            for (const subject of viewerConfiguration.subjects) {
+            for (const subject of viewerSettings.subjects) {
                 // User/org/global settings cannot be edited from the
                 // browser extension (only client settings can).
                 subject.viewerCanAdminister = false
             }
 
-            return {
-                subjects: viewerConfiguration.subjects,
-                final: viewerConfiguration.merged.contents,
-            }
+            return viewerSettings as ISettingsCascade
         })
     )
 }
