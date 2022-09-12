@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/prometheus/model/labels"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,6 +38,11 @@ type GenerateOptions struct {
 	PrometheusDir string
 	// Output directory for generated documentation
 	DocsDir string
+
+	// InjectLabelMatchers specifies labels to inject into all selectors in Prometheus
+	// expressions - this includes dashboard template variables, observable queries,
+	// alert queries, and so on - using internal/promql.Inject(...).
+	InjectLabelMatchers []*labels.Matcher
 }
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
@@ -58,8 +64,12 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
 	}
+
+	// Pre-process dashboard configuration
+	preprocessDashboards(dashboards, opts)
+
+	// Generate Grafana content for all dashboards
 	dlog := logger.Scoped("grafana", "grafana dashboard generation")
-	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
 		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))

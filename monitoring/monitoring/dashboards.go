@@ -5,6 +5,9 @@ import (
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
 )
 
 // UnitType for controlling the unit type display on graphs.
@@ -114,4 +117,55 @@ func isValidGrafanaUID(s string) bool {
 		}
 	}
 	return true
+}
+
+func preprocessDashboards(dashboards []*Dashboard, opts GenerateOptions) error {
+	var preprocessErrs error
+	if len(opts.InjectLabelMatchers) > 0 {
+		for _, dashboard := range dashboards {
+			for vi, v := range dashboard.Variables {
+				var err error
+				if v.OptionsLabel.Query != "" {
+					dashboard.Variables[vi].OptionsLabel.Query, err = promql.Inject(v.OptionsLabel.Query, opts.InjectLabelMatchers, nil)
+					if err != nil {
+						preprocessErrs = errors.Append(preprocessErrs,
+							errors.Wrapf(err, "Dashboard %q variable %q", dashboard.Name, v.Name))
+						continue
+					}
+				}
+			}
+
+			variables := newVariableApplier(dashboard.Variables)
+			for gi, g := range dashboard.Groups {
+				for ri, r := range g.Rows {
+					for oi, o := range r {
+						var err error
+						// Update observable query - we need to set the value directly in
+						// the slice to update it.
+						dashboard.Groups[gi].Rows[ri][oi].Query, err = promql.Inject(o.Query, opts.InjectLabelMatchers, variables)
+						if err != nil {
+							preprocessErrs = errors.Append(preprocessErrs, errors.Wrapf(err, "Dashboard %q observable %q", dashboard.Name, o.Name))
+						}
+						// Update custom alert queries if any
+						for _, a := range []*ObservableAlertDefinition{
+							o.Warning,
+							o.Critical,
+						} {
+							if a != nil && a.customQuery != "" {
+								a.customQuery, err = promql.Inject(a.customQuery, opts.InjectLabelMatchers, variables)
+								if err != nil {
+									preprocessErrs = errors.Append(preprocessErrs,
+										errors.Wrapf(err, "Dashboard %q observable %q alert", dashboard.Name, o.Name))
+
+									continue
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
