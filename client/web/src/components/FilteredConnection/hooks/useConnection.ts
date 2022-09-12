@@ -58,7 +58,13 @@ export const useConnection = <TResult, TVariables, TData>({
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
     const [componentCachedConnection, setComponentCachedConnection] = useState<Connection<TData>>()
+    const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
     const searchParameters = useSearchParameters()
+
+    options = {
+        ...options,
+        fetchPolicy: 'component-cache-and-network',
+    }
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
     const firstReference = useRef({
@@ -107,7 +113,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
-        fetchPolicy: options?.fetchPolicy === 'component-cache-and-network' ? 'no-cache' : options?.fetchPolicy,
+        fetchPolicy: skipApolloCache ? 'no-cache' : (options?.fetchPolicy as WatchQueryFetchPolicy),
         onCompleted: options?.onCompleted,
     })
 
@@ -115,10 +121,13 @@ export const useConnection = <TResult, TVariables, TData>({
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
      * This ensures good interoperability between `FilteredConnection` and `useConnection`.
      */
-    const getConnection = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
-        const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
-        return getConnectionFromGraphQLResult(result)
-    }
+    const getConnection = useCallback(
+        ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
+            const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
+            return getConnectionFromGraphQLResult(result)
+        },
+        [getConnectionFromGraphQLResult]
+    )
 
     const connection = componentCachedConnection || (data ? getConnection({ data, error }) : undefined)
 
@@ -130,8 +139,6 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
-        const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
-
         const queryVariables = {
             ...variables,
             // Use cursor paging if possible, otherwise fallback to multiplying `first`
@@ -143,8 +150,9 @@ export const useConnection = <TResult, TVariables, TData>({
 
             if (cursor) {
                 setComponentCachedConnection(previous => {
-                    const nextConnection = getConnection({ data: nextResult.data })
                     const previousConnection = previous || getConnection({ data })
+                    const nextConnection = getConnection({ data: nextResult.data })
+
                     return {
                         ...nextConnection,
                         nodes: [...previousConnection.nodes, ...nextConnection.nodes],
@@ -185,11 +193,26 @@ export const useConnection = <TResult, TVariables, TData>({
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
 
-        await refetch({
+        const result = await refetch({
             ...variables,
             first,
         })
-    }, [connection?.nodes.length, refetch, variables])
+
+        if (skipApolloCache) {
+            const refetchedConnection = getConnection({ data: result.data })
+            setComponentCachedConnection(previous => {
+                const previousConnection = previous || getConnection({ data })
+
+                if (previousConnection.nodes.length > refetchedConnection.nodes.length) {
+                    // Something has changed since we started polling,
+                    // let's use what we believe is the latest data
+                    return previousConnection
+                }
+
+                return refetchedConnection
+            })
+        }
+    }, [connection?.nodes.length, data, getConnection, refetch, skipApolloCache, variables])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
