@@ -34,6 +34,8 @@ In Chrome:
 3. Under Inspect Views select background page, this will open a dev console to the extension background page
 4. In the developer console select the network tab
 
+> _**Note: In the upper right hand corner of the Extensions page you'll need to switch on the Developer Mode toggle in order to view the background page.**_
+
 In Safari:
 
 1. Ensure you have access to the develop tab by selecting Safari > Preferences > Advanced, at the bottom of the preference UI check the box labelled `Show Develop menu in menu bar`
