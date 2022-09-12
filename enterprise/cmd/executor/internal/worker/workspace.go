@@ -29,7 +29,7 @@ type Workspace interface {
 	Path() string
 	// ScriptFilenames holds the ordered set of script filenames to be invoked.
 	ScriptFilenames() []string
-	Remove(ctx context.Context) error
+	Remove(ctx context.Context)
 }
 
 type firecrackerWorkspace struct {
@@ -47,32 +47,31 @@ func (w firecrackerWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }
 
-func (w firecrackerWorkspace) Remove(ctx context.Context) error {
+func (w firecrackerWorkspace) Remove(ctx context.Context) {
 	handle := w.commandLogger.Log("teardown.fs", nil)
 	defer handle.Close()
 
-	if !w.keepWorkspaces {
-		fmt.Fprintf(handle, "Removing loop device %s\n", w.loopPath)
-
-		cmd := exec.CommandContext(ctx, "losetup", "--detach", w.blockDevice)
-		out, err := cmd.CombinedOutput()
-		if err != nil || cmd.ProcessState.ExitCode() != 0 {
-			fmt.Fprintf(handle, "Command 'losetup --detach' exited with non-zero exit code: %q", out)
-		}
-
-		if err := os.Remove(w.loopPath); err != nil {
-			fmt.Fprintf(handle, "Error removing loop device: %v", err)
-		}
-
-		// We always finish this with exit code 0 even if it errored, because workspace
-		// cleanup doesn't fail the execution job. We can deal with it separately.
-		handle.Finalize(0)
-	} else {
+	if w.keepWorkspaces {
 		fmt.Fprintf(handle, "Preserving workspace files (block device: %s, loop file: %s) as per config", w.blockDevice, w.loopPath)
 		handle.Finalize(0)
+		return
 	}
 
-	return nil
+	fmt.Fprintf(handle, "Removing loop device %s\n", w.loopPath)
+
+	cmd := exec.CommandContext(ctx, "losetup", "--detach", w.blockDevice)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Fprintf(handle, "Command 'losetup --detach' failed: %q", out)
+	}
+
+	if err := os.Remove(w.loopPath); err != nil {
+		fmt.Fprintf(handle, "Error removing loop device: %v", err)
+	}
+
+	// We always finish this with exit code 0 even if it errored, because workspace
+	// cleanup doesn't fail the execution job. We can deal with it separately.
+	handle.Finalize(0)
 }
 
 type dockerWorkspace struct {
@@ -90,23 +89,22 @@ func (w dockerWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }
 
-func (w dockerWorkspace) Remove(ctx context.Context) error {
+func (w dockerWorkspace) Remove(ctx context.Context) {
 	handle := w.commandLogger.Log("teardown.fs", nil)
 	defer handle.Close()
 
-	if !w.keepWorkspaces {
-		fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
-
-		if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
-			fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
-		}
-
-	} else {
+	if w.keepWorkspaces {
 		fmt.Fprintf(handle, "Preserving workspace (%s) as per config", w.workspaceDir)
-		handle.Finalize(0)
 	}
 
-	return nil
+	fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
+	if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
+		fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+	}
+
+	// We always finish this with exit code 0 even if it errored, because workspace
+	// cleanup doesn't fail the execution job. We can deal with it separately.
+	handle.Finalize(0)
 }
 
 // prepareWorkspace creates and returns a temporary directory in which acts the workspace
