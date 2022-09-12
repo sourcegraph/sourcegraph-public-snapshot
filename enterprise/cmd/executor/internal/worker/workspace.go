@@ -43,6 +43,7 @@ type firecrackerWorkspace struct {
 func (w firecrackerWorkspace) Path() string {
 	return w.path
 }
+
 func (w firecrackerWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }
@@ -85,6 +86,7 @@ type dockerWorkspace struct {
 func (w dockerWorkspace) Path() string {
 	return w.path
 }
+
 func (w dockerWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }
@@ -521,7 +523,7 @@ func setupLoopDevice(
 
 	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, loopFileName)
 
-	mountCmd := exec.CommandContext(ctx, "mount", "-auto", blockDevice, tmpMountDir)
+	mountCmd := exec.CommandContext(ctx, "mount", blockDevice, tmpMountDir)
 	if out, err := mountCmd.CombinedOutput(); err != nil {
 		if !keepWorkspaces {
 			os.RemoveAll(tmpMountDir)
