@@ -365,9 +365,6 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 var makeTempFile = makeTemporaryFile
 
 func makeTemporaryFile(prefix string) (*os.File, error) {
-	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
-	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
-	// os.MkdirTemp below will fail.
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return nil, err
@@ -383,9 +380,6 @@ func makeTemporaryFile(prefix string) (*os.File, error) {
 var makeTempDirectory = makeTemporaryDirectory
 
 func makeTemporaryDirectory(prefix string) (string, error) {
-	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
-	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
-	// os.MkdirTemp below will fail.
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
@@ -512,12 +506,12 @@ func setupLoopDevice(
 
 	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, loopFileName)
 
-	// replace with exec.Command("mount") ?
-	if err = syscall.Mount(blockDevice, tmpMountDir, "ext4", 0, ""); err != nil {
+	mountCmd := exec.CommandContext(ctx, "mount", "-auto", blockDevice, tmpMountDir)
+	if out, err := mountCmd.CombinedOutput(); err != nil {
 		if !keepWorkspaces {
 			os.RemoveAll(tmpMountDir)
 		}
-		return "", "", "", errors.Newf("failed to mount loop device %q to %q: %v", loopFileName, tmpMountDir, err)
+		return "", "", "", errors.Newf("failed to mount loop device %q to %q: %q", loopFileName, tmpMountDir, out)
 	}
 
 	return loopFileName, tmpMountDir, blockDevice, nil
