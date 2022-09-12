@@ -331,6 +331,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			if filter(hdr) {
 				continue
 			}
+
 			// We are happy with the file, so we can write it to zw.
 			w, err := zw.CreateHeader(&zip.FileHeader{
 				Name:   hdr.Name,
@@ -338,6 +339,12 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			})
 			if err != nil {
 				return err
+			}
+
+			// We do not search the content of large files unless they are
+			// allowed.
+			if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
+				continue
 			}
 
 			n, err := tr.Read(buf)
@@ -349,12 +356,6 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			case nil:
 			default:
 				return err
-			}
-
-			// We do not search the content of large files unless they are
-			// allowed.
-			if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
-				continue
 			}
 
 			// Heuristic: Assume file is binary if first 256 bytes contain a
