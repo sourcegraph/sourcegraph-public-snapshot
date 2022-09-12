@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
@@ -25,7 +25,7 @@ interface UseConnectionConfig<TResult> {
     /** Set if query variables should be updated in and derived from the URL */
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
-    fetchPolicy?: WatchQueryFetchPolicy
+    fetchPolicy?: WatchQueryFetchPolicy | 'component-cache-and-network'
     /** Set to enable polling of all the nodes currently loaded in the connection */
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
@@ -57,6 +57,7 @@ export const useConnection = <TResult, TVariables, TData>({
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
+    const [componentCachedConnection, setComponentCachedConnection] = useState<Connection<TData>>()
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -106,7 +107,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
-        fetchPolicy: options?.fetchPolicy,
+        fetchPolicy: options?.fetchPolicy === 'component-cache-and-network' ? 'no-cache' : options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
 
@@ -119,7 +120,7 @@ export const useConnection = <TResult, TVariables, TData>({
         return getConnectionFromGraphQLResult(result)
     }
 
-    const connection = data ? getConnection({ data, error }) : undefined
+    const connection = componentCachedConnection || (data ? getConnection({ data, error }) : undefined)
 
     useConnectionUrl({
         enabled: options?.useURL,
@@ -129,34 +130,56 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
+        const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
 
-        await fetchMore({
-            variables: {
-                ...variables,
-                // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
-            },
-            updateQuery: (previousResult, { fetchMoreResult }) => {
-                if (!fetchMoreResult) {
-                    return previousResult
-                }
+        const queryVariables = {
+            ...variables,
+            // Use cursor paging if possible, otherwise fallback to multiplying `first`
+            ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
+        }
 
-                if (cursor) {
-                    // Update resultant data in the cache by prepending the `previousResult`s to the
-                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
-                    // order to access and modify the actual `nodes` in the connection response because we
-                    // don't know the exact response structure
-                    const previousNodes = getConnection({ data: previousResult }).nodes
-                    getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
-                } else {
-                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
-                    // we just need to update `first` to fetch more results next time
-                    firstReference.current.actual *= 2
-                }
+        if (skipApolloCache) {
+            const nextResult = await fetchMore({ variables: queryVariables })
 
-                return fetchMoreResult
-            },
-        })
+            if (cursor) {
+                setComponentCachedConnection(previous => {
+                    const nextConnection = getConnection({ data: nextResult.data })
+                    const previousConnection = previous || getConnection({ data })
+                    return {
+                        ...nextConnection,
+                        nodes: [...previousConnection.nodes, ...nextConnection.nodes],
+                    }
+                })
+            } else {
+                // With batch-based pagination, we have all the results already in `fetchMoreResult`,
+                // we just need to update `first` to fetch more results next time
+                firstReference.current.actual *= 2
+            }
+        } else {
+            await fetchMore({
+                variables: queryVariables,
+                updateQuery: (previousResult, { fetchMoreResult }) => {
+                    if (!fetchMoreResult) {
+                        return previousResult
+                    }
+
+                    if (cursor) {
+                        // Update resultant data in the cache by prepending the `previousResult`s to the
+                        // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
+                        // order to access and modify the actual `nodes` in the connection response because we
+                        // don't know the exact response structure
+                        const previousNodes = getConnection({ data: previousResult }).nodes
+                        getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
+                    } else {
+                        // With batch-based pagination, we have all the results already in `fetchMoreResult`,
+                        // we just need to update `first` to fetch more results next time
+                        firstReference.current.actual *= 2
+                    }
+
+                    return fetchMoreResult
+                },
+            })
+        }
     }
 
     const refetchAll = useCallback(async (): Promise<void> => {
