@@ -68,11 +68,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint)
 	}
 
-	maxQueueDepth, maxReorderDuration := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
+	maxQueueDepth, maxReorderDuration, maxQueueMatchCount := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
 
 	// resultQueue is used to re-order results by priority.
 	var mu sync.Mutex
-	resultQueue := newResultQueue(maxQueueDepth, endpoints)
+	resultQueue := newResultQueue(maxQueueDepth, maxQueueMatchCount, endpoints)
 
 	// Flush the queue latest after maxReorderDuration. The longer
 	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
@@ -169,9 +169,10 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	return nil
 }
 
-func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration) {
+func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration, maxQueueMatchCount int) {
 	// defaults
 	maxQueueDepth = 24
+	maxQueueMatchCount = 99999
 	maxReorderDuration = 0
 
 	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
@@ -180,6 +181,10 @@ func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueu
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
 		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+	}
+
+	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount != nil {
+		maxQueueMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
 	}
 
 	maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
@@ -201,6 +206,16 @@ type resultQueue struct {
 	// results in memory.
 	maxQueueDepth int
 
+	// maxQueueMatchCount will flush any items in the queue such that we never exceed
+	// maxQueueMatchCount. This is used to prevent aggregating too many results in
+	// memory.
+	maxQueueMatchCount int
+
+	// The number of matches currently in the queue. We keep track of the current
+	// queueMatchCount separately from the stats, because the stats are reset with
+	// every event we sent.
+	queueMatchCount int
+
 	queue           priorityQueue
 	metricMaxLength int // for a prometheus metric
 
@@ -214,7 +229,7 @@ type resultQueue struct {
 	stats zoekt.Stats
 }
 
-func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
+func newResultQueue(maxQueueDepth, maxQueueMatchCount int, endpoints []string) *resultQueue {
 	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
 	endpointMaxPendingPriority := map[string]float64{}
 	for _, endpoint := range endpoints {
@@ -223,6 +238,7 @@ func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
 
 	return &resultQueue{
 		maxQueueDepth:              maxQueueDepth,
+		maxQueueMatchCount:         maxQueueMatchCount,
 		endpointMaxPendingPriority: endpointMaxPendingPriority,
 	}
 }
@@ -232,7 +248,8 @@ func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
 func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 	// Update aggregate stats
 	q.stats.Add(sr.Stats)
-	sr.Stats = zoekt.Stats{}
+
+	q.queueMatchCount += sr.MatchCount
 
 	// Note the endpoint's updated MaxPendingPriority
 	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
@@ -269,14 +286,18 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		q.metricMaxLength = q.queue.Len()
 	}
 
-	// Pop and send search results where it is guaranteed that no
-	// higher-priority result is possible, because there are no pending shards
-	// with a greater priority.
-	for (q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth) || q.queue.isTopAbove(maxPending) {
-		// We need to use the current aggregate stats then clear them out.
+	// Pop and send search results where it is guaranteed that (1) no
+	// higher-priority result is possible, because there are no pending shards with
+	// a greater priority, or (2) the result queue conforms to the limits
+	// maxQueueDepth and maxQueueMatchCount.
+	for (q.maxQueueDepth >= 0 && (q.queue.Len() > q.maxQueueDepth || q.queueMatchCount > q.maxQueueMatchCount)) || q.queue.isTopAbove(maxPending) {
 		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
+		q.queueMatchCount -= sr.MatchCount
+
+		// We need to use the current aggregate stats then clear them out.
 		sr.Stats = q.stats
 		q.stats = zoekt.Stats{}
+
 		streamer.Send(sr)
 	}
 }
@@ -301,6 +322,8 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 		})
 		q.stats = zoekt.Stats{}
 	}
+
+	q.queueMatchCount = 0
 }
 
 // priorityQueue modified from https://golang.org/pkg/container/heap/
