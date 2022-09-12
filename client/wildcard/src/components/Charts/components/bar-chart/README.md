@@ -1,6 +1,6 @@
 # Bar Chart
 
-The bar chart is one of the pre-built high-level data visualization components. Since it's pre-built
+The bar chart is one of the pre-built high-level data visualization components. Since it's a pre-built
 component it has a few UI features that are already implemented inside the component.
 
 - **Data grouping**. A bar chart can render data in different modes,
