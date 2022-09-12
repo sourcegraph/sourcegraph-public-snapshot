@@ -10,11 +10,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/bmatcuk/doublestar"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -159,14 +157,16 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
-	largeFilePatterns := conf.Get().SearchLargeFiles
+	filter := newSearchableFilter(&conf.Get().SiteConfiguration)
 
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.New()
-	_, _ = fmt.Fprintf(h, "%q %q %q", repo, commit, largeFilePatterns)
+	_, _ = fmt.Fprintf(h, "%q %q", repo, commit)
+	filter.HashKey(h)
+	_, _ = io.WriteString(h, "\x00Paths")
 	for _, p := range paths {
 		_, _ = h.Write([]byte{0})
-		_, _ = h.Write([]byte(p))
+		_, _ = io.WriteString(h, p)
 	}
 	key := hex.EncodeToString(h.Sum(nil))
 	span.LogKV("key", key)
@@ -187,7 +187,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
-			return s.fetch(ctx, repo, commit, largeFilePatterns, paths)
+			return s.fetch(ctx, repo, commit, filter, paths)
 		})
 		var path string
 		if f != nil {
@@ -218,7 +218,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string, paths []string) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -272,9 +272,9 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}
 
-	filter := func(hdr *tar.Header) bool { return false } // default: don't filter
+	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter, err = s.FilterTar(ctx, s.DB, repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, s.DB, repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -292,7 +292,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, largeFilePatterns, filter)
+		err := copySearchable(tr, zw, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -306,7 +306,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is under size limit, non-binary, and not matching the filter.
-func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, filter FilterFunc) error {
+func copySearchable(tr *tar.Reader, zw *zip.Writer, filter *searchableFilter) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -328,7 +328,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 		switch hdr.Typeflag {
 		case tar.TypeReg, tar.TypeRegA:
 			// ignore files if they match the filter
-			if filter(hdr) {
+			if filter.Ignore(hdr) {
 				continue
 			}
 
@@ -343,7 +343,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 
 			// We do not search the content of large files unless they are
 			// allowed.
-			if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
+			if filter.SkipContent(hdr) {
 				continue
 			}
 
@@ -383,7 +383,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			// writing the link's target path as content.
 
 			// ignore symlinks if they match the filter
-			if filter(hdr) {
+			if filter.Ignore(hdr) {
 				continue
 			}
 			fh := &zip.FileHeader{
@@ -440,18 +440,6 @@ func (s *Store) watchConfig() {
 
 		time.Sleep(10 * time.Second)
 	}
-}
-
-// ignoreSizeMax determines whether the max size should be ignored. It uses
-// the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
-func ignoreSizeMax(name string, patterns []string) bool {
-	for _, pattern := range patterns {
-		pattern = strings.TrimSpace(pattern)
-		if m, _ := doublestar.Match(pattern, name); m {
-			return true
-		}
-	}
-	return false
 }
 
 var (
