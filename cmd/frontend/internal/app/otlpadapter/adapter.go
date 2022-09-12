@@ -1,7 +1,9 @@
 package otlpadapter
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -72,10 +74,17 @@ func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mu
 		},
 		Transport: &roundTripper{
 			roundTrip: func(r *http.Request) (*http.Response, error) {
-				if !sig.Enabled.Load() {
-					return nil, errors.New("tunnel is disabled")
+				if sig.Enabled != nil && !sig.Enabled.Load() {
+					body := "tunnel disabled via site configuration"
+					return &http.Response{
+						StatusCode:    http.StatusUnprocessableEntity,
+						Body:          ioutil.NopCloser(bytes.NewBufferString(body)),
+						ContentLength: int64(len(body)),
+						Request:       r,
+						Header:        make(http.Header, 0),
+					}, nil
 				}
-				return http.DefaultClient.Transport.RoundTrip(r)
+				return http.DefaultTransport.RoundTrip(r)
 			},
 		},
 		ErrorLog: std.NewLogger(adapterLogger, log.LevelWarn),

@@ -15,7 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Register sets up adapter services and registers proxies on the router.
+// Register sets up adapter services and registers proxies on the router. enabled can be
+// provided to atomically toggle whether the signal endpoints are enabled serverside -
+// this is important because clients might not receive updated configuration for quite a
+// while, so we need to stop accepting incoming requests.
 func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router, enabled *atomic.Bool) {
 	// Build an OTLP exporter that exports directly to the desired protocol and endpoint
 	exporterFactory, signalExporterConfig, err := newExporter(protocol, endpoint)

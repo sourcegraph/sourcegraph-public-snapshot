@@ -257,6 +257,10 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 			switch {
 			case m.Code == http.StatusNotFound:
 				logger.Info(msg, fields...)
+			case m.Code == http.StatusNotAcceptable:
+				// Used for intentionally disabled endpoints
+				// https://www.rfc-editor.org/rfc/rfc9110.html#name-406-not-acceptable
+				logger.Debug(msg, fields...)
 			case m.Code == http.StatusUnauthorized:
 				logger.Warn(msg, fields...)
 			case m.Code >= http.StatusInternalServerError && requestErrorCause != nil:
