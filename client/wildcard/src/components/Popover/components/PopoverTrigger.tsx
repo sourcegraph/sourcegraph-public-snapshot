@@ -1,4 +1,4 @@
-import React, { forwardRef, PropsWithChildren, ReactNode, useContext } from 'react'
+import React, { forwardRef, ReactNode, useContext } from 'react'
 
 import { noop } from 'lodash'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
@@ -7,8 +7,8 @@ import { ForwardReferenceComponent } from '../../../types'
 import { PopoverContext } from '../contexts/internal-context'
 import { PopoverOpenEventReason } from '../Popover'
 
-interface PopoverTriggerProps extends PropsWithChildren<any>{
-    children: ReactNode | ((isOpen: boolean ) => ReactNode)
+export interface PopoverTriggerProps {
+    children?: ReactNode | ((isOpen: boolean) => ReactNode)
 }
 
 export const PopoverTrigger = forwardRef(function PopoverTrigger(props, reference) {
@@ -25,7 +25,7 @@ export const PopoverTrigger = forwardRef(function PopoverTrigger(props, referenc
 
     return (
         <Component ref={mergedReference} onClick={handleClick} {...otherProps}>
-            { typeof children === 'function' ? children(isOpen) : children }
+            {typeof children === 'function' ? children(isOpen) : children}
         </Component>
     )
 }) as ForwardReferenceComponent<'button', PopoverTriggerProps>

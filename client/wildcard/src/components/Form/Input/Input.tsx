@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
-import { useAutoFocus } from '../../../hooks/useAutoFocus'
+import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'

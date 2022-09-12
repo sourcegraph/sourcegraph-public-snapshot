@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { useWildcardTheme } from '../../hooks/useWildcardTheme'
+import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
