@@ -1458,6 +1458,7 @@ type GroupResultPing struct {
 	AggregationMode *string
 	UIMode          *string
 	Count           *int32
+	BarIndex        *int32
 }
 
 type GroupResultExpandedViewPing struct {

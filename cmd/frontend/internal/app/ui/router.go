@@ -378,9 +378,8 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 // The scheme, host, and path in the specified url override ones in the incoming
 // request. For example:
 //
-// 	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
-// 	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
-//
+//	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
+//	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
 func staticRedirectHandler(u string, code int) http.Handler {
 	target, err := url.Parse(u)
 	if err != nil {
@@ -420,9 +419,8 @@ func limitString(s string, n int, ellipsis bool) string {
 // Clients that wish to return their own HTTP status code should use this from
 // their handler:
 //
-// 	serveError(w, r, err, http.MyStatusCode)
-//  return nil
-//
+//	serveError(w, r, err, http.MyStatusCode)
+//	return nil
 func handler(db database.DB, f handlerFunc) http.Handler {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -544,7 +542,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 // serveErrorTest makes it easy to test styling/layout of the error template by
 // visiting:
 //
-// 	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+//	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
 //
 // The `nodebug=true` parameter hides error messages (which is ALWAYS the case
 // in production), `error` controls the error message text, and status controls
