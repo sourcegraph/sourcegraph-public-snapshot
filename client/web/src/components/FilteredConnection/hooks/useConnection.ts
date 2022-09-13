@@ -57,8 +57,18 @@ export const useConnection = <TResult, TVariables, TData>({
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
+    /**
+     * Local connections is intended to track pagination _without_ using the Apollo cache.
+     * This state will only be used if options.fetchPolicy is 'component-cache-and-network'
+     *
+     * Note: We use a `Map` here in order to keep track of connections against provided variables.
+     * This is so that consumers are able to modify the connection request without having
+     * to deal with potentially state data.
+     * This is especially important when using polling, as there may already be in-flight requests.
+     */
     const [localConnections, setLocalConnections] = useState<Map<TVariables, TResult>>(new Map())
     const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
+
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -128,6 +138,7 @@ export const useConnection = <TResult, TVariables, TData>({
     let connection: Connection<TData> | undefined
 
     if (skipApolloCache && localConnections.has(initialVariables)) {
+        // `Data` cannot be relied on without the Apollo cache, we use our stateful value instead.
         connection = getConnection({ data: localConnections.get(initialVariables) })
     } else if (data) {
         connection = getConnection({ data, error })
@@ -148,12 +159,24 @@ export const useConnection = <TResult, TVariables, TData>({
         }
 
         if (skipApolloCache) {
+            /**
+             * We're using the local cache.
+             * We do not use `updateQuery` as it is used to update the Apollo cache,
+             * instead we will update our local cache in state using the resolved value directly.
+             */
             const nextResult = await fetchMore({ variables: queryVariables })
 
             if (cursor) {
                 setLocalConnections(connections => {
+                    // Get the previous result from the local cache.
+                    // Note: If this is the first subsequent request, the local cache will not yet be populated.
+                    // Instead, we fall back to data as that is the latest response.
                     const previousResult = connections.get(initialVariables) || data
                     const previousNodes = previousResult ? getConnection({ data: previousResult }).nodes : []
+                    // Update resultant data in the local cache by prepending the `previousResult`s to the
+                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
+                    // order to access and modify the actual `nodes` in the connection response because we
+                    // don't know the exact response structure
                     getConnection({ data: nextResult.data }).nodes.unshift(...previousNodes)
                     return connections.set(initialVariables, nextResult.data)
                 })
@@ -163,6 +186,11 @@ export const useConnection = <TResult, TVariables, TData>({
                 firstReference.current.actual *= 2
             }
         } else {
+            /**
+             * We're using the Apollo cache.
+             * We will use `updateQuery` to allow us to directly modify the current cache item
+             * and append the new results globally.
+             */
             await fetchMore({
                 variables: queryVariables,
                 updateQuery: (previousResult, { fetchMoreResult }) => {
@@ -171,7 +199,7 @@ export const useConnection = <TResult, TVariables, TData>({
                     }
 
                     if (cursor) {
-                        // Update resultant data in the cache by prepending the `previousResult`s to the
+                        // Update resultant data in the Apollo cache by prepending the `previousResult`s to the
                         // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
                         // order to access and modify the actual `nodes` in the connection response because we
                         // don't know the exact response structure
@@ -198,7 +226,13 @@ export const useConnection = <TResult, TVariables, TData>({
         })
 
         if (skipApolloCache) {
+            /**
+             * We're using the local cache.
+             * We need to overwrite the latest cached value.
+             */
             setLocalConnections(connections => {
+                // Note: If this is the first subsequent request, the local cache will not yet be populated.
+                // Instead, we fall back to data as that is the latest response.
                 const previousResult = connections.get(initialVariables) || data
                 const refetchedConnection = getConnection({ data: refetchedData })
                 if (
@@ -211,6 +245,7 @@ export const useConnection = <TResult, TVariables, TData>({
                     return connections
                 }
 
+                // Overwrite the local cache to use the latest data.
                 return connections.set(initialVariables, refetchedData)
             })
         }
