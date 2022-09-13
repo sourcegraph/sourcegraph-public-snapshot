@@ -450,14 +450,14 @@ export const useWorkspacesListConnection = (
         variables: {
             node: batchSpecID,
             after: null,
-            first: 20,
+            first: 2,
             search,
             state,
         },
         options: {
             useURL: true,
             fetchPolicy: 'component-cache-and-network',
-            pollInterval: 2500,
+            pollInterval: 500,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
