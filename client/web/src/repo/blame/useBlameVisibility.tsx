@@ -1,21 +1,22 @@
+import { useCallback } from 'react'
+
 import { BehaviorSubject } from 'rxjs'
 
-import { useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 const IS_BLAME_VISIBLE_STORAGE_KEY = 'GitBlame.isVisible'
-const isBlameVisible = new BehaviorSubject<boolean>(!!window.localStorage.getItem(IS_BLAME_VISIBLE_STORAGE_KEY))
-const setIsBlameVisible = (isVisible: boolean): void => {
-    isBlameVisible.next(isVisible)
-
-    if (isVisible) {
-        window.localStorage.setItem(IS_BLAME_VISIBLE_STORAGE_KEY, 'true')
-    } else {
-        window.localStorage.removeItem(IS_BLAME_VISIBLE_STORAGE_KEY)
-    }
-}
+const isBlameVisibleObservable = new BehaviorSubject<boolean | undefined>(undefined)
 
 export const useBlameVisibility = (): [boolean, (isVisible: boolean) => void] => {
-    const isVisible = useObservable(isBlameVisible)
+    const [isVisibleFromLocalStorage, updateLocalStorageValue] = useLocalStorage(IS_BLAME_VISIBLE_STORAGE_KEY, false)
+    const isVisible = useObservable(isBlameVisibleObservable)
+    const setIsBlameVisible = useCallback(
+        (isVisible: boolean): void => {
+            isBlameVisibleObservable.next(isVisible)
+            updateLocalStorageValue(isVisible)
+        },
+        [updateLocalStorageValue]
+    )
 
-    return [Boolean(isVisible), setIsBlameVisible]
+    return [isVisible ?? isVisibleFromLocalStorage, setIsBlameVisible]
 }
