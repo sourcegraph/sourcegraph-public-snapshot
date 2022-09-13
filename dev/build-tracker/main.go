@@ -151,8 +151,9 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 // handleEvent handles an event received from the http listener. A event is valid when:
 // - Has the correct headers from Buildkite
 // - On of the following events
-//   * job.finished
-//   * build.finished
+//   - job.finished
+//   - build.finished
+//
 // - Has valid JSON
 // Note that if we received an unwanted event ie. the event is not "job.finished" or "build.finished" we respond with a 200 OK regardless.
 // Once all the conditions are met, the event is processed in a go routine with `processEvent`

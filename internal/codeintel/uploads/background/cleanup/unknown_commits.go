@@ -54,10 +54,10 @@ func mergeSourceCommits(usc []uploads.SourcedCommits, isc []autoindexing.Sourced
 	return sourceCommits
 }
 
-// func (j *janitor) HandleError(err error) {
-// 	j.metrics.numErrors.Inc()
-// 	log.Error("Failed to delete codeintel records with an unknown commit", "error", err)
-// }
+//	func (j *janitor) HandleError(err error) {
+//		j.metrics.numErrors.Inc()
+//		log.Error("Failed to delete codeintel records with an unknown commit", "error", err)
+//	}
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string

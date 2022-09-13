@@ -136,9 +136,9 @@ func reverseGraph(graph map[string][]string) map[string][]string {
 // tokens to upload meta value. Select commits are any commits that satisfy one of the following
 // properties:
 //
-//   1. They define an upload,
-//   2. They have multiple parents, or
-//   3. They have a child with multiple parents.
+//  1. They define an upload,
+//  2. They have multiple parents, or
+//  3. They have a child with multiple parents.
 //
 // For all remaining commits, we can easily re-calculate the visible uploads without storing them.
 // All such commits have a single, unambiguous path to an ancestor that does store data. These
@@ -187,9 +187,9 @@ func populateUploadsByTraversal(graph map[string][]string, order []string, commi
 // populateUploadsForCommit populates the items stored in the given mapping for the given commit.
 // The uploads considered visible for a commit include:
 //
-//   1. the set of uploads defined on that commit, and
-//   2. the set of uploads visible from the ancestors with the minimum distance
-//      for equivalent root and indexer values.
+//  1. the set of uploads defined on that commit, and
+//  2. the set of uploads visible from the ancestors with the minimum distance
+//     for equivalent root and indexer values.
 //
 // If two ancestors have different uploads visible for the same root and indexer, the one with the
 // smaller distance to the source commit will shadow the other. Similarly, If an ancestor and the
