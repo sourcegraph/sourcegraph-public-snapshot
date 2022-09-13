@@ -525,7 +525,7 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": { "pointer": true }
         }
       },
@@ -1391,6 +1391,12 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 500
+    },
+    "insights.aggregations.proactiveResultLimit": {
+      "description": "The maximum number of results a proactive search aggregation can accept before stopping",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 50000
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

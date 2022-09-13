@@ -64,7 +64,6 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 // 1. Webhook insights are not enqueued (not yet supported.)
 // 2. Duplicate insights are deduplicated / do not submit multiple jobs.
 // 3. Jobs are scheduled not to all run at the same time.
-//
 func Test_discoverAndEnqueueInsights(t *testing.T) {
 	// Setup the setting store and job enqueuer mocks.
 	ctx := context.Background()

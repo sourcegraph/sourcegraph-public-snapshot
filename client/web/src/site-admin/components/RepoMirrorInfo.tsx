@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { mdiCloudOutline } from '@mdi/js'
+import prettyBytes from 'pretty-bytes'
 
 import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
@@ -31,7 +32,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                     <>Not yet synced from code host.</>
                 ) : (
                     <>
-                        Last synced <Timestamp date={mirrorInfo.updatedAt} />.
+                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Size: {prettyBytes(mirrorInfo.byteSize)}.
                     </>
                 )}
             </small>

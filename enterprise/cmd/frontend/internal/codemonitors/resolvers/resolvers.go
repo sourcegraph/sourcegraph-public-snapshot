@@ -690,9 +690,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (graphql.I
 	return graphqlbackend.MarshalUserID(monitor.UserID), nil
 }
 
-//
 // MonitorConnection
-//
 type monitorConnection struct {
 	*Resolver
 	monitors    []graphqlbackend.MonitorResolver
@@ -756,9 +754,7 @@ func unmarshalAfter(after *string) (*int, error) {
 	return &a, err
 }
 
-//
 // Monitor
-//
 type monitor struct {
 	*Resolver
 	*edb.Monitor
@@ -865,9 +861,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	return &monitorActionConnection{actions: actions, totalCount: int32(totalCount)}, nil
 }
 
-//
 // MonitorTrigger <<UNION>>
-//
 type monitorTrigger struct {
 	query graphqlbackend.MonitorQueryResolver
 }
@@ -876,9 +870,7 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 	return t.query, t.query != nil
 }
 
-//
 // Query
-//
 type monitorQuery struct {
 	*Resolver
 	*edb.QueryTrigger
@@ -920,9 +912,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totalCount: totalCount}, nil
 }
 
-//
 // MonitorTriggerEventConnection
-//
 type monitorTriggerEventConnection struct {
 	*Resolver
 	events     []graphqlbackend.MonitorTriggerEventResolver
@@ -944,9 +934,7 @@ func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
-//
 // MonitorTriggerEvent
-//
 type monitorTriggerEvent struct {
 	*Resolver
 	*edb.TriggerJob
@@ -1002,7 +990,6 @@ func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.
 }
 
 // ActionConnection
-//
 type monitorActionConnection struct {
 	actions    []graphqlbackend.MonitorAction
 	totalCount int32
@@ -1027,9 +1014,7 @@ func (a *monitorActionConnection) PageInfo() *graphqlutil.PageInfo {
 	panic("found non-email monitor action")
 }
 
-//
 // Action <<UNION>>
-//
 type action struct {
 	email        graphqlbackend.MonitorEmailResolver
 	webhook      graphqlbackend.MonitorWebhookResolver
@@ -1061,9 +1046,7 @@ func (a *action) ToMonitorSlackWebhook() (graphqlbackend.MonitorSlackWebhookReso
 	return a.slackWebhook, a.slackWebhook != nil
 }
 
-//
 // Email
-//
 type monitorEmail struct {
 	*Resolver
 	*edb.EmailAction
@@ -1287,9 +1270,7 @@ func intPtrToInt64Ptr(i *int) *int64 {
 	return &j
 }
 
-//
 // MonitorActionEmailRecipientConnection
-//
 type monitorActionEmailRecipientsConnection struct {
 	recipients     []graphqlbackend.NamespaceResolver
 	nextPageCursor string
@@ -1311,9 +1292,7 @@ func (a *monitorActionEmailRecipientsConnection) PageInfo() *graphqlutil.PageInf
 	return graphqlutil.NextPageCursor(a.nextPageCursor)
 }
 
-//
 // MonitorActionEventConnection
-//
 type monitorActionEventConnection struct {
 	events     []graphqlbackend.MonitorActionEventResolver
 	totalCount int32
@@ -1334,9 +1313,7 @@ func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
-//
 // MonitorEvent
-//
 type monitorActionEvent struct {
 	*Resolver
 	*edb.ActionJob

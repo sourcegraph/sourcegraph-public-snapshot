@@ -5,19 +5,19 @@
 // When editing this package or introducing any shared declarations, you should abide strictly by the
 // following rules:
 //
-// 1. Do NOT declare a shared definition unless 5+ dashboards will use it. Sharing dashboard
-//    declarations means the codebase becomes more complex and non-declarative which we want to avoid
-//    so repeat yourself instead if it applies to less than 5 dashboards.
+//  1. Do NOT declare a shared definition unless 5+ dashboards will use it. Sharing dashboard
+//     declarations means the codebase becomes more complex and non-declarative which we want to avoid
+//     so repeat yourself instead if it applies to less than 5 dashboards.
 //
-// 2. ONLY declare shared Observables. Introducing shared Rows or Groups prevents individual dashboard
-//    maintainers from holistically considering both the layout of dashboards as well as the
-//    metrics and alerts defined within them -- which we do not want.
+//  2. ONLY declare shared Observables. Introducing shared Rows or Groups prevents individual dashboard
+//     maintainers from holistically considering both the layout of dashboards as well as the
+//     metrics and alerts defined within them -- which we do not want.
 //
-// 3. Use the sharedObservable type and do NOT parameterize more than just the container name. It may
-//    be tempting to pass an alerting threshold as an argument, or parameterize whether a critical
-//    alert is defined -- but this makes reasoning about alerts at a high level much more difficult.
-//    If you have a need for this, it is a strong signal you should NOT be using the shared definition
-//    anymore and should instead copy it and apply your modifications.
+//  3. Use the sharedObservable type and do NOT parameterize more than just the container name. It may
+//     be tempting to pass an alerting threshold as an argument, or parameterize whether a critical
+//     alert is defined -- but this makes reasoning about alerts at a high level much more difficult.
+//     If you have a need for this, it is a strong signal you should NOT be using the shared definition
+//     anymore and should instead copy it and apply your modifications.
 //
 // Learn more about monitoring in https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars
 package shared

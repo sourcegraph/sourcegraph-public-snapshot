@@ -253,7 +253,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 {source === 'blob' && (
                     <>
                         <ToggleBlameAction location={props.location} />
-                        <OpenInEditorActionItem platformContext={props.platformContext} />
+                        {window.context.isAuthenticatedUser && (
+                            <OpenInEditorActionItem platformContext={props.platformContext} />
+                        )}
                     </>
                 )}
 

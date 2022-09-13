@@ -308,10 +308,10 @@ func CookieMiddleware(logger log.Logger, db database.DB, next http.Handler) http
 // CookieMiddlewareWithCSRFSafety is a middleware that authenticates HTTP requests using the
 // provided cookie (if any), *only if* one of the following is true.
 //
-// - The request originates from a trusted origin (the same origin, browser extension origin, or one
-//   in the site configuration corsOrigin allow list.)
-// - The request has the special X-Requested-With header present, which is only possible to send in
-//   browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
+//   - The request originates from a trusted origin (the same origin, browser extension origin, or one
+//     in the site configuration corsOrigin allow list.)
+//   - The request has the special X-Requested-With header present, which is only possible to send in
+//     browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
 //
 // If one of the above are not true, the request is still allowed to proceed but will be
 // unauthenticated unless some other authentication is provided, such as an access token.

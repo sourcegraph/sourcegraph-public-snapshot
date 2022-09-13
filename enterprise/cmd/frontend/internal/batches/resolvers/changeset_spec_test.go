@@ -91,12 +91,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -146,12 +143,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -201,12 +195,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -312,9 +303,6 @@ query($id: ID!) {
           baseRef
           baseRev
 
-          headRepository {
-              id
-          }
           headRef
 
           title

@@ -515,13 +515,20 @@ func conjunction(left, right Basic) Basic {
 // pattern node, just not in any of the parameters.
 //
 // For example, the query
-//   repo:a (file:b OR file:c)
+//
+//	repo:a (file:b OR file:c)
+//
 // is transformed to
-//   (repo:a file:b) OR (repo:a file:c)
+//
+//	(repo:a file:b) OR (repo:a file:c)
+//
 // but the query
-//   (repo:a OR repo:b) (b OR c)
+//
+//	(repo:a OR repo:b) (b OR c)
+//
 // is transformed to
-//   (repo:a (b OR c)) OR (repo:b (b OR c))
+//
+//	(repo:a (b OR c)) OR (repo:b (b OR c))
 func BuildPlan(query []Node) Plan {
 	return distribute([]Basic{}, query)
 }
