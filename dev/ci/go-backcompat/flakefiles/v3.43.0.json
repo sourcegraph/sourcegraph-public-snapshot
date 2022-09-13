@@ -1,0 +1,257 @@
+[
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/webhooks",
+    "prefix": "TestWebhooksIntegration",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/worker/internal/batches/workers",
+    "prefix": "TestBatchSpecWorkspaceCreatorProcess_Caching",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/worker/internal/batches/workers",
+    "prefix": "TestBatchSpecWorkspaceCreatorProcess_Importing",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/worker/internal/batches/workers",
+    "prefix": "TestBatchSpecWorkspaceCreatorProcess_NoDiff",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/worker/internal/batches/workers",
+    "prefix": "TestReconcilerWorkerView",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/worker/internal/batches/workers",
+    "prefix": "TestReconcilerWorkerView",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "internal/usagestats",
+    "prefix": "TestGetBatchChangesUsageStatistics",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBatchSpecResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBatchSpecResolver_BatchSpecCreatedFromRaw",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBulkOperationConnectionResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBulkOperationResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestChangesetApplyPreviewConnectionResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetApplyPreviewResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetApplyPreviewResolverWithPublicationStates",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetConnectionResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetCountsOverTimeIntegration",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetEventConnectionResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetSpecConnectionResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetSpecResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestChangesetResolver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestPermissionLevels",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestRepositoryPermissions",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCreateBatchSpec",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCreateChangesetSpec",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestApplyBatchChange",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCreateEmptyBatchChange",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestUpsertEmptyBatchChange",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCreateBatchChange",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestApplyOrCreateBatchSpecWithPublicationStates",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestApplyBatchChangeWithLicenseFail",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCreateChangesetComments",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestReenqueueChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestMergeChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestCloseChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolver",
+    "prefix": "TestPublishChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/processor",
+    "prefix": "TestBulkProcessor",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/reconciler",
+    "prefix": "TestExecutor_ExecutePlan",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/reconciler",
+    "prefix": "TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/reconciler",
+    "prefix": "TestExecutor_ExecutePlan_AvoidLoadingChangesetSource",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/reconciler",
+    "prefix": "TestExecutor_UserCredentialsForGitserver",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/reconciler",
+    "prefix": "TestReconcilerProcess_IntegrationTest",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/service",
+    "prefix": "TestServiceApplyBatchChange",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/service",
+    "prefix": "TestServicePermissionLevels",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/service",
+    "prefix": "TestService",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestStore_ListBatchSpecRepoIDs",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestCancelQueuedBatchChangeChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestEnqueueChangesetsToClose",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestCleanDetachedChangesets",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration",
+    "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."
+  }
+]
