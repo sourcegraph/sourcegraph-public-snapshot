@@ -450,7 +450,7 @@ export const useWorkspacesListConnection = (
         variables: {
             node: batchSpecID,
             after: null,
-            first: 2,
+            first: 20,
             search,
             state,
         },
