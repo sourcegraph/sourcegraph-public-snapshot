@@ -59,8 +59,7 @@ type DeploymentTrace struct {
 //
 // The generated trace is structured as follows:
 //
-// deploy/env ---------
-//
+//	deploy/env ---------
 //	  pr/1 -------------
 //	  -------- service/1
 //	  -------- service/2

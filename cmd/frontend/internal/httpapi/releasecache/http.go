@@ -19,7 +19,7 @@ import (
 // handler implements a http.Handler that wraps a VersionCache to provide two
 // endpoints:
 //
-//   - GET /.*:        this looks up the given branch and returns the latest
+//   - GET /.*: this looks up the given branch and returns the latest
 //     version, if any.
 //   - POST /webhooks: this triggers an update of the version cache if given a
 //     valid GitHub webhook.

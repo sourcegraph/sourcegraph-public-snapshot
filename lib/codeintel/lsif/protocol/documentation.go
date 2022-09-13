@@ -38,13 +38,12 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 //
 // It allows one represent hierarchical documentation like:
 //
-// "project" (e.g. an HTTP library)
-// -> "documentationResult" (e.g. "HTTP library" library documentation)
-//
-//	-> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
-//	  -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
-//	  -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
-//	    -> ...
+//	"project" (e.g. an HTTP library)
+//	-> "documentationResult" (e.g. "HTTP library" library documentation)
+//	  -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
+//	    -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
+//	    -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
+//	      -> ...
 //
 // Note: the "project" -> "documentationResult" attachment above is expressed via a
 // "documentationResult" edge, since the parent is not a "documentationResult" vertex.

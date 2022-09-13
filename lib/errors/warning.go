@@ -43,9 +43,8 @@ var _ Warning = (*warning)(nil)
 // Consumers of these errors should then use errors.As to check if the error is of a warning type
 // and based on that, should just log it as a warning. For example:
 //
-// var ref errors.Warning
-// err := someFunctionThatReturnsAWarningErrorOrACriticalError()
-//
+//	var ref errors.Warning
+//	err := someFunctionThatReturnsAWarningErrorOrACriticalError()
 //	if err != nil && errors.As(err, &ref) {
 //	    log.Warnf("failed to do X: %v", err)
 //	}

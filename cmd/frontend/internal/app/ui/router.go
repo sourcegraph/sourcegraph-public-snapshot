@@ -419,8 +419,8 @@ func limitString(s string, n int, ellipsis bool) string {
 // Clients that wish to return their own HTTP status code should use this from
 // their handler:
 //
-//		serveError(w, r, err, http.MyStatusCode)
-//	 return nil
+//	serveError(w, r, err, http.MyStatusCode)
+//	return nil
 func handler(db database.DB, f handlerFunc) http.Handler {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
