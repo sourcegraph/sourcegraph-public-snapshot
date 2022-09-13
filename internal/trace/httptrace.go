@@ -292,9 +292,10 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 
 // Recoverer is a recovery handler to wrap the stdlib net/http Mux.
 // Example:
-//  mux := http.NewServeMux
-//  ...
-//	http.Handle("/", sentry.Recoverer(mux))
+//
+//	 mux := http.NewServeMux
+//	 ...
+//		http.Handle("/", sentry.Recoverer(mux))
 func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {

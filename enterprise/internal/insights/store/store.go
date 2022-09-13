@@ -207,13 +207,13 @@ ORDER BY sub.series_id, sub.interval_time ASC
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
 // intervals. In specific:
 //
-// 1. Multiple points recorded at the same time T for cardinality C will be considered part of the same vector.
-//    For example, series S and repos R1, R2 have a point at time T. The sum over R1,R2 at T will give the
-//    aggregated sum for that series at time T.
-// 2. Rarely, it may contain duplicate data points due to the at-least once semantics of query execution.
-//    This will cause some jitter in the aggregated series, and will skew the results slightly.
-// 3. Searches may not complete at the same exact time, so even in a perfect world if the interval
-//    should be 12h it may be off by a minute or so.
+//  1. Multiple points recorded at the same time T for cardinality C will be considered part of the same vector.
+//     For example, series S and repos R1, R2 have a point at time T. The sum over R1,R2 at T will give the
+//     aggregated sum for that series at time T.
+//  2. Rarely, it may contain duplicate data points due to the at-least once semantics of query execution.
+//     This will cause some jitter in the aggregated series, and will skew the results slightly.
+//  3. Searches may not complete at the same exact time, so even in a perfect world if the interval
+//     should be 12h it may be off by a minute or so.
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 
@@ -267,7 +267,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	)
 }
 
-//values constructs a SQL values statement out of an array of repository ids
+// values constructs a SQL values statement out of an array of repository ids
 func values(ids []api.RepoID) string {
 	if len(ids) == 0 {
 		return ""

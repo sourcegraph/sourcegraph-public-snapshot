@@ -30,7 +30,7 @@ import (
 // GitDir is an absolute path to a GIT_DIR.
 // They will all follow the form:
 //
-//    ${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${name}/.git
 type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
