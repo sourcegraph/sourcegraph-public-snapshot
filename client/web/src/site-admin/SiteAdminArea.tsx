@@ -96,6 +96,10 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
+            label: 'Insights',
+            to: '/site-admin/analytics/code-insights',
+        },
+        {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
         },
@@ -110,10 +114,6 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
-        },
-        {
-            label: 'Code insights (soon)',
-            to: '/site-admin/analytics/code-insights',
         },
     ],
 }
@@ -141,7 +141,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
         exact: true,
     },
     {
@@ -152,11 +152,6 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
         exact: true,
     },
     {

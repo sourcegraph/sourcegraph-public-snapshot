@@ -94,10 +94,14 @@ func makeFilters(containerLabel, containerName string, filters ...string) string
 	return strings.Join(filters, ",")
 }
 
-// makeBy returns the suffix if the aggregator expression (e.g., max by (queue)),
-//                                                                   ^^^^^^^^^^
-// as well as a prefix to be used as part of the legend consisting of placeholder
-// values that will render to the value of the label/variable in the Grafana UI.
+// makeBy returns the suffix if the aggregator expression.
+//
+//	e.g. max by (queue)
+//	         ^^^^^^^^^^
+//
+// legendPrefix is a prefix to be used as part of the legend consisting of
+// placeholder values that will render to the value of the label/variable in
+// the Grafana UI.
 func makeBy(labels ...string) (aggregateExprSuffix string, legendPrefix string) {
 	if len(labels) == 0 {
 		return "", ""

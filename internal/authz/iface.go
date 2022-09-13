@@ -15,28 +15,28 @@ import (
 //
 // Rules are expressed as Glob syntaxes:
 //
-//    pattern:
-//        { term }
+//	pattern:
+//	    { term }
 //
-//    term:
-//        `*`         matches any sequence of non-separator characters
-//        `**`        matches any sequence of characters
-//        `?`         matches any single non-separator character
-//        `[` [ `!` ] { character-range } `]`
-//                    character class (must be non-empty)
-//        `{` pattern-list `}`
-//                    pattern alternatives
-//        c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
-//        `\` c       matches character c
+//	term:
+//	    `*`         matches any sequence of non-separator characters
+//	    `**`        matches any sequence of characters
+//	    `?`         matches any single non-separator character
+//	    `[` [ `!` ] { character-range } `]`
+//	                character class (must be non-empty)
+//	    `{` pattern-list `}`
+//	                pattern alternatives
+//	    c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
+//	    `\` c       matches character c
 //
-//    character-range:
-//        c           matches character c (c != `\\`, `-`, `]`)
-//        `\` c       matches character c
-//        lo `-` hi   matches character c for lo <= c <= hi
+//	character-range:
+//	    c           matches character c (c != `\\`, `-`, `]`)
+//	    `\` c       matches character c
+//	    lo `-` hi   matches character c for lo <= c <= hi
 //
-//    pattern-list:
-//        pattern { `,` pattern }
-//                    comma-separated (without spaces) patterns
+//	pattern-list:
+//	    pattern { `,` pattern }
+//	                comma-separated (without spaces) patterns
 //
 // This Glob syntax is currently from github.com/gobwas/glob:
 // https://sourcegraph.com/github.com/gobwas/glob@e7a84e9525fe90abcda167b604e483cc959ad4aa/-/blob/glob.go?L39:6

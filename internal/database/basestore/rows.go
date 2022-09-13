@@ -16,19 +16,19 @@ import (
 //
 // The signature of this function allows scan methods to be written uniformly:
 //
-//     func ScanThings(rows *sql.Rows, queryErr error) (_ []Thing, err error) {
-//         if queryErr != nil {
-//             return nil, queryErr
-//         }
-//         defer func() { err = CloseRows(rows, err) }()
+//	func ScanThings(rows *sql.Rows, queryErr error) (_ []Thing, err error) {
+//	    if queryErr != nil {
+//	        return nil, queryErr
+//	    }
+//	    defer func() { err = CloseRows(rows, err) }()
 //
-//         // read things from rows
-//     }
+//	    // read things from rows
+//	}
 //
 // Scan methods should be called directly with the results of `*store.Query` to
 // ensure that the rows are always properly handled.
 //
-//     things, err := ScanThings(store.Query(ctx, query))
+//	things, err := ScanThings(store.Query(ctx, query))
 func CloseRows(rows *sql.Rows, err error) error {
 	return errors.Append(err, rows.Close(), rows.Err())
 }
