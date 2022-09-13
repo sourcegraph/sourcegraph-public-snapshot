@@ -74,7 +74,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private cohortID?: string
     private firstSourceURL?: string
     private lastSourceURL?: string
-    private sessionID = ''
     private deviceID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
