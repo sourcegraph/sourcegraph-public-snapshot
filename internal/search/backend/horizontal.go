@@ -40,6 +40,11 @@ var (
 		Name: "src_zoekt_final_queue_size",
 		Help: "the size of the results queue once streaming is done.",
 	})
+	metricMaxMatchCount = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_zoekt_queue_max_match_count",
+		Help:    "Maximum number of matches in the queue.",
+		Buckets: prometheus.ExponentialBuckets(4, 2, 20),
+	}, nil)
 )
 
 // HorizontalSearcher is a Streamer which aggregates searches over
@@ -206,15 +211,16 @@ type resultQueue struct {
 	// results in memory.
 	maxQueueDepth int
 
-	// maxQueueMatchCount will flush any items in the queue such that we never exceed
-	// maxQueueMatchCount. This is used to prevent aggregating too many results in
+	// maxMatchCount will flush any items in the queue such that we never exceed
+	// maxMatchCount. This is used to prevent aggregating too many results in
 	// memory.
-	maxQueueMatchCount int
+	maxMatchCount int
 
 	// The number of matches currently in the queue. We keep track of the current
-	// queueMatchCount separately from the stats, because the stats are reset with
+	// matchCount separately from the stats, because the stats are reset with
 	// every event we sent.
-	queueMatchCount int
+	matchCount          int
+	metricMaxMatchCount int
 
 	queue           priorityQueue
 	metricMaxLength int // for a prometheus metric
@@ -238,7 +244,7 @@ func newResultQueue(maxQueueDepth, maxQueueMatchCount int, endpoints []string) *
 
 	return &resultQueue{
 		maxQueueDepth:              maxQueueDepth,
-		maxQueueMatchCount:         maxQueueMatchCount,
+		maxMatchCount:              maxQueueMatchCount,
 		endpointMaxPendingPriority: endpointMaxPendingPriority,
 	}
 }
@@ -249,7 +255,7 @@ func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 	// Update aggregate stats
 	q.stats.Add(sr.Stats)
 
-	q.queueMatchCount += sr.MatchCount
+	q.matchCount += sr.MatchCount
 
 	// Note the endpoint's updated MaxPendingPriority
 	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
@@ -286,13 +292,17 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		q.metricMaxLength = q.queue.Len()
 	}
 
+	if q.matchCount > q.metricMaxMatchCount {
+		q.metricMaxMatchCount = q.matchCount
+	}
+
 	// Pop and send search results where it is guaranteed that (1) no
 	// higher-priority result is possible, because there are no pending shards with
 	// a greater priority, or (2) the result queue conforms to the limits
-	// maxQueueDepth and maxQueueMatchCount.
-	for (q.maxQueueDepth >= 0 && (q.queue.Len() > q.maxQueueDepth || q.queueMatchCount > q.maxQueueMatchCount)) || q.queue.isTopAbove(maxPending) {
+	// maxQueueDepth and maxMatchCount.
+	for q.isFull() || q.queue.isTopAbove(maxPending) {
 		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		q.queueMatchCount -= sr.MatchCount
+		q.matchCount -= sr.MatchCount
 
 		// We need to use the current aggregate stats then clear them out.
 		sr.Stats = q.stats
@@ -306,7 +316,9 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 // final statistics. This should only be called once all endpoints are done.
 func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(q.metricMaxMatchCount))
 	metricFinalQueueSize.Add(float64(q.queue.Len()))
+
 	for q.queue.Len() > 0 {
 		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
 		sr.Stats = q.stats
@@ -323,7 +335,23 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 		q.stats = zoekt.Stats{}
 	}
 
-	q.queueMatchCount = 0
+	q.matchCount = 0
+}
+
+func (q *resultQueue) isFull() bool {
+	if q.maxQueueDepth < 0 {
+		return false
+	}
+
+	if q.queue.Len() > q.maxQueueDepth {
+		return true
+	}
+
+	if q.matchCount > q.maxMatchCount {
+		return true
+	}
+
+	return false
 }
 
 // priorityQueue modified from https://golang.org/pkg/container/heap/
