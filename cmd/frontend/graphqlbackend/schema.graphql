@@ -460,9 +460,9 @@ type Mutation {
         """
         referrer: String
         """
-        Session ID to identify the user's session for analytics.
+        Device session ID to identify the user's session for analytics.
         """
-        sessionID: String
+        deviceSessionID: String
         """
         The additional argument information.
         """
@@ -828,9 +828,9 @@ input Event {
     """
     referrer: String
     """
-    Session ID to identify the user's session for analytics.
+    Device session ID to identify the user's session for analytics.
     """
-    sessionID: String
+    deviceSessionID: String
     """
     The additional argument information.
     """

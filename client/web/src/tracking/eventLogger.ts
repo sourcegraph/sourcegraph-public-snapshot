@@ -18,7 +18,7 @@ export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
-export const SESSION_ID_KEY = 'sourcegraphSessionId'
+export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -92,7 +92,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         domain: location.hostname,
     }
 
-    private readonly sessionCookieSettings: CookieAttributes = {
+    private readonly deviceSessionCookieSettings: CookieAttributes = {
         // ~30 minutes expiry, but renewed on activity.
         expires: 0.0208,
         // Enforce HTTPS
@@ -233,13 +233,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         return lastSourceURL
     }
 
-    public getSessionID(): string {
-        let sessionID = cookies.get(SESSION_ID_KEY)
-        if (!sessionID || sessionID == '') {
-            sessionID = uuid.v4()
-            cookies.set(SESSION_ID_KEY, sessionID, this.sessionCookieSettings)
+    public getDeviceSessionID(): string {
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        if (!deviceSessionID || deviceSessionID == '') {
+            deviceSessionID = uuid.v4()
+            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
         }
-        return sessionID
+        return deviceSessionID
     }
 
     // Device ID is a require field for Amplitude events.
