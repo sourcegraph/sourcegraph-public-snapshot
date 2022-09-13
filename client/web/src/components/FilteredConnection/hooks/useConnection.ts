@@ -57,7 +57,7 @@ export const useConnection = <TResult, TVariables, TData>({
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
-    const [localConnections, setLocalConnections] = useState<Map<TVariables, Connection<TData>>>(new Map())
+    const [localConnections, setLocalConnections] = useState<Map<TVariables, TResult>>(new Map())
     const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
     const searchParameters = useSearchParameters()
 
@@ -125,7 +125,13 @@ export const useConnection = <TResult, TVariables, TData>({
         [getConnectionFromGraphQLResult]
     )
 
-    const connection = localConnections.get(initialVariables) || (data ? getConnection({ data, error }) : undefined)
+    let connection: Connection<TData> | undefined
+
+    if (skipApolloCache && localConnections.has(initialVariables)) {
+        connection = getConnection({ data: localConnections.get(initialVariables) })
+    } else if (data) {
+        connection = getConnection({ data, error })
+    }
 
     useConnectionUrl({
         enabled: options?.useURL,
@@ -146,12 +152,10 @@ export const useConnection = <TResult, TVariables, TData>({
 
             if (cursor) {
                 setLocalConnections(connections => {
-                    const previousConnectionNodes = connections.get(initialVariables)?.nodes || []
-                    const nextConnection = getConnection({ data: nextResult.data })
-                    return connections.set(initialVariables, {
-                        ...nextConnection,
-                        nodes: [...previousConnectionNodes, ...nextConnection.nodes],
-                    })
+                    const previousResult = connections.get(initialVariables) || data
+                    const previousNodes = previousResult ? getConnection({ data: previousResult }).nodes : []
+                    getConnection({ data: nextResult.data }).nodes.unshift(...previousNodes)
+                    return connections.set(initialVariables, nextResult.data)
                 })
             } else {
                 // With batch-based pagination, we have all the results already in `fetchMoreResult`,
@@ -188,26 +192,29 @@ export const useConnection = <TResult, TVariables, TData>({
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
 
-        const result = await refetch({
+        const { data: refetchedData } = await refetch({
             ...variables,
             first,
         })
 
         if (skipApolloCache) {
-            const refetchedConnection = getConnection({ data: result.data })
             setLocalConnections(connections => {
-                const previousConnection = connections.get(initialVariables)
-                if (previousConnection && previousConnection.nodes.length !== refetchedConnection.nodes.length) {
+                const previousResult = connections.get(initialVariables) || data
+                const refetchedConnection = getConnection({ data: refetchedData })
+                if (
+                    previousResult &&
+                    getConnection({ data: previousResult }).nodes.length !== refetchedConnection.nodes.length
+                ) {
                     // We expect the refetched request to have the same amount of results as the previous one.
                     // If this is not the case, we should fallback to the previous result.
                     // Note: This will typically happen if a user clicks "Show more" as the polled request is initiated.
                     return connections
                 }
 
-                return connections.set(initialVariables, refetchedConnection)
+                return connections.set(initialVariables, refetchedData)
             })
         }
-    }, [connection, getConnection, initialVariables, refetch, skipApolloCache, variables])
+    }, [connection?.nodes.length, data, getConnection, initialVariables, refetch, skipApolloCache, variables])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
