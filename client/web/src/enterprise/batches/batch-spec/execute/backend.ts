@@ -457,7 +457,7 @@ export const useWorkspacesListConnection = (
         options: {
             useURL: true,
             fetchPolicy: 'component-cache-and-network',
-            pollInterval: 500,
+            pollInterval: 2500,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
