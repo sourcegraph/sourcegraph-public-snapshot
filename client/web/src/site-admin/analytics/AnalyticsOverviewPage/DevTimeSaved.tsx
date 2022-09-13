@@ -1,10 +1,10 @@
 import React from 'react'
 
-import { mdiMagnify, mdiSitemap, mdiBookOutline, mdiPuzzleOutline } from '@mdi/js'
+import { mdiMagnify, mdiSitemap, mdiBookOutline, mdiPuzzleOutline, mdiPoll } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { H2, H3, Text, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
+import { H2, H3, Text, LoadingSpinner, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchChangesIconNav } from '../../../batches/icons'
 import {
@@ -263,6 +263,26 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
                         <Text as="td" weight="bold">
                             {formatNumber(totalExtensionsHoursSaved)}
                         </Text>
+                    </tr>
+                    <tr>
+                        <td className="text-left">
+                            <Link to="/site-admin/analytics/code-insights">
+                                <Text as="span" className="d-flex align-items-center">
+                                    <Icon svgPath={mdiPoll} size="md" aria-label="Extensions" className="mr-1" />
+                                    Code insights
+                                </Text>
+                            </Link>
+                        </td>
+                        <Tooltip content="Coming soon">
+                            <Text className="cursor-pointer" as="td" weight="bold">
+                                ...*
+                            </Text>
+                        </Tooltip>
+                        <Tooltip content="Coming soon">
+                            <Text className="cursor-pointer" as="td" weight="bold">
+                                ...*
+                            </Text>
+                        </Tooltip>
                     </tr>
                 </tbody>
             </table>
