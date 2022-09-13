@@ -7,7 +7,10 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
+import { Grid } from '../Grid'
 import { Icon } from '../Icon'
+import { LoadingSpinner } from '../LoadingSpinner'
+import { H1 } from '../Typography'
 
 import {
     Combobox,
@@ -31,13 +34,16 @@ const config: Meta = {
 export default config
 
 export const ComboboxDemo = () => (
-    <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '2rem' }}>
-        <CommonSearchDemo />
-        <ComboboxOpenOnFocusDemo />
-        <ComboboxWithIcon />
-        <ComboboxCustomSuggestionRenderDemo />
-        <ComboboxServerSideSearchDemo />
-    </div>
+    <>
+        <H1>Combobox UI</H1>
+        <Grid columnCount={3}>
+            <CommonSearchDemo />
+            <ComboboxOpenOnFocusDemo />
+            <ComboboxWithIcon />
+            <ComboboxCustomSuggestionRenderDemo />
+            <ComboboxServerSideSearchDemo />
+        </Grid>
+    </>
 )
 
 const CommonSearchDemo = () => (
@@ -141,12 +147,12 @@ const ComboboxServerSideSearchDemo = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const { suggestions, loading } = useRepoSuggestions(searchTerm)
 
-    const handleSearchTermChange = (event: ChangeEvent): void => {
+    const handleSearchTermChange = (event: ChangeEvent<HTMLInputElement>): void => {
         setSearchTerm(event.target.value)
     }
 
     return (
-        <Combobox aria-label="Choose a repo" openOnFocus={true} style={{ maxWidth: '20rem' }}>
+        <Combobox aria-label="Choose a repo" openOnFocus={true} style={{ maxWidth: '20rem' }} hidden={false}>
             <ComboboxInput
                 label="Repository"
                 placeholder="Focus and type..."
@@ -157,7 +163,7 @@ const ComboboxServerSideSearchDemo = () => {
             <ComboboxPopover>
                 {loading ? (
                     <div style={{ minHeight: '6rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        Loading ...
+                        <LoadingSpinner /> Loading
                     </div>
                 ) : (
                     <ComboboxList>
@@ -172,7 +178,7 @@ const ComboboxServerSideSearchDemo = () => {
 }
 
 function useRepoSuggestions(searchTerm: string): { suggestions: string[]; loading: boolean } {
-    const [suggestions, setSuggestions] = useState([])
+    const [suggestions, setSuggestions] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -188,13 +194,15 @@ function useRepoSuggestions(searchTerm: string): { suggestions: string[]; loadin
             })
             .catch(console.error)
 
-        return () => (isFresh = false)
+        return () => {
+            isFresh = false
+        }
     }, [searchTerm])
 
     return { suggestions, loading }
 }
 
-const SUGGESTIONS_CACHE = {}
+const SUGGESTIONS_CACHE: Record<string, string[]> = {}
 const SUGGESTIONS_MOCK = [
     'github.com/sourcegraph/sourcegraph',
     'github.com/sourcegraph/about',
@@ -208,7 +216,7 @@ function fetchRepositories(value: string): Promise<string[]> {
         return Promise.resolve(SUGGESTIONS_CACHE[value])
     }
 
-    return new Promise(resolve => setTimeout(() => resolve(SUGGESTIONS_MOCK), 2000)).then(result => {
+    return new Promise<string[]>(resolve => setTimeout(() => resolve(SUGGESTIONS_MOCK), 2000)).then(result => {
         SUGGESTIONS_CACHE[value] = result
         return result
     })

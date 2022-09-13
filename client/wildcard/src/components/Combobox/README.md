@@ -3,7 +3,7 @@
 These components are simply wrappers over the [reach-ui combobox primitives](https://reach.tech/combobox#comboboxpopover).
 We use these reach-ui primitives to have covered all a11 peculiarities in how combobox UI should work.
 
-For more details, we suggest taking a look at `Combobox.story.tsx` file (storybook demos) but in a nutshell Combobox
+For more details, we suggest taking a look at `Combobox.story.tsx` file ([storybook demos](https://storybook.sgdev.org/?path=/story/wildcard-combobox--combobox-demo)) but in a nutshell Combobox
 the package exposes low-level UI blocks that
 
 - Enforce Sourcegraph-like styles
@@ -45,4 +45,4 @@ Where
 - `<ComboboxList />` is a compound wrapper for all suggestions.
 - `<ComboboxOption />` is a suggestions text component (it implements text highlighting logic by default)
 
-See Combobox storybook stories for more examples.
+[See Combobox storybook stories for more examples](https://storybook.sgdev.org/?path=/story/wildcard-combobox--combobox-demo).

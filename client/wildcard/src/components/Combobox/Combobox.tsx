@@ -15,10 +15,11 @@ import {
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
+import { useMeasure } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 import { Input, InputProps } from '../Form'
 import { PopoverContent, Position } from '../Popover'
-import { Heading } from '../Typography'
+import { Heading, HeadingElement } from '../Typography'
 
 import styles from './Combobox.module.scss'
 
@@ -83,6 +84,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
     const { className, ...attributes } = props
 
     const { inputRef, isExpanded } = useContext(ComboboxContext)
+    const [, { width: inputWidth }] = useMeasure(inputRef, 'boundingRect')
 
     // If we don't have registered input element we should not
     // render anything about combobox suggestions (popover content)
@@ -93,6 +95,9 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
     return (
         <ReachComboboxPopover
             ref={ref}
+            // We use our own Popover logic here since our version is more sophisticated and advanced
+            // compared to reach-ui Popover logic. (it support content size changes, different render
+            // strategies and so on, see Popover doc for more details)
             as={PopoverContent}
             isOpen={isExpanded}
             targetElement={inputRef}
@@ -107,7 +112,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // Turn off reach UI portal position logic PopoverContent does this job
             portal={false}
             // Make sure that the width of the suggestion isn't less than combobox input width
-            style={{ minWidth: inputRef.getBoundingClientRect().width }}
+            style={{ minWidth: inputWidth }}
             className={classNames(className, styles.popover)}
             {...attributes}
         />
@@ -124,15 +129,15 @@ export const ComboboxList = forwardRef<HTMLUListElement, ComboboxListProps>((pro
 
 interface ComboboxOptionGroupProps {
     heading: string
-    size?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+    headingElement?: HeadingElement
 }
 
 export const ComboboxOptionGroup = forwardRef((props, ref) => {
-    const { heading, size = 'h6', as: Component = 'div', className, children, ...attributes } = props
+    const { heading, headingElement = 'h6', as: Component = 'div', className, children, ...attributes } = props
 
     return (
         <Component ref={ref} className={classNames(className, styles.group)} {...attributes}>
-            <Heading as={size} className={styles.groupHeading}>
+            <Heading as={headingElement} className={styles.groupHeading}>
                 {heading}
             </Heading>
             {children}
