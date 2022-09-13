@@ -304,7 +304,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-// / identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err matches a known error.
 func identifyError(err error) (bool, string) {
 	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
