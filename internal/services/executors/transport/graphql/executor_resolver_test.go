@@ -72,7 +72,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "3.43.0",
 				sourcegraphVersion: "3.40.0",
 				isActive:           true,
-				expected:           TooNewCompatibility.ToGraphQL(),
+				expected:           VersionAheadCompatibility.ToGraphQL(),
 			},
 			// The executor is outdated if the sourcegraph version is greater than the executor version (BuildDate).
 			{
@@ -86,7 +86,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_patch",
 				sourcegraphVersion: "169135_2022-08-15_a2b623dce148",
 				isActive:           true,
-				expected:           TooNewCompatibility.ToGraphQL(),
+				expected:           VersionAheadCompatibility.ToGraphQL(),
 			},
 		}
 

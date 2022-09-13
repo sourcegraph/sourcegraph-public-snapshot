@@ -137,7 +137,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                         </Text>
                     </Alert>
                 )
-            case ExecutorCompatibility.TOONEW:
+            case ExecutorCompatibility.VERSION_AHEAD:
                 return (
                     <Alert variant="warning" className="mt-3">
                         <Text className="m-0">Your sourcegraph instance is out of date.</Text>

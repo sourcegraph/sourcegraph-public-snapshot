@@ -1,8 +1,6 @@
 package graphql
 
 import (
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -12,10 +10,10 @@ type Executor = types.Executor
 type ExecutorCompaitibility string
 
 const (
-	OutdatedCompatibilty  ExecutorCompaitibility = "Outdated"
-	UpToDateCompatibility ExecutorCompaitibility = "UpToDate"
-	TooNewCompatibility   ExecutorCompaitibility = "TooNew"
+	OutdatedCompatibilty      ExecutorCompaitibility = "OUTDATED"
+	UpToDateCompatibility     ExecutorCompaitibility = "UOTODATE"
+	VersionAheadCompatibility ExecutorCompaitibility = "VERSION_AHEAD"
 )
 
 // ToGraphQL returns the GraphQL representation of the state.
-func (c ExecutorCompaitibility) ToGraphQL() string { return strings.ToUpper(string(c)) }
+func (c ExecutorCompaitibility) ToGraphQL() string { return string(c) }

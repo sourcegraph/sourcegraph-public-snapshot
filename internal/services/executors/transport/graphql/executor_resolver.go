@@ -80,7 +80,7 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 		if et.Before(st) {
 			compatibility = OutdatedCompatibilty
 		} else if et.After(st) {
-			compatibility = TooNewCompatibility
+			compatibility = VersionAheadCompatibility
 		}
 
 		return compatibility.ToGraphQL(), nil
@@ -105,7 +105,7 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 	if s.GreaterThan(&iev) {
 		compatibility = OutdatedCompatibilty
 	} else if isv.LessThan(e) {
-		compatibility = TooNewCompatibility
+		compatibility = VersionAheadCompatibility
 	}
 
 	return compatibility.ToGraphQL(), nil
