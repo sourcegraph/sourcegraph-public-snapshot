@@ -102,8 +102,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 margin: {
                     top: 16,
                     right: 16,
-                    left: yAxisElement?.getBBox().width,
-                    bottom: xAxisReference?.getBBox().height,
+                    left: yAxisElement?.getBBox?.().width ?? 0,
+                    bottom: xAxisReference?.getBBox?.().height ?? 0,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
