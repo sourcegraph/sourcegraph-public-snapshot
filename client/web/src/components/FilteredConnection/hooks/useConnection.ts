@@ -25,11 +25,13 @@ interface UseConnectionConfig<TResult> {
     /** Set if query variables should be updated in and derived from the URL */
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
-    fetchPolicy?: WatchQueryFetchPolicy | 'component-cache-and-network'
+    fetchPolicy?: WatchQueryFetchPolicy
     /** Set to enable polling of all the nodes currently loaded in the connection */
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
+    /** Allows using component state instead of the global Apollo cache. */
+    skipApolloCache?: boolean
 }
 
 interface UseConnectionParameters<TResult, TVariables, TData> {
@@ -67,8 +69,6 @@ export const useConnection = <TResult, TVariables, TData>({
      * This is especially important when using polling, as there may already be in-flight requests.
      */
     const [localConnections, setLocalConnections] = useState<Map<TVariables, TResult>>(new Map())
-    const skipApolloCache = options?.fetchPolicy === 'component-cache-and-network'
-
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -119,7 +119,10 @@ export const useConnection = <TResult, TVariables, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
-        fetchPolicy: skipApolloCache ? 'no-cache' : (options?.fetchPolicy as WatchQueryFetchPolicy),
+        fetchPolicy: options?.skipApolloCache ? 'no-cache' : (options?.fetchPolicy as WatchQueryFetchPolicy),
+        // // We force future fetches to skip the network if we're not using the Apollo cache due
+        // // to a bug with the `skip` parameter: https://github.com/apollographql/apollo-client/issues/7307#issuecomment-726332572
+        // nextFetchPolicy: 'cache-first',
         onCompleted: options?.onCompleted,
     })
 
@@ -137,7 +140,7 @@ export const useConnection = <TResult, TVariables, TData>({
 
     let connection: Connection<TData> | undefined
 
-    if (skipApolloCache && localConnections.has(initialVariables)) {
+    if (options?.skipApolloCache && localConnections.has(initialVariables)) {
         // `Data` cannot be relied on without the Apollo cache, we use our stateful value instead.
         connection = getConnection({ data: localConnections.get(initialVariables) })
     } else if (data) {
@@ -158,13 +161,13 @@ export const useConnection = <TResult, TVariables, TData>({
             ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
         }
 
-        if (skipApolloCache) {
+        if (options?.skipApolloCache) {
             /**
              * We're using the local cache.
              * We do not use `updateQuery` as it is used to update the Apollo cache,
              * instead we will update our local cache in state using the resolved value directly.
              */
-            const nextResult = await fetchMore({ variables: queryVariables })
+            const { data: nextResult } = await fetchMore({ variables: queryVariables })
 
             if (cursor) {
                 setLocalConnections(connections => {
@@ -177,10 +180,11 @@ export const useConnection = <TResult, TVariables, TData>({
                     // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
                     // order to access and modify the actual `nodes` in the connection response because we
                     // don't know the exact response structure
-                    getConnection({ data: nextResult.data }).nodes.unshift(...previousNodes)
-                    return connections.set(initialVariables, nextResult.data)
+                    getConnection({ data: nextResult }).nodes.unshift(...previousNodes)
+                    return connections.set(initialVariables, nextResult)
                 })
             } else {
+                setLocalConnections(connections => connections.set(initialVariables, nextResult))
                 // With batch-based pagination, we have all the results already in `fetchMoreResult`,
                 // we just need to update `first` to fetch more results next time
                 firstReference.current.actual *= 2
@@ -220,12 +224,12 @@ export const useConnection = <TResult, TVariables, TData>({
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
 
-        const { data: refetchedData } = await refetch({
+        const { data: refetchedResult } = await refetch({
             ...variables,
             first,
         })
 
-        if (skipApolloCache) {
+        if (options?.skipApolloCache) {
             /**
              * We're using the local cache.
              * We need to overwrite the latest cached value.
@@ -234,7 +238,7 @@ export const useConnection = <TResult, TVariables, TData>({
                 // Note: If this is the first subsequent request, the local cache will not yet be populated.
                 // Instead, we fall back to data as that is the latest response.
                 const previousResult = connections.get(initialVariables) || data
-                const refetchedConnection = getConnection({ data: refetchedData })
+                const refetchedConnection = getConnection({ data: refetchedResult })
                 if (
                     previousResult &&
                     getConnection({ data: previousResult }).nodes.length !== refetchedConnection.nodes.length
@@ -246,10 +250,10 @@ export const useConnection = <TResult, TVariables, TData>({
                 }
 
                 // Overwrite the local cache to use the latest data.
-                return connections.set(initialVariables, refetchedData)
+                return connections.set(initialVariables, refetchedResult)
             })
         }
-    }, [connection?.nodes.length, data, getConnection, initialVariables, refetch, skipApolloCache, variables])
+    }, [connection?.nodes.length, data, getConnection, initialVariables, options?.skipApolloCache, refetch, variables])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which

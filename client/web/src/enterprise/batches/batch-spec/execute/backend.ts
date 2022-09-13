@@ -456,7 +456,7 @@ export const useWorkspacesListConnection = (
         },
         options: {
             useURL: true,
-            fetchPolicy: 'component-cache-and-network',
+            skipApolloCache: true,
             pollInterval: 2500,
         },
         getConnection: result => {
