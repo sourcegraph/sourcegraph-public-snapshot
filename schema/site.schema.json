@@ -492,8 +492,8 @@
               "!go": { "pointer": true }
             },
             "maxQueueMatchCount": {
-              "description": "The maximum number of matches that can be buffered to sort results. The default is 99999. This protects frontend against OOMs for queries with extremely high count of matches per repository.",
-              "default": 99999,
+              "description": "The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.",
+              "default": -1,
               "type": "integer",
               "group": "Search",
               "!go": { "pointer": true }

@@ -177,7 +177,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration, maxQueueMatchCount int) {
 	// defaults
 	maxQueueDepth = 24
-	maxQueueMatchCount = 99999
+	maxQueueMatchCount = -1
 	maxReorderDuration = 0
 
 	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
@@ -339,15 +339,11 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 }
 
 func (q *resultQueue) isFull() bool {
-	if q.maxQueueDepth < 0 {
-		return false
-	}
-
-	if q.queue.Len() > q.maxQueueDepth {
+	if q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth {
 		return true
 	}
 
-	if q.matchCount > q.maxMatchCount {
+	if q.maxMatchCount >= 0 && q.matchCount > q.maxMatchCount {
 		return true
 	}
 

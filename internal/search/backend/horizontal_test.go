@@ -305,7 +305,7 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 			name:                   "defaults",
 			siteConfig:             schema.SiteConfiguration{},
 			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: 99999,
+			wantMaxQueueMatchCount: -1,
 		},
 		{
 			name: "MaxReorderDurationMS",
@@ -314,7 +314,7 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 			}}},
 			wantMaxQueueDepth:      24,
 			wantMaxReorderDuration: 5 * time.Millisecond,
-			wantMaxQueueMatchCount: 99999,
+			wantMaxQueueMatchCount: -1,
 		},
 		{
 			name: "MaxReorderQueueSize",
@@ -322,7 +322,7 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 				MaxReorderQueueSize: &queueDepth,
 			}}},
 			wantMaxQueueDepth:      96,
-			wantMaxQueueMatchCount: 99999,
+			wantMaxQueueMatchCount: -1,
 		},
 		{
 			name: "MaxQueueMatchCount",
