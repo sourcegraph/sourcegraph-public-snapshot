@@ -1,9 +1,9 @@
 import React, { FC, useMemo } from 'react'
 
-import { mdiLock, mdiWeb, mdiDomain, mdiChevronUp, mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiDomain, mdiLock, mdiWeb } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Icon, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
+import { Icon, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -121,7 +121,12 @@ export const NotebookShareOptionsDropdown: FC<NotebookShareOptionsDropdownProps>
                 )}
             </MenuButton>
 
-            <MenuList>
+            <MenuList
+                // Stop keydown event bubbling in order to prevent a global notebook keyboard
+                // navigation. Global notebook navigation breaks this menu keyboard navigation
+                // see https://github.com/sourcegraph/sourcegraph/pull/41654#issuecomment-1246672813
+                onKeyDown={event => event.stopPropagation()}
+            >
                 {shareOptions.map(option => (
                     <MenuItem
                         key={`${option.namespaceId}-${option.isPublic}`}
