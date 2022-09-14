@@ -168,6 +168,10 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	mu.Lock()
+	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueue.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(resultQueue.metricMaxMatchCount))
+	metricFinalQueueSize.Add(float64(resultQueue.queue.Len()))
+
 	resultQueue.FlushAll(streamer)
 	mu.Unlock()
 
@@ -296,34 +300,15 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		q.metricMaxMatchCount = q.matchCount
 	}
 
-	// Pop and send search results where it is guaranteed that (1) no
-	// higher-priority result is possible, because there are no pending shards with
-	// a greater priority, or (2) the result queue conforms to the limits
-	// maxQueueDepth and maxMatchCount.
-	for q.isFull() || q.queue.isTopAbove(maxPending) {
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		q.matchCount -= sr.MatchCount
-
-		// We need to use the current aggregate stats then clear them out.
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-
-		streamer.Send(sr)
+	for q.hasResultsToSend(maxPending) {
+		streamer.Send(q.pop())
 	}
 }
 
-// FlushAll will send any remaining results that are in the queue and any
-// final statistics. This should only be called once all endpoints are done.
+// FlushAll will send all results in the queue and any aggregate statistics.
 func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
-	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
-	metricMaxMatchCount.WithLabelValues().Observe(float64(q.metricMaxMatchCount))
-	metricFinalQueueSize.Add(float64(q.queue.Len()))
-
 	for q.queue.Len() > 0 {
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-		streamer.Send(sr)
+		streamer.Send(q.pop())
 	}
 
 	// We may have had no matches but had stats. Send the final stats if there
@@ -334,11 +319,26 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 		})
 		q.stats = zoekt.Stats{}
 	}
-
-	q.matchCount = 0
 }
 
-func (q *resultQueue) isFull() bool {
+// pop returns 1 search result from queue. The search result contains the
+// current aggregate stats. After the call to pop() the queue's aggregate stats
+// are reset.
+func (q *resultQueue) pop() *zoekt.SearchResult {
+	sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
+	q.matchCount -= sr.MatchCount
+
+	// We attach the current aggregate stats to the event and then reset them.
+	sr.Stats = q.stats
+	q.stats = zoekt.Stats{}
+
+	return sr
+}
+
+// hasResultsToSend returns true if there are search results in the queue that
+// should be sent up the stream. Retrieve search results by calling pop() on
+// resultQueue.
+func (q *resultQueue) hasResultsToSend(maxPending float64) bool {
 	if q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth {
 		return true
 	}
@@ -347,7 +347,7 @@ func (q *resultQueue) isFull() bool {
 		return true
 	}
 
-	return false
+	return q.queue.isTopAbove(maxPending)
 }
 
 // priorityQueue modified from https://golang.org/pkg/container/heap/
