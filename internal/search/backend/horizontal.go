@@ -75,9 +75,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 	maxQueueDepth, maxReorderDuration, maxQueueMatchCount := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
 
-	// resultQueue is used to re-order results by priority.
+	// rq is used to re-order results by priority.
 	var mu sync.Mutex
-	resultQueue := newResultQueue(maxQueueDepth, maxQueueMatchCount, endpoints)
+	rq := newResultQueue(maxQueueDepth, maxQueueMatchCount, endpoints)
 
 	// Flush the queue latest after maxReorderDuration. The longer
 	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
@@ -117,7 +117,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				if searchDone {
 					return
 				}
-				resultQueue.FlushAll(streamer)
+				rq.FlushAll(streamer)
 			}
 		}()
 	}
@@ -144,11 +144,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 
-				resultQueue.Enqueue(endpoint, sr)
-				resultQueue.FlushReady(streamer)
+				rq.Enqueue(endpoint, sr)
+				rq.FlushReady(streamer)
 			}))
 			mu.Lock()
-			resultQueue.Done(endpoint)
+			rq.Done(endpoint)
 			mu.Unlock()
 
 			if canIgnoreError(ctx, err) {
@@ -168,11 +168,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	mu.Lock()
-	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueue.metricMaxLength))
-	metricMaxMatchCount.WithLabelValues().Observe(float64(resultQueue.metricMaxMatchCount))
-	metricFinalQueueSize.Add(float64(resultQueue.queue.Len()))
+	metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
+	metricFinalQueueSize.Add(float64(rq.queue.Len()))
 
-	resultQueue.FlushAll(streamer)
+	rq.FlushAll(streamer)
 	mu.Unlock()
 
 	return nil
