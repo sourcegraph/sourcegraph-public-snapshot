@@ -412,11 +412,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
-		kind := sym.Symbol.LSPKind()
-		kindString := "UNKNOWN"
-		if kind != 0 {
-			kindString = strings.ToUpper(kind.String())
-		}
+		kindString := sym.Symbol.NormalizedKind()
 
 		symbols = append(symbols, streamhttp.Symbol{
 			URL:           sym.URL().String(),

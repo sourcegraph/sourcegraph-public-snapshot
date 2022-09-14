@@ -101,7 +101,7 @@ func getBlobPreviewTitle(blobFilePath string, lineRange *lineRange, symbolResult
 		formattedBlob += "?" + formattedLineRange
 	}
 	if symbolResult != nil {
-		return fmt.Sprintf("%s %s (%s)", symbolResult.LSPKind().String(), symbolResult.Name, formattedBlob)
+		return fmt.Sprintf("%s %s (%s)", symbolResult.NormalizedKind(), symbolResult.Name, formattedBlob)
 	}
 	return formattedBlob
 }
