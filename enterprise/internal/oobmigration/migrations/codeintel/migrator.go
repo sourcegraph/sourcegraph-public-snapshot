@@ -21,16 +21,18 @@ import (
 //
 // We have the following assumptions about the schema (for a configured table T):
 //
-// 1. There is an index on T.dump_id
-// 2. For each distinct dump_id in table T, there is a corresponding row in table
-//    T_schema_version. This invariant is kept up to date via triggers on insert.
-// 3. Table T_schema_version has the following schema:
+//  1. There is an index on T.dump_id
 //
-//    CREATE TABLE T_schema_versions (
-//        dump_id            integer PRIMARY KEY NOT NULL,
-//        min_schema_version integer,
-//        max_schema_version integer
-//    );
+//  2. For each distinct dump_id in table T, there is a corresponding row in table
+//     T_schema_version. This invariant is kept up to date via triggers on insert.
+//
+//  3. Table T_schema_version has the following schema:
+//
+//     CREATE TABLE T_schema_versions (
+//     dump_id            integer PRIMARY KEY NOT NULL,
+//     min_schema_version integer,
+//     max_schema_version integer
+//     );
 //
 // When selecting a set of candidate records to migrate, we first use the each upload record's
 // schema version bounds to determine if there are still records associated with that upload

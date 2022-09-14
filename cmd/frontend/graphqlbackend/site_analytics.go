@@ -107,3 +107,12 @@ func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
 }) *adminanalytics.Extensions {
 	return &adminanalytics.Extensions{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
+
+/* Insights */
+
+func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
+	DateRange *string
+	Grouping  *string
+}) *adminanalytics.CodeInsights {
+	return &adminanalytics.CodeInsights{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}

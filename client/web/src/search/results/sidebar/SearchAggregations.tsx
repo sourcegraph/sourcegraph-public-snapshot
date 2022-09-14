@@ -66,6 +66,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
 
     const handleBarLinkClick = (query: string, index: number): void => {
+        // Clearing the aggregation mode on drill down would provide a better experience
+        // in most cases and preserve the desired behavior of the capture group search
+        // when the original query had multiple capture groups
+        setAggregationMode(null)
+
         onQuerySubmit(query)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,

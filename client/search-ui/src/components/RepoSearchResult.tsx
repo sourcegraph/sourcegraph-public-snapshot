@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { highlightNode } from '@sourcegraph/common'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
@@ -125,11 +125,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     )
 
     useEffect((): void => {
-        if (repoNameElement.current && result.repositoryMatches) {
+        if (repoNameElement.current && result.repository && result.repositoryMatches) {
             for (const range of result.repositoryMatches) {
                 highlightNode(
                     repoNameElement.current as HTMLElement,
-                    range.start.column,
+                    range.start.column - codeHostSubstrLength(result.repository),
                     range.end.column - range.start.column
                 )
             }

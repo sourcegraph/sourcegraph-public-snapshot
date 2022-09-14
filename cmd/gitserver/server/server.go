@@ -2542,7 +2542,7 @@ var (
 // tag called HEAD (case insensitive), most commands will output a warning
 // from git:
 //
-//  warning: refname 'HEAD' is ambiguous.
+//	warning: refname 'HEAD' is ambiguous.
 //
 // Instead we just remove this ref.
 func removeBadRefs(ctx context.Context, dir GitDir) {

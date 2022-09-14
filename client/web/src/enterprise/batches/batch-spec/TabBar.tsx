@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { uniqBy, upperFirst } from 'lodash'
 import { NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './TabBar.module.scss'
 
@@ -14,7 +14,6 @@ export type TabKey = typeof TAB_KEYS[number]
 export interface TabsConfig {
     key: TabKey
     isEnabled: boolean
-    disabledTooltip?: string
     handler?: { type: 'link' } | { type: 'button'; onClick: () => void }
 }
 
@@ -47,7 +46,7 @@ export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps
     const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (
         <ul className={classNames('nav nav-tabs', styles.navList, className)}>
-            {fullTabsConfig.map(({ key, isEnabled, disabledTooltip, handler }, index) => {
+            {fullTabsConfig.map(({ key, isEnabled, handler }, index) => {
                 const tabName = getTabName(key, index)
 
                 return (
@@ -57,19 +56,13 @@ export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps
                                 {tabName}
                             </span>
                         ) : !isEnabled ? (
-                            <Tooltip content={disabledTooltip}>
-                                <span
-                                    aria-disabled="true"
-                                    className={classNames(
-                                        'nav-link text-muted',
-                                        styles.navLinkDisabled,
-                                        styles.navLink
-                                    )}
-                                    data-tab-content={tabName}
-                                >
-                                    {tabName}
-                                </span>
-                            </Tooltip>
+                            <span
+                                aria-disabled="true"
+                                className={classNames('nav-link text-muted', styles.navLinkDisabled, styles.navLink)}
+                                data-tab-content={tabName}
+                            >
+                                {tabName}
+                            </span>
                         ) : !handler ? (
                             <span
                                 aria-disabled="true"

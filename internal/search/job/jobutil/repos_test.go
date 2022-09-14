@@ -221,24 +221,6 @@ func TestRepoMatchRanges(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:  "strips code host from repo name before matching",
-			input: "github.com/paramore/riot/tracklist/4-misery-business/5-when-it-rains",
-			want: []result.Range{
-				{
-					Start: result.Location{
-						Offset: 26,
-						Line:   0,
-						Column: 26,
-					},
-					End: result.Location{
-						Offset: 41,
-						Line:   0,
-						Column: 41,
-					},
-				},
-			},
-		},
 	}
 
 	for _, tc := range tests {

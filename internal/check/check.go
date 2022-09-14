@@ -131,17 +131,18 @@ func DefaultEndpointProvider(service string) []*url.URL {
 }
 
 // NewAggregateHealthCheckHandler returns a JSON with the high-level structure
-// {
-//     <service1>: {
-//         <address1>: {
-//             <check1-name> : <check1-data>,
-//             <check2-name> : <check2-data>
-//         },
-//         <address2>: ...
-//     },
-//     <service2>: ...
-//     ...
-// }
+//
+//	{
+//	    <service1>: {
+//	        <address1>: {
+//	            <check1-name> : <check1-data>,
+//	            <check2-name> : <check2-data>
+//	        },
+//	        <address2>: ...
+//	    },
+//	    <service2>: ...
+//	    ...
+//	}
 //
 // The handler should only be used in frontend.
 //

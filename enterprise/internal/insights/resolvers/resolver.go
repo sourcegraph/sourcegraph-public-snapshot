@@ -2,7 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/log"
 
@@ -132,12 +137,14 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 type AggregationResolver struct {
 	postgresDB database.DB
 	logger     log.Logger
+	operations *aggregationsOperations
 }
 
-func NewAggregationResolver(postgres database.DB) graphqlbackend.InsightsAggregationResolver {
+func NewAggregationResolver(postgres database.DB, observationContext *observation.Context) graphqlbackend.InsightsAggregationResolver {
 	return &AggregationResolver{
 		logger:     log.Scoped("AggregationResolver", ""),
 		postgresDB: postgres,
+		operations: newAggregationsOperations(observationContext),
 	}
 }
 
@@ -146,5 +153,30 @@ func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args gra
 		postgresDB:  r.postgresDB,
 		searchQuery: args.Query,
 		patternType: args.PatternType,
+		operations:  r.operations,
 	}, nil
+}
+
+type aggregationsOperations struct {
+	aggregations *observation.Operation
+}
+
+func newAggregationsOperations(observationContext *observation.Context) *aggregationsOperations {
+	redM := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"insights_aggregations",
+		metrics.WithLabels("op", "extended_mode", "aggregation_mode"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:              fmt.Sprintf("insights_aggregations.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redM,
+		})
+	}
+
+	return &aggregationsOperations{
+		aggregations: op("Aggregations"),
+	}
 }
