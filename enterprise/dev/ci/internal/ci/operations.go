@@ -61,8 +61,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addJetBrainsUnitTests,        // ~2.5m
-			addTypescriptCheck,           // ~4m
+			addBrowserExtensionReleaseSteps,
+			addJetBrainsUnitTests, // ~2.5m
+			addTypescriptCheck,    // ~4m
 		)
 
 		if opts.ClientLintOnlyChangedFiles {
@@ -478,11 +479,11 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 
 	// Release to the Chrome Webstore
-	pipeline.AddStep(":rocket::chrome: Extension release",
-		withYarnCache(),
-		bk.Cmd("yarn --immutable --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
-		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
+	// pipeline.AddStep(":rocket::chrome: Extension release",
+	// 	withYarnCache(),
+	// 	bk.Cmd("yarn --immutable --network-timeout 60000"),
+	// 	bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+	// 	bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
@@ -491,11 +492,11 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
-	pipeline.AddStep(":rocket::npm: npm Release",
-		withYarnCache(),
-		bk.Cmd("yarn --immutable --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
-		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
+	// pipeline.AddStep(":rocket::npm: npm Release",
+	// 	withYarnCache(),
+	// 	bk.Cmd("yarn --immutable --network-timeout 60000"),
+	// 	bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+	// 	bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
 // Release the VS Code extension.
