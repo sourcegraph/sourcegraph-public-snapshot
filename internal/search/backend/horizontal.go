@@ -279,9 +279,7 @@ func (q *resultQueue) Done(endpoint string) {
 	delete(q.endpointMaxPendingPriority, endpoint)
 }
 
-// FlushReady will send results which are greater than the
-// maxPendingPriority. Note: it will also send results if we exceed
-// maxQueueDepth.
+// FlushReady sends results that are ready to be sent.
 func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 	// we can send any results such that priority > maxPending. Need to
 	// calculate maxPending.
