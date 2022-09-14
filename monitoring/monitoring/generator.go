@@ -3,13 +3,15 @@ package monitoring
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/grafana-tools/sdk"
-	"github.com/inconshreveable/log15"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,8 +40,10 @@ type GenerateOptions struct {
 }
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
-func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
-	logger.Info("Regenerating monitoring", "options", opts, "dashboards", len(dashboards))
+func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
+	logger.Info("Regenerating monitoring",
+		log.String("options", fmt.Sprintf("%+v", opts)),
+		log.Int("dashboards", len(dashboards)))
 
 	var generatedAssets []string
 
@@ -54,12 +58,11 @@ func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboar
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
 	}
-
+	dlog := logger.Scoped("grafana", "grafana dashboard generation")
 	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
-		clog := logger.New("dashboard", dashboard.Name)
-
+		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
 			clog.Debug("Rendering Grafana assets")
@@ -78,8 +81,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboar
 
 			// Reload specific dashboard
 			if opts.Reload {
-				crlog := clog.New("instance", localGrafanaURL)
-				crlog.Debug("Reloading Grafana instance")
+				clog.Debug("Reloading Grafana instance")
 				client, err := sdk.NewClient(localGrafanaURL, localGrafanaCredentials, sdk.DefaultHTTPClient)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to initialize Grafana client for dashboard %q", dashboard.Title)
@@ -88,7 +90,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboar
 				if err != nil {
 					return errors.Wrapf(err, "Could not reload Grafana instance for dashboard %q", dashboard.Title)
 				} else {
-					crlog.Info("Reloaded Grafana instance")
+					clog.Info("Reloaded Grafana instance")
 				}
 			}
 		}
@@ -115,9 +117,9 @@ func Generate(logger log15.Logger, opts GenerateOptions, dashboards ...*Dashboar
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.New("instance", localPrometheusURL)
+		rlog := logger.Scoped("prometheus", "prometheus alerts generation").With(log.String("instance", localPrometheusURL))
 		// Reload all Prometheus rules
-		rlog.Debug("Reloading Prometheus instance", "instance", localPrometheusURL)
+		rlog.Debug("Reloading Prometheus instance")
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
 		if err != nil {
 			return errors.Wrapf(err, "Could not reload Prometheus at %q", localPrometheusURL)

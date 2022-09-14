@@ -1123,8 +1123,9 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 // do performs a request to a gitserver instance based on the address in the uri argument.
+//
+//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {

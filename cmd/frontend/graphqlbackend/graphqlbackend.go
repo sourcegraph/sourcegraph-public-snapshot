@@ -331,8 +331,7 @@ var blocklistedPrometheusTypeNames = map[string]struct{}{
 // not worth tracking. You can find a complete list of the ones Prometheus is
 // currently tracking via:
 //
-// 	sum by (type)(src_graphql_field_seconds_count)
-//
+//	sum by (type)(src_graphql_field_seconds_count)
 func prometheusTypeName(typeName string) string {
 	if _, ok := blocklistedPrometheusTypeNames[typeName]; ok {
 		return "other"

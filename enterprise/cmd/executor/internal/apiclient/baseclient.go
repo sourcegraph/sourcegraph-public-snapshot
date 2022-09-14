@@ -22,24 +22,24 @@ import (
 // The following is a minimal example of decorating the base client, making the
 // actual logic of the decorated client extremely lean:
 //
-//     type SprocketClient struct {
-//         *httpcli.BaseClient
+//	type SprocketClient struct {
+//	    *httpcli.BaseClient
 //
-//         baseURL *url.URL
-//     }
+//	    baseURL *url.URL
+//	}
 //
-//     func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
-//         url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
+//	func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
+//	    url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
 //
-//         req, err := httpcli.MakeJSONRequest("POST", url.String(), spec)
-//         if err != nil {
-//             return Sprocket{}, err
-//         }
+//	    req, err := httpcli.MakeJSONRequest("POST", url.String(), spec)
+//	    if err != nil {
+//	        return Sprocket{}, err
+//	    }
 //
-//         var s Sprocket
-//         err := c.client.DoAndDecode(ctx, req, &s)
-//         return s, err
-//     }
+//	    var s Sprocket
+//	    err := c.client.DoAndDecode(ctx, req, &s)
+//	    return s, err
+//	}
 type BaseClient struct {
 	httpClient *http.Client
 	options    BaseClientOptions

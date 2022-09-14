@@ -158,9 +158,6 @@ func (r *changesetDescriptionResolver) BaseRef() string {
 	return gitdomain.AbbreviateRef(r.spec.BaseRef)
 }
 func (r *changesetDescriptionResolver) BaseRev() string { return r.spec.BaseRev }
-func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.RepositoryResolver {
-	return r.repoResolver
-}
 func (r *changesetDescriptionResolver) HeadRef() string {
 	return gitdomain.AbbreviateRef(r.spec.HeadRef)
 }
