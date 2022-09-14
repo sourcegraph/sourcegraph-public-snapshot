@@ -1,19 +1,20 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
-import { Subscription } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { HighlightResponseFormat } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
-
-import { fetchBlob } from './backend'
-
-interface PrefetchableFileProps {
+interface FilePrefetcherParams {
     revision: string
     filePath: string
     repoName: string
-    isPrefetchEnabled: boolean
+}
+
+export type FilePrefetcher = (parameters: FilePrefetcherParams) => Observable<unknown | null>
+
+interface PrefetchableFileProps extends FilePrefetcherParams {
+    prefetch?: FilePrefetcher
+    isPrefetchEnabled?: boolean
     isSelected?: boolean
 }
 
@@ -23,27 +24,34 @@ interface PrefetchableFileProps {
  * the `enableSidebarFilePrefetch ` feature flag.
  */
 export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props, reference) {
-    const { revision, filePath, repoName, isPrefetchEnabled, isSelected, as: Component = 'div', ...rest } = props
+    const {
+        prefetch,
+        revision,
+        filePath,
+        repoName,
+        isPrefetchEnabled,
+        isSelected,
+        as: Component = 'div',
+        ...rest
+    } = props
 
     const observable = useRef<Subscription | null>(null)
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
 
     const startPrefetch = useCallback(() => {
-        if (observable.current) {
-            // Already fetching or already fetched
+        if (observable.current || !prefetch) {
+            // Already fetching/fetched OR prefetch not available
             return
         }
 
         // Note that we don't actually do anything with this data.
         // The primary aim is to kickstart the memoized observable so that
         // when BlobPage does try to fetch the data, it is already resolved/resolving.
-        observable.current = fetchBlob({
+        observable.current = prefetch({
             revision,
             filePath,
             repoName,
-            format: enableCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT,
         }).subscribe()
-    }, [filePath, repoName, revision, enableCodeMirror])
+    }, [prefetch, revision, filePath, repoName])
 
     const stopPrefetch = useCallback(() => {
         if (observable.current && !observable.current.closed) {
@@ -53,7 +61,7 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
         }
     }, [])
 
-    // Start file prefetch if it's selected via keyboard navigation.
+    // Support manually triggering prefetch with the `isSelected` prop.
     useEffect(() => {
         if (isPrefetchEnabled && isSelected) {
             startPrefetch()
@@ -64,6 +72,8 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(props
         <Component
             onMouseOver={isPrefetchEnabled ? startPrefetch : undefined}
             onMouseLeave={isPrefetchEnabled ? stopPrefetch : undefined}
+            onFocus={isPrefetchEnabled ? startPrefetch : undefined}
+            onBlur={isPrefetchEnabled ? stopPrefetch : undefined}
             ref={reference}
             {...rest}
         />

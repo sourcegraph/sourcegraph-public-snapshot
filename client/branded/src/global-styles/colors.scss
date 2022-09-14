@@ -17,9 +17,6 @@ $yellow: $oc-yellow-7;
 $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: #72dbe8;
-$body-color: var(--body-color);
-$body-bg: var(--body-bg);
-$text-muted: var(--text-muted);
 
 // Exception that's used in $theme-colors.
 $gray-02: #eff2f5;
@@ -151,6 +148,7 @@ $theme-colors: (
     --mark-bg: #f8e688;
     --merged-4: #eee9fd;
     --text-muted: var(--gray-07);
+    --text-muted-highlighted: #566880; // --text-muted with higher contrast when shown on a --mark-bg background
     --link-color: var(--primary);
     --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
@@ -246,6 +244,7 @@ $theme-colors: (
     --mark-bg: #7a341e;
     --merged-4: #1f0a5c;
     --text-muted: var(--gray-06);
+    --text-muted-highlighted: #a9b9da; // --text-muted with higher contrast when shown on a --mark-bg background
     --link-color: #4393e7;
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;

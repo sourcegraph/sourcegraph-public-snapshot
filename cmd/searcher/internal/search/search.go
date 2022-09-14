@@ -2,13 +2,13 @@
 // a specific commit.
 //
 // Architecture Notes:
-//  * Archive is fetched from gitserver
-//  * Simple HTTP API exposed
-//  * Currently no concept of authorization
-//  * On disk cache of fetched archives to reduce load on gitserver
-//  * Run search on archive. Rely on OS file buffers
-//  * Simple to scale up since stateless
-//  * Use ingress with affinity to increase local cache hit ratio
+//   - Archive is fetched from gitserver
+//   - Simple HTTP API exposed
+//   - Currently no concept of authorization
+//   - On disk cache of fetched archives to reduce load on gitserver
+//   - Run search on archive. Rely on OS file buffers
+//   - Simple to scale up since stateless
+//   - Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (

@@ -26,7 +26,7 @@ export AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
 export AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # This should prevent some occurrences of Failed waiting for AMI failures:
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
-export AWS_MAX_ATTEMPTS=240
+export AWS_MAX_ATTEMPTS=480
 export AWS_POLL_DELAY_SECONDS=5
 
 pushd "$TMR_WORKDIR" 1>/dev/null

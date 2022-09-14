@@ -28,6 +28,7 @@ type AggregationMatchResult struct {
 type SearchResultsAggregator interface {
 	streaming.Sender
 	ShardTimeoutOccurred() bool
+	ResultLimitHit(limit int) bool
 }
 
 type AggregationTabulator func(*AggregationMatchResult, error)
@@ -201,10 +202,11 @@ func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator Aggreg
 }
 
 type searchAggregationResults struct {
-	ctx       context.Context
-	tabulator AggregationTabulator
-	countFunc AggregationCountFunc
-	progress  client.ProgressAggregator
+	ctx         context.Context
+	tabulator   AggregationTabulator
+	countFunc   AggregationCountFunc
+	progress    client.ProgressAggregator
+	resultCount int
 
 	mu sync.Mutex
 }
@@ -219,11 +221,17 @@ func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 	return false
 }
 
+func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
+
+	return limit <= r.resultCount
+}
+
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.progress.Update(event)
+	r.resultCount += event.Results.ResultCount()
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
 		select {

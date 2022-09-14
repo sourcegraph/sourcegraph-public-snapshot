@@ -11,10 +11,10 @@ import (
 // scripts via UserData values. This struct can take one of two mutually
 // exclusive forms:
 //
-//   (1) An applicable recognizer with patterns and a generate function.
-//   (2) A fallback recognizer, which consists of a list of children.
-//       Execution of a fallback recognizer will invoke its children,
-//       in order and recursively, until the non-empty value is yielded.
+//	(1) An applicable recognizer with patterns and a generate function.
+//	(2) A fallback recognizer, which consists of a list of children.
+//	    Execution of a fallback recognizer will invoke its children,
+//	    in order and recursively, until the non-empty value is yielded.
 type Recognizer struct {
 	patterns           []*PathPattern
 	patternsForContent []*PathPattern
