@@ -46,11 +46,10 @@ describe('GitLab', () => {
         })
 
         testContext.overrideGraphQL({
-            ViewerSettings: () => ({
-                viewerSettings: {
+            ViewerConfiguration: () => ({
+                viewerConfiguration: {
                     subjects: [],
                     merged: { contents: '', messages: [] },
-                    final: '',
                 },
             }),
             ResolveRev: () => ({
@@ -156,8 +155,8 @@ describe('GitLab', () => {
             extensions: extensionSettings,
         }
         testContext.overrideGraphQL({
-            ViewerSettings: () => ({
-                viewerSettings: {
+            ViewerConfiguration: () => ({
+                viewerConfiguration: {
                     subjects: [
                         {
                             __typename: 'User',
@@ -173,7 +172,6 @@ describe('GitLab', () => {
                         },
                     ],
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
-                    final: JSON.stringify(userSettings),
                 },
             }),
             Extensions,
