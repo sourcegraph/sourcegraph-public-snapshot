@@ -45,6 +45,7 @@ export const SELECTORS: Access[] = [
             { name: 'event' },
             { name: 'operator' },
             { name: 'type-parameter' },
+            { name: 'type' },
         ],
     },
     {

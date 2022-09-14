@@ -58,7 +58,17 @@ func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, p
 	}
 }
 
-func (s Symbol) LSPKind() lsp.SymbolKind {
+type Stringer interface {
+	String() string
+}
+
+type StringerFunc string
+
+func (sf StringerFunc) String() string {
+	return string(sf)
+}
+
+func (s Symbol) LSPKind() Stringer {
 	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
 	switch strings.ToLower(s.Kind) {
 	case "file":
@@ -69,7 +79,7 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 		return lsp.SKNamespace
 	case "package", "packagename", "subprogspec":
 		return lsp.SKPackage
-	case "class", "classes", "type", "service", "typedef", "union", "section", "subtype", "component":
+	case "class", "classes", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
 	case "method", "methodspec":
 		return lsp.SKMethod
@@ -113,8 +123,11 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 		return lsp.SKOperator
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
+	// THe following cases extend the lsp kinds defined in go-lsp
+	case "type":
+		return StringerFunc("type")
 	}
-	return 0
+	return StringerFunc("unknown")
 }
 
 func (s Symbol) Range() lsp.Range {
@@ -167,7 +180,7 @@ var toSelectKind = map[string]string{
 	"subprogspec":     "package",
 	"class":           "class",
 	"classes":         "class",
-	"type":            "class",
+	"type":            "type",
 	"service":         "class",
 	"typedef":         "class",
 	"union":           "class",

@@ -73,6 +73,7 @@ var validSelectors = object{
 		"event":          nil,
 		"operator":       nil,
 		"type-parameter": nil,
+		"type":           nil,
 	},
 }
 
