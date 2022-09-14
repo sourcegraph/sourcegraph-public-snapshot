@@ -1,7 +1,8 @@
-import React, { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
@@ -22,7 +23,7 @@ import { USERS_STATISTICS } from './queries'
 
 import styles from './AnalyticsUsersPage.module.scss'
 
-export const AnalyticsUsersPage: React.FunctionComponent<{}> = () => {
+export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'registeredUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
