@@ -2,6 +2,7 @@
 
 set -ex
 
+yarn add web-ext
 yarn web-ext sign
 
 # # Setup
