@@ -1,4 +1,16 @@
 // Spacing
+:root {
+    --spacer: 1rem;
+}
+
+$spacers: (
+    0: 0,
+    1: calc(var(--spacer) * 0.25),
+    2: calc(var(--spacer) * 0.5),
+    3: var(--spacer),
+    4: calc(var(--spacer) * 1.5),
+    5: calc(var(--spacer) * 3),
+);
 
 @each $breakpoint in map-keys($grid-breakpoints) {
     @include media-breakpoint-up($breakpoint) {
