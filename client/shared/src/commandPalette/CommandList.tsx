@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { forwardRef, useCallback, useMemo, useState } from 'react'
 
-import { mdiPuzzle, mdiConsole, mdiChevronUp, mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiConsole, mdiPuzzle } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
-import { sortBy, uniq, uniqueId } from 'lodash'
+import { sortBy, uniq } from 'lodash'
 import { from, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
@@ -14,15 +14,17 @@ import { Key } from 'ts-key-enum'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
 import {
+    Button,
     ButtonProps,
-    LoadingSpinner,
+    ForwardReferenceComponent,
     Icon,
-    Label,
     Input,
+    Label,
+    LoadingSpinner,
     Popover,
-    PopoverTrigger,
     PopoverContent,
-    Button
+    PopoverTrigger,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
@@ -43,21 +45,19 @@ import { EmptyCommandListContainer } from './EmptyCommandListContainer'
 import styles from './CommandList.module.scss'
 
 /**
- * Customizable CSS classes for elements of the the command list button.
+ * Customizable CSS classes for elements of the command list button.
  */
 export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
     buttonElement?: 'span' | 'a' | 'button'
     buttonOpenClassName?: string
-
-    showCaret?: boolean
     popoverClassName?: string
-    popoverInnerClassName?: string
+    showCaret?: boolean
 }
 
 /**
- * Customizable CSS classes for elements of the the command list.
+ * Customizable CSS classes for elements of the command list.
  */
 export interface CommandListClassProps {
     inputClassName?: string
@@ -110,6 +110,7 @@ const getContributions = memoizeObservable(
 export class CommandList extends React.PureComponent<CommandListProps, State> {
     // Persist recent actions in localStorage. Be robust to serialization errors.
     private static RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
+
     private static readRecentActions(): string[] | null {
         const value = localStorage.getItem(CommandList.RECENT_ACTIONS_STORAGE_KEY)
         if (value === null) {
@@ -127,6 +128,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         CommandList.writeRecentActions(null)
         return null
     }
+
     private static writeRecentActions(recentActions: string[] | null): void {
         try {
             if (recentActions === null) {
@@ -375,19 +377,18 @@ export interface CommandListPopoverButtonProps
     keyboardShortcutForShow?: KeyboardShortcut
 }
 
-export const CommandListPopoverButton: React.FunctionComponent<
-    React.PropsWithChildren<CommandListPopoverButtonProps>
-> = ({
-    buttonClassName,
-    buttonElement = 'span',
-    buttonOpenClassName,
-    showCaret = true,
-    popoverClassName,
-    popoverInnerClassName,
-    keyboardShortcutForShow,
-    variant,
-    ...props
-}) => {
+export const CommandListPopoverButton = forwardRef((props, ref) => {
+    const {
+        as: Component = Button,
+        buttonElement,
+        buttonClassName,
+        buttonOpenClassName,
+        popoverClassName,
+        showCaret = true,
+        keyboardShortcutForShow,
+        variant,
+    } = props
+
     const [isOpen, setIsOpen] = useState(false)
 
     // Capture active element on open in order to restore focus on close.
@@ -410,29 +411,41 @@ export const CommandListPopoverButton: React.FunctionComponent<
         setIsOpen(!isOpen)
     }, [isOpen, originallyFocusedElement])
 
-    const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
-
-    const MenuDropdownIcon = (): JSX.Element => (
-        <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
-    )
-
     return (
         <Popover isOpen={isOpen} onOpenChange={toggleIsOpen}>
             <PopoverTrigger
-                as={Button}
-                id={id}
-                role="button"
-                aria-label="Command list"
+                ref={ref}
+                // Support legacy buttonElement prop since it's used in the different code hosts
+                // specifications
+                as={buttonElement ?? Component}
                 variant={variant}
+                aria-label="Command list"
                 className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
                 onClick={toggleIsOpen}
             >
                 <Icon size="md" aria-hidden={true} svgPath={mdiConsole} />
-                {showCaret && <MenuDropdownIcon />}
+                {showCaret && <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />}
             </PopoverTrigger>
 
-            <PopoverContent>
-                <CommandList {...props} onSelect={close} />
+            <PopoverContent className={popoverClassName} position={Position.bottomEnd}>
+                <CommandList
+                    inputClassName={props.inputClassName}
+                    formClassName={props.formClassName}
+                    listItemClassName={props.listItemClassName}
+                    selectedListItemClassName={props.selectedListItemClassName}
+                    selectedActionItemClassName={props.selectedActionItemClassName}
+                    listClassName={props.listClassName}
+                    resultsContainerClassName={props.resultsContainerClassName}
+                    actionItemClassName={props.actionItemClassName}
+                    noResultsClassName={props.noResultsClassName}
+                    iconClassName={props.iconClassName}
+                    menu={props.menu}
+                    platformContext={props.platformContext}
+                    extensionsController={props.extensionsController}
+                    location={props.location}
+                    telemetryService={props.telemetryService}
+                    onSelect={close}
+                />
 
                 {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                     <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
@@ -440,4 +453,4 @@ export const CommandListPopoverButton: React.FunctionComponent<
             </PopoverContent>
         </Popover>
     )
-}
+}) as ForwardReferenceComponent<'button', CommandListPopoverButtonProps>
