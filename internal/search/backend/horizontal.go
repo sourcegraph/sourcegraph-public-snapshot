@@ -321,9 +321,8 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 	}
 }
 
-// pop returns 1 search result from queue. The search result contains the
-// current aggregate stats. After the call to pop() the queue's aggregate stats
-// are reset.
+// pop returns 1 search result from q. The search result contains the current
+// aggregate stats. After the call to pop() we reset q's aggregate stats
 func (q *resultQueue) pop() *zoekt.SearchResult {
 	sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
 	q.matchCount -= sr.MatchCount
