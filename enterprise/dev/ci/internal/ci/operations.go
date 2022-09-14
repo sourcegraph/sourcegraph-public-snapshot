@@ -474,7 +474,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	addBrowserExtensionE2ESteps(pipeline)
+	// addBrowserExtensionE2ESteps(pipeline)
 
 	pipeline.AddWait()
 
