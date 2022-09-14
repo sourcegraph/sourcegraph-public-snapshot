@@ -56,7 +56,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
-			addBrowserExtensionReleaseSteps,
 			clientIntegrationTests,
 			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
@@ -474,16 +473,16 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	// addBrowserExtensionE2ESteps(pipeline)
+	addBrowserExtensionE2ESteps(pipeline)
 
 	pipeline.AddWait()
 
 	// Release to the Chrome Webstore
-	// pipeline.AddStep(":rocket::chrome: Extension release",
-	// 	withYarnCache(),
-	// 	bk.Cmd("yarn --immutable --network-timeout 60000"),
-	// 	bk.Cmd("yarn workspace @sourcegraph/browser run build"),
-	// 	bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
+	pipeline.AddStep(":rocket::chrome: Extension release",
+		withYarnCache(),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
@@ -492,11 +491,11 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
-	// pipeline.AddStep(":rocket::npm: npm Release",
-	// 	withYarnCache(),
-	// 	bk.Cmd("yarn --immutable --network-timeout 60000"),
-	// 	bk.Cmd("yarn workspace @sourcegraph/browser run build"),
-	// 	bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
+	pipeline.AddStep(":rocket::npm: npm Release",
+		withYarnCache(),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
 // Release the VS Code extension.
