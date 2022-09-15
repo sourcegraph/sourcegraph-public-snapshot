@@ -7,7 +7,7 @@
     z-index: 1001 !important;
     --dropdown-bg: var(--gray-50, #fff);
     --dropdown-shadow: 0 2px 4px rgb(0 0 0 / 10%);
-    --dropdown-border-color: #dbdbdb;
+    --dropdown-border-color: var(--border-color);
     --popover-border-radius: 3px;
 }
 
