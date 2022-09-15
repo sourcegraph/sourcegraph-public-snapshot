@@ -1,15 +1,12 @@
 // Spacing
-:root {
-    --spacer: 1rem;
-}
-
+$spacer: 1rem;
 $spacers: (
     0: 0,
-    1: calc(var(--spacer) * 0.25),
-    2: calc(var(--spacer) * 0.5),
-    3: var(--spacer),
-    4: calc(var(--spacer) * 1.5),
-    5: calc(var(--spacer) * 3),
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
 );
 
 @each $breakpoint in map-keys($grid-breakpoints) {

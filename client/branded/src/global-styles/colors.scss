@@ -16,10 +16,6 @@ $cyan: #72dbe8;
 // Exception that's used in $theme-colors and in --box-shadow variable.
 $gray-08: #343a4d;
 
-// light and dark colors used in `$theme-colors` -> `bg-*`
-$gray-100: #f8f9fa;
-$gray-800: #343a40;
-
 // Core semantic base colors.
 $primary: $blue;
 $secondary: $gray-08;
@@ -28,8 +24,9 @@ $info: $cyan;
 $warning: $yellow;
 $danger: $red;
 $merged: $purple;
-$light: $gray-100;
-$dark: $gray-800;
+// light and dark colors used in `$theme-colors` -> `bg-*`
+$light: #f8f9fa;
+$dark: #343a40;
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (

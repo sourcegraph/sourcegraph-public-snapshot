@@ -18,11 +18,12 @@ $grid-breakpoints: (
     --font-weight-bold: 700;
     --border-width: 1px;
     --zindex-sticky: 1020;
+    --spacer: 1rem;
     --font-size-base: 0.875rem;
     --line-height-base: calc(20 / 14);
     // Input
     --input-font-size: var(--font-size-base);
-    --input-font-size-sm: calc(11 / 14) + em;
+    --input-font-size-sm: 0.786em;
     --input-line-height: var(--line-height-base);
     --input-line-height-sm: 1.5;
     --input-line-height-lg: var(--line-height-base);

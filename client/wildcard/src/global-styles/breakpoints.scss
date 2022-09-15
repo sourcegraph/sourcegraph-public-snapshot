@@ -7,6 +7,7 @@ $viewport-lg: 992px;
 $viewport-xl: 1200px;
 
 :root {
+    --viewport-sm: #{$viewport-sm};
     --viewport-md: #{$viewport-md};
     --viewport-lg: #{$viewport-lg};
     --viewport-xl: #{$viewport-xl};
