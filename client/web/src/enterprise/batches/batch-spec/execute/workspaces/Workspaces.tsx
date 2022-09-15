@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
 import { useHistory, useLocation } from 'react-router'
-import { delay, repeatWhen } from 'rxjs/operators'
+import { delay, repeatWhen, retryWhen, filter, tap } from 'rxjs/operators'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { ConnectionError } from '../../../../../components/FilteredConnection/ui'
 import {
     Scalars,
     VisibleBatchSpecWorkspaceListFields,
@@ -37,6 +38,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
     const location = useLocation()
 
     const [filters, setFilters] = useState<WorkspaceFilters>({ state: null, search: null })
+    const [error, setError] = useState<string>()
 
     const queryWorkspacesListConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -46,7 +48,25 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
                 after: args.after ?? null,
                 search: filters.search ?? null,
                 state: filters.state ?? null,
-            }).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))),
+            }).pipe(
+                repeatWhen(notifier => notifier.pipe(delay(2500))),
+                retryWhen(errors =>
+                    errors.pipe(
+                        filter(error => {
+                            // Capture the error, but don't throw it so the data in the
+                            // connection remains visible.
+                            setError(error)
+                            return true
+                        }),
+                        // Retry after 5s.
+                        delay(5000)
+                    )
+                ),
+                tap(() => {
+                    // Reset the error when the query succeeds.
+                    setError(undefined)
+                })
+            ),
         [batchSpecID, filters.search, filters.state, queryWorkspacesList]
     )
 
@@ -55,6 +75,7 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
             <WorkspacesListHeader>Workspaces</WorkspacesListHeader>
             <WorkspaceFilterRow onFiltersChange={setFilters} />
             <div className={styles.listContainer}>
+                {error && <ConnectionError errors={[error]} className="mb-2" />}
                 {/* We need to use FilteredConnection over the new composable API here because we
                 still have to use observables for this connection query. See query docstring for
                 more details. */}
