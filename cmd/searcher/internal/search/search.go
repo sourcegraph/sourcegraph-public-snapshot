@@ -53,6 +53,11 @@ type Service struct {
 	//
 	// TODO Git client should be exposing a better API here.
 	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
+	// single call to git archive. This mainly needs to be less than ARG_MAX
+	// for the exec.Command on gitserver.
+	MaxTotalPathsLength int
 }
 
 // ServeHTTP handles HTTP based search requests
