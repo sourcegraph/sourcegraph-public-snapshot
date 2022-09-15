@@ -210,7 +210,6 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     diffStat: {
                         __typename: 'DiffStat',
                         added: 100,
-                        changed: 10,
                         deleted: 23,
                     },
                     error: null,
@@ -725,7 +724,6 @@ describe('Batches', () => {
                             diffStat: {
                                 __typename: 'DiffStat',
                                 added: 1000,
-                                changed: 100,
                                 deleted: 182,
                             },
                             expiresAt: addDays(now, 3).toISOString(),
@@ -812,7 +810,6 @@ describe('Batches', () => {
                                                     diffStat: {
                                                         __typename: 'DiffStat',
                                                         added: 10,
-                                                        changed: 2,
                                                         deleted: 9,
                                                     },
                                                     title: 'Changeset title',
