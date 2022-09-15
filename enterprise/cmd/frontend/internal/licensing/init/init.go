@@ -88,17 +88,10 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
 
 	globals.WatchBranding(func() error {
-		if !licensing.EnforceTiers {
-			return nil
-		}
 		return licensing.Check(licensing.FeatureBranding)
 	})
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		if !licensing.EnforceTiers {
-			return nil
-		}
-
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
 			return nil
