@@ -436,7 +436,7 @@ export const BATCH_SPEC_WORKSPACES = gql`
 // NOTE: The workspaces list connection query was implemented with Apollo but has been
 // migrated back to `requestGraphQL` and observables due to polling + pagination not
 // playing well together with the cache. See
-// https://github.com/sourcegraph/sourcegraph/pull/40717 for more context.
+// https://github.com/sourcegraph/sourcegraph/pull/40717 for more context. 😢😢
 export const queryWorkspacesList = ({
     batchSpecID,
     first,
