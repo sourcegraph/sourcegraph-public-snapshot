@@ -24,6 +24,7 @@
 }
 
 .command-palette-popover {
+    --dropdown-bg: var(--body-bg);
     --dropdown-border-color: var(--color-border-default);
     --popover-border-radius: 6px;
 }
