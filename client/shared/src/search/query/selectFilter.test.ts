@@ -366,7 +366,7 @@ describe('selectorCompletion', () => {
             symbol.vresource,
             symbol.wrapper,
             symbol.xinput,
-            symbol.xtask,
+            symbol.xtask
         `)
     })
 
