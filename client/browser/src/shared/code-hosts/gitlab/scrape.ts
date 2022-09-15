@@ -45,6 +45,13 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
     }
 }
 
+const applyNameTransformations = (name: string, transformations: { regex: string; replacement: string }[]): string => {
+    for (const { regex, replacement } of transformations) {
+        name = name.replace(new RegExp(regex), replacement)
+    }
+    return name
+}
+
 /**
  * Gets information about the page.
  */
@@ -64,11 +71,18 @@ export function getPageInfo(): GitLabInfo {
     const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
+    // TODO: replace with actual transformations
+    const transformations = [{ regex: '2$', replacement: '3' }]
+    const tranformedProjectName = applyNameTransformations(projectName, transformations)
+    const transformedProjectFullName = applyNameTransformations(projectFullName, transformations)
+
+    // TODO: return both transformed and untransformed names. The former is used for GraphQL queries,
+    // the latter for checking whether repo is private or not (and maybe some other cases).
     return {
         owner,
-        projectName,
-        rawRepoName: [hostname, owner, projectName].join('/'),
-        repoName: projectFullName,
+        projectName: tranformedProjectName,
+        rawRepoName: [hostname, owner, tranformedProjectName].join('/'),
+        repoName: transformedProjectFullName,
         pageKind,
     }
 }
