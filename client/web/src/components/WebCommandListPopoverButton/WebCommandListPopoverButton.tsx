@@ -7,6 +7,7 @@ import {
     CommandListPopoverButtonProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './WebCommandListPopoverButton.module.scss'
 
@@ -18,6 +19,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<
     return (
         <CommandListPopoverButton
             {...props}
+            as={Button}
             variant="link"
             buttonClassName={classNames('m-0 p-0', styles.button)}
             formClassName="form p-2 bg-1 border-bottom"

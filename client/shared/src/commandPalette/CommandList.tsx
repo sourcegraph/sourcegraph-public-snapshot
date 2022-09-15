@@ -14,7 +14,6 @@ import { Key } from 'ts-key-enum'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
 import {
-    Button,
     ButtonProps,
     ForwardReferenceComponent,
     Icon,
@@ -379,7 +378,7 @@ export interface CommandListPopoverButtonProps
 
 export const CommandListPopoverButton = forwardRef((props, ref) => {
     const {
-        as: Component = Button,
+        as: Component = 'span',
         buttonElement,
         buttonClassName,
         buttonOpenClassName,
