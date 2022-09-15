@@ -4,7 +4,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -78,7 +78,7 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
             >
                 {button}
             </PopoverTrigger>
-            <PopoverContent className={styles.container}>
+            <PopoverContent className={styles.container} position={Position.bottomEnd}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">
                         <div className={styles.icon}>{icon}</div>
