@@ -12,7 +12,10 @@ import { Card, CardBody, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
 import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
-import { queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs } from '../backend'
+import {
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    queryWorkspacesList as _queryWorkspacesList,
+} from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { WorkspacesPanel } from './WorkspacesPanel'
@@ -24,6 +27,7 @@ interface ExecutionWorkspacesProps extends ThemeProps {
     /** For testing purposes only */
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const ExecutionWorkspaces: React.FunctionComponent<
@@ -59,6 +63,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
     errors,
     queryBatchSpecWorkspaceStepFileDiffs,
     queryChangesetSpecFileDiffs,
+    queryWorkspacesList,
 }) {
     const history = useHistory()
 
@@ -82,6 +87,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                     batchSpecID={batchSpec.id}
                     selectedNode={selectedWorkspaceID}
                     executionURL={batchSpec.executionURL}
+                    queryWorkspacesList={queryWorkspacesList}
                 />
                 <Card className="w-100 overflow-auto flex-grow-1">
                     {/* This is necessary to prevent the margin collapse on `Card` */}
