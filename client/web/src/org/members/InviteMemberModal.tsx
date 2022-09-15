@@ -169,7 +169,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
         }
     }, [setModalOpened, orgId, eventLoggerEventName])
 
-    const onCloseIviteModal = useCallback(() => {
+    const onCloseInviteModal = useCallback(() => {
         setModalOpened(false)
     }, [setModalOpened])
 
@@ -184,7 +184,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
                     orgId={orgId}
                     orgName={orgName}
                     onInviteSent={onInviteSent}
-                    onDismiss={onCloseIviteModal}
+                    onDismiss={onCloseInviteModal}
                     showBetaBanner={showBetaBanner}
                 />
             )}

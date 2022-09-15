@@ -4,11 +4,6 @@
 }
 
 .suggestions-container {
-    width: 100%;
-    padding: 0.25rem 0;
-    border-radius: 5px;
-    box-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
-    background-color: var(--color-bg-1);
     overflow: auto;
     max-height: 18rem;
 }
