@@ -10,7 +10,9 @@ import {
     ComboboxList as ReachComboboxList,
     ComboboxListProps as ReachComboboxListProps,
     ComboboxOption as ReachComboboxOption,
+    ComboboxOptionProps as ReachComboboxOptionProps,
     ComboboxOptionText as ReachComboboxOptionText,
+    useComboboxOptionContext,
 } from '@reach/combobox'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -88,7 +90,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
 
     // If we don't have registered input element we should not
     // render anything about combobox suggestions (popover content)
-    if (!inputRef) {
+    if (!inputRef || !isExpanded) {
         return null
     }
 
@@ -99,7 +101,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // compared to reach-ui Popover logic. (it support content size changes, different render
             // strategies and so on, see Popover doc for more details)
             as={PopoverContent}
-            isOpen={isExpanded}
+            isOpen={true}
             targetElement={inputRef}
             // Suppress TS problem about position prop. ReachComboboxPopover and PopoverContent both
             // have position props with different interfaces. Since we swap component rendering with `as`
@@ -145,5 +147,27 @@ export const ComboboxOptionGroup = forwardRef((props, ref) => {
     )
 }) as ForwardReferenceComponent<'div', ComboboxOptionGroupProps>
 
-export { ReachComboboxOption as ComboboxOption }
+interface ComboboxOptionProps extends ReachComboboxOptionProps {
+    disabled?: boolean
+}
+
+export const ComboboxOption = forwardRef((props, ref) => {
+    const { disabled, children, ...attributes } = props
+    const context = useComboboxOptionContext()
+
+    if (disabled) {
+        return (
+            <li ref={ref} {...attributes}>
+                {typeof children === 'function' ? children(context) : children}
+            </li>
+        )
+    }
+
+    return (
+        <ReachComboboxOption ref={ref} {...attributes}>
+            {children}
+        </ReachComboboxOption>
+    )
+}) as ForwardReferenceComponent<'li', ComboboxOptionProps>
+
 export { ReachComboboxOptionText as ComboboxOptionText }
