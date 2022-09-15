@@ -417,7 +417,9 @@ export const CommandListPopoverButton = forwardRef((props, ref) => {
                 ref={ref}
                 // Support legacy buttonElement prop since it's used in the different code hosts
                 // specifications
-                as={buttonElement ?? Component}
+                as={buttonElement as 'button' ?? Component}
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 variant={variant}
                 aria-label="Command list"
                 className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
