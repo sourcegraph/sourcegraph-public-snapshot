@@ -260,6 +260,9 @@ func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 	q.stats.Add(sr.Stats)
 
 	q.matchCount += sr.MatchCount
+	if q.matchCount > q.metricMaxMatchCount {
+		q.metricMaxMatchCount = q.matchCount
+	}
 
 	// Note the endpoint's updated MaxPendingPriority
 	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
@@ -267,6 +270,9 @@ func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 	// Don't add empty results to the heap.
 	if len(sr.Files) != 0 {
 		q.queue.add(sr)
+		if q.queue.Len() > q.metricMaxLength {
+			q.metricMaxLength = q.queue.Len()
+		}
 	}
 }
 
@@ -288,14 +294,6 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		if pri > maxPending {
 			maxPending = pri
 		}
-	}
-
-	if q.queue.Len() > q.metricMaxLength {
-		q.metricMaxLength = q.queue.Len()
-	}
-
-	if q.matchCount > q.metricMaxMatchCount {
-		q.metricMaxMatchCount = q.matchCount
 	}
 
 	for q.hasResultsToSend(maxPending) {
