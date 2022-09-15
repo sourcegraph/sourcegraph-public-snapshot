@@ -100,7 +100,6 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 	iev := e.IncMinor()
 
 	isv := s.IncMinor()
-	// dev, err := semver.NewVersion(fmt.Sprintf("%d.%d.%d", e.Major(), e.Minor() - 1, e.Patch()))
 
 	if s.GreaterThan(&iev) {
 		compatibility = OutdatedCompatibilty
