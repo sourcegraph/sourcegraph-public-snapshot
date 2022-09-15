@@ -51,9 +51,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	var namespaceUserID, namespaceOrgID int32
 	var err error
 	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
-	}
+	// if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
+	// 	return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	// }
 
 	if args.Input.Namespace != nil {
 		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
@@ -136,9 +136,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	var err error
 	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
-	}
+	// if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
+	// 	return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
+	// }
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
