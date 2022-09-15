@@ -20,7 +20,7 @@ Also [check the status out-of-band migrations](../how-to/unfinished_migration.md
 
 ### Multi-version upgrades
 
-A **multi-version** upgrade moves an instance multiple minor versions ahead. We currently support jumping from `v3.20` to any future version.
+A **multi-version** upgrade moves an instance multiple minor versions ahead. We currently support jumping from `v3.20` to any future version (using a version of the `migrator` at least as new as the target version).
 
 This upgrade process involves spinning down the active instance (incurring a definite downtime period), running a migration utility on the database, and spinning up the infrastructure for the new target instance. This migration utility performs both schema migrations, as well as data migrations that generally happen slowly in the background over several versions.
 

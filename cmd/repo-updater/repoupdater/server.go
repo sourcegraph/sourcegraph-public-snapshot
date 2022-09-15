@@ -142,7 +142,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
+		s.Logger.Warn("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
 		s.respond(w, status, err)
 		return
 	}

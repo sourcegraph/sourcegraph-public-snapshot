@@ -13,7 +13,7 @@ interface FormState {
 /**
  * Form component that handles validation.
  * If the user tries to submit the form and one of the inputs is invalid,
- * Bootstrap's `was-validated` class will be assigned so the invalid inputs get highlighted.
+ * the global `was-validated` class will be assigned so the invalid inputs get highlighted.
  */
 export class Form extends React.PureComponent<FormProps, FormState> {
     constructor(props: FormProps) {

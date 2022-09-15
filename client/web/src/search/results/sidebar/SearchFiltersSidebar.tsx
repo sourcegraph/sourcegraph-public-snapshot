@@ -20,7 +20,6 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
@@ -35,12 +34,14 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     liveQuery: string
     submittedURLQuery: string
     patternType: SearchPatternType
+    caseSensitive: boolean
     filters?: Filter[]
+    showAggregationPanel?: boolean
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
-    caseSensitive: boolean
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
+    setSidebarCollapsed: (collapsed: boolean) => void
 }
 
 export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
@@ -50,10 +51,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         caseSensitive,
         patternType,
         filters,
+        showAggregationPanel,
         selectedSearchContextSpec,
         aggregationUIMode,
         onNavbarQueryChange,
         onSearchSubmit,
+        setSidebarCollapsed,
         telemetryService,
         settingsCascade,
         children,
@@ -62,13 +65,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
 
     // Settings
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const enableSearchAggregations = useExperimentalFeatures(
-        features => features.enableSearchResultsAggregations ?? false
+    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
+    const proactiveSearchAggregations = useExperimentalFeatures(
+        features => features.proactiveSearchResultsAggregations ?? true
     )
-    const disableProactiveSearchAggregations = useExperimentalFeatures(
-        features => features.disableProactiveSearchAggregations ?? false
-    )
-    const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
@@ -105,19 +105,23 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     return (
-        <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
+        <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
             {children}
 
-            {enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
+            {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    // SearchAggregations content contains component that makes a few API network requests
+                    // in order to prevent these calls if this section is collapsed we turn off force render
+                    // for collapse section component
+                    forcedRender={false}
                     onToggle={handleGroupedByToggle}
                 >
                     <SearchAggregations
                         query={submittedURLQuery}
                         patternType={patternType}
-                        proactive={!disableProactiveSearchAggregations}
+                        proactive={proactiveSearchAggregations}
                         caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}

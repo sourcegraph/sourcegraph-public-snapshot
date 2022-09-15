@@ -25,7 +25,9 @@ import (
 // transaction if an error didn't occur.
 //
 // After opening this transaction, it executes the query
-//     SET CONSTRAINTS ALL DEFERRED
+//
+//	SET CONSTRAINTS ALL DEFERRED
+//
 // which aids in testing.
 func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	tx, err := db.Begin()

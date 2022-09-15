@@ -26,6 +26,8 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
     caseSensitive: false,
+    setSidebarCollapsed: noop,
+    sidebarCollapsed: false,
 }
 
 const renderSearchResultsInfoBar = (
@@ -41,7 +43,7 @@ const renderSearchResultsInfoBar = (
 describe('SearchResultsInfoBar', () => {
     beforeAll(() => {
         window.context = {
-            enableLegacyExtensions: true,
+            enableLegacyExtensions: false,
         } as any
     })
 

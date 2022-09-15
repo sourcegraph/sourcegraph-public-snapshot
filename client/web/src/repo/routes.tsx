@@ -1,13 +1,16 @@
 import React from 'react'
 
+import { RouteComponentProps } from 'react-router-dom'
+
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
+import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
-import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
 
@@ -38,28 +41,33 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
     'ActionItemsBar'
 )
 
+export const compareSpecPath = '/-/compare/:spec*'
+
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="commit"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
     {
         path: '/-/branches',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryBranchesArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -67,32 +75,35 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/tags',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryReleasesArea {...context} />
             </RepositoryGitDataContainer>
         ),
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="compare"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
     {
         path: '/-/stats',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepositoryStatsArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -100,53 +111,41 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/settings',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                 <RepoSettingsArea {...context} />
             </RepositoryGitDataContainer>
         ),
     },
 ]
 
-export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    useBreadcrumb,
-    setBreadcrumb,
-    repo,
-    history,
-    location,
-    match,
-    globbing,
-}) => (
-    <>
-        <RepositoryStatsArea
-            useBreadcrumb={useBreadcrumb}
-            setBreadcrumb={setBreadcrumb}
-            repo={repo}
-            history={history}
-            location={location}
-            match={match}
-            globbing={globbing}
-        />
-    </>
+export const RepoContributors: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionContainerContext & RouteComponentProps>
+> = ({ useBreadcrumb, setBreadcrumb, repo, history, location, match, globbing, repoName }) => (
+    <RepositoryStatsArea
+        useBreadcrumb={useBreadcrumb}
+        setBreadcrumb={setBreadcrumb}
+        repo={repo}
+        repoName={repoName}
+        history={history}
+        location={location}
+        match={match}
+        globbing={globbing}
+    />
 )
 
-export const RepoCommits: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    resolvedRev: { commitID },
-    repoHeaderContributionsLifecycleProps,
-    ...context
-}) => (
-    <>
-        <RepositoryCommitsPage
-            {...context}
-            commitID={commitID}
-            repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
-        />
-    </>
-)
+export const RepoCommits: React.FunctionComponent<
+    Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
+> = ({ revision, repo, ...context }) => <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
+
+const blobPath = '/-/:objectType(blob)/:filePath*'
+const treePath = '/-/:objectType(tree)/:filePath*'
+export const commitsPath = '/-/commits'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
         '',
-        '/-/:objectType(blob|tree)/:filePath*',
+        blobPath,
+        treePath,
         '/-/docs/tab/:pathID*',
         '/-/commits/tab',
         '/-/branch/tab',
@@ -164,11 +163,20 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 }}
             >
                 <RepositoryFileTreePage {...props} />
+                <ActionItemsBar
+                    repo={props.repo}
+                    useActionItemsBar={props.useActionItemsBar}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                    source={routePath === blobPath ? 'blob' : undefined}
+                />
             </TraceSpanProvider>
         ),
     })),
     {
-        path: '/-/commits',
+        path: commitsPath,
         render: RepoCommits,
     },
     {
@@ -182,19 +190,22 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="compare"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },

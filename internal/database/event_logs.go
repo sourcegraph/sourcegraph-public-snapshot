@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -469,23 +470,6 @@ func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.
 	return time.Time{}, false
 }
 
-var nonActiveUserEvents = []string{
-	"ViewSignIn",
-	"ViewSignUp",
-	"SignOutAttempted",
-	"SignOutFailed",
-	"SignOutSucceeded",
-	"SignInAttempted",
-	"SignInFailed",
-	"SignInSucceeded",
-	"PasswordResetRequested",
-	"PasswordRandomized",
-	"PasswordChanged",
-	"EmailVerified",
-	"ExternalAuthSignupFailed",
-	"ExternalAuthSignupSucceeded",
-}
-
 // CountUniqueUsersOptions provides options for counting unique users.
 type CountUniqueUsersOptions struct {
 	// If set, adds additional restrictions on the event types.
@@ -544,7 +528,7 @@ func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
 		}
 		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(nonActiveUserEvents, "','")+"')"))
+			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
 		}
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -831,7 +815,7 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
 		}
 		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(nonActiveUserEvents, "','")+"')"))
+			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
 		}
 	}
 

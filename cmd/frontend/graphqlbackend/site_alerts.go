@@ -395,8 +395,8 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 			log15.Debug("Detected GitLab instance running a version below 12.0.0", "version", chv.Version)
 
 			return []*Alert{{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "Warning: One or more of your code hosts is running a version of GitLab below 12.0. Sourcegraph will no longer support GitLab < 12.0 in the next major version. Please upgrade your GitLab instance(s) before upgrading Sourcegraph to version 4.0.",
+				TypeValue:    AlertTypeError,
+				MessageValue: "One or more of your code hosts is running a version of GitLab below 12.0, which is not supported by Sourcegraph. Please upgrade your GitLab instance(s) to prevent disruption.",
 			}}
 		}
 	}

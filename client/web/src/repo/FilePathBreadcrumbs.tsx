@@ -13,7 +13,6 @@ import styles from './FilePathBreadcrumbs.module.scss'
 interface Props extends RepoRevision, TelemetryProps {
     filePath: string
     isDir: boolean
-    repoUrl: string
 }
 
 /**

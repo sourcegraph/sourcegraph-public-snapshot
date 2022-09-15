@@ -77,23 +77,3 @@ export function getReturnTo(location: H.Location): string {
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
 }
-
-export function maybeAddPostSignUpRedirect(url?: string): string {
-    const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
-    const isDotCom = window.context?.sourcegraphDotComMode
-    const shouldAddRedirect = isDotCom && enablePostSignupFlow
-
-    if (url) {
-        if (shouldAddRedirect) {
-            // second param to protect against relative urls
-            const urlObject = new URL(url, window.location.href)
-
-            urlObject.searchParams.append('redirect', '/welcome')
-            return urlObject.toString()
-        }
-
-        return url
-    }
-
-    return shouldAddRedirect ? '/welcome' : ''
-}

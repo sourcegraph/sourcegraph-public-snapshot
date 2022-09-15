@@ -406,15 +406,15 @@ describe('buildSearchURLQuery', () => {
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
         expect(buildSearchURLQuery('foo case:yes', SearchPatternType.standard, false, undefined)).toBe(
-            'q=foo+&patternType=standard&case=yes'
+            'q=foo&patternType=standard&case=yes'
         ))
     it('removes the case parameter if using a quoted value', () =>
         expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.standard, true, undefined)).toBe(
-            'q=foo+&patternType=standard&case=yes'
+            'q=foo&patternType=standard&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
         expect(buildSearchURLQuery('foo case:no', SearchPatternType.standard, true, undefined)).toBe(
-            'q=foo+&patternType=standard'
+            'q=foo&patternType=standard'
         ))
 })
 

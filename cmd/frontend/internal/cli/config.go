@@ -103,12 +103,11 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 
 func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
 	logger = logger.Scoped("overrideSiteConfig", "")
-	path := os.Getenv("SITE_CONFIG_FILE")
-	if path == "" {
+	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
+	if len(paths) == 0 {
 		return nil
 	}
 	cs := newConfigurationSource(logger, db)
-	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
 		if err != nil {
@@ -131,7 +130,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, updateFunc)
+	go watchUpdate(ctx, logger, updateFunc, paths...)
 	return nil
 }
 
@@ -169,7 +168,7 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 	if err := update(ctx); err != nil {
 		return err
 	}
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
@@ -348,14 +347,14 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
 
-func watchUpdate(ctx context.Context, logger log.Logger, path string, update func(context.Context) error) {
-	logger = logger.Scoped("watch", "")
-	events, err := watchPaths(ctx, path)
+func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) error, paths ...string) {
+	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
+	events, err := watchPaths(ctx, paths...)
 	if err != nil {
 		logger.Error("failed to watch config override files", log.Error(err))
 		return
@@ -368,10 +367,10 @@ func watchUpdate(ctx context.Context, logger log.Logger, path string, update fun
 		}
 
 		if err := update(ctx); err != nil {
-			logger.Error("failed to update configuration from modified config override file", log.Error(err), log.String("file", path))
+			logger.Error("failed to update configuration from modified config override file", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
 		} else {
-			logger.Info("updated configuration from modified config override files", log.String("file", path))
+			logger.Info("updated configuration from modified config override files")
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		}
 	}

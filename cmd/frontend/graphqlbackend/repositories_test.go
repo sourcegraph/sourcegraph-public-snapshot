@@ -568,70 +568,91 @@ func TestRepositories_Integration(t *testing.T) {
 	}
 	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
 
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-		wantTotalCount: 6,
-	})
+	tests := []repositoriesQueryTest{
+		// no args
+		{
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wantTotalCount: 6,
+		},
+		// first
+		{
+			args:           "first: 2",
+			wantRepos:      []string{"repo1", "repo2"},
+			wantTotalCount: 6,
+		},
+		// cloned
+		{
+			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
+			args:           "cloned: true",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wantTotalCount: 6,
+		},
+		{
+			args:           "cloned: false",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4"},
+			wantTotalCount: 4,
+		},
+		{
+			args:           "cloned: false, first: 2",
+			wantRepos:      []string{"repo1", "repo2"},
+			wantTotalCount: 4,
+		},
+		// notCloned
+		{
+			args:           "notCloned: true",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wantTotalCount: 6,
+		},
+		{
+			args:           "notCloned: false",
+			wantRepos:      []string{"repo5", "repo6"},
+			wantTotalCount: 2,
+		},
+		// failedFetch
+		{
+			args:           "failedFetch: true",
+			wantRepos:      []string{"repo2", "repo4", "repo6"},
+			wantTotalCount: 3,
+		},
+		{
+			args:           "failedFetch: true, first: 2",
+			wantRepos:      []string{"repo2", "repo4"},
+			wantTotalCount: 3,
+		},
+		{
+			args:           "failedFetch: false",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wantTotalCount: 6,
+		},
+		// cloneStatus
+		{
+			args:           "cloneStatus:NOT_CLONED",
+			wantRepos:      []string{"repo1", "repo2"},
+			wantTotalCount: 2,
+		},
+		{
+			args:           "cloneStatus:CLONING",
+			wantRepos:      []string{"repo3", "repo4"},
+			wantTotalCount: 2,
+		},
+		{
+			args:           "cloneStatus:CLONED",
+			wantRepos:      []string{"repo5", "repo6"},
+			wantTotalCount: 2,
+		},
+		{
+			args:           "cloneStatus:NOT_CLONED, first: 1",
+			wantRepos:      []string{"repo1"},
+			wantTotalCount: 2,
+		},
+	}
 
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
-		args:           "cloned: true",
-		wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-		wantTotalCount: 6,
-	})
+	for _, tt := range tests {
+		t.Run(tt.args, func(t *testing.T) {
+			runRepositoriesQuery(t, ctx, schema, tt)
+		})
+	}
 
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloned: false",
-		wantRepos: []string{"repo1", "repo2", "repo3", "repo4"},
-		// Right now we don't produce a totalCount if "cloned: false" is used
-		wantNoTotalCount: true,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:           "notCloned: true",
-		wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-		wantTotalCount: 6,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "notCloned: false",
-		wantRepos: []string{"repo5", "repo6"},
-		// Right now we don't produce a totalCount if "notCloned" is used
-		wantNoTotalCount: true,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:           "failedFetch: true",
-		wantRepos:      []string{"repo2", "repo4", "repo6"},
-		wantTotalCount: 3,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:           "failedFetch: false",
-		wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-		wantTotalCount: 6,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:NOT_CLONED",
-		wantRepos: []string{"repo1", "repo2"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:CLONING",
-		wantRepos: []string{"repo3", "repo4"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
-	})
-
-	runRepositoriesQuery(t, ctx, schema, repositoriesQueryTest{
-		args:      "cloneStatus:CLONED",
-		wantRepos: []string{"repo5", "repo6"},
-		// Right now we don't produce a totalCount if "cloneStatus" is used
-		wantNoTotalCount: true,
-	})
 }
 
 type repositoriesQueryTest struct {

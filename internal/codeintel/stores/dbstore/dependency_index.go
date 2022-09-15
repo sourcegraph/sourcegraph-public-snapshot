@@ -58,14 +58,6 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
 }
 
-// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
-// `*Store.query`.
-var scanDependencySyncingJobs = basestore.NewSliceScanner(scanDependencySyncingJob)
-
-// scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
-// value of `*Store.query` and returns the first.
-var scanFirstDependencySyncingingJob = basestore.NewFirstScanner(scanDependencySyncingJob)
-
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
 type DependencyIndexingJob struct {
@@ -115,14 +107,6 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_kind"),
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
-
-// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
-// `*Store.query`.
-var scanDependencyIndexingJobs = basestore.NewSliceScanner(scanDependencyIndexingJob)
-
-// scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
-// value of `*Store.query` and returns the first.
-var scanFirstDependencyIndexingJob = basestore.NewFirstScanner(scanDependencyIndexingJob)
 
 // InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
 func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {

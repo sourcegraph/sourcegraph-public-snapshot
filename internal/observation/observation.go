@@ -10,6 +10,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -124,11 +125,22 @@ type Operation struct {
 // value pairs into a related opentracing span. It has an embedded Logger that can be used
 // directly to log messages in the context of a trace.
 type TraceLogger interface {
-	// Log logs and event with fields to the opentracing.Span as well as the nettrace.Trace,
+	// AddEvent logs an event with name and fields on the trace.
+	AddEvent(name string, attributes ...attribute.KeyValue)
+
+	// Deprecated: Use AddEvent(...) instead.
+	//
+	// Log logs an event with fields to the opentracing.Span as well as the nettrace.Trace,
 	// and also logs an 'trace.event' log entry at INFO level with the fields, including
 	// any existing tags and parent observation context.
 	Log(fields ...otlog.Field)
 
+	// SetAttributes adds attributes to the trace, and also applies fields to the
+	// underlying Logger.
+	SetAttributes(attributes ...attribute.KeyValue)
+
+	// Deprecated: Use SetAttributes(...) instead.
+	//
 	// Tag adds fields to the opentracing.Span as tags as well as as logs to the nettrace.Trace.
 	//
 	// Tag will add fields to the underlying logger.
@@ -165,6 +177,18 @@ func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 	}
 }
 
+func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
+	if honey.Enabled() {
+		for _, attr := range attributes {
+			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+		}
+	}
+	if t.trace != nil {
+		t.trace.AddEvent(name, attributes...)
+	}
+}
+
+// Deprecated: Use AddEvent(...) instead.
 func (t *traceLogger) Log(fields ...otlog.Field) {
 	if honey.Enabled() {
 		for _, field := range fields {
@@ -181,6 +205,19 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	}
 }
 
+func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
+	if honey.Enabled() {
+		for _, attr := range attributes {
+			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+		}
+	}
+	if t.trace != nil {
+		t.trace.SetAttributes(attributes...)
+	}
+	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
+}
+
+// Deprecated: Use SetAttributes(...) instead.
 func (t *traceLogger) Tag(fields ...otlog.Field) {
 	if honey.Enabled() {
 		for _, field := range fields {

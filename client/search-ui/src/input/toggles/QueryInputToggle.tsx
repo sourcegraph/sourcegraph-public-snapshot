@@ -13,7 +13,7 @@ export interface ToggleProps {
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */
-    icon: React.ComponentType<{ className?: string }>
+    iconSvgPath: string
     /** Condition for when the toggle should have an active state.  */
     isActive: boolean
     /** Callback on toggle.  */
@@ -24,7 +24,6 @@ export interface ToggleProps {
      */
     disableOn?: { condition: boolean; reason: string }[]
     className?: string
-    activeClassName?: string
     /**
      * If set to false makes the button non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -36,11 +35,7 @@ export interface ToggleProps {
 /**
  * A toggle displayed in the QueryInput.
  */
-export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<ToggleProps>> = ({
-    onToggle,
-    interactive = true,
-    ...props
-}) => {
+export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, interactive = true, ...props }) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
@@ -90,8 +85,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                     props.className,
                     !!disabledRule && styles.disabled,
                     isActive && styles.toggleActive,
-                    !interactive && styles.toggleNonInteractive,
-                    props.activeClassName
+                    !interactive && styles.toggleNonInteractive
                 )}
                 ref={toggleCheckbox}
                 role="checkbox"
@@ -100,7 +94,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                 aria-checked={isActive}
                 {...interactiveProps}
             >
-                <Icon aria-hidden={true} as={props.icon} />
+                <Icon aria-hidden={true} svgPath={props.iconSvgPath} />
             </Button>
         </Tooltip>
     )

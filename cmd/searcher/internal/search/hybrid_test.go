@@ -117,6 +117,8 @@ Hello world example in go
 			}
 			return []byte(gitDiffOutput), nil
 		},
+		MaxTotalPathsLength: 100_000,
+
 		Store: s,
 		Log:   logtest.Scoped(t),
 	})

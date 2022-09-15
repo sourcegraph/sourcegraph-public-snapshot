@@ -8,9 +8,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/log"
 

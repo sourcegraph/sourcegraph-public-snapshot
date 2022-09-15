@@ -193,16 +193,14 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
                 filePath={result.path}
+                pathMatchRanges={'pathMatches' in result ? result.pathMatches : []}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(
-                    styles.titleInner,
-                    coreWorkflowImprovementsEnabled && result.type !== 'path' && styles.mutedRepoFileLink
-                )}
+                className={classNames(styles.titleInner, coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink)}
             />
         ),
         allExpanded: props.allExpanded,

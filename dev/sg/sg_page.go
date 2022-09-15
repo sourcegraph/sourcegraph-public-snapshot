@@ -1,139 +1,129 @@
 package main
 
 import (
-	"flag"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/opsgenie/opsgenie-go-sdk-v2/alert"
+	opsgeniealert "github.com/opsgenie/opsgenie-go-sdk-v2/alert"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
-)
-
-var (
-	pageToken               string
-	pageMessage             string
-	pageDesc                string
-	pagePriority            string
-	pageURL                 string
-	pageResponderEscalation string
-	pageResponderSchedule   string
 )
 
 var pageCommand = &cli.Command{
 	Name:      "page",
-	UsageText: "sg page --opsgenie.token [TOKEN] --message \"something is broken\" --responder.schedule [my-schedule-on-ops-genie]",
-	Usage:     "Utility to page engineers, mostly used within scripts to automate paging alerts",
-	Category:  CategoryUtil,
+	UsageText: "sg page --opsgenie.token [TOKEN] --message \"something is broken\" [my-schedule-on-ops-genie]",
+	ArgsUsage: "[opsgenie-schedule]",
+	Usage:     "Page engineers at Sourcegraph - mostly used within scripts to automate paging alerts",
+	Category:  CategoryCompany,
 	Action:    pageExec,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:        "opsgenie.token",
-			Usage:       "OpsGenie token",
-			Required:    true,
-			Destination: &pageToken,
+			// TODO allow setting from secrets store
+			Name:     "opsgenie.token",
+			Usage:    "OpsGenie token",
+			Required: true,
+			EnvVars:  []string{"SG_OPSGENIE_TOKEN"},
 		},
 		&cli.StringFlag{
-			Name:        "message",
-			Usage:       "Message for the paging alert",
-			Required:    true,
-			Destination: &pageMessage,
+			Name:     "message",
+			Aliases:  []string{"m"},
+			Usage:    "Message for the paging alert",
+			Required: true,
 		},
 		&cli.StringFlag{
-			Name:        "description",
-			Usage:       "Description for the paging alert",
-			Destination: &pageDesc,
+			Name:    "description",
+			Aliases: []string{"d"},
+			Usage:   "Description for the paging alert (optional)",
 		},
 		&cli.StringFlag{
-			Name:        "priority",
-			Usage:       "Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5",
-			Value:       "P5",
-			Destination: &pagePriority,
+			Name:    "priority",
+			Aliases: []string{"p"},
+			Usage:   "Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5",
+			Value:   "P5",
 		},
 		&cli.StringFlag{
-			Name:        "url",
-			Usage:       "URL field for alert details (optional)",
-			Destination: &pageURL,
+			Name:  "url",
+			Usage: "URL field for alert details (optional)",
 		},
-		&cli.StringFlag{
-			Name:        "responder.schedule",
-			Usage:       "Schedule team to alert (at least one responder must be given)",
-			Destination: &pageResponderSchedule,
-		},
-		&cli.StringFlag{
-			Name:        "responder.escalation",
-			Usage:       "Escalation team to alert (at least one responder must be given)",
-			Destination: &pageResponderEscalation,
+		&cli.StringSliceFlag{
+			Name:  "escalation",
+			Usage: "Escalation team(s) to alert (if provided, target schedules can be omitted)",
 		},
 	},
 }
 
-func pageExec(ctx *cli.Context) error {
+func pageExec(cmd *cli.Context) error {
 	logger := log.Scoped("pager", "paging client for SG")
-	var err error
-	var prio alert.Priority
-	if prio, err = parseOpsGeniePriority(pagePriority); err != nil {
-		logger.Fatal("cannot parse ops priority", log.Error(err))
-	}
-	if pageResponderSchedule == "" && pageResponderEscalation == "" {
-		// At least one responder must be given.
-		flag.Usage()
-		return flag.ErrHelp
+
+	priority, err := parseOpsGeniePriority(cmd.String("priority"))
+	if err != nil {
+		return errors.Wrap(err, "cannot parse ops priority")
 	}
 
-	alertClient, err := alert.NewClient(&client.Config{
-		ApiKey: pageToken,
+	var (
+		responders  = cmd.Args().Slice()
+		escalations = cmd.StringSlice("escalation")
+	)
+
+	if len(responders) == 0 && len(escalations) == 0 {
+		// At least one responder must be given.
+		return errors.New("Target responder schedules or esclation schedules are required")
+	}
+
+	logger.Info("paging schedules",
+		log.String("priority", string(priority)),
+		log.Strings("responders", responders),
+		log.Strings("escalations", escalations))
+
+	alertClient, err := opsgeniealert.NewClient(&client.Config{
+		ApiKey: cmd.String("opsgenie.token"),
 	})
 	if err != nil {
-		logger.Fatal("cannot create client", log.Error(err))
+		return errors.Wrap(err, "cannot create opsgenie client")
 	}
 
-	req := &alert.CreateAlertRequest{
-		Message:  pageMessage,
-		Priority: prio,
+	req := &opsgeniealert.CreateAlertRequest{
+		Priority:    priority,
+		Message:     cmd.String("message"),
+		Description: cmd.String("description"),
 	}
-
-	req.Description = ctx.String("description")
-
-	if pageURL != "" {
+	if pageURL := cmd.String("url"); pageURL != "" {
 		req.Details = map[string]string{
 			"url": pageURL,
 		}
 	}
-	if pageResponderSchedule != "" {
-		req.Responders = append(req.Responders, alert.Responder{Type: alert.ScheduleResponder, Name: pageResponderSchedule})
+	for _, schedule := range responders {
+		req.Responders = append(req.Responders, opsgeniealert.Responder{Type: opsgeniealert.ScheduleResponder, Name: schedule})
 	}
-	if pageResponderEscalation != "" {
-		req.Responders = append(req.Responders, alert.Responder{Type: alert.EscalationResponder, Name: pageResponderEscalation})
+	for _, schedule := range escalations {
+		req.Responders = append(req.Responders, opsgeniealert.Responder{Type: opsgeniealert.EscalationResponder, Name: schedule})
 	}
 
-	createResult, err := alertClient.Create(ctx.Context, req)
-
+	createResult, err := alertClient.Create(cmd.Context, req)
 	if err != nil {
 		if createResult != nil {
-			logger.Fatal("failed to post the alert on ops genie", log.Error(err), log.String("result", createResult.Result))
-		} else {
-			logger.Fatal("failed to post the alert on ops genie", log.Error(err))
+			logger.Error("got error result from posting alert to opsgenie", log.Error(err), log.String("result", createResult.Result))
 		}
+		return errors.Wrap(err, "failed to post the alert on ops genie")
 	}
 	return nil
 }
 
-func parseOpsGeniePriority(p string) (alert.Priority, error) {
+func parseOpsGeniePriority(p string) (opsgeniealert.Priority, error) {
 	switch p {
 	case "P1":
-		return alert.P1, nil
+		return opsgeniealert.P1, nil
 	case "P2":
-		return alert.P2, nil
+		return opsgeniealert.P2, nil
 	case "P3":
-		return alert.P3, nil
+		return opsgeniealert.P3, nil
 	case "P4":
-		return alert.P4, nil
+		return opsgeniealert.P4, nil
 	case "P5":
-		return alert.P5, nil
+		return opsgeniealert.P5, nil
 	default:
-		return alert.Priority(""), errors.Errorf("invalid priority %q", p)
+		return opsgeniealert.Priority(""), errors.Errorf("invalid priority %q", p)
 	}
 }
