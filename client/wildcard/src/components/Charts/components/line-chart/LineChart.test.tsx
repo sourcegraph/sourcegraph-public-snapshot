@@ -23,13 +23,13 @@ describe('LineChart', () => {
         })
 
         it('series with data', () => {
-            const { container } = renderChart(defaultArgs)
+            renderChart(defaultArgs)
 
             // Check number of series rendered
-            expect(container.querySelectorAll('.visx-linepath')).toHaveLength(totalSeries)
+            expect(screen.getAllByRole('listitem')).toHaveLength(totalSeries)
 
             // Check number of data points rendered
-            expect(container.querySelectorAll('circle.visx-glyph-dot')).toHaveLength(totalDataPoints)
+            expect(screen.getAllByRole(/(link|graphics-dataunit)/)).toHaveLength(totalDataPoints)
 
             // Spot check y axis labels
             expect(screen.getByLabelText(/tick axis 1 of 8. value: 8/i)).toBeInTheDocument()
