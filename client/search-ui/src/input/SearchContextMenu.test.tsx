@@ -6,8 +6,7 @@ import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { ListSearchContextsResult, SearchContextFields } from '@sourcegraph/search'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { ListSearchContextsResult, SearchContextFields, SearchContextMinimalFields } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -49,7 +48,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
             updatedAt: '2021-03-15T19:39:11Z',
             viewerCanManage: false,
         },
-    ] as ISearchContext[])
+    ] as SearchContextMinimalFields[])
 
 const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
     const nodes = [
@@ -263,7 +262,7 @@ describe('SearchContextMenu', () => {
     })
 
     it('should default to empty array if fetching auto-defined contexts fails', () => {
-        const errorFetchAutoDefinedSearchContexts: () => Observable<ISearchContext[]> = () =>
+        const errorFetchAutoDefinedSearchContexts: () => Observable<SearchContextMinimalFields[]> = () =>
             throwError(new Error('unknown error'))
 
         render(

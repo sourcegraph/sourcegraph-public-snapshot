@@ -10,8 +10,8 @@ import {
     SearchContextProps,
     SearchPatternTypeMutationProps,
     SubmitSearchProps,
+    SearchPatternType,
 } from '@sourcegraph/search'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
