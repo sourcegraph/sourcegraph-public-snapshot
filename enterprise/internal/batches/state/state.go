@@ -637,7 +637,7 @@ func computeDiffStat(ctx context.Context, db database.DB, c *btypes.Changeset, r
 		fs := file.Stat()
 
 		stat.Added += fs.Added + fs.Changed
-		stat.Deleted += (fs.Deleted + fs.Changed)
+		stat.Deleted += fs.Deleted + fs.Changed
 	}
 
 	return stat, nil
