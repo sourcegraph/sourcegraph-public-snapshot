@@ -17,5 +17,5 @@ export const MaybeLink: React.FunctionComponent<React.PropsWithChildren<MaybeLin
             {children}
         </Link>
     ) : (
-        (children as React.ReactElement)
+        <span {...props}>{children}</span>
     )
