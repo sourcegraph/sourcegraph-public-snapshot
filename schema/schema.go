@@ -1538,6 +1538,8 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
+	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
 	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
 	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
@@ -2058,6 +2060,8 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
+	// InsightsAggregationsProactiveResultLimit description: The maximum number of results a proactive search aggregation can accept before stopping
+	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).

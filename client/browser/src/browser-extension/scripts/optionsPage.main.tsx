@@ -11,10 +11,10 @@ import { Optional } from 'utility-types'
 
 import { asError, isDefined } from '@sourcegraph/common'
 import { gql, GraphQLResult } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
+import { CurrentUserResult } from '../../graphql-operations'
 import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
@@ -141,10 +141,12 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
-const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 'settingsURL' | 'siteAdmin'>> => {
+const fetchCurrentUser = (
+    sourcegraphURL: string
+): Observable<Pick<NonNullable<CurrentUserResult['currentUser']>, 'settingsURL' | 'siteAdmin'>> => {
     const requestGraphQL = createRequestGraphQL(sourcegraphURL)
 
-    return requestGraphQL<GQL.IQuery>({
+    return requestGraphQL<CurrentUserResult>({
         request: gql`
             query CurrentUser {
                 currentUser {

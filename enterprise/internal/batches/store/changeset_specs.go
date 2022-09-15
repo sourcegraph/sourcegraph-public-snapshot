@@ -618,14 +618,14 @@ type GetRewirerMappingsOpts struct {
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 //
 // We need to:
-// 1. Find out whether our new specs should _update_ an existing
-//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
-// 2. Since we can have multiple changesets per repository, we need to match
-//    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
-// 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
-//    In that case, we need to check whether the branch on which we _might_
-//    push the commit (because the changeset might not be published
-//    yet) is the same or compare the external IDs in the current and new specs.
+//  1. Find out whether our new specs should _update_ an existing
+//     changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
+//  2. Since we can have multiple changesets per repository, we need to match
+//     based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
+//  3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
+//     In that case, we need to check whether the branch on which we _might_
+//     push the commit (because the changeset might not be published
+//     yet) is the same or compare the external IDs in the current and new specs.
 //
 // What we want:
 //

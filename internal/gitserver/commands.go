@@ -238,12 +238,11 @@ func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 // the following somewhat-common malformed syntax where a user has misconfigured
 // their email address as their name:
 //
-// 	foo@gmail.com <foo@gmail.com>
+//	foo@gmail.com <foo@gmail.com>
 //
 // As a valid name, whereas mail.ParseAddress would return an error:
 //
-// 	mail: expected single address, got "<foo@gmail.com>"
-//
+//	mail: expected single address, got "<foo@gmail.com>"
 func lenientParseAddress(address string) (*mail.Address, error) {
 	addr, err := mail.ParseAddress(address)
 	if err != nil && strings.Contains(err.Error(), "expected single address") {
@@ -1042,8 +1041,8 @@ func (c *clientImplementor) ListDirectoryChildren(
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
 // few peculiarities handled here:
 //
-//   1. The root of the tree must be indicated with `.`, and
-//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+//  1. The root of the tree must be indicated with `.`, and
+//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
 func cleanDirectoriesForLsTree(dirnames []string) []string {
 	var args []string
 	for _, dir := range dirnames {

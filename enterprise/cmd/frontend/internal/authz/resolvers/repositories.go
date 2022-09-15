@@ -35,9 +35,10 @@ type repositoryConnectionResolver struct {
 // is the site admin because this method computes data from all available information in
 // the database.
 // This function takes returns a pagination of the repo IDs
-// 	r.ids - the full slice of sorted repo IDs
-// 	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
-// 	r.first - the # of repo IDs to return
+//
+//	r.ids - the full slice of sorted repo IDs
+//	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
+//	r.first - the # of repo IDs to return
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32

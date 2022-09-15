@@ -19,7 +19,6 @@
 // containing source code or a binary
 //
 // https://pypi.org/help/#packages
-//
 package pypi
 
 import (

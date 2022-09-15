@@ -11,7 +11,7 @@ import (
 
 // GetService creates or returns an already-initialized dependencies service. If the service is
 // new, it will use the given database handle and syncer instance. If the given syncer is nil,
-/// then ErrorSyncer will be used instead.
+// then ErrorSyncer will be used instead.
 func GetService(db database.DB) *dependencies.Service {
 	return dependencies.GetService(db)
 }

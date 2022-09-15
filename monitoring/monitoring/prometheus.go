@@ -45,7 +45,6 @@ func (r *promRule) validate() error {
 // see:
 //
 // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-//
 type promRulesFile struct {
 	Groups []promGroup
 }

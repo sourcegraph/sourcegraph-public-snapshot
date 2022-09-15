@@ -7,12 +7,7 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
-import {
-    FetchFileParameters,
-    SidebarButtonStrip,
-    StreamingProgress,
-    StreamingSearchResultsList,
-} from '@sourcegraph/search-ui'
+import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -84,7 +79,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
-    const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -293,10 +288,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const showAggregationPanel = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
     return (
-        <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
+        <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
-
-            <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
             <SearchFiltersSidebar
                 liveQuery={liveQuery}
@@ -312,6 +305,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
                 onSearchSubmit={handleSidebarSearchSubmit}
+                setSidebarCollapsed={setSidebarCollapsed}
             >
                 <GettingStartedTour
                     className="mb-1"
@@ -347,7 +341,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        onShowFiltersChanged={show => setShowMobileSidebar(show)}
+                        onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
+                        sidebarCollapsed={!!sidebarCollapsed}
+                        setSidebarCollapsed={setSidebarCollapsed}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
