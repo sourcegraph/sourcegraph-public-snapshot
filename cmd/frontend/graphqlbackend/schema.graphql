@@ -3457,11 +3457,11 @@ Statistics about a diff.
 """
 type DiffStat {
     """
-    Number of lines added,
+    Number of lines added.
     """
     added: Int!
     """
-    Number of lines deleted,
+    Number of lines deleted.
     """
     deleted: Int!
 }
