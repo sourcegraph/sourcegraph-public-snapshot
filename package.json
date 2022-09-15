@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v16.7.0",
+    "node": "^v16.17.0",
     "yarn": "^1.22.4"
   },
   "scripts": {
@@ -104,10 +104,11 @@
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@gql2ts/types": "^1.9.0",
-    "@graphql-codegen/cli": "^1.19.4",
-    "@graphql-codegen/typescript": "1.17.9",
-    "@graphql-codegen/typescript-apollo-client-helpers": "^1.1.9",
-    "@graphql-codegen/typescript-operations": "1.17.8",
+    "@graphql-codegen/cli": "^2.12.0",
+    "@graphql-codegen/gql-tag-operations-preset": "^1.5.5",
+    "@graphql-codegen/typescript": "2.7.3",
+    "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.3",
+    "@graphql-codegen/typescript-operations": "2.5.3",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^27.5.1",
     "@lhci/cli": "0.8.1",

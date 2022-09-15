@@ -1,8 +1,11 @@
+import type { TypedQueryDocumentNode } from 'graphql'
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { getGraphQLClient, GraphQLResult, requestGraphQLCommon, GraphQLRequest } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+
+export type GraphQLRequest<T, V> = string | TypedQueryDocumentNode<T, V>
 
 const getHeaders = (): { [header: string]: string } => ({
     ...window?.context?.xhrHeaders,
@@ -21,7 +24,7 @@ const getHeaders = (): { [header: string]: string } => ({
  * @template TVariables The type of the query input variables (import from our auto-generated types).
  */
 export const requestGraphQL = <TResult, TVariables = object>(
-    request: string,
+    request: GraphQLRequest<TResult, TVariables>,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
     requestGraphQLCommon({

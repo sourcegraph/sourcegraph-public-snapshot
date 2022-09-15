@@ -12,7 +12,12 @@ const { readFile, writeFile, mkdir } = require('mz/fs')
 const { format, resolveConfig } = require('prettier')
 
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
-const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
+const {
+  generateGraphQlOperations,
+  ALL_DOCUMENTS_GLOB,
+  WEB_DOCUMENTS_GLOB,
+  generateGraphQlDocuments,
+} = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
 
@@ -120,7 +125,8 @@ function watchGraphQlOperations() {
   // trigger the code generation more selectively.
   return gulp
     .watch(ALL_DOCUMENTS_GLOB, {
-      ignored: /** @param {string} name */ name => name.endsWith('graphql-operations.ts'),
+      ignored: /** @param {string} name */ name =>
+        name.endsWith('graphql-operations.ts') || name.endsWith('.queries.ts'),
     })
     .on('all', (type, name) => {
       ;(async () => {
@@ -136,10 +142,37 @@ function watchGraphQlOperations() {
 }
 
 /**
+ * Generates the new query-specific types on file changes.
+ */
+function watchGraphQlDocuments() {
+  // Although graphql-codegen has watching capabilities, they don't appear to
+  // use chokidar correctly and rely on polling. Instead, let's get gulp to
+  // watch for us, since we know it'll do it more efficiently, and then we can
+  // trigger the code generation more selectively.
+  return gulp.watch(WEB_DOCUMENTS_GLOB).on('all', () => {
+    ;(async (type, name) => {
+      console.log('type', type)
+      console.log('Regenerating GraphQL documents', name)
+      await generateGraphQlDocuments()
+      console.log('Done regenerating GraphQL documents')
+    })().catch(error => {
+      console.error(error)
+    })
+  })
+}
+
+/**
  * Generates the new query-specific types.
  */
 async function graphQlOperations() {
   await generateGraphQlOperations()
+}
+
+/**
+ * Generates the new query-specific types.
+ */
+async function graphQlDocuments() {
+  await generateGraphQlDocuments()
 }
 
 /**
@@ -198,6 +231,8 @@ module.exports = {
   watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
+  graphQlDocuments,
+  watchGraphQlDocuments,
   cssModulesTypings,
   watchCSSModulesTypings,
 }

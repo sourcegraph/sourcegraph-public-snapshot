@@ -1,4 +1,5 @@
-import { GraphQLError } from 'graphql'
+import { gql as apolloGql } from '@apollo/client'
+import { GraphQLError, TypedQueryDocumentNode } from 'graphql'
 import { trimEnd } from 'lodash'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -13,8 +14,7 @@ import { GRAPHQL_URI } from './constants'
 /**
  * Use this template string tag for all GraphQL queries.
  */
-export const gql = (template: TemplateStringsArray, ...substitutions: any[]): string =>
-    String.raw(template, ...substitutions)
+export const gql = apolloGql
 
 export interface SuccessGraphQLResult<T> {
     data: T
@@ -29,6 +29,7 @@ export interface ErrorGraphQLResult<T = unknown> {
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult<T>
+export type GraphQLRequest<T, V> = string | TypedQueryDocumentNode<T, V>
 
 /**
  * Guarantees that the GraphQL query resulted in an error.
@@ -54,16 +55,24 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
-interface BuildGraphQLUrlOptions {
-    request?: string
+interface BuildGraphQLUrlOptions<T, V> {
+    request?: GraphQLRequest<T, V>
     baseUrl?: string
 }
 /**
  * Constructs GraphQL Request URL
  */
-export const buildGraphQLUrl = ({ request, baseUrl }: BuildGraphQLUrlOptions): string => {
-    const nameMatch = request ? request.match(/^\s*(?:query|mutation)\s+(\w+)/) : ''
-    const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
+export function buildGraphQLUrl<T, V = object>({ request, baseUrl }: BuildGraphQLUrlOptions<T, V>): string {
+    let nameMatch: string | undefined
+
+    if (typeof request === 'string') {
+        nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)?.[1]
+    } else {
+        // TODO: Update
+        nameMatch = undefined
+    }
+
+    const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch : ''}`
     return baseUrl ? new URL(trimEnd(baseUrl, '/') + apiURL).href : apiURL
 }
 
@@ -78,7 +87,7 @@ export function requestGraphQLCommon<T, V = object>({
     variables,
     ...options
 }: GraphQLRequestOptions & {
-    request: string
+    request: GraphQLRequest<T, V>
     variables?: V
 }): Observable<GraphQLResult<T>> {
     return fromFetch<GraphQLResult<T>>(buildGraphQLUrl({ request, baseUrl }), {
