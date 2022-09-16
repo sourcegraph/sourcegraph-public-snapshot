@@ -232,24 +232,6 @@ interface Changeset {
     ): BatchChangeConnection!
 
     """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
     The state of the changeset.
     """
     state: ChangesetState!
@@ -304,24 +286,6 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -432,24 +396,6 @@ type ExternalChangeset implements Node & Changeset {
     or the changeset has not yet been published.
     """
     author: Person
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -925,14 +871,6 @@ type GitBranchChangesetDescription {
     For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     """
     baseRev: String!
-
-    """
-    The repository that contains the branch with this changeset's changes.
-    """
-    headRepository: Repository!
-        @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
-        )
 
     """
     The full name of the Git ref that holds the changes proposed by this changeset. This ref will
@@ -2603,22 +2541,6 @@ type BatchChange implements Node {
     state: BatchChangeState!
 
     """
-    The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
-    """
-    specCreator: User
-        @deprecated(
-            reason: "Unused. This always incorrectly returned the current batch specs creator, not the intial one. This field is deprecated and will be removed in a future release."
-        )
-
-    """
-    The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
-
-    This is an alias of BatchChange.creator.
-    """
-    initialApplier: User
-        @deprecated(reason: "Use creator instead. This field is deprecated and will be removed in a future release.")
-
-    """
     The user who created the batch change, or null if the user was deleted.
     """
     creator: User
@@ -2675,27 +2597,6 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
-        """
-        Only include changesets with any of the given reconciler states.
-        """
-        reconcilerState: [ChangesetReconcilerState!]
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given publication state.
-        """
-        publicationState: ChangesetPublicationState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given external state.
-        """
-        externalState: ChangesetExternalState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
         """
         Only include changesets with the given state.
         """

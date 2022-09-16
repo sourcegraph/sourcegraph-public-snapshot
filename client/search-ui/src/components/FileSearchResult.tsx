@@ -200,10 +200,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(
-                    styles.titleInner,
-                    coreWorkflowImprovementsEnabled && result.type !== 'path' && styles.mutedRepoFileLink
-                )}
+                className={classNames(styles.titleInner, coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink)}
             />
         ),
         allExpanded: props.allExpanded,

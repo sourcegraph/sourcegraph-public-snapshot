@@ -518,7 +518,8 @@ describe('Repository component', () => {
             })
 
             describe('jump to definition', () => {
-                test('noops when on the definition', async () => {
+                // https://github.com/sourcegraph/sourcegraph/issues/41555
+                test.skip('noops when on the definition', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'

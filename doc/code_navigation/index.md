@@ -51,7 +51,7 @@ developers to explore code by
 
 <div class="cta-group">
 <a class="btn btn-primary" href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references">★ Try it on public code!</a>
-<a class="btn" href="#code-intelligence-for-your-code">Enable it for your code</a>
+<a class="btn" href="#code-navigation-for-your-code">Enable it for your code</a>
 <a class="btn" href="references/precise_examples">Examples</a>
 <a class="btn" href="references/indexers">🗂 Indexers</a>
 </div>
@@ -75,16 +75,19 @@ Here's how you go from search-based code navigation to **automatically-updating,
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
-    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
     - [Index a Python repository](https://github.com/sourcegraph/scip-python)
+    - [Index a Ruby repository](https://github.com/sourcegraph/scip-ruby)
+    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
+
 
 1. _Optional_: automate the uploading of indexes by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
 1. Get **automatic precise code navigation** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code navigation for them.
 1. Setup **auto-dependency indexing** to navigate and search through the dependencies used by your code:
     - **Go**: Enable [auto-indexing](explanations/auto_indexing.md) and Sourcegraph will start indexing your dependencies.
-    - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
     - **JavaScript, TypeScript**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [npm dependencies code host](../../integration/npm.md).
+    - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
+    
 
 Once setup, code navigation is available for use across popular development tools:
 
@@ -117,9 +120,9 @@ Once setup, code navigation is available for use across popular development tool
   - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
   - [Index a C++ repository](how-to/index_a_cpp_repository.md)
   - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
-- Automate uploading LSIF data
-  - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
-  - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
+- Automate uploading code graph data
+  - [Add code graph data to many repositories](how-to/adding_lsif_to_many_repos.md)
+  - [Adding code graph data to CI workflows](how-to/adding_lsif_to_workflows.md)
   - <span class="badge badge-beta">Beta</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
   - <span class="badge badge-beta">Beta</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
 

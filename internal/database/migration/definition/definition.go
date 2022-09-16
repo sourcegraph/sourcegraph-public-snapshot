@@ -122,11 +122,11 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 // of all leaves. This gives us a nice clean single-entry, single-exit graph prefix
 // that can be squashed into a single migration.
 //
-//              +-- ... --+           +-- [ leaf 1 ]
-//              |         |           |
-//    [ root ] -+         +- [ nca ] -+
-//              |         |           |
-//              +-- ... --+           +-- [ leaf 2 ]
+//	          +-- ... --+           +-- [ leaf 1 ]
+//	          |         |           |
+//	[ root ] -+         +- [ nca ] -+
+//	          |         |           |
+//	          +-- ... --+           +-- [ leaf 2 ]
 func (ds *Definitions) LeafDominator() (Definition, bool) {
 	leaves := ds.Leaves()
 	if len(leaves) == 0 {

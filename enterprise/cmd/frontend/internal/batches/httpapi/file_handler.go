@@ -59,6 +59,8 @@ func (h *FileHandler) Get() http.Handler {
 		w.WriteHeader(statusCode)
 
 		if responseBody != nil {
+			w.Header().Set("Content-Type", "application/octet-stream")
+
 			if _, err := io.Copy(w, responseBody); err != nil {
 				h.logger.Error("failed to write payload to client", sglog.Error(err))
 			}

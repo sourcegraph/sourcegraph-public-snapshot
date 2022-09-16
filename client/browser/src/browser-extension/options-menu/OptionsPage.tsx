@@ -8,11 +8,11 @@ import { Observable } from 'rxjs'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { IUser } from '@sourcegraph/shared/src/schema'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
 
+import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
@@ -47,7 +47,7 @@ export interface OptionsPageProps {
     requestPermissionsHandler?: React.MouseEventHandler
 
     hasRepoSyncError?: boolean
-    currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
+    currentUser?: Pick<NonNullable<CurrentUserResult['currentUser']>, 'settingsURL' | 'siteAdmin'>
 }
 
 // "Error code" constants for Sourcegraph URL validation

@@ -149,6 +149,10 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    // Remove negation from the field for lookup
+    if (field.startsWith('-')) {
+        field = field.slice(1)
+    }
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {

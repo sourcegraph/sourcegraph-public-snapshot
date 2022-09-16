@@ -114,9 +114,9 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
 //
-// * WorkerMetrics records worker operations & number of jobs.
-// * ResetterMetrics records the number of jobs that got reset because workers timed out / took too
-//   long.
+//   - WorkerMetrics records worker operations & number of jobs.
+//   - ResetterMetrics records the number of jobs that got reset because workers timed out / took too
+//     long.
 //
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.

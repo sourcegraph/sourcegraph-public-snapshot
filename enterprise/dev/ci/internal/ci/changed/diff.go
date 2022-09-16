@@ -55,7 +55,7 @@ var topLevelGoDirs = []string{
 // ParseDiff identifies what has changed in files by generating a Diff that can be used
 // to check for specific changes, e.g.
 //
-// 	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//	if diff.Has(changed.Client | changed.GraphQL) { ... }
 //
 // To introduce a new type of Diff, add it a new Diff constant above and add a check in
 // this function to identify the Diff.

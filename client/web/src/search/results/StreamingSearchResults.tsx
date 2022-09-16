@@ -7,12 +7,7 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
-import {
-    FetchFileParameters,
-    SidebarButtonStrip,
-    StreamingProgress,
-    StreamingSearchResultsList,
-} from '@sourcegraph/search-ui'
+import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -31,6 +26,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
+import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
@@ -80,7 +76,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [smartSearchEnabled] = useFeatureFlag('ab-lucky-search')
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const prefetchBlobFormat = usePrefetchBlobFormat()
+
+    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -289,10 +288,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const showAggregationPanel = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
     return (
-        <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
+        <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
-
-            <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
             <SearchFiltersSidebar
                 liveQuery={liveQuery}
@@ -308,6 +305,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
                 onSearchSubmit={handleSidebarSearchSubmit}
+                setSidebarCollapsed={setSidebarCollapsed}
             >
                 <GettingStartedTour
                     className="mb-1"
@@ -343,7 +341,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        onShowFiltersChanged={show => setShowMobileSidebar(show)}
+                        onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
+                        sidebarCollapsed={!!sidebarCollapsed}
+                        setSidebarCollapsed={setSidebarCollapsed}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
@@ -397,6 +397,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             smartSearchEnabled={smartSearchEnabled}
+                            prefetchFileEnabled={prefetchFileEnabled}
+                            prefetchFile={params =>
+                                fetchBlob({
+                                    ...params,
+                                    format: prefetchBlobFormat,
+                                })
+                            }
                         />
                     </div>
                 </>
