@@ -203,6 +203,49 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
 }
 
+func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("repositoryID", repositoryID),
+			otlog.String("rev", rev),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.QueueRepoRev(ctx, repositoryID, rev)
+}
+
+func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("batchSize", batchSize),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+	if err != nil {
+		return err
+	}
+
+	ids := make([]int, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			return err
+		}
+
+		ids = append(ids, repoRev.ID)
+	}
+
+	return tx.MarkRepoRevsAsProcessed(ctx, ids)
+}
+
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
 // configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
 // the configuration will be determined based on the regular index scheduling rules: first read any
@@ -217,6 +260,7 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
+			otlog.String("rev", rev),
 		},
 	})
 	defer endObservation(1, observation.Args{})
