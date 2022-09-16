@@ -1,5 +1,7 @@
 import * as React from 'react'
 
+import * as H from 'history'
+
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
@@ -7,18 +9,26 @@ import { switchMap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Input, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Input, Text, Button } from '@sourcegraph/wildcard'
 
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { PageTitle } from '../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    DeleteRepositoryResult,
+    DeleteRepositoryVariables,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchSettingsAreaRepository } from './backend'
+import { requestGraphQL } from '../../../src/backend/graphql'
+import { DELETE_REPOSITORY_MUTATION } from '../../../src/site-admin/backend'
+import { ActionContainer } from './components/ActionContainer'
 
-interface Props extends RouteComponentProps<{}> {
+export interface RepoSettingsOptionsPageProps extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
+    history: H.History
 }
 
 interface State {
@@ -34,11 +44,11 @@ interface State {
 /**
  * The repository settings options page.
  */
-export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
+export class RepoSettingsOptionsPage extends React.PureComponent<RepoSettingsOptionsPageProps, State> {
     private repoUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: RepoSettingsOptionsPageProps) {
         super(props)
 
         this.state = {
@@ -60,6 +70,14 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    private deleteRepo(repo: string): () => Promise<void> {
+        return async () => {
+        await requestGraphQL<DeleteRepositoryResult, DeleteRepositoryVariables>(DELETE_REPOSITORY_MUTATION, {
+            name: repo,
+        }).toPromise()
+        }
     }
 
     public render(): JSX.Element | null {
@@ -107,6 +125,16 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             className="mb-0"
                         />
                     </Form>
+
+                    <ActionContainer
+                        title="Reclone repository"
+                        description={<div>Site admins are able to reclone this repository.</div>}
+                        buttonLabel="Reclone repo"
+                        buttonClassName="danger"
+                        flashText="Recloning repository"
+                        run={this.deleteRepo(this.state.repo.name)}
+                        history={this.props.history}
+                    />
                 </Container>
             </>
         )
