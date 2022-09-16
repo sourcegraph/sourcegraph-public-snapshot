@@ -23,6 +23,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
+import { eventLogger } from '../tracking/eventLogger'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -70,6 +71,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             query,
             extensionHostAPIPromise: extensionHostAPI,
             enableGoImportsSearchQueryTransform,
+            eventLogger,
         })
     }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 

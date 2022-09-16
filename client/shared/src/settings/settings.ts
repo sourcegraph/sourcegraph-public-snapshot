@@ -31,7 +31,6 @@ export interface Settings {
             enabled: boolean
             forNerds?: boolean
         }
-        extensionsAsCoreFeatures?: boolean
         enableGoImportsSearchQueryTransform?: boolean
         enableLegacyExtensions?: boolean
         enableLazyFileResultSyntaxHighlighting?: boolean

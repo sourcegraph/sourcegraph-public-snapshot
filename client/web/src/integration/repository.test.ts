@@ -1052,6 +1052,7 @@ describe('Repository', () => {
         }
 
         it('file decorations work on tree page and sidebar', async () => {
+            testContext.overrideJsContext({ enableLegacyExtensions: true })
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {

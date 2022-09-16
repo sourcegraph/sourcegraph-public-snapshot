@@ -19,7 +19,6 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, useObservable, Icon, Input, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
@@ -268,7 +267,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
     )
 
     // Merge auto-defined contexts and user-defined contexts
-    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts as ISearchContext[]), [
+    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts), [
         filteredAutoDefinedSearchContexts,
         searchContexts,
     ])

@@ -40,6 +40,9 @@ func TestGetTlsExternal(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// We also include system certificates, so when comparing only compare
+		// the first 3 lines.
+		got = head(got, 3)
 
 		want := `foo
 bar
@@ -50,6 +53,19 @@ baz
 			t.Errorf("mismatch in contenst of SSLCAInfo file (-want +got):\n%s", diff)
 		}
 	})
+}
+
+// head will return the first n lines of data.
+func head(data []byte, n int) []byte {
+	for i, b := range data {
+		if b == '\n' {
+			n--
+			if n == 0 {
+				return data[:i+1]
+			}
+		}
+	}
+	return data
 }
 
 func TestConfigureRemoteGitCommand(t *testing.T) {

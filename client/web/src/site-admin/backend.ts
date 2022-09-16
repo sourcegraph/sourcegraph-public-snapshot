@@ -145,6 +145,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloneInProgress
         updatedAt
         lastError
+        byteSize
     }
 `
 

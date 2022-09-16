@@ -287,13 +287,12 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 // possible. We treat repos differently depending on which part of the
 // diff they are:
 //
-//
-//   Deleted    - remove from scheduler and queue.
-//   Added      - new repo, enqueue for asap clone.
-//   Modified   - likely new url or name. May also be a sign of new
-//                commits. Enqueue for asap clone (or fetch).
-//   Unmodified - we likely already have this cloned. Just rely on
-//                the scheduler and do not enqueue.
+//	Deleted    - remove from scheduler and queue.
+//	Added      - new repo, enqueue for asap clone.
+//	Modified   - likely new url or name. May also be a sign of new
+//	             commits. Enqueue for asap clone (or fetch).
+//	Unmodified - we likely already have this cloned. Just rely on
+//	             the scheduler and do not enqueue.
 func (s *UpdateScheduler) UpdateFromDiff(diff Diff) {
 	for _, r := range diff.Deleted {
 		s.remove(r)
