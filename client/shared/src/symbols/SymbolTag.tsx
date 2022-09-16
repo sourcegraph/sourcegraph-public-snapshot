@@ -11,10 +11,30 @@ import styles from './SymbolTag.module.scss'
 
 const getSymbolTooltip = (kind: SymbolKind): string => {
     switch (kind) {
-        case 'TYPEPARAMETER':
-            return 'Type parameter'
-        case 'ENUMMEMBER':
-            return 'Enum member'
+        case 'ACTIVEBINDINGFUNC':
+            return 'Active binding func'
+        case 'ALTSTEP':
+            return 'Altstep definition'
+        case "ANNOTATION":
+            return 'Annotation declarations'
+        case 'ANONMEMBER':
+            return 'Struct anonymous member'
+        case 'ARTIFACTID':
+            return 'Artifact identifiers'
+        case 'CHUNKLABEL':
+            return 'Chunck labels'
+        case 'ENUMCONSTANT':
+            return 'Enum constant'
+        case "HEADING1":
+            return 'H1 headings'
+        case "HEADING2":
+            return 'H2 headings'
+        case "HEADING3":
+            return 'H3 headings'
+        case "IFCLASS":
+            return 'Interface class'
+        case 'METHODSPEC':
+            return 'Interface method specification'
         default:
             return upperFirst((kind as string).toLowerCase())
     }
@@ -44,6 +64,8 @@ function getSymbolClassName(kind: SymbolKind): string {
         case 'METHOD':
         case 'CONSTRUCTOR':
         case 'FUNCTION':
+        case 'FUN':
+        case "FUNC":
             return styles.tagFunction
 
         case 'STRING':
@@ -59,8 +81,7 @@ function getSymbolClassName(kind: SymbolKind): string {
         case 'PROPERTY':
         case 'FIELD':
         case 'KEY':
-        case 'ENUMMEMBER':
-        case 'TYPEPARAMETER':
+        case 'ENUMCONSTANT':
             return styles.tagVariable
 
         case 'EVENT':
