@@ -227,7 +227,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                         />
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
-                    <div data-testid="search-context-menu-item">
+                    <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>Loading search contexts...</small>
                     </div>
                 )}
