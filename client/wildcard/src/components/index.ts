@@ -46,6 +46,16 @@ export {
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
+export {
+    Combobox,
+    ComboboxInput,
+    ComboboxPopover,
+    ComboboxList,
+    ComboboxOptionGroup,
+    ComboboxOption,
+    ComboboxOptionText,
+} from './Combobox'
+
 /**
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
