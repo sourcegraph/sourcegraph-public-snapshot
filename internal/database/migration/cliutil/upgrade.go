@@ -16,6 +16,7 @@ func Upgrade(
 	runnerFactory RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
 	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	expectedSchemaFactories ...ExpectedSchemaFactory,
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
@@ -45,6 +46,11 @@ func Upgrade(
 	skipVersionCheckFlag := &cli.BoolFlag{
 		Name:     "skip-version-check",
 		Usage:    "Skip validation of the instance's current version.",
+		Required: false,
+	}
+	skipDriftCheckFlag := &cli.BoolFlag{
+		Name:     "skip-drift-check",
+		Usage:    "Skip comparison of the instance's current schema against the expected version's schema.",
 		Required: false,
 	}
 	dryRunFlag := &cli.BoolFlag{
@@ -100,9 +106,11 @@ func Upgrade(
 			privilegedMode,
 			privilegedHashFlag.Get(cmd),
 			skipVersionCheckFlag.Get(cmd),
+			skipDriftCheckFlag.Get(cmd),
 			dryRunFlag.Get(cmd),
 			true, // up
 			registerMigrators,
+			expectedSchemaFactories,
 			out,
 		)
 	})
@@ -119,6 +127,7 @@ func Upgrade(
 			noopPrivilegedFlag,
 			privilegedHashFlag,
 			skipVersionCheckFlag,
+			skipDriftCheckFlag,
 			dryRunFlag,
 		},
 	}
