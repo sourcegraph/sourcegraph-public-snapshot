@@ -166,7 +166,6 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 			}
 			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: generalTimeoutMsg, reasonType: reasonType}, aggregationMode)}, nil
 		} else {
-			r.getLogger().Error("unable to run aggregation search", log.String("mode", string(aggregationMode)), log.Error(err))
 			return nil, err
 		}
 	}
