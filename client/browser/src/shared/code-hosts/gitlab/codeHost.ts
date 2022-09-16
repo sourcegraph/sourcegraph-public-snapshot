@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -267,9 +268,24 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         map(() => parseHash(window.location.hash))
     ),
 
-    prepareCodeHost: async () => {
-        await new Promise(resolve => setTimeout(resolve, 10))
-        // TODO: replace with actual transformations
-        nameTransformations.next([{ regex: '2$', replacement: '3' }])
-    },
+    prepareCodeHost: async requestGraphQL =>
+        requestGraphQL<any>({
+            request: gql`
+                query GitlabNameTransformations {
+                    # currentUser {
+                    #     settingsURL
+                    # }
+                }
+            `,
+            variables: {},
+            mightContainPrivateInfo: true,
+        })
+            .pipe(
+                tap(() => {
+                    // TODO: replace with actual transformations
+                    nameTransformations.next([{ regex: '2$', replacement: '3' }])
+                }),
+                mapTo(true)
+            )
+            .toPromise(),
 })
