@@ -1,14 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { boolean, select } from '@storybook/addon-knobs'
-import { useMemo } from '@storybook/addons'
+import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
 import { Position } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -25,6 +24,16 @@ const config: Meta = {
         chromatic: {
             enableDarkMode: true,
             viewports: [600],
+        },
+    },
+    argTypes: {
+        showDotComMarketing: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        codeHostIntegrationMessaging: {
+            control: { type: 'select', options: ['browser-extension', 'native-integration'] as const },
+            defaultValue: 'browser-extension',
         },
     },
 }
@@ -58,17 +67,12 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     },
 }
 
-const commonProps = (): UserNavItemProps => ({
+const commonProps = (props: Args): UserNavItemProps => ({
     themePreference: ThemePreference.Light,
     isLightTheme: true,
     onThemePreferenceChange,
-    showDotComMarketing: boolean('showDotComMarketing', true),
-    codeHostIntegrationMessaging: select(
-        'codeHostIntegrationMessaging',
-        ['browser-extension', 'native-integration'] as const,
-        'browser-extension'
-    ),
-    showRepositorySection: true,
+    showDotComMarketing: props.showDotComMarketing,
+    codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     authenticatedUser,
     position: Position.bottomStart,
     showKeyboardShortcutsHelp: () => undefined,
@@ -86,8 +90,8 @@ const OpenByDefaultWrapper: React.FunctionComponent<{
     return children({ menuButtonRef: menuButtonReference })
 }
 
-export const SiteAdmin: Story = () => {
-    const props = useMemo(() => commonProps(), [])
+export const SiteAdmin: Story = args => {
+    const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
@@ -106,8 +110,8 @@ export const SiteAdmin: Story = () => {
     )
 }
 
-export const WithAvatar: Story = () => {
-    const props = useMemo(() => commonProps(), [])
+export const WithAvatar: Story = args => {
+    const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
@@ -117,7 +121,6 @@ export const WithAvatar: Story = () => {
                             {...props}
                             {...webProps}
                             menuButtonRef={menuButtonRef}
-                            showRepositorySection={true}
                             authenticatedUser={{
                                 ...props.authenticatedUser,
                                 avatarURL:

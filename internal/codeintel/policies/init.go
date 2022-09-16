@@ -3,8 +3,8 @@ package policies
 import (
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -21,18 +21,18 @@ var (
 
 // GetService creates or returns an already-initialized policies service. If the service is
 // new, it will use the given database handle.
-func GetService(db database.DB) *Service {
+func GetService(db database.DB, uploadSvc UploadService, gitserver GitserverClient) *Service {
 	svcOnce.Do(func() {
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
 				Logger:     log.Scoped("policies."+name, "codeintel policies "+name),
-				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 				Registerer: prometheus.DefaultRegisterer,
 			}
 		}
 
 		store := store.New(db, oc("store"))
-		svc = newService(store, oc("service"))
+		svc = newService(store, uploadSvc, gitserver, oc("service"))
 	})
 
 	return svc

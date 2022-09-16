@@ -1,4 +1,3 @@
-import { number } from '@storybook/addon-knobs'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -15,19 +14,37 @@ const config: Meta = {
 }
 
 export default config
-
+let openValue = 0
+let mergedValue = 0
 const queryRepoChangesetsStats: typeof _queryRepoChangesetsStats = () =>
     of({
         changesetsStats: {
-            open: number('Open', 2),
-            merged: number('Merged', 47),
+            open: openValue,
+            merged: mergedValue,
         },
     })
 
-export const RepoButton: Story = () => (
+export const RepoButton: Story = args => (
     <WebStory>
-        {() => <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />}
+        {() => {
+            openValue = args.open
+            mergedValue = args.merged
+
+            return (
+                <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
+            )
+        }}
     </WebStory>
 )
+RepoButton.argTypes = {
+    open: {
+        control: { type: 'number' },
+        defaultValue: 2,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 47,
+    },
+}
 
 RepoButton.storyName = 'RepoButton'

@@ -129,7 +129,7 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	if err != nil {
 		return nil, err
 	}
-	c, err := e.Configuration()
+	c, err := e.Configuration(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 
 	for _, e := range es {
 		var c any
-		c, err = e.Configuration()
+		c, err = e.Configuration(ctx)
 		if err != nil {
 			return nil, err
 		}

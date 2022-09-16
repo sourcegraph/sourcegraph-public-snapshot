@@ -53,12 +53,16 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			var config map[string]any
 			// Raw configs may have comments in them so we have to use a json parser
 			// that supports comments in json.
-			if err := jsonc.Unmarshal(service.Config, &config); err != nil {
+			rawConfig, err := service.Config.Decrypt(r.Context())
+			if err != nil {
+				return err
+			}
+			if jsonc.Unmarshal(rawConfig, &config); err != nil {
 				log15.Error(
 					"ignoring external service config that has invalid json",
 					"id", service.ID,
 					"displayName", service.DisplayName,
-					"config", service.Config,
+					"config", rawConfig,
 					"err", err,
 				)
 				continue

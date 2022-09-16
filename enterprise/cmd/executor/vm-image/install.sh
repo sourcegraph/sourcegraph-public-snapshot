@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-export IGNITE_VERSION=v0.10.0
+export IGNITE_VERSION=v0.10.4
 export CNI_VERSION=v0.9.1
-export RUNTIME_IMAGE="weaveworks/ignite:${IGNITE_VERSION}"
+export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
 export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
-export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
+export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
 export NODE_EXPORTER_VERSION=1.2.2
 export NODE_EXPORTER_ADDR="127.0.0.1:9100"
 
@@ -81,7 +81,7 @@ function install_ignite() {
   apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
 
   # Download and install ignite binary.
-  curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
+  curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
 }
@@ -195,13 +195,13 @@ function install_src_cli() {
   rm -rf src-cli.tar.gz
 }
 
-## Build the ignite-ubuntu image for use in firecracker.
+## Build the sourcegraph/executor-vm image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
-  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/executor-vm
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
-  # Remove intermediate layers and base image used in ignite-ubuntu.
+  # Remove intermediate layers and base image used in executor-vm.
   docker system prune --force
 }
 
@@ -215,6 +215,8 @@ function preheat_kernel_image() {
 ## Configures the CNI explicitly and adds the isolation plugin to the chain.
 ## This is to prevent cross-network communication (which currently doesn't happen
 ## as we only have 1 bridge).
+## We also set the maximum bandwidth usable per VM to 500 MBit to avoid abuse and
+## to make sure multiple VMs on the same host won't starve others.
 function configure_cni() {
   mkdir -p /etc/cni/net.d
   cat <<EOF >/etc/cni/net.d/10-ignite.conflist
@@ -245,6 +247,14 @@ function configure_cni() {
     },
     {
       "type": "isolation"
+    },
+    {
+      "name": "slowdown",
+      "type": "bandwidth",
+      "ingressRate": 524288000,
+      "ingressBurst": 1048576000,
+      "egressRate": 524288000,
+      "egressBurst": 1048576000
     }
   ]
 }
@@ -312,6 +322,15 @@ spec:
       oci: "${RUNTIME_IMAGE}"
     kernel:
       oci: "${KERNEL_IMAGE}"
+      # Explanation of arguments passed here:
+      # console: Default
+      # reboot: Default
+      # panic: Default
+      # pci: Default
+      # ip: Default
+      # random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md, this makes RNG initialization much faster (saves ~1s on startup).
+      # i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
+      cmdLine: "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
 EOF
 }
 
@@ -326,7 +345,7 @@ function cleanup() {
 # Prerequisites
 if [ "${PLATFORM_TYPE}" == "gcp" ]; then
   install_ops_agent
-else
+elif [ "${PLATFORM_TYPE}" == "aws" ]; then
   install_cloudwatch_agent
 fi
 install_docker

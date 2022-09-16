@@ -21,7 +21,7 @@
 
 button.card {
     cursor: pointer;
-    &:hover {
+    &:hover:not(:disabled) {
         --card-border-color: var(--primary);
         box-shadow: var(--hover-box-shadow);
     }

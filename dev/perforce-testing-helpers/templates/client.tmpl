@@ -1,0 +1,19 @@
+Client: ${P4CLIENT}
+
+Owner:  ${P4USER}
+
+Host: ${P4_CLIENT_HOST}
+
+Description: ${DEPOT_DESCRIPTION}
+
+Root: ${DEPOT_DIR}/
+
+Options: noallwrite noclobber nocompress unlocked nomodtime normdir
+
+SubmitOptions:  submitunchanged
+
+LineEnd: local
+
+View:
+        //${DEPOT_NAME}/... //${P4CLIENT}/...
+

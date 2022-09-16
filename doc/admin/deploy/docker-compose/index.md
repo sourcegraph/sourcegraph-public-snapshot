@@ -13,6 +13,7 @@ This section provides instruction for how to install Sourcegraph with Docker Com
 Alternatively, follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
 
 - [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+- [Deploy Sourcegraph with Docker Compose on Azure](../../deploy/docker-compose/azure.md)
 - [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
 - [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
 
@@ -99,7 +100,7 @@ Clone the forked repository to your local machine.
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.42.1"
+  export SOURCEGRAPH_VERSION="v3.43.2"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

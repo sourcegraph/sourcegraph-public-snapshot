@@ -37,7 +37,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clo
 	awsRepo := bt.TestRepo(t, es, extsvc.KindAWSCodeCommit)
 
 	// Enable webhooks on GitHub only.
-	rawConfig, err := ghExtSvc.Configuration()
+	rawConfig, err := ghExtSvc.Configuration(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clo
 	if err != nil {
 		t.Fatal(err)
 	}
-	ghExtSvc.Config = string(marshalledConfig)
+	ghExtSvc.Config.Set(string(marshalledConfig))
 	es.Upsert(ctx, ghExtSvc)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {

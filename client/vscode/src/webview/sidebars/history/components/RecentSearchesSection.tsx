@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, H5, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -56,15 +56,16 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
 
     return (
         <div className={styles.sidebarSection}>
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+            <Button
+                variant="secondary"
+                outline={true}
+                className={styles.sidebarSectionCollapseButton}
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
                 <H5 className="flex-grow-1">Recent Searches</H5>
                 <Icon className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} aria-hidden={true} />
-            </button>
+            </Button>
 
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
@@ -73,13 +74,13 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                         .map(search => (
                             <div key={search.timestamp + search.searchText}>
                                 <small className={styles.sidebarSectionListItem}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link p-0 text-left text-decoration-none"
+                                    <Button
+                                        variant="link"
+                                        className="p-0 text-left text-decoration-none"
                                         onClick={() => onSavedSearchClick(search.searchText)}
                                     >
                                         <SyntaxHighlightedSearchQuery query={search.searchText} />
-                                    </button>
+                                    </Button>
                                 </small>
                             </div>
                         ))}

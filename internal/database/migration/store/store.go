@@ -224,7 +224,7 @@ func (s *Store) inferbackfillTargetViaMigrationLogs(ctx context.Context) (int, b
 // DO NOT call this method from inside a transaction, otherwise the absence of this relation will
 // cause a transaction rollback while this function returns a nil-valued error (hard to debug).
 func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, bool, error) {
-	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(tableizeSchemaName(s.schemaName)))))
+	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(s.schemaName))))
 	if err != nil && !isMissingRelation(err) {
 		return 0, false, err
 	}
@@ -521,16 +521,6 @@ func humanizeSchemaName(schemaName string) string {
 	}
 
 	return strings.TrimSuffix(schemaName, "_schema_migrations")
-}
-
-// tableizeSchemaName converts a migration name as defined in the migrations/ directory to
-// the name of the table used by golang-migrate.
-func tableizeSchemaName(schemaName string) string {
-	if schemaName == "frontend" {
-		return "schema_migrations"
-	}
-
-	return fmt.Sprintf("%s_schema_migrations", schemaName)
 }
 
 var quote = sqlf.Sprintf

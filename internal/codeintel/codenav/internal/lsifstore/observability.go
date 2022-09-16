@@ -15,6 +15,7 @@ type operations struct {
 	getDiagnostics         *observation.Operation
 	getRanges              *observation.Operation
 	getStencil             *observation.Operation
+	getExists              *observation.Operation
 	getMonikersByPosition  *observation.Operation
 	getPackageInformation  *observation.Operation
 	getBulkMonikerResults  *observation.Operation
@@ -56,6 +57,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDiagnostics:         op("GetDiagnostics"),
 		getRanges:              op("GetRanges"),
 		getStencil:             op("GetStencil"),
+		getExists:              op("GetExists"),
 		getMonikersByPosition:  op("GetMonikersByPosition"),
 		getPackageInformation:  op("GetPackageInformation"),
 		getBulkMonikerResults:  op("GetBulkMonikerResults"),

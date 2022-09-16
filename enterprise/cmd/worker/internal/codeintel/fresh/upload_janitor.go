@@ -3,8 +3,8 @@ package codeintel
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -40,10 +40,17 @@ func (j *uploadJanitorJob) Config() []env.Config {
 func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "codeintel job routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	metrics := cleanup.NewMetrics(observationContext)
+
+	// Initialize stores
+	db, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+	databaseDB := database.NewDB(logger, db)
 
 	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
@@ -54,23 +61,20 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	if err != nil {
 		return nil, err
 	}
+	codeIntelLsifStore := database.NewDBWith(logger, lsifStore)
 
-	db, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-
+	// Initialize clients
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
-
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 
-	indexSvc := autoindexing.GetService(database.NewDB(logger, db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
-	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore), gitserverClient)
+	// Initialize services
+	uploadSvc := uploads.GetService(databaseDB, codeIntelLsifStore, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	return []goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, indexSvc, observationContext.Logger, metrics),
+		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, autoindexingSvc, observationContext.Logger, metrics),
 	}, nil
 }

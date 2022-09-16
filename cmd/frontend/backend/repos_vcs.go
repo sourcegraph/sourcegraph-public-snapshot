@@ -3,8 +3,7 @@ package backend
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -40,7 +39,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
+	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
 
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)

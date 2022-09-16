@@ -14,7 +14,6 @@ import (
 )
 
 type operations struct {
-	symbol          *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -22,10 +21,15 @@ type operations struct {
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
+
+	getSupportedByCtags        *observation.Operation
+	getGitBlobLSIFDataResolver *observation.Operation
+	getLanguagesRequestedBy    *observation.Operation
+	setRequestLanguageSupport  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_symbols_transport_graphql",
 		metrics.WithLabels("op"),
@@ -36,20 +40,23 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.codenav.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		symbol: op("Symbol"),
-		hover:  op("Hover"),
-
+		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
 		implementations: op("Implementations"),
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
+
+		getSupportedByCtags:        op("GetSupportedByCtags"),
+		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
+		getLanguagesRequestedBy:    op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport:  op("SetRequestLanguageSupport"),
 	}
 }
 

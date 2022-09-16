@@ -2,31 +2,12 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-import { useState } from 'react'
-
 import { action } from '@storybook/addon-actions'
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import {
-    TextArea,
-    Button,
-    ButtonGroup,
-    Link,
-    Select,
-    BUTTON_SIZES,
-    Checkbox,
-    Input,
-    Text,
-    Code,
-    H1,
-    H2,
-    H3,
-    H4,
-} from '@sourcegraph/wildcard'
+import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4 } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -34,7 +15,6 @@ import { Form } from '../../components/Form'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
-import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
 registerHighlightContributions()
@@ -53,25 +33,6 @@ const config: Meta = {
 }
 
 export default config
-
-export const TextTypography: Story = () => (
-    <>
-        <H1>Typography</H1>
-
-        <TextStory />
-    </>
-)
-
-TextTypography.parameters = {
-    design: {
-        name: 'Figma',
-        type: 'figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-    },
-}
-
-type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const CodeTypography: Story = () => (
     <>
@@ -253,136 +214,6 @@ export const Layout: Story = () => (
         </div>
     </>
 )
-
-export const ButtonGroups: Story = () => {
-    const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
-    const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
-    return (
-        <>
-            <H1>Button groups</H1>
-            <Text>
-                Group a series of buttons together on a single line with the button group.{' '}
-                <Link to="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</Link>
-            </Text>
-
-            <H2>Example</H2>
-            <div className="mb-2">
-                <Text>
-                    Button groups have no styles on their own, they just group buttons together. This means they can be
-                    used to group any other semantic or outline button variant.
-                </Text>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button variant="secondary">Left</Button>
-                        <Button variant="secondary">Middle</Button>
-                        <Button variant="secondary">Right</Button>
-                    </ButtonGroup>{' '}
-                    Example with <Code>btn-secondary</Code>
-                </div>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button outline={true} variant="secondary">
-                            Left
-                        </Button>
-                        <Button outline={true} variant="secondary">
-                            Middle
-                        </Button>
-                        <Button outline={true} variant="secondary">
-                            Right
-                        </Button>
-                    </ButtonGroup>{' '}
-                    Example with <Code>btn-outline-secondary</Code>
-                </div>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button outline={true} variant="primary">
-                            Left
-                        </Button>
-                        <Button outline={true} variant="primary">
-                            Middle
-                        </Button>
-                        <Button outline={true} variant="primary">
-                            Right
-                        </Button>
-                    </ButtonGroup>{' '}
-                    Example with <Code>btn-outline-primary</Code>
-                </div>
-            </div>
-
-            <H2 className="mt-3">Sizing</H2>
-            <Text>
-                Just like buttons, button groups have <Code>sm</Code> and <Code>lg</Code> size variants.
-            </Text>
-            <div className="mb-2">
-                {buttonSizes.map(size => (
-                    <div key={size} className="mb-2">
-                        <ButtonGroup aria-label="Sizing example">
-                            <Button size={size} outline={true} variant="primary">
-                                Left
-                            </Button>
-                            <Button size={size} outline={true} variant="primary">
-                                Middle
-                            </Button>
-                            <Button size={size} outline={true} variant="primary">
-                                Right
-                            </Button>
-                        </ButtonGroup>
-                    </div>
-                ))}
-            </div>
-
-            <H2 className="mt-3">Active state</H2>
-            <Text>
-                The <Code>active</Code> class can be used to craft toggles out of button groups.
-            </Text>
-            <div className="mb-2">
-                <ButtonGroup aria-label="Basic example">
-                    {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <Button
-                            key={option}
-                            className={classNames(option === active && 'active')}
-                            onClick={() => setActive(option)}
-                            aria-pressed={option === active}
-                            outline={true}
-                            variant="secondary"
-                        >
-                            {option}
-                        </Button>
-                    ))}
-                </ButtonGroup>{' '}
-                Example with <Code>btn-outline-secondary</Code>
-            </div>
-            <div className="mb-2">
-                <ButtonGroup aria-label="Basic example">
-                    {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <Button
-                            key={option}
-                            className={classNames(option === active && 'active')}
-                            onClick={() => setActive(option)}
-                            aria-pressed={option === active}
-                            outline={true}
-                            variant="primary"
-                        >
-                            {option}
-                        </Button>
-                    ))}
-                </ButtonGroup>{' '}
-                Example with <Code>btn-outline-primary</Code>
-            </div>
-        </>
-    )
-}
-
-ButtonGroups.storyName = 'Button groups'
-
-ButtonGroups.parameters = {
-    design: {
-        type: 'figma',
-        name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-    },
-}
 
 export const InputGroups: Story = () => (
     <>
@@ -577,49 +408,67 @@ export const ListGroups: Story = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = () => {
-    const min = number('min', 0)
-    const max = number('max', 1)
-    const high = number('high', 0.8)
-    const low = number('low', 0.2)
-    const optimum = number('optimum', 1)
-    const value = number('value', 0.1)
+export const Meter: Story = args => (
+    <>
+        <H1>Meter</H1>
+        <Text>
+            The HTML{' '}
+            <Link
+                to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <Code>{'<meter>'}</Code>
+            </Link>{' '}
+            element represents either a scalar value within a known range or a fractional value.
+        </Text>
+        <H2>Examples</H2>
+        <hr />
+        <div className="pb-3">
+            <H3>Optimum</H3>
+            <meter min={0} max={1} optimum={1} value={1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Customize with controls</H3>
+            <meter {...args} />
+        </div>
+    </>
+)
 
-    return (
-        <>
-            <H1>Meter</H1>
-            <Text>
-                The HTML{' '}
-                <Link
-                    to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Code>{'<meter>'}</Code>
-                </Link>{' '}
-                element represents either a scalar value within a known range or a fractional value.
-            </Text>
-            <H2>Examples</H2>
-            <hr />
-            <div className="pb-3">
-                <H3>Optimum</H3>
-                <meter min={0} max={1} optimum={1} value={1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Sub optimum</H3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Sub sub optimum</H3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Customize with knobs</H3>
-                <meter min={min} max={max} high={high} low={low} optimum={optimum} value={value} />
-            </div>
-        </>
-    )
+Meter.argTypes = {
+    min: {
+        type: 'number',
+        defaultValue: 0,
+    },
+    max: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    high: {
+        type: 'number',
+        defaultValue: 0.8,
+    },
+    low: {
+        type: 'number',
+        defaultValue: 0.2,
+    },
+    optimum: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    value: {
+        type: 'number',
+        defaultValue: 0.1,
+    },
 }

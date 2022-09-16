@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -108,15 +107,13 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
-	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
-		// streamStructuralSearch performs a streaming search when the user sets a value
-		// for `count`. The first return parameter indicates whether the request was
-		// serviced with streaming.
+func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, batchRetry bool, repos []repoData, stream streaming.Sender) error {
+	if !batchRetry {
+		// stream search results
 		return streamStructuralSearch(ctx, clients, args, repos, stream)
 	}
 
-	// For structural search with default limits we retry if we get no results.
+	// For batching structural search we use retry logic if we get no results.
 	agg := streaming.NewAggregatingStream()
 	err := streamStructuralSearch(ctx, clients, args, repos, agg)
 
@@ -153,10 +150,10 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 }
 
 type SearchJob struct {
-	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
+	BatchRetry       bool
 
 	RepoOpts search.RepoOptions
 }
@@ -184,7 +181,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
 	})
 }
 
@@ -199,14 +196,10 @@ func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
 			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
 			log.String("useIndex", string(s.UseIndex)),
-			trace.Printf("select", "%q", s.ZoektArgs.Select),
-			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", s.ZoektArgs.Query),
-			log.String("type", string(s.ZoektArgs.Typ)),
 			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		)

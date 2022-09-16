@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -33,10 +34,11 @@ func NewWorker(
 ) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 	observationContext := observation.Context{
-		Tracer: &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		HoneyDataset: &honey.Dataset{
 			Name: "codeintel-worker",
 		},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	op := observationContext.Operation(observation.Op{
@@ -46,15 +48,23 @@ func NewWorker(
 		},
 	})
 
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationContext.Registerer.MustRegister(uploadSizeGuage)
+
 	handler := &handler{
-		dbStore:         dbStore,
-		workerStore:     workerStore,
-		lsifStore:       lsifStore,
-		uploadStore:     uploadStore,
-		gitserverClient: gitserverClient,
-		enableBudget:    budgetMax > 0,
-		budgetRemaining: budgetMax,
-		handleOp:        op,
+		dbStore:           dbStore,
+		workerStore:       workerStore,
+		lsifStore:         lsifStore,
+		uploadStore:       uploadStore,
+		gitserverClient:   gitserverClient,
+		handleOp:          op,
+		budgetRemaining:   budgetMax,
+		enableBudget:      budgetMax > 0,
+		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),
+		uploadSizeGuage:   uploadSizeGuage,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{

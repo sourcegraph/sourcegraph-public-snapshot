@@ -35,8 +35,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,

@@ -7,17 +7,19 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 )
 
 var preview bool
@@ -35,8 +37,24 @@ func init() {
 func main() {
 	flag.Parse()
 
+	liblog := log.Init(log.Resource{
+		Name:       "buildkite-ci",
+		Version:    "",
+		InstanceID: hostname.Get(),
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{
+				Dsn:        os.Getenv("CI_SENTRY_DSN"),
+				SampleRate: 1, //send all
+			},
+		},
+	))
+	defer liblog.Sync()
+
+	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+
 	if docs {
-		renderPipelineDocs(os.Stdout)
+		renderPipelineDocs(logger, os.Stdout)
 		return
 	}
 
@@ -44,7 +62,7 @@ func main() {
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to generate pipeline", log.Error(err))
 	}
 
 	if preview {
@@ -58,7 +76,7 @@ func main() {
 		_, err = pipeline.WriteJSONTo(os.Stdout)
 	}
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to write pipeline out to stdout", log.Error(err), log.Bool("wantYaml", wantYaml))
 	}
 }
 
@@ -100,7 +118,7 @@ func trimEmoji(s string) string {
 	return strings.TrimSpace(emojiRegexp.ReplaceAllString(s, ""))
 }
 
-func renderPipelineDocs(w io.Writer) {
+func renderPipelineDocs(logger log.Logger, w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
 	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
 	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
@@ -117,7 +135,7 @@ func renderPipelineDocs(w io.Writer) {
 			Diff:    diff,
 		})
 		if err != nil {
-			log.Fatalf("Generating pipeline for diff %q: %s", diff, err)
+			logger.Fatal("generating pipeline for diff", log.Error(err), log.Uint32("diff", uint32(diff)))
 		}
 		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
@@ -190,7 +208,7 @@ func renderPipelineDocs(w io.Writer) {
 					Version: "v1.1.1",
 				})
 				if err != nil {
-					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+					logger.Fatal("generating pipeline for RunType", log.String("runType", rt.String()), log.Error(err))
 				}
 				fmt.Fprint(w, "\nBase pipeline (more steps might be included based on branch changes):\n\n")
 				for _, raw := range pipeline.Steps {

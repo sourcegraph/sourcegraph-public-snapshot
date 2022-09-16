@@ -60,8 +60,8 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
-	c, err := extSvc.Configuration()
+func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (string, error) {
+	c, err := extSvc.Configuration(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
 	}

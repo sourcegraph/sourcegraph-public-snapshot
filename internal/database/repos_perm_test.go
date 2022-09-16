@@ -224,7 +224,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 	aliceExternalService := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err = db.ExternalServices().Create(ctx, confGet, aliceExternalService)
 	if err != nil {
@@ -314,7 +314,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	extsvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err = db.ExternalServices().Create(ctx, confGet, extsvc)
 	if err != nil {
@@ -446,7 +446,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	extsvc := &types.ExternalService{
 		Kind:           extsvc.KindGitHub,
 		DisplayName:    "GITHUB #1",
-		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		NamespaceOrgID: org.ID,
 	}
 	err = db.ExternalServices().Create(ctx, confGet, extsvc)
@@ -495,7 +495,7 @@ func createGitHubExternalService(t *testing.T, db DB, userID int32) *types.Exter
 	svc := &types.ExternalService{
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 		NamespaceUserID: userID,
 		CreatedAt:       now,
 		UpdatedAt:       now,
@@ -655,7 +655,7 @@ VALUES (%s, %s, '')
 	cindyExternalService := &types.ExternalService{
 		Kind:         extsvc.KindGitHub,
 		DisplayName:  "GITHUB #1",
-		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		Unrestricted: true,
 	}
 	err = db.ExternalServices().Create(ctx, confGet, cindyExternalService)

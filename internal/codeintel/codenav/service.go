@@ -15,6 +15,7 @@ import (
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,6 +34,14 @@ type service interface {
 	GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error)
 	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, _ int, err error)
 	GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error)
+	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error)
+
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language Support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 
 	// Uploads Service
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
@@ -41,18 +50,22 @@ type service interface {
 }
 
 type Service struct {
-	store      store.Store
-	lsifstore  lsifstore.LsifStore
-	uploadSvc  UploadService
-	operations *operations
+	store         store.Store
+	lsifstore     lsifstore.LsifStore
+	gitserver     GitserverClient
+	symbolsClient *symbols.Client
+	uploadSvc     UploadService
+	operations    *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, uploadSvc UploadService, observationContext *observation.Context) *Service {
+func newService(store store.Store, lsifstore lsifstore.LsifStore, uploadSvc UploadService, gitserver GitserverClient, symbolsClient *symbols.Client, observationContext *observation.Context) *Service {
 	return &Service{
-		store:      store,
-		lsifstore:  lsifstore,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationContext),
+		store:         store,
+		lsifstore:     lsifstore,
+		gitserver:     gitserver,
+		symbolsClient: symbolsClient,
+		uploadSvc:     uploadSvc,
+		operations:    newOperations(observationContext),
 	}
 }
 
@@ -1190,6 +1203,128 @@ func (s *Service) GetPackageInformation(ctx context.Context, bundleID int, path,
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetPackageInformation(ctx, bundleID, path, packageInformationID)
+}
+
+func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
+	ctx, trace, endObservation := s.operations.getClosestDumpsForBlob.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{
+			traceLog.Int("repositoryID", repositoryID),
+			traceLog.String("commit", commit),
+			traceLog.String("path", path),
+			traceLog.Bool("exactPath", exactPath),
+			traceLog.String("indexer", indexer),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	candidates, err := s.uploadSvc.InferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
+	if err != nil {
+		return nil, err
+	}
+
+	uploadCandidates := updateSvcDumpToSharedDump(candidates)
+	trace.Log(
+		traceLog.Int("numCandidates", len(candidates)),
+		traceLog.String("candidates", uploadIDsToString(uploadCandidates)),
+	)
+
+	commitChecker := NewCommitCache(s.gitserver)
+	commitChecker.SetResolvableCommit(repositoryID, commit)
+
+	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(
+		traceLog.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
+		traceLog.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)),
+	)
+
+	// Filter in-place
+	filtered := candidatesWithCommits[:0]
+
+	for i := range candidatesWithCommits {
+		if exactPath {
+			// TODO - this breaks if the file was renamed in git diff
+			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(path, candidates[i].Root))
+			if err != nil {
+				return nil, errors.Wrap(err, "lsifStore.Exists")
+			}
+			if !pathExists {
+				continue
+			}
+		} else { //nolint:staticcheck
+			// TODO(efritz) - ensure there's a valid document path for this condition as well
+		}
+
+		filtered = append(filtered, uploadCandidates[i])
+	}
+	trace.Log(
+		traceLog.Int("numFiltered", len(filtered)),
+		traceLog.String("filtered", uploadIDsToString(filtered)),
+	)
+
+	return filtered, nil
+}
+
+func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
+			}
+		}
+	}
+
+	return false, "", nil
+}
+
+func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID), traceLog.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetLanguagesRequestedBy(ctx, userID)
+}
+
+// filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
+// slice. The slice is filtered in-place and returned (to update the slice length).
+func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []shared.Dump) ([]shared.Dump, error) {
+	rcs := make([]codeintelgitserver.RepositoryCommit, 0, len(uploads))
+	for _, upload := range uploads {
+		rcs = append(rcs, codeintelgitserver.RepositoryCommit{
+			RepositoryID: upload.RepositoryID,
+			Commit:       upload.Commit,
+		})
+	}
+	exists, err := commitCache.ExistsBatch(ctx, rcs)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := uploads[:0]
+	for i, upload := range uploads {
+		if exists[i] {
+			filtered = append(filtered, upload)
+		}
+	}
+
+	return filtered, nil
 }
 
 func updateSvcDumpToSharedDump(uploadDumps []uploads.Dump) []shared.Dump {

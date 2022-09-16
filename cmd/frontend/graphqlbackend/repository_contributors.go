@@ -37,14 +37,14 @@ type repositoryContributorConnectionResolver struct {
 
 	// cache result because it is used by multiple fields
 	once    sync.Once
-	results []*gitdomain.PersonCount
+	results []*gitdomain.ContributorCount
 	err     error
 }
 
-func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*gitdomain.PersonCount, error) {
+func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	r.once.Do(func() {
 		client := gitserver.NewClient(r.db)
-		var opt gitserver.ShortLogOptions
+		var opt gitserver.ContributorOptions
 		if r.args.RevisionRange != nil {
 			opt.Range = *r.args.RevisionRange
 		}
@@ -54,7 +54,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.AfterDate != nil {
 			opt.After = *r.args.AfterDate
 		}
-		r.results, r.err = client.ShortLog(ctx, r.repo.RepoName(), opt)
+		r.results, r.err = client.ContributorCount(ctx, r.repo.RepoName(), opt)
 	})
 	return r.results, r.err
 }

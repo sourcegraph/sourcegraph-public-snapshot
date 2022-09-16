@@ -2,11 +2,8 @@ package trace
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 )
 
@@ -68,132 +65,6 @@ func SQL(q *sqlf.Query) log.Field {
 			fv.EmitObject(fmt.Sprintf("arg%d", i+1), arg)
 		}
 	})
-}
-
-// fieldsStringer lazily marshals a slice of log.Field into a string for
-// printing in net/trace.
-type fieldsStringer []log.Field
-
-func (fs fieldsStringer) String() string {
-	var e encoder
-	for _, f := range fs {
-		f.Marshal(&e)
-	}
-	return e.Builder.String()
-}
-
-// encoder is a log.Encoder used by fieldsStringer.
-type encoder struct {
-	strings.Builder
-	prefixNewline bool
-}
-
-func (e *encoder) EmitString(key, value string) {
-	if e.prefixNewline {
-		// most times encoder is used is for one field
-		e.Builder.WriteString("\n")
-	}
-	if !e.prefixNewline {
-		e.prefixNewline = true
-	}
-
-	e.Builder.Grow(len(key) + 1 + len(value))
-	e.Builder.WriteString(key)
-	e.Builder.WriteString(":")
-	e.Builder.WriteString(value)
-}
-
-func (e *encoder) EmitBool(key string, value bool) {
-	e.EmitString(key, strconv.FormatBool(value))
-}
-
-func (e *encoder) EmitInt(key string, value int) {
-	e.EmitString(key, strconv.Itoa(value))
-}
-
-func (e *encoder) EmitInt32(key string, value int32) {
-	e.EmitString(key, strconv.FormatInt(int64(value), 10))
-}
-
-func (e *encoder) EmitInt64(key string, value int64) {
-	e.EmitString(key, strconv.FormatInt(value, 10))
-}
-
-func (e *encoder) EmitUint32(key string, value uint32) {
-	e.EmitString(key, strconv.FormatUint(uint64(value), 10))
-}
-
-func (e *encoder) EmitUint64(key string, value uint64) {
-	e.EmitString(key, strconv.FormatUint(value, 10))
-}
-
-func (e *encoder) EmitFloat32(key string, value float32) {
-	e.EmitString(key, strconv.FormatFloat(float64(value), 'E', -1, 64))
-}
-
-func (e *encoder) EmitFloat64(key string, value float64) {
-	e.EmitString(key, strconv.FormatFloat(value, 'E', -1, 64))
-}
-
-func (e *encoder) EmitObject(key string, value any) {
-	e.EmitString(key, fmt.Sprintf("%+v", value))
-}
-
-func (e *encoder) EmitLazyLogger(value log.LazyLogger) {
-	value(e)
-}
-
-// spanTagEncoder wraps the opentracing.Span.SetTags to write values
-// of type log.Field to span tags. The doc string of SetTags notes
-// that it only accepts strings, numeric types, and bools, so these
-// encoder methods convert to those types before writing the tag.
-type spanTagEncoder struct {
-	opentracing.Span
-}
-
-func (e *spanTagEncoder) EmitString(key, value string) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitBool(key string, value bool) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitInt(key string, value int) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitInt32(key string, value int32) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitInt64(key string, value int64) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitUint32(key string, value uint32) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitUint64(key string, value uint64) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitFloat32(key string, value float32) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitFloat64(key string, value float64) {
-	e.SetTag(key, value)
-}
-
-func (e *spanTagEncoder) EmitObject(key string, value any) {
-	s := fmt.Sprintf("%#+v", value)
-	e.EmitString(key, s)
-}
-
-func (e *spanTagEncoder) EmitLazyLogger(value log.LazyLogger) {
-	value(e)
 }
 
 // scopedEncoder encodes each field with a scoped key, like `scope.key`

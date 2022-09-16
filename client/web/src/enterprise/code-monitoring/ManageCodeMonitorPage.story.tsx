@@ -13,6 +13,8 @@ const config: Meta = {
 
 export default config
 
+window.context.emailEnabled = true
+
 export const ManageCodeMonitorPageStory: Story = () => (
     <WebStory>
         {props => (

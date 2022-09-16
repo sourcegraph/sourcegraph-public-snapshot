@@ -1,4 +1,4 @@
-import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
@@ -90,7 +90,7 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
         <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
                 <H3>{title}</H3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
+                <Button className={styles.closeButton} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
                     <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                 </Button>
@@ -140,7 +140,7 @@ export const InvitedNotification: React.FunctionComponent<React.PropsWithChildre
             <div>They will receive an email shortly. You can also send them this personal invite link:</div>
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
             <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
@@ -151,7 +151,6 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
-    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent<React.PropsWithChildren<unknown>>
     initiallyOpened?: boolean
     eventLoggerEventName?: string
 }
@@ -160,7 +159,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
 > = (props: InviteMemberModalButtonProps) => {
     const query = useQueryStringParameters()
     const showBetaBanner = !!query.get('openBetaBanner')
-    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props
+    const { orgName, orgId, onInviteSent, triggerLabel, initiallyOpened, eventLoggerEventName, ...rest } = props
     const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
@@ -176,7 +175,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
 
     return (
         <>
-            <Button {...rest} onClick={onInviteClick} as={as as any} size="sm">
+            <Button {...rest} onClick={onInviteClick} size="sm">
                 {triggerLabel || 'Invite member'}
             </Button>
 

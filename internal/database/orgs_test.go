@@ -247,7 +247,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 
 	service := &types.ExternalService{
 		Kind:           extsvc.KindGitHub,
-		Config:         `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 		NamespaceOrgID: org2.ID,
 	}
 	confGet := func() *conf.Unified {

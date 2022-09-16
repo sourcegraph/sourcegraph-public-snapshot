@@ -5,16 +5,15 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 type DiagnosticConnectionResolver struct {
-	diagnostics      []resolvers.AdjustedDiagnostic
+	diagnostics      []AdjustedDiagnostic
 	totalCount       int
 	locationResolver *CachedLocationResolver
 }
 
-func NewDiagnosticConnectionResolver(diagnostics []resolvers.AdjustedDiagnostic, totalCount int, locationResolver *CachedLocationResolver) gql.DiagnosticConnectionResolver {
+func NewDiagnosticConnectionResolver(diagnostics []AdjustedDiagnostic, totalCount int, locationResolver *CachedLocationResolver) gql.DiagnosticConnectionResolver {
 	return &DiagnosticConnectionResolver{
 		diagnostics:      diagnostics,
 		totalCount:       totalCount,

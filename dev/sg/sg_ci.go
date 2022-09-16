@@ -16,6 +16,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
+	sgrun "github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
@@ -46,6 +48,11 @@ var (
 		Aliases: []string{"n"}, // 'n' for number, because 'b' is taken
 		Usage:   "Override branch detection with a specific build `number`",
 	}
+	ciCommitFlag = cli.StringFlag{
+		Name:    "commit",
+		Aliases: []string{"c"},
+		Usage:   "Override branch detection with the latest build for `commit`",
+	}
 	ciPipelineFlag = cli.StringFlag{
 		Name:    "pipeline",
 		Aliases: []string{"p"},
@@ -59,10 +66,20 @@ var (
 var ciTargetFlags = []cli.Flag{
 	&ciBranchFlag,
 	&ciBuildFlag,
+	&ciCommitFlag,
 	&ciPipelineFlag,
 }
 
+type buildTargetType string
+
+const (
+	buildTargetTypeBranch      buildTargetType = "branch"
+	buildTargetTypeBuildNumber buildTargetType = "build"
+	buildTargetTypeCommit      buildTargetType = "commit"
+)
+
 type targetBuild struct {
+	targetType buildTargetType
 	// target identifier - could br a branch or a build
 	target string
 	// buildkite pipeline to query
@@ -70,8 +87,6 @@ type targetBuild struct {
 
 	// Whether or not the target is set from a flag
 	fromFlag bool
-	// Whether or not the target is a branch
-	isBranch bool
 }
 
 // getBuildTarget returns a targetBuild that can be used to retrieve details about a
@@ -87,37 +102,57 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 	var (
 		branch = ciBranchFlag.Get(cmd)
 		build  = ciBuildFlag.Get(cmd)
+		commit = ciCommitFlag.Get(cmd)
 	)
 	if branch != "" && build != "" {
 		return target, errors.New("branch and build cannot both be set")
 	}
 
 	target.fromFlag = true
-	target.isBranch = true
 	switch {
 	case branch != "":
 		target.target = branch
+		target.targetType = buildTargetTypeBranch
+
 	case build != "":
 		target.target = build
-		target.isBranch = false
+		target.targetType = buildTargetTypeBuildNumber
+
+	case commit != "":
+		// get the full commit
+		target.target, err = root.Run(sgrun.Cmd(cmd.Context, "git rev-parse", commit)).String()
+		if err != nil {
+			return
+		}
+		target.targetType = buildTargetTypeCommit
+
 	default:
 		target.target, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
 		target.fromFlag = false
+		target.targetType = buildTargetTypeBranch
 	}
 	return
 }
 
 func (t targetBuild) GetBuild(ctx context.Context, client *bk.Client) (build *buildkite.Build, err error) {
-	if t.isBranch {
+	switch t.targetType {
+	case buildTargetTypeBranch:
 		build, err = client.GetMostRecentBuild(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to get most recent build for branch %q: %w", t.target, err)
 		}
-	} else {
+	case buildTargetTypeBuildNumber:
 		build, err = client.GetBuildByNumber(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
 		}
+	case buildTargetTypeCommit:
+		build, err = client.GetBuildByCommit(ctx, t.pipeline, t.target)
+		if err != nil {
+			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
+		}
+	default:
+		panic("bad target type " + t.targetType)
 	}
 	return
 }
@@ -175,7 +210,7 @@ sg ci build --help
 			if err != nil {
 				return err
 			}
-			if !target.isBranch {
+			if target.targetType != buildTargetTypeBranch {
 				// Should never happen because we only register the branch flag
 				return errors.New("target is not a branch")
 			}
@@ -295,7 +330,7 @@ sg ci build --help
 			// If we're not on a specific branch and not asking for a specific build,
 			// warn if build commit is not your local copy - we are building an
 			// unknown revision.
-			if !target.fromFlag && target.isBranch {
+			if !target.fromFlag && target.targetType == buildTargetTypeBranch {
 				commit, err := run.GitCmd("rev-parse", "HEAD")
 				if err != nil {
 					return err
@@ -645,7 +680,38 @@ From there, you can start exploring logs with the Grafana explore panel.
 			}
 			return open.URL(buildkiteURL)
 		},
+	}, {
+		Name:      "search-failures",
+		ArgsUsage: "[text to search for]",
+		Usage:     "Open Sourcegraph's CI failures Grafana logs page in browser",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "step",
+				Usage: "Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')",
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			text := "TODO"
+			stepName := ctx.String("step")
+
+			if ctx.Args().Len() > 0 {
+				text = ctx.Args().Slice()[0]
+			}
+			grafanaURL := buildGrafanaURL(text, stepName)
+			return open.URL(grafanaURL)
+		},
 	}},
+}
+
+func buildGrafanaURL(text string, stepName string) string {
+	var base string
+	if stepName == "" {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	} else {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	}
+	url := strings.ReplaceAll(base, "_TEXT_", text)
+	return strings.ReplaceAll(url, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
 }
 
 func getAllowedBuildTypeArgs() []string {

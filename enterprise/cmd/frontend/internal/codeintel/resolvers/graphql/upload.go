@@ -119,10 +119,17 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *gql.
 		term = *args.Query
 	}
 
-	matches, totalCount, err := r.resolver.RetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	upload := sharedPoliciesUploadsToStoreUpload(r.upload)
+	m, totalCount, err := policyResolver.GetRetentionPolicyOverview(ctx, upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	matches := sharedRetentionPolicyToStoreRetentionPolicy(m)
 
 	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.db, r.resolver, matches, totalCount, r.traceErrs), nil
 }
@@ -142,7 +149,8 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 	if args.Pattern != "" {
 		pattern = args.Pattern
 	}
-	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
+
+	documents, totalCount, err := r.resolver.UploadsResolver().GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +162,7 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 }
 
 func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAuditLogsResolver, error) {
-	logs, err := r.resolver.AuditLogsForUpload(ctx, r.upload.ID)
+	logs, err := r.resolver.UploadsResolver().GetAuditLogsForUpload(ctx, r.upload.ID)
 	if err != nil {
 		return nil, err
 	}

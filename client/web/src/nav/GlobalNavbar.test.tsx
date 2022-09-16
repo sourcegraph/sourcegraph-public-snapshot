@@ -12,7 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -56,7 +56,7 @@ describe('GlobalNavbar', () => {
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
         window.context = {
-            enableLegacyExtensions: true,
+            enableLegacyExtensions: false,
         } as any
     })
     afterEach(() => {

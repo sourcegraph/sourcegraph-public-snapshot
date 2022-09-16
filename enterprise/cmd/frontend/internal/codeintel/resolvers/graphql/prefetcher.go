@@ -71,10 +71,12 @@ func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (store.Upload, b
 	}
 	sort.Ints(ids)
 
-	uploads, err := p.resolver.GetUploadsByIDs(ctx, ids...)
+	u, err := p.resolver.UploadsResolver().GetUploadsByIDs(ctx, ids...)
 	if err != nil {
 		return store.Upload{}, false, err
 	}
+
+	uploads := convertSharedUploadsListToDBStoreUploadsList(u)
 	for _, upload := range uploads {
 		p.uploadCache[upload.ID] = upload
 	}
@@ -124,12 +126,13 @@ func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (store.Index, boo
 	}
 	sort.Ints(ids)
 
-	indexes, err := p.resolver.GetIndexesByIDs(ctx, ids...)
+	autoindexingResolver := p.resolver.AutoIndexingResolver()
+	indexes, err := autoindexingResolver.GetIndexesByIDs(ctx, ids...)
 	if err != nil {
 		return store.Index{}, false, err
 	}
 	for _, index := range indexes {
-		p.indexCache[index.ID] = index
+		p.indexCache[index.ID] = convertSharedIndexToDBStoreIndex(index)
 	}
 	p.indexIDs = nil
 

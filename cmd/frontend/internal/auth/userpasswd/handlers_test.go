@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -128,7 +129,11 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 
 	lockout := NewMockLockoutStore()
-	h := HandleSignIn(db, lockout)
+	logger := logtest.NoOp(t)
+	if testing.Verbose() {
+		logger = logtest.Scoped(t)
+	}
+	h := HandleSignIn(logger, db, lockout)
 
 	// Normal authentication fail before lockout
 	{
@@ -176,7 +181,11 @@ func TestHandleAccount_Unlock(t *testing.T) {
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 
 	lockout := NewMockLockoutStore()
-	h := HandleUnlockAccount(db, lockout)
+	logger := logtest.NoOp(t)
+	if testing.Verbose() {
+		logger = logtest.Scoped(t)
+	}
+	h := HandleUnlockAccount(logger, db, lockout)
 
 	// bad request if missing token or user id
 	{

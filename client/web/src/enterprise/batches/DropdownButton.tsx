@@ -15,7 +15,6 @@ import {
     MenuDivider,
     H4,
     Text,
-    Tooltip,
     Icon,
 } from '@sourcegraph/wildcard'
 
@@ -46,10 +45,8 @@ export interface Props {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
-    dropdownMenuPosition?: 'left' | 'right'
     onLabel?: (label: string | undefined) => void
     placeholder?: string
-    tooltip?: string
 }
 
 export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -58,7 +55,6 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
     disabled,
     onLabel,
     placeholder = 'Select action',
-    tooltip,
 }) => {
     const [isDisabled, setIsDisabled] = useState(!!disabled)
 
@@ -134,16 +130,14 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
             {renderedElement}
             <Menu>
                 <ButtonGroup>
-                    <Tooltip content={tooltip}>
-                        <Button
-                            className="text-nowrap"
-                            onClick={onTriggerAction}
-                            disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                            variant="primary"
-                        >
-                            {label}
-                        </Button>
-                    </Tooltip>
+                    <Button
+                        className="text-nowrap"
+                        onClick={onTriggerAction}
+                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                        variant="primary"
+                    >
+                        {label}
+                    </Button>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
                             <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />

@@ -79,7 +79,7 @@ func checkLicense() error {
 // maxUnlicensedChangesets is the maximum number of changesets that can be
 // attached to a batch change when Sourcegraph is unlicensed or the Batch
 // Changes feature is disabled.
-const maxUnlicensedChangesets = 5
+const maxUnlicensedChangesets = 10
 
 type batchSpecCreatedArg struct {
 	ChangesetSpecsCount int `json:"changeset_specs_count"`
@@ -215,11 +215,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}
 
 	// Parse the batch spec.
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-		AllowArrayEnvironments: true,
-	})
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec))
 	if err != nil {
 		return nil, err
 	}

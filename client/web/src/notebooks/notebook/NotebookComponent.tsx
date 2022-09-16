@@ -30,6 +30,7 @@ import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
+import { useExperimentalFeatures } from '../../stores'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -54,7 +55,7 @@ export interface NotebookComponentProps
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
-    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'> | null
     platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
@@ -110,13 +111,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
+        const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+            features => features.enableGoImportsSearchQueryTransform
+        )
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
-                    extensionHostAPI: extensionsController.extHostAPI,
+                    extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
+                    enableGoImportsSearchQueryTransform,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchQueryTransform]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
@@ -567,7 +572,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         blocks={blocks}
                     />
                 )}
-                {hoverState.hoverOverlayProps && (
+                {hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         platformContext={platformContext}

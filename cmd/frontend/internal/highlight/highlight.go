@@ -106,10 +106,8 @@ type Params struct {
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 
-	// FormatOnly, if true, will skip highlighting and only return the code
-	// in a formatted table view. This is useful if we want to display code
-	// as quickly as possible, without waiting for highlighting.
-	FormatOnly bool
+	// Format defines the response format of the syntax highlighting request.
+	Format gosyntect.HighlightResponseType
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -306,7 +304,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-/// identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err matches a known error.
 func identifyError(err error) (bool, string) {
 	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
@@ -405,7 +403,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return plainResponse, true, nil
 	}
 
-	if p.FormatOnly {
+	if p.Format == gosyntect.FormatHTMLPlaintext {
 		return unhighlightedCode(err, code)
 	}
 
@@ -431,6 +429,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
+		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	// Set the Filetype part of the command if:
@@ -443,7 +442,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
+	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -487,7 +486,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return unhighlightedCode(err, code)
 	}
 
-	if filetypeQuery.Engine == EngineTreeSitter {
+	// We need to return SCIP data if explicitly requested or if the selected
+	// engine is tree sitter.
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
@@ -608,15 +609,15 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
 // following transformations:
 //
-// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
-// 	FOO.Sh → FOO.sh
+//	a/b/c/FOO.TXT → a/b/c/FOO.txt
+//	FOO.Sh → FOO.sh
 //
 // The following are left unmodified, as they already have lowercase extensions:
 //
-// 	a/b/c/FOO.txt
-// 	a/b/c/Makefile
-// 	Makefile.am
-// 	FOO.txt
+//	a/b/c/FOO.txt
+//	a/b/c/Makefile
+//	Makefile.am
+//	FOO.txt
 //
 // It expects the filepath uses forward slashes always.
 func normalizeFilepath(p string) string {

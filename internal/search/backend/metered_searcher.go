@@ -5,14 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"

@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
+import {
+    mdiBookmarkOutline,
+    mdiArrowExpandDown,
+    mdiArrowCollapseUp,
+    mdiChevronDoubleUp,
+    mdiChevronDoubleDown,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -35,7 +41,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'settings'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -53,6 +59,7 @@ export interface SearchResultsInfoBarProps
     query?: string
     resultsFound: boolean
 
+    batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
     batchChangesExecutionEnabled?: boolean
 
@@ -69,7 +76,10 @@ export interface SearchResultsInfoBarProps
 
     stats: JSX.Element
 
-    onShowFiltersChanged?: (show: boolean) => void
+    onShowMobileFiltersChanged?: (show: boolean) => void
+
+    sidebarCollapsed: boolean
+    setSidebarCollapsed: (collapsed: boolean) => void
 }
 
 interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
@@ -135,7 +145,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.query,
                     props.patternType,
                     props.authenticatedUser,
-                    props.batchChangesExecutionEnabled
+                    props.batchChangesEnabled && props.batchChangesExecutionEnabled
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
@@ -150,6 +160,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.enableCodeInsights,
             props.patternType,
             props.query,
+            props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
         ]
     )
@@ -257,12 +268,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.query, props.patternType, props.caseSensitive]
     )
 
-    const [showFilters, setShowFilters] = useState(false)
-    const onShowFiltersClicked = (): void => {
-        const newShowFilters = !showFilters
-        setShowFilters(newShowFilters)
-        props.onShowFiltersChanged?.(newShowFilters)
+    // Show/hide mobile filters menu
+    const [showMobileFilters, setShowMobileFilters] = useState(false)
+    const onShowMobileFiltersClicked = (): void => {
+        const newShowFilters = !showMobileFilters
+        setShowMobileFilters(newShowFilters)
+        props.onShowMobileFiltersChanged?.(newShowFilters)
     }
+
+    const { extensionsController } = props
 
     return (
         <aside
@@ -272,49 +286,39 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             data-testid="results-info-bar"
         >
             <div className={styles.row}>
-                <Button
-                    className={classNames('d-flex d-lg-none', showFilters && 'active')}
-                    aria-pressed={showFilters}
-                    onClick={onShowFiltersClicked}
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
-                    aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
-                >
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiMenu} />
-                    Filters
-                    <Icon aria-hidden={true} svgPath={showFilters ? mdiMenuUp : mdiMenuDown} />
-                </Button>
-
                 {props.stats}
 
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    <ActionsContainer
-                        {...props}
-                        extraContext={extraContext}
-                        menu={ContributableMenu.SearchResultsToolbar}
-                    >
-                        {actionItems => (
-                            <>
-                                {actionItems.map(actionItem => (
-                                    <ActionItem
-                                        {...props}
-                                        {...actionItem}
-                                        key={actionItem.action.id}
-                                        showLoadingSpinnerDuringExecution={false}
-                                        className="mr-2 text-decoration-none"
-                                        actionItemStyleProps={{
-                                            actionItemVariant: 'secondary',
-                                            actionItemSize: 'sm',
-                                            actionItemOutline: true,
-                                        }}
-                                    />
-                                ))}
-                            </>
-                        )}
-                    </ActionsContainer>
+                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
+                        <ActionsContainer
+                            {...props}
+                            extensionsController={extensionsController}
+                            extraContext={extraContext}
+                            menu={ContributableMenu.SearchResultsToolbar}
+                        >
+                            {actionItems => (
+                                <>
+                                    {actionItems.map(actionItem => (
+                                        <ActionItem
+                                            {...props}
+                                            {...actionItem}
+                                            extensionsController={extensionsController}
+                                            key={actionItem.action.id}
+                                            showLoadingSpinnerDuringExecution={false}
+                                            className="mr-2 text-decoration-none"
+                                            actionItemStyleProps={{
+                                                actionItemVariant: 'secondary',
+                                                actionItemSize: 'sm',
+                                                actionItemOutline: true,
+                                            }}
+                                        />
+                                    ))}
+                                </>
+                            )}
+                        </ActionsContainer>
+                    ) : null}
 
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
@@ -323,6 +327,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                     {coreWorkflowImprovementsEnabled ? (
                         <SearchActionsMenu
+                            query={props.query}
+                            patternType={props.patternType}
+                            sourcegraphURL={props.platformContext.sourcegraphURL}
                             authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}
@@ -347,7 +354,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
-                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                             onClick={
                                                 createActionButton.eventToLog
                                                     ? () => {
@@ -420,6 +426,41 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         </>
                     )}
                 </ul>
+
+                <Button
+                    className={classNames(
+                        'd-flex align-items-center d-lg-none',
+                        styles.filtersButton,
+                        showMobileFilters && 'active'
+                    )}
+                    aria-pressed={showMobileFilters}
+                    onClick={onShowMobileFiltersClicked}
+                    outline={true}
+                    variant="secondary"
+                    size="sm"
+                    aria-label={`${showMobileFilters ? 'Hide' : 'Show'} filters`}
+                >
+                    Filters
+                    <Icon
+                        aria-hidden={true}
+                        className="ml-2"
+                        svgPath={showMobileFilters ? mdiChevronDoubleUp : mdiChevronDoubleDown}
+                    />
+                </Button>
+
+                {props.sidebarCollapsed && (
+                    <Button
+                        className={classNames('align-items-center d-none d-lg-flex', styles.filtersButton)}
+                        onClick={() => props.setSidebarCollapsed(false)}
+                        outline={true}
+                        variant="secondary"
+                        size="sm"
+                        aria-label="Show filters sidebar"
+                    >
+                        Filters
+                        <Icon aria-hidden={true} className="ml-2" svgPath={mdiChevronDoubleDown} />
+                    </Button>
+                )}
             </div>
         </aside>
     )

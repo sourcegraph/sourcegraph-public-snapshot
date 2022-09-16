@@ -42,7 +42,7 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(extSvc)
+	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -107,7 +107,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 			continue
 		}
 
-		c, _ := e.Configuration()
+		c, _ := e.Configuration(r.Context())
 		con, ok := c.(*schema.BitbucketCloudConnection)
 		if !ok {
 			continue

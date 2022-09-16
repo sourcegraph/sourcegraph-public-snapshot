@@ -49,7 +49,6 @@ export class GoToRawAction extends React.PureComponent<Props> {
                     to={to}
                     target="_blank"
                     onClick={this.onClick.bind(this)}
-                    className="btn-icon"
                     download={true}
                 >
                     <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />

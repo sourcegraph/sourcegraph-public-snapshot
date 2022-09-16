@@ -188,7 +188,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                         } else if (update.docChanged) {
                             timer = window.setTimeout(() => {
                                 timer = null
-                                startCompletion(update.view)
+                                if (update.view.hasFocus) {
+                                    startCompletion(update.view)
+                                }
                             }, TIMEOUT)
                         }
                     } else {

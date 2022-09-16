@@ -70,6 +70,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -115,6 +116,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)

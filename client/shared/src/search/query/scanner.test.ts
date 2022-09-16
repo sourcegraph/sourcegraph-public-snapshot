@@ -230,20 +230,20 @@ thing`
 
 describe('scanSearchQuery() with predicate', () => {
     test('recognize predicate', () => {
-        expect(scanSearchQuery('repo:contains(file:README.md)')).toMatchInlineSnapshot(
-            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":29},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains(file:README.md)","range":{"start":5,"end":29},"quoted":false},"negated":false}]}'
+        expect(scanSearchQuery('repo:contains.file(path:README.md)')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":34},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains.file(path:README.md)","range":{"start":5,"end":34},"quoted":false},"negated":false}]}'
         )
     })
 
     test('recognize multiple predicates over whitespace', () => {
-        expect(scanSearchQuery('repo:contains(file:README.md)\n\nrepo:contains.file(foo)')).toMatchInlineSnapshot(
-            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":29},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains(file:README.md)","range":{"start":5,"end":29},"quoted":false},"negated":false},{"type":"whitespace","range":{"start":29,"end":31}},{"type":"filter","range":{"start":31,"end":54},"field":{"type":"literal","value":"repo","range":{"start":31,"end":35}},"value":{"type":"literal","value":"contains.file(foo)","range":{"start":36,"end":54},"quoted":false},"negated":false}]}'
+        expect(scanSearchQuery('repo:contains.file(path:README.md)\n\nrepo:contains.path(foo)')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":34},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains.file(path:README.md)","range":{"start":5,"end":34},"quoted":false},"negated":false},{"type":"whitespace","range":{"start":34,"end":36}},{"type":"filter","range":{"start":36,"end":59},"field":{"type":"literal","value":"repo","range":{"start":36,"end":40}},"value":{"type":"literal","value":"contains.path(foo)","range":{"start":41,"end":59},"quoted":false},"negated":false}]}'
         )
     })
 
     test('recognize parenthesized predicate', () => {
-        expect(scanSearchQuery('(repo:contains(file:bar))')).toMatchInlineSnapshot(
-            '{"type":"success","term":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"filter","range":{"start":1,"end":24},"field":{"type":"literal","value":"repo","range":{"start":1,"end":5}},"value":{"type":"literal","value":"contains(file:bar)","range":{"start":6,"end":24},"quoted":false},"negated":false},{"type":"closingParen","range":{"start":24,"end":25}}]}'
+        expect(scanSearchQuery('(repo:contains.file(path:bar))')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"filter","range":{"start":1,"end":29},"field":{"type":"literal","value":"repo","range":{"start":1,"end":5}},"value":{"type":"literal","value":"contains.file(path:bar)","range":{"start":6,"end":29},"quoted":false},"negated":false},{"type":"closingParen","range":{"start":29,"end":30}}]}'
         )
     })
 

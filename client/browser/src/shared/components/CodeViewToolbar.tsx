@@ -61,7 +61,7 @@ export interface CodeViewToolbarProps
 
 export const CodeViewToolbar: React.FunctionComponent<React.PropsWithChildren<CodeViewToolbarProps>> = props => (
     <ul className={classNames(styles.codeViewToolbar, props.className)} data-testid="code-view-toolbar">
-        {!props.hideActions && (
+        {!props.hideActions && props.extensionsController !== null && (
             <ActionsNavItems
                 {...props}
                 listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}

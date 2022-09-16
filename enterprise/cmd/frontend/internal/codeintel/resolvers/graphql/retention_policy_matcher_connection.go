@@ -13,12 +13,12 @@ import (
 type codeIntelligenceRetentionPolicyMatcherConnectionResolver struct {
 	db         database.DB
 	resolver   resolvers.Resolver
-	policies   []resolvers.RetentionPolicyMatchCandidate
+	policies   []RetentionPolicyMatchCandidate
 	totalCount int
 	errTracer  *observation.ErrCollector
 }
 
-func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(db database.DB, resolver resolvers.Resolver, policies []resolvers.RetentionPolicyMatchCandidate, totalCount int, errTracer *observation.ErrCollector) *codeIntelligenceRetentionPolicyMatcherConnectionResolver {
+func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(db database.DB, resolver resolvers.Resolver, policies []RetentionPolicyMatchCandidate, totalCount int, errTracer *observation.ErrCollector) *codeIntelligenceRetentionPolicyMatcherConnectionResolver {
 	return &codeIntelligenceRetentionPolicyMatcherConnectionResolver{
 		db:         db,
 		resolver:   resolver,

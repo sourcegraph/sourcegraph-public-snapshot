@@ -269,11 +269,13 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     __typename: 'BatchSpec',
                     id: 'Execution',
                     state: BatchSpecState.COMPLETED,
-                    finishedAt: null,
+                    finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
                         name: 'test-batch-change',
                     },
+                    source: BatchSpecSource.REMOTE,
+                    startedAt: '2022-07-06T23:21:45Z',
                     namespace: {
                         namespaceName: 'alice',
                         url: '/users/alice',
@@ -369,11 +371,24 @@ function mockCommonGraphQLResponses(
                     username: 'alice',
                 },
                 name: 'test-batch-change',
-                namespace: {
-                    id: '1234',
-                    namespaceName: entityType === 'user' ? 'alice' : 'test-org',
-                    url: namespaceURL,
-                },
+                namespace:
+                    entityType === 'user'
+                        ? {
+                              __typename: 'User',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'alice',
+                              url: namespaceURL,
+                              username: 'alice',
+                          }
+                        : {
+                              __typename: 'Org',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'test-org',
+                              url: namespaceURL,
+                              name: 'test-org',
+                          },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
@@ -473,7 +488,7 @@ describe('Batches', () => {
             allBatchChanges: {
                 totalCount: 1,
             },
-            maxUnlicensedChangesets: 5,
+            maxUnlicensedChangesets: 10,
         }),
     }
     const batchChangesListResults = {

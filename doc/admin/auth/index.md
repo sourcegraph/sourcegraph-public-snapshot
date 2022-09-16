@@ -437,6 +437,10 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
   ]
 }
 ```
+## Linking accounts from multiple auth providers
+Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
+
+At the time of signing in with the new account, any of the email addresses configured on the user account on the auth provider must match any of the **verified** email addresses on the user account on the Sourcegraph side. If there is a match, the accounts are linked, [otherwise a new user account is created if auth provider is configured to support user sign ups](#how-to-control-user-sign-up).
 
 ## Username normalization
 

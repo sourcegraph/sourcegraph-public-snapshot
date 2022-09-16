@@ -1,5 +1,5 @@
 import { Remote } from 'comlink'
-import { Observable, from, concat } from 'rxjs'
+import { Observable, from, concat, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { DocumentHighlight } from 'sourcegraph'
 
@@ -31,21 +31,23 @@ export function getHover(
 ): Observable<MaybeLoadingResult<HoverMerged | null>> {
     return concat(
         [{ isLoading: true, result: null }],
-        from(extensionsController.extHostAPI).pipe(
-            switchMap(extensionHost =>
-                wrapRemoteObservable(
-                    extensionHost.getHover({
-                        textDocument: {
-                            uri: toURIWithPath(context),
-                        },
-                        position: {
-                            character: context.position.character - 1,
-                            line: context.position.line - 1,
-                        },
-                    })
-                )
-            )
-        )
+        extensionsController !== null
+            ? from(extensionsController.extHostAPI).pipe(
+                  switchMap(extensionHost =>
+                      wrapRemoteObservable(
+                          extensionHost.getHover({
+                              textDocument: {
+                                  uri: toURIWithPath(context),
+                              },
+                              position: {
+                                  character: context.position.character - 1,
+                                  line: context.position.line - 1,
+                              },
+                          })
+                      )
+                  )
+              )
+            : [{ isLoading: false, result: null }]
     )
 }
 
@@ -61,21 +63,23 @@ export function getDocumentHighlights(
 ): Observable<DocumentHighlight[]> {
     return concat(
         [[]],
-        from(extensionsController.extHostAPI).pipe(
-            switchMap(extensionHost =>
-                wrapRemoteObservable(
-                    extensionHost.getDocumentHighlights({
-                        textDocument: {
-                            uri: toURIWithPath(context),
-                        },
-                        position: {
-                            character: context.position.character - 1,
-                            line: context.position.line - 1,
-                        },
-                    })
-                )
-            )
-        )
+        extensionsController !== null
+            ? from(extensionsController.extHostAPI).pipe(
+                  switchMap(extensionHost =>
+                      wrapRemoteObservable(
+                          extensionHost.getDocumentHighlights({
+                              textDocument: {
+                                  uri: toURIWithPath(context),
+                              },
+                              position: {
+                                  character: context.position.character - 1,
+                                  line: context.position.line - 1,
+                              },
+                          })
+                      )
+                  )
+              )
+            : [[]]
     )
 }
 
@@ -92,9 +96,11 @@ export const getFileDecorations = ({
 } & ExtensionsControllerProps<'extHostAPI'> &
     RepoSpec &
     ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
-    from(extensionsController.extHostAPI).pipe(
-        switchMap(extensionHost => getFileDecorationsFromHost({ ...parameters, extensionHost }))
-    )
+    extensionsController !== null
+        ? from(extensionsController.extHostAPI).pipe(
+              switchMap(extensionHost => getFileDecorationsFromHost({ ...parameters, extensionHost }))
+          )
+        : of({})
 
 const getFileDecorationsFromHost = memoizeObservable(
     ({

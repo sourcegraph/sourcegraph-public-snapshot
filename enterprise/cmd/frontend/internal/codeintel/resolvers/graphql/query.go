@@ -9,6 +9,9 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,23 +36,23 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type QueryResolver struct {
-	queryResolver    resolvers.QueryResolver
-	resolver         resolvers.Resolver
-	gitserver        GitserverClient
-	locationResolver *CachedLocationResolver
-	errTracer        *observation.ErrCollector
+	gitBlobLSIFDataResolver graphql.GitBlobLSIFDataResolver
+	resolver                resolvers.Resolver
+	gitserver               GitserverClient
+	locationResolver        *CachedLocationResolver
+	errTracer               *observation.ErrCollector
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewQueryResolver(gitserver GitserverClient, queryResolver resolvers.QueryResolver, resolver resolvers.Resolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
+func NewQueryResolver(gitserver GitserverClient, gitBlobResolver graphql.GitBlobLSIFDataResolver, resolver resolvers.Resolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
 	return &QueryResolver{
-		queryResolver:    queryResolver,
-		resolver:         resolver,
-		gitserver:        gitserver,
-		locationResolver: locationResolver,
-		errTracer:        errTracer,
+		gitBlobLSIFDataResolver: gitBlobResolver,
+		resolver:                resolver,
+		gitserver:               gitserver,
+		locationResolver:        locationResolver,
+		errTracer:               errTracer,
 	}
 }
 
@@ -59,13 +62,18 @@ func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) 
 func (r *QueryResolver) Stencil(ctx context.Context) (_ []gql.RangeResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "stencil"))
 
-	ranges, err := r.queryResolver.Stencil(ctx)
+	ranges, err := r.gitBlobLSIFDataResolver.Stencil(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]gql.RangeResolver, 0, len(ranges))
+	var adjustedRanges []lsifstore.Range
 	for _, r := range ranges {
+		adjustedRanges = append(adjustedRanges, sharedRangeTolsifstoreRange(r))
+	}
+
+	resolvers := make([]gql.RangeResolver, 0, len(adjustedRanges))
+	for _, r := range adjustedRanges {
 		resolvers = append(resolvers, gql.NewRangeResolver(convertRange(r)))
 	}
 
@@ -79,13 +87,13 @@ func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (_
 		return nil, ErrIllegalBounds
 	}
 
-	ranges, err := r.queryResolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
+	ranges, err := r.gitBlobLSIFDataResolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
 	if err != nil {
 		return nil, err
 	}
 
 	return &CodeIntelligenceRangeConnectionResolver{
-		ranges:           ranges,
+		ranges:           sharedRangeToAdjustedRange(ranges),
 		locationResolver: r.locationResolver,
 	}, nil
 }
@@ -93,7 +101,7 @@ func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (_
 func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "definitions"))
 
-	locations, err := r.queryResolver.Definitions(ctx, int(args.Line), int(args.Character))
+	locations, err := r.gitBlobLSIFDataResolver.Definitions(ctx, int(args.Line), int(args.Character))
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +116,9 @@ func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPosi
 		locations = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
+	lct := uploadLocationToAdjustedLocations(locations)
+
+	return NewLocationConnectionResolver(lct, nil, r.locationResolver), nil
 }
 
 func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
@@ -124,7 +134,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 		return nil, err
 	}
 
-	locations, cursor, err := r.queryResolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	locations, cursor, err := r.gitBlobLSIFDataResolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +149,9 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 		locations = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+	lct := uploadLocationToAdjustedLocations(locations)
+
+	return NewLocationConnectionResolver(lct, strPtr(cursor), r.locationResolver), nil
 }
 
 func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
@@ -155,7 +167,7 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 		return nil, err
 	}
 
-	locations, cursor, err := r.queryResolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
+	locations, cursor, err := r.gitBlobLSIFDataResolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -170,32 +182,39 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 		locations = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+	lct := uploadLocationToAdjustedLocations(locations)
+
+	return NewLocationConnectionResolver(lct, strPtr(cursor), r.locationResolver), nil
 }
 
 func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.HoverResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "hover"))
 
-	text, rx, exists, err := r.queryResolver.Hover(ctx, int(args.Line), int(args.Character))
+	text, rx, exists, err := r.gitBlobLSIFDataResolver.Hover(ctx, int(args.Line), int(args.Character))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return NewHoverResolver(text, convertRange(rx)), nil
+	return NewHoverResolver(text, sharedRangeTolspRange(rx)), nil
 }
 
 func (r *QueryResolver) LSIFUploads(ctx context.Context) (_ []gql.LSIFUploadResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "lsifUploads"))
 
-	uploads, err := r.queryResolver.LSIFUploads(ctx)
+	uploads, err := r.gitBlobLSIFDataResolver.LSIFUploads(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	dbUploads := []store.Upload{}
+	for _, u := range uploads {
+		dbUploads = append(dbUploads, sharedDumpToDbstoreUpload(u))
+	}
+
 	prefetcher := NewPrefetcher(r.resolver)
 
-	resolvers := make([]gql.LSIFUploadResolver, 0, len(uploads))
-	for _, upload := range uploads {
+	resolvers := make([]gql.LSIFUploadResolver, 0, len(dbUploads))
+	for _, upload := range dbUploads {
 		resolvers = append(resolvers, NewUploadResolver(r.locationResolver.db, r.gitserver, r.resolver, upload, prefetcher, r.locationResolver, r.errTracer))
 	}
 
@@ -210,10 +229,12 @@ func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosti
 		return nil, ErrIllegalLimit
 	}
 
-	diagnostics, totalCount, err := r.queryResolver.Diagnostics(ctx, limit)
+	diagnostics, totalCount, err := r.gitBlobLSIFDataResolver.Diagnostics(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
+	adjustedDiag := sharedDiagnosticAtUploadToAdjustedDiagnostic(diagnostics)
+
+	return NewDiagnosticConnectionResolver(adjustedDiag, totalCount, r.locationResolver), nil
 }

@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
@@ -6,7 +5,6 @@ import { subDays } from 'date-fns'
 import { isChromatic } from '@sourcegraph/storybook'
 
 import { WebStory } from '../../../components/WebStory'
-import { ListBatchChange } from '../../../graphql-operations'
 
 import { BatchChangeNode } from './BatchChangeNode'
 import { nodes, now } from './testData'
@@ -20,17 +18,29 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'web/batches/list/BatchChangeNode',
     decorators: [decorator],
+    argTypes: {
+        displayNamespace: {
+            name: 'Display namespace',
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        node: {
+            table: {
+                disable: true,
+            },
+        },
+    },
 }
 
 export default config
 
-const Template: Story<{ node: ListBatchChange }> = ({ node }) => (
+const Template: Story /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
     <WebStory>
         {props => (
             <BatchChangeNode
                 {...props}
                 node={node}
-                displayNamespace={boolean('Display namespace', true)}
+                displayNamespace={args.displayNamespace}
                 now={isChromatic() ? () => subDays(now, 5) : undefined}
                 isExecutionEnabled={false}
             />

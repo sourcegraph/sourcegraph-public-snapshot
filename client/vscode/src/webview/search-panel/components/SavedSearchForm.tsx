@@ -204,7 +204,6 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                     {props.defaultValues?.notify && (
                         <div>
                             {/* Label is for visual benefit, input has more specific label attached */}
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
                             </Label>

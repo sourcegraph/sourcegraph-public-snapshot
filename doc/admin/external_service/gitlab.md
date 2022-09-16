@@ -16,7 +16,7 @@ To connect GitLab to Sourcegraph:
 ## Supported versions
 
 - GitLab.com
-- GitLab CE/EE (v10.0 and newer)
+- GitLab CE/EE (v12.0 and newer)
 
 ## Repository syncing
 

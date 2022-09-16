@@ -61,10 +61,10 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/github-proxy
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/searcher
-  github.com/google/zoekt/cmd/zoekt-archive-index
-  github.com/google/zoekt/cmd/zoekt-git-index
-  github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
-  github.com/google/zoekt/cmd/zoekt-webserver
+  github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
+  github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+  github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
+  github.com/sourcegraph/zoekt/cmd/zoekt-webserver
 )
 
 PACKAGES+=("${additional_images[@]}")
@@ -97,9 +97,6 @@ IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
 
 echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
-
-echo "--- jaeger-all-in-one binary"
-cmd/server/jaeger.sh
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \

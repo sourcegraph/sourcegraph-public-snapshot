@@ -76,6 +76,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "21")
 
 	NewUploadHandler(
 		database.NewDB(logger, nil),
@@ -108,6 +109,9 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		}
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		}
+		if *call.Arg1.UncompressedSize != 21 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
 		}
 	}
 
@@ -231,6 +235,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "50")
 
 	NewUploadHandler(
 		database.NewDB(logger, nil),
@@ -263,6 +268,9 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		}
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		}
+		if *call.Arg1.UncompressedSize != 50 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
 		}
 	}
 }

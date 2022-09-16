@@ -5,9 +5,8 @@ import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H2, Text, H4, AnchorLink } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
 import { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -74,7 +73,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: creations.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: creations.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
                 tooltip:
@@ -83,7 +82,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         : 'The number of users who created notebooks in the timeframe.',
             },
             {
-                value: views.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: views.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
                 tooltip:
@@ -92,7 +91,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         : 'The number of users who viewed notebooks in the timeframe.',
             },
             {
-                value: blockRuns.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                value: blockRuns.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
                 description: aggregation.selected === 'count' ? 'Block runs' : 'Users ran blocks',
                 color: 'var(--body-color)',
                 position: 'right',
@@ -129,7 +128,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Notebooks</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Notebooks</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

@@ -69,6 +69,29 @@ func TestGetServiceVersion(t *testing.T) {
 	})
 }
 
+func TestSetServiceVersion(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db)
+
+	if err := store.UpdateServiceVersion(ctx, "service", "1.2.3"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if err := store.SetServiceVersion(ctx, "service", "1.2.5"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	version, _, err := store.GetServiceVersion(ctx, "service")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if want := "1.2.5"; version != want {
+		t.Fatalf("unexpected version. want=%q have=%q", want, version)
+	}
+}
+
 func TestGetFirstServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)

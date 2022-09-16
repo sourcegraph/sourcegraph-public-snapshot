@@ -9,6 +9,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,6 +32,10 @@ func New(db database.DB, dbStore DBStore, observationContext *observation.Contex
 		dbStore:    dbStore,
 		operations: newOperations(observationContext),
 	}
+}
+
+func (c *Client) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	return gitserver.NewClient(c.db).DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
 }
 
 // CommitExists determines if the given commit exists in the given repository.

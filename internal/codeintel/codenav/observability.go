@@ -12,9 +12,6 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	symbol *observation.Operation
-
 	getReferences                        *observation.Operation
 	getImplementations                   *observation.Operation
 	getDiagnostics                       *observation.Operation
@@ -28,6 +25,9 @@ type operations struct {
 	getUploadsWithDefinitionsForMonikers *observation.Operation
 	getUploadIDsWithReferences           *observation.Operation
 	getDumpsByIDs                        *observation.Operation
+	getClosestDumpsForBlob               *observation.Operation
+	getLanguagesRequestedBy              *observation.Operation
+	setRequestLanguageSupport            *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -47,9 +47,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Not used yet.
-		symbol: op("Symbol"),
-
 		getReferences:                        op("getReferences"),
 		getImplementations:                   op("getImplementations"),
 		getDiagnostics:                       op("getDiagnostics"),
@@ -63,6 +60,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
 		getDumpsByIDs:                        op("GetDumpsByIDs"),
+		getClosestDumpsForBlob:               op("GetClosestDumpsForBlob"),
+		getLanguagesRequestedBy:              op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport:            op("SetRequestLanguageSupport"),
 	}
 }
 

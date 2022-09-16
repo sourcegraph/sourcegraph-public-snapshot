@@ -18,11 +18,11 @@ import {
     H2,
     H3,
     Text,
+    Card,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { SingleValueCard } from '../components/SingleValueCard'
 import { Timestamp } from '../components/time/Timestamp'
 import {
     SurveyResponseAggregateFields,
@@ -37,6 +37,7 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
+import { ValueLegendItem } from './analytics/components/ValueLegendList'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminSurveyResponsesPage.module.scss'
@@ -235,40 +236,41 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         } else if (this.state.summary.netPromoterScore < 0) {
             npsText = `${npsText}`
         }
-        const npsClass =
+        const npsColor =
             this.state.summary.netPromoterScore > 0
-                ? 'text-success'
+                ? 'var(--success)'
                 : this.state.summary.netPromoterScore < 0
-                ? 'text-danger'
-                : 'text-info'
+                ? 'var(--danger)'
+                : 'var(--info)'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
+        const avgColor = roundAvg > 8 ? 'var(--success)' : roundAvg > 6 ? 'var(--info)' : 'var(--danger)'
         return (
-            <div className="mb-2">
-                <H3>Summary</H3>
-                <div className={styles.container}>
-                    <SingleValueCard
-                        className={styles.item}
-                        value={this.state.summary.last30DaysCount}
-                        title="Number of submissions"
-                        subTitle="Last 30 days"
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? roundAvg : '-'}
-                        title="Average score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${roundAvg} out of 10`}
-                        valueClassName={anyResults ? `text-${scoreToClassSuffix(roundAvg)}` : ''}
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? npsText : '-'}
-                        title="Net promoter score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${npsText} (between -100 and +100)`}
-                        valueClassName={anyResults ? npsClass : ''}
-                    />
+            <div className="mb-3">
+                <div className="d-flex">
+                    <H3>Summary</H3>
+                    <Text className="ml-2 text-muted">(Last 30 days)</Text>
                 </div>
+                <Card className="d-flex justify-content-around flex-row p-5">
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={this.state.summary.last30DaysCount}
+                        description="Number of submissions"
+                    />
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={anyResults ? roundAvg : '-'}
+                        description="Average score"
+                        color={anyResults ? avgColor : undefined}
+                        tooltip={`${roundAvg} out of 10`}
+                    />
+                    <ValueLegendItem
+                        className="flex-1"
+                        value={anyResults ? npsText : '-'}
+                        description="Net promoter score"
+                        color={anyResults ? npsColor : undefined}
+                        tooltip={`${npsText} (between -100 and +100)`}
+                    />
+                </Card>
             </div>
         )
     }

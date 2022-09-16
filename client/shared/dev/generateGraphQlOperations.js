@@ -60,107 +60,111 @@ const SHARED_PLUGINS = [
  * Generates TypeScript files with types for all GraphQL operations.
  */
 async function generateGraphQlOperations() {
-  await generate(
-    {
-      schema: SCHEMA_PATH,
-      hooks: {
-        afterOneFileWrite: 'prettier --write',
+  try {
+    await generate(
+      {
+        schema: SCHEMA_PATH,
+        hooks: {
+          afterOneFileWrite: 'prettier --write',
+        },
+        errorsOnly: true,
+        config: {
+          preResolveTypes: true,
+          operationResultSuffix: 'Result',
+          omitOperationSuffix: true,
+          namingConvention: {
+            typeNames: 'keep',
+            enumValues: 'keep',
+            transformUnderscore: true,
+          },
+          declarationKind: 'interface',
+          avoidOptionals: {
+            field: true,
+            inputValue: false,
+            object: true,
+          },
+          scalars: {
+            DateTime: 'string',
+            JSON: 'object',
+            JSONValue: 'unknown',
+            GitObjectID: 'string',
+            JSONCString: 'string',
+            PublishedValue: "boolean | 'draft'",
+            BigInt: 'string',
+          },
+        },
+        generates: {
+          [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
+            documents: BROWSER_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              enumValues: '@sourcegraph/shared/src/graphql-operations',
+              interfaceNameForOperations: 'BrowserGraphQlOperations',
+            },
+            plugins: SHARED_PLUGINS,
+          },
+
+          [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
+            documents: WEB_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              enumValues: '@sourcegraph/shared/src/graphql-operations',
+              interfaceNameForOperations: 'WebGraphQlOperations',
+            },
+            plugins: SHARED_PLUGINS,
+          },
+
+          [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
+            documents: SHARED_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              interfaceNameForOperations: 'SharedGraphQlOperations',
+            },
+            plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
+          },
+
+          [path.join(SEARCH_FOLDER, './src/graphql-operations.ts')]: {
+            documents: SEARCH_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              enumValues: '@sourcegraph/shared/src/graphql-operations',
+              interfaceNameForOperations: 'SearchGraphQlOperations',
+            },
+            plugins: SHARED_PLUGINS,
+          },
+
+          [path.join(VSCODE_FOLDER, './src/graphql-operations.ts')]: {
+            documents: VSCODE_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              enumValues: '@sourcegraph/shared/src/graphql-operations',
+              interfaceNameForOperations: 'VSCodeGraphQlOperations',
+            },
+            plugins: SHARED_PLUGINS,
+          },
+
+          [path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts')]: {
+            documents: JETBRAINS_DOCUMENTS_GLOB,
+            config: {
+              onlyOperationTypes: true,
+              noExport: false,
+              enumValues: '@sourcegraph/shared/src/graphql-operations',
+              interfaceNameForOperations: 'JetBrainsGraphQlOperations',
+            },
+            plugins: SHARED_PLUGINS,
+          },
+        },
       },
-      errorsOnly: true,
-      config: {
-        preResolveTypes: true,
-        operationResultSuffix: 'Result',
-        omitOperationSuffix: true,
-        namingConvention: {
-          typeNames: 'keep',
-          enumValues: 'keep',
-          transformUnderscore: true,
-        },
-        declarationKind: 'interface',
-        avoidOptionals: {
-          field: true,
-          inputValue: false,
-          object: true,
-        },
-        scalars: {
-          DateTime: 'string',
-          JSON: 'object',
-          JSONValue: 'unknown',
-          GitObjectID: 'string',
-          JSONCString: 'string',
-          PublishedValue: "boolean | 'draft'",
-          BigInt: 'string',
-        },
-      },
-      generates: {
-        [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
-          documents: BROWSER_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '@sourcegraph/shared/src/graphql-operations',
-            interfaceNameForOperations: 'BrowserGraphQlOperations',
-          },
-          plugins: SHARED_PLUGINS,
-        },
-
-        [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
-          documents: WEB_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '@sourcegraph/shared/src/graphql-operations',
-            interfaceNameForOperations: 'WebGraphQlOperations',
-          },
-          plugins: SHARED_PLUGINS,
-        },
-
-        [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
-          documents: SHARED_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            interfaceNameForOperations: 'SharedGraphQlOperations',
-          },
-          plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
-        },
-
-        [path.join(SEARCH_FOLDER, './src/graphql-operations.ts')]: {
-          documents: SEARCH_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '@sourcegraph/shared/src/graphql-operations',
-            interfaceNameForOperations: 'SearchGraphQlOperations',
-          },
-          plugins: SHARED_PLUGINS,
-        },
-
-        [path.join(VSCODE_FOLDER, './src/graphql-operations.ts')]: {
-          documents: VSCODE_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '@sourcegraph/shared/src/graphql-operations',
-            interfaceNameForOperations: 'VSCodeGraphQlOperations',
-          },
-          plugins: SHARED_PLUGINS,
-        },
-
-        [path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts')]: {
-          documents: JETBRAINS_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '@sourcegraph/shared/src/graphql-operations',
-            interfaceNameForOperations: 'JetBrainsGraphQlOperations',
-          },
-          plugins: SHARED_PLUGINS,
-        },
-      },
-    },
-    true
-  )
+      true
+    )
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 module.exports = {

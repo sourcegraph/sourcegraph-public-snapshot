@@ -23,6 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
@@ -75,18 +76,31 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && showSearchHistory
                 ? [
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
                           selectedSearchContext: props.selectedSearchContextSpec,
+                          onSelection: index => {
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
+                          },
                       }),
                   ]
                 : [],
-        [props.authenticatedUser, props.selectedSearchContextSpec, coreWorkflowImprovementsEnabled]
+        [
+            coreWorkflowImprovementsEnabled,
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            props.telemetryService,
+            showSearchHistory,
+        ]
     )
 
     const quickLinks =
@@ -154,13 +168,15 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
                         defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                {!coreWorkflowImprovementsEnabled && (
+                    <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                )}
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

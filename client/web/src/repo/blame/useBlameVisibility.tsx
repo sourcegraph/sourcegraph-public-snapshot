@@ -1,21 +1,12 @@
-import React from 'react'
+import { BehaviorSubject } from 'rxjs'
 
-const BlameContext = React.createContext<{
-    isBlameVisible: boolean
-    setIsBlameVisible: React.Dispatch<React.SetStateAction<boolean>>
-}>({
-    isBlameVisible: false,
-    setIsBlameVisible: () => {},
-})
+import { useObservable } from '@sourcegraph/wildcard'
 
-export const BlameContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
-    const [isBlameVisible, setIsBlameVisible] = React.useState<boolean>(false)
+const isBlameVisible = new BehaviorSubject<boolean>(false)
+const setIsBlameVisible = (isVisible: boolean): void => isBlameVisible.next(isVisible)
 
-    return <BlameContext.Provider value={{ isBlameVisible, setIsBlameVisible }}>{children}</BlameContext.Provider>
-}
+export const useBlameVisibility = (): [boolean, (isVisible: boolean) => void] => {
+    const isVisible = useObservable(isBlameVisible)
 
-export const useBlameVisibility = (): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const { isBlameVisible, setIsBlameVisible } = React.useContext(BlameContext)
-
-    return [isBlameVisible, setIsBlameVisible]
+    return [Boolean(isVisible), setIsBlameVisible]
 }

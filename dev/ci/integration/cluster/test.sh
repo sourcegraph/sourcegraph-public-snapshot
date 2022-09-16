@@ -13,6 +13,9 @@ export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER-$BUILDKITE_JOB_ID"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
+  # Get some more verbobe information about what is running.
+  set -x
+
   echo "--- dump diagnostics"
   # Get overview of all pods
   kubectl get pods
@@ -22,11 +25,13 @@ function cluster_capture_state() {
 
   # Get logs for some deployments
   kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
+
+  set +x
 }
 
 # Cleanup the cluster
 function cluster_cleanup() {
-  cluster_capture_state
+  cluster_capture_state || true
   kubectl delete namespace "$NAMESPACE"
 }
 

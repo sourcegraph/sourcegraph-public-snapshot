@@ -12,7 +12,7 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -25,17 +25,19 @@ import {
     PathMatch,
     SearchMatch,
     getMatchUrl,
+    getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { luckySearchClickedEvent } from '../util/events'
+import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 
+import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
@@ -48,16 +50,13 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
-    /** Render prop for `<SearchUserNeedsCodeHost>`  */
-    renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -72,7 +71,11 @@ export interface StreamingSearchResultsListProps
     /**
      * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
      */
-    luckySearchEnabled?: boolean
+    smartSearchEnabled?: boolean
+
+    prefetchFile?: FilePrefetcher
+
+    prefetchFileEnabled?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -86,17 +89,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    authenticatedUser,
     showSearchContext,
     assetsRoot,
-    renderSearchUserNeedsCodeHost,
     platformContext,
     extensionsController,
     hoverifier,
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    luckySearchEnabled,
+    smartSearchEnabled: smartSearchEnabled,
+    prefetchFile,
+    prefetchFileEnabled,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -110,17 +113,17 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (smartSearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
-                luckySearchEnabled &&
+                smartSearchEnabled &&
                 results?.alert?.kind === 'lucky-search-queries' &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
-                const event = luckySearchClickedEvent(
+                const event = smartSearchClickedEvent(
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
@@ -128,7 +131,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, luckySearchEnabled]
+        [telemetryService, results, smartSearchEnabled]
     )
 
     const renderResult = useCallback(
@@ -138,25 +141,37 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'path':
                 case 'symbol':
                     return (
-                        <FileSearchResult
-                            index={index}
-                            location={location}
-                            telemetryService={telemetryService}
-                            icon={getFileMatchIcon(result)}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                            expanded={false}
-                            showAllMatches={false}
-                            allExpanded={allExpanded}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            repoDisplayName={displayRepoName(result.repository)}
-                            settingsCascade={settingsCascade}
-                            extensionsController={extensionsController}
-                            hoverifier={hoverifier}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
+                        <PrefetchableFile
+                            isPrefetchEnabled={prefetchFileEnabled}
+                            prefetch={prefetchFile}
+                            filePath={result.path}
+                            revision={getRevision(result.branches, result.commit)}
+                            repoName={result.repository}
+                            // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                            // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                            // child components than is worth doing right now for this experimental feature
+                            className={resultContainerStyles.resultContainer}
                             as="li"
-                        />
+                        >
+                            <FileSearchResult
+                                index={index}
+                                location={location}
+                                telemetryService={telemetryService}
+                                icon={getFileMatchIcon(result)}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                expanded={false}
+                                showAllMatches={false}
+                                allExpanded={allExpanded}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                repoDisplayName={displayRepoName(result.repository)}
+                                settingsCascade={settingsCascade}
+                                extensionsController={extensionsController}
+                                hoverifier={hoverifier}
+                                openInNewTab={openMatchesInNewTab}
+                                containerClassName={resultClassName}
+                            />
+                        </PrefetchableFile>
                     )
                 case 'commit':
                     return (
@@ -183,33 +198,24 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             }
         },
         [
+            prefetchFileEnabled,
+            prefetchFile,
             location,
             telemetryService,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
-            platformContext,
             extensionsController,
             hoverifier,
             openMatchesInNewTab,
             resultClassName,
+            platformContext,
             logSearchResultClicked,
         ]
     )
 
     return (
         <>
-            <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
-                <div className="align-self-stretch">
-                    {renderSearchUserNeedsCodeHost &&
-                        isSourcegraphDotCom &&
-                        searchContextsEnabled &&
-                        authenticatedUser &&
-                        results?.state === 'complete' &&
-                        results?.results.length === 0 &&
-                        renderSearchUserNeedsCodeHost(authenticatedUser)}
-                </div>
-            </div>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"

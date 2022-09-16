@@ -501,6 +501,9 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 				}
 				return nil, err
 			}
+			// The lack of an error return here is intentional. Do not use this
+			// as a basis for implementing other functions that need normal
+			// error handling!
 		} else {
 			return nil, err
 		}
@@ -693,11 +696,96 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 				}
 				return nil, err
 			}
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	return &result.Repository.DefaultBranchRef.Target.History, nil
+}
+
+type Release struct {
+	TagName      string
+	IsDraft      bool
+	IsPrerelease bool
+}
+
+type ReleasesResult struct {
+	Nodes    []Release
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   Cursor
+	}
+}
+
+type ReleasesParams struct {
+	// Repository name
+	Name string
+	// Repository owner
+	Owner string
+	// After is the cursor to paginate from.
+	After Cursor
+	// First is the page size. Default to 100 if left zero.
+	First int
+}
+
+// Releases returns the releases for the given repository, ordered from newest
+// to oldest. This excludes pre-release and draft releases.
+func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*ReleasesResult, error) {
+	const query = `
+		query($owner: String!, $name: String!, $first: Int!, $after: String, $order: ReleaseOrder!) {
+			repository(owner: $owner, name: $name) {
+				releases(first: $first, after: $after, orderBy: $order) {
+					nodes {
+						tagName
+						isDraft
+						isPrerelease
+					}
+					pageInfo {
+						hasNextPage
+						endCursor
+					}
+				}
+			}
+		}
+	`
+
+	if params.First == 0 {
+		params.First = 100
+	}
+
+	vars := map[string]any{
+		"name":  params.Name,
+		"owner": params.Owner,
+		"first": params.First,
+		"order": map[string]any{
+			"field":     "CREATED_AT",
+			"direction": "DESC",
+		},
+	}
+	if params.After != "" {
+		vars["after"] = params.After
+	}
+
+	var result struct {
+		Repository struct {
+			Releases ReleasesResult
+		}
+	}
+	err := c.requestGraphQL(ctx, query, vars, &result)
+	if err != nil {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
+				if err2.Type == graphqlErrTypeNotFound {
+					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
+					continue
+				}
+				return nil, err
+			}
+		}
+		return nil, err
+	}
+
+	return &result.Repository.Releases, nil
 }
 
 func graphQLErrorField(err graphqlError) log.Field {

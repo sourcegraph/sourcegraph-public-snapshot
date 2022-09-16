@@ -2,7 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ProductStatusBadge, Link, BaseProductStatusBadgeProps } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, BaseProductStatusBadgeProps } from '../../Badge'
+import { Link } from '../../Link'
 
 import styles from './FeedbackBadge.module.scss'
 

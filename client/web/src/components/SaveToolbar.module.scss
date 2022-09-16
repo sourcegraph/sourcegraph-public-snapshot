@@ -21,27 +21,7 @@
     align-items: center;
 }
 
-.btn {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: none;
-    border-left: none;
-    &-first {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        border-top-right-radius: 0;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    &-last {
-        border-bottom-right-radius: 0;
-        border-bottom-left-radius: 0;
-        border-top-left-radius: 0;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-}
-
 .actions {
     display: flex;
+    justify-content: flex-start;
 }

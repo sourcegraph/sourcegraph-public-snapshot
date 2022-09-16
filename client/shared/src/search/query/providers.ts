@@ -5,7 +5,7 @@ import { map, delay, takeUntil, switchMap } from 'rxjs/operators'
 import { SearchPatternType } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { getCompletionItems, REPO_DEPS_PREDICATE_REGEX } from './completion'
+import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { FilterType } from './filters'
 import { getHoverResult } from './hover'
@@ -67,11 +67,8 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
     }
 
     if (suggestionType === 'repo') {
-        const depsPredicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX)
-        const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenValue
-        const relevantFilters =
-            !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
-        return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
+        const relevantFilters = !hasAndOrOperators ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
+        return `${relevantFilters} repo:${tokenValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
 
     // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out

@@ -7,11 +7,11 @@ import * as Monaco from 'monaco-editor'
 import { QueryChangeSource } from '@sourcegraph/search'
 import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
-import { ThemePreference } from '../../../../../stores/themeState'
-import { useTheme } from '../../../../../theme'
+import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
 
@@ -88,6 +88,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     const applySuggestionsOnEnter = useExperimentalFeatures(
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (
@@ -111,7 +112,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
             autoFocus={autoFocus}
             onBlur={onBlur}
-            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
         />
     )
 })

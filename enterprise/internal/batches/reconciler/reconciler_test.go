@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -60,11 +61,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		"update a published changeset": {
 			currentSpec: &bt.TestSpecOpts{
 				HeadRef:   "refs/heads/head-ref-on-github",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 			},
 
 			previousSpec: &bt.TestSpecOpts{
 				HeadRef:   "refs/heads/head-ref-on-github",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 
 				Title:         "old title",
@@ -128,15 +131,19 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Setup gitserver dependency.
 			gitClient := &bt.FakeGitserverClient{ResponseErr: nil}
 			if changesetSpec != nil {
-				gitClient.Response = changesetSpec.Spec.HeadRef
+				gitClient.Response = changesetSpec.HeadRef
 			}
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &stesting.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &stesting.FakeChangesetSource{
+				Svc:                  extSvc,
+				FakeMetadata:         githubPR,
+				CurrentAuthenticator: &auth.OAuthBearerTokenWithSSH{},
+			}
 			if changesetSpec != nil {
-				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
-				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
+				fakeSource.WantHeadRef = changesetSpec.HeadRef
+				fakeSource.WantBaseRef = changesetSpec.BaseRef
 			}
 
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)

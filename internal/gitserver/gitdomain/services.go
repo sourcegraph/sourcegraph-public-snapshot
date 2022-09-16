@@ -43,7 +43,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 			// occurs is an empty repository.
 			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
 		}
-		return nil, BadCommitError{Spec: objectName, Commit: api.CommitID(sha), Repo: repo}
+		return nil, &BadCommitError{Spec: objectName, Commit: api.CommitID(sha), Repo: repo}
 	}
 
 	oid, err := decodeOID(sha)

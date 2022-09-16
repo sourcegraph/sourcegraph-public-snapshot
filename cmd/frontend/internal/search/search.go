@@ -312,6 +312,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
@@ -388,6 +389,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
@@ -453,21 +455,12 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:         streamhttp.RepoMatchType,
-		RepositoryID: int32(rm.ID),
-		Repository:   string(rm.Name),
-		Branches:     branches,
-	}
-
-	if len(rm.DescriptionMatches) > 0 {
-		dms := make([]streamhttp.Range, 0, len(rm.DescriptionMatches))
-		for _, matchRange := range rm.DescriptionMatches {
-			dms = append(dms, streamhttp.Range{
-				Start: fromLocation(matchRange.Start),
-				End:   fromLocation(matchRange.End),
-			})
-		}
-		repoEvent.DescriptionMatches = dms
+		Type:               streamhttp.RepoMatchType,
+		RepositoryID:       int32(rm.ID),
+		Repository:         string(rm.Name),
+		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
+		Branches:           branches,
+		DescriptionMatches: fromRanges(rm.DescriptionMatches),
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
@@ -477,6 +470,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
+		repoEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	return repoEvent

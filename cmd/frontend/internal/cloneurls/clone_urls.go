@@ -107,7 +107,7 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 	span.SetTag("ExternalService.ID", svc.ID)
 	span.SetTag("ExternalService.Kind", svc.Kind)
 
-	cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
 		return "", errors.Wrap(err, "parse config")
 	}

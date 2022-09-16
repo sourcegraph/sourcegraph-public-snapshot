@@ -30,6 +30,7 @@ type Upload struct {
 	NumParts          int
 	UploadedParts     []int
 	UploadSize        *int64
+	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
 }
@@ -200,4 +201,27 @@ func (s *sliceScanner) Next() (PackageReference, bool, error) {
 
 func (s *sliceScanner) Close() error {
 	return nil
+}
+
+type UploadsWithRepositoryNamespace struct {
+	Root    string
+	Indexer string
+	Uploads []Upload
+}
+
+type UploadLog struct {
+	LogTimestamp      time.Time
+	RecordDeletedAt   *time.Time
+	UploadID          int
+	Commit            string
+	Root              string
+	RepositoryID      int
+	UploadedAt        time.Time
+	Indexer           string
+	IndexerVersion    *string
+	UploadSize        *int
+	AssociatedIndexID *int
+	TransitionColumns []map[string]*string
+	Reason            *string
+	Operation         string
 }

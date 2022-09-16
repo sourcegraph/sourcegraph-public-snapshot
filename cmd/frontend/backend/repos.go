@@ -48,17 +48,20 @@ func (e ErrRepoSeeOther) Error() string {
 // more idiomatic solution.
 func NewRepos(logger log.Logger, db database.DB) *repos {
 	repoStore := db.Repos()
+	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		db:    db,
-		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(logger, repoStore),
+		logger: logger,
+		db:     db,
+		store:  repoStore,
+		cache:  dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	db    database.DB
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	logger log.Logger
+	db     database.DB
+	store  database.RepoStore
+	cache  *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -183,8 +186,12 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// indexable repos which could include private user added repos.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists
+// ALL indexable repos which could include private user added repos.
+// In addition, it only lists cloned repositories.
+//
+// The intended call site for this is the logic which assigns repositories to
+// zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
@@ -200,7 +207,10 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	}
 
 	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+		Index:      &trueP,
+		OnlyCloned: true,
+	})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -215,7 +225,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}

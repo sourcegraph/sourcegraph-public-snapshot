@@ -61,11 +61,11 @@ func TestOrganization(t *testing.T) {
 			}
 		}
 		// Removing all members from an organization is not allowed - add a new user to the organization to verify cascading settings below
-		cleanup, err := createOrganizationUser(orgID)
+		testUserID, err := createOrganizationUser(orgID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer cleanup(t)
+		removeTestUserAfterTest(t, testUserID)
 		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
 		// no longer get cascaded settings from this organization.
 		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
@@ -102,12 +102,7 @@ func TestOrganization(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
-			err := client.DeleteUser(testUserID1, true)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
+		removeTestUserAfterTest(t, testUserID1)
 
 		orgs, err := client.UserOrganizations(testUsername1)
 		if err != nil {
@@ -149,12 +144,7 @@ func TestOrganization(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() {
-				err := client.DeleteUser(testUserID2, true)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}()
+			removeTestUserAfterTest(t, testUserID2)
 
 			orgs, err = client.UserOrganizations(testUsername2)
 			if err != nil {
@@ -174,18 +164,13 @@ func TestOrganization(t *testing.T) {
 	})
 }
 
-func createOrganizationUser(orgID string) (func(*testing.T), error) {
+func createOrganizationUser(orgID string) (string, error) {
 	const tmpUserName = "gqltest-org-user-tmp"
 	tmpUserID, err := client.CreateUser(tmpUserName, tmpUserName+"@sourcegraph.com")
 	if err != nil {
-		return nil, err
+		return tmpUserID, err
 	}
 
 	err = client.AddUserToOrganization(orgID, tmpUserName)
-	return func(t *testing.T) {
-		err := client.DeleteUser(tmpUserID, true)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}, err
+	return tmpUserID, err
 }

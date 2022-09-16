@@ -76,13 +76,13 @@ Sourcegraph is most useful when it's at your fingertips. Our [integrations](../.
 
 ![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
 
-For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_search_engine.md).
+For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_extension/how-tos/browser_search_engine.md).
 
 ## 5. Measure success
 
 This looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure! 
 
-Sourcegraph has built-in analytics that are provided to site-admins to help understand and measure the value developers are seeing. Admin analytics is a free-feature for all instances. [Learn more about our admin analytics](../../admin/admin_analytics.md).
+Sourcegraph has built-in analytics that are provided to site-admins to help understand and measure the value developers are seeing. Analytics is a free-feature for all instances. [Learn more about our analytics](../../admin/analytics.md).
 
 How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@sourcegraph), and we'll send you some Sourcegraph swag!
 

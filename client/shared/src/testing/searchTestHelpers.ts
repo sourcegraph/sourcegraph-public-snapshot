@@ -2,6 +2,8 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
+import { FetchFileParameters } from '@sourcegraph/search-ui'
+
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
@@ -301,8 +303,15 @@ export const HIGHLIGHTED_FILE_LINES_LONG = [
     ],
 ]
 
-export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES))
-export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES_SIMPLE))
+export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES[0].slice(range.startLine, range.endLine)))
+)
+export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_SIMPLE[0].slice(range.startLine, range.endLine)))
+)
+export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
+)
 
 export const NOOP_SETTINGS_CASCADE = {
     subjects: null,

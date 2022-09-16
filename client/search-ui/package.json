@@ -7,8 +7,8 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "storybook": "STORIES_GLOB=client/search-ui/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
-    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "storybook": "STORIES_GLOB='client/search-ui/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start",
+    "lint:js": "yarn run -T eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "yarn run -T jest"
   }
 }

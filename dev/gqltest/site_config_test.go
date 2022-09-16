@@ -17,12 +17,7 @@ func TestSiteConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
-			err := client.DeleteUser(testClient1.AuthenticatedUserID(), true)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
+		removeTestUserAfterTest(t, testClient1.AuthenticatedUserID())
 
 		// Update site configuration to not allow sign up for builtin auth provider.
 		siteConfig, err := client.SiteConfiguration()
@@ -62,15 +57,19 @@ func TestSiteConfig(t *testing.T) {
 				}
 				t.Fatal(err)
 			}
-			defer func() {
-				err := client.DeleteUser(testClient2.AuthenticatedUserID(), true)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}()
+			removeTestUserAfterTest(t, testClient2.AuthenticatedUserID())
 			return gqltestutil.ErrContinueRetry
 		})
 		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func removeTestUserAfterTest(t *testing.T, userID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := client.DeleteUser(userID, true); err != nil {
 			t.Fatal(err)
 		}
 	})

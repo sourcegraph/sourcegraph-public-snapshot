@@ -94,7 +94,6 @@ export class ToggleLineWrap extends React.PureComponent<
                 <span>
                     <RepoHeaderActionButtonLink
                         aria-label={this.state.value ? 'Disable' : 'Enable'}
-                        className="btn-icon"
                         file={false}
                         onSelect={this.onClick}
                     >

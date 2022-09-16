@@ -17,10 +17,17 @@ var generateAnnotations = &cli.BoolFlag{
 	Usage: "Write helpful output to ./annotations directory",
 }
 
-var lintFixFlag = &cli.BoolFlag{
+var lintFix = &cli.BoolFlag{
 	Name:    "fix",
 	Aliases: []string{"f"},
 	Usage:   "Try to fix any lint issues",
+}
+
+var lintFailFast = &cli.BoolFlag{
+	Name:    "fail-fast",
+	Aliases: []string{"ff"},
+	Usage:   "Exit immediately if an issue is encountered (not available with '-fix')",
+	Value:   true,
 }
 
 var lintCommand = &cli.Command{
@@ -47,7 +54,8 @@ sg lint --help
 	Category: CategoryDev,
 	Flags: []cli.Flag{
 		generateAnnotations,
-		lintFixFlag,
+		lintFix,
+		lintFailFast,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -93,6 +101,7 @@ sg lint --help
 			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
 			return runner.Fix(cmd.Context, repoState)
 		}
+		runner.FailFast = lintFailFast.Get(cmd)
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
@@ -120,10 +129,11 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				}
 
 				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), target)
-				if lintFixFlag.Get(cmd) {
+				if lintFix.Get(cmd) {
 					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
 					return runner.Fix(cmd.Context, repoState)
 				}
+				runner.FailFast = lintFailFast.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
 				return runner.Check(cmd.Context, repoState)
 			},

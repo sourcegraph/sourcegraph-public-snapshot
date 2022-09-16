@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { EditorHint, QueryState } from '@sourcegraph/search'
+import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
+
+import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
@@ -15,71 +16,20 @@ export interface QueryExamplesHomepageProps extends TelemetryProps {
     setQueryState: (newState: QueryState) => void
 }
 
-const queryExampleSectionsColumns = [
-    [
-        {
-            title: 'Scope search to specific repos',
-            queryExamples: [
-                { id: 'single-repo', query: 'repo:awesomecorp/big-repo' },
-                { id: 'org-repos', query: 'repo:awesomecorp/*' },
-            ],
-        },
-        {
-            title: 'Jump into code navigation',
-            queryExamples: [
-                { id: 'file-filter', query: 'file:examplefile.go' },
-                { id: 'type-symbol', query: 'type:symbol Handler' },
-            ],
-        },
-        {
-            title: 'Get specific',
-            queryExamples: [
-                { id: 'author', query: 'author:logansmith' },
-                { id: 'before-after-filters', query: 'before:today after:earlydate' },
-            ],
-        },
-    ],
-    [
-        {
-            title: 'Find exact matches',
-            queryExamples: [{ id: 'exact-matches', query: 'some error message', helperText: 'No quotes needed' }],
-        },
-        {
-            title: 'Operators',
-            queryExamples: [
-                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                { id: 'and-operator', query: 'example AND secondexample' },
-                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-            ],
-        },
-        {
-            title: 'Get advanced',
-            queryExamples: [{ id: 'contains-commit-after', query: 'repo:contains.commit.after(yesterday)' }],
-            footer: (
-                <small className="d-block mt-3">
-                    <Link target="blank" to="/help/code_search/reference/queries">
-                        Complete query reference{' '}
-                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                    </Link>
-                </small>
-            ),
-        },
-    ],
-]
-
-type Tip = 'rev' | 'lang' | 'type-commit-diff'
+type Tip = 'rev' | 'lang' | 'before'
 
 export const queryToTip = (id: string | undefined): Tip | null => {
     switch (id) {
         case 'single-repo':
         case 'org-repos':
             return 'rev'
-        case 'file-filter':
-        case 'type-symbol':
         case 'exact-matches':
+        case 'regex-pattern':
             return 'lang'
-        case 'author':
-            return 'type-commit-diff'
+        case 'type-diff-author':
+        case 'type-commit-message':
+        case 'type-diff-after':
+            return 'before'
     }
     return null
 }
@@ -91,6 +41,8 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
+
+    const queryExampleSectionsColumns = useQueryExamples()
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {
@@ -146,11 +98,11 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         for matches only in a given language
                     </>
                 )}
-                {selectedTip === 'type-commit-diff' && (
+                {selectedTip === 'before' && (
                     <>
-                        Use <QueryExampleChip query="type:commit" onClick={onQueryExampleClick} className="mx-1" /> or{' '}
-                        <QueryExampleChip query="type:diff" onClick={onQueryExampleClick} className="mx-1" /> to specify
-                        where the author appears
+                        Use{' '}
+                        <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
+                        to query within a time range
                     </>
                 )}
             </div>
@@ -190,15 +142,17 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
     <div className={styles.queryExamplesSection}>
         <div className={styles.queryExamplesSectionTitle}>{title}</div>
         <div className={styles.queryExamplesItems}>
-            {queryExamples.map(({ id, query, helperText }) => (
-                <QueryExampleChip
-                    id={id}
-                    key={query}
-                    query={query}
-                    helperText={helperText}
-                    onClick={onQueryExampleClick}
-                />
-            ))}
+            {queryExamples
+                .filter(({ query }) => query.length > 0)
+                .map(({ id, query, helperText }) => (
+                    <QueryExampleChip
+                        id={id}
+                        key={query}
+                        query={query}
+                        helperText={helperText}
+                        onClick={onQueryExampleClick}
+                    />
+                ))}
         </div>
         {footer}
     </div>
@@ -224,7 +178,7 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
 }) => (
     <span className={classNames('d-flex align-items-center', className)}>
         <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
-            <SyntaxHighlightedSearchQuery query={query} />
+            <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
         {helperText && (
             <span className="text-muted ml-2">

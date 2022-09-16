@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"

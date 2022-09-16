@@ -261,6 +261,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                                 expanded && styles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}
+                            data-testid="toggle-matches-container"
                         >
                             <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
                             <span className={styles.toggleMatchesButtonText}>

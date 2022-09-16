@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
@@ -64,20 +63,35 @@ export default config
 
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
 
-export const _04Completed: Story = () => (
+export const _04Completed: Story = args => (
     <ActivationDropdown
         {...commonProps}
         activation={{
             ...baseActivation(),
             completed: {
-                ConnectedCodeHost: boolean('ConnectedCodeHost', false),
-                DidSearch: boolean('DidSearch', false),
-                FoundReferences: boolean('FoundReferences', false),
-                EnabledRepository: boolean('EnabledRepository', false),
+                ...args,
             },
         }}
     />
 )
+_04Completed.argTypes = {
+    ConnectedCodeHost: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    DidSearch: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    FoundReferences: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    EnabledSharing: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 _04Completed.storyName = 'Progress 0/4 completed'
 _04Completed.parameters = {
@@ -88,20 +102,35 @@ _04Completed.parameters = {
     },
 }
 
-export const _14Completed: Story = () => (
+export const _14Completed: Story = args => (
     <ActivationDropdown
         {...commonProps}
         activation={{
             ...baseActivation(),
             completed: {
-                ConnectedCodeHost: boolean('ConnectedCodeHost', true),
-                DidSearch: boolean('DidSearch', false),
-                FoundReferences: boolean('FoundReferences', false),
-                EnabledRepository: boolean('EnabledRepository', false),
+                ...args,
             },
         }}
     />
 )
+_14Completed.argTypes = {
+    ConnectedCodeHost: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+    DidSearch: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    FoundReferences: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    EnabledSharing: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 _14Completed.storyName = 'Progress 1/4 completed'
 _14Completed.parameters = {

@@ -83,7 +83,6 @@ export class GoToPermalinkAction extends React.PureComponent<
             <Tooltip content="Permalink (with full Git commit SHA)">
                 <RepoHeaderActionButtonLink
                     aria-label="Permalink"
-                    className="btn-icon"
                     file={false}
                     to={this.permalinkURL}
                     onSelect={this.onClick.bind(this)}

@@ -18,6 +18,7 @@ import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -150,14 +151,18 @@ export class Notebook {
                     }),
                 })
                 break
-            case 'query':
+            case 'query': {
+                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
+                // Removes comments
+                const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(
                         transformSearchQuery({
-                            // Removes comments
-                            query: block.input.query.replace(/\/\/.*/g, ''),
-                            extensionHostAPIPromise: this.dependencies.extensionHostAPI,
+                            query,
+                            extensionHostAPIPromise: extensionHostAPI,
+                            enableGoImportsSearchQueryTransform,
+                            eventLogger,
                         }),
                         {
                             version: LATEST_VERSION,
@@ -168,6 +173,7 @@ export class Notebook {
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
+            }
             case 'file':
                 this.blocks.set(block.id, {
                     ...block,

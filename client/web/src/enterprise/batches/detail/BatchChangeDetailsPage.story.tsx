@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
@@ -36,6 +35,22 @@ const config: Meta = {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
+        },
+        controls: {
+            exclude: ['url', 'supersededBatchSpec'],
+        },
+    },
+    argTypes: {
+        supersedingBatchSpec: {
+            control: { type: 'boolean' },
+        },
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        isClosed: {
+            control: { type: 'boolean' },
+            defaultValue: false,
         },
     },
 }
@@ -127,10 +142,11 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story<{ url: string; supersededBatchSpec?: boolean }> = ({ url, supersededBatchSpec }) => {
-    const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const isClosed = boolean('isClosed', false)
+const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
+    const supersedingBatchSpec = args.supersedingBatchSpec
+    const viewerCanAdminister = args.viewerCanAdminister
+    const isClosed = args.isClosed
+
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...MOCK_BATCH_CHANGE,
@@ -203,27 +219,57 @@ const Template: Story<{ url: string; supersededBatchSpec?: boolean }> = ({ url, 
 
 export const Overview = Template.bind({})
 Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change' }
+Overview.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const BurndownChart = Template.bind({})
 BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' }
 BurndownChart.storyName = 'Burndown chart'
+BurndownChart.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const SpecFile = Template.bind({})
 SpecFile.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' }
 SpecFile.storyName = 'Spec file'
+SpecFile.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const Archived = Template.bind({})
 Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' }
+Archived.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const BulkOperations = Template.bind({})
 BulkOperations.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' }
 BulkOperations.storyName = 'Bulk operations'
+BulkOperations.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const SupersededBatchSpec = Template.bind({})
 SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
+SupersededBatchSpec.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: true,
+    },
+}
 
-export const EmptyChangesets: Story = () => {
+export const EmptyChangesets: Story = args => {
     const mocks = new WildcardMockLink([
         {
             request: {
@@ -257,11 +303,15 @@ export const EmptyChangesets: Story = () => {
                         extensionsController={{} as any}
                         platformContext={{} as any}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        {...args}
                     />
                 </MockedTestProvider>
             )}
         </WebStory>
     )
+}
+EmptyChangesets.parameters = {
+    controls: { hideNoControlsWarning: true, exclude: ['supersedingBatchSpec', 'viewerCanAdminister', 'isClosed'] },
 }
 
 EmptyChangesets.storyName = 'Empty changesets'

@@ -1,9 +1,16 @@
 # Go dependencies
 
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+</aside>
+
 Site admins can sync Go modules from any from any Go module proxy, including open source code from proxy.golang.org or a private proxy such as [Athens](https://github.com/gomods/athens), to their Sourcegraph instance so that users can search and navigate the repositories.
 
 To add Go dependencies to Sourcegraph you need to setup a Go dependencies code host:
 
+1. As *site admin*: go to **Site admin > Global settings** and enable the experimental feature by adding: `{"experimentalFeatures": {"goPackages": "enabled"} }`
 1. As *site admin*: go to **Site admin > Manage code hosts**
 1. Select **JVM Dependencies**.
 1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).

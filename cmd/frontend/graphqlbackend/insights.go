@@ -22,8 +22,6 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
-
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -450,23 +448,4 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
-}
-
-type SearchQueryInsightsResolver interface {
-	ThirtyDayPercentChange(ctx context.Context) (int32, error)
-	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
-}
-
-type SearchQueryInsightsNotAvailable interface {
-	Message(ctx context.Context) string
-}
-
-type SearchQueryInsightsArgs struct {
-	Query       string `json:"query"`
-	PatternType string `json:"patternType"`
-}
-
-type SearchQueryInsightsResult interface {
-	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
-	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }

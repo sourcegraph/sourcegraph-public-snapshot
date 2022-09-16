@@ -80,7 +80,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 <H3>Setting up executors</H3>
                 <Text className="mb-0">
                     Executors enable{' '}
-                    <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
+                    <Link to="/help/code_navigation/explanations/auto_indexing" rel="noopener">
                         auto-indexing for code navigation
                     </Link>{' '}
                     and{' '}

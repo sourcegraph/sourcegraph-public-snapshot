@@ -432,6 +432,17 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
+// buildRecordScanner converts a scan*() function as implemented in lots of
+// places in this package into something we can use in
+// `dbworker.BuildWorkerScan`.
+func buildRecordScanner[T any](scan func(*T, dbutil.Scanner) error) func(dbutil.Scanner) (*T, error) {
+	return func(s dbutil.Scanner) (*T, error) {
+		var t T
+		err := scan(&t, s)
+		return &t, err
+	}
+}
+
 func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:

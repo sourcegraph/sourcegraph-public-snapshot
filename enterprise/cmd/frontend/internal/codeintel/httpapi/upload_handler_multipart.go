@@ -43,6 +43,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 		State:             "uploading",
 		NumParts:          uploadState.numParts,
 		UploadedParts:     nil,
+		UncompressedSize:  uploadState.uncompressedSize,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err

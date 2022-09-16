@@ -1,8 +1,6 @@
 import React from 'react'
 
-import { Text } from '@sourcegraph/wildcard'
-
-import { ParentSize } from '../../../charts'
+import { Text, ParentSize } from '@sourcegraph/wildcard'
 
 import styles from './index.module.scss'
 

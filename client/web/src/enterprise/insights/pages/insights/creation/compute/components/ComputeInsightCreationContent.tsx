@@ -22,10 +22,10 @@ import {
     useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { ComputeLivePreview } from '../../ComputeLivePreview'
 import { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
+import { ComputeLivePreview } from './ComputeLivePreview'
 
 const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
@@ -149,7 +149,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         seriesField={series}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
-                        showColorPicker={false}
+                        hasAddNewSeriesButton={false}
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>

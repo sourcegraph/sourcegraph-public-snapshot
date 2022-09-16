@@ -28,11 +28,11 @@ export interface FormSeriesProps {
     queryFieldDescription?: ReactNode
 
     /**
-     * This prop hides color picker from the series form. This field is needed for
-     * compute powered insight creation UI, see https://github.com/sourcegraph/sourcegraph/issues/38832
-     * for more details compute doesn't have series colors
+     * For the compute-powered insight we do not support multi series, in order to enforce it
+     * we need to hide this functionality by hiding add new series button.
+     * More context in this issue https://github.com/sourcegraph/sourcegraph/issues/38832
      */
-    showColorPicker?: boolean
+    hasAddNewSeriesButton?: boolean
 }
 
 export const FormSeries: FC<FormSeriesProps> = props => {
@@ -41,7 +41,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
         showValidationErrorsOnMount,
         repositories,
         queryFieldDescription,
-        showColorPicker = true,
+        hasAddNewSeriesButton = true,
     } = props
 
     const { licensed } = useUiFeatures()
@@ -60,7 +60,6 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                         autofocus={line.autofocus}
                         repositories={repositories}
                         queryFieldDescription={queryFieldDescription}
-                        showColorPicker={showColorPicker}
                         className={classNames('p-3', styles.formSeriesItem)}
                         onSubmit={editCommit}
                         onCancel={() => cancelEdit(line.id)}
@@ -74,7 +73,6 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                             onEdit={() => editRequest(line.id)}
                             onRemove={() => deleteSeries(line.id)}
                             className={styles.formSeriesItem}
-                            showColor={showColorPicker}
                             {...line}
                         />
                     )
@@ -85,16 +83,18 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                 <LimitedAccessLabel message="Unlock Code Insights for unlimited data series" className="mx-auto my-3" />
             )}
 
-            <Button
-                data-testid="add-series-button"
-                type="button"
-                onClick={() => editRequest()}
-                variant="link"
-                disabled={!licensed ? series.length >= 10 : false}
-                className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
-            >
-                + Add another data series
-            </Button>
+            {hasAddNewSeriesButton && (
+                <Button
+                    data-testid="add-series-button"
+                    type="button"
+                    onClick={() => editRequest()}
+                    variant="link"
+                    disabled={!licensed ? series.length >= 10 : false}
+                    className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
+                >
+                    + Add another data series
+                </Button>
+            )}
         </ul>
     )
 }

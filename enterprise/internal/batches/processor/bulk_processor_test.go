@@ -41,6 +41,7 @@ func TestBulkProcessor(t *testing.T) {
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 	})
 	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
@@ -262,6 +263,7 @@ func TestBulkProcessor(t *testing.T) {
 						Repo:      repo.ID,
 						BatchSpec: batchSpec.ID,
 						HeadRef:   "main",
+						Typ:       btypes.ChangesetSpecTypeBranch,
 						Published: false,
 					},
 					changeset: bt.TestChangesetOpts{
@@ -324,6 +326,7 @@ func TestBulkProcessor(t *testing.T) {
 								Repo:      repo.ID,
 								BatchSpec: batchSpec.ID,
 								HeadRef:   "main",
+								Typ:       btypes.ChangesetSpecTypeBranch,
 							})
 							changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 								Repo:             repo.ID,

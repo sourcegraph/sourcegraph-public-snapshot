@@ -24,16 +24,16 @@ export async function initializeSearchPanelWebview({
     webviewPanel: vscode.WebviewPanel
 }> {
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
-    const extensionsDistPath = vscode.Uri.joinPath(extensionUri, 'dist', 'extensions')
+    const extensionsDistributionPath = vscode.Uri.joinPath(extensionUri, 'dist', 'extensions')
 
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true,
         enableFindWidget: true,
-        localResourceRoots: [webviewPath, extensionsDistPath],
+        localResourceRoots: [webviewPath, extensionsDistributionPath],
     })
 
-    const extensionsDistWebviewPath = panel.webview.asWebviewUri(extensionsDistPath)
+    const extensionsDistributionWebviewPath = panel.webview.asWebviewUri(extensionsDistributionPath)
     const scriptSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.js'))
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
     const styleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
@@ -63,7 +63,7 @@ export async function initializeSearchPanelWebview({
     // panel.webview.cspSource comes from the webview object
     // debt: load codicon ourselves.
     panel.webview.html = `<!DOCTYPE html>
-    <html lang="en" data-panel-id="${panelId}" data-extensions-dist-path=${extensionsDistWebviewPath.toString()}>
+    <html lang="en" data-panel-id="${panelId}" data-extensions-dist-path=${extensionsDistributionWebviewPath.toString()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -109,12 +109,12 @@ export function initializeSearchSidebarWebview({
     searchSidebarAPI: Comlink.Remote<SearchSidebarAPI>
 } {
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
-    const extensionsDistPath = vscode.Uri.joinPath(extensionUri, 'dist', 'extensions')
-    const extensionsDistWebviewPath = webviewView.webview.asWebviewUri(extensionsDistPath)
+    const extensionsDistributionPath = vscode.Uri.joinPath(extensionUri, 'dist', 'extensions')
+    const extensionsDistributionWebviewPath = webviewView.webview.asWebviewUri(extensionsDistributionPath)
 
     webviewView.webview.options = {
         enableScripts: true,
-        localResourceRoots: [webviewPath, extensionsDistPath],
+        localResourceRoots: [webviewPath, extensionsDistributionPath],
     }
 
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.js'))
@@ -133,7 +133,7 @@ export function initializeSearchSidebarWebview({
     // Apply Content-Security-Policy
     // debt: load codicon ourselves.
     webviewView.webview.html = `<!DOCTYPE html>
-    <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()} data-extensions-dist-path=${extensionsDistWebviewPath.toString()}>
+    <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()} data-extensions-dist-path=${extensionsDistributionWebviewPath.toString()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">

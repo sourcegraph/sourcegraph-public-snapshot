@@ -14,7 +14,11 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 	ctx := context.Background()
 
 	dummySrc := &dummyPackagesSource{}
-	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{ID: 1, Kind: extsvc.KindGoPackages}}
+	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGoPackages,
+		Config: extsvc.NewEmptyConfig(),
+	}}
 
 	src.GetRepo(ctx, "go/github.com/sourcegraph-testing/go-repo-a")
 

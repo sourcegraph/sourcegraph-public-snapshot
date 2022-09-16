@@ -182,6 +182,62 @@ func Zoekt() *monitoring.Dashboard {
 							NextSteps:   "none",
 						},
 					},
+					{
+						{
+							Name:        "zoekt_shards_sched",
+							Description: "current number of zoekt scheduler processes in a state",
+							Query:       "sum by (type, state) (zoekt_shards_sched)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+						{
+							Name:        "zoekt_shards_sched_total",
+							Description: "rate of zoekt scheduler process state transitions in the last 5m",
+							Query:       "sum by (type, state) (rate(zoekt_shards_sched[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+					},
 				},
 			},
 			{

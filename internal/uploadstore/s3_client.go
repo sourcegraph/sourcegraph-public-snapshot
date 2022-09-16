@@ -133,6 +133,8 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 	var bytesRange *string
 	if byteOffset > 0 {
 		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", byteOffset))
+	} else if byteOffset < 0 {
+		bytesRange = aws.String(fmt.Sprintf("bytes=%d", byteOffset))
 	}
 
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{

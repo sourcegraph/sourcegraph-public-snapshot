@@ -9,11 +9,7 @@ export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unkno
         <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
         No uploads yet. Enable precise code navigation by{' '}
-        <Link
-            to="/help/code_intelligence/explanations/precise_code_intelligence"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
+        <Link to="/help/code_navigation/explanations/precise_code_navigation" target="_blank" rel="noreferrer noopener">
             uploading LSIF data
         </Link>
         .

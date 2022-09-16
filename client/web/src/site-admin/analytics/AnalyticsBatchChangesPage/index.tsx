@@ -4,9 +4,8 @@ import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H2, Text } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H2, Text, LineChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
 import { BatchChangesStatisticsResult, BatchChangesStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -110,7 +109,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Batch Changes</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Batch Changes</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

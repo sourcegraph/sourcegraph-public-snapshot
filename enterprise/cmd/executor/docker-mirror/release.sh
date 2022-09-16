@@ -11,11 +11,13 @@ export AWS_SECRET_ACCESS_KEY="${AWS_EXECUTOR_AMI_SECRET_KEY}"
 # Point to GCP boot disk image/AMI built by build.sh script
 NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
 GOOGLE_IMAGE_NAME="${NAME}"
-AWS_AMI_ID=$(aws ec2 describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
 
 # Mark GCP boot disk as released and make it usable outside of Sourcegraph.
 gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --member='allAuthenticatedUsers' --role='roles/compute.imageUser'
 gcloud compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 
-# Make AMI usable outside of Sourcegraph.
-aws ec2 modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
+for region in $(jq -r '.builders[1].ami_regions[]' <docker-mirror.json); do
+  AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
+  # Make AMI usable outside of Sourcegraph.
+  aws ec2 --region="${region}" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
+done

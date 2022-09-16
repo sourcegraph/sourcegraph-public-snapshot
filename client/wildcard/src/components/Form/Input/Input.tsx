@@ -41,7 +41,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Displays the input with description, error message, visual invalid and valid states.
  */
-export const Input = forwardRef((props, reference) => {
+export const Input = forwardRef(function Input(props, reference) {
     const {
         as: Component = 'input',
         type = 'text',

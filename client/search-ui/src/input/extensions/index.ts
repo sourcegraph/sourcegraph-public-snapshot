@@ -13,7 +13,8 @@ import {
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
 
-export { createDefaultSuggestionSources, searchQueryAutocompletion, StandardSuggestionSource }
+export { createDefaultSuggestionSources, searchQueryAutocompletion }
+export type { StandardSuggestionSource }
 
 /**
  * Creates an extension that calls the provided callback whenever the editor

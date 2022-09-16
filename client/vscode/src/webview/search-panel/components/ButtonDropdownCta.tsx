@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -70,17 +71,17 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
-            <DropdownToggle
-                className={classNames(
-                    'btn btn-sm btn-outline-secondary text-decoration-none',
-                    className,
-                    styles.toggle
-                )}
+            <Button
+                as={DropdownToggle}
+                variant="secondary"
+                outline={true}
+                size="sm"
+                className={classNames('text-decoration-none', className, styles.toggle)}
                 nav={true}
                 caret={false}
             >
                 {button}
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.container}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">

@@ -544,9 +544,14 @@ var installFuncs = map[string]installFunc{
 		if err != nil {
 			return err
 		}
+		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
+		if _, err := os.Stat(target); err == nil {
+			return nil
+		} else if !os.IsNotExist(err) {
+			return err
+		}
 		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
 		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
-		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
 		_, err = download.Executable(ctx, url, target)
 		return err
 	},

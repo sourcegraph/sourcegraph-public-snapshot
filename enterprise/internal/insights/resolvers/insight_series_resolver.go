@@ -217,10 +217,46 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
-	for _, point := range p.points {
+	modifiedPoints := removeClosePoints(p.points, p.series)
+	for _, point := range modifiedPoints {
 		resolvers = append(resolvers, insightsDataPointResolver{point})
 	}
 	return resolvers, nil
+}
+
+// This will make sure that no two snapshots are too close together. We'll use 20% of the time interval to
+// remove these "close" points.
+func removeClosePoints(points []store.SeriesPoint, series types.InsightViewSeries) []store.SeriesPoint {
+	buffer := intervalToMinutes(types.IntervalUnit(series.SampleIntervalUnit), series.SampleIntervalValue) / 5
+	modifiedPoints := []store.SeriesPoint{}
+	for i := 0; i < len(points)-1; i++ {
+		modifiedPoints = append(modifiedPoints, points[i])
+		if points[i+1].Time.Sub(points[i].Time).Minutes() < buffer {
+			i++
+		}
+	}
+	// Always add the very last snapshot point if it exists
+	if len(points) > 0 {
+		return append(modifiedPoints, points[len(points)-1])
+	}
+	return modifiedPoints
+}
+
+// This only needs to be approximate to calculate a comfortable buffer in which to remove points
+func intervalToMinutes(unit types.IntervalUnit, value int) float64 {
+	switch unit {
+	case types.Day:
+		return time.Hour.Minutes() * 24 * float64(value)
+	case types.Week:
+		return time.Hour.Minutes() * 24 * 7 * float64(value)
+	case types.Month:
+		return time.Hour.Minutes() * 24 * 30 * float64(value)
+	case types.Year:
+		return time.Hour.Minutes() * 24 * 365 * float64(value)
+	default:
+		// By default return the smallest interval (an hour)
+		return time.Hour.Minutes() * float64(value)
+	}
 }
 
 func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {

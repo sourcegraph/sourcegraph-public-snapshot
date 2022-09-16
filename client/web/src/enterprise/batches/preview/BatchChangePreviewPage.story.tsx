@@ -1,6 +1,5 @@
-import { boolean } from '@storybook/addon-knobs'
-import { useMemo } from '@storybook/addons'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Args, useMemo } from '@storybook/addons'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -35,6 +34,16 @@ const config: Meta = {
             disableSnapshot: false,
         },
     },
+    argTypes: {
+        supersedingBatchSpec: {
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
@@ -44,7 +53,7 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
-const batchSpec = (): BatchSpecFields => ({
+const batchSpec = (props: Args): BatchSpecFields => ({
     appliesToBatchChange: null,
     createdAt: subDays(new Date(), 5).toISOString(),
     creator: {
@@ -70,14 +79,14 @@ const batchSpec = (): BatchSpecFields => ({
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    supersedingBatchSpec: boolean('supersedingBatchSpec', false)
+    supersedingBatchSpec: props.supersedingBatchSpec
         ? {
               __typename: 'BatchSpec',
               createdAt: subDays(new Date(), 1).toISOString(),
               applyURL: '/users/alice/batch-changes/apply/newspecid',
           }
         : null,
-    viewerCanAdminister: boolean('viewerCanAdminister', true),
+    viewerCanAdminister: props.viewerCanAdminister,
     viewerBatchChangesCodeHosts: {
         __typename: 'BatchChangesCodeHostConnection',
         totalCount: 0,
@@ -116,11 +125,11 @@ const batchSpecByIDLink = (spec: BatchSpecFields): WildcardMockLink =>
         },
     ])
 
-const fetchBatchSpecCreate = () => batchSpecByIDLink(batchSpec())
+const fetchBatchSpecCreate = (props: Args) => batchSpecByIDLink(batchSpec(props))
 
-const fetchBatchSpecMissingCredentials = () =>
+const fetchBatchSpecMissingCredentials = (props: Args) =>
     batchSpecByIDLink({
-        ...batchSpec(),
+        ...batchSpec(props),
         viewerBatchChangesCodeHosts: {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 2,
@@ -137,9 +146,9 @@ const fetchBatchSpecMissingCredentials = () =>
         },
     })
 
-const fetchBatchSpecUpdate = () =>
+const fetchBatchSpecUpdate = (props: Args) =>
     batchSpecByIDLink({
-        ...batchSpec(),
+        ...batchSpec(props),
         appliesToBatchChange: {
             id: 'somebatch',
             name: 'awesome-batch-change',
@@ -147,7 +156,7 @@ const fetchBatchSpecUpdate = () =>
         },
     })
 
-const fetchExceedsLicense = () =>
+const fetchExceedsLicense = (props: Args) =>
     new WildcardMockLink([
         {
             request: {
@@ -160,7 +169,7 @@ const fetchExceedsLicense = () =>
                 data: {
                     node: {
                         __typename: 'BatchSpec',
-                        ...batchSpec(),
+                        ...batchSpec(props),
                     },
                 },
             },
@@ -216,8 +225,8 @@ const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConn
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const Create: Story = () => {
-    const link = useMemo(() => fetchBatchSpecCreate(), [])
+export const Create: Story = args => {
+    const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
         <WebStory>
             {props => (
@@ -242,8 +251,8 @@ export const Create: Story = () => {
     )
 }
 
-export const Update: Story = () => {
-    const link = useMemo(() => fetchBatchSpecUpdate(), [])
+export const Update: Story = args => {
+    const link = useMemo(() => fetchBatchSpecUpdate(args), [args])
     return (
         <WebStory>
             {props => (
@@ -268,8 +277,8 @@ export const Update: Story = () => {
     )
 }
 
-export const MissingCredentials: Story = () => {
-    const link = useMemo(() => fetchBatchSpecMissingCredentials(), [])
+export const MissingCredentials: Story = args => {
+    const link = useMemo(() => fetchBatchSpecMissingCredentials(args), [args])
     return (
         <WebStory>
             {props => (
@@ -296,8 +305,8 @@ export const MissingCredentials: Story = () => {
 
 MissingCredentials.storyName = 'Missing credentials'
 
-export const SpecFile: Story = () => {
-    const link = useMemo(() => fetchBatchSpecCreate(), [])
+export const SpecFile: Story = args => {
+    const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
         <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
             {props => (
@@ -324,8 +333,8 @@ export const SpecFile: Story = () => {
 
 SpecFile.storyName = 'Spec file'
 
-export const NoChangesets: Story = () => {
-    const link = useMemo(() => fetchBatchSpecCreate(), [])
+export const NoChangesets: Story = args => {
+    const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
         <WebStory>
             {props => (
@@ -352,8 +361,8 @@ export const NoChangesets: Story = () => {
 
 NoChangesets.storyName = 'No changesets'
 
-export const CreateNewStory: Story = () => {
-    const link = useMemo(() => fetchBatchSpecCreate(), [])
+export const CreateNewStory: Story = args => {
+    const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
         <WebStory>
             {props => (
@@ -380,8 +389,8 @@ export const CreateNewStory: Story = () => {
 
 CreateNewStory.storyName = 'Create (New)'
 
-export const ExceedsLicenseStory: Story = () => {
-    const link = useMemo(() => fetchExceedsLicense(), [])
+export const ExceedsLicenseStory: Story = args => {
+    const link = useMemo(() => fetchExceedsLicense(args), [args])
     return (
         <WebStory>
             {props => (

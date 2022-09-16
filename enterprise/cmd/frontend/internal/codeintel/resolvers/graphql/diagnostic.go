@@ -4,16 +4,15 @@ import (
 	"context"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DiagnosticResolver struct {
-	diagnostic       resolvers.AdjustedDiagnostic
+	diagnostic       AdjustedDiagnostic
 	locationResolver *CachedLocationResolver
 }
 
-func NewDiagnosticResolver(diagnostic resolvers.AdjustedDiagnostic, locationResolver *CachedLocationResolver) gql.DiagnosticResolver {
+func NewDiagnosticResolver(diagnostic AdjustedDiagnostic, locationResolver *CachedLocationResolver) gql.DiagnosticResolver {
 	return &DiagnosticResolver{
 		diagnostic:       diagnostic,
 		locationResolver: locationResolver,
@@ -29,7 +28,7 @@ func (r *DiagnosticResolver) Location(ctx context.Context) (gql.LocationResolver
 	return resolveLocation(
 		ctx,
 		r.locationResolver,
-		resolvers.AdjustedLocation{
+		AdjustedLocation{
 			Dump:           r.diagnostic.Dump,
 			Path:           r.diagnostic.Path,
 			AdjustedCommit: r.diagnostic.AdjustedCommit,
