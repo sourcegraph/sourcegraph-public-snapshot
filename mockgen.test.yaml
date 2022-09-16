@@ -37,6 +37,9 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi
   interfaces:
     - DBStore
+- filename: enterprise/cmd/frontend/internal/codeintel/httpapi/auth/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth
+  interfaces:
     - GitHubClient
 - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 type DBStore interface {
@@ -29,9 +28,4 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 	}
 
 	return &DBStoreShim{tx}, nil
-}
-
-type GitHubClient interface {
-	GetRepository(ctx context.Context, owner string, name string) (*github.Repository, error)
-	ListInstallationRepositories(ctx context.Context, page int) ([]*github.Repository, bool, int, error)
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -543,7 +544,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(userID)))
 		}
 
-		authValidators := AuthValidatorMap{
+		authValidators := auth.AuthValidatorMap{
 			"github": func(context.Context, url.Values, string) (int, error) {
 				if user.name != "owning-user" {
 					return http.StatusUnauthorized, errors.New("sample text import cycle")
