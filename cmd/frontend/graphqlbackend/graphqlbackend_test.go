@@ -104,14 +104,14 @@ func TestDeleteRepository(t *testing.T) {
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
                 mutation {
-                    deleteRepository(name: "github.com/gorilla/mux") {
+                    recloneRepository(name: "github.com/gorilla/mux") {
                         alwaysNil
                     }
                 }
             `,
 			ExpectedResult: `
                 {
-                    "deleteRepository": {
+                    "recloneRepository": {
                         "alwaysNil": null
                     }
                 }

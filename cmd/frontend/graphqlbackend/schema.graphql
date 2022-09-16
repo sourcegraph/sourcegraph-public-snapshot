@@ -785,9 +785,10 @@ type Mutation {
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 
     """
-    Delete a repository from the gitserver and mark it as not cloned.
+    Reclone a repository from the gitserver. This involves deleting the file on disk,
+    marking it as not-cloned in the database, and then restarting the clone process.
     """
-    deleteRepository(name: String): EmptyResponse!
+    recloneRepository(name: String): EmptyResponse!
 
 
 }

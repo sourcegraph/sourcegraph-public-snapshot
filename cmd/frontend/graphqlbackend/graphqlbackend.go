@@ -593,8 +593,9 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	return resolver.repo, nil
 }
 
-// DeleteRepository deletes a repository from the gitserver and marks it as not cloned.
-func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
+// RecloneRepository deletes a repository from the gitserver disk, marks it as not cloned, and restarts
+// the repo cloning process.
+func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Name *string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete repositories.
