@@ -109,7 +109,7 @@ describe('SearchContextMenu', () => {
         selectSearchContextSpec: () => {},
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts,
         fetchSearchContexts: mockFetchSearchContexts,
-        closeMenu: () => {},
+        onMenuClose: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         searchContextsEnabled: true,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -163,7 +163,7 @@ describe('SearchContextMenu', () => {
                         {...defaultProps}
                         selectSearchContextSpec={selectSearchContextSpec}
                         selectedSearchContextSpec="@username"
-                        closeMenu={closeMenu}
+                        onMenuClose={closeMenu}
                     />
                 </DropdownMenu>
             </UncontrolledDropdown>

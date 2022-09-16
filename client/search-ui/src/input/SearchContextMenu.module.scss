@@ -20,7 +20,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.25rem 1rem 0.5rem;
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--border-color-2);
     color: var(--text-muted);
 
@@ -32,8 +32,8 @@
 .list {
     width: 31rem;
     max-width: 100%;
+    max-height: 310px;
     padding: 0.25rem 0;
-    max-height: 300px;
     overflow: auto;
 }
 
@@ -52,6 +52,11 @@
         overflow: hidden;
         text-overflow: ellipsis;
         flex-shrink: 0;
+        white-space: nowrap;
+
+        [data-suggested-value] {
+            font-weight: 500;
+        }
     }
 
     &-description {
@@ -59,9 +64,18 @@
         text-overflow: ellipsis;
         flex-grow: 1;
         font-size: 0.75rem;
+        white-space: nowrap;
     }
 
-    &:not(:active) {
+    &[data-highlighted] {
+        /* Badge-secondary variant for improved contrast when background color changes */
+        > .item-default {
+            background-color: var(--color-bg-1);
+            border-color: var(--color-bg-1);
+        }
+    }
+
+    &:not([data-highlighted]) {
         > .item-description {
             color: var(--text-muted);
         }
@@ -69,36 +83,6 @@
 
     &--selected {
         background-color: var(--color-bg-3);
-    }
-
-    &--highlighted {
-        font-weight: 700;
-    }
-
-    &:hover,
-    &:active,
-    &:focus {
-        /* Override default focus styles */
-        box-shadow: none;
-        outline: none;
-
-        background-color: var(--primary);
-        color: var(--light-text);
-
-        > .item-description {
-            color: var(--light-text);
-        }
-    }
-
-    &:hover,
-    &:active,
-    &:focus,
-    &--selected {
-        /* Badge-secondary variant for improved contrast when background color changes */
-        > .item-default {
-            background-color: var(--color-bg-1);
-            border-color: var(--color-bg-1);
-        }
     }
 }
 
@@ -114,6 +98,5 @@
 }
 
 .infinite-scroll-trigger {
-    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     height: 1px;
 }
