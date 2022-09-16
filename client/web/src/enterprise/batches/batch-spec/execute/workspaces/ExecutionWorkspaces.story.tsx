@@ -17,7 +17,11 @@ import {
     mockWorkspaces,
 } from '../../batch-spec.mock'
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
-import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from '../backend'
+import {
+    BATCH_SPEC_WORKSPACE_BY_ID,
+    FETCH_BATCH_SPEC_EXECUTION,
+    queryWorkspacesList as _queryWorkspacesList,
+} from '../backend'
 
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 
@@ -53,14 +57,6 @@ const MOCKS = new WildcardMockLink([
     },
     {
         request: {
-            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaces(50) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
             query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
             variables: MATCH_ANY_PARAMETERS,
         },
@@ -77,6 +73,10 @@ const MOCKS = new WildcardMockLink([
     },
 ])
 
+const queryWorkspacesList: typeof _queryWorkspacesList = () =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    of(mockWorkspaces(50).node.workspaceResolution!.workspaces)
+
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 export const List: Story = () => (
@@ -84,7 +84,7 @@ export const List: Story = () => (
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
-                    <ExecutionWorkspaces {...props} />
+                    <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} {...props} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -98,7 +98,8 @@ export const WorkspaceSelected: Story = () => (
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
                     <ExecutionWorkspaces
                         {...props}
-                        selectedWorkspaceID="spec1234"
+                        selectedWorkspaceID="workspace2"
+                        queryWorkspacesList={queryWorkspacesList}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                     />
                 </BatchSpecContextProvider>

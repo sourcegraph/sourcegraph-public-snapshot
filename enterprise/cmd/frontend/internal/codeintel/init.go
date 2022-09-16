@@ -32,7 +32,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	}
 
 	executorResolver := executorgraphql.New(db)
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, services.AutoIndexingSvc, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
 	uploadResolver := uploadgraphql.New(services.UploadSvc, oc("upload"))
