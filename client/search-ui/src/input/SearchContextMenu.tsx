@@ -207,6 +207,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     variant="small"
                     placeholder="Find..."
                     autoFocus={true}
+                    spellCheck={false}
                     aria-label="Find a context"
                     data-testid="search-context-menu-header-input"
                     className="w-100"
