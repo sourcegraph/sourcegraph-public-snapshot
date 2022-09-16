@@ -3,6 +3,8 @@ package github
 import (
 	"context"
 	"encoding/base64"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"net/url"
 
 	"github.com/sourcegraph/log"
@@ -19,7 +21,7 @@ import (
 
 // newAppProvider creates a new authz Provider for GitHub App.
 func newAppProvider(
-	externalServicesStore database.ExternalServiceStore,
+	db database.DB,
 	svc *types.ExternalService,
 	urn string,
 	baseURL *url.URL,
@@ -33,6 +35,16 @@ func newAppProvider(
 		return nil, errors.Wrap(err, "decode private key")
 	}
 
+	rawConfig, err := svc.Config.Decrypt(context.Background())
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+
 	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
 	if err != nil {
 		return nil, errors.Wrap(err, "new authenticator with GitHub App")
@@ -42,7 +54,10 @@ func newAppProvider(
 	appClient := github.NewV3Client(
 		log.Scoped("app", "github client for github app").
 			With(log.String("appID", appID)),
-		urn, apiURL, auther, cli, nil) // todo: add token refresher
+		urn, apiURL, auther, cli, tokenRefresher)
+
+	externalServicesStore := db.ExternalServices()
+
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
@@ -56,7 +71,7 @@ func newAppProvider(
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, nil), // todo: add token refresher
+				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, tokenRefresher),
 			}, nil
 		},
 		InstallationID: &installationID,
