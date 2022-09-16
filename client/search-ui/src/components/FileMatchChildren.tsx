@@ -1,4 +1,4 @@
-import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo, useContext } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -387,6 +387,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     className={classNames('test-file-match-children-item', styles.symbol)}
                     data-href={symbol.url}
+                    data-selectable-href={symbol.url}
                     role="link"
                     tabIndex={0}
                     onClick={navigateToFile}
@@ -396,7 +397,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mr-2 flex-shrink-0">
                         <SymbolTag kind={symbol.kind} />
                     </div>
-                    <div className={styles.symbolCodeExcerpt}>
+                    <div className={classNames(styles.symbolCodeExcerpt, 'selectable-list-underline')}>
                         <CodeExcerpt
                             className="a11y-ignore"
                             repoName={result.repository}
@@ -420,7 +421,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>
-                    {grouped.map((group, index) => (
+                    {grouped.map(group => (
                         <div
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
@@ -429,6 +430,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         >
                             <div
                                 data-href={createCodeExcerptLink(group)}
+                                data-selectable-href={createCodeExcerptLink(group)}
                                 className={classNames(
                                     'test-file-match-children-item',
                                     styles.item,

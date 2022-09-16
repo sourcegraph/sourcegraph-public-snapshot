@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
@@ -39,6 +39,7 @@ import { useItemsToShow } from './use-items-to-show'
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
+import { useSelectableList } from './useSelectableList'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,
@@ -213,6 +214,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             logSearchResultClicked,
         ]
     )
+
+    useSelectableList()
 
     return (
         <>

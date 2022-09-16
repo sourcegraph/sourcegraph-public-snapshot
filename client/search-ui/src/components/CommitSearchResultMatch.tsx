@@ -120,7 +120,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             partialVisibility={true}
             offset={visibilitySensorOffset}
         >
-            <div className={styles.commitSearchResultMatch}>
+            <div data-selectable-href={item.url} className={styles.commitSearchResultMatch}>
                 {item.repoLastFetched && (
                     <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
                 )}

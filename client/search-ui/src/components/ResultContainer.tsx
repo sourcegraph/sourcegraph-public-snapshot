@@ -13,6 +13,7 @@ import { CodeHostIcon } from './CodeHostIcon'
 import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
+import { getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 
 export interface ResultContainerProps {
     /**
@@ -258,7 +259,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                             type="button"
                             className={classNames(
                                 styles.toggleMatchesButton,
-                                expanded && styles.toggleMatchesButtonExpanded
+                                expanded && styles.toggleMatchesButtonExpanded,
+                                'selectable-list-compatible'
                             )}
                             onClick={toggle}
                             data-testid="toggle-matches-container"

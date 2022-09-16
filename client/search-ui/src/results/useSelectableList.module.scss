@@ -1,0 +1,10 @@
+.highlighted {
+    background-color: var(--color-bg-2);
+}
+.highlighted a {
+    text-decoration: underline;
+}
+
+.highlighted :global(.selectable-list-underline) {
+    text-decoration: underline;
+}

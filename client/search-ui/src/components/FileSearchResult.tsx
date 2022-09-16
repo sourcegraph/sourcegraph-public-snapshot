@@ -33,6 +33,8 @@ import { RepoFileLink } from './RepoFileLink'
 import { ResultContainerProps, ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
+import { result } from 'lodash'
+import { NoResultsPage } from '../results/NoResultsPage'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -215,6 +217,11 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     let containerProps: ResultContainerProps
 
+    if (result.type === 'path') {
+        commonContainerProps.title = (
+            <div data-selectable-href={getFileMatchUrl(result)}>{commonContainerProps.title}</div>
+        )
+    }
     if (result.type === 'content' && result.hunks) {
         // We should only get here if the new streamed highlight format is sent
         const grouped: MatchGroup[] =

@@ -217,16 +217,21 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
     }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
 
+    const [searchContextChangeCount, setSearchContextChangeCount] = useState(0)
+
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
-        if (selectedSearchContextSpec) {
+        setSearchContextChangeCount(searchContextChangeCount + 1)
+        if (searchContextChangeCount > 0 && selectedSearchContextSpec) {
             editorReference.current?.focus()
+            console.log('FOCUS2')
         }
     }, [selectedSearchContextSpec])
 
     // Focus the editor if the autoFocus prop is truthy
     useEffect(() => {
         if (editor && autoFocus) {
+            console.log('FOCUS3')
             editor.focus()
         }
     }, [editor, autoFocus])
@@ -256,6 +261,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         if (queryState.hint) {
             if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
                 editor.focus()
+                console.log('FOCUS4')
             }
             if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
                 startCompletion(editor)
@@ -268,6 +274,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     const globalFocus = useCallback(() => {
         if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
             editorReference.current.focus()
+            console.log('FOCUS5')
         }
     }, [editorReference])
 
@@ -450,6 +457,14 @@ const [callbacksField, setCallbacks] = createUpdateableField<
                         // Cancel/close any open completion popovers
                         closeCompletion(view)
                         onSubmit()
+                        // HACK: can't figure out how to unfocus the search bar
+                        const input = document.createElement('input')
+                        input.classList.add('selectable-list-compatible')
+                        // input.style.display = 'none'
+                        document.body.appendChild(input)
+                        input.focus({ preventScroll: true })
+                        document.body.dispatchEvent(new MouseEvent('click'))
+                        input.style.display = 'none'
                         return true
                     }
                     return false
@@ -833,6 +848,7 @@ function toCMDiagnostic(diagnostic: Diagnostic): CMDiagnostic {
             apply(view) {
                 view.dispatch({ changes: action.change, selection: action.selection })
                 if (action.selection && !view.hasFocus) {
+                    console.log('FOCUS1')
                     view.focus()
                 }
             },

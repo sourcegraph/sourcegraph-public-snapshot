@@ -248,7 +248,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                             : 'default'
                     }
                     minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
+                    isSearchAutoFocusRequired={isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     onHandleFuzzyFinder={setIsFuzzyFinderVisible}

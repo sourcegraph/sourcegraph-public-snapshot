@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useContext, useEffect, useRef } from 'react'
 
 import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -37,7 +37,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const repoNameElement = useRef<HTMLAnchorElement>(null)
 
     const renderTitle = (): JSX.Element => (
-        <div className={styles.title}>
+        <div className={classNames(styles.title)}>
             <span
                 className={classNames(
                     'test-search-result-label',
@@ -154,19 +154,21 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     ])
 
     return (
-        <ResultContainer
-            index={index}
-            icon={SourceRepositoryIcon}
-            collapsible={false}
-            defaultExpanded={true}
-            title={renderTitle()}
-            resultType={result.type}
-            onResultClicked={onSelect}
-            expandedChildren={renderBody()}
-            repoName={result.repository}
-            repoStars={result.repoStars}
-            className={containerClassName}
-            as={as}
-        />
+        <div data-selectable-href={getRepoMatchUrl(result)}>
+            <ResultContainer
+                index={index}
+                icon={SourceRepositoryIcon}
+                collapsible={false}
+                defaultExpanded={true}
+                title={renderTitle()}
+                resultType={result.type}
+                onResultClicked={onSelect}
+                expandedChildren={renderBody()}
+                repoName={result.repository}
+                repoStars={result.repoStars}
+                className={containerClassName}
+                as={as}
+            />
+        </div>
     )
 }
