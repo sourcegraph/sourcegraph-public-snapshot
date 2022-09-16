@@ -45,29 +45,59 @@ const getSymbolIconComponent = (kind: SymbolKind): string => {
             return mdiCodeBraces
         case 'NAMESPACE':
             return mdiWeb
+        case 'PACKAGENAME':
+        case 'SUBPROGSPEC':
         case 'PACKAGE':
             return mdiPackage
         case 'CLASS':
+        case 'TYPE':
+        case 'SERVICE':
+        case 'TYPEDEF':
+        case 'UNION':
+        case 'SECTION':
+        case 'SUBTYPE':
+        case 'COMPONENT':
             return mdiSitemap
         case 'METHOD':
+        case 'METHODSPEC':
             return mdiCubeOutline
         case 'PROPERTY':
             return mdiWrench
         case 'FIELD':
+        case 'MEMBER':
+        case 'ANONMEMBER':
+        case 'RECORDFIELD':
             return mdiTextBox
         case 'CONSTRUCTOR':
             return mdiCubeOutline
         case 'ENUM':
+        case 'ENUMERATOR':
             return mdiNumeric
         case 'INTERFACE':
             return mdiLink
+        case 'FUN':
+        case 'FUNC':
         case 'FUNCTION':
+        case 'SUBROUTINE':
+        case 'MACRO':
+        case 'SUBPROGRAM':
+        case 'PROCEDURE':
+        case 'COMMAND':
+        case 'SINGLETONMETHOD':
             return mdiFunction
+        case 'DEFINE':
+        case 'ALIAS':
+        case 'VAL':
+        case 'FUNCTIONVAR':
+        case 'VAR':
         case 'VARIABLE':
             return mdiCube
         case 'CONSTANT':
+        case 'CONST':
             return mdiPiBox
         case 'STRING':
+        case 'MESSAGE':
+        case 'HEREDOC':
             return mdiCodeString
         case 'NUMBER':
             return mdiPound
@@ -76,20 +106,26 @@ const getSymbolIconComponent = (kind: SymbolKind): string => {
         case 'ARRAY':
             return mdiCodeArray
         case 'OBJECT':
+        case 'LITERAL':
+        case 'MAP':
             return mdiDrawingBox
         case 'KEY':
+        case 'LABEL':
+        case 'TARGET':
+        case 'SELECTOR':
+        case 'ID':
+        case 'TAG':
             return mdiKey
         case 'NULL':
             return mdiNull
-        case 'ENUMMEMBER':
-            return mdiNumeric
         case 'STRUCT':
             return mdiPillar
         case 'EVENT':
             return mdiTimetable
         case 'OPERATOR':
             return mdiCodeNotEqual
-        case 'TYPEPARAMETER':
+        case 'TYPEALIAS':
+        case 'TYPESPEC':
             return mdiCube
         case 'UNKNOWN':
         default:
