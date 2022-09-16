@@ -1,4 +1,4 @@
-package main
+package cliutil
 
 import (
 	"fmt"
@@ -6,10 +6,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// completeOptions provides autocompletions based on the options returned by
+// CompleteOptions provides autocompletions based on the options returned by
 // generateOptions. generateOptions must not write to output, or reference any resources
 // that are initialized elsewhere.
-func completeOptions(generateOptions func() (options []string)) cli.BashCompleteFunc {
+func CompleteOptions(generateOptions func() (options []string)) cli.BashCompleteFunc {
 	return func(cmd *cli.Context) {
 		for _, opt := range generateOptions() {
 			fmt.Fprintf(cmd.App.Writer, "%s\n", opt)
