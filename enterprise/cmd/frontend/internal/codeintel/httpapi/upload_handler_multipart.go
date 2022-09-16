@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,18 +32,12 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 		return nil, http.StatusBadRequest, errors.Errorf("illegal number of parts: %d", uploadState.numParts)
 	}
 
-	id, err := h.dbStore.InsertUpload(ctx, dbstore.Upload{
+	id, err := h.dbStore.InsertUpload(ctx, Upload{
 		State:            "uploading",
 		NumParts:         uploadState.numParts,
 		UploadedParts:    nil,
 		UncompressedSize: uploadState.uncompressedSize,
-
-		RepositoryID:      uploadState.metadata.repositoryID,
-		Commit:            uploadState.metadata.commit,
-		Root:              uploadState.metadata.root,
-		Indexer:           uploadState.metadata.indexer,
-		IndexerVersion:    uploadState.metadata.indexerVersion,
-		AssociatedIndexID: &uploadState.metadata.associatedIndexID,
+		Metadata:         uploadState.metadata,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err

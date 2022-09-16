@@ -11,7 +11,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -31,18 +30,12 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, err := tx.InsertUpload(ctx, dbstore.Upload{
+	id, err := tx.InsertUpload(ctx, Upload{
 		State:            "uploading",
 		NumParts:         1,
 		UploadedParts:    []int{0},
 		UncompressedSize: uploadState.uncompressedSize,
-
-		RepositoryID:      uploadState.metadata.repositoryID,
-		Commit:            uploadState.metadata.commit,
-		Root:              uploadState.metadata.root,
-		Indexer:           uploadState.metadata.indexer,
-		IndexerVersion:    uploadState.metadata.indexerVersion,
-		AssociatedIndexID: &uploadState.metadata.associatedIndexID,
+		Metadata:         uploadState.metadata,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err

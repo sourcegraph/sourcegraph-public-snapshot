@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -99,17 +98,17 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
 		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Commit)
+		if call.Arg1.Metadata.commit != testCommit {
+			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.commit)
 		}
-		if call.Arg1.Root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Root)
+		if call.Arg1.Metadata.root != "proj/" {
+			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.root)
 		}
-		if call.Arg1.RepositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.RepositoryID)
+		if call.Arg1.Metadata.repositoryID != 50 {
+			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.repositoryID)
 		}
-		if call.Arg1.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		if call.Arg1.Metadata.indexer != "lsif-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.indexer)
 		}
 		if *call.Arg1.UncompressedSize != 21 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
@@ -258,17 +257,17 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
 		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Commit)
+		if call.Arg1.Metadata.commit != testCommit {
+			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.commit)
 		}
-		if call.Arg1.Root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Root)
+		if call.Arg1.Metadata.root != "proj/" {
+			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.root)
 		}
-		if call.Arg1.RepositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.RepositoryID)
+		if call.Arg1.Metadata.repositoryID != 50 {
+			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.repositoryID)
 		}
-		if call.Arg1.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		if call.Arg1.Metadata.indexer != "lsif-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.indexer)
 		}
 		if *call.Arg1.UncompressedSize != 50 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
@@ -283,7 +282,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := store.Upload{
+	upload := Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -364,7 +363,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := store.Upload{
+	upload := Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -435,7 +434,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := store.Upload{
+	upload := Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 3, 4},

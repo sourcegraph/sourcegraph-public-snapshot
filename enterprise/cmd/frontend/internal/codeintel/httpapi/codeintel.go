@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -68,22 +67,6 @@ func (h *UploadHandler) metadataFromRequest(ctx context.Context, r *http.Request
 		indexer:           getQuery(r, "indexerName"),
 		indexerVersion:    getQuery(r, "indexerVersion"),
 		associatedIndexID: getQueryInt(r, "associatedIndexId"),
-	}, 0, nil
-}
-
-func (h *UploadHandler) metadataFromRecord(upload dbstore.Upload) (codeintelUploadMetadata, int, error) {
-	associatedIndexID := 0
-	if upload.AssociatedIndexID != nil {
-		associatedIndexID = *upload.AssociatedIndexID
-	}
-
-	return codeintelUploadMetadata{
-		repositoryID:      upload.RepositoryID,
-		commit:            upload.Commit,
-		root:              upload.Root,
-		indexer:           upload.Indexer,
-		indexerVersion:    upload.IndexerVersion,
-		associatedIndexID: associatedIndexID,
 	}, 0, nil
 }
 

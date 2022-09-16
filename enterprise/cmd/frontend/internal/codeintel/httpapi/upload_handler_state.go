@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,7 +58,13 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		return uploadState, http.StatusNotFound, errors.Errorf("upload not found")
 	}
 
-	return h.hydrateUploadStateFromRecord(ctx, r, uploadState, upload)
+	// Stash all fields given in the initial request
+	uploadState.numParts = upload.NumParts
+	uploadState.uploadedParts = upload.UploadedParts
+	uploadState.uncompressedSize = upload.UncompressedSize
+	uploadState.metadata = upload.Metadata
+
+	return uploadState, 0, nil
 }
 
 func (h *UploadHandler) hydrateUploadStateFromRequest(ctx context.Context, r *http.Request, uploadState uploadState) (uploadState, int, error) {
@@ -81,21 +86,6 @@ func (h *UploadHandler) hydrateUploadStateFromRequest(ctx context.Context, r *ht
 	uploadState.multipart = hasQuery(r, "multiPart")
 	uploadState.numParts = getQueryInt(r, "numParts")
 	uploadState.uncompressedSize = uncompressedSize
-	uploadState.metadata = metadata
-
-	return uploadState, 0, nil
-}
-
-func (h *UploadHandler) hydrateUploadStateFromRecord(_ context.Context, r *http.Request, uploadState uploadState, upload dbstore.Upload) (uploadState, int, error) {
-	metadata, statusCode, err := h.metadataFromRecord(upload)
-	if err != nil {
-		return uploadState, statusCode, err
-	}
-
-	// Stash all fields given in the initial request
-	uploadState.numParts = upload.NumParts
-	uploadState.uploadedParts = upload.UploadedParts
-	uploadState.uncompressedSize = upload.UncompressedSize
 	uploadState.metadata = metadata
 
 	return uploadState, 0, nil

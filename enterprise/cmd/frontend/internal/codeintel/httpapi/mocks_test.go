@@ -9,8 +9,6 @@ package httpapi
 import (
 	"context"
 	"sync"
-
-	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -56,12 +54,12 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 dbstore.Upload, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 Upload, r1 bool, r2 error) {
 				return
 			},
 		},
 		InsertUploadFunc: &DBStoreInsertUploadFunc{
-			defaultHook: func(context.Context, dbstore.Upload) (r0 int, r1 error) {
+			defaultHook: func(context.Context, Upload) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -98,12 +96,12 @@ func NewStrictMockDBStore() *MockDBStore {
 			},
 		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+			defaultHook: func(context.Context, int) (Upload, bool, error) {
 				panic("unexpected invocation of MockDBStore.GetUploadByID")
 			},
 		},
 		InsertUploadFunc: &DBStoreInsertUploadFunc{
-			defaultHook: func(context.Context, dbstore.Upload) (int, error) {
+			defaultHook: func(context.Context, Upload) (int, error) {
 				panic("unexpected invocation of MockDBStore.InsertUpload")
 			},
 		},
@@ -365,15 +363,15 @@ func (c DBStoreDoneFuncCall) Results() []interface{} {
 // DBStoreGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockDBStore instance is invoked.
 type DBStoreGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (dbstore.Upload, bool, error)
-	hooks       []func(context.Context, int) (dbstore.Upload, bool, error)
+	defaultHook func(context.Context, int) (Upload, bool, error)
+	hooks       []func(context.Context, int) (Upload, bool, error)
 	history     []DBStoreGetUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (dbstore.Upload, bool, error) {
+func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (Upload, bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(DBStoreGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -382,7 +380,7 @@ func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (dbstore.Upload,
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
+func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (Upload, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -390,7 +388,7 @@ func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int
 // GetUploadByID method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
+func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (Upload, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -398,20 +396,20 @@ func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbs
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreGetUploadByIDFunc) SetDefaultReturn(r0 dbstore.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) SetDefaultReturn(r0 Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetUploadByIDFunc) PushReturn(r0 dbstore.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) PushReturn(r0 Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (Upload, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -452,7 +450,7 @@ type DBStoreGetUploadByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 dbstore.Upload
+	Result0 Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -476,15 +474,15 @@ func (c DBStoreGetUploadByIDFuncCall) Results() []interface{} {
 // DBStoreInsertUploadFunc describes the behavior when the InsertUpload
 // method of the parent MockDBStore instance is invoked.
 type DBStoreInsertUploadFunc struct {
-	defaultHook func(context.Context, dbstore.Upload) (int, error)
-	hooks       []func(context.Context, dbstore.Upload) (int, error)
+	defaultHook func(context.Context, Upload) (int, error)
+	hooks       []func(context.Context, Upload) (int, error)
 	history     []DBStoreInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore) InsertUpload(v0 context.Context, v1 dbstore.Upload) (int, error) {
+func (m *MockDBStore) InsertUpload(v0 context.Context, v1 Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(DBStoreInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -493,7 +491,7 @@ func (m *MockDBStore) InsertUpload(v0 context.Context, v1 dbstore.Upload) (int, 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, dbstore.Upload) (int, error)) {
+func (f *DBStoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -501,7 +499,7 @@ func (f *DBStoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, dbst
 // InsertUpload method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreInsertUploadFunc) PushHook(hook func(context.Context, dbstore.Upload) (int, error)) {
+func (f *DBStoreInsertUploadFunc) PushHook(hook func(context.Context, Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -510,19 +508,19 @@ func (f *DBStoreInsertUploadFunc) PushHook(hook func(context.Context, dbstore.Up
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *DBStoreInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, Upload) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *DBStoreInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, dbstore.Upload) (int, error) {
+	f.PushHook(func(context.Context, Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreInsertUploadFunc) nextHook() func(context.Context, dbstore.Upload) (int, error) {
+func (f *DBStoreInsertUploadFunc) nextHook() func(context.Context, Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -560,7 +558,7 @@ type DBStoreInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 dbstore.Upload
+	Arg1 Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
