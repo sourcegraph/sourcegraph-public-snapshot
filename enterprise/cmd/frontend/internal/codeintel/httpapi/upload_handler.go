@@ -25,7 +25,6 @@ type UploadHandler[T any] struct {
 	uploadStore uploadstore.Store
 	operations  *Operations
 
-	// TODO
 	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
 }
 
