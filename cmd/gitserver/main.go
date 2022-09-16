@@ -355,7 +355,7 @@ func getRemoteURLFunc(
 			}
 			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli, db)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, svc, rawConfig, gitHubAppConfig, installationID, cli, db)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
@@ -372,7 +372,6 @@ func getRemoteURLFunc(
 // config ensuring the token is always valid.
 func editGitHubAppExternalServiceConfigToken(
 	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	rawConfig string,
 	gitHubAppConfig *schema.GitHubApp,
@@ -423,6 +422,7 @@ func editGitHubAppExternalServiceConfigToken(
 	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
 	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, tokenRefresher)
 
+	externalServiceStore := db.ExternalServices()
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
 	if err != nil {
 		return "", errors.Wrap(err, "get or renew GitHub App installation access token")

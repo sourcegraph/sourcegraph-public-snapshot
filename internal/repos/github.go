@@ -65,7 +65,7 @@ var (
 )
 
 // NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGithubSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -74,7 +74,8 @@ func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
+
+	return newGithubSource(logger, db, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -161,7 +162,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 
 func newGithubSource(
 	logger log.Logger,
-	externalServicesStore database.ExternalServiceStore,
+	db database.DB,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
@@ -221,15 +222,18 @@ func newGithubSource(
 	token := &auth.OAuthBearerToken{Token: c.Token}
 	urn := svc.URN()
 
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli, nil) // todo: add token refresher
+		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli, tokenRefresher)
 		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
 
 		searchClientLogger = log.Scoped("search", "github client for search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli, nil) // todo: add token refresher
+		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli, tokenRefresher)
 	)
 
+	externalServicesStore := db.ExternalServices()
 	useGitHubApp := false
 	gitHubAppConfig := conf.SiteConfig().GitHubApp
 	if c.GithubAppInstallationID != "" &&

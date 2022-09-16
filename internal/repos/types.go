@@ -137,7 +137,6 @@ type ScopeCache interface {
 // Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
 func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
-	externalServicesStore := db.ExternalServices()
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
@@ -161,7 +160,7 @@ func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db 
 		}
 
 		// Slow path
-		src, err := NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
+		src, err := NewGithubSource(ctx, logger.Scoped("GithubSource", ""), db, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
