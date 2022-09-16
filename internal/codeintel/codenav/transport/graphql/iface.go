@@ -37,3 +37,7 @@ type GitserverClient interface {
 	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
 	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 }
+
+type AutoindexingService interface {
+	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
+}

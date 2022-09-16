@@ -23,7 +23,6 @@ import (
 //
 // - The site configuration, from the database (from the site-admin panel).
 // - Service connections, from the frontend (e.g. which gitservers to talk to).
-//
 type Unified struct {
 	schema.SiteConfiguration
 	ServiceConnectionConfig conftypes.ServiceConnections

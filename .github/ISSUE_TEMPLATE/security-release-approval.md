@@ -11,3 +11,6 @@ Security must close this issue before releases. It is the responsibility of the 
 
 - [ ] All feasible CVEs are closed.
 - [ ] Any open CVEs are documented in the handbook.
+
+
+cc @sourcegraph/security

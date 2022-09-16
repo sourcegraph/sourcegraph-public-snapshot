@@ -2,7 +2,6 @@ import { ComponentProps, MouseEvent, ReactElement, useMemo } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleBand } from '@visx/scale'
-import classNames from 'classnames'
 import { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { getBrowserName } from '@sourcegraph/common'
@@ -22,6 +21,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
     getDatumColor: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
@@ -41,6 +41,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
         getDatumLink,
         onBarHover,
         onBarLeave,
@@ -95,6 +96,15 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                         const barX = isOneDatumCategory ? 0 : xCategoriesScale(getDatumName(datum))
                         const barY = yScale(getDatumValue(datum))
 
+                        const barColorProps =
+                            activeSegment && activeSegment.category.id !== category.id
+                                ? getDatumFadeColor
+                                    ? { fill: getDatumFadeColor(datum) }
+                                    : // We use css filters to calculate lighten/darken color for non-active bars
+                                      // CSS filters don't work in Safari for SVG elements, so we fall back on opacity
+                                      { className: styles.barFade, opacity: isSafari ? 0.5 : 1 }
+                                : {}
+
                         return (
                             <MaybeLink
                                 key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
@@ -107,19 +117,9 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                                     y={barY}
                                     width={barWidth}
                                     height={barHeight}
-                                    fill={getDatumColor(datum)}
                                     rx={2}
-                                    opacity={
-                                        isSafari && activeSegment
-                                            ? activeSegment.category.id === category.id
-                                                ? 1
-                                                : 0.5
-                                            : 1
-                                    }
-                                    className={classNames({
-                                        [styles.barActive]: activeSegment && activeSegment?.category.id === category.id,
-                                        [styles.barFade]: activeSegment && activeSegment?.category.id !== category.id,
-                                    })}
+                                    fill={getDatumColor(datum)}
+                                    {...barColorProps}
                                 />
                             </MaybeLink>
                         )

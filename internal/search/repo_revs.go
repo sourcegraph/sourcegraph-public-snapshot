@@ -74,7 +74,7 @@ func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
 // or more revspecs. The format is:
 //
-//   repo@revs
+//	repo@revs
 //
 // where repo is a repository regex and revs is a ':'-separated list of revspecs
 // and/or ref globs. A ref glob is a revspec prefixed with '*' (which is not a
@@ -83,13 +83,13 @@ func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 //
 // For example:
 //
-// - 'foo' refers to the 'foo' repo at the default branch
-// - 'foo@bar' refers to the 'foo' repo and the 'bar' revspec.
-// - 'foo@bar:baz:qux' refers to the 'foo' repo and 3 revspecs: 'bar', 'baz',
-//   and 'qux'.
-// - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
-//   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
-//   section on the --glob flag)
+//   - 'foo' refers to the 'foo' repo at the default branch
+//   - 'foo@bar' refers to the 'foo' repo and the 'bar' revspec.
+//   - 'foo@bar:baz:qux' refers to the 'foo' repo and 3 revspecs: 'bar', 'baz',
+//     and 'qux'.
+//   - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
+//     because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
+//     section on the --glob flag)
 func ParseRepositoryRevisions(repoAndOptionalRev string) (string, []RevisionSpecifier) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {

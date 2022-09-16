@@ -292,17 +292,20 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 
 func TestResultQueueSettingsFromConfig(t *testing.T) {
 	queueDepth := 96
+	maxQueueMatchCount := 100
 
 	cases := []struct {
 		name                   string
 		siteConfig             schema.SiteConfiguration
 		wantMaxQueueDepth      int
 		wantMaxReorderDuration time.Duration
+		wantMaxQueueMatchCount int
 	}{
 		{
-			name:              "defaults",
-			siteConfig:        schema.SiteConfiguration{},
-			wantMaxQueueDepth: 24,
+			name:                   "defaults",
+			siteConfig:             schema.SiteConfiguration{},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: -1,
 		},
 		{
 			name: "MaxReorderDurationMS",
@@ -311,20 +314,29 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 			}}},
 			wantMaxQueueDepth:      24,
 			wantMaxReorderDuration: 5 * time.Millisecond,
+			wantMaxQueueMatchCount: -1,
 		},
 		{
-
 			name: "MaxReorderQueueSize",
 			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
 				MaxReorderQueueSize: &queueDepth,
 			}}},
-			wantMaxQueueDepth: 96,
+			wantMaxQueueDepth:      96,
+			wantMaxQueueMatchCount: -1,
+		},
+		{
+			name: "MaxQueueMatchCount",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxQueueMatchCount: &maxQueueMatchCount,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: 100,
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			haveMaxQueueDepth, haveMaxReorderDuration := resultQueueSettingsFromConfig(tt.siteConfig)
+			haveMaxQueueDepth, haveMaxReorderDuration, haveMaxQueueMatchCount := resultQueueSettingsFromConfig(tt.siteConfig)
 
 			if haveMaxQueueDepth != tt.wantMaxQueueDepth {
 				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, haveMaxQueueDepth)
@@ -332,6 +344,10 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 
 			if haveMaxReorderDuration != tt.wantMaxReorderDuration {
 				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, haveMaxReorderDuration)
+			}
+
+			if haveMaxQueueMatchCount != tt.wantMaxQueueMatchCount {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, haveMaxQueueMatchCount)
 			}
 		})
 	}

@@ -104,7 +104,6 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 
 // cachedRepoStoreList calls a.repoStore.List to do a paginated list of repositories, and caches the
 // results in-memory for some time.
-//
 func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page database.LimitOffset) ([]*types.Repo, error) {
 	if a.cachedPageRequests == nil {
 		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}

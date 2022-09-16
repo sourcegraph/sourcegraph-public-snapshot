@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix code-intel issue on GitHub Enterprise: [pull/41646](https://github.com/sourcegraph/sourcegraph/pull/41646)
+
 ## Chrome & Firefox 22.7.29.851, Safari v1.14 (22.8.2.1319)
 
 - Fix extensions decorations issue when navigating project files on GitHub: [codecov/sourcegraph-codecov/issues/86](https://github.com/codecov/sourcegraph-codecov/issues/86), [pull/39557](https://github.com/sourcegraph/sourcegraph/pull/39557)

@@ -2,13 +2,13 @@
 // a specific commit.
 //
 // Architecture Notes:
-//  * Archive is fetched from gitserver
-//  * Simple HTTP API exposed
-//  * Currently no concept of authorization
-//  * On disk cache of fetched archives to reduce load on gitserver
-//  * Run search on archive. Rely on OS file buffers
-//  * Simple to scale up since stateless
-//  * Use ingress with affinity to increase local cache hit ratio
+//   - Archive is fetched from gitserver
+//   - Simple HTTP API exposed
+//   - Currently no concept of authorization
+//   - On disk cache of fetched archives to reduce load on gitserver
+//   - Run search on archive. Rely on OS file buffers
+//   - Simple to scale up since stateless
+//   - Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (
@@ -53,6 +53,11 @@ type Service struct {
 	//
 	// TODO Git client should be exposing a better API here.
 	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
+	// single call to git archive. This mainly needs to be less than ARG_MAX
+	// for the exec.Command on gitserver.
+	MaxTotalPathsLength int
 }
 
 // ServeHTTP handles HTTP based search requests

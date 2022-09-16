@@ -16,8 +16,8 @@ import (
 )
 
 // p4ProtectLine is a parsed line from `p4 protects`. See:
-//  - https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html#Usage_Notes_..364
-//  - https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protects.html#p4_protects
+//   - https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html#Usage_Notes_..364
+//   - https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protects.html#p4_protects
 type p4ProtectLine struct {
 	level      string // e.g. read
 	entityType string // e.g. user

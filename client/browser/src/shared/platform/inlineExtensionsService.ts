@@ -5,9 +5,9 @@ import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import extensions from '../../../code-intel-extensions.json'
+import { EnableLegacyExtensionsResult } from '../../graphql-operations'
 import { isExtension } from '../context'
 
 const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false
@@ -18,7 +18,7 @@ const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false
  * - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
  */
 export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<EnableLegacyExtensionsResult>({
         request: gql`
             query EnableLegacyExtensions {
                 site {
