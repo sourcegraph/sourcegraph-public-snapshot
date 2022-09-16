@@ -155,9 +155,15 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	}
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
-
-	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
-		return err
+	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
+	if ok {
+		if _, err := doRequest(ctx, nil, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, nil, req, &respBody); err != nil { // todo: add token refresher
+			return err
+		}
+	} else {
+		if _, err := doRequest(ctx, nil, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, nil, nil, req, &respBody); err != nil {
+			return err
+		}
 	}
 
 	// If the GraphQL response has errors, still attempt to unmarshal the data portion, as some
@@ -345,7 +351,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 
 	// Initiate a v3Client since this requires a V3 API request.
 	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
-	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient)
+	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil) //todo add token refresher
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		c.log.Warn("Failed to fetch GitHub enterprise version",
@@ -598,7 +604,7 @@ func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil).Fork(ctx, owner, repo, org) // todo: add token refrehser
 }
 
 type RecentCommittersParams struct {

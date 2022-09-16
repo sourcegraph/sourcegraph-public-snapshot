@@ -409,7 +409,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
+	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, nil) // add token refresher
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
 	if err != nil {

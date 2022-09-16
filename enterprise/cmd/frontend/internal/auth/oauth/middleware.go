@@ -177,7 +177,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 
 		client := github.NewV3Client(logger,
-			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil)
+			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil, nil) //todo add token refresher
 
 		installation, err := client.GetAppInstallation(req.Context(), installationID)
 		if err != nil {

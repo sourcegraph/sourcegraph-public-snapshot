@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"io"
 	"net/http"
 	"net/url"
@@ -29,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1505,7 +1506,7 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1529,11 +1530,18 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
+	if bearerToken != nil && oauthContext != nil {
+		code, header, _, err := oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
+		if err != nil {
+			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
+		}
+	} else {
+		resp, err = httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
 	}
-	defer resp.Body.Close()
 
 	logger.Debug("doRequest",
 		log.String("status", resp.Status),
@@ -2015,3 +2023,5 @@ func handlePullRequestError(err error) error {
 func IsGitHubAppAccessToken(token string) bool {
 	return strings.HasPrefix(token, "ghu")
 }
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext

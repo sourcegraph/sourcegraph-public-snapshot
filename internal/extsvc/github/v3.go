@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"io"
 	"net/http"
 	"net/url"
@@ -61,6 +62,8 @@ type V3Client struct {
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
 	resource string
+
+	tokenRefresher oauthutil.TokenRefresher
 }
 
 // NewV3Client creates a new GitHub API client with an optional default
@@ -68,8 +71,8 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(logger, urn, apiURL, a, "rest", cli)
+func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *V3Client {
+	return newV3ClientWithTokenRefresher(logger, urn, apiURL, a, "rest", cli, tokenRefresher)
 }
 
 // NewV3SearchClient creates a new GitHub API client intended for use with the
@@ -77,11 +80,11 @@ func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(logger, urn, apiURL, a, "search", cli)
+func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *V3Client {
+	return newV3ClientWithTokenRefresher(logger, urn, apiURL, a, "search", cli, tokenRefresher)
 }
 
-func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+func newV3ClientWithTokenRefresher(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -123,6 +126,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		resource:         resource,
+		tokenRefresher:   tokenRefresher,
 	}
 }
 
@@ -130,7 +134,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
+	return newV3ClientWithTokenRefresher(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient, c.tokenRefresher)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -144,7 +148,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*htt
 		return nil, err
 	}
 
-	return c.request(ctx, req, result)
+	return c.request(ctx, nil, req, result) // todo: getOauthCtxt
 }
 
 //nolint:unparam // Return *httpResponseState for consistency with other methods
@@ -161,7 +165,7 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 
 	req.Header.Add("Content-Type", "application/json")
 
-	return c.request(ctx, req, result)
+	return c.request(ctx, nil, req, result) // todo: getOauthCtxt
 }
 
 func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
@@ -172,10 +176,10 @@ func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponse
 
 	req.Header.Add("Content-Type", "application/json")
 
-	return c.request(ctx, req, struct{}{})
+	return c.request(ctx, nil, req, struct{}{}) // todo: getOauthCtxt
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
+func (c *V3Client) request(ctx context.Context, oauthContext *oauthutil.OAuthContext, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -205,7 +209,12 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
+	if ok {
+		return doRequest(ctx, oauthContext, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
+	}
+
+	return doRequest(ctx, oauthContext, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with

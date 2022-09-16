@@ -59,7 +59,7 @@ func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName str
 	logger := log.Scoped("uncachedEnforceAuthViaGitHub", "uncached authentication enforcement")
 
 	ghClient := github.NewV3Client(logger,
-		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
+		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil, nil) //todo: add token refresher
 
 	if author, err := checkGitHubPermissions(ctx, repoName, ghClient); err != nil {
 		if githubErr := new(github.APIError); errors.As(err, &githubErr) {

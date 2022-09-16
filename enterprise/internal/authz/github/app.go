@@ -42,7 +42,7 @@ func newAppProvider(
 	appClient := github.NewV3Client(
 		log.Scoped("app", "github client for github app").
 			With(log.String("appID", appID)),
-		urn, apiURL, auther, cli)
+		urn, apiURL, auther, cli, nil) // todo: add token refresher
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
@@ -56,7 +56,7 @@ func newAppProvider(
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli),
+				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, nil), // todo: add token refresher
 			}, nil
 		},
 		InstallationID: &installationID,
