@@ -34,16 +34,17 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 	}
 
 	id, err := h.dbStore.InsertUpload(ctx, dbstore.Upload{
-		Commit:            uploadState.commit,
-		Root:              uploadState.root,
-		RepositoryID:      uploadState.repositoryID,
-		Indexer:           uploadState.indexer,
-		IndexerVersion:    uploadState.indexerVersion,
-		AssociatedIndexID: &uploadState.associatedIndexID,
-		State:             "uploading",
-		NumParts:          uploadState.numParts,
-		UploadedParts:     nil,
-		UncompressedSize:  uploadState.uncompressedSize,
+		State:            "uploading",
+		NumParts:         uploadState.numParts,
+		UploadedParts:    nil,
+		UncompressedSize: uploadState.uncompressedSize,
+
+		RepositoryID:      uploadState.metadata.repositoryID,
+		Commit:            uploadState.metadata.commit,
+		Root:              uploadState.metadata.root,
+		Indexer:           uploadState.metadata.indexer,
+		IndexerVersion:    uploadState.metadata.indexerVersion,
+		AssociatedIndexID: &uploadState.metadata.associatedIndexID,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -53,8 +54,6 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 	h.logger.Info(
 		"codeintel.httpapi: enqueued upload",
 		sglog.Int("id", id),
-		sglog.Int("repository_id", uploadState.repositoryID),
-		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string

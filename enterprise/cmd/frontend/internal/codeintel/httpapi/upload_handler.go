@@ -59,15 +59,18 @@ var errUnprocessableRequest = errors.New("unprocessable request: missing expecte
 // POST /upload
 //
 // handleEnqueue dispatches to the correct handler function based on the request's query args. Running
-// the `src code-intel upload` command will cause one of two sequences of requests to occur. For uploads that
-// are small enough repos (that can be uploaded in one-shot), only one request will be made:
+// the `src code-intel upload` command will cause one of two sequences of requests to occur. For uploads
+// that are small enough repos (that can be uploaded in one-shot), only one request will be made:
 //
-//   - POST `/upload?repositoryId,commit,root,indexerName`
+//   - POST `/upload?{metadata}`
+//
+// where `{metadata}` contains the keys `repositoryId`, `commit`, `root`, `indexerName`, `indexerVersion`,
+// and `associatedIndexId`.
 //
 // For larger uploads, the requests are broken up into a setup request, a serires of upload requests,
 // and a finalization request:
 //
-//   - POST `/upload?repositoryId,commit,root,indexerName,multiPart=true,numParts={n}`
+//   - POST `/upload?multiPart=true,numParts={n},{metadata}`
 //   - POST `/upload?uploadId={id},index={i}`
 //   - POST `/upload?uploadId={id},done=true`
 //
@@ -95,19 +98,14 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return nil, statusCode, err
 		}
 		trace.Log(
-			log.Int("repositoryID", uploadState.repositoryID),
 			log.Int("uploadID", uploadState.uploadID),
-			log.String("commit", uploadState.commit),
-			log.String("root", uploadState.root),
-			log.String("indexer", uploadState.indexer),
-			log.String("indexerVersion", uploadState.indexerVersion),
-			log.Int("associatedIndexID", uploadState.associatedIndexID),
 			log.Int("numParts", uploadState.numParts),
 			log.Int("numUploadedParts", len(uploadState.uploadedParts)),
 			log.Bool("multipart", uploadState.multipart),
 			log.Bool("suppliedIndex", uploadState.suppliedIndex),
 			log.Int("index", uploadState.index),
 			log.Bool("done", uploadState.done),
+			log.Object("metadata", uploadState.metadata),
 		)
 
 		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {

@@ -32,16 +32,17 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	defer func() { err = tx.Done(err) }()
 
 	id, err := tx.InsertUpload(ctx, dbstore.Upload{
-		Commit:            uploadState.commit,
-		Root:              uploadState.root,
-		RepositoryID:      uploadState.repositoryID,
-		Indexer:           uploadState.indexer,
-		IndexerVersion:    uploadState.indexerVersion,
-		AssociatedIndexID: &uploadState.associatedIndexID,
-		State:             "uploading",
-		NumParts:          1,
-		UploadedParts:     []int{0},
-		UncompressedSize:  uploadState.uncompressedSize,
+		State:            "uploading",
+		NumParts:         1,
+		UploadedParts:    []int{0},
+		UncompressedSize: uploadState.uncompressedSize,
+
+		RepositoryID:      uploadState.metadata.repositoryID,
+		Commit:            uploadState.metadata.commit,
+		Root:              uploadState.metadata.root,
+		Indexer:           uploadState.metadata.indexer,
+		IndexerVersion:    uploadState.metadata.indexerVersion,
+		AssociatedIndexID: &uploadState.metadata.associatedIndexID,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -61,8 +62,6 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	h.logger.Info(
 		"codeintel.httpapi: enqueued upload",
 		sglog.Int("id", id),
-		sglog.Int("repository_id", uploadState.repositoryID),
-		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string
