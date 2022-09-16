@@ -104,4 +104,26 @@ describe('SearchContextDropdown', () => {
 
         sinon.assert.calledOnce(submitSearch)
     })
+
+    it('should close menu when pressing Escape button', () => {
+        const closeMenu = sinon.spy()
+
+        render(
+            <SearchContextDropdown
+                {...defaultProps}
+                selectedSearchContextSpec="@username"
+                onEscapeMenuClose={closeMenu}
+            />
+        )
+
+        userEvent.click(screen.getByTestId('dropdown-toggle'))
+        userEvent.type(document.body, '{esc}')
+
+        act(() => {
+            // Wait for the next frame
+            clock.tick(50)
+        })
+
+        sinon.assert.calledOnce(closeMenu)
+    })
 })
