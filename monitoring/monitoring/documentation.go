@@ -127,7 +127,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 			return err
 		}
 		fmt.Fprintf(&d.alertDocs, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
-		if alert.threshold.query != "" {
+		if alert.threshold.customQuery != "" {
 			fmt.Fprintf(&d.alertDocs, `
 <details>
 <summary>Technical details</summary>
@@ -135,7 +135,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 Custom alert query: %s
 
 </details>
-`, fmt.Sprintf("`%s`", alert.threshold.query))
+`, fmt.Sprintf("`%s`", alert.threshold.customQuery))
 		}
 		prometheusAlertNames = append(prometheusAlertNames,
 			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
