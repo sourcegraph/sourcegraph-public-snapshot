@@ -602,6 +602,10 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if args.Name == nil || *args.Name == "" {
+		return &EmptyResponse{}, errors.New("repository name required")
+	}
+
 	err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name))
 
 	return &EmptyResponse{}, err
