@@ -4,7 +4,7 @@
 # This allows the base image to be substituted for a GCP image that ships metrics to managed Prometheus. Default base image is regular upstream Prometheus
 #	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-ARG BASE_IMAGE="prom/prometheus:v2.35.0@sha256:4b86ad59abc67fa19a6e1618e936f3fd0f6ae13f49260da55a03eeca763a0fb5" 
+ARG BASE_IMAGE="prom/prometheus:v2.38.0@sha256:f2d994f9a7aae94636d4d3b0aca504f420488f70da7b0acef433eb0bf2fd71ef" 
 # https://github.com/hadolint/hadolint/issues/339
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS prom_upstream
@@ -16,10 +16,6 @@ RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
-
-# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-FROM prom/prometheus:v2.38.0@sha256:f2d994f9a7aae94636d4d3b0aca504f420488f70da7b0acef433eb0bf2fd71ef AS prom_upstream
-FROM prom/alertmanager:v0.24.0@sha256:088464f949de8065b9da7dfce7302a633d700e9d598e2bebc03310712f083b31 AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
