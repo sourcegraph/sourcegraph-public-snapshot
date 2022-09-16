@@ -133,7 +133,11 @@ const UserResultItem: FC<UserResultItemProps> = props => {
     )
 }
 
-const EmptyResultsItem: FC<{ userNameOrEmail: string }> = ({ userNameOrEmail }) => (
+interface EmptyResultsItemProps {
+  userNameOrEmail: string
+}
+
+const EmptyResultsItem: FC<EmptyResultsItemProps> = ({ userNameOrEmail }) => (
     <div
         data-testid="search-context-menu-item"
         role="menuitem"
