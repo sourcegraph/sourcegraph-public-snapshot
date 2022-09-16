@@ -846,6 +846,12 @@ type GitHubConnection struct {
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
 	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.
 	Token string `json:"token,omitempty"`
+	// TokenOauthExpiry description: The OAuth token expiry (Unix timestamp in seconds)
+	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
+	// TokenOauthRefresh description: The OAuth refresh token
+	TokenOauthRefresh string `json:"token.oauth.refresh,omitempty"`
+	// TokenType description: The type of the token
+	TokenType string `json:"token.type,omitempty"`
 	// Url description: URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
