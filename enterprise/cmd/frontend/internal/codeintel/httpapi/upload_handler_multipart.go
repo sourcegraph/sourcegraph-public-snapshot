@@ -20,7 +20,7 @@ import (
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
-func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadState uploadState, _ io.Reader) (_ any, statusCode int, err error) {
+func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartSetup.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -32,7 +32,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 		return nil, http.StatusBadRequest, errors.Errorf("illegal number of parts: %d", uploadState.numParts)
 	}
 
-	id, err := h.dbStore.InsertUpload(ctx, Upload{
+	id, err := h.dbStore.InsertUpload(ctx, Upload[T]{
 		State:            "uploading",
 		NumParts:         uploadState.numParts,
 		UploadedParts:    nil,
@@ -57,7 +57,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
-func (h *UploadHandler) handleEnqueueMultipartUpload(ctx context.Context, uploadState uploadState, body io.Reader) (_ any, statusCode int, err error) {
+func (h *UploadHandler[T]) handleEnqueueMultipartUpload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartUpload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -86,7 +86,7 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(ctx context.Context, upload
 // handleEnqueueMultipartFinalize handles the final request of a multipart upload. This transitions the
 // upload from 'uploading' to 'queued', then instructs the bundle manager to concatenate all of the part
 // files together.
-func (h *UploadHandler) handleEnqueueMultipartFinalize(ctx context.Context, uploadState uploadState, _ io.Reader) (_ any, statusCode int, err error) {
+func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartFinalize.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -134,7 +134,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(ctx context.Context, uplo
 //
 // This method does not return an error as it's best-effort cleanup. If an error occurs when
 // trying to modify the record, it will be logged but will not be directly visible to the user.
-func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uploadID int, err error) {
+func (h *UploadHandler[T]) markUploadAsFailed(ctx context.Context, tx DBStore[T], uploadID int, err error) {
 	var reason string
 	var e manager.MultiUploadFailure
 

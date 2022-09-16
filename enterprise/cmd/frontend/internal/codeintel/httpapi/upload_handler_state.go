@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type uploadState struct {
+type uploadState[T any] struct {
 	uploadID         int
 	numParts         int
 	uploadedParts    []int
@@ -18,16 +18,7 @@ type uploadState struct {
 	index            int
 	done             bool
 	uncompressedSize *int64
-	metadata         codeintelUploadMetadata
-}
-
-type codeintelUploadMetadata struct {
-	repositoryID      int
-	commit            string
-	root              string
-	indexer           string
-	indexerVersion    string
-	associatedIndexID int
+	metadata         T
 }
 
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
@@ -35,8 +26,8 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 // constructUploadState reads the query args of the given HTTP request and populates an upload state object.
 // This function should be used instead of reading directly from the request as the upload state's fields are
 // backfilled/denormalized from the database, depending on the type of request.
-func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Request) (uploadState, int, error) {
-	uploadState := uploadState{
+func (h *UploadHandler[T]) constructUploadState(ctx context.Context, r *http.Request) (uploadState[T], int, error) {
+	uploadState := uploadState[T]{
 		uploadID:      getQueryInt(r, "uploadId"),
 		suppliedIndex: hasQuery(r, "index"),
 		index:         getQueryInt(r, "index"),
@@ -67,7 +58,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 	return uploadState, 0, nil
 }
 
-func (h *UploadHandler) hydrateUploadStateFromRequest(ctx context.Context, r *http.Request, uploadState uploadState) (uploadState, int, error) {
+func (h *UploadHandler[T]) hydrateUploadStateFromRequest(ctx context.Context, r *http.Request, uploadState uploadState[T]) (uploadState[T], int, error) {
 	uncompressedSize := new(int64)
 	if size := r.Header.Get("X-Uncompressed-Size"); size != "" {
 		parsedSize, err := strconv.ParseInt(size, 10, 64)

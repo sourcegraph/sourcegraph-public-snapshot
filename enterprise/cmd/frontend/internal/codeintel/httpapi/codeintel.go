@@ -19,22 +19,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type codeintelUploadMetadata struct {
+	repositoryID      int
+	commit            string
+	root              string
+	indexer           string
+	indexerVersion    string
+	associatedIndexID int
+}
+
 func NewUploadHandler(
 	db database.DB,
-	dbStore DBStore,
+	dbStore DBStore[codeintelUploadMetadata],
 	uploadStore uploadstore.Store,
 	internal bool,
 	authValidators auth.AuthValidatorMap,
 	operations *Operations,
 ) http.Handler {
-	handler := &UploadHandler{
-		logger: sglog.Scoped("UploadHandler", "").With(
-			sglog.Bool("internal", internal),
-		),
+	logger := sglog.Scoped("UploadHandler", "").With(
+		sglog.Bool("internal", internal),
+	)
+
+	handler := &UploadHandler[codeintelUploadMetadata]{
+		logger:      logger,
 		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		operations:  operations,
+		metadataFromRequest: func(ctx context.Context, r *http.Request) (codeintelUploadMetadata, int, error) {
+			commit := getQuery(r, "commit")
+			if !revhashPattern.Match([]byte(commit)) {
+				return codeintelUploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
+			}
+
+			// Ensure that the repository and commit given in the request are resolvable.
+			repositoryName := getQuery(r, "repository")
+			repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, logger, db, repositoryName, commit)
+			if err != nil {
+				return codeintelUploadMetadata{}, statusCode, err
+			}
+
+			// Populate state from request
+			return codeintelUploadMetadata{
+				repositoryID:      repositoryID,
+				commit:            commit,
+				root:              sanitizeRoot(getQuery(r, "root")),
+				indexer:           getQuery(r, "indexerName"),
+				indexerVersion:    getQuery(r, "indexerVersion"),
+				associatedIndexID: getQueryInt(r, "associatedIndexId"),
+			}, 0, nil
+		},
 	}
 
 	if internal {
@@ -44,30 +78,6 @@ func NewUploadHandler(
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
 	return auth.AuthMiddleware(http.HandlerFunc(handler.handleEnqueue), db, authValidators, operations.authMiddleware)
-}
-
-func (h *UploadHandler) metadataFromRequest(ctx context.Context, r *http.Request) (codeintelUploadMetadata, int, error) {
-	commit := getQuery(r, "commit")
-	if !revhashPattern.Match([]byte(commit)) {
-		return codeintelUploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
-	}
-
-	// Ensure that the repository and commit given in the request are resolvable.
-	repositoryName := getQuery(r, "repository")
-	repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, h.logger, h.db, repositoryName, commit)
-	if err != nil {
-		return codeintelUploadMetadata{}, statusCode, err
-	}
-
-	// Populate state from request
-	return codeintelUploadMetadata{
-		repositoryID:      repositoryID,
-		commit:            commit,
-		root:              sanitizeRoot(getQuery(r, "root")),
-		indexer:           getQuery(r, "indexerName"),
-		indexerVersion:    getQuery(r, "indexerVersion"),
-		associatedIndexID: getQueryInt(r, "associatedIndexId"),
-	}, 0, nil
 }
 
 func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db database.DB, repoName, commit string) (int, int, error) {

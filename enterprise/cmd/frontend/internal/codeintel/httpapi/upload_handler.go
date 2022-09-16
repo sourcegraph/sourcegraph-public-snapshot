@@ -18,12 +18,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type UploadHandler struct {
+type UploadHandler[T any] struct {
 	logger      sglog.Logger
 	db          database.DB
-	dbStore     DBStore
+	dbStore     DBStore[T]
 	uploadStore uploadstore.Store
 	operations  *Operations
+
+	// TODO
+	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
 }
 
 var errUnprocessableRequest = errors.New("unprocessable request: missing expected query arguments (uploadId, index, or done)")
@@ -52,7 +55,7 @@ var errUnprocessableRequest = errors.New("unprocessable request: missing expecte
 //   - handleEnqueueMultipartSetup
 //   - handleEnqueueMultipartUpload
 //   - handleEnqueueMultipartFinalize
-func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
+func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// Wrap the interesting bits of this in a function literal that's immediately
 	// executed so that we can instrument the duration and the resulting error more
 	// easily. The remainder of the function simply serializes the result to the
@@ -116,9 +119,9 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type uploadHandlerFunc = func(context.Context, uploadState, io.Reader) (any, int, error)
+type uploadHandlerFunc[T any] func(context.Context, uploadState[T], io.Reader) (any, int, error)
 
-func (h *UploadHandler) selectUploadHandlerFunc(uploadState uploadState) uploadHandlerFunc {
+func (h *UploadHandler[T]) selectUploadHandlerFunc(uploadState uploadState[T]) uploadHandlerFunc[T] {
 	if uploadState.uploadID == 0 {
 		if uploadState.multipart {
 			return h.handleEnqueueMultipartSetup

@@ -48,7 +48,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -138,7 +138,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -210,7 +210,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -279,10 +279,10 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload{
+	upload := Upload[codeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -360,10 +360,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload{
+	upload := Upload[codeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -431,10 +431,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload{
+	upload := Upload[codeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 3, 4},
@@ -456,7 +456,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
+	h := &UploadHandler[codeintelUploadMetadata]{
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
@@ -474,7 +474,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	conf.Mock(&conf.Unified{
