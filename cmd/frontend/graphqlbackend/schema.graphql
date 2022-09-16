@@ -783,6 +783,13 @@ type Mutation {
     Delete a key-value pair associated with a repo.
     """
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+
+    """
+    Delete a repository from the gitserver and mark it as not cloned.
+    """
+    deleteRepository(name: String): EmptyResponse!
+
+
 }
 
 """

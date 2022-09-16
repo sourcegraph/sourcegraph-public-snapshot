@@ -245,3 +245,15 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	}
 	return &inv, nil
 }
+
+func (s *repos) Delete(ctx context.Context, name api.RepoName) (err error) {
+	if Mocks.Repos.Delete != nil {
+		return Mocks.Repos.Delete(ctx, name)
+	}
+
+	ctx, done := trace(ctx, "Repos", "Delete", name, &err)
+	defer done()
+
+	err = gitserver.NewClient(s.db).Remove(ctx, name)
+	return err
+}

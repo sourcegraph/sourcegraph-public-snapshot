@@ -801,7 +801,7 @@ func dirSize(d string) int64 {
 	return size
 }
 
-// removeRepoDirectory atomically removes a directory from s.ReposDir.
+// removeRepoDirectory automically removes a directory from s.ReposDir.
 //
 // It first moves the directory to a temporary location to avoid leaving
 // partial state in the event of server restart or concurrent modifications to

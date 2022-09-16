@@ -20,6 +20,7 @@ type MockRepos struct {
 	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 	ResolveRev   func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetInventory func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+    Delete       func(v0 context.Context, name api.RepoName) (error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -75,6 +76,15 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *b
 			repos[i] = &types.Repo{Name: repo}
 		}
 		return repos, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockDelete(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
+    called = new(bool)
+	s.Delete = func(_ context.Context, name api.RepoName) (error) {
+		*called = true
+		return nil
 	}
 	return
 }

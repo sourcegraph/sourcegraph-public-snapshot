@@ -593,6 +593,20 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	return resolver.repo, nil
 }
 
+// DeleteRepository deletes a repository from the gitserver and marks it as not cloned.
+func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
+	Name *string
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete repositories.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name))
+
+	return &EmptyResponse{}, err
+}
+
 func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {

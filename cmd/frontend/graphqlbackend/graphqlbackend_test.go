@@ -18,6 +18,7 @@ import (
 	"github.com/inconshreveable/log15"
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -85,6 +86,40 @@ func TestRepository(t *testing.T) {
 			`,
 		},
 	})
+}
+
+func TestDeleteRepository(t *testing.T) {
+    resetMocks()
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.DeleteFunc.SetDefaultReturn(nil)
+	db.ReposFunc.SetDefaultReturn(repos)
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+    db.UsersFunc.SetDefaultReturn(users)
+    called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+                mutation {
+                    deleteRepository(name: "github.com/gorilla/mux") {
+                        alwaysNil
+                    }
+                }
+            `,
+			ExpectedResult: `
+                {
+                    "deleteRepository": {
+                        "alwaysNil": null
+                    }
+                }
+            `,
+		},
+	})
+
+    assert.True(t, *called)
 }
 
 func TestResolverTo(t *testing.T) {

@@ -301,6 +301,14 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
     )
 }
 
+export const DELETE_REPOSITORY_MUTATION = gql`
+    mutation DeleteRepository($name: String) {
+        deleteRepository(name: $name) {
+            alwaysNil
+        }
+    }
+`
+
 /**
  * Fetches usage statistics for all users.
  *
