@@ -1,4 +1,5 @@
 import { last, take } from 'lodash'
+import { BehaviorSubject } from 'rxjs'
 
 import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -27,6 +28,12 @@ export interface GitLabInfo extends RawRepoSpec, RepoSpec {
  * Information about single file pages.
  */
 interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec {}
+
+/**
+ * Subject to store GitLab name transformations.
+ * Updated in `gitlabCodeHost.prepareCodeHost` method.
+ */
+export const nameTransformations = new BehaviorSubject<{ regex: string; replacement: string }[]>([])
 
 export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
     const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))
@@ -71,18 +78,13 @@ export function getPageInfo(): GitLabInfo {
     const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
-    // TODO: replace with actual transformations
-    const transformations = [{ regex: '2$', replacement: '3' }]
-    const tranformedProjectName = applyNameTransformations(projectName, transformations)
-    const transformedProjectFullName = applyNameTransformations(projectFullName, transformations)
+    const tranformedProjectName = applyNameTransformations(projectName, nameTransformations.value)
 
-    // TODO: return both transformed and untransformed names. The former is used for GraphQL queries,
-    // the latter for checking whether repo is private or not (and maybe some other cases).
     return {
         owner,
         projectName: tranformedProjectName,
         rawRepoName: [hostname, owner, tranformedProjectName].join('/'),
-        repoName: transformedProjectFullName,
+        repoName: projectFullName, // original (untranformed) repo name to be use in GitLab API calls
         pageKind,
     }
 }

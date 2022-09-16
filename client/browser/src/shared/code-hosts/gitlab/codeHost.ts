@@ -18,7 +18,7 @@ import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
-import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
+import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView, nameTransformations } from './scrape'
 
 import styles from './codeHost.module.scss'
 
@@ -266,4 +266,10 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
         map(() => parseHash(window.location.hash))
     ),
+
+    prepareCodeHost: async () => {
+        await new Promise(resolve => setTimeout(resolve, 10))
+        // TODO: replace with actual transformations
+        nameTransformations.next([{ regex: '2$', replacement: '3' }])
+    },
 })

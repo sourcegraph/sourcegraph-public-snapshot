@@ -28,6 +28,8 @@ export async function injectCodeIntelligence(
             await onCodeHostFound(codeHost)
         }
 
+        await codeHost.prepareCodeHost?.()
+
         const observeMutations: ObserveMutations = codeHost.observeMutations || defaultObserveMutations
         const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
             childList: true,
