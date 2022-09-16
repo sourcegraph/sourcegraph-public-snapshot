@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -59,6 +60,14 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 	}
 
 	gitlabs, err := conf.GitLabConfigs(ctx)
+
+	// TODO: add to resolver?
+	for _, g := range gitlabs {
+		for _, t := range g.NameTransformations {
+			fmt.Println("gitlabs: ", *t)
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}
