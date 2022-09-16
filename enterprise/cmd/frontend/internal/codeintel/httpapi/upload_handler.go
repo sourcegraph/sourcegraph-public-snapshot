@@ -49,7 +49,7 @@ var errUnprocessableRequest = errors.New("unprocessable request: missing expecte
 // See the functions the following functions for details on how each request is handled:
 //
 //   - handleEnqueueSinglePayload
-//   - handleEnqueueMultipartSetup'
+//   - handleEnqueueMultipartSetup
 //   - handleEnqueueMultipartUpload
 //   - handleEnqueueMultipartFinalize
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
