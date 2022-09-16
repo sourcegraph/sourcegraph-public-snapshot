@@ -86,7 +86,10 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         setIsOpen(isOpen)
 
         if (reason === PopoverOpenEventReason.Esc) {
-            onEscapeMenuClose?.()
+            // In order to wait until Popover will be unmounted and popover internal focus
+            // management returns focus to the target, and then we call onEscapeMenuClose
+            // and put focus to the search box
+            requestAnimationFrame(() => onEscapeMenuClose?.())
         }
 
         telemetryService.log('SearchContextDropdownToggled')
