@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -26,6 +27,73 @@ type codeintelUploadMetadata struct {
 	indexer           string
 	indexerVersion    string
 	associatedIndexID int
+}
+
+type DBStoreShim struct {
+	*dbstore.Store
+}
+
+func (s *DBStoreShim) Transact(ctx context.Context) (DBStore[codeintelUploadMetadata], error) {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DBStoreShim{tx}, nil
+}
+
+func (s *DBStoreShim) InsertUpload(ctx context.Context, upload Upload[codeintelUploadMetadata]) (int, error) {
+	var associatedIndexID *int
+	if upload.Metadata.associatedIndexID != 0 {
+		associatedIndexID = &upload.Metadata.associatedIndexID
+	}
+
+	return s.Store.InsertUpload(ctx, dbstore.Upload{
+		ID:                upload.ID,
+		State:             upload.State,
+		NumParts:          upload.NumParts,
+		UploadedParts:     upload.UploadedParts,
+		UploadSize:        upload.UploadSize,
+		UncompressedSize:  upload.UncompressedSize,
+		RepositoryID:      upload.Metadata.repositoryID,
+		Commit:            upload.Metadata.commit,
+		Root:              upload.Metadata.root,
+		Indexer:           upload.Metadata.indexer,
+		IndexerVersion:    upload.Metadata.indexerVersion,
+		AssociatedIndexID: associatedIndexID,
+	})
+}
+
+func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (Upload[codeintelUploadMetadata], bool, error) {
+	upload, ok, err := s.Store.GetUploadByID(ctx, uploadID)
+	if err != nil {
+		return Upload[codeintelUploadMetadata]{}, false, err
+	}
+	if !ok {
+		return Upload[codeintelUploadMetadata]{}, false, nil
+	}
+
+	u := Upload[codeintelUploadMetadata]{
+		ID:               upload.ID,
+		State:            upload.State,
+		NumParts:         upload.NumParts,
+		UploadedParts:    upload.UploadedParts,
+		UploadSize:       upload.UploadSize,
+		UncompressedSize: upload.UncompressedSize,
+		Metadata: codeintelUploadMetadata{
+			repositoryID:   upload.RepositoryID,
+			commit:         upload.Commit,
+			root:           upload.Root,
+			indexer:        upload.Indexer,
+			indexerVersion: upload.IndexerVersion,
+		},
+	}
+
+	if upload.AssociatedIndexID != nil {
+		u.Metadata.associatedIndexID = *upload.AssociatedIndexID
+	}
+
+	return u, true, nil
 }
 
 func NewUploadHandler(

@@ -5,14 +5,13 @@ import (
 )
 
 type Upload[T any] struct {
-	ID                int
-	State             string
-	NumParts          int
-	UploadedParts     []int
-	UploadSize        *int64
-	UncompressedSize  *int64
-	AssociatedIndexID *int
-	Metadata          T
+	ID               int
+	State            string
+	NumParts         int
+	UploadedParts    []int
+	UploadSize       *int64
+	UncompressedSize *int64
+	Metadata         T
 }
 
 type DBStore[T any] interface {
@@ -25,16 +24,3 @@ type DBStore[T any] interface {
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
 	MarkFailed(ctx context.Context, id int, reason string) error
 }
-
-// type DBStoreShim struct {
-// 	*dbstore.Store
-// }
-
-// func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
-// 	tx, err := s.Store.Transact(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &DBStoreShim{tx}, nil
-// }
