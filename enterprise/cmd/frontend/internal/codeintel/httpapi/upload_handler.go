@@ -12,7 +12,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -25,33 +24,6 @@ type UploadHandler struct {
 	dbStore     DBStore
 	uploadStore uploadstore.Store
 	operations  *Operations
-}
-
-func NewUploadHandler(
-	db database.DB,
-	dbStore DBStore,
-	uploadStore uploadstore.Store,
-	internal bool,
-	authValidators auth.AuthValidatorMap,
-	operations *Operations,
-) http.Handler {
-	handler := &UploadHandler{
-		logger: sglog.Scoped("UploadHandler", "").With(
-			sglog.Bool("internal", internal),
-		),
-		db:          db,
-		dbStore:     dbStore,
-		uploadStore: uploadStore,
-		operations:  operations,
-	}
-
-	if internal {
-		return http.HandlerFunc(handler.handleEnqueue)
-	}
-
-	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
-	// visibility check with the remote code host (if enabled via site configuration).
-	return auth.AuthMiddleware(http.HandlerFunc(handler.handleEnqueue), db, authValidators, operations.authMiddleware)
 }
 
 var errUnprocessableRequest = errors.New("unprocessable request: missing expected query arguments (uploadId, index, or done)")
