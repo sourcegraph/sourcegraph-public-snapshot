@@ -66,7 +66,7 @@ func TestGetBlobPreviewTitle(t *testing.T) {
 		{name: "empty line range", lineRange: nil, blobFilePath: "path/a.txt", wantTitle: "a.txt"},
 		{name: "single line", lineRange: &lineRange{StartLine: 4}, blobFilePath: "path/a.txt", wantTitle: "a.txt?L4"},
 		{name: "line range", lineRange: &lineRange{StartLine: 1, EndLine: 10}, blobFilePath: "path/a.txt", wantTitle: "a.txt?L1-10"},
-		{name: "line range with symbol", lineRange: &lineRange{StartLine: 1, EndLine: 10}, blobFilePath: "path/a.go", symbolResult: &result.Symbol{Kind: "function", Name: "myFunc"}, wantTitle: "Function myFunc (a.go?L1-10)"},
+		{name: "line range with symbol", lineRange: &lineRange{StartLine: 1, EndLine: 10}, blobFilePath: "path/a.go", symbolResult: &result.Symbol{Kind: "function", Name: "myFunc"}, wantTitle: "function myFunc (a.go?L1-10)"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
