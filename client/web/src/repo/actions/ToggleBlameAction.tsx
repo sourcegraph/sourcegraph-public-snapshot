@@ -2,25 +2,23 @@ import { useCallback, useEffect } from 'react'
 
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
+import * as H from 'history'
 
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
-import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
-export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; filePath: string }> = ({
-    actionType,
-    filePath,
-}) => {
+export const ToggleBlameAction: React.FC<{ location: H.Location }> = ({ location }) => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
     // Turn off visibility when the file path changes.
     useEffect(() => {
         setIsBlameVisible(false)
-    }, [filePath, setIsBlameVisible])
+    }, [location.pathname, setIsBlameVisible])
 
     const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
@@ -34,30 +32,13 @@ export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown'; file
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    if (actionType === 'dropdown') {
-        return (
-            <RepoHeaderActionMenuItem file={true} onSelect={toggleBlameState}>
-                <Icon aria-hidden={true} svgPath={mdiGit} />
-                <span>{descriptiveText}</span>
-            </RepoHeaderActionMenuItem>
-        )
-    }
-
     return (
-        <Tooltip content={descriptiveText}>
-            {/**
-             * This <RepoHeaderActionButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
-             * break its underlying <ButtonLink>'s onClick handler and it will no longer prevent the default page reload (with no href).
-             */}
-            <span>
-                <RepoHeaderActionButtonLink aria-label={descriptiveText} onSelect={toggleBlameState}>
-                    <Icon
-                        aria-hidden={true}
-                        svgPath={mdiGit}
-                        className={classNames(isBlameVisible && styles.iconActive)}
-                    />
-                </RepoHeaderActionButtonLink>
-            </span>
-        </Tooltip>
+        <SimpleActionItem isActive={isBlameVisible} tooltip={descriptiveText} onSelect={toggleBlameState}>
+            <Icon
+                aria-hidden={true}
+                svgPath={mdiGit}
+                className={classNames(styles.icon, isBlameVisible && styles.iconActive)}
+            />
+        </SimpleActionItem>
     )
 }

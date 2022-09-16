@@ -19,10 +19,10 @@ import (
 // handler implements a http.Handler that wraps a VersionCache to provide two
 // endpoints:
 //
-// - GET /.*:        this looks up the given branch and returns the latest
-//                   version, if any.
-// - POST /webhooks: this triggers an update of the version cache if given a
-//                   valid GitHub webhook.
+//   - GET /.*: this looks up the given branch and returns the latest
+//     version, if any.
+//   - POST /webhooks: this triggers an update of the version cache if given a
+//     valid GitHub webhook.
 //
 // The routing relies on a previous handler having injected a gorilla.Mux
 // variable called "rest" that includes the path to route.

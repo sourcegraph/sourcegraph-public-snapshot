@@ -1098,12 +1098,12 @@ repository should be recloned.`
 )
 
 // writeSGMLog writes a log file with the format
-// 		<header>
 //
-// 		<sgmLogPrefix>=<int>
+//	<header>
 //
-// 		<error message>
+//	<sgmLogPrefix>=<int>
 //
+//	<error message>
 func writeSGMLog(dir GitDir, m []byte) error {
 	return os.WriteFile(
 		dir.Path(sgmLog),

@@ -210,7 +210,7 @@ type NewUser struct {
 // username/email and password. If no password is given, a non-builtin auth provider must be used to
 // sign into the account.
 //
-// CREATION OF SITE ADMINS
+// # CREATION OF SITE ADMINS
 //
 // The new user is made to be a site admin if the following are both true: (1) this user would be
 // the first and only user on the server, and (2) the site has not yet been initialized. Otherwise,

@@ -14,11 +14,11 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { HighlightResponseFormat, IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
@@ -162,7 +162,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const fetchFileRangeMatches = useCallback(
-        (args: { format?: HighlightResponseFormat; ranges: IHighlightLineRange[] }): Observable<string[][]> =>
+        (args: { format?: HighlightResponseFormat; ranges: HighlightLineRange[] }): Observable<string[][]> =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
@@ -183,7 +183,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             return fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_HIGHLIGHT,
                 ranges: grouped.map(
-                    (group): IHighlightLineRange => ({
+                    (group): HighlightLineRange => ({
                         startLine: group.startLine,
                         endLine: group.endLine,
                     })
@@ -208,7 +208,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_PLAINTEXT,
                 ranges: grouped.map(
-                    (group): IHighlightLineRange => ({
+                    (group): HighlightLineRange => ({
                         startLine: group.startLine,
                         endLine: group.endLine,
                     })
@@ -232,7 +232,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             return fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_HIGHLIGHT,
                 ranges: result.symbols.map(
-                    (symbol): IHighlightLineRange => ({
+                    (symbol): HighlightLineRange => ({
                         startLine: symbol.line - 1,
                         endLine: symbol.line,
                     })
@@ -263,7 +263,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             return fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_PLAINTEXT,
                 ranges: result.symbols.map(
-                    (symbol): IHighlightLineRange => ({
+                    (symbol): HighlightLineRange => ({
                         startLine: symbol.line - 1,
                         endLine: symbol.line,
                     })

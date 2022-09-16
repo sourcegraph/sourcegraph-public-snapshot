@@ -34,11 +34,13 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.PROCESSING:
             return (
                 <Tooltip content="This workspace is currently executing.">
-                    <Icon
-                        aria-label="This workspace is currently executing."
-                        className={className}
-                        as={LoadingSpinner}
-                    />
+                    <span>
+                        <Icon
+                            aria-label="This workspace is currently executing."
+                            className={className}
+                            as={LoadingSpinner}
+                        />
+                    </span>
                 </Tooltip>
             )
         case BatchSpecWorkspaceState.SKIPPED:
