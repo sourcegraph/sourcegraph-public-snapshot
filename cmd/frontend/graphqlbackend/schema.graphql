@@ -788,7 +788,7 @@ type Mutation {
     Reclone a repository from the gitserver. This involves deleting the file on disk,
     marking it as not-cloned in the database, and then restarting the clone process.
     """
-    recloneRepository(name: String): EmptyResponse!
+    deleteRepositoryFromDisk(name: String): EmptyResponse!
 
 
 }
