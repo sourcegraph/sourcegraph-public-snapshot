@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -41,7 +42,7 @@ type client interface {
 	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
-	WithToken(token string) client
+	WithTokenAndRefresher(token string, refresher oauthutil.TokenRefresher) client
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -51,8 +52,8 @@ type ClientAdapter struct {
 	*github.V3Client
 }
 
-func (c *ClientAdapter) WithToken(token string) client {
+func (c *ClientAdapter) WithTokenAndRefresher(token string, tokenRefresher oauthutil.TokenRefresher) client {
 	return &ClientAdapter{
-		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
+		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}, tokenRefresher),
 	}
 }

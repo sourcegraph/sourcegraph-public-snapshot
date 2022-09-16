@@ -141,7 +141,7 @@ func main() {
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo, db)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
@@ -323,6 +323,7 @@ func getRemoteURLFunc(
 	repoStore database.RepoStore,
 	cli httpcli.Doer,
 	repo api.RepoName,
+	db database.DB,
 ) (string, error) {
 	r, err := repoStore.GetByName(ctx, repo)
 	if err != nil {
@@ -354,7 +355,7 @@ func getRemoteURLFunc(
 			}
 			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli, db)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
@@ -377,6 +378,7 @@ func editGitHubAppExternalServiceConfigToken(
 	gitHubAppConfig *schema.GitHubApp,
 	installationID int64,
 	cli httpcli.Doer,
+	db database.DB,
 ) (string, error) {
 	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
 
@@ -409,7 +411,17 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, nil) // add token refresher
+	rawConfig, err = svc.Config.Decrypt(ctx)
+	if err != nil {
+		return "", nil
+	}
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return "", nil
+	}
+
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, tokenRefresher)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
 	if err != nil {

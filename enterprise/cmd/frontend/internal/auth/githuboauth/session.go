@@ -292,7 +292,7 @@ func derefInt64(i *int64) int64 {
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
 	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
-		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil, nil) //todo add token refresher
+		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,

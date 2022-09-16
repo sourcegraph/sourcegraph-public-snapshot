@@ -72,7 +72,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil, nil) // todo: add token refresher
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil, nil)
 
 	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 		return newGitHubAppSetupHandler(db, apiURL, client)
