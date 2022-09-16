@@ -94,8 +94,8 @@ device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
 if [ "${device_fs}" == "" ]
 then
   mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
-  xfs_admin -L "${EBS_VOLUME_LABEL} ${EBS_VOLUME_DEVICE_NAME}"
 fi
+xfs_admin -L "${EBS_VOLUME_LABEL} ${EBS_VOLUME_DEVICE_NAME}"
 mkdir -p "${DOCKER_DATA_ROOT}"
 mount "${EBS_VOLUME_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
 # Mount file system by label on reboot
