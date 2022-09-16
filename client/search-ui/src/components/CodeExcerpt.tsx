@@ -10,11 +10,11 @@ import { catchError, filter } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { HighlightLineRange } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Code } from '@sourcegraph/wildcard'
 
@@ -25,7 +25,7 @@ export interface FetchFileParameters {
     commitID: string
     filePath: string
     disableTimeout?: boolean
-    ranges: GQL.IHighlightLineRange[]
+    ranges: HighlightLineRange[]
     format?: HighlightResponseFormat
 }
 

@@ -72,9 +72,20 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			return nil, false, err
 		}
 
+		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
+		totalLenUnindexedSearch := totalStringsLen(unindexedSearch)
+
 		logger = logger.With(
 			log.Int("indexedIgnorePaths", len(indexedIgnore)),
-			log.Int("unindexedSearchPaths", len(unindexedSearch)))
+			log.Int("totalLenIndexedIgnorePaths", totalLenIndexedIgnore),
+			log.Int("unindexedSearchPaths", len(unindexedSearch)),
+			log.Int("totalLenUnindexedSearchPaths", totalLenUnindexedSearch))
+
+		if totalLenIndexedIgnore > s.MaxTotalPathsLength || totalLenUnindexedSearch > s.MaxTotalPathsLength {
+			logger.Info("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
+				log.Int("MAX_TOTAL_PATHS_LENGTH", s.MaxTotalPathsLength))
+			return nil, false, nil
+		}
 
 		logger.Info("starting zoekt search")
 
@@ -336,6 +347,14 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 	sort.Strings(changedB)
 
 	return changedA, changedB, nil
+}
+
+func totalStringsLen(ss []string) int {
+	sum := 0
+	for _, s := range ss {
+		sum += len(s)
+	}
+	return sum
 }
 
 // logWithTrace is a helper which returns l.WithTrace if there is a
