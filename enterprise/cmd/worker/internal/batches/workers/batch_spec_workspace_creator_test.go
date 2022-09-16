@@ -618,7 +618,7 @@ changesetTemplate:
 `
 
 		batchSpec := createBatchSpec(t, false, rawSpec)
-		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Size: 6, ModifiedAt: time.Now().UTC()}}
+		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
 		createBatchSpecMounts(t, mounts)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
 
@@ -714,8 +714,8 @@ changesetTemplate:
 
 		batchSpec := createBatchSpec(t, false, rawSpec)
 		mounts := []*btypes.BatchSpecWorkspaceFile{
-			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Size: 6, ModifiedAt: time.Now().UTC()},
-			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Size: 6, ModifiedAt: time.Now().UTC()},
+			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
 		}
 		createBatchSpecMounts(t, mounts)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
