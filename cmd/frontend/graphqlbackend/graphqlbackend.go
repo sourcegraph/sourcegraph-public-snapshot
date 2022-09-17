@@ -609,7 +609,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.New("repository name required")
 	}
 
-	if err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name)); err != nil {
+	if err := backend.NewRepos(r.logger, r.db).Delete(ctx, *args.Name); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
 	}
 
