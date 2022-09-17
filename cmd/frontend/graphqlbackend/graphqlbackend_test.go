@@ -89,15 +89,15 @@ func TestRepository(t *testing.T) {
 }
 
 func TestDeleteRepository(t *testing.T) {
-    resetMocks()
+	resetMocks()
 	db := database.NewMockDB()
 	repos := database.NewMockRepoStore()
 	repos.DeleteFunc.SetDefaultReturn(nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-    db.UsersFunc.SetDefaultReturn(users)
-    called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
+	db.UsersFunc.SetDefaultReturn(users)
+	called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
 
 	RunTests(t, []*Test{
 		{
@@ -119,7 +119,7 @@ func TestDeleteRepository(t *testing.T) {
 		},
 	})
 
-    assert.True(t, *called)
+	assert.True(t, *called)
 }
 
 func TestResolverTo(t *testing.T) {
