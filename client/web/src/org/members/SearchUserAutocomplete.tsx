@@ -7,6 +7,7 @@ import { debounce } from 'lodash'
 import { Tooltip, Combobox, ComboboxInput, ComboboxPopover, ComboboxList, ComboboxOption } from '@sourcegraph/wildcard'
 
 import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { SEARCH_USERS_AUTOCOMPLETE_QUERY } from './gqlQueries'
@@ -48,7 +49,7 @@ export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props =
 
     const debounceGetUsers = useRef(debounce(searchUsers, 250, { leading: false }))
 
-    const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+    const handleUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         const newValue = event.currentTarget.value
 
         setUsernameOrEmail(newValue)
@@ -57,6 +58,15 @@ export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props =
             debounceGetUsers.current(newValue)
         }
     }, [])
+
+    const handleUserSelect = (username: string): void => {
+        setUsernameOrEmail(username)
+        eventLogger.log(
+            'InviteAutocompleteUserSelected',
+            { organizationId: orgId, user: username },
+            { organizationId: orgId }
+        )
+    }
 
     const results = (data
         ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1))
@@ -67,7 +77,7 @@ export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props =
     const renderNoMatch = resultsEnabled && !loading && results.length === 0
 
     return (
-        <Combobox className={styles.inputContainer} onSelect={setUsernameOrEmail}>
+        <Combobox className={styles.inputContainer} onSelect={handleUserSelect}>
             <ComboboxInput
                 autocomplete={false}
                 label="Email address or username"
@@ -75,7 +85,7 @@ export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props =
                 autoFocus={true}
                 disabled={disabled}
                 status={loading ? 'loading' : error ? 'error' : undefined}
-                onChange={onUsernameChange}
+                onChange={handleUsernameChange}
             />
 
             <ComboboxPopover className={styles.suggestionsContainer}>
@@ -104,29 +114,23 @@ const UserResultItem: FC<UserResultItemProps> = props => {
     const { user } = props
 
     return (
-        <ComboboxOption
-            value={user.displayName ?? user.username}
-            data-testid="search-context-menu-item"
-            data-res-user-id={user.id}
-            disabled={user.inOrg}
-            className={styles.item}
-        >
-            <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
+        <ComboboxOption value={user.username} disabled={user.inOrg} data-res-user-id={user.id} className={styles.item}>
+            <div className={styles.userContainer}>
                 <div className={styles.avatarContainer}>
                     <Tooltip content={user.displayName || user.username}>
                         <UserAvatar
-                            size={24}
-                            className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
                             user={user}
+                            size={24}
+                            className={classNames(styles.avatar, user.inOrg && styles.avatarDisabled)}
                         />
                     </Tooltip>
                 </div>
-                <div className="d-flex flex-column">
+                <div className={styles.itemDescription}>
                     <div>
                         <strong>{user.displayName || user.username}</strong>{' '}
                         {user.displayName && <span className={styles.userName}>{user.username}</span>}
                     </div>
-                    {user.inOrg && <small className="text-muted">Already in this organization</small>}
+                    {user.inOrg && <small className={styles.userDescription}>Already in this organization</small>}
                 </div>
             </div>
         </ComboboxOption>
@@ -138,11 +142,7 @@ interface EmptyResultsItemProps {
 }
 
 const EmptyResultsItem: FC<EmptyResultsItemProps> = ({ userNameOrEmail }) => (
-    <div
-        data-testid="search-context-menu-item"
-        role="menuitem"
-        className={classNames('d-flex', 'flex-column', styles.emptyResults)}
-    >
+    <div role="menuitem" className={styles.emptyResults}>
         <span>
             <small>
                 <strong>{`Nobody found with the username “${userNameOrEmail}”`}</strong>
