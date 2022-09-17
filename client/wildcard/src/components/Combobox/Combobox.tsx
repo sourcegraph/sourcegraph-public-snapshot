@@ -90,6 +90,8 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
 
     // If we don't have registered input element we should not
     // render anything about combobox suggestions (popover content)
+    // And if we have closed state we shouldn't render anything about ReachComboboxPopover
+    // (by default even if combobox is closed it renders empty block with border 1px line)
     if (!inputRef || !isExpanded) {
         return null
     }
@@ -152,19 +154,24 @@ interface ComboboxOptionProps extends ReachComboboxOptionProps {
 }
 
 export const ComboboxOption = forwardRef((props, ref) => {
-    const { disabled, children, ...attributes } = props
+    const { value, disabled, children, className, ...attributes } = props
     const context = useComboboxOptionContext()
 
     if (disabled) {
         return (
-            <li ref={ref} {...attributes}>
-                {typeof children === 'function' ? children(context) : children}
+            <li
+                ref={ref}
+                data-option-disabled={true}
+                className={classNames(className, styles.itemDisabled)}
+                {...attributes}
+            >
+                {typeof children === 'function' ? children(context) : children ?? value}
             </li>
         )
     }
 
     return (
-        <ReachComboboxOption ref={ref} {...attributes}>
+        <ReachComboboxOption ref={ref} value={value} {...attributes}>
             {children}
         </ReachComboboxOption>
     )
