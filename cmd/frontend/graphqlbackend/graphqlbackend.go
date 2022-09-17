@@ -475,6 +475,7 @@ type schemaResolver struct {
 	logger            sglog.Logger
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
+	gitserverClient   *gitserver.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 
 	// SubResolvers are assigned using the Schema constructor.
@@ -495,10 +496,12 @@ type schemaResolver struct {
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB) *schemaResolver {
+	gitserverClient := gitserver.NewClient(db)
 	r := &schemaResolver{
 		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
+		gitserverClient:   &gitserverClient,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -613,7 +616,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
 	}
 
-	if _, err := gitserver.NewClient(r.db).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
+	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", *args.Name))
 	}
 

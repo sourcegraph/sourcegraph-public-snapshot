@@ -9,6 +9,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -22,8 +24,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -88,8 +93,22 @@ func TestRepository(t *testing.T) {
 	})
 }
 
-func TestDeleteRepository(t *testing.T) {
+func TestRecloneRepository(t *testing.T) {
 	resetMocks()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		resp := protocol.RepoUpdateResponse{}
+		json.NewEncoder(w).Encode(&resp)
+	}))
+	defer srv.Close()
+	serverURL, err := url.Parse(srv.URL)
+	assert.Nil(t, err)
+	conf.Mock(&conf.Unified{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
+			GitServers: []string{serverURL.Host},
+		},
+	})
+	defer conf.Mock(nil)
 	db := database.NewMockDB()
 	repos := database.NewMockRepoStore()
 	repos.DeleteFunc.SetDefaultReturn(nil)
@@ -104,14 +123,14 @@ func TestDeleteRepository(t *testing.T) {
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
                 mutation {
-                    deleteRepositoryFromDisk(name: "github.com/gorilla/mux") {
+                    recloneRepository(name: "github.com/gorilla/mux") {
                         alwaysNil
                     }
                 }
             `,
 			ExpectedResult: `
                 {
-                    "deleteRepositoryFromDisk": {
+                    "recloneRepository": {
                         "alwaysNil": null
                     }
                 }
