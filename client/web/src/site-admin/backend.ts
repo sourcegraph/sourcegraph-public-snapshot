@@ -301,9 +301,9 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
     )
 }
 
-export const DELETE_REPOSITORY_FROM_DISK_MUTATION = gql`
-    mutation DeleteRepositoryFromDisk($name: String) {
-        deleteRepositoryFromDisk(name: $name) {
+export const RECLONE_REPOSITORY_MUTATION = gql`
+    mutation RecloneRepository($name: String) {
+        recloneRepository(name: $name) {
             alwaysNil
         }
     }
