@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -596,7 +597,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 // RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
 // in the database, and then starts a repo clone.
 func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
-	Name *string
+	Name *api.RepoName
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete repositories.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -608,6 +609,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	}
 
 	err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name))
+
+	gitserver.NewClient(r.db).RequestRepoUpdate(ctx, *args.Name, 1*time.Second)
 
 	return &EmptyResponse{}, err
 }
