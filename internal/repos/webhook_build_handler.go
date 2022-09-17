@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"math/rand"
 	"net/url"
 
@@ -26,6 +27,7 @@ import (
 type webhookBuildHandler struct {
 	store Store
 	doer  httpcli.Doer
+	db    database.DB
 }
 
 func newWebhookBuildHandler(store Store, doer httpcli.Doer) *webhookBuildHandler {
@@ -66,7 +68,9 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer, nil) // todo: add token refresher
+
+	tokenRefresher := database.ExternalServiceTokenRefresher(w.db, svc.ID, conn.TokenOauthRefresh)
+	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer, tokenRefresher)
 
 	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Not make an API call upon every request
 	if err != nil && err.Error() != "unable to find webhook" {

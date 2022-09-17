@@ -227,7 +227,7 @@ func newGithubSource(
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
 		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli, tokenRefresher)
-		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
+		v4Client       = github.NewV4Client(urn, apiURL, token, cli, tokenRefresher)
 
 		searchClientLogger = log.Scoped("search", "github client for search")
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli, tokenRefresher)
@@ -253,7 +253,7 @@ func newGithubSource(
 		}
 
 		client := github.NewV3Client(log.Scoped("app", "github client for Sourcegraph GitHub app"),
-			urn, apiURL, auther, nil, nil)
+			urn, apiURL, auther, nil, tokenRefresher)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -266,8 +266,8 @@ func newGithubSource(
 		}
 
 		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli, nil)
-		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
+		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli, tokenRefresher)
+		v4Client = github.NewV4Client(urn, apiURL, auther, cli, tokenRefresher)
 
 		useGitHubApp = true
 	}
@@ -333,7 +333,7 @@ func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	sc := s
 
 	sc.v3Client = sc.v3Client.WithAuthenticator(a, tokenRefresher)
-	sc.v4Client = sc.v4Client.WithAuthenticator(a)
+	sc.v4Client = sc.v4Client.WithAuthenticator(a, tokenRefresher)
 	sc.searchClient = sc.searchClient.WithAuthenticator(a, tokenRefresher)
 
 	return &sc, nil

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -55,6 +56,8 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *ratelimit.InstrumentedLimiter
+
+	tokenRefresher oauthutil.TokenRefresher
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -62,7 +65,7 @@ type V4Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V4Client.apiURL.
-func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
+func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *V4Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -99,14 +102,15 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
+		tokenRefresher:   tokenRefresher,
 	}
 }
 
 // WithAuthenticator returns a new V4Client that uses the same configuration as
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
-func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
+func (c *V4Client) WithAuthenticator(a auth.Authenticator, tokenRefresher oauthutil.TokenRefresher) *V4Client {
+	return NewV4Client(c.urn, c.apiURL, a, c.httpClient, tokenRefresher)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -351,7 +355,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 
 	// Initiate a v3Client since this requires a V3 API request.
 	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
-	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil) //todo add token refresher
+	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		c.log.Warn("Failed to fetch GitHub enterprise version",

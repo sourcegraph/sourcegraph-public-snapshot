@@ -133,8 +133,8 @@ func newV3ClientWithTokenRefresher(logger log.Logger, urn string, apiURL *url.UR
 // WithAuthenticator returns a new V3Client that uses the same configuration as
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
-func (c *V3Client) WithAuthenticator(a auth.Authenticator, refresher oauthutil.TokenRefresher) *V3Client {
-	return newV3ClientWithTokenRefresher(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient, refresher)
+func (c *V3Client) WithAuthenticator(a auth.Authenticator, tokenRefresher oauthutil.TokenRefresher) *V3Client {
+	return newV3ClientWithTokenRefresher(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient, tokenRefresher)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
