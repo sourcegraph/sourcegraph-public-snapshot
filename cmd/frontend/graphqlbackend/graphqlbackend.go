@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -608,11 +609,15 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.New("repository name required")
 	}
 
-	err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name))
+	if err := backend.NewRepos(r.logger, r.db).Delete(ctx, api.RepoName(*args.Name)); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
+	}
 
-	gitserver.NewClient(r.db).RequestRepoUpdate(ctx, *args.Name, 1*time.Second)
+	if _, err := gitserver.NewClient(r.db).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", *args.Name))
+	}
 
-	return &EmptyResponse{}, err
+	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
