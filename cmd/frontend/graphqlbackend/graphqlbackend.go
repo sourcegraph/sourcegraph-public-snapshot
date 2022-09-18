@@ -603,7 +603,32 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Name *api.RepoName
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete repositories.
+	// 🚨 SECURITY: Only site admins can reclone repositories.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.Name == nil || *args.Name == "" {
+		return &EmptyResponse{}, errors.New("repository name required")
+	}
+
+	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
+	}
+
+	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", *args.Name))
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+// RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
+// in the database, and then starts a repo clone.
+func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
+	Name *api.RepoName
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete repositories from disk.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -614,10 +639,6 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 
 	if err := backend.NewRepos(r.logger, r.db).Delete(ctx, *args.Name); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
-	}
-
-	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", *args.Name))
 	}
 
 	return &EmptyResponse{}, nil

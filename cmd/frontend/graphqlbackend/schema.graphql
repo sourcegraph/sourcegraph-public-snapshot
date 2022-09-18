@@ -790,6 +790,11 @@ type Mutation {
     """
     recloneRepository(name: String): EmptyResponse!
 
+    """
+    Delete a repository from the gitserver. This involves deleting the file on disk,
+    and marking it as not-cloned in the database.
+    """
+    deleteRepositoryFromDisk(name: String): EmptyResponse!
 
 }
 

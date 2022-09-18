@@ -95,12 +95,14 @@ func TestRepository(t *testing.T) {
 
 func TestRecloneRepository(t *testing.T) {
 	resetMocks()
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		resp := protocol.RepoUpdateResponse{}
 		json.NewEncoder(w).Encode(&resp)
 	}))
 	defer srv.Close()
+
 	serverURL, err := url.Parse(srv.URL)
 	assert.Nil(t, err)
 	conf.Mock(&conf.Unified{
@@ -109,13 +111,17 @@ func TestRecloneRepository(t *testing.T) {
 		},
 	})
 	defer conf.Mock(nil)
-	db := database.NewMockDB()
+
 	repos := database.NewMockRepoStore()
 	repos.DeleteFunc.SetDefaultReturn(nil)
-	db.ReposFunc.SetDefaultReturn(repos)
+
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
+
 	called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
 
 	RunTests(t, []*Test{
@@ -131,6 +137,40 @@ func TestRecloneRepository(t *testing.T) {
 			ExpectedResult: `
                 {
                     "recloneRepository": {
+                        "alwaysNil": null
+                    }
+                }
+            `,
+		},
+	})
+
+	assert.True(t, *called)
+}
+
+func TestDeleteRepositoryFromDisk(t *testing.T) {
+	resetMocks()
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.DeleteFunc.SetDefaultReturn(nil)
+	db.ReposFunc.SetDefaultReturn(repos)
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	db.UsersFunc.SetDefaultReturn(users)
+	called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+                mutation {
+                    deleteRepositoryFromDisk(name: "github.com/gorilla/mux") {
+                        alwaysNil
+                    }
+                }
+            `,
+			ExpectedResult: `
+                {
+                    "deleteRepositoryFromDisk": {
                         "alwaysNil": null
                     }
                 }
