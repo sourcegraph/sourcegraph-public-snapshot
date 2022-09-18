@@ -302,8 +302,8 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
 }
 
 export const RECLONE_REPOSITORY_MUTATION = gql`
-    mutation RecloneRepository($name: String) {
-        recloneRepository(name: $name) {
+    mutation RecloneRepository($repo: ID!) {
+        recloneRepository(repo: $repo) {
             alwaysNil
         }
     }
