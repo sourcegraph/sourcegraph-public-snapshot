@@ -785,14 +785,15 @@ type Mutation {
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 
     """
-    Reclone a repository from the gitserver. This involves deleting the file on disk,
-    marking it as not-cloned in the database, and then initiating a repo clone.
+    INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
+    the file on disk, marking it as not-cloned in the database, and then initiating
+    a repo clone.
     """
     recloneRepository(name: String): EmptyResponse!
 
     """
-    Delete a repository from the gitserver. This involves deleting the file on disk,
-    and marking it as not-cloned in the database.
+    INTERNAL ONLY: Delete a repository from the gitserver. This involves deleting
+    the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(name: String): EmptyResponse!
 
