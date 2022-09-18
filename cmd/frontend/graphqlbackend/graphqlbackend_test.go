@@ -125,7 +125,7 @@ func TestRecloneRepository(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t)
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
 	RunTests(t, []*Test{
 		{
@@ -160,7 +160,7 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
-	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t)
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
 	RunTests(t, []*Test{
 		{

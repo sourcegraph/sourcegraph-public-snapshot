@@ -80,10 +80,10 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *b
 	return
 }
 
-func (s *MockRepos) MockDeleteRepositoryFromDisk(t *testing.T) (called *bool) {
+func (s *MockRepos) MockDeleteRepositoryFromDisk(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	called = new(bool)
 	s.DeleteRepositoryFromDisk = func(_ context.Context, repo api.RepoID) error {
-		*called = true
+		*called = repo == wantRepo
 		return nil
 	}
 	return
