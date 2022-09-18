@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useMemo } from 'react'
 
-import { mdiCloudDownload, mdiCog } from '@mdi/js'
+import { mdiCloudDownload, mdiCog, mdiCloudRefresh } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 

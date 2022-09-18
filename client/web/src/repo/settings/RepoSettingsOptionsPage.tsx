@@ -9,21 +9,21 @@ import { switchMap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Input, Text, Button } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Input, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    DeleteRepositoryResult,
-    DeleteRepositoryVariables,
+    RecloneRepositoryResult,
+    RecloneRepositoryVariables,
     SettingsAreaRepositoryFields,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchSettingsAreaRepository } from './backend'
 import { requestGraphQL } from '../../../src/backend/graphql'
-import { DELETE_REPOSITORY_MUTATION } from '../../../src/site-admin/backend'
+import { RECLONE_REPOSITORY_MUTATION } from '../../../src/site-admin/backend'
 import { ActionContainer } from './components/ActionContainer'
 
 export interface RepoSettingsOptionsPageProps extends RouteComponentProps<{}> {
@@ -58,7 +58,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<RepoSettingsOpt
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettings')
+        eventLogger.logPageView('RepoSettings')
 
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(
@@ -72,11 +72,11 @@ export class RepoSettingsOptionsPage extends React.PureComponent<RepoSettingsOpt
         this.subscriptions.unsubscribe()
     }
 
-    private deleteRepo(repo: string): () => Promise<void> {
+    private recloneRepo(repo: string): () => Promise<void> {
         return async () => {
-        await requestGraphQL<DeleteRepositoryResult, DeleteRepositoryVariables>(DELETE_REPOSITORY_MUTATION, {
-            name: repo,
-        }).toPromise()
+            await requestGraphQL<RecloneRepositoryResult, RecloneRepositoryVariables>(RECLONE_REPOSITORY_MUTATION, {
+                name: repo,
+            }).toPromise()
         }
     }
 
@@ -128,11 +128,19 @@ export class RepoSettingsOptionsPage extends React.PureComponent<RepoSettingsOpt
 
                     <ActionContainer
                         title="Reclone repository"
-                        description={<div>Site admins are able to reclone this repository.</div>}
+                        description={
+                            <>
+                                <div>Site admins are able to reclone this repository.</div>
+                                <div>
+                                    WARNING: This will delete the repository from disk and restart the cloning process,
+                                    which could cause repository downtime.
+                                </div>
+                            </>
+                        }
                         buttonLabel="Reclone repo"
                         buttonClassName="danger"
                         flashText="Recloning repository"
-                        run={this.deleteRepo(this.state.repo.name)}
+                        run={this.recloneRepo(this.state.repo.name)}
                         history={this.props.history}
                     />
                 </Container>
