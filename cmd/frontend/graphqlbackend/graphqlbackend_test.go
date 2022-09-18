@@ -96,9 +96,11 @@ func TestRepository(t *testing.T) {
 func TestRecloneRepository(t *testing.T) {
 	resetMocks()
 
+	gitserverCalled := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		resp := protocol.RepoUpdateResponse{}
+		gitserverCalled = true
 		json.NewEncoder(w).Encode(&resp)
 	}))
 	defer srv.Close()
@@ -114,6 +116,7 @@ func TestRecloneRepository(t *testing.T) {
 
 	repos := database.NewMockRepoStore()
 	repos.DeleteFunc.SetDefaultReturn(nil)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
@@ -122,14 +125,14 @@ func TestRecloneRepository(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t)
 
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
                 mutation {
-                    recloneRepository(name: "github.com/gorilla/mux") {
+                    recloneRepository(repo: "UmVwb3NpdG9yeTox") {
                         alwaysNil
                     }
                 }
@@ -145,6 +148,7 @@ func TestRecloneRepository(t *testing.T) {
 	})
 
 	assert.True(t, *called)
+	assert.True(t, gitserverCalled)
 }
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {
@@ -156,14 +160,14 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
-	called := backend.Mocks.Repos.MockDelete(t, "github.com/gorilla/mux")
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t)
 
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
                 mutation {
-                    deleteRepositoryFromDisk(name: "github.com/gorilla/mux") {
+                    deleteRepositoryFromDisk(repo: "UmVwb3NpdG9yeTox") {
                         alwaysNil
                     }
                 }

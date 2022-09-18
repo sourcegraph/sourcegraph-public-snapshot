@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -246,14 +247,19 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	return &inv, nil
 }
 
-func (s *repos) Delete(ctx context.Context, name api.RepoName) (err error) {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, name)
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
+		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Delete", name, &err)
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
 	defer done()
 
-	err = gitserver.NewClient(s.db).Remove(ctx, name)
+	err = gitserver.NewClient(s.db).Remove(ctx, repo.Name)
 	return err
 }

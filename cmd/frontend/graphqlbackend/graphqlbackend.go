@@ -601,23 +601,34 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 // RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
 // in the database, and then starts a repo clone.
 func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
-	Name *api.RepoName
+	Repo graphql.ID
 }) (*EmptyResponse, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Only site admins can reclone repositories.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if args.Name == nil || *args.Name == "" {
-		return &EmptyResponse{}, errors.New("repository name required")
+	if r.gitserverClient == nil {
+		return &EmptyResponse{}, errors.New("no gitserver client available")
 	}
 
-	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
+	repos := backend.NewRepos(r.logger, r.db)
+	repo, err := repos.Get(ctx, repoID)
+	if err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
 	}
 
-	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, *args.Name, 1*time.Second); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", *args.Name))
+	if err = repos.DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", repo.Name))
+	}
+
+	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, repo.Name, 1*time.Second); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", repo.Name))
 	}
 
 	return &EmptyResponse{}, nil
@@ -626,19 +637,19 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 // RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
 // in the database, and then starts a repo clone.
 func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
-	Name *api.RepoName
+	Repo graphql.ID
 }) (*EmptyResponse, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+		return nil, err
+	}
 	// 🚨 SECURITY: Only site admins can delete repositories from disk.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if args.Name == nil || *args.Name == "" {
-		return &EmptyResponse{}, errors.New("repository name required")
-	}
-
-	if err := backend.NewRepos(r.logger, r.db).Delete(ctx, *args.Name); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", *args.Name))
+	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 
 	return &EmptyResponse{}, nil
