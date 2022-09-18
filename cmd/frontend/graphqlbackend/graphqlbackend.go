@@ -634,8 +634,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-// RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
-// in the database, and then starts a repo clone.
+// DeleteRepositoryFromDisk deletes a repository from the gitserver disk and marks it as not cloned
+// in the database.
 func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
 	Repo graphql.ID
 }) (*EmptyResponse, error) {
