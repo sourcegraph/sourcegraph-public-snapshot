@@ -104,7 +104,7 @@ func TestAggregations(t *testing.T) {
 	}
 
 	err = client.WaitForReposToBeCloned(
-		"sgtest/go-dff",
+		"sgtest/go-diff",
 	)
 	if err != nil {
 		t.Fatal(err)
