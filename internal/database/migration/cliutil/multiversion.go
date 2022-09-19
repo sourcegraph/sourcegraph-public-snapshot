@@ -179,7 +179,7 @@ func runMigration(
 			if err := r.Run(ctx, runner.Options{
 				Operations:             operations,
 				PrivilegedMode:         privilegedMode,
-				PrivilegedHash:         privilegedHash,
+				MatchPrivilegedHash:    func(hash string) bool { return hash == privilegedHash },
 				IgnoreSingleDirtyLog:   true,
 				IgnoreSinglePendingLog: true,
 			}); err != nil {

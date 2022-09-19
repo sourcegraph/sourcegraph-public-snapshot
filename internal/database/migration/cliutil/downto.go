@@ -62,7 +62,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 				},
 			},
 			PrivilegedMode:         privilegedMode,
-			PrivilegedHash:         privilegedHashFlag.Get(cmd),
+			MatchPrivilegedHash:    func(hash string) bool { return hash == privilegedHashFlag.Get(cmd) },
 			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
 			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil

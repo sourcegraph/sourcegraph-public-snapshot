@@ -74,7 +74,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		return runner.Options{
 			Operations:             operations,
 			PrivilegedMode:         privilegedMode,
-			PrivilegedHash:         privilegedHashFlag.Get(cmd),
+			MatchPrivilegedHash:    func(hash string) bool { return hash == privilegedHashFlag.Get(cmd) },
 			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
 			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil
