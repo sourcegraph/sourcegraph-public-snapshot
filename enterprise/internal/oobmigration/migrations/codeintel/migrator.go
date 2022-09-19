@@ -196,7 +196,7 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 // transformed, then updated in-place in the database.
 //
 // Two migrators (of the same concrete type) will not process the same upload identifier concurrently as
-// the selection of the upload holds a row lock assocaited with that upload for the duration of the method's
+// the selection of the upload holds a row lock associated with that upload for the duration of the method's
 // enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
 	g := group.New().WithErrors()
