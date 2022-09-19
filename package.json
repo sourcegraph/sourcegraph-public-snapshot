@@ -499,5 +499,5 @@
     "prettier": "2.2.1",
     "jsprim": "1.4.2"
   },
-  "packageManager": "yarn@1.22.19"
+  "packageManager": "yarn@3.2.3"
 }
