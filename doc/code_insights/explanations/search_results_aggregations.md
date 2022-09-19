@@ -21,7 +21,9 @@ We may continue adding new aggregation categories, like date and code host, base
 
 You can turn the aggregations on with the experimental feature setting: `searchResultsAggregations` in your user, org, or site settings. 
 
-You can turn off just the proactive aggregations by setting `proactiveSearchResultsAggregations` to `false`. This prevents aggregations from running on every search and forces users to explicitly click to run them. (The main reason to consider disabling proactive aggregations is if you're seeing a heavy or unexpected load on your instance, but as noted below in "Limitations" there are limits that keep the overall resource needs low to begin with.) 
+You can turn off just the proactive aggregations by setting `proactiveSearchResultsAggregations` to `false`. 
+This prevents aggregations from running on every search and requires users to explicitly click to run them. 
+(The main reason to consider disabling proactive aggregations is if you're seeing a heavy or unexpected load on your instance, but as noted below in [Limitations](#limitations) there are limits that keep the overall resource needs low to begin with.) 
 
 ## Drilldowns 
 
@@ -39,7 +41,8 @@ At the moment all aggregations search queries are run with a 2-second timeout, e
 
 ### Count limits
 
-Aggregation search queries that run proactively are run with `count:50000`. This default can be changed using the site setting `insights.aggregations.proactiveResultLimit`. If the number of results exceeds this limit, the user can choose to explictly run the aggregation, and these explictly-run aggregations use `count:all`.
+Aggregation search queries that run proactively are run with `count:50000`. This default can be changed using the site setting `insights.aggregations.proactiveResultLimit`. 
+If the number of results exceeds this limit, the user can choose to explicitly run the aggregation, and these explicitly-run aggregations use `count:all`.
 
 ### Best effort aggregation
 
