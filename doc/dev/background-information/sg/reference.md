@@ -190,6 +190,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format="<value>"`: Output format for the preview (one of 'markdown', 'json', or 'yaml') (default: markdown)
 
 ### sg ci status
 
