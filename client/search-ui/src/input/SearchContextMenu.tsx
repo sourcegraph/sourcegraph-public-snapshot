@@ -171,11 +171,14 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         onMenuClose()
     }, [onMenuClose, defaultSearchContextSpec, selectSearchContextSpec])
 
-    const handleContextSelect = (context: string): void => {
-        selectSearchContextSpec(context)
-        onMenuClose(true)
-        telemetryService.log('SearchContextSelected')
-    }
+    const handleContextSelect = useCallback(
+        (context: string): void => {
+            selectSearchContextSpec(context)
+            onMenuClose(true)
+            telemetryService.log('SearchContextSelected')
+        },
+        [onMenuClose, selectSearchContextSpec, telemetryService]
+    )
 
     const filteredAutoDefinedSearchContexts = useMemo(
         () =>
@@ -201,7 +204,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
-            <div className={classNames('d-flex', styles.header)}>
+            <div className={styles.header}>
                 <ComboboxInput
                     type="search"
                     variant="small"
@@ -210,8 +213,8 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     spellCheck={false}
                     aria-label="Find a context"
                     data-testid="search-context-menu-header-input"
-                    className="w-100"
-                    inputClassName={styles.headerInput}
+                    className={styles.headerInput}
+                    inputClassName={styles.headerInputElement}
                     onInput={onSearchFilterChanged}
                 />
             </div>

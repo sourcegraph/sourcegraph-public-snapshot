@@ -10,6 +10,10 @@
     border-bottom: 1px solid var(--border-color-2);
 
     &-input {
+        width: 100%;
+    }
+
+    &-input-element {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
         font-size: 0.75rem;
