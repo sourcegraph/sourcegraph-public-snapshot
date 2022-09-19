@@ -58,7 +58,6 @@ func NewFirecrackerWorkspace(
 	}
 
 	return &firecrackerWorkspace{
-		path:            blockDevice,
 		scriptFilenames: scriptPaths,
 		blockDeviceFile: blockDeviceFile,
 		blockDevice:     blockDevice,
@@ -67,14 +66,14 @@ func NewFirecrackerWorkspace(
 }
 
 type firecrackerWorkspace struct {
-	path                         string
-	scriptFilenames              []string
-	blockDeviceFile, blockDevice string
-	commandLogger                command.Logger
+	scriptFilenames []string
+	blockDeviceFile string
+	blockDevice     string
+	commandLogger   command.Logger
 }
 
 func (w firecrackerWorkspace) Path() string {
-	return w.path
+	return w.blockDevice
 }
 
 func (w firecrackerWorkspace) ScriptFilenames() []string {
@@ -95,21 +94,21 @@ func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 		// Remount the workspace, so that it can be inspected.
 		mountDir, err := mountLoopDevice(ctx, w.blockDevice)
 		if err != nil {
-			fmt.Fprintf(handle, "Failed to mount workspace: %s", err)
+			fmt.Fprintf(handle, "Failed to mount workspace: %s\n", err)
 			return
 		}
-		fmt.Fprintf(handle, "Inspect the workspace contents at: %s", mountDir)
+		fmt.Fprintf(handle, "Inspect the workspace contents at: %s\n", mountDir)
 		return
 	}
 
 	fmt.Fprintf(handle, "Removing loop device %s\n", w.blockDevice)
 	if err := detachLoopDevice(ctx, w.blockDevice); err != nil {
-		fmt.Fprint(handle, err)
+		fmt.Fprintf(handle, "stderr: Failed to detach loop device: %s\n", err)
 	}
 
 	fmt.Fprintf(handle, "Removing block device file %s\n", w.blockDeviceFile)
 	if err := os.Remove(w.blockDeviceFile); err != nil {
-		fmt.Fprint(handle, err)
+		fmt.Fprintf(handle, "stderr: Failed to remove block device: %s\n", err)
 	}
 }
 
@@ -121,7 +120,7 @@ func setupLoopDevice(
 	jobID int,
 	diskSpace string,
 	commandLogger command.Logger,
-) (loopFileName, tmpMountDir, blockDevice string, err error) {
+) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
 	handle := commandLogger.Log("setup.fs.workspace", nil)
 	defer func() {
 		if err != nil {
@@ -142,8 +141,8 @@ func setupLoopDevice(
 			os.Remove(tempFile.Name())
 		}
 	}()
-	loopFileName = tempFile.Name()
-	fmt.Fprintf(handle, "Created backing workspace file at %q\n", loopFileName)
+	blockDeviceFile = tempFile.Name()
+	fmt.Fprintf(handle, "Created backing workspace file at %q\n", blockDeviceFile)
 
 	// Truncate the file to be of the size of the maximum permissible disk space.
 	diskSize, err := datasize.ParseString(diskSpace)
@@ -153,22 +152,22 @@ func setupLoopDevice(
 	if err := tempFile.Truncate(int64(diskSize.Bytes())); err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to make backing file sparse with %d bytes", diskSize.Bytes())
 	}
-	fmt.Fprintf(handle, "Created sparse file of size %s from %q\n", diskSize.HumanReadable(), loopFileName)
+	fmt.Fprintf(handle, "Created sparse file of size %s from %q\n", diskSize.HumanReadable(), blockDeviceFile)
 	if err := tempFile.Close(); err != nil {
 		return "", "", "", errors.Wrap(err, "failed to make close backing file")
 	}
 
 	// Create an ext4 file system in the device backing file.
-	cmd := exec.CommandContext(ctx, "mkfs.ext4", loopFileName)
+	cmd := exec.CommandContext(ctx, "mkfs.ext4", blockDeviceFile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", "", "", errors.Newf("failed to create ext4 filesystem in backing file: %q", out)
 	}
 	mkfsOutput := "stderr: " + strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", "\nstderr: ")
-	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q:\n%s\n", loopFileName, mkfsOutput)
+	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q:\n%s\n", blockDeviceFile, mkfsOutput)
 
 	// Create a loop device pointing to our block device.
-	cmd = exec.CommandContext(ctx, "losetup", "--find", "--show", loopFileName)
+	cmd = exec.CommandContext(ctx, "losetup", "--find", "--show", blockDeviceFile)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return "", "", "", errors.Newf("failed to create loop device: %q", out)
@@ -185,7 +184,7 @@ func setupLoopDevice(
 			}
 		}
 	}()
-	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, loopFileName)
+	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, blockDeviceFile)
 
 	// Mount the loop device at a temporary directory so we can write the workspace contents to it.
 	tmpMountDir, err = mountLoopDevice(ctx, blockDevice)
@@ -194,7 +193,7 @@ func setupLoopDevice(
 	}
 	fmt.Fprintf(handle, "Created temporary workspace mount location at %q\n", tmpMountDir)
 
-	return loopFileName, tmpMountDir, blockDevice, nil
+	return blockDeviceFile, tmpMountDir, blockDevice, nil
 }
 
 // detachLoopDevice detaches a loop device by path (/dev/loopX).
