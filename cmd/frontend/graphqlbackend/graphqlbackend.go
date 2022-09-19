@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -591,6 +593,62 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		return nil, nil
 	}
 	return resolver.repo, nil
+}
+
+// RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned
+// in the database, and then starts a repo clone.
+func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
+	Repo graphql.ID
+}) (*EmptyResponse, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins can reclone repositories.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
+	}
+
+	if err := backend.NewRepos(r.logger, r.db).RequestRepositoryClone(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+// DeleteRepositoryFromDisk deletes a repository from the gitserver disk and marks it as not cloned
+// in the database.
+func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
+	Repo graphql.ID
+}) (*EmptyResponse, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only site admins can delete repositories from disk.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	repo, err := r.db.GitserverRepos().GetByID(ctx, repoID)
+	if err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
+	}
+
+	if repo.CloneStatus == types.CloneStatusCloning {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
+	}
+
+	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
+	}
+
+	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
