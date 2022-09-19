@@ -3,7 +3,6 @@
 .wildcard-tabs {
     --opacity-transition: 0.3s;
     --scroll-gradient-color: var(--body-bg);
-
     --small-size-font: 0.75rem;
     --medium-size-font: 0.875rem;
     --large-size-font: 1rem;
@@ -90,28 +89,26 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity var(--opacity-transition) ease;
+            background: linear-gradient(
+                to var(--scroll-gradient-direction),
+                var(--scroll-gradient-color) 15%,
+                rgba(0, 0, 0, 0)
+            );
 
             @media (prefers-reduced-motion: reduce) {
                 transition: none;
             }
         }
 
-        &::before,
-        &::after {
-            background: linear-gradient(
-                to var(--scroll-gradient-direction),
-                var(--scroll-gradient-color) 15%,
-                rgba(0, 0, 0, 0)
-            );
-        }
-
         &::before {
             left: 0;
+
             --scroll-gradient-direction: right;
         }
 
         &::after {
             right: 0;
+
             --scroll-gradient-direction: left;
         }
 
