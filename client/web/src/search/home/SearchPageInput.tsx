@@ -165,7 +165,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
