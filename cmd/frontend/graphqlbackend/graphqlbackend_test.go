@@ -121,9 +121,13 @@ func TestRecloneRepository(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
+    gitserverRepos := database.NewMockGitserverRepoStore()
+    gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
+    db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
 
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
@@ -155,14 +159,20 @@ func TestRecloneRepository(t *testing.T) {
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {
 	resetMocks()
-	db := database.NewMockDB()
+
 	repos := database.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
+
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	db.UsersFunc.SetDefaultReturn(users)
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
+    gitserverRepos := database.NewMockGitserverRepoStore()
+    gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+    
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefaultReturn(users)
+    db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
 	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
 
 	RunTests(t, []*Test{

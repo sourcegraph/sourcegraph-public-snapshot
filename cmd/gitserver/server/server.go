@@ -464,6 +464,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+    mux.HandleFunc("/repo-reclone", trace.WithRouteName("repo-reclone", s.handleRepoReclone))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -1011,6 +1012,30 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.Error = updateErr.Error()
 		}
 	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// handleRepoReclone is a asynchronous (does not wait for update to complete or
+// time out). Returns an error if a clone is already in progress.
+func (s *Server) handleRepoReclone(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoReclone", "asynchronous http handler for repo reclones")
+	var req protocol.RepoRecloneRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var resp protocol.RepoRecloneResponse
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+
+    _, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false, Overwrite: true})
+    if err != nil {
+        logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+        resp.Error = err.Error()
+    }
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

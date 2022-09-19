@@ -609,8 +609,16 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repos := backend.NewRepos(r.logger, r.db)
+	repo, err := r.db.GitserverRepos().GetByID(ctx, repoID)
+	if err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
+	}
 
+	if repo.CloneStatus == "cloning" {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot reclone repository %d: busy cloning", repo.RepoID))
+	}
+
+	repos := backend.NewRepos(r.logger, r.db)
 	if err := repos.DeleteRepositoryFromDisk(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
@@ -634,6 +642,15 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 	// 🚨 SECURITY: Only site admins can delete repositories from disk.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+
+	repo, err := r.db.GitserverRepos().GetByID(ctx, repoID)
+	if err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
+	}
+
+	if repo.CloneStatus == "cloning" {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot reclone repository %d: busy cloning", repo.RepoID))
 	}
 
 	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
