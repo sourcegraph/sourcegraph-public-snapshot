@@ -84,7 +84,7 @@ func TestAggregations(t *testing.T) {
 
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-search",
+		DisplayName: "gqltest-aggregation-search",
 		Config: mustMarshalJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
