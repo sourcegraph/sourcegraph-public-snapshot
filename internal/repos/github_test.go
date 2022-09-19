@@ -174,7 +174,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 
 	for result := range results {
 		if result.err != nil {
-			t.Error("unexpected error, expected repository instead")
+			t.Errorf("unexpected error: %s, expected repository instead", result.err.Error())
 		}
 	}
 }
