@@ -58,16 +58,6 @@ func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, p
 	}
 }
 
-type Stringer interface {
-	String() string
-}
-
-type StringerFunc string
-
-func (sf StringerFunc) String() string {
-	return string(sf)
-}
-
 func (s Symbol) NormalizedKind() string {
 	if s.Kind != "" {
 		return s.Kind
