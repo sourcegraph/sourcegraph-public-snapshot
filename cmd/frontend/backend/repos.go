@@ -263,3 +263,16 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 	err = gitserver.NewClient(s.db).Remove(ctx, repo.Name)
 	return err
 }
+
+func (s *repos) RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) (err error) {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "RequestRepositoryUpdate", repoID, &err)
+	defer done()
+
+	_, err = gitserver.NewClient(s.db).RequestRepoUpdate(ctx, repo.Name, 1*time.Second)
+	return err
+}

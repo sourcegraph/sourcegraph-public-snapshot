@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -115,7 +116,6 @@ func TestRecloneRepository(t *testing.T) {
 	defer conf.Mock(nil)
 
 	repos := database.NewMockRepoStore()
-	repos.DeleteFunc.SetDefaultReturn(nil)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
 
 	users := database.NewMockUserStore()
@@ -127,16 +127,18 @@ func TestRecloneRepository(t *testing.T) {
 
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
+	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			Query: fmt.Sprintf(`
                 mutation {
-                    recloneRepository(repo: "UmVwb3NpdG9yeTox") {
+                    recloneRepository(repo: "%s") {
                         alwaysNil
                     }
                 }
-            `,
+            `, repoID),
 			ExpectedResult: `
                 {
                     "recloneRepository": {
@@ -155,23 +157,24 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 	resetMocks()
 	db := database.NewMockDB()
 	repos := database.NewMockRepoStore()
-	repos.DeleteFunc.SetDefaultReturn(nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
+	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			Query: fmt.Sprintf(`
                 mutation {
-                    deleteRepositoryFromDisk(repo: "UmVwb3NpdG9yeTox") {
+                    deleteRepositoryFromDisk(repo: "%s") {
                         alwaysNil
                     }
                 }
-            `,
+            `, repoID),
 			ExpectedResult: `
                 {
                     "deleteRepositoryFromDisk": {

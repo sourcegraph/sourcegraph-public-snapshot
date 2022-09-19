@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -475,7 +474,6 @@ type schemaResolver struct {
 	logger            sglog.Logger
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
-	gitserverClient   *gitserver.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 
 	// SubResolvers are assigned using the Schema constructor.
@@ -496,12 +494,10 @@ type schemaResolver struct {
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB) *schemaResolver {
-	gitserverClient := gitserver.NewClient(db)
 	r := &schemaResolver{
 		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
-		gitserverClient:   &gitserverClient,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -613,22 +609,14 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if r.gitserverClient == nil {
-		return &EmptyResponse{}, errors.New("no gitserver client available")
-	}
-
 	repos := backend.NewRepos(r.logger, r.db)
-	repo, err := repos.Get(ctx, repoID)
-	if err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
+
+	if err := repos.DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 
-	if err = repos.DeleteRepositoryFromDisk(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository %s", repo.Name))
-	}
-
-	if _, err := (*r.gitserverClient).RequestRepoUpdate(ctx, repo.Name, 1*time.Second); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while updating repository %s", repo.Name))
+	if err := repos.RequestRepositoryUpdate(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting update for repository with ID %d", repoID))
 	}
 
 	return &EmptyResponse{}, nil
