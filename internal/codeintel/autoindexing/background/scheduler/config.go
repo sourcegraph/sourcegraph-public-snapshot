@@ -9,10 +9,13 @@ import (
 type config struct {
 	env.BaseConfig
 
-	Interval               time.Duration
+	SchedulerInterval      time.Duration
 	RepositoryProcessDelay time.Duration
 	RepositoryBatchSize    int
 	PolicyBatchSize        int
+
+	OnDemandSchedulerInterval time.Duration
+	OnDemandBatchsize         int
 }
 
 var ConfigInst = &config{}
@@ -23,8 +26,11 @@ func (c *config) Load() {
 	repositoryBatchSizeName := env.ChooseFallbackVariableName("CODEINTEL_AUTOINDEXING_SCHEDULER_REPOSITORY_BATCH_SIZE", "PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_BATCH_SIZE")
 	policyBatchSizeName := env.ChooseFallbackVariableName("CODEINTEL_AUTOINDEXING_SCHEDULER_POLICY_BATCH_SIZE", "PRECISE_CODE_INTEL_AUTO_INDEXING_POLICY_BATCH_SIZE")
 
-	c.Interval = c.GetInterval(intervalName, "10m", "How frequently to run the autoindexer scheduling routine.")
+	c.SchedulerInterval = c.GetInterval(intervalName, "10m", "How frequently to run the auto-indexing scheduling routine.")
 	c.RepositoryProcessDelay = c.GetInterval(repositoryProcessDelayName, "24h", "The minimum frequency that the same repository can be considered for auto-index scheduling.")
 	c.RepositoryBatchSize = c.GetInt(repositoryBatchSizeName, "100", "The number of repositories to consider for auto-indexing scheduling at a time.")
 	c.PolicyBatchSize = c.GetInt(policyBatchSizeName, "100", "The number of policies to consider for auto-indexing scheduling at a time.")
+
+	c.OnDemandSchedulerInterval = c.GetInterval("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_INTERVAL", "30s", "How frequently to run the on-demand auto-indexing scheduling routine.")
+	c.OnDemandBatchsize = c.GetInt("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_BATCH_SIZE", "100", "The number of repo/rev pairs to consider for on-demand auto-indexing scheduling at a time.")
 }
