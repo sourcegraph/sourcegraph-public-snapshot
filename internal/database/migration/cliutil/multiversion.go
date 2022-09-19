@@ -111,7 +111,7 @@ func runMigration(
 	privilegedMode runner.PrivilegedMode,
 	privilegedHash string,
 	skipVersionCheck bool,
-	skipDriftCheck,
+	skipDriftCheck bool,
 	dryRun bool,
 	up bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
@@ -307,22 +307,18 @@ func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.O
 	}
 
 	drift := false
-
-	if len(schemasWithDrift) > 0 {
-		for _, schemaName := range schemasWithDrift {
-			empty, err := isEmptySchema(ctx, r, schemaName)
-			if err != nil {
-				return err
-			}
-			if empty {
-				continue
-			}
-
-			drift = true
-			out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleFailure, "Schema drift detected for %s", schemaName))
+	for _, schemaName := range schemasWithDrift {
+		empty, err := isEmptySchema(ctx, r, schemaName)
+		if err != nil {
+			return err
 		}
-	}
+		if empty {
+			continue
+		}
 
+		drift = true
+		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Schema drift detected for %s", schemaName))
+	}
 	if !drift {
 		return nil
 	}
