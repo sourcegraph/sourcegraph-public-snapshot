@@ -26,7 +26,6 @@ const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
     of({
         batchChangesDiffStat: {
             added: 247,
-            changed: 1896,
             deleted: 990,
         },
         changesetsStats: {
@@ -43,7 +42,6 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
     of({
         batchChangesDiffStat: {
             added: 0,
-            changed: 0,
             deleted: 0,
         },
         changesetsStats: {

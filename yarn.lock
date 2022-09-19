@@ -27633,18 +27633,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-scroll-manager@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "react-scroll-manager@npm:1.0.3"
-  dependencies:
-    prop-types: ^15.7.2
-  peerDependencies:
-    react: ^16.0.0
-    react-dom: ^16.0.0
-  checksum: a4da9ab92395110916ff1ea23a9c4adcfd3bfcd4dc924c11adf3de1ec3726c2531a661eefb4e123db824f2ceb09f28ac42766a51c00cda1693b1ffd109f23878
-  languageName: node
-  linkType: hard
-
 "react-select@npm:^3.2.0":
   version: 3.2.0
   resolution: "react-select@npm:3.2.0"
@@ -29177,7 +29165,6 @@ pvutils@latest:
     react-router: ^5.2.0
     react-router-dom: ^5.2.0
     react-router-dom-v5-compat: ^6.3.0
-    react-scroll-manager: ^1.0.3
     react-select: ^5.2.2
     react-spring: ^9.4.2
     react-sticky-box: 1.0.2

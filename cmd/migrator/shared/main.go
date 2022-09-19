@@ -64,6 +64,11 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 		registerEnterpriseMigrators,
 	)
 
+	schemaFactories := []cliutil.ExpectedSchemaFactory{
+		cliutil.GCSExpectedSchemaFactory,
+		cliutil.GitHubExpectedSchemaFactory,
+	}
+
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -74,9 +79,9 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
+			cliutil.Drift(appName, newRunner, outputFactory, schemaFactories...),
 			cliutil.AddLog(appName, newRunner, outputFactory),
-			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
 			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
 			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},

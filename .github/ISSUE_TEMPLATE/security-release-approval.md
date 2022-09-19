@@ -10,4 +10,7 @@ assignees: andreeleuterio, evict, willdollman, ferozsalam, mohammadualam
 Security must close this issue before releases. It is the responsibility of the Security Engineer on rotation the week the release is cut. More steps will be added in the future.
 
 - [ ] All feasible CVEs are closed.
-- [ ] Any open CVEs are documented in the handbook
+- [ ] Any open CVEs are documented in the handbook.
+
+
+cc @sourcegraph/security

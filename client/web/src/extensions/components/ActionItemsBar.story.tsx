@@ -11,6 +11,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { extensionsController, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AppRouterContainer } from '../../components/AppRouterContainer'
+import { WebStory } from '../../components/WebStory'
 import { SourcegraphContext } from '../../jscontext'
 
 import { ActionItemsBar, useWebActionItems } from './ActionItemsBar'
@@ -71,9 +72,13 @@ const mockExtensionsController = {
 const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <AppRouterContainer>
-            <div className="container mt-3">{story()}</div>
-        </AppRouterContainer>
+        <WebStory>
+            {() => (
+                <AppRouterContainer>
+                    <div className="container mt-3">{story()}</div>
+                </AppRouterContainer>
+            )}
+        </WebStory>
     </>
 )
 
