@@ -22,8 +22,10 @@ func Validate(expression string, vars VariableApplier) error {
 }
 
 func parse(expression string, vars VariableApplier) (promqlparser.Expr, error) {
-	applied := vars.ApplyDefaults(expression)
-	expr, err := promqlparser.ParseExpr(applied)
+	if vars != nil {
+		expression = vars.ApplyDefaults(expression)
+	}
+	expr, err := promqlparser.ParseExpr(expression)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%q", expression)
 	}
