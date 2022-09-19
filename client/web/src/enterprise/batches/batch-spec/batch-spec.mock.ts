@@ -420,7 +420,7 @@ export const CANCELED_WORKSPACE = mockWorkspace(1, {
 export const mockWorkspaces = (
     count: number,
     workspace?: Partial<VisibleBatchSpecWorkspaceFields>
-): BatchSpecWorkspacesResult => ({
+): BatchSpecWorkspacesResult & { node: { __typename: 'BatchSpec' } } => ({
     node: {
         __typename: 'BatchSpec',
         id: 'spec1234',
