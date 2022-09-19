@@ -105,14 +105,14 @@ func TestAggregations(t *testing.T) {
 	removeExternalServiceAfterTest(t, esID)
 
 	err = client.WaitForReposToBeCloned(
-		"sgtest/go-diff",
+		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = client.WaitForReposToBeIndexed(
-		"sgtest/go-diff",
+		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
 		t.Fatal(err)

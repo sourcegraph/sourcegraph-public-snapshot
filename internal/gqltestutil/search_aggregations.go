@@ -109,6 +109,10 @@ type AggregationResponse struct {
 	ReasonType string
 	Reason     string // If this is set the fields below will be empty.
 
-	Groups []string // List of results in form of labels
-	Mode   string
+	Groups []struct {
+		Label string
+		Count int32
+		Query string
+	} // List of results in form of labels
+	Mode string
 }
