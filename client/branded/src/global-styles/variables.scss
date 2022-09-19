@@ -23,7 +23,7 @@ $grid-breakpoints: (
     --line-height-base: calc(20 / 14);
     // Input
     --input-font-size: var(--font-size-base);
-    --input-font-size-sm: 0.786em;
+    --input-font-size-sm: calc(11em / 14);
     --input-line-height: var(--line-height-base);
     --input-line-height-sm: 1.5;
     --input-line-height-lg: var(--line-height-base);

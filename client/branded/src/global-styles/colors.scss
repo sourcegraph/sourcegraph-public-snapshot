@@ -13,8 +13,20 @@ $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: #72dbe8;
 
+// Exception that's used in $theme-colors.
+$gray-02: #eff2f5;
+// Exception that's used in [data-reach-dialog-overlay] background.
+$gray-04: #dbe2f0;
+// Exception that's used in $custom-select-indicator as SVG icon fill color.
+$gray-06: #798baf;
 // Exception that's used in $theme-colors and in --box-shadow variable.
 $gray-08: #343a4d;
+// Exception that's used in $theme-colors.
+$gray-09: #262b38;
+
+// light and dark colors used in `$theme-colors` -> `bg-*`
+$gray-100: #f8f9fa;
+$gray-800: #343a40;
 
 // Core semantic base colors.
 $primary: $blue;
@@ -24,9 +36,8 @@ $info: $cyan;
 $warning: $yellow;
 $danger: $red;
 $merged: $purple;
-// light and dark colors used in `$theme-colors` -> `bg-*`
-$light: #f8f9fa;
-$dark: #343a40;
+$light: $gray-100;
+$dark: $gray-800;
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
@@ -45,14 +56,14 @@ $theme-colors: (
     // Gray (blueish) root palette.
     --white: #ffffff;
     --gray-01: #f9fafb;
-    --gray-02: #eff2f5; // Exception that's used in $theme-colors.
+    --gray-02: #{$gray-02};
     --gray-03: #e6ebf2;
-    --gray-04: #dbe2f0; // Exception that's used in [data-reach-dialog-overlay] background.
+    --gray-04: #{$gray-04};
     --gray-05: #a6b6d9;
-    --gray-06: #798baf; // Exception that's used in $custom-select-indicator as SVG icon fill color.
+    --gray-06: #{$gray-06};
     --gray-07: #5e6e8c;
     --gray-08: #{$gray-08};
-    --gray-09: #262b38; // Exception that's used in $theme-colors.
+    --gray-09: #{$gray-09};
     --gray-10: #1d212f;
     --gray-11: #181b26;
     --gray-12: #14171f;
@@ -179,7 +190,7 @@ $theme-colors: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
-    --subtle-bg-2: #{rgba(var(--gray-02), 0.5)};
+    --subtle-bg-2: #{rgba($gray-02, 0.5)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
@@ -192,7 +203,7 @@ $theme-colors: (
         rgba(228, 211, 252, 0.25) 3.11%,
         rgba(215, 240, 253, 0.25) 83.64%
     );
-    --modal-bg: #{rgba(var(--gray-04), 0.5)};
+    --modal-bg: #{rgba($gray-04, 0.5)};
     // Colors used in the search sidebar with .core-workflow-improvements-enabled
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
@@ -275,7 +286,7 @@ $theme-colors: (
     --code-bg: var(--gray-10);
     --intel-bg: var(--gray-12);
     --subtle-bg: var(--gray-09);
-    --subtle-bg-2: #{rgba(var(--gray-09), 0.2)};
+    --subtle-bg-2: #{rgba($gray-09, 0.2)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     --code-line-highlight-color: var(--body-bg);
     --diff-add-bg: #224035;
@@ -297,7 +308,7 @@ $theme-colors: (
     --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
-    --text-muted-transparent: #{rgba(var(--gray-06), 0.3)};
+    --text-muted-transparent: #{rgba($gray-06, 0.3)};
 }
 
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
