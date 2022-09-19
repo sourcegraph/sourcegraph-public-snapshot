@@ -1032,7 +1032,7 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 	var resp protocol.RepoCloneResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
-	_, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false, Overwrite: true})
+	_, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false})
 	if err != nil {
 		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 		resp.Error = err.Error()
