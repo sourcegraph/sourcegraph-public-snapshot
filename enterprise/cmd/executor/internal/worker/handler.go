@@ -101,7 +101,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
-	defer workspace.Remove(ctx)
+	defer workspace.Remove(ctx, h.options.KeepWorkspaces)
 
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
