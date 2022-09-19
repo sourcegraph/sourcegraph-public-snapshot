@@ -5,11 +5,12 @@ import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
+import { RepositoryNameResult, RepositoryNameVariables } from '../../../graphql-operations'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -19,7 +20,7 @@ import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
-import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView, nameTransformations } from './scrape'
+import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView, repoName, getGitlabRepoURL } from './scrape'
 
 import styles from './codeHost.module.scss'
 
@@ -269,21 +270,23 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     ),
 
     prepareCodeHost: async requestGraphQL =>
-        requestGraphQL<any>({
+        requestGraphQL<RepositoryNameResult, RepositoryNameVariables>({
             request: gql`
-                query GitlabNameTransformations {
-                    # currentUser {
-                    #     settingsURL
-                    # }
+                query RepositoryName($cloneURL: String!) {
+                    repository(cloneURL: $cloneURL) {
+                        name
+                    }
                 }
             `,
-            variables: {},
+            variables: {
+                cloneURL: getGitlabRepoURL(),
+            },
             mightContainPrivateInfo: true,
         })
             .pipe(
-                tap(() => {
-                    // TODO: replace with actual transformations
-                    nameTransformations.next([{ regex: '2$', replacement: '3' }])
+                map(dataOrThrowErrors),
+                tap(({ repository }) => {
+                    repoName.next(repository?.name ?? '')
                 }),
                 mapTo(true)
             )

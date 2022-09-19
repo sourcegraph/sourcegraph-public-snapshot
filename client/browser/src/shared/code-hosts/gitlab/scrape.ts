@@ -29,12 +29,6 @@ export interface GitLabInfo extends RawRepoSpec, RepoSpec {
  */
 interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec {}
 
-/**
- * Subject to store GitLab name transformations.
- * Updated in `gitlabCodeHost.prepareCodeHost` method.
- */
-export const nameTransformations = new BehaviorSubject<{ regex: string; replacement: string }[]>([])
-
 export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
     const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))
     if (!pageKindMatch) {
@@ -52,23 +46,42 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
     }
 }
 
-const applyNameTransformations = (name: string, transformations: { regex: string; replacement: string }[]): string => {
-    for (const { regex, replacement } of transformations) {
-        name = name.replace(new RegExp(regex), replacement)
+/**
+ * Subject to store repo name on the Sourcegraph instance.
+ * It may be different from the repo name on the code host because of the name transformations applied
+ * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
+ * Set in `gitlabCodeHost.prepareCodeHost` method.
+ */
+export const repoName = new BehaviorSubject<string>('')
+
+/**
+ * Extracts the project name from the repo name.
+ * (e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'jsonrpc2')
+ */
+const getTransformedProjectName = (): string => {
+    const projectName = last(repoName.value.split('/'))
+    if (!projectName) {
+        throw new Error('Invalid repo name')
     }
-    return name
+    return projectName
+}
+
+/**
+ * Gets repo URL from on GitLab.
+ */
+export const getGitlabRepoURL = (): string => {
+    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
+    if (!projectLink) {
+        throw new Error('Unable to determine project name')
+    }
+    return projectLink.href // e.g. 'https://gitlab.com/sourcegraph/jsonrpc2'
 }
 
 /**
  * Gets information about the page.
  */
 export function getPageInfo(): GitLabInfo {
-    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
-    if (!projectLink) {
-        throw new Error('Unable to determine project name')
-    }
-
-    const projectFullName = new URL(projectLink.href).pathname.slice(1)
+    const projectFullName = new URL(getGitlabRepoURL()).pathname.slice(1) // e.g. 'sourcegraph/jsonrpc2'
 
     const parts = projectFullName.split('/')
 
@@ -78,13 +91,13 @@ export function getPageInfo(): GitLabInfo {
     const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
-    const tranformedProjectName = applyNameTransformations(projectName, nameTransformations.value)
+    const transformedProjectName = getTransformedProjectName()
 
     return {
         owner,
-        projectName: tranformedProjectName,
-        rawRepoName: [hostname, owner, tranformedProjectName].join('/'),
-        repoName: projectFullName, // original (untranformed) repo name to be use in GitLab API calls
+        projectName: transformedProjectName,
+        rawRepoName: [hostname, owner, transformedProjectName].join('/'),
+        repoName: projectFullName, // original (untransformed) repo name to be use in GitLab API calls
         pageKind,
     }
 }
