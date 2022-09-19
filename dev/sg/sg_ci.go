@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -257,7 +256,7 @@ sg ci build --help
 				}
 				return std.Out.WriteCode("yaml", out)
 			default:
-				return errors.Newf("unsupported format type: %q", cmd.String("format")
+				return errors.Newf("unsupported format type: %q", cmd.String("format"))
 			}
 		},
 	}, {
