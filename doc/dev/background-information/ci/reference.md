@@ -50,6 +50,10 @@ The default run type.
   - **Linters and static analysis**: Run sg lint
   - Upload build trace
 
+- Pipeline for `ExecutorVMImage` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
   - Upload build trace
