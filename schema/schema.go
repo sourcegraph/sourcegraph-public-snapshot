@@ -66,6 +66,16 @@ type ApiRatelimit struct {
 	PerUser int `json:"perUser"`
 }
 
+// AuditLog description: EXPERIMENTAL: Audit Log
+type AuditLog struct {
+	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
+	GitserverAccess bool `json:"gitserverAccess"`
+	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
+	GraphQL bool `json:"graphQL"`
+	// SecurityEvents description: Capture security events as part of the audit log.
+	SecurityEvents bool `json:"securityEvents"`
+}
+
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
@@ -595,6 +605,8 @@ type ExperimentalFeatures struct {
 	AndOrQuery string `json:"andOrQuery,omitempty"`
 	// ApidocsSearchIndexing description: Deprecated.
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
+	// AuditLog description: EXPERIMENTAL: Audit Log
+	AuditLog *AuditLog `json:"auditLog,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
