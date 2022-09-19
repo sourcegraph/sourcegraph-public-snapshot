@@ -22,7 +22,7 @@ Some stepwise upgrade notes have multi-version considerations.
 - **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
     - If you are using an external database, follow the [upgrade instructions](../postgres#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
     - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
-- **Upgrades crossing 3.26 -> 3.27** will require a deprecation of TimescaleDB for codeinsights. This should not require special treatment from the user: the old `codeinsights-db` image is compatible with Postgres 12. This datababase's image should be updated with the rest of the instance after the migrator has ran successfully.
+- **Upgrades crossing 3.26 -> 3.27** will require a deprecation of TimescaleDB for codeinsights. This should not require special treatment from the user: the old `codeinsights-db` image is compatible with Postgres 12. This database's image should be updated with the rest of the instance after the migrator has ran successfully.
 - **Upgrades crossing 3.20 -> 3.21** wil require a new `codeintel-db` database. This database should be added to the instance prior to starting the upgrade procedure.
 
 
