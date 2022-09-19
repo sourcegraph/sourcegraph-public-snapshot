@@ -82,7 +82,7 @@ func TestAggregations(t *testing.T) {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
@@ -102,6 +102,7 @@ func TestAggregations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	removeExternalServiceAfterTest(t, esID)
 
 	err = client.WaitForReposToBeCloned(
 		"sgtest/go-diff",
