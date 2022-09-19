@@ -622,26 +622,25 @@ AND NOT EXISTS (
 // GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
 // on the changeset spec columns. It respects the actor in the context for repo
 // permissions.
-func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, changed, deleted int64, err error) {
+func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, deleted int64, err error) {
 	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
-		return 0, 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
+		return 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
 	}
 
 	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id, authzConds)
 	row := s.QueryRow(ctx, q)
-	err = row.Scan(&added, &deleted, &changed)
-	return added, deleted, changed, err
+	err = row.Scan(&added, &deleted)
+	return added, deleted, err
 }
 
 const getTotalDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changeset_specs
