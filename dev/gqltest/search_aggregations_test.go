@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"testing"
 )
@@ -76,42 +76,96 @@ func TestModeAvailability(t *testing.T) {
 }
 
 func TestAggregations(t *testing.T) {
-	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
-	}
+	//if len(*githubToken) == 0 {
+	//	t.Skip("Environment variable GITHUB_TOKEN is not set")
+	//}
+	//
+	//_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	//	Kind:        extsvc.KindGitHub,
+	//	DisplayName: "gqltest-github-search",
+	//	Config: mustMarshalJSONString(struct {
+	//		URL                   string   `json:"url"`
+	//		Token                 string   `json:"token"`
+	//		Repos                 []string `json:"repos"`
+	//		RepositoryPathPattern string   `json:"repositoryPathPattern"`
+	//	}{
+	//		URL:   "https://ghe.sgdev.org/",
+	//		Token: *githubToken,
+	//		Repos: []string{
+	//			"sgtest/mux",
+	//		},
+	//		RepositoryPathPattern: "github.com/{nameWithOwner}",
+	//	}),
+	//})
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//err = client.WaitForReposToBeCloned(
+	//	"sgtest/mux",
+	//)
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//err = client.WaitForReposToBeIndexed(
+	//	"sgtest/mux",
+	//)
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
-			Repos: []string{
-				"sgtest/mux",
-			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
-		}),
+	t.Run("finds default mode if not specified", func(t *testing.T) {
+		args := gqltestutil.AggregationArgs{
+			Query:       `(\w+) query`,
+			PatternType: "regexp",
+		}
+		resp, err := client.Aggregations(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Reason != "" {
+			t.Errorf("Expected to work, got %q", resp.Reason)
+		}
+		if resp.Mode != "CAPTURE_GROUP" {
+			t.Errorf("Expected to default to CAPTURE_GROUP, got %v", resp.Mode)
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	err = client.WaitForReposToBeCloned(
-		"sgtest/mux",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("returns unavailable for unavailable mode for query", func(t *testing.T) {
+		mode := "CAPTURE_GROUP"
+		args := gqltestutil.AggregationArgs{
+			Query:       `(\w+) query`,
+			PatternType: "literal",
+			Mode:        &mode,
+		}
+		resp, err := client.Aggregations(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Reason == "" {
+			t.Error("Expected reason unavailable, got empty")
+		}
+		fmt.Println(resp.Reason)
+	})
 
-	err = client.WaitForReposToBeIndexed(
-		"sgtest/mux",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("returns results", func(t *testing.T) {
+		t.Skip("for now")
+		mode := "CAPTURE_GROUP"
+		args := gqltestutil.AggregationArgs{
+			Query:       `repo:^github\.com/sgtest/mux$ (\w+)\s*middleware lang:go -file:test`,
+			PatternType: "regexp",
+			Mode:        &mode,
+		}
+		resp, err := client.Aggregations(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Reason != "" {
+			t.Errorf("Expected to work, got %q", resp.Reason)
+		}
+		if resp.Mode != "CAPTURE_GROUP" {
+			t.Errorf("Expected to default to CAPTURE_GROUP, got %v", resp.Mode)
+		}
+	})
 }
