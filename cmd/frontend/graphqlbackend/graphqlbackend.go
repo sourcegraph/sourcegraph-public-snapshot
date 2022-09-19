@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -614,7 +615,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
 	}
 
-	if repo.CloneStatus == "cloning" {
+	if repo.CloneStatus == types.CloneStatusCloning {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot reclone repository %d: busy cloning", repo.RepoID))
 	}
 
@@ -649,8 +650,8 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
 	}
 
-	if repo.CloneStatus == "cloning" {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot reclone repository %d: busy cloning", repo.RepoID))
+	if repo.CloneStatus == types.CloneStatusCloning {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
 	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
