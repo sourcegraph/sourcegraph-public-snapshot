@@ -943,7 +943,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
   - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
       - gitserver
       - indexed-search
-1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the migrator is invoked as a Kubernetes job (a short-lived container) using the same Kubernetes cluster and using environment variables indicating the instance's databases.
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the migrator is invoked as a [Kubernetes job](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml) (a short-lived container) using the same Kubernetes cluster and using environment variables indicating the instance's databases.
 1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Kubernetes with Helm](#standard-upgrades).
 
 ### Rollback
