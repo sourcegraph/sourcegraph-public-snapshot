@@ -154,7 +154,7 @@ func migrationPath(schemaName, rev string) (string, error) {
 	return filepath.Join("migrations", schemaName), nil
 }
 
-// tagRevToBranch attempts to determine the branch on which teh given rev, assumed to be a tag of the
+// tagRevToBranch attempts to determine the branch on which the given rev, assumed to be a tag of the
 // form vX.Y.Z, belongs. This is used to support generation of stitched migrations after a branch cut
 // but before the tagged commit is created.
 func tagRevToBranch(rev string) (string, bool) {
