@@ -9,13 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
-	generic "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,7 +24,7 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 func NewUploadHandler(
 	db database.DB,
-	dbStore generic.DBStore[UploadMetadata],
+	dbStore uploadhandler.DBStore[UploadMetadata],
 	uploadStore uploadstore.Store,
 	internal bool,
 	authValidators auth.AuthValidatorMap,
@@ -58,7 +58,7 @@ func NewUploadHandler(
 		}, 0, nil
 	}
 
-	handler := generic.NewUploadHandler(
+	handler := uploadhandler.NewUploadHandler(
 		logger,
 		dbStore,
 		uploadStore,

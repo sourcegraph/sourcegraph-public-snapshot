@@ -1,4 +1,4 @@
-package generic
+package uploadhandler
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploa
 	}
 
 	h.logger.Info(
-		"uploadutil.http: enqueued upload",
+		"uploadhandler: enqueued upload",
 		sglog.Int("id", id),
 	)
 

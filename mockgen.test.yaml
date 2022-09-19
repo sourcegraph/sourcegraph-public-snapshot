@@ -34,11 +34,11 @@
   interfaces:
     - githubClient
 - filename: enterprise/cmd/frontend/internal/codeintel/httpapi/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic
+  path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
-- filename: enterprise/cmd/frontend/internal/codeintel/httpapi/generic/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic
+- filename: internal/uploadhandler/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
 - filename: enterprise/cmd/frontend/internal/codeintel/httpapi/auth/mocks_test.go

@@ -3,8 +3,8 @@ package httpapi
 import (
 	"context"
 
-	generic "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
 type UploadMetadata struct {
@@ -20,7 +20,7 @@ type DBStoreShim struct {
 	*dbstore.Store
 }
 
-func (s *DBStoreShim) Transact(ctx context.Context) (generic.DBStore[UploadMetadata], error) {
+func (s *DBStoreShim) Transact(ctx context.Context) (uploadhandler.DBStore[UploadMetadata], error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (s *DBStoreShim) Transact(ctx context.Context) (generic.DBStore[UploadMetad
 	return &DBStoreShim{tx}, nil
 }
 
-func (s *DBStoreShim) InsertUpload(ctx context.Context, upload generic.Upload[UploadMetadata]) (int, error) {
+func (s *DBStoreShim) InsertUpload(ctx context.Context, upload uploadhandler.Upload[UploadMetadata]) (int, error) {
 	var associatedIndexID *int
 	if upload.Metadata.AssociatedIndexID != 0 {
 		associatedIndexID = &upload.Metadata.AssociatedIndexID
@@ -51,16 +51,16 @@ func (s *DBStoreShim) InsertUpload(ctx context.Context, upload generic.Upload[Up
 	})
 }
 
-func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (generic.Upload[UploadMetadata], bool, error) {
+func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (uploadhandler.Upload[UploadMetadata], bool, error) {
 	upload, ok, err := s.Store.GetUploadByID(ctx, uploadID)
 	if err != nil {
-		return generic.Upload[UploadMetadata]{}, false, err
+		return uploadhandler.Upload[UploadMetadata]{}, false, err
 	}
 	if !ok {
-		return generic.Upload[UploadMetadata]{}, false, nil
+		return uploadhandler.Upload[UploadMetadata]{}, false, nil
 	}
 
-	u := generic.Upload[UploadMetadata]{
+	u := uploadhandler.Upload[UploadMetadata]{
 		ID:               upload.ID,
 		State:            upload.State,
 		NumParts:         upload.NumParts,

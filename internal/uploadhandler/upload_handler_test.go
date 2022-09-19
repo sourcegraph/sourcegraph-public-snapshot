@@ -1,4 +1,4 @@
-package generic
+package uploadhandler
 
 import (
 	"bytes"
@@ -420,10 +420,6 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusBadRequest, w.Code)
 	}
 }
-
-//
-///
-//
 
 type testUploadMetadata struct {
 	RepositoryID      int

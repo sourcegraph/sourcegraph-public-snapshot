@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package generic
+package uploadhandler
 
 import (
 	"context"
@@ -12,9 +12,8 @@ import (
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic)
-// used for unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/uploadhandler) used
+// for unit testing.
 type MockDBStore[T interface{}] struct {
 	// AddUploadPartFunc is an instance of a mock function object
 	// controlling the behavior of the method AddUploadPart.

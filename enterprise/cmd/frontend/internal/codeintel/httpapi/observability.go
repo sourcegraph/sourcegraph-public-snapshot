@@ -3,13 +3,13 @@ package httpapi
 import (
 	"fmt"
 
-	generic "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
 type Operations struct {
-	*generic.Operations
+	*uploadhandler.Operations
 	authMiddleware *observation.Operation
 }
 
@@ -30,7 +30,7 @@ func NewOperations(observationContext *observation.Context) *Operations {
 	}
 
 	return &Operations{
-		Operations:     generic.NewOperations(observationContext),
+		Operations:     uploadhandler.NewOperations(observationContext),
 		authMiddleware: op("authMiddleware"),
 	}
 }

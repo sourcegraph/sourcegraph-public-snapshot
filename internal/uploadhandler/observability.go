@@ -1,4 +1,4 @@
-package generic
+package uploadhandler
 
 import (
 	"fmt"
@@ -18,14 +18,14 @@ type Operations struct {
 func NewOperations(observationContext *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"uploadutil_http",
+		"uploadhandler",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("uploadutil.http.%s", name),
+			Name:              fmt.Sprintf("uploadhandler.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})

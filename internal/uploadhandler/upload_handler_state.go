@@ -1,4 +1,4 @@
-package generic
+package uploadhandler
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package generic
+package uploadhandler
 
 import (
 	"bytes"
@@ -105,7 +105,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 	}()
 	if err != nil {
 		if statusCode >= 500 {
-			h.logger.Error("uploadutil.http: failed to enqueue payload", sglog.Error(err))
+			h.logger.Error("uploadhandler: failed to enqueue payload", sglog.Error(err))
 		}
 
 		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), statusCode)
@@ -120,7 +120,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		h.logger.Error("uploadutil.http: failed to serialize result", sglog.Error(err))
+		h.logger.Error("uploadhandler: failed to serialize result", sglog.Error(err))
 		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -129,7 +129,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusAccepted)
 
 	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {
-		h.logger.Error("uploadutil.http: failed to write payload to client", sglog.Error(err))
+		h.logger.Error("uploadhandler: failed to write payload to client", sglog.Error(err))
 	}
 }
 
