@@ -215,7 +215,7 @@ export const mockStep = (
     __typename: 'BatchSpecWorkspaceStep',
     cachedResultFound: false,
     container: 'ubuntu:18.04',
-    diffStat: { __typename: 'DiffStat', added: 10, changed: 5, deleted: 5 },
+    diffStat: { __typename: 'DiffStat', added: 15, deleted: 10 },
     environment: [],
     exitCode: 0,
     finishedAt: subMinutes(now, 1).toISOString(),
@@ -259,7 +259,7 @@ export const mockWorkspace = (
                     url: '/github.com/sourcegraph-testing/batch-changes-test-repo',
                 },
                 body: 'My first batch change!',
-                diffStat: { __typename: 'DiffStat', added: 100, changed: 50, deleted: 90 },
+                diffStat: { __typename: 'DiffStat', added: 150, deleted: 140 },
                 headRef: 'hello-world',
                 published: null,
                 title: 'Hello World',
@@ -270,7 +270,7 @@ export const mockWorkspace = (
             __typename: 'VisibleChangesetSpec',
         },
     ],
-    diffStat: { __typename: 'DiffStat', added: 100, changed: 50, deleted: 90, ...workspace?.diffStat },
+    diffStat: { __typename: 'DiffStat', added: 150, deleted: 140, ...workspace?.diffStat },
     stages: {
         __typename: 'BatchSpecWorkspaceStages',
         setup: [
@@ -385,9 +385,8 @@ export const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
     state: BatchSpecWorkspaceState.COMPLETED,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 2,
-        deleted: 5,
+        added: 12,
+        deleted: 7,
     },
     placeInQueue: null,
     placeInGlobalQueue: null,

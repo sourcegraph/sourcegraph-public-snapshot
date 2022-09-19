@@ -30,7 +30,7 @@ type MockedChangesetSyncState struct {
 func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 	state := &MockedChangesetSyncState{
 		// This diff.Stat matches the testGitHubDiff below
-		DiffStat: &diff.Stat{Added: 1, Changed: 1, Deleted: 3},
+		DiffStat: &diff.Stat{Added: 2, Deleted: 4},
 
 		execReader:      gitserver.Mocks.ExecReader,
 		mockRepoLookup:  repoupdater.MockRepoLookup,
