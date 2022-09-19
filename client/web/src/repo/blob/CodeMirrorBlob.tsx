@@ -140,33 +140,37 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange) => {
-        const parameters = new URLSearchParams(locationRef.current.search)
-        let query: string | undefined
+    const navigateToUrl = props.nav
+    const onSelection = useCallback(
+        (range: SelectedLineRange) => {
+            const parameters = new URLSearchParams(locationRef.current.search)
+            let query: string | undefined
 
-        if (range?.line !== range?.endLine && range?.endLine) {
-            query = toPositionOrRangeQueryParameter({
-                range: {
-                    start: { line: range.line },
-                    end: { line: range.endLine },
-                },
-            })
-        } else if (range?.line) {
-            query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
-        }
-
-        const newSearchParameters = addLineRangeQueryParameter(parameters, query)
-        if (props.nav) {
-            props.nav(
-                historyRef.current.createHref({
-                    ...locationRef.current,
-                    search: formatSearchParameters(newSearchParameters),
+            if (range?.line !== range?.endLine && range?.endLine) {
+                query = toPositionOrRangeQueryParameter({
+                    range: {
+                        start: { line: range.line },
+                        end: { line: range.endLine },
+                    },
                 })
-            )
-        } else {
-            updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
-        }
-    }, [])
+            } else if (range?.line) {
+                query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
+            }
+
+            const newSearchParameters = addLineRangeQueryParameter(parameters, query)
+            if (navigateToUrl) {
+                navigateToUrl(
+                    historyRef.current.createHref({
+                        ...locationRef.current,
+                        search: formatSearchParameters(newSearchParameters),
+                    })
+                )
+            } else {
+                updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+            }
+        },
+        [navigateToUrl]
+    )
 
     const extensions = useMemo(
         () => [

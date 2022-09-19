@@ -231,7 +231,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     return (
         <Modal
             position="center"
-            id={styles.modal}
+            className={styles.modal}
             onDismiss={() => props.onClose()}
             aria-label="Fuzzy finder: Find file"
         >

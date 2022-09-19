@@ -10,6 +10,4 @@ import { useStorageHook } from './useStorageHook'
 export const useSessionStorage = <T>(
     key: string,
     initialValue: T
-): [T, (value: T | ((previousValue: T) => T)) => void] => {
-    return useStorageHook(window.sessionStorage, key, initialValue)
-}
+): [T, (value: T | ((previousValue: T) => T)) => void] => useStorageHook(window.sessionStorage, key, initialValue)

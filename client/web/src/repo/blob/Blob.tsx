@@ -387,6 +387,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
+    const navigateToURL = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
         useMemo(
@@ -443,12 +444,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         parameters.delete('popover')
 
                         const notBlankSpace = position && !('character' in position)
-                        if (position && props.nav) {
+                        if (position && navigateToURL) {
                             const entry: H.LocationDescriptor<unknown> = {
                                 ...location,
                                 search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
                             }
-                            props.nav(props.history.createHref(entry))
+                            navigateToURL(props.history.createHref(entry))
                         } else if (position && (props.navigateToLineOnAnyClick || notBlankSpace)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
@@ -462,7 +463,14 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
+            [
+                codeViewElements,
+                hoverifier.hoverState.selectedPosition,
+                location,
+                props.history,
+                props.navigateToLineOnAnyClick,
+                navigateToURL,
+            ]
         )
     )
 
@@ -799,26 +807,28 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
-    if (props.navigateToLineOnAnyClick) {
-        // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickab.e
-        useLayoutEffect(() => {
-            const subscription = codeViewElements.subscribe(codeView => {
-                if (codeView) {
-                    const table = codeView.firstElementChild as HTMLTableElement
-                    for (const row of table.rows) {
-                        if (row.cells.length === 0) {
-                            continue
-                        }
-                        row.className = styles.clickableRow
-                    }
-                }
-            })
+    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickab.e
+    useLayoutEffect(() => {
+        if (!props.navigateToLineOnAnyClick) {
+            return
+        }
 
-            return () => {
-                subscription.unsubscribe()
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                for (const row of table.rows) {
+                    if (row.cells.length === 0) {
+                        continue
+                    }
+                    row.className = styles.clickableRow
+                }
             }
-        }, [codeViewElements])
-    }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements, props.navigateToLineOnAnyClick])
 
     const logEventOnCopy = useCallback(() => {
         props.telemetryService.log(...codeCopiedEvent('blob'))

@@ -31,7 +31,7 @@ export const useStorageHook = <T>(
             storage.setItem(key, JSON.stringify(valueToStore))
             setStoredValue(valueToStore)
         },
-        [key]
+        [storage, key]
     )
 
     return [storedValue, setValue]

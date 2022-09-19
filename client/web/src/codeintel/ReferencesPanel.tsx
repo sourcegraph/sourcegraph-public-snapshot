@@ -6,7 +6,6 @@ import * as H from 'history'
 import { capitalize } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 
-import { Position } from '@sourcegraph/extension-api-classes'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
@@ -16,6 +15,7 @@ import {
     pluralize,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
@@ -295,21 +295,21 @@ export const ReferencesList: React.FunctionComponent<
 
     // This is the history of the panel, that is inside a memory router
     // const panelHistory = useHistory()
-    const [activeUrl, setActiveUrl] = useSessionStorage<string | undefined>(
+    const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + localStorageKeyFromToken(props.token),
         undefined
     )
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const setActiveLocation = (location: Location | undefined): void => {
-        setActiveUrl(location?.url)
+        setActiveURL(location?.url)
     }
 
-    const sideblob = useMemo(() => parseSideBlobProps(activeUrl), [activeUrl])
+    const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
 
-    if (activeUrl) {
+    if (activeURL) {
         // NOTE(olafurpg) I tried wrapping this step inside `useEffect()` but it stopped working.
-        panelHistory.replace(activeUrl)
+        panelHistory.replace(activeURL)
     }
 
     const isActiveLocation = (location: Location): boolean =>
@@ -326,9 +326,9 @@ export const ReferencesList: React.FunctionComponent<
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            setActiveUrl(definitions[0].url)
+            setActiveURL(definitions[0].url)
         }
-    }, [panelHistory, props.jumpToFirst, definitions])
+    }, [panelHistory, props.jumpToFirst, definitions, setActiveURL])
 
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
@@ -340,7 +340,7 @@ export const ReferencesList: React.FunctionComponent<
     // useEffect(
     //     () =>
     //         panelHistory.listen(location => {
-    //             setActiveUrl(panelHistory.createHref(location))
+    //             setActiveURL(panelHistory.createHref(location))
     //         }),
     //     [history]
     // )
@@ -356,7 +356,7 @@ export const ReferencesList: React.FunctionComponent<
     // '?jumpToFirst=true' causes the panel to select the first reference and
     // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        setActiveUrl(url)
+        setActiveURL(url)
         props.externalHistory.push(url)
     }
 
@@ -492,10 +492,10 @@ export const ReferencesList: React.FunctionComponent<
                                 </Button>
                             </Tooltip>
                             <Link
-                                to={activeUrl || ''}
+                                to={activeURL || ''}
                                 // onClick={event => {
                                 //     event.preventDefault()
-                                //     navigateToUrl(sideblob.activeUrl)
+                                //     navigateToUrl(sideblob.activeURL)
                                 // }}
                                 className={styles.sideBlobFilename}
                             >
@@ -624,13 +624,13 @@ interface SideBlobProps extends ReferencesPanelProps {
 }
 
 function parseSideBlobProps(
-    activeUrl: string | undefined
+    activeURL: string | undefined
 ): Pick<SideBlobProps, 'repository' | 'commitID' | 'file' | 'position'> | undefined {
-    if (!activeUrl) {
+    if (!activeURL) {
         return undefined
     }
     try {
-        const url = parseBrowserRepoURL(activeUrl)
+        const url = parseBrowserRepoURL(activeURL)
         if (!url.repoName || !url.filePath) {
             return undefined
         }
@@ -638,9 +638,9 @@ function parseSideBlobProps(
         const position = url.position
             ? new Position(Math.max(url.position.line - 1), Math.max(0, url.position.character - 1))
             : undefined
-        return { repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position: position }
+        return { repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
     } catch (error) {
-        console.error(`failed to parse activeURL ${activeUrl}`, error)
+        console.error(`failed to parse activeURL ${activeURL}`, error)
         return undefined
     }
 }

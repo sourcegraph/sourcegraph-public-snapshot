@@ -7,9 +7,5 @@ import { useStorageHook } from './useStorageHook'
  * @param initialValue The initial value to use when there is no value in localStorage for the key.
  * @returns A getter and setter for the value (`const [foo, setFoo] = useLocalStorage('key', 123)`).
  */
-export const useLocalStorage = <T>(
-    key: string,
-    initialValue: T
-): [T, (value: T | ((previousValue: T) => T)) => void] => {
-    return useStorageHook(window.localStorage, key, initialValue)
-}
+export const useLocalStorage = <T>(key: string, initialValue: T): [T, (value: T | ((previousValue: T) => T)) => void] =>
+    useStorageHook(window.localStorage, key, initialValue)
