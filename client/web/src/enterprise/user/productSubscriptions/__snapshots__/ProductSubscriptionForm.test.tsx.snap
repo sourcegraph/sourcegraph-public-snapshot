@@ -76,7 +76,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             class="form-group mt-3"
           >
             <button
-              class="btn btnSecondary btnVariant btnNormal btnLg w-100 d-flex align-items-center justify-content-center"
+              class="btn btnSecondary btnLg w-100 d-flex align-items-center justify-content-center"
               disabled=""
               type="submit"
             >
@@ -152,7 +152,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             class="form-group mt-3"
           >
             <a
-              class="anchorLink btn btnPrimary btnVariant btnNormal btnLg w-100 center"
+              class="anchorLink btn btnPrimary btnLg w-100 center"
               href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
             >
               Create account or sign in to continue
@@ -183,7 +183,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             class="form-group mt-3"
           >
             <button
-              class="btn btnSecondary btnVariant btnNormal btnLg w-100 d-flex align-items-center justify-content-center"
+              class="btn btnSecondary btnLg w-100 d-flex align-items-center justify-content-center"
               disabled=""
               type="submit"
             >
@@ -269,7 +269,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             class="form-group mt-3"
           >
             <button
-              class="btn btnSecondary btnVariant btnNormal btnLg w-100 d-flex align-items-center justify-content-center"
+              class="btn btnSecondary btnLg w-100 d-flex align-items-center justify-content-center"
               disabled=""
               type="submit"
             >

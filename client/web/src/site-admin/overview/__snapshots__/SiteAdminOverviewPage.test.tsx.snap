@@ -125,7 +125,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
               class="h3"
             >
               <a
-                class="anchorLink btn btnSecondary btnVariant btnNormal"
+                class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
                 View all usage statistics 

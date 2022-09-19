@@ -25,7 +25,7 @@ exports[`Button Renders size 'sm' correctly 1`] = `
 exports[`Button Renders variant 'danger' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnDanger btnVariant btnNormal"
+    class="btn btnDanger"
     type="button"
   >
     Hello world
@@ -47,7 +47,7 @@ exports[`Button Renders variant 'icon' correctly 1`] = `
 exports[`Button Renders variant 'info' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnInfo btnVariant btnNormal"
+    class="btn btnInfo"
     type="button"
   >
     Hello world
@@ -69,7 +69,7 @@ exports[`Button Renders variant 'link' correctly 1`] = `
 exports[`Button Renders variant 'merged' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnMerged btnVariant btnNormal"
+    class="btn btnMerged"
     type="button"
   >
     Hello world
@@ -80,7 +80,7 @@ exports[`Button Renders variant 'merged' correctly 1`] = `
 exports[`Button Renders variant 'primary' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnPrimary btnVariant btnNormal"
+    class="btn btnPrimary"
     type="button"
   >
     Hello world
@@ -91,7 +91,7 @@ exports[`Button Renders variant 'primary' correctly 1`] = `
 exports[`Button Renders variant 'secondary' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnSecondary btnVariant btnNormal"
+    class="btn btnSecondary"
     type="button"
   >
     Hello world
@@ -102,7 +102,7 @@ exports[`Button Renders variant 'secondary' correctly 1`] = `
 exports[`Button Renders variant 'success' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnSuccess btnVariant btnNormal"
+    class="btn btnSuccess"
     type="button"
   >
     Hello world
@@ -113,7 +113,7 @@ exports[`Button Renders variant 'success' correctly 1`] = `
 exports[`Button Renders variant 'warning' correctly 1`] = `
 <DocumentFragment>
   <button
-    class="btn btnWarning btnVariant btnNormal"
+    class="btn btnWarning"
     type="button"
   >
     Hello world

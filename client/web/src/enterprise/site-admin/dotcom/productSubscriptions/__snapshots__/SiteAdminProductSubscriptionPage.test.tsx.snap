@@ -37,7 +37,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-3"
     >
       <button
-        class="btn btnDanger btnVariant btnNormal"
+        class="btn btnDanger"
         type="button"
       >
         Archive
@@ -132,7 +132,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="d-flex align-items-center"
                 >
                   <button
-                    class="btn btnSecondary btnVariant btnNormal btnSm"
+                    class="btn btnSecondary btnSm"
                     type="button"
                   >
                     Link billing subscription
@@ -169,7 +169,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       >
         Licenses
         <button
-          class="btn btnPrimary btnVariant btnNormal btnSm"
+          class="btn btnPrimary btnSm"
           type="button"
         >
           <svg
@@ -266,7 +266,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 >
                   <button
                     aria-label="Copy"
-                    class="btn btnSecondary btnVariant btnNormal"
+                    class="btn btnSecondary"
                     type="button"
                   >
                     <svg

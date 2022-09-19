@@ -10,17 +10,8 @@ interface GetButtonStyleParameters {
     outline?: boolean
 }
 
-export const getButtonStyle = ({ variant, outline }: GetButtonStyleParameters): string => {
-    if (['link', 'icon'].includes(variant)) {
-        return styles[`btn${outline ? 'Outline' : ''}${upperFirst(variant)}` as keyof typeof styles]
-    }
-
-    return classNames(
-        styles[`btn${upperFirst(variant)}` as keyof typeof styles],
-        styles.btnVariant,
-        outline ? styles.btnOutline : styles.btnNormal
-    )
-}
+export const getButtonStyle = ({ variant, outline }: GetButtonStyleParameters): string =>
+    classNames(styles[`btn${upperFirst(variant)}` as keyof typeof styles], outline && styles.btnOutline)
 
 interface GetButtonSizeParameters {
     size: typeof BUTTON_SIZES[number]
