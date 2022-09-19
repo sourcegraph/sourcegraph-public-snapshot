@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
@@ -177,37 +178,39 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 	return variable
 }
 
-func (c *ContainerVariable) getExampleValue() string {
+var numbers = regexp.MustCompile(`\d+`)
+
+// getSentinelValue provides an easily distuingishable sentinel example value for this
+// variable that allows a query with variables to be converted into a valid Prometheus
+// query.
+func (c *ContainerVariable) getSentinelValue() string {
+	var example string
 	switch {
 	case len(c.Options.Options) > 0:
-		return c.Options.Options[0]
+		example = c.Options.Options[0]
 	case c.OptionsQuery.Query != "":
-		return c.OptionsQuery.ExampleOption
+		example = c.OptionsQuery.ExampleOption
+	default:
+		return ""
 	}
-	return ""
+	// Scramble numerics - replace with a number that is very unlikely to conflict with
+	// some other existing number in the query, this helps us distinguish what values
+	// were replaced.
+	return numbers.ReplaceAllString(example, "1234")
 }
-
-type variableApplier struct{ vars []ContainerVariable }
-
-var _ promql.VariableApplier = &variableApplier{}
 
 func newVariableApplier(vars []ContainerVariable) promql.VariableApplier {
-	return &variableApplier{
-		vars: append(vars,
-			// Make sure default Grafana variables are applied too
-			ContainerVariable{
-				Name: "__rate_interval",
-				Options: ContainerVariableOptions{
-					Options: []string{"123m"},
-				},
-			}),
+	applier := promql.VariableApplier{}
+	for _, v := range append(vars,
+		// Make sure default Grafana variables are applied too.
+		ContainerVariable{
+			// https://grafana.com/docs/grafana/latest/datasources/prometheus/#using-__rate_interval
+			Name: "__rate_interval",
+			Options: ContainerVariableOptions{
+				Options: []string{"123m"},
+			},
+		}) {
+		applier[v.Name] = v.getSentinelValue()
 	}
-}
-
-func (a *variableApplier) ApplyDefaults(expression string) string {
-	for _, v := range a.vars {
-		example := v.getExampleValue()
-		expression = strings.ReplaceAll(expression, "$"+v.Name, example)
-	}
-	return expression
+	return applier
 }

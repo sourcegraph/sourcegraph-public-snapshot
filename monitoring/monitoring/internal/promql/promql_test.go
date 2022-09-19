@@ -1,20 +1,8 @@
 package promql
 
 import (
-	"strings"
 	"testing"
 )
-
-type mapVariableApplier map[string]string
-
-var _ VariableApplier = &mapVariableApplier{}
-
-func (m mapVariableApplier) ApplyDefaults(expression string) string {
-	for k, def := range m {
-		expression = strings.ReplaceAll(expression, k, def)
-	}
-	return expression
-}
 
 func TestValidate(t *testing.T) {
 	for _, tc := range []struct {
@@ -30,17 +18,20 @@ func TestValidate(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name:       "invalid expression",
-			expression: "foobar{foo=$var}", // $variable is not valid promql
+			name:       "valid variable expression",
+			expression: `foobar{foo="$var"}`, // "$variable" is valid promql
+			wantErr:    false,
+		},
+		{
+			name:       "invalid variable expression",
+			expression: `foobar[$time]`, // not valid promql
 			wantErr:    true,
 		},
 		{
 			name:       "invalid expression fixed by vars",
-			expression: "foobar{foo=$var}", // $variable is not valid promql
-			vars: mapVariableApplier{
-				"$var": "'bar'",
-			},
-			wantErr: false,
+			expression: `foobar[$time]`, // not valid promql
+			vars:       VariableApplier{"time": "1m"},
+			wantErr:    false,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
