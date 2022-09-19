@@ -109,7 +109,7 @@ func runMigration(
 	runnerFactory RunnerFactoryWithSchemas,
 	plan migrationPlan,
 	privilegedMode runner.PrivilegedMode,
-	privilegedHash string,
+	privilegedHashes []string,
 	skipVersionCheck bool,
 	skipDriftCheck bool,
 	dryRun bool,
@@ -177,9 +177,17 @@ func runMigration(
 			}
 
 			if err := r.Run(ctx, runner.Options{
-				Operations:             operations,
-				PrivilegedMode:         privilegedMode,
-				PrivilegedHash:         privilegedHash,
+				Operations:     operations,
+				PrivilegedMode: privilegedMode,
+				MatchPrivilegedHash: func(hash string) bool {
+					for _, candidate := range privilegedHashes {
+						if hash == candidate {
+							return true
+						}
+					}
+
+					return false
+				},
 				IgnoreSingleDirtyLog:   true,
 				IgnoreSinglePendingLog: true,
 			}); err != nil {
