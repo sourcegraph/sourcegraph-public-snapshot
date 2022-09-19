@@ -20,7 +20,7 @@ func NewDockerWorkspace(
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
-	workspaceDir, err := makeTempDirectory("workspace-" + strconv.Itoa(job.ID))
+	workspaceDir, err := MakeTempDirectory("workspace-" + strconv.Itoa(job.ID))
 	if err != nil {
 		return nil, err
 	}

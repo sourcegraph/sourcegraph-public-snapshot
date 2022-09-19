@@ -137,7 +137,7 @@ func setupLoopDevice(
 	}()
 
 	// Create a temp file to hold the block device on disk.
-	tempFile, err := makeTempFile("workspace-loop-" + strconv.Itoa(jobID))
+	tempFile, err := MakeTempFile("workspace-loop-" + strconv.Itoa(jobID))
 	if err != nil {
 		return "", "", "", err
 	}
@@ -214,7 +214,7 @@ func detachLoopDevice(ctx context.Context, blockDevice string) error {
 // mountLoopDevice takes a path to a loop device (/dev/loopX) and mounts it at a
 // random temporary mount point. The mount point is returned.
 func mountLoopDevice(ctx context.Context, blockDevice string) (string, error) {
-	tmpMountDir, err := makeTempDirectory("workspace-mountpoints")
+	tmpMountDir, err := MakeTempDirectory("workspace-mountpoints")
 	if err != nil {
 		return "", err
 	}

@@ -2,9 +2,9 @@ package workspace
 
 import "os"
 
-// makeTempFile defaults to makeTemporaryFile and can be replaced for testing
+// MakeTempFile defaults to makeTemporaryFile and can be replaced for testing
 // with determinstic workspace/scripts directories.
-var makeTempFile = makeTemporaryFile
+var MakeTempFile = makeTemporaryFile
 
 func makeTemporaryFile(prefix string) (*os.File, error) {
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
@@ -17,11 +17,11 @@ func makeTemporaryFile(prefix string) (*os.File, error) {
 	return os.CreateTemp("", prefix+"-*")
 }
 
-// makeTempDirectory defaults to makeTemporaryDirectory and can be replaced for testing
+// MakeTempDirectory defaults to makeTemporaryDirectory and can be replaced for testing
 // with determinstic workspace/scripts directories.
-var makeTempDirectory = makeTemporaryDirectory
+var MakeTempDirectory = MakeTemporaryDirectory
 
-func makeTemporaryDirectory(prefix string) (string, error) {
+func MakeTemporaryDirectory(prefix string) (string, error) {
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
