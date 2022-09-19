@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/hcl/strconv"
@@ -23,14 +24,14 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 		Name:      "generate",
 		ArgsUsage: "<dashboard>",
 		UsageText: fmt.Sprintf(`
-# Generate all dashboards with default configuration
-%[1]s generate
+# Generate all monitoring with default configuration into a temporary directory
+%[1]s generate -all.dir /tmp/monitoring
 
 # Generate and reload local instances of Grafana, Prometheus, etc.
 %[1]s generate -reload
 
-# Render dashboards in a custom directory
-%[1]s generate -grafana.dir /tmp/my-dashboards
+# Render dashboards in a custom directory, and disable rendering of docs
+%[1]s generate -grafana.dir /tmp/my-dashboards -docs.dir ''
 `, cmdRoot),
 		Usage: "Generate monitoring assets - dashboards, alerts, and more",
 		// Flags should correspond to monitoring.GenerateOpts
@@ -45,6 +46,12 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				EnvVars: []string{"RELOAD"},
 				Usage:   "Trigger reload of active Prometheus or Grafana instance (requires respective output directories)",
 			},
+
+			&cli.StringFlag{
+				Name:  "all.dir",
+				Usage: "Override all other '-*.dir' directories",
+			},
+
 			&cli.StringFlag{
 				Name:    "grafana.dir",
 				EnvVars: []string{"GRAFANA_DIR"},
@@ -153,10 +160,18 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				}(),
 			}
 
-			if expandErr != nil {
+			// If 'all.dir' is set, override all other '*.dir' flags and ignore expansion
+			// errors.
+			if allDir := c.String("all.dir"); allDir != "" {
+				logger.Info("overriding all directory flags with 'all.dir'", log.String("all.dir", allDir))
+				options.GrafanaDir = filepath.Join(allDir, "grafana")
+				options.PrometheusDir = filepath.Join(allDir, "prometheus")
+				options.DocsDir = filepath.Join(allDir, "docs")
+			} else if expandErr != nil {
 				return expandErr
 			}
 
+			// Decide which dashboards to generate
 			var dashboards definitions.Dashboards
 			if c.Args().Len() == 0 {
 				dashboards = definitions.Default()

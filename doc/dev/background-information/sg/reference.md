@@ -942,18 +942,19 @@ Also refer to the generated reference documentation available for site admins:
 Generate monitoring assets - dashboards, alerts, and more.
 
 ```sh
-# Generate all dashboards with default configuration
-$ sg monitoring generate
+# Generate all monitoring with default configuration into a temporary directory
+$ sg monitoring generate -all.dir /tmp/monitoring
 
 # Generate and reload local instances of Grafana, Prometheus, etc.
 $ sg monitoring generate -reload
 
-# Render dashboards in a custom directory
-$ sg monitoring generate -grafana.dir /tmp/my-dashboards
+# Render dashboards in a custom directory, and disable rendering of docs
+$ sg monitoring generate -grafana.dir /tmp/my-dashboards -docs.dir ''
 ```
 
 Flags:
 
+* `--all.dir="<value>"`: Override all other '-*.dir' directories
 * `--docs.dir="<value>"`: Output directory for generated documentation (default: $SG_ROOT/doc/admin/observability/)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
