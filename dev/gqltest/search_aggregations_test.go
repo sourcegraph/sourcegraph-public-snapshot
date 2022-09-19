@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
 func TestModeAvailability(t *testing.T) {
@@ -93,7 +94,7 @@ func TestAggregations(t *testing.T) {
 			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
-				"sgtest/mux",
+				"sgtest/go-diff",
 			},
 			RepositoryPathPattern: "github.com/{nameWithOwner}",
 		}),
@@ -103,14 +104,14 @@ func TestAggregations(t *testing.T) {
 	}
 
 	err = client.WaitForReposToBeCloned(
-		"sgtest/mux",
+		"sgtest/go-dff",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = client.WaitForReposToBeIndexed(
-		"sgtest/mux",
+		"sgtest/go-diff",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -152,7 +153,7 @@ func TestAggregations(t *testing.T) {
 	t.Run("returns results", func(t *testing.T) {
 		mode := "CAPTURE_GROUP"
 		args := gqltestutil.AggregationArgs{
-			Query:       `repo:^github\.com/sgtest/mux$ (\w+)\s*mux lang:go -file:test`,
+			Query:       `(\w+) main lang:go`,
 			PatternType: "regexp",
 			Mode:        &mode,
 		}
@@ -172,7 +173,7 @@ func TestAggregations(t *testing.T) {
 				t.Fatalf("Got unexpected unavailable reason: %v", resp.Reason)
 			}
 			// We don't assert on the results because these could change, but we want to get some.
-			// However, the query is for `mux`, given the repo we should always get at least *one* result.
+			// However, the query is for `main`, given the go repo we should always get at least *one* result.
 			if len(resp.Groups) == 0 {
 				t.Error("Did not get any results")
 			}
