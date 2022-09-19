@@ -208,6 +208,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	}
 
 	// Clean up dangling assets
+	logger.Info("generated assets", log.Strings("files", generatedAssets))
 	if !opts.DisablePrune {
 		logger.Debug("Pruning dangling assets")
 		if err := pruneAssets(logger, generatedAssets, opts.GrafanaDir, opts.PrometheusDir); err != nil {
