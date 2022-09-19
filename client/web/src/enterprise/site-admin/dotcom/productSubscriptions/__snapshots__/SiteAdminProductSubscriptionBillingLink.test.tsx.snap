@@ -28,7 +28,7 @@ exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
         </svg>
       </a>
       <button
-        class="btn btnSecondary btnSm"
+        class="btn btnSecondary btnVariant btnNormal btnSm"
         type="button"
       >
         Unlink
@@ -47,7 +47,7 @@ exports[`SiteAdminProductSubscriptionBillingLink no linked billing 1`] = `
       class="d-flex align-items-center"
     >
       <button
-        class="btn btnSecondary btnSm"
+        class="btn btnSecondary btnVariant btnNormal btnSm"
         type="button"
       >
         Link billing subscription

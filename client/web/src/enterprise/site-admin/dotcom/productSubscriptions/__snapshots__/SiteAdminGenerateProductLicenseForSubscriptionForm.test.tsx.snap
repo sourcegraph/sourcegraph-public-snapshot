@@ -157,7 +157,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         </small>
       </div>
       <button
-        class="btn btnPrimary"
+        class="btn btnPrimary btnVariant btnNormal"
         type="submit"
       >
         Generate license

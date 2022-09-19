@@ -118,7 +118,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               class="form-group mt-3"
             >
               <button
-                class="btn btnSecondary btnLg w-100 d-flex align-items-center justify-content-center"
+                class="btn btnSecondary btnVariant btnNormal btnLg w-100 d-flex align-items-center justify-content-center"
                 disabled=""
                 type="submit"
               >
