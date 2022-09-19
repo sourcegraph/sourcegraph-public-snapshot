@@ -16,6 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// NewFirecrackerWorkspace creates a new workspace for firecracker-based execution.
+// A block device will be created on the host disk, with an ext4 file system. It
+// is exposed through a loopback device. To set up the workspace, this device will
+// be mounted and clone the repo and put script files in it. Then, the executor
+// VM can mount this loopback device. This prevents host file system access.
 func NewFirecrackerWorkspace(
 	ctx context.Context,
 	job executor.Job,

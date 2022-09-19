@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
+// NewDockerWorkspace creates a new workspace for docker-based execution. A path on
+// the host will be used to set up the workspace, clone the repo and put script files.
 func NewDockerWorkspace(
 	ctx context.Context,
 	job executor.Job,
