@@ -48,7 +48,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -78,7 +78,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 	r.Header.Set("X-Uncompressed-Size", "21")
 
-	NewUploadHandler(
+	NewCodeIntelUploadHandler(
 		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
@@ -98,17 +98,17 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
 		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Metadata.commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.commit)
+		if call.Arg1.Metadata.Commit != testCommit {
+			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.Commit)
 		}
-		if call.Arg1.Metadata.root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.root)
+		if call.Arg1.Metadata.Root != "proj/" {
+			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.Root)
 		}
-		if call.Arg1.Metadata.repositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.repositoryID)
+		if call.Arg1.Metadata.RepositoryID != 50 {
+			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
 		}
-		if call.Arg1.Metadata.indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.indexer)
+		if call.Arg1.Metadata.Indexer != "lsif-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
 		}
 		if *call.Arg1.UncompressedSize != 21 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
@@ -138,7 +138,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -173,7 +173,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	NewUploadHandler(
+	NewCodeIntelUploadHandler(
 		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
@@ -210,7 +210,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
@@ -237,7 +237,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 	r.Header.Set("X-Uncompressed-Size", "50")
 
-	NewUploadHandler(
+	NewCodeIntelUploadHandler(
 		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
@@ -257,17 +257,17 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
 		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Metadata.commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.commit)
+		if call.Arg1.Metadata.Commit != testCommit {
+			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.Commit)
 		}
-		if call.Arg1.Metadata.root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.root)
+		if call.Arg1.Metadata.Root != "proj/" {
+			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.Root)
 		}
-		if call.Arg1.Metadata.repositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.repositoryID)
+		if call.Arg1.Metadata.RepositoryID != 50 {
+			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
 		}
-		if call.Arg1.Metadata.indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.indexer)
+		if call.Arg1.Metadata.Indexer != "lsif-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
 		}
 		if *call.Arg1.UncompressedSize != 50 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
@@ -279,10 +279,10 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload[codeintelUploadMetadata]{
+	upload := Upload[CodeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -312,7 +312,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	NewUploadHandler(
+	NewCodeIntelUploadHandler(
 		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
@@ -360,10 +360,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload[codeintelUploadMetadata]{
+	upload := Upload[CodeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
@@ -387,7 +387,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	NewUploadHandler(
+	NewCodeIntelUploadHandler(
 		database.NewDB(logger, nil),
 		mockDBStore,
 		mockUploadStore,
@@ -431,10 +431,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	upload := Upload[codeintelUploadMetadata]{
+	upload := Upload[CodeintelUploadMetadata]{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 3, 4},
@@ -456,7 +456,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler[codeintelUploadMetadata]{
+	h := &UploadHandler[CodeintelUploadMetadata]{
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
@@ -474,7 +474,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	mockDBStore := NewMockDBStore[codeintelUploadMetadata]()
+	mockDBStore := NewMockDBStore[CodeintelUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	conf.Mock(&conf.Unified{
@@ -552,7 +552,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			},
 		}
 
-		NewUploadHandler(
+		NewCodeIntelUploadHandler(
 			db,
 			mockDBStore,
 			mockUploadStore,

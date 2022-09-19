@@ -20,20 +20,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type codeintelUploadMetadata struct {
-	repositoryID      int
-	commit            string
-	root              string
-	indexer           string
-	indexerVersion    string
-	associatedIndexID int
+type CodeintelUploadMetadata struct {
+	RepositoryID      int
+	Commit            string
+	Root              string
+	Indexer           string
+	IndexerVersion    string
+	AssociatedIndexID int
 }
 
 type DBStoreShim struct {
 	*dbstore.Store
 }
 
-func (s *DBStoreShim) Transact(ctx context.Context) (DBStore[codeintelUploadMetadata], error) {
+func (s *DBStoreShim) Transact(ctx context.Context) (DBStore[CodeintelUploadMetadata], error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -42,10 +42,10 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore[codeintelUploadMeta
 	return &DBStoreShim{tx}, nil
 }
 
-func (s *DBStoreShim) InsertUpload(ctx context.Context, upload Upload[codeintelUploadMetadata]) (int, error) {
+func (s *DBStoreShim) InsertUpload(ctx context.Context, upload Upload[CodeintelUploadMetadata]) (int, error) {
 	var associatedIndexID *int
-	if upload.Metadata.associatedIndexID != 0 {
-		associatedIndexID = &upload.Metadata.associatedIndexID
+	if upload.Metadata.AssociatedIndexID != 0 {
+		associatedIndexID = &upload.Metadata.AssociatedIndexID
 	}
 
 	return s.Store.InsertUpload(ctx, dbstore.Upload{
@@ -55,50 +55,50 @@ func (s *DBStoreShim) InsertUpload(ctx context.Context, upload Upload[codeintelU
 		UploadedParts:     upload.UploadedParts,
 		UploadSize:        upload.UploadSize,
 		UncompressedSize:  upload.UncompressedSize,
-		RepositoryID:      upload.Metadata.repositoryID,
-		Commit:            upload.Metadata.commit,
-		Root:              upload.Metadata.root,
-		Indexer:           upload.Metadata.indexer,
-		IndexerVersion:    upload.Metadata.indexerVersion,
+		RepositoryID:      upload.Metadata.RepositoryID,
+		Commit:            upload.Metadata.Commit,
+		Root:              upload.Metadata.Root,
+		Indexer:           upload.Metadata.Indexer,
+		IndexerVersion:    upload.Metadata.IndexerVersion,
 		AssociatedIndexID: associatedIndexID,
 	})
 }
 
-func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (Upload[codeintelUploadMetadata], bool, error) {
+func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (Upload[CodeintelUploadMetadata], bool, error) {
 	upload, ok, err := s.Store.GetUploadByID(ctx, uploadID)
 	if err != nil {
-		return Upload[codeintelUploadMetadata]{}, false, err
+		return Upload[CodeintelUploadMetadata]{}, false, err
 	}
 	if !ok {
-		return Upload[codeintelUploadMetadata]{}, false, nil
+		return Upload[CodeintelUploadMetadata]{}, false, nil
 	}
 
-	u := Upload[codeintelUploadMetadata]{
+	u := Upload[CodeintelUploadMetadata]{
 		ID:               upload.ID,
 		State:            upload.State,
 		NumParts:         upload.NumParts,
 		UploadedParts:    upload.UploadedParts,
 		UploadSize:       upload.UploadSize,
 		UncompressedSize: upload.UncompressedSize,
-		Metadata: codeintelUploadMetadata{
-			repositoryID:   upload.RepositoryID,
-			commit:         upload.Commit,
-			root:           upload.Root,
-			indexer:        upload.Indexer,
-			indexerVersion: upload.IndexerVersion,
+		Metadata: CodeintelUploadMetadata{
+			RepositoryID:   upload.RepositoryID,
+			Commit:         upload.Commit,
+			Root:           upload.Root,
+			Indexer:        upload.Indexer,
+			IndexerVersion: upload.IndexerVersion,
 		},
 	}
 
 	if upload.AssociatedIndexID != nil {
-		u.Metadata.associatedIndexID = *upload.AssociatedIndexID
+		u.Metadata.AssociatedIndexID = *upload.AssociatedIndexID
 	}
 
 	return u, true, nil
 }
 
-func NewUploadHandler(
+func NewCodeIntelUploadHandler(
 	db database.DB,
-	dbStore DBStore[codeintelUploadMetadata],
+	dbStore DBStore[CodeintelUploadMetadata],
 	uploadStore uploadstore.Store,
 	internal bool,
 	authValidators auth.AuthValidatorMap,
@@ -108,44 +108,43 @@ func NewUploadHandler(
 		sglog.Bool("internal", internal),
 	)
 
-	handler := &UploadHandler[codeintelUploadMetadata]{
-		logger:      logger,
-		db:          db,
-		dbStore:     dbStore,
-		uploadStore: uploadStore,
-		operations:  operations,
-		metadataFromRequest: func(ctx context.Context, r *http.Request) (codeintelUploadMetadata, int, error) {
+	handler := NewUploadHandler(
+		logger,
+		dbStore,
+		uploadStore,
+		operations,
+		func(ctx context.Context, r *http.Request) (CodeintelUploadMetadata, int, error) {
 			commit := getQuery(r, "commit")
 			if !revhashPattern.Match([]byte(commit)) {
-				return codeintelUploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
+				return CodeintelUploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
 			}
 
 			// Ensure that the repository and commit given in the request are resolvable.
 			repositoryName := getQuery(r, "repository")
 			repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, logger, db, repositoryName, commit)
 			if err != nil {
-				return codeintelUploadMetadata{}, statusCode, err
+				return CodeintelUploadMetadata{}, statusCode, err
 			}
 
 			// Populate state from request
-			return codeintelUploadMetadata{
-				repositoryID:      repositoryID,
-				commit:            commit,
-				root:              sanitizeRoot(getQuery(r, "root")),
-				indexer:           getQuery(r, "indexerName"),
-				indexerVersion:    getQuery(r, "indexerVersion"),
-				associatedIndexID: getQueryInt(r, "associatedIndexId"),
+			return CodeintelUploadMetadata{
+				RepositoryID:      repositoryID,
+				Commit:            commit,
+				Root:              sanitizeRoot(getQuery(r, "root")),
+				Indexer:           getQuery(r, "indexerName"),
+				IndexerVersion:    getQuery(r, "indexerVersion"),
+				AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
 			}, 0, nil
 		},
-	}
+	)
 
 	if internal {
-		return http.HandlerFunc(handler.handleEnqueue)
+		return handler
 	}
 
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
-	return auth.AuthMiddleware(http.HandlerFunc(handler.handleEnqueue), db, authValidators, operations.authMiddleware)
+	return auth.AuthMiddleware(handler, db, authValidators, operations.authMiddleware)
 }
 
 func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db database.DB, repoName, commit string) (int, int, error) {

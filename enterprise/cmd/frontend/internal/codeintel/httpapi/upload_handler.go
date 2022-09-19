@@ -12,20 +12,35 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type UploadHandler[T any] struct {
-	logger      sglog.Logger
-	db          database.DB
-	dbStore     DBStore[T]
-	uploadStore uploadstore.Store
-	operations  *Operations
-
+	logger              sglog.Logger
+	dbStore             DBStore[T]
+	uploadStore         uploadstore.Store
+	operations          *Operations
 	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
+}
+
+func NewUploadHandler[T any](
+	logger sglog.Logger,
+	dbStore DBStore[T],
+	uploadStore uploadstore.Store,
+	operations *Operations,
+	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error),
+) http.Handler {
+	handler := &UploadHandler[T]{
+		logger:              logger,
+		dbStore:             dbStore,
+		uploadStore:         uploadStore,
+		operations:          operations,
+		metadataFromRequest: metadataFromRequest,
+	}
+
+	return http.HandlerFunc(handler.handleEnqueue)
 }
 
 var errUnprocessableRequest = errors.New("unprocessable request: missing expected query arguments (uploadId, index, or done)")
