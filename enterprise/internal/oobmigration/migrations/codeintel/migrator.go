@@ -65,7 +65,7 @@ type migratorOptions struct {
 	batchSize int
 
 	// numRoutines is the maximum number of routines that can run at once on invocation of the
-	// mgirator's Up or Down methods. If zero, a number of routines proportional to available
+	// migrator's Up or Down methods. If zero, a number of routines equal to the number of available
 	// CPUs will be used.
 	numRoutines int
 
