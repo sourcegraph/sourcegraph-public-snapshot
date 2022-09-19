@@ -1020,7 +1020,8 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleRepoClone is an asynchronous (does not wait for update to complete or
-// time out) function to clone a repository.
+// time out) call to clone a repository.
+// Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
 func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
 	var req protocol.RepoCloneRequest
