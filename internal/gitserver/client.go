@@ -243,8 +243,8 @@ type Client interface {
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
-	// RequestRepoReclone is an asynchronous request to reclone a repository.
-	RequestRepoReclone(context.Context, api.RepoName) (*protocol.RepoRecloneResponse, error)
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
 
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
@@ -900,12 +900,12 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	return info, err
 }
 
-// RequestRepoReclone requests that the gitserver does an asynchronous reclone of the repository.
-func (c *clientImplementor) RequestRepoReclone(ctx context.Context, repo api.RepoName) (*protocol.RepoRecloneResponse, error) {
-	req := &protocol.RepoRecloneRequest{
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
 		Repo: repo,
 	}
-	resp, err := c.httpPost(ctx, repo, "repo-reclone", req)
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
 	if err != nil {
 		return nil, err
 	}
@@ -918,7 +918,7 @@ func (c *clientImplementor) RequestRepoReclone(ctx context.Context, repo api.Rep
 		}
 	}
 
-	var info *protocol.RepoRecloneResponse
+	var info *protocol.RepoCloneResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }

@@ -180,14 +180,14 @@ type RepoUpdateResponse struct {
 	Error string `json:",omitempty"`
 }
 
-// RepoRecloneRequest is a request to completely reclone a repository asynchronously.
-type RepoRecloneRequest struct {
+// RepoCloneRequest is a request to clone a repository asynchronously.
+type RepoCloneRequest struct {
 	Repo api.RepoName `json:"repo"`
 }
 
-// RepoRecloneResponse returns an error if the repo reclone request failed.
-type RepoRecloneResponse struct {
-	Error string `json:",omtempty"`
+// RepoCloneResponse returns an error if the repo clone request failed.
+type RepoCloneResponse struct {
+	Error string `json:",omitempty"`
 }
 
 type NotFoundPayload struct {
