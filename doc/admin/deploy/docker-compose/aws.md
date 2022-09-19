@@ -6,7 +6,7 @@ This guide will take you through how to deploy Sourcegraph with [Docker Compose]
 
 - An AWS account
 - Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> [Create your own customized copy of the deployment repository](../index.md#installation)
+- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
 
 ---
 

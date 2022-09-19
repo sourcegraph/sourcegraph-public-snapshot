@@ -2,7 +2,7 @@
 
 You can find the default [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file inside the deployment repository.
 
-If you would like to make changes to the default configurations, we highly recommend you to create a new file called `docker-compose.override.yaml` file in the same directory where the base file ([docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml)) is located, and make your customizations inside the `docker-compose.override.yaml` file.
+If you would like to make changes to the default configurations, we highly recommend you to create a new file called `docker-compose.override.yaml` in the same directory where the base file ([docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml)) is located, and make your customizations inside the `docker-compose.override.yaml` file.
 
 >WARNING: For configuration of Sourcegraph, see Sourcegraph's [configuration](../../config/index.md) docs.
 
@@ -82,6 +82,8 @@ services:
 volumes:
   gitserver-1:
 ```
+
+> Important: You cannot create a replica for services with dependents, like `frontend` for example.
 
 ### Disable a service
 

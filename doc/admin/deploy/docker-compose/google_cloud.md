@@ -6,7 +6,7 @@ This guide will take you through how to deploy Sourcegraph with [Docker Compose]
 
 - A Google account
 - Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> [Create your own customized copy of the deployment repository](../index.md#installation
+- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
 
 ---
 
@@ -124,7 +124,7 @@ sudo systemctl restart --now docker
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
-# Run Sourcegraph. Restart the containers upon reboot.
+# Start Sourcegraph with Docker Compose
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```

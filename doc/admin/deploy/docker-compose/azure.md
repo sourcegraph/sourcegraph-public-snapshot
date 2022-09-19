@@ -6,7 +6,7 @@ This guide will take you through how to set up a Sourcegraph instance on an Azur
 
 - An Azure account
 - Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> [Create your own customized copy of the deployment repository](../index.md#installation)
+- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
 
 ---
 
@@ -64,7 +64,7 @@ Click `Create and attach a new disk` to create **two** disks:
 
 #### Management
 
-* Endable backup - Recommended
+* <span class="badge badge-note">RECOMMENDED</span> Endable backup
 
 #### Advanced
 
