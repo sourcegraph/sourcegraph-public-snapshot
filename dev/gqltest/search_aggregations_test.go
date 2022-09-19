@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"testing"
+)
 
 func TestModeAvailability(t *testing.T) {
 	t.Parallel()
@@ -72,5 +76,42 @@ func TestModeAvailability(t *testing.T) {
 }
 
 func TestAggregations(t *testing.T) {
+	if len(*githubToken) == 0 {
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
+	}
 
+	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "gqltest-github-search",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:   "https://ghe.sgdev.org/",
+			Token: *githubToken,
+			Repos: []string{
+				"sgtest/mux",
+			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeCloned(
+		"sgtest/mux",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeIndexed(
+		"sgtest/mux",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
