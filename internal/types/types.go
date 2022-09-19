@@ -909,9 +909,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatChangedSum int32
 	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatDeletedSum int32
@@ -924,9 +921,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatChangedSum int32
 	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatDeletedSum int32

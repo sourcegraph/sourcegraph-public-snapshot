@@ -72,10 +72,10 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+        coreWorkflowImprovementsEnabled
     const [showSearchHistory] = useFeatureFlag('search-input-show-history')
 
     const suggestionSources = useMemo(
@@ -168,7 +168,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
                         defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}

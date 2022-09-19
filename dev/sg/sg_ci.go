@@ -201,6 +201,11 @@ sg ci build --help
 		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
 		Flags: []cli.Flag{
 			&ciBranchFlag,
+			&cli.StringFlag{
+				Name:  "format",
+				Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
+				Value: "markdown",
+			},
 		},
 		Action: func(cmd *cli.Context) error {
 			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
@@ -220,16 +225,39 @@ sg ci build --help
 				return err
 			}
 
-			previewCmd := usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
-				Env(map[string]string{
-					"BUILDKITE_BRANCH":  target.target, // this must be a branch
-					"BUILDKITE_MESSAGE": message,
-				})
-			out, err := root.Run(previewCmd).String()
-			if err != nil {
-				return err
+			var previewCmd *sgrun.Command
+			env := map[string]string{
+				"BUILDKITE_BRANCH":  target.target, // this must be a branch
+				"BUILDKITE_MESSAGE": message,
 			}
-			return std.Out.WriteMarkdown(out)
+			switch cmd.String("format") {
+			case "markdown":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteMarkdown(out)
+			case "json":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("json", out)
+			case "yaml":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("yaml", out)
+			default:
+				return errors.Newf("unsupported format type: %q", cmd.String("format"))
+			}
 		},
 	}, {
 		Name:    "status",
