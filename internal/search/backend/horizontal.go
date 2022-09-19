@@ -334,6 +334,10 @@ func (q *resultQueue) pop() *zoekt.SearchResult {
 // should be sent up the stream. Retrieve search results by calling pop() on
 // resultQueue.
 func (q *resultQueue) hasResultsToSend(maxPending float64) bool {
+	if q.queue.Len() == 0 {
+		return false
+	}
+
 	if q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth {
 		return true
 	}
