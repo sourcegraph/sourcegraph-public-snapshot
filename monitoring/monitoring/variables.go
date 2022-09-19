@@ -43,7 +43,7 @@ type ContainerVariable struct {
 	// be used in conjunction with Options
 	OptionsQuery ContainerVariableOptionsQuery
 	// Options are the pre-defined possible values for this variable. Cannot be used in
-	// conjunction with Query
+	// conjunction with OptionsQuery
 	Options ContainerVariableOptions
 
 	// WildcardAllValue indicates to Grafana that is should NOT use OptionsQuery or Options to
