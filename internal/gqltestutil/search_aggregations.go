@@ -67,6 +67,7 @@ func (c *Client) Aggregations(args AggregationArgs) (AggregationResponse, error)
 			  }
 			  ... on SearchAggregationNotAvailable {
 				reason
+				reasonType
 			  }
 			}
 		  }
@@ -74,10 +75,11 @@ func (c *Client) Aggregations(args AggregationArgs) (AggregationResponse, error)
 	`
 
 	variables := map[string]any{
-		"query":       args.Query,
-		"patternType": args.PatternType,
-		"mode":        args.Mode,
-		"limit":       args.Limit,
+		"query":           args.Query,
+		"patternType":     args.PatternType,
+		"mode":            args.Mode,
+		"limit":           args.Limit,
+		"extendedTimeout": args.ExtendedTimeout,
 	}
 
 	var resp struct {
@@ -96,14 +98,16 @@ func (c *Client) Aggregations(args AggregationArgs) (AggregationResponse, error)
 }
 
 type AggregationArgs struct {
-	Query       string
-	PatternType string
-	Mode        *string
-	Limit       *int32
+	Query           string
+	PatternType     string
+	ExtendedTimeout bool
+	Mode            *string
+	Limit           *int32
 }
 
 type AggregationResponse struct {
-	Reason string // If this is set the fields below will be empty.
+	ReasonType string
+	Reason     string // If this is set the fields below will be empty.
 
 	Groups []string // List of results in form of labels
 	Mode   string

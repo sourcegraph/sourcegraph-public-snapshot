@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"testing"
+	"time"
 )
 
 func TestModeAvailability(t *testing.T) {
@@ -76,44 +77,44 @@ func TestModeAvailability(t *testing.T) {
 }
 
 func TestAggregations(t *testing.T) {
-	//if len(*githubToken) == 0 {
-	//	t.Skip("Environment variable GITHUB_TOKEN is not set")
-	//}
-	//
-	//_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-	//	Kind:        extsvc.KindGitHub,
-	//	DisplayName: "gqltest-github-search",
-	//	Config: mustMarshalJSONString(struct {
-	//		URL                   string   `json:"url"`
-	//		Token                 string   `json:"token"`
-	//		Repos                 []string `json:"repos"`
-	//		RepositoryPathPattern string   `json:"repositoryPathPattern"`
-	//	}{
-	//		URL:   "https://ghe.sgdev.org/",
-	//		Token: *githubToken,
-	//		Repos: []string{
-	//			"sgtest/mux",
-	//		},
-	//		RepositoryPathPattern: "github.com/{nameWithOwner}",
-	//	}),
-	//})
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//
-	//err = client.WaitForReposToBeCloned(
-	//	"sgtest/mux",
-	//)
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//
-	//err = client.WaitForReposToBeIndexed(
-	//	"sgtest/mux",
-	//)
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
+	if len(*githubToken) == 0 {
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
+	}
+
+	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "gqltest-github-search",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:   "https://ghe.sgdev.org/",
+			Token: *githubToken,
+			Repos: []string{
+				"sgtest/mux",
+			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeCloned(
+		"sgtest/mux",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeIndexed(
+		"sgtest/mux",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("finds default mode if not specified", func(t *testing.T) {
 		args := gqltestutil.AggregationArgs{
@@ -146,26 +147,39 @@ func TestAggregations(t *testing.T) {
 		if resp.Reason == "" {
 			t.Error("Expected reason unavailable, got empty")
 		}
-		fmt.Println(resp.Reason)
 	})
 
 	t.Run("returns results", func(t *testing.T) {
-		t.Skip("for now")
 		mode := "CAPTURE_GROUP"
 		args := gqltestutil.AggregationArgs{
-			Query:       `repo:^github\.com/sgtest/mux$ (\w+)\s*middleware lang:go -file:test`,
+			Query:       `repo:^github\.com/sgtest/mux$ (\w+)\s*mux lang:go -file:test`,
 			PatternType: "regexp",
 			Mode:        &mode,
 		}
-		resp, err := client.Aggregations(args)
+		var resp gqltestutil.AggregationResponse
+		var err error
+		// We'll retry with timeout max twice.
+		err = gqltestutil.Retry(2*time.Minute, func() error {
+			resp, err = client.Aggregations(args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if resp.ReasonType == "TIMEOUT_EXTENSION_AVAILABLE" {
+				args.ExtendedTimeout = true
+				return gqltestutil.ErrContinueRetry
+			}
+			if resp.Reason != "" {
+				t.Fatalf("Got unexpected unavailable reason: %v", resp.Reason)
+			}
+			// We don't assert on the results because these could change, but we want to get some.
+			// However, the query is for `mux`, given the repo we should always get at least *one* result.
+			if len(resp.Groups) == 0 {
+				t.Error("Did not get any results")
+			}
+			return nil
+		})
 		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.Reason != "" {
-			t.Errorf("Expected to work, got %q", resp.Reason)
-		}
-		if resp.Mode != "CAPTURE_GROUP" {
-			t.Errorf("Expected to default to CAPTURE_GROUP, got %v", resp.Mode)
+			t.Errorf("got error after retrying: %v", err)
 		}
 	})
 }
