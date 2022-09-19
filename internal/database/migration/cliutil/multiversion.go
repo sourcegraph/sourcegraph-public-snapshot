@@ -1,6 +1,7 @@
 package cliutil
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -110,9 +111,11 @@ func runMigration(
 	privilegedMode runner.PrivilegedMode,
 	privilegedHash string,
 	skipVersionCheck bool,
+	skipDriftCheck bool,
 	dryRun bool,
 	up bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	expectedSchemaFactories []ExpectedSchemaFactory,
 	out *output.Output,
 ) error {
 	var runnerSchemas []*schemas.Schema
@@ -137,6 +140,12 @@ func runMigration(
 	if !skipVersionCheck {
 		if err := checkServiceVersion(ctx, r, plan); err != nil {
 			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+		}
+	}
+
+	if !skipDriftCheck {
+		if err := checkDrift(ctx, r, plan, out, expectedSchemaFactories); err != nil {
+			return err
 		}
 	}
 
@@ -274,4 +283,69 @@ func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Versi
 		"frontend",
 		fmt.Sprintf("%d.%d.0", version.Major, version.Minor),
 	)
+}
+
+func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
+	schemasWithDrift := make([]string, 0, len(schemas.SchemaNames))
+	for _, schemaName := range schemas.SchemaNames {
+		store, err := r.Store(ctx, schemaName)
+		if err != nil {
+			return err
+		}
+		schemas, err := store.Describe(ctx)
+		if err != nil {
+			return err
+		}
+		schema := schemas["public"]
+
+		var buf bytes.Buffer
+		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
+
+		if err := compareByFactories(schemaName, plan.from.GitTag(), schema, noopOutput, expectedSchemaFactories); err != nil {
+			schemasWithDrift = append(schemasWithDrift, schemaName)
+		}
+	}
+
+	drift := false
+	for _, schemaName := range schemasWithDrift {
+		empty, err := isEmptySchema(ctx, r, schemaName)
+		if err != nil {
+			return err
+		}
+		if empty {
+			continue
+		}
+
+		drift = true
+		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Schema drift detected for %s", schemaName))
+	}
+	if !drift {
+		return nil
+	}
+
+	out.WriteLine(output.Linef(
+		output.EmojiLightbulb,
+		output.StyleItalic,
+		""+
+			"Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema."+
+			" "+
+			"See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions."+
+			"\n",
+	))
+
+	return errors.New("database drift detected")
+}
+
+func isEmptySchema(ctx context.Context, r Runner, schemaName string) (bool, error) {
+	store, err := r.Store(ctx, schemaName)
+	if err != nil {
+		return false, err
+	}
+
+	appliedVersions, _, _, err := store.Versions(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return len(appliedVersions) == 0, nil
 }
