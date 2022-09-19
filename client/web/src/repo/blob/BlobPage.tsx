@@ -39,7 +39,6 @@ import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -165,7 +164,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      */
     const formattedBlobInfoOrError = useObservable(
         useMemo(() => {
-            if (!enableLazyBlobSyntaxHighlighting) {
+            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
+            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
+            if (!enableLazyBlobSyntaxHighlighting || enableCodeMirror) {
                 return of(undefined)
             }
 
@@ -184,7 +185,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 html: blob.highlight.html ?? '',
                                 repoName,
                                 revision,
-                                commitID,
                                 filePath,
                                 mode,
                                 // Properties used in `BlobPage` but not `Blob`
@@ -198,7 +198,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [commitID, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -244,7 +244,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             lsif: blob.highlight.lsif ?? '',
                             repoName,
                             revision,
-                            commitID,
                             filePath,
                             mode,
                             // Properties used in `BlobPage` but not `Blob`
@@ -255,7 +254,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
+            [repoName, revision, filePath, mode, enableCodeMirror]
         )
     )
 
@@ -354,15 +353,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         revision={props.revision}
                         filePath={filePath}
                     />
-                )}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                id="toggle-blame"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
                 )}
             </RepoHeaderContributionPortal>
         </>

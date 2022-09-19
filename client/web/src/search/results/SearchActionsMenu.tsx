@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures } from '../../stores'
 
 import { CreateAction } from './createActions'
 import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
@@ -34,7 +33,6 @@ interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformCo
     canCreateMonitor: boolean
     resultsFound: boolean
     allExpanded: boolean
-    extensionsAsCoreFeatures?: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
 }
@@ -52,7 +50,6 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     onExpandAllResultsToggle,
     onSaveQueryClick,
 }) => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [requestSearchResultsExport] = useExportSearchResultsQuery({ query, patternType, sourcegraphURL })
 
     return (
@@ -80,12 +77,10 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                {extensionsAsCoreFeatures && (
-                                    <MenuItem onSelect={requestSearchResultsExport}>
-                                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                                        Export Results
-                                    </MenuItem>
-                                )}
+                                <MenuItem onSelect={requestSearchResultsExport}>
+                                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                                    Export Results
+                                </MenuItem>
                             </>
                         )}
                         <MenuHeader>Search query</MenuHeader>

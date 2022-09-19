@@ -12,7 +12,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { GitBlameResult, GitBlameVariables } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -114,16 +113,14 @@ export const useBlameHunks = (
     },
     sourcegraphURL: string
 ): BlameHunk[] | undefined => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
-        useMemo(
-            () =>
-                extensionsAsCoreFeatures && isBlameVisible
-                    ? fetchBlame({ revision, repoName, filePath })
-                    : of(undefined),
-            [extensionsAsCoreFeatures, isBlameVisible, revision, repoName, filePath]
-        )
+        useMemo(() => (isBlameVisible ? fetchBlame({ revision, repoName, filePath }) : of(undefined)), [
+            isBlameVisible,
+            revision,
+            repoName,
+            filePath,
+        ])
     )
 
     const hunksWithDisplayInfo = useMemo(() => {

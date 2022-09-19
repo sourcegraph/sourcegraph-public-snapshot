@@ -315,28 +315,27 @@ type RepoStore interface {
 //
 // It works roughly like this:
 //
-//   * For every repository on Sourcegraph (a subset on Sourcegraph.com):
-//     * Build a list of time frames that we should consider
-//	   * Check the commit index to see if any timeframes can be discarded (if they didn't change)
-//     * For each frame:
-//       * Find the oldest commit in the repository.
-//         * For every unique search insight series (i.e. search query):
-//           * Consider yielding/sleeping.
-//           * If the series has data for this timeframe+repo already, nothing to do.
-//           * If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
-//           * Else, locate the commit nearest to the point in time we're trying to get data for and
-//             enqueue a queryrunner job to search that repository commit - recording historical data
-//            for it.
+//	For every repository on Sourcegraph (a subset on Sourcegraph.com):
+//	1. Build a list of time frames that we should consider
+//	   - Check the commit index to see if any timeframes can be discarded (if they didn't change)
+//	2. For each frame
+//	  - Find the oldest commit in the repository.
+//	3. For every unique pair of frame and search insight series (i.e. search query):
+//	  - Consider yielding/sleeping.
+//	  - If the series has data for this timeframe+repo already, nothing to do.
+//	  - If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
+//	  - Else, locate the commit nearest to the point in time we're trying to get data for and
+//	    enqueue a queryrunner job to search that repository commit - recording historical data
+//	    for it.
 //
 // As you can no doubt see, there is much complexity and potential room for duplicative API calls
 // here (e.g. "for every timeframe we list every repository"). For this exact reason, we do two
 // things:
 //
-// 1. Cache duplicative calls to prevent performing heavy operations multiple times.
-// 2. Lift heavy operations to the layer/loop one level higher, when it is sane to do so.
-// 3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
-//    work being performed.
-//
+//  1. Cache duplicative calls to prevent performing heavy operations multiple times.
+//  2. Lift heavy operations to the layer/loop one level higher, when it is sane to do so.
+//  3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
+//     work being performed.
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time

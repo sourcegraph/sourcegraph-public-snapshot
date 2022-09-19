@@ -9,12 +9,14 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -285,6 +287,69 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	_, err = searcher.List(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("List: expected error")
+	}
+}
+
+func TestResultQueueSettingsFromConfig(t *testing.T) {
+	queueDepth := 96
+	maxQueueMatchCount := 100
+
+	cases := []struct {
+		name                   string
+		siteConfig             schema.SiteConfiguration
+		wantMaxQueueDepth      int
+		wantMaxReorderDuration time.Duration
+		wantMaxQueueMatchCount int
+	}{
+		{
+			name:                   "defaults",
+			siteConfig:             schema.SiteConfiguration{},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: -1,
+		},
+		{
+			name: "MaxReorderDurationMS",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderDurationMS: 5,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxReorderDuration: 5 * time.Millisecond,
+			wantMaxQueueMatchCount: -1,
+		},
+		{
+			name: "MaxReorderQueueSize",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderQueueSize: &queueDepth,
+			}}},
+			wantMaxQueueDepth:      96,
+			wantMaxQueueMatchCount: -1,
+		},
+		{
+			name: "MaxQueueMatchCount",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxQueueMatchCount: &maxQueueMatchCount,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: 100,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			haveMaxQueueDepth, haveMaxReorderDuration, haveMaxQueueMatchCount := resultQueueSettingsFromConfig(tt.siteConfig)
+
+			if haveMaxQueueDepth != tt.wantMaxQueueDepth {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, haveMaxQueueDepth)
+			}
+
+			if haveMaxReorderDuration != tt.wantMaxReorderDuration {
+				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, haveMaxReorderDuration)
+			}
+
+			if haveMaxQueueMatchCount != tt.wantMaxQueueMatchCount {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, haveMaxQueueMatchCount)
+			}
+		})
 	}
 }
 

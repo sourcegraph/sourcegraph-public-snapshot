@@ -9,7 +9,7 @@ import {
     useMemo,
 } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import StickyBox from 'react-sticky-box'
@@ -17,7 +17,7 @@ import StickyBox from 'react-sticky-box'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Icon } from '@sourcegraph/wildcard'
 
 import { SearchFilterSection } from './SearchFilterSection'
 
@@ -76,8 +76,11 @@ export const SearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props =>
         >
             <StickyBox className={styles.stickyBox} offsetTop={8}>
                 <div className={styles.header}>
+                    <H4 as={H2} className="mb-0">
+                        Filters
+                    </H4>
                     <Button variant="icon" onClick={onClose}>
-                        <Icon svgPath={mdiClose} aria-label="Close sidebar" />
+                        <Icon svgPath={mdiChevronDoubleUp} aria-label="Hide sidebar" />
                     </Button>
                 </div>
 
