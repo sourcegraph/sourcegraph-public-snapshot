@@ -75,5 +75,5 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
   - `docker-compose up -d pgsql`
   - `docker-compose up -d codeintel-db`
   - `docker-compose up -d codeinsights-db`
-1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the migrator is invoked with a `docker run` command using the same compose network and using environment variables indicating the instance's databases.
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the [migrator](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-docker%24+file:docker-compose%5C.yaml+container_name:+migrator) is invoked with a `docker run` command using the same compose network and using environment variables indicating the instance's databases.
 1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Compose](#standard-upgrades).
