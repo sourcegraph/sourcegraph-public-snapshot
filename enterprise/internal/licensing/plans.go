@@ -47,12 +47,12 @@ func (info *Info) Plan() Plan {
 
 		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
 		if tag == "starter" {
-			return oldEnterpriseStarter
+			return PlanOldEnterpriseStarter
 		}
 	}
 
 	// Backcompat: no tags means it is the old "Enterprise" plan.
-	return oldEnterprise
+	return PlanOldEnterprise
 }
 
 // hasUnknownPlan returns an error if the plan is presented in the license tags

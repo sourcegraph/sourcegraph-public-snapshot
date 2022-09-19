@@ -113,16 +113,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -165,16 +163,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -217,16 +213,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -326,10 +320,10 @@ query($id: ID!) {
 
           diff {
             fileDiffs {
-              diffStat { added, changed, deleted }
+              diffStat { added, deleted }
             }
           }
-          diffStat { added, changed, deleted }
+          diffStat { added, deleted }
         }
       }
 

@@ -331,7 +331,6 @@ Foreign-key constraints:
  repo_id             | integer                  |           | not null | 
  user_id             | integer                  |           |          | 
  diff_stat_added     | integer                  |           |          | 
- diff_stat_changed   | integer                  |           |          | 
  diff_stat_deleted   | integer                  |           |          | 
  created_at          | timestamp with time zone |           | not null | now()
  updated_at          | timestamp with time zone |           | not null | now()
@@ -385,7 +384,6 @@ Referenced by:
  external_review_state    | text                                         |           |          | 
  external_check_state     | text                                         |           |          | 
  diff_stat_added          | integer                                      |           |          | 
- diff_stat_changed        | integer                                      |           |          | 
  diff_stat_deleted        | integer                                      |           |          | 
  sync_state               | jsonb                                        |           | not null | '{}'::jsonb
  current_spec_id          | bigint                                       |           |          | 
@@ -712,6 +710,21 @@ Webhook actions configured on code monitors
 **monitor**: The code monitor that the action is defined on
 
 **url**: The webhook URL we send the code monitor event to
+
+# Table "public.codeintel_autoindex_queue"
+```
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id            | integer                  |           | not null | nextval('codeintel_autoindex_queue_id_seq'::regclass)
+ repository_id | integer                  |           | not null | 
+ rev           | text                     |           | not null | 
+ queued_at     | timestamp with time zone |           | not null | now()
+ processed_at  | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_autoindex_queue_pkey" PRIMARY KEY, btree (id)
+    "codeintel_autoindex_queue_repository_id_commit" UNIQUE, btree (repository_id, rev)
+
+```
 
 # Table "public.codeintel_langugage_support_requests"
 ```
@@ -3248,7 +3261,6 @@ Foreign-key constraints:
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,

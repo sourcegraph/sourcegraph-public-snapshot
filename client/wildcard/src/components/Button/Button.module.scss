@@ -141,7 +141,8 @@
     $light-color-variant,
     $dark-color-variant,
     $text-color: var(--light-text),
-    $disabled-text-color: var(--light-text)
+    $light-disabled-text-color: var(--light-text),
+    $dark-disabled-text-color: var(--text-disabled)
 ) {
     .btn-#{$name} {
         color: $text-color;
@@ -153,7 +154,12 @@
             opacity: 1;
             background-color: $light-color-variant;
             border-color: $light-color-variant;
-            color: $disabled-text-color;
+            :global(.theme-light) & {
+                color: $light-disabled-text-color;
+            }
+            :global(.theme-dark) & {
+                color: $dark-disabled-text-color;
+            }
         }
 
         &:not(:disabled):not(:global(.disabled)) {
@@ -266,7 +272,8 @@
     $name: 'primary',
     $base-color: var(--primary),
     $light-color-variant: var(--primary-2),
-    $dark-color-variant: var(--primary-3)
+    $dark-color-variant: var(--primary-3),
+    $dark-disabled-text-color: rgba(var(--text-light), 0.6)
 );
 
 @include button-variant(
@@ -276,7 +283,8 @@
     $dark-color-variant: var(--secondary-3),
     // Use darker text colors for contrast
     $text-color: var(--body-color),
-    $disabled-text-color: var(--text-disabled)
+    $light-disabled-text-color: var(--text-disabled),
+    $dark-disabled-text-color: var(--text-muted)
 );
 
 @include button-variant(
@@ -300,7 +308,8 @@
     $dark-color-variant: var(--warning-3),
     // Use darker text colors for contrast
     $text-color: var(--dark-text),
-    $disabled-text-color: var(--text-disabled)
+    $light-disabled-text-color: var(--text-muted),
+    $dark-disabled-text-color: var(--text-muted)
 );
 
 @include button-variant(
@@ -310,14 +319,16 @@
     $dark-color-variant: var(--info-3),
     // Use darker text colors for contrast
     $text-color: var(--dark-text),
-    $disabled-text-color: var(--text-disabled)
+    $light-disabled-text-color: var(--text-muted),
+    $dark-disabled-text-color: var(--text-muted)
 );
 
 @include button-variant(
     $name: 'merged',
     $base-color: var(--merged),
     $light-color-variant: var(--merged-2),
-    $dark-color-variant: var(--merged-3)
+    $dark-color-variant: var(--merged-3),
+    $dark-disabled-text-color: var(--light-text)
 );
 
 :global(.theme-dark),

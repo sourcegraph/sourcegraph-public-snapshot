@@ -522,24 +522,20 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		if err := s.CreateChangesetSpec(ctx,
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatDeleted: 10, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatDeleted: 20, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
 		); err != nil {
 			t.Fatal(err)
 		}
 
-		assertDiffStat := func(wantAdded, wantChanged, wantDeleted int64) func(added, changed, deleted int64, err error) {
-			return func(added, changed, deleted int64, err error) {
+		assertDiffStat := func(wantAdded, wantDeleted int64) func(added, deleted int64, err error) {
+			return func(added, deleted int64, err error) {
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				if added != wantAdded {
 					t.Errorf("invalid added returned, want=%d have=%d", wantAdded, added)
-				}
-
-				if changed != wantChanged {
-					t.Errorf("invalid changed returned, want=%d have=%d", wantChanged, changed)
 				}
 
 				if deleted != wantDeleted {
@@ -549,13 +545,13 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		t.Run("no user in context", func(t *testing.T) {
-			assertDiffStat(0, 0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
+			assertDiffStat(0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
 		})
 		t.Run("regular user in context with access to repo1", func(t *testing.T) {
-			assertDiffStat(10, 10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
+			assertDiffStat(10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
 		})
 		t.Run("admin user in context", func(t *testing.T) {
-			assertDiffStat(30, 30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
+			assertDiffStat(30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
 		})
 	})
 

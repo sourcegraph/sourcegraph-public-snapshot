@@ -178,9 +178,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Total count of created batch changes</li>
                         <li>Total count of closed batch changes</li>
                         <li>Total count of changesets created by batch changes</li>
-                        <li>Aggregate counts of lines changed, added, deleted in changeset</li>
+                        <li>Aggregate counts of lines added, deleted in changeset</li>
                         <li>Total count of changesets created by batch changes that have been merged</li>
-                        <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
+                        <li>Aggregate counts of lines added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a batch change</li>
                         <li>Total count of changesets manually added to a batch change that have been merged</li>
                         <li>
