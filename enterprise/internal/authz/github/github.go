@@ -329,6 +329,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 // has read access on the code host. The repository ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
 //
+// The client used by this method will be in charge of updating the OAuth token
+// if it has expired and retrying the request.
+//
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
 //

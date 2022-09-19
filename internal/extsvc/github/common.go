@@ -2023,5 +2023,3 @@ func handlePullRequestError(err error) error {
 func IsGitHubAppAccessToken(token string) bool {
 	return strings.HasPrefix(token, "ghu")
 }
-
-var MockGetOAuthContext func() *oauthutil.OAuthContext

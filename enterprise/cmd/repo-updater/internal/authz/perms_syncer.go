@@ -280,8 +280,9 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 	}
 	apiURL, _ = github.APIRoot(apiURL)
 
+	tokenRefresher := database.ExternalAccountTokenRefresher(s.db, acct.ID, tok.RefreshToken)
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
-		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil, nil)
+		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil, tokenRefresher)
 
 	installations, err := ghClient.GetUserInstallations(ctx)
 	if err != nil {
@@ -420,14 +421,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			acctLogger.Warn("failed to fetch GitHub App installations", log.Error(err))
 		}
 
+		// FetchUserPerms makes API requests using a client that will deal with the token
+		// expiration and try to refresh it when necessary. If the client fails to update
+		// the token, or if the token is revoked, the "401 Unauthorized" error will be
+		// handled here.
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			acctLogger.Debug("fetching user permissions", log.Error(err))
 
-			// FetchUserPerms makes API requests using a client that will deal with the token
-			// expiration and try to refresh it when necessary. If the client fails to update
-			// the token, or if the token is revoked, the "401 Unauthorized" error will be
-			// handled here.
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error
