@@ -19,7 +19,7 @@ import (
 
 var (
 	gitTreePattern = lazyregexp.New("^tree .+:.+\n")
-	versionPattern = lazyregexp.New(`v(\d+).(\d+)(?:.(\d+))`)
+	versionPattern = lazyregexp.New(`v(\d+)\.(\d+)(?:\.(\d+))?`)
 )
 
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
