@@ -48,7 +48,7 @@ const generalTimeoutMsg = "The query was unable to complete in the allocated tim
 const proactiveResultLimitMsg = "The query exceeded the number of results allowed over this time period."
 
 // These should be very rare
-const unknowAggregationModeMsg = "The requested grouping is not supported."                     // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
+const unknownAggregationModeMsg = "The requested grouping is not supported."                    // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
 const unableToModifyQueryMsg = "The search query was unable to be updated to support grouping." // if the query was valid but we were unable to add timeout: & count:all
 const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
 
@@ -146,7 +146,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		r.getLogger().Error("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
 		return &searchAggregationResultResolver{
 			resolver: newSearchAggregationNotAvailableResolver(
-				notAvailableReason{reason: unknowAggregationModeMsg, reasonType: types.ERROR_OCCURRED},
+				notAvailableReason{reason: unknownAggregationModeMsg, reasonType: types.ERROR_OCCURRED},
 				aggregationMode),
 		}, nil
 	}
