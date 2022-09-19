@@ -610,21 +610,11 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repo, err := r.db.GitserverRepos().GetByID(ctx, repoID)
-	if err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
+	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if repo.CloneStatus == types.CloneStatusCloning {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot reclone repository %d: busy cloning", repo.RepoID))
-	}
-
-	repos := backend.NewRepos(r.logger, r.db)
-	if err := repos.DeleteRepositoryFromDisk(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
-	}
-
-	if err := repos.RequestRepositoryClone(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db).RequestRepositoryClone(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
 	}
 
