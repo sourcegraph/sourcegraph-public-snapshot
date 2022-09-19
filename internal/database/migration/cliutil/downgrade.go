@@ -40,7 +40,7 @@ func Downgrade(
 	}
 	privilegedHashesFlag := &cli.StringSliceFlag{
 		Name:  "privileged-hash",
-		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) downgrade operations will require a unique hash.",
 		Value: nil,
 	}
 	skipVersionCheckFlag := &cli.BoolFlag{
