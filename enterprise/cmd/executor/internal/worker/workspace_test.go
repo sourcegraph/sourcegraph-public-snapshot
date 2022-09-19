@@ -30,7 +30,7 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	dir, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		FetchTags:      true,
@@ -38,7 +38,7 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
-	defer os.RemoveAll(dir.Path())
+	defer os.RemoveAll(workspace.Path())
 
 	if value := len(runner.RunFunc.History()); value != 6 {
 		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 6, value)
@@ -50,12 +50,12 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 	}
 
 	expectedCommands := [][]string{
-		{"git", "-C", dir.Path(), "init"},
-		{"git", "-C", dir.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
-		{"git", "-C", dir.Path(), "config", "--local", "gc.auto", "0"},
-		{"git", "-C", dir.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--tags", "origin", "deadbeef"},
-		{"git", "-C", dir.Path(), "checkout", "--progress", "--force", "deadbeef"},
-		{"git", "-C", dir.Path(), "remote", "set-url", "origin", "torvalds/linux"},
+		{"git", "-C", workspace.Path(), "init"},
+		{"git", "-C", workspace.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
+		{"git", "-C", workspace.Path(), "config", "--local", "gc.auto", "0"},
+		{"git", "-C", workspace.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--tags", "origin", "deadbeef"},
+		{"git", "-C", workspace.Path(), "checkout", "--progress", "--force", "deadbeef"},
+		{"git", "-C", workspace.Path(), "remote", "set-url", "origin", "torvalds/linux"},
 	}
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
@@ -78,8 +78,7 @@ func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	// dir, err := handler.prepareWorkspace(context.Background(), runner, "torvalds/linux", "subdirectory", "deadbeef", false, false, []string{})
-	dir, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
 		RepositoryName:      "torvalds/linux",
 		RepositoryDirectory: "subdirectory",
 		Commit:              "deadbeef",
@@ -87,9 +86,9 @@ func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
-	defer os.RemoveAll(dir.Path())
+	defer os.RemoveAll(workspace.Path())
 
-	repoDir := filepath.Join(dir.Path(), "subdirectory")
+	repoDir := filepath.Join(workspace.Path(), "subdirectory")
 
 	if value := len(runner.RunFunc.History()); value != 6 {
 		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 6, value)
@@ -129,8 +128,7 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	// dir, err := handler.prepareWorkspace(context.Background(), runner, "torvalds/linux", "", "deadbeef", false, true, []string{})
-	dir, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		ShallowClone:   true,
@@ -138,7 +136,7 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
-	defer os.RemoveAll(dir.Path())
+	defer os.RemoveAll(workspace.Path())
 
 	if value := len(runner.RunFunc.History()); value != 6 {
 		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 6, value)
@@ -150,12 +148,12 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 	}
 
 	expectedCommands := [][]string{
-		{"git", "-C", dir.Path(), "init"},
-		{"git", "-C", dir.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
-		{"git", "-C", dir.Path(), "config", "--local", "gc.auto", "0"},
-		{"git", "-C", dir.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--no-tags", "--depth=1", "origin", "deadbeef"},
-		{"git", "-C", dir.Path(), "checkout", "--progress", "--force", "deadbeef"},
-		{"git", "-C", dir.Path(), "remote", "set-url", "origin", "torvalds/linux"},
+		{"git", "-C", workspace.Path(), "init"},
+		{"git", "-C", workspace.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
+		{"git", "-C", workspace.Path(), "config", "--local", "gc.auto", "0"},
+		{"git", "-C", workspace.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--no-tags", "--depth=1", "origin", "deadbeef"},
+		{"git", "-C", workspace.Path(), "checkout", "--progress", "--force", "deadbeef"},
+		{"git", "-C", workspace.Path(), "remote", "set-url", "origin", "torvalds/linux"},
 	}
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
@@ -178,7 +176,7 @@ func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	dir, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{
 		RepositoryName: "torvalds/linux",
 		Commit:         "deadbeef",
 		ShallowClone:   true,
@@ -187,7 +185,7 @@ func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
-	defer os.RemoveAll(dir.Path())
+	defer os.RemoveAll(workspace.Path())
 
 	if value := len(runner.RunFunc.History()); value != 8 {
 		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 8, value)
@@ -199,14 +197,14 @@ func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 	}
 
 	expectedCommands := [][]string{
-		{"git", "-C", dir.Path(), "init"},
-		{"git", "-C", dir.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
-		{"git", "-C", dir.Path(), "config", "--local", "gc.auto", "0"},
-		{"git", "-C", dir.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--no-tags", "--depth=1", "--filter=blob:none", "origin", "deadbeef"},
-		{"git", "-C", dir.Path(), "config", "--local", "core.sparseCheckout", "1"},
-		{"git", "-C", dir.Path(), "sparse-checkout", "set", "--no-cone", "--", "kernel"},
-		{"git", "-C", dir.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "checkout", "--progress", "--force", "deadbeef"},
-		{"git", "-C", dir.Path(), "remote", "set-url", "origin", "torvalds/linux"},
+		{"git", "-C", workspace.Path(), "init"},
+		{"git", "-C", workspace.Path(), "remote", "add", "origin", "https://executor@test.io/internal/git/torvalds/linux"},
+		{"git", "-C", workspace.Path(), "config", "--local", "gc.auto", "0"},
+		{"git", "-C", workspace.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "--progress", "--no-recurse-submodules", "--no-tags", "--depth=1", "--filter=blob:none", "origin", "deadbeef"},
+		{"git", "-C", workspace.Path(), "config", "--local", "core.sparseCheckout", "1"},
+		{"git", "-C", workspace.Path(), "sparse-checkout", "set", "--no-cone", "--", "kernel"},
+		{"git", "-C", workspace.Path(), "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "checkout", "--progress", "--force", "deadbeef"},
+		{"git", "-C", workspace.Path(), "remote", "set-url", "origin", "torvalds/linux"},
 	}
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
@@ -221,11 +219,11 @@ func TestPrepareWorkspace_NoRepository(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	dir, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{}, nil)
+	workspace, err := handler.prepareWorkspace(context.Background(), runner, executor.Job{}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
-	defer os.RemoveAll(dir.Path())
+	defer os.RemoveAll(workspace.Path())
 
 	if value := len(runner.RunFunc.History()); value != 0 {
 		t.Fatalf("unexpected call to Run")
