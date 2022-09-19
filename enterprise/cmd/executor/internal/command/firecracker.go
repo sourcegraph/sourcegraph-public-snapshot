@@ -53,8 +53,8 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, device string, options Options, operations *Operations) error {
-	// Start the VM and wait for the SSH server to become available
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
+	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
 		Command: flatten(
@@ -63,7 +63,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
 			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath),
-			"--volumes", fmt.Sprintf("%s:%s", device, firecrackerContainerDir),
+			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
@@ -121,6 +121,10 @@ func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
 
 	sort.Strings(copyfiles)
 	return intersperse("--copy-files", copyfiles)
+}
+
+func firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, firecrackerContainerDir)}
 }
 
 var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)

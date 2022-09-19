@@ -1,6 +1,6 @@
 package worker
 
-/* import (
+import (
 	"context"
 	"os"
 	"path/filepath"
@@ -18,9 +18,9 @@ package worker
 
 func TestHandle(t *testing.T) {
 	testDir := "/tmp/codeintel"
-	makeTempDir = func() (string, error) { return testDir, nil }
+	makeTempDirectory = func(string) (string, error) { return testDir, nil }
 	t.Cleanup(func() {
-		makeTempDir = makeTemporaryDirectory
+		makeTempDirectory = makeTemporaryDirectory
 	})
 
 	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {
@@ -116,4 +116,3 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
 	}
 }
-*/
