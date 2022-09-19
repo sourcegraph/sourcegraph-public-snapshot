@@ -204,7 +204,7 @@ sg ci build --help
 			&ciBranchFlag,
 			&cli.StringFlag{
 				Name:  "format",
-				Usage: "Output format for the preview, (valid values are 'markdown', 'json' and 'yaml' which will both output the raw pipeline in that format",
+				Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
 				Value: "markdown",
 			},
 		},
@@ -257,7 +257,7 @@ sg ci build --help
 				}
 				return std.Out.WriteCode("yaml", out)
 			default:
-				return flag.ErrHelp
+				return errors.Newf("unsupported format type: %q", cmd.String("format")
 			}
 		},
 	}, {
