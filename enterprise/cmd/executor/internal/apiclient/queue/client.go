@@ -46,7 +46,7 @@ func New(options Options, metricsGatherer prometheus.Gatherer, observationContex
 	return &Client{
 		options:         options,
 		client:          apiclient.NewBaseClient(options.BaseClientOptions),
-		logger:          log.Scoped("executor-api-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationContext),
 	}
