@@ -26,8 +26,9 @@ func Zoekt() *monitoring.Dashboard {
 			{
 				Label: "Instance",
 				Name:  "instance",
-				OptionsQuery: monitoring.ContainerVariableOptionsQuery{
-					Query:         "label_values(index_num_assigned, instance)",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "index_num_assigned",
+					LabelName:     "instance",
 					ExampleOption: "zoekt-indexserver-0:6072",
 				},
 				Multi: true,

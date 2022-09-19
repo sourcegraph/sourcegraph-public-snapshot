@@ -30,8 +30,9 @@ func Executor() *monitoring.Dashboard {
 			{
 				Label: "Compute instance",
 				Name:  "instance",
-				OptionsQuery: monitoring.ContainerVariableOptionsQuery{
-					Query:         `label_values(node_exporter_build_info{sg_job="` + executorsJobName + `"}, sg_instance)`,
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         `node_exporter_build_info{sg_job="` + executorsJobName + `"}`,
+					LabelName:     "sg_instance",
 					ExampleOption: "codeintel-cloud-sourcegraph-executor-5rzf-ff9a035d-e34b-4bcf-b862-e78c69b99484",
 				},
 
