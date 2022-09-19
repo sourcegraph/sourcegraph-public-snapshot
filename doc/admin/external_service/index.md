@@ -16,6 +16,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
    <thead>
       <tr>
         <th>Code Host</th>
+        <th>Status</th>
         <th>Repository Syncing</th>
         <th>Permissions Syncing</th>
         <th>Authentication</th>
@@ -28,9 +29,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
    <tbody>
       <tr>
         <td>GitHub.com</td>
-        <td><a href="github.md">Github.com</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -41,9 +40,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitHub Self-Hosted Enterprise</td>
-        <td><a href="github.md">GitHub Self-Hosted</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -54,9 +51,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitLab.com</td>
-        <td><a href="gitlab.md">GitLab.com</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -67,9 +62,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitLab Self-Hosted</td>
-        <td><a href="gitlab.md">GitLab Self-Hosted</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -80,9 +73,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>BitBucket Cloud</td>
-        <td><a href="bitbucket_cloud.md">BitBucket Cloud</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-n">✗</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-n">✗</td> <!-- Authentication -->
@@ -93,9 +84,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>BitBucket Server</td>
-        <td><a href="bitbucket_server.md">BitBucket Server</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -106,9 +95,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>Perforce</td>
-        <td><a href="../repo/perforce.md">Perforce</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
-        <td class="indexer-implemented-y">✓</td> <!-- Code Host -->
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
