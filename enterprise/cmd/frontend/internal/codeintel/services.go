@@ -91,7 +91,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			return uploadshttp.GetHandler(uploadSvc)
 		}
 
-		return httpapi.NewCodeIntelUploadHandler(
+		return httpapi.NewUploadHandler(
 			db,
 			&httpapi.DBStoreShim{Store: dbStore},
 			uploadStore,

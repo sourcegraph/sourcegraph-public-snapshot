@@ -1,11 +1,10 @@
-package httpapi
+package generic
 
 import (
 	"context"
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,8 +19,6 @@ type uploadState[T any] struct {
 	uncompressedSize *int64
 	metadata         T
 }
-
-var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 // constructUploadState reads the query args of the given HTTP request and populates an upload state object.
 // This function should be used instead of reading directly from the request as the upload state's fields are
@@ -80,4 +77,17 @@ func (h *UploadHandler[T]) hydrateUploadStateFromRequest(ctx context.Context, r 
 	uploadState.metadata = metadata
 
 	return uploadState, 0, nil
+}
+
+func hasQuery(r *http.Request, name string) bool {
+	return r.URL.Query().Get(name) != ""
+}
+
+func getQuery(r *http.Request, name string) string {
+	return r.URL.Query().Get(name)
+}
+
+func getQueryInt(r *http.Request, name string) int {
+	value, _ := strconv.Atoi(r.URL.Query().Get(name))
+	return value
 }

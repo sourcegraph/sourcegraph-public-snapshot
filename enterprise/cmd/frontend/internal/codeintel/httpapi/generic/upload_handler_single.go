@@ -1,4 +1,4 @@
-package httpapi
+package generic
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploa
 	}
 
 	h.logger.Info(
-		"codeintel.httpapi: enqueued upload",
+		"uploadutil.http: enqueued upload",
 		sglog.Int("id", id),
 	)
 

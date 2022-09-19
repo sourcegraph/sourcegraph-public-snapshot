@@ -4,13 +4,11 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package httpapi
+package generic
 
 import (
 	"context"
 	"sync"
-
-	generic "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/generic"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -56,12 +54,12 @@ func NewMockDBStore[T interface{}]() *MockDBStore[T] {
 			},
 		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc[T]{
-			defaultHook: func(context.Context, int) (r0 generic.Upload[T], r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 Upload[T], r1 bool, r2 error) {
 				return
 			},
 		},
 		InsertUploadFunc: &DBStoreInsertUploadFunc[T]{
-			defaultHook: func(context.Context, generic.Upload[T]) (r0 int, r1 error) {
+			defaultHook: func(context.Context, Upload[T]) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -76,7 +74,7 @@ func NewMockDBStore[T interface{}]() *MockDBStore[T] {
 			},
 		},
 		TransactFunc: &DBStoreTransactFunc[T]{
-			defaultHook: func(context.Context) (r0 generic.DBStore[T], r1 error) {
+			defaultHook: func(context.Context) (r0 DBStore[T], r1 error) {
 				return
 			},
 		},
@@ -98,12 +96,12 @@ func NewStrictMockDBStore[T interface{}]() *MockDBStore[T] {
 			},
 		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc[T]{
-			defaultHook: func(context.Context, int) (generic.Upload[T], bool, error) {
+			defaultHook: func(context.Context, int) (Upload[T], bool, error) {
 				panic("unexpected invocation of MockDBStore.GetUploadByID")
 			},
 		},
 		InsertUploadFunc: &DBStoreInsertUploadFunc[T]{
-			defaultHook: func(context.Context, generic.Upload[T]) (int, error) {
+			defaultHook: func(context.Context, Upload[T]) (int, error) {
 				panic("unexpected invocation of MockDBStore.InsertUpload")
 			},
 		},
@@ -118,7 +116,7 @@ func NewStrictMockDBStore[T interface{}]() *MockDBStore[T] {
 			},
 		},
 		TransactFunc: &DBStoreTransactFunc[T]{
-			defaultHook: func(context.Context) (generic.DBStore[T], error) {
+			defaultHook: func(context.Context) (DBStore[T], error) {
 				panic("unexpected invocation of MockDBStore.Transact")
 			},
 		},
@@ -127,7 +125,7 @@ func NewStrictMockDBStore[T interface{}]() *MockDBStore[T] {
 
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockDBStoreFrom[T interface{}](i generic.DBStore[T]) *MockDBStore[T] {
+func NewMockDBStoreFrom[T interface{}](i DBStore[T]) *MockDBStore[T] {
 	return &MockDBStore[T]{
 		AddUploadPartFunc: &DBStoreAddUploadPartFunc[T]{
 			defaultHook: i.AddUploadPart,
@@ -365,15 +363,15 @@ func (c DBStoreDoneFuncCall[T]) Results() []interface{} {
 // DBStoreGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockDBStore instance is invoked.
 type DBStoreGetUploadByIDFunc[T interface{}] struct {
-	defaultHook func(context.Context, int) (generic.Upload[T], bool, error)
-	hooks       []func(context.Context, int) (generic.Upload[T], bool, error)
+	defaultHook func(context.Context, int) (Upload[T], bool, error)
+	hooks       []func(context.Context, int) (Upload[T], bool, error)
 	history     []DBStoreGetUploadByIDFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore[T]) GetUploadByID(v0 context.Context, v1 int) (generic.Upload[T], bool, error) {
+func (m *MockDBStore[T]) GetUploadByID(v0 context.Context, v1 int) (Upload[T], bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(DBStoreGetUploadByIDFuncCall[T]{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -382,7 +380,7 @@ func (m *MockDBStore[T]) GetUploadByID(v0 context.Context, v1 int) (generic.Uplo
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreGetUploadByIDFunc[T]) SetDefaultHook(hook func(context.Context, int) (generic.Upload[T], bool, error)) {
+func (f *DBStoreGetUploadByIDFunc[T]) SetDefaultHook(hook func(context.Context, int) (Upload[T], bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -390,7 +388,7 @@ func (f *DBStoreGetUploadByIDFunc[T]) SetDefaultHook(hook func(context.Context, 
 // GetUploadByID method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreGetUploadByIDFunc[T]) PushHook(hook func(context.Context, int) (generic.Upload[T], bool, error)) {
+func (f *DBStoreGetUploadByIDFunc[T]) PushHook(hook func(context.Context, int) (Upload[T], bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -398,20 +396,20 @@ func (f *DBStoreGetUploadByIDFunc[T]) PushHook(hook func(context.Context, int) (
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreGetUploadByIDFunc[T]) SetDefaultReturn(r0 generic.Upload[T], r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (generic.Upload[T], bool, error) {
+func (f *DBStoreGetUploadByIDFunc[T]) SetDefaultReturn(r0 Upload[T], r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (Upload[T], bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetUploadByIDFunc[T]) PushReturn(r0 generic.Upload[T], r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (generic.Upload[T], bool, error) {
+func (f *DBStoreGetUploadByIDFunc[T]) PushReturn(r0 Upload[T], r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (Upload[T], bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetUploadByIDFunc[T]) nextHook() func(context.Context, int) (generic.Upload[T], bool, error) {
+func (f *DBStoreGetUploadByIDFunc[T]) nextHook() func(context.Context, int) (Upload[T], bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -452,7 +450,7 @@ type DBStoreGetUploadByIDFuncCall[T interface{}] struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 generic.Upload[T]
+	Result0 Upload[T]
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -476,15 +474,15 @@ func (c DBStoreGetUploadByIDFuncCall[T]) Results() []interface{} {
 // DBStoreInsertUploadFunc describes the behavior when the InsertUpload
 // method of the parent MockDBStore instance is invoked.
 type DBStoreInsertUploadFunc[T interface{}] struct {
-	defaultHook func(context.Context, generic.Upload[T]) (int, error)
-	hooks       []func(context.Context, generic.Upload[T]) (int, error)
+	defaultHook func(context.Context, Upload[T]) (int, error)
+	hooks       []func(context.Context, Upload[T]) (int, error)
 	history     []DBStoreInsertUploadFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore[T]) InsertUpload(v0 context.Context, v1 generic.Upload[T]) (int, error) {
+func (m *MockDBStore[T]) InsertUpload(v0 context.Context, v1 Upload[T]) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(DBStoreInsertUploadFuncCall[T]{v0, v1, r0, r1})
 	return r0, r1
@@ -493,7 +491,7 @@ func (m *MockDBStore[T]) InsertUpload(v0 context.Context, v1 generic.Upload[T]) 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreInsertUploadFunc[T]) SetDefaultHook(hook func(context.Context, generic.Upload[T]) (int, error)) {
+func (f *DBStoreInsertUploadFunc[T]) SetDefaultHook(hook func(context.Context, Upload[T]) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -501,7 +499,7 @@ func (f *DBStoreInsertUploadFunc[T]) SetDefaultHook(hook func(context.Context, g
 // InsertUpload method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreInsertUploadFunc[T]) PushHook(hook func(context.Context, generic.Upload[T]) (int, error)) {
+func (f *DBStoreInsertUploadFunc[T]) PushHook(hook func(context.Context, Upload[T]) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -510,19 +508,19 @@ func (f *DBStoreInsertUploadFunc[T]) PushHook(hook func(context.Context, generic
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *DBStoreInsertUploadFunc[T]) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, generic.Upload[T]) (int, error) {
+	f.SetDefaultHook(func(context.Context, Upload[T]) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *DBStoreInsertUploadFunc[T]) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, generic.Upload[T]) (int, error) {
+	f.PushHook(func(context.Context, Upload[T]) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreInsertUploadFunc[T]) nextHook() func(context.Context, generic.Upload[T]) (int, error) {
+func (f *DBStoreInsertUploadFunc[T]) nextHook() func(context.Context, Upload[T]) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -560,7 +558,7 @@ type DBStoreInsertUploadFuncCall[T interface{}] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 generic.Upload[T]
+	Arg1 Upload[T]
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -798,15 +796,15 @@ func (c DBStoreMarkQueuedFuncCall[T]) Results() []interface{} {
 // DBStoreTransactFunc describes the behavior when the Transact method of
 // the parent MockDBStore instance is invoked.
 type DBStoreTransactFunc[T interface{}] struct {
-	defaultHook func(context.Context) (generic.DBStore[T], error)
-	hooks       []func(context.Context) (generic.DBStore[T], error)
+	defaultHook func(context.Context) (DBStore[T], error)
+	hooks       []func(context.Context) (DBStore[T], error)
 	history     []DBStoreTransactFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDBStore[T]) Transact(v0 context.Context) (generic.DBStore[T], error) {
+func (m *MockDBStore[T]) Transact(v0 context.Context) (DBStore[T], error) {
 	r0, r1 := m.TransactFunc.nextHook()(v0)
 	m.TransactFunc.appendCall(DBStoreTransactFuncCall[T]{v0, r0, r1})
 	return r0, r1
@@ -814,7 +812,7 @@ func (m *MockDBStore[T]) Transact(v0 context.Context) (generic.DBStore[T], error
 
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreTransactFunc[T]) SetDefaultHook(hook func(context.Context) (generic.DBStore[T], error)) {
+func (f *DBStoreTransactFunc[T]) SetDefaultHook(hook func(context.Context) (DBStore[T], error)) {
 	f.defaultHook = hook
 }
 
@@ -822,7 +820,7 @@ func (f *DBStoreTransactFunc[T]) SetDefaultHook(hook func(context.Context) (gene
 // Transact method of the parent MockDBStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreTransactFunc[T]) PushHook(hook func(context.Context) (generic.DBStore[T], error)) {
+func (f *DBStoreTransactFunc[T]) PushHook(hook func(context.Context) (DBStore[T], error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -830,20 +828,20 @@ func (f *DBStoreTransactFunc[T]) PushHook(hook func(context.Context) (generic.DB
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreTransactFunc[T]) SetDefaultReturn(r0 generic.DBStore[T], r1 error) {
-	f.SetDefaultHook(func(context.Context) (generic.DBStore[T], error) {
+func (f *DBStoreTransactFunc[T]) SetDefaultReturn(r0 DBStore[T], r1 error) {
+	f.SetDefaultHook(func(context.Context) (DBStore[T], error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreTransactFunc[T]) PushReturn(r0 generic.DBStore[T], r1 error) {
-	f.PushHook(func(context.Context) (generic.DBStore[T], error) {
+func (f *DBStoreTransactFunc[T]) PushReturn(r0 DBStore[T], r1 error) {
+	f.PushHook(func(context.Context) (DBStore[T], error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreTransactFunc[T]) nextHook() func(context.Context) (generic.DBStore[T], error) {
+func (f *DBStoreTransactFunc[T]) nextHook() func(context.Context) (DBStore[T], error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -881,7 +879,7 @@ type DBStoreTransactFuncCall[T interface{}] struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 generic.DBStore[T]
+	Result0 DBStore[T]
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

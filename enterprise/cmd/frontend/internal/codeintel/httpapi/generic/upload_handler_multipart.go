@@ -1,4 +1,4 @@
-package httpapi
+package generic
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uplo
 	trace.Log(log.Int("uploadID", id))
 
 	h.logger.Info(
-		"codeintel.httpapi: enqueued upload",
+		"uploadutil.http: enqueued upload",
 		sglog.Int("id", id),
 	)
 
@@ -146,6 +146,6 @@ func (h *UploadHandler[T]) markUploadAsFailed(ctx context.Context, tx DBStore[T]
 	}
 
 	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
-		h.logger.Error("codeintel.httpapi: failed to mark upload as failed", sglog.Error(markErr))
+		h.logger.Error("uploadutil.http: failed to mark upload as failed", sglog.Error(markErr))
 	}
 }
