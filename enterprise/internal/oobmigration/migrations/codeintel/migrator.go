@@ -190,6 +190,14 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 `
 
 // Up runs a batch of the migration.
+//
+// Each invocation of the internal method `up` (and symmetrically, `down`) selects an upload identifier
+// that still has data in the target range. Records associated with this upload identifier are read and
+// transformed, then updated in-place in the database.
+//
+// Two migrators (of the same concrete type) will not process the same upload identifier concurrently as
+// the selection of the upload holds a row lock assocaited with that upload for the duration of the method's
+// enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
 	g := group.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
@@ -204,6 +212,8 @@ func (m *migrator) up(ctx context.Context) (err error) {
 }
 
 // Down runs a batch of the migration in reverse.
+//
+// For notes on parallelism, see the symmetric `Up` method on this migrator.
 func (m *migrator) Down(ctx context.Context) error {
 	g := group.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
