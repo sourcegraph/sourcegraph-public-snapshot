@@ -79,7 +79,7 @@ Examples:
 		ui.ResolvingNamespaceSuccess(namespace.ID)
 
 		ui.SendingBatchChange()
-		batchChangeName, err := svc.UpsertBatchChange(ctx, spec.Name, namespace.ID)
+		batchChangeID, batchChangeName, err := svc.UpsertBatchChange(ctx, spec.Name, namespace.ID)
 		if err != nil {
 			return err
 		}
@@ -93,6 +93,7 @@ Examples:
 			flags.allowIgnored,
 			flags.allowUnsupported,
 			flags.clearCache,
+			batchChangeID,
 		)
 		if err != nil {
 			return err

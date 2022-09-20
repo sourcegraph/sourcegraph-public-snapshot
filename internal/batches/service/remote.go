@@ -17,6 +17,7 @@ mutation UpsertEmptyBatchChange(
 		name: $name,
 		namespace: $namespace
 	) {
+		id
 		name
 	}
 }
@@ -26,9 +27,10 @@ func (svc *Service) UpsertBatchChange(
 	ctx context.Context,
 	name string,
 	namespaceID string,
-) (string, error) {
+) (string, string, error) {
 	var resp struct {
 		UpsertEmptyBatchChange struct {
+			ID   string `json:"id"`
 			Name string `json:"name"`
 		} `json:"upsertEmptyBatchChange"`
 	}
@@ -37,10 +39,10 @@ func (svc *Service) UpsertBatchChange(
 		"name":      name,
 		"namespace": namespaceID,
 	}).Do(ctx, &resp); err != nil || !ok {
-		return "", err
+		return "", "", err
 	}
 
-	return resp.UpsertEmptyBatchChange.Name, nil
+	return resp.UpsertEmptyBatchChange.ID, resp.UpsertEmptyBatchChange.Name, nil
 }
 
 const createBatchSpecFromRawQuery = `
@@ -50,6 +52,7 @@ mutation CreateBatchSpecFromRaw(
     $allowIgnored: Boolean!,
     $allowUnsupported: Boolean!,
     $noCache: Boolean!,
+    $batchChange: ID!,
 ) {
     createBatchSpecFromRaw(
         batchSpec: $batchSpec,
@@ -57,6 +60,7 @@ mutation CreateBatchSpecFromRaw(
         allowIgnored: $allowIgnored,
         allowUnsupported: $allowUnsupported,
         noCache: $noCache,
+        batchChange: $batchChange,
     ) {
         id
     }
@@ -70,6 +74,7 @@ func (svc *Service) CreateBatchSpecFromRaw(
 	allowIgnored bool,
 	allowUnsupported bool,
 	noCache bool,
+	batchChange string,
 ) (string, error) {
 	var resp struct {
 		CreateBatchSpecFromRaw struct {
@@ -83,6 +88,7 @@ func (svc *Service) CreateBatchSpecFromRaw(
 		"allowIgnored":     allowIgnored,
 		"allowUnsupported": allowUnsupported,
 		"noCache":          noCache,
+		"batchChange":      batchChange,
 	}).Do(ctx, &resp); err != nil || !ok {
 		return "", err
 	}
