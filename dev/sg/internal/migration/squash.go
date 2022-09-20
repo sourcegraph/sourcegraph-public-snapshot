@@ -175,6 +175,12 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 		return definition.Definition{}, false, err
 	}
 
+	// Determine the set of parents inside the intersection with children outside of
+	// the intersection. Unfortunately it's not enough to calculate only the leaf
+	// dominator (below) if there were long-standing PRs that caused a migration parent
+	// edge to cross over the release boundary. What we actually need is the dominators
+	// of the leaves as well as the set of migrations defined more recently than the
+	// squash target version.
 	parentsMap := make(map[int]struct{}, len(versionsAtCommit))
 	for _, migration := range ds.All() {
 		if _, ok := filteredDefinitions.GetByID(migration.ID); !ok {

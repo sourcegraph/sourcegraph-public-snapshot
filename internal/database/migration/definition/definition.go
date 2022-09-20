@@ -117,6 +117,9 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 // LeafDominator returns the unique migration definition that dominates the set
 // of leaf migrations. If no such migration exists, a false-valued flag is returned.
 //
+// Additional migration identifiers can be passed, which are added to the initial
+// set of leaf identifiers.
+//
 // Note that if there is a single leaf, this function returns that leaf. If there
 // exist multiple leaves, then this function returns the nearest common ancestor (nca)
 // of all leaves. This gives us a nice clean single-entry, single-exit graph prefix
@@ -129,7 +132,7 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 //	          +-- ... --+           +-- [ leaf 2 ]
 func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
 	leaves := ds.Leaves()
-	if len(leaves) == 0 {
+	if len(leaves) == 0 && len(extraIDs) == 0 {
 		return Definition{}, false
 	}
 
