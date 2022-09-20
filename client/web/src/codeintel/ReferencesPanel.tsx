@@ -33,6 +33,7 @@ import {
     FileSpec,
     ResolvedRevisionSpec,
     parseQueryAndHash,
+    toPrettyBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Link,
@@ -292,6 +293,7 @@ export const ReferencesList: React.FunctionComponent<
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
     const panelHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
+    // TODO: get rid of this history because we don't use it.
 
     // This is the history of the panel, that is inside a memory router
     // const panelHistory = useHistory()
@@ -302,7 +304,22 @@ export const ReferencesList: React.FunctionComponent<
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const setActiveLocation = (location: Location | undefined): void => {
-        setActiveURL(location?.url)
+        if (location) {
+            // Reconstruct the URL instead of using `location.url` to ensure that 5
+            const absoluteURL = toPrettyBlobURL({
+                filePath: location.file,
+                revision: location.commitID,
+                repoName: location.repo,
+                commitID: location.commitID,
+                position: location.range
+                    ? {
+                          line: location.range.start.line + 1,
+                          character: location.range.start.character,
+                      }
+                    : undefined,
+            })
+            setActiveURL(absoluteURL)
+        }
     }
 
     const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
@@ -310,23 +327,27 @@ export const ReferencesList: React.FunctionComponent<
     if (activeURL) {
         // NOTE(olafurpg) I tried wrapping this step inside `useEffect()` but it stopped working.
         panelHistory.replace(activeURL)
+        console.log({ activeURL })
     }
 
-    const isActiveLocation = (location: Location): boolean =>
-        (sideblob?.position &&
-            location.range &&
-            sideblob.repository === location.repo &&
-            sideblob.file === location.file &&
-            sideblob.commitID === location.commitID &&
-            sideblob.position.line === location.range.start.line) ||
-        false
+    const isActiveLocation = (location: Location): boolean => {
+        const result =
+            (sideblob?.position &&
+                location.range &&
+                sideblob.repository === location.repo &&
+                sideblob.file === location.file &&
+                sideblob.commitID === location.commitID &&
+                sideblob.position.line === location.range.start.line) ||
+            false
+        return result
+    }
 
     // If props.jumpToFirst is true and we finished loading (and have
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            setActiveURL(definitions[0].url)
+            setActiveLocation(definitions[0])
         }
     }, [panelHistory, props.jumpToFirst, definitions, setActiveURL])
 
@@ -336,14 +357,6 @@ export const ReferencesList: React.FunctionComponent<
     const onReferenceClick = (location: Location | undefined): void => {
         setActiveLocation(location)
     }
-
-    // useEffect(
-    //     () =>
-    //         panelHistory.listen(location => {
-    //             setActiveURL(panelHistory.createHref(location))
-    //         }),
-    //     [history]
-    // )
 
     // When we user clicks on a token *inside* the code blob on the right, we
     // update the history for the panel itself, which is inside a memory router.
@@ -491,16 +504,18 @@ export const ReferencesList: React.FunctionComponent<
                                     />
                                 </Button>
                             </Tooltip>
-                            <Link
-                                to={activeURL || ''}
-                                // onClick={event => {
-                                //     event.preventDefault()
-                                //     navigateToUrl(sideblob.activeURL)
-                                // }}
-                                className={styles.sideBlobFilename}
-                            >
-                                {sideblob.file}{' '}
-                            </Link>
+                            {activeURL && (
+                                <Link
+                                    to={activeURL}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        navigateToUrl(activeURL)
+                                    }}
+                                    className={styles.sideBlobFilename}
+                                >
+                                    {sideblob.file}{' '}
+                                </Link>
+                            )}
                         </small>
                     </CardHeader>
                     <SideBlob
@@ -649,27 +664,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
     // const { history, panelHistory } = props
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
-
-    // // When using CodeMirror we have to forward history entries to the panel's
-    // // router. That's because the CodeMirror <-> React integration uses its own
-    // // Router and so clicks on <Link />s are not caught by the panel's router
-    // // context.
-    // useEffect(
-    //     () =>
-    //         history.listen((location, method) => {
-    //             if (useCodeMirror && location.state?.syncToPanel !== false) {
-    //                 switch (method) {
-    //                     case 'PUSH':
-    //                         panelHistory.push(location)
-    //                         break
-    //                     case 'REPLACE':
-    //                         panelHistory.replace(location)
-    //                         break
-    //                 }
-    //             }
-    //         }),
-    //     [useCodeMirror, history, panelHistory]
-    // )
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
