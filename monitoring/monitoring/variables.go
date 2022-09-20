@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/grafana-tools/sdk"
@@ -199,7 +200,11 @@ func (c *ContainerVariable) getSentinelValue() string {
 	// some other existing number in the query, this helps us distinguish what values
 	// were replaced. It also must be less than 60, since we don't want it to be
 	// reformatted as hours if it is a duration-based thing.
-	return numbers.ReplaceAllString(example, "59")
+	//
+	// To help prevent 2 variables from colliding, we do a simple heuristic where the
+	// variable name contributes to the generated number.
+	sentinelNumber := strconv.Itoa(60 - len(c.Name))
+	return numbers.ReplaceAllString(example, sentinelNumber)
 }
 
 func newVariableApplier(vars []ContainerVariable) promql.VariableApplier {

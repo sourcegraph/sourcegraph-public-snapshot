@@ -22,9 +22,10 @@ func TestVariableToGrafanaTemplateVar(t *testing.T) {
 
 func TestVariableExampleValue(t *testing.T) {
 	// Numbers get replaced with sentinel values - in getSentinelValue numbers are
-	// replaced with the value 59m
-	assert.Equal(t, "59m",
+	// replaced with the value 60-len(name)
+	assert.Equal(t, "56m",
 		(&ContainerVariable{
+			Name: "name",
 			Options: ContainerVariableOptions{
 				Options: []string{
 					"1m",
@@ -64,7 +65,7 @@ func TestVariableApplier(t *testing.T) {
 	var expression = `metric{bar="$bar"}[$foo]`
 
 	applied := vars.ApplySentinelValues(expression)
-	assert.Equal(t, `metric{bar="$bar"}[59m]`, applied) // 59 is sentinel value
+	assert.Equal(t, `metric{bar="$bar"}[57m]`, applied) // sentinel value is 60-len(name)
 
 	reverted := vars.RevertDefaults(expression, applied)
 	assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
