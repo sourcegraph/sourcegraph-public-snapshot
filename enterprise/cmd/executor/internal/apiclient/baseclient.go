@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path/filepath"
+	"path"
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
@@ -48,12 +48,14 @@ const schemeExecutorToken = "token-executor"
 type BaseClient struct {
 	httpClient *http.Client
 	options    BaseClientOptions
+	baseURL    *url.URL
 }
 
 type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
 
+	// EndpointOptions configures the endpoint the BaseClient will call for requests.
 	EndpointOptions EndpointOptions
 }
 
@@ -61,6 +63,7 @@ type EndpointOptions struct {
 	// URL is the target request URL.
 	URL string
 
+	// PathPrefix is the prefix of the path to be called by the BaseClient.
 	PathPrefix string
 
 	// Token is the authorization token to include with all requests (via Authorization header).
@@ -68,11 +71,17 @@ type EndpointOptions struct {
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
-func NewBaseClient(options BaseClientOptions) *BaseClient {
+func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
+	// Parse the base url upfront to save on overhead.
+	baseURL, err := url.Parse(options.EndpointOptions.URL)
+	if err != nil {
+		return nil, err
+	}
 	return &BaseClient{
 		httpClient: httpcli.InternalClient,
 		options:    options,
-	}
+		baseURL:    baseURL,
+	}, nil
 }
 
 // Do performs the given HTTP request and returns the body. If there is no content
@@ -129,15 +138,9 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 	return err
 }
 
+// NewRequest creates a new http.Request where only the Authorization HTTP header is set.
 func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.Request, error) {
-	u, err := newRelativeURL(
-		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.PathPrefix,
-		path,
-	)
-	if err != nil {
-		return nil, err
-	}
+	u := c.newRelativeURL(path)
 
 	r, err := http.NewRequest(method, u.String(), payload)
 	if err != nil {
@@ -148,15 +151,10 @@ func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.R
 	return r, nil
 }
 
+// NewJSONRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
+// HTTP header is set.
 func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Request, error) {
-	u, err := newRelativeURL(
-		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.PathPrefix,
-		path,
-	)
-	if err != nil {
-		return nil, err
-	}
+	u := c.newRelativeURL(path)
 
 	r, err := newJSONRequest(method, u, payload)
 	if err != nil {
@@ -168,14 +166,11 @@ func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Req
 }
 
 // newRelativeURL builds the relative URL on the provided base URL and adds any additional paths.
-// If the base URL is not a valid URL, an error is returned.
-func newRelativeURL(base string, path ...string) (*url.URL, error) {
-	baseURL, err := url.Parse(base)
-	if err != nil {
-		return nil, err
-	}
-
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+func (c *BaseClient) newRelativeURL(endpointPath string) *url.URL {
+	// Create a shallow clone
+	u := *c.baseURL
+	u.Path = path.Join(u.Path, c.options.EndpointOptions.PathPrefix, endpointPath)
+	return &u
 }
 
 // newJSONRequest creates an HTTP request with the given payload serialized as JSON. This
