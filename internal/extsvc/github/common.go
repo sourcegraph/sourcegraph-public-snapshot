@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"io"
 	"net/http"
@@ -1504,12 +1506,12 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, c *V3Client, req *http.Request, result any) (responseState *httpResponseState, err error) {
-	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
-	req.URL = c.apiURL.ResolveReference(req.URL)
+func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
+	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
+	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.auth != nil {
-		if err := c.auth.Authenticate(req); err != nil {
+	if auth != nil {
+		if err := auth.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1528,21 +1530,20 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, c *V3C
 		span.Finish()
 	}()
 
-	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
-	if ok && oauthContext != nil {
-		code, header, _, err := oauthutil.DoRequest(ctx, c.httpClient, req, bearerToken, c.tokenRefresher, *oauthContext)
+	if bearerToken != nil && oauthContext != nil {
+		code, header, _, err := oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
 		if err != nil {
 			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
-		resp, err = c.httpClient.Do(req.WithContext(ctx))
+		resp, err = httpClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return nil, err
 		}
 		defer resp.Body.Close()
 	}
 
-	c.log.Debug("doRequest",
+	logger.Debug("doRequest",
 		log.String("status", resp.Status),
 		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
@@ -1550,7 +1551,7 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, c *V3C
 	// call to block for up to an hour because it believes we have run out of tokens.
 	// Instead, we should fail fast.
 	if resp.StatusCode != 401 {
-		c.rateLimitMonitor.Update(resp.Header)
+		rateLimitMonitor.Update(resp.Header)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
@@ -2021,4 +2022,32 @@ func handlePullRequestError(err error) error {
 // which is used for GitHub App access tokens.
 func IsGitHubAppAccessToken(token string) bool {
 	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+				Scopes: []string{"user:email", "repo", "read:org"},
+			}
+		}
+	}
+	return nil
 }
