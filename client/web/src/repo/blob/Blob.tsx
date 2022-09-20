@@ -124,7 +124,7 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
-    isBlameVisible?: boolean
+    isBlameVisible: boolean
     blameHunks?: BlameHunk[]
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
