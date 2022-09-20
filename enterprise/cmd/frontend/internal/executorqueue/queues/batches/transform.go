@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"path/filepath"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -22,16 +20,16 @@ import (
 )
 
 const (
-	srcInputPath = "input.json"
-	srcMountDir  = "mounts"
-	srcTempDir   = ".src-tmp"
-	srcRepoDir   = "repository"
+	srcInputPath         = "input.json"
+	srcRepoDir           = "repository"
+	srcTempDir           = ".src-tmp"
+	srcWorkspaceFilesDir = "workspace-files"
 )
 
 type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
-	ListBatchSpecMounts(ctx context.Context, opts store.ListBatchSpecMountsOpts) (mounts []*btypes.BatchSpecMount, next int64, err error)
+	ListBatchSpecWorkspaceFiles(ctx context.Context, opts store.ListBatchSpecWorkspaceFileOpts) ([]*btypes.BatchSpecWorkspaceFile, int64, error)
 
 	DatabaseDB() database.DB
 }
@@ -61,24 +59,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
-	}
-
-	batchSpecMounts, _, err := s.ListBatchSpecMounts(ctx, store.ListBatchSpecMountsOpts{BatchSpecRandID: batchSpec.RandID})
-	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching mounts")
-	}
-	mounts := make([]apiclient.Mount, len(batchSpecMounts))
-	for i, mount := range batchSpecMounts {
-		mounts[i] = apiclient.Mount{
-			FileName: mount.FileName,
-			Path:     mount.Path,
-			Modified: mount.ModifiedAt,
-			URL: filepath.Join(
-				"batches/mount",
-				string(relay.MarshalID("BatchSpec", batchSpec.RandID)),
-				string(relay.MarshalID("BatchSpecMount", mount.RandID)),
-			),
-		}
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
@@ -130,7 +110,23 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	if err != nil {
 		return apiclient.Job{}, err
 	}
-	files := map[string]string{srcInputPath: string(marshaledInput)}
+	files := map[string]apiclient.VirtualMachineFile{
+		srcInputPath: {
+			Content: string(marshaledInput),
+		},
+	}
+
+	workspaceFiles, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: batchSpec.RandID})
+	if err != nil {
+		return apiclient.Job{}, errors.Wrap(err, "fetching mounts")
+	}
+	for _, workspaceFile := range workspaceFiles {
+		files[filepath.Join(workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
+			Bucket:          "batches",
+			Key:             filepath.Join(batchSpec.RandID, workspaceFile.RandID),
+			CacheModifiedAt: workspaceFile.ModifiedAt,
+		}
+	}
 
 	// If we only want to fetch the workspace, we add a sparse checkout pattern.
 	sparseCheckout := []string{}
@@ -141,13 +137,12 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 
 	return apiclient.Job{
-		ID:                  int(job.ID),
-		VirtualMachineFiles: files,
-		RepositoryName:      string(repo.Name),
-		RepositoryDirectory: srcRepoDir,
-		Mounts:              mounts,
-		MountDirectory:      srcMountDir,
-		Commit:              workspace.Commit,
+		ID:                      int(job.ID),
+		VirtualMachineFiles:     files,
+		RepositoryName:          string(repo.Name),
+		RepositoryDirectory:     srcRepoDir,
+		WorkspaceFilesDirectory: srcWorkspaceFilesDir,
+		Commit:                  workspace.Commit,
 		// We only care about the current repos content, so a shallow clone is good enough.
 		// Later we might allow to tweak more git parameters, like submodules and LFS.
 		ShallowClone:   true,
@@ -162,7 +157,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					// Tell src to store tmp files inside the workspace. Src currently
 					// runs on the host and we don't want pollution outside of the workspace.
 					"-tmp", srcTempDir,
-					"-mount", srcMountDir,
+					"-workspaceFiles", srcWorkspaceFilesDir,
 				},
 				Dir: ".",
 				Env: []string{},
@@ -171,14 +166,4 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// Nothing to redact for now. We want to add secrets here once implemented.
 		RedactedValues: map[string]string{},
 	}, nil
-}
-
-func makeURL(base, password string) (string, error) {
-	u, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-
-	u.User = url.UserPassword("sourcegraph", password)
-	return u.String(), nil
 }
