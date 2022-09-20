@@ -71,18 +71,13 @@ const parseGitLabRepoURL = (): { hostname: string; projectFullName: string; owne
     return { hostname: url.hostname, projectFullName, owner, projectName }
 }
 
-const getRepoNameOnSourcegraphInitialValue = (): string => {
-    const { hostname, projectFullName } = parseGitLabRepoURL()
-    return [hostname, projectFullName].join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2'
-}
-
 /**
  * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/sourcegraph/jsonrpc2').
  * It may be different from the repo name on the code host because of the name transformations applied
  * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
  * Set in `gitlabCodeHost.prepareCodeHost` method.
  */
-export const repoNameOnSourcegraph = new BehaviorSubject<string>(getRepoNameOnSourcegraphInitialValue())
+export const repoNameOnSourcegraph = new BehaviorSubject<string>('')
 
 /**
  * Gets information about the page.
@@ -94,7 +89,9 @@ export function getPageInfo(): GitLabInfo {
         owner: ownerOnGitLab,
         projectName: projectNameOnGitLab,
     } = parseGitLabRepoURL()
-    const projectFullNameOnSourcegraph = repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+    const projectFullNameOnSourcegraph = repoNameOnSourcegraph.value
+        ? repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+        : projectFullNameOnGitLab
     const { owner, projectName } = parseFullProjectName(projectFullNameOnSourcegraph)
     const pageKind = getPageKindFromPathName(ownerOnGitLab, projectNameOnGitLab, window.location.pathname)
 
