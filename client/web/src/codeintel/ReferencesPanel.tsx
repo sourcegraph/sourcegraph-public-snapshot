@@ -279,13 +279,15 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
-    // This is the history of the panel, that is inside a memory router
+    // The "active URL" is the URL of the highlighted line number in SideBlob,
+    // which also influences which item gets highlighted inside
+    // CollapsibleLocationList. This URL is persisted to session storage so that
+    // it remains sticky between browser reloads and when pressing back/forward
+    // in the browser history.
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
         undefined
     )
-    // activeLocation is the location that is selected/clicked in the list of
-    // definitions/references/implementations.
     const setActiveLocation = (location: Location | undefined): void => {
         if (!location) {
             setActiveURL(undefined)
