@@ -46,7 +46,6 @@ import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
 import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
-import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
 import { RepoCommits } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
@@ -390,19 +389,13 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/compare/tab`}
                                             render={() => (
                                                 <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer
+                                                    <RepositoryCompareArea
+                                                        repo={repo}
+                                                        match={match}
+                                                        settingsCascade={settingsCascade}
+                                                        useBreadcrumb={useBreadcrumb}
                                                         {...props}
-                                                        repoName={repoName}
-                                                        resolvedRevisionOrError={undefined}
-                                                    >
-                                                        <RepositoryCompareArea
-                                                            repo={repo}
-                                                            match={match}
-                                                            settingsCascade={settingsCascade}
-                                                            useBreadcrumb={useBreadcrumb}
-                                                            {...props}
-                                                        />
-                                                    </RepositoryGitDataContainer>
+                                                    />
                                                 </RepoRevisionWrapper>
                                             )}
                                         />
