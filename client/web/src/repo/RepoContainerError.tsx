@@ -1,5 +1,3 @@
-import { PropsWithChildren } from 'react'
-
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
