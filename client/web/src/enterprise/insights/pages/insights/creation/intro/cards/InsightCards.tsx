@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -104,36 +104,5 @@ export const CaptureGroupInsightCard: React.FunctionComponent<React.PropsWithChi
         </InsightCardBody>
 
         <InsightCardExampleBlock>Detecting and tracking language or package versions.</InsightCardExampleBlock>
-    </InsightCard>
-)
-
-export const ExtensionInsightsCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
-    <InsightCard {...props} className={styles.cardExtensionCard}>
-        <div className={styles.images}>
-            <img
-                className={styles.image}
-                src={`${window.context?.assetsRoot || ''}/img/codecov.png`}
-                data-skip-percy={true}
-                alt="Codecov logo"
-            />
-            <img
-                className={styles.image}
-                src={`${window.context?.assetsRoot || ''}/img/eslint.png`}
-                data-skip-percy={true}
-                alt="Eslint logo"
-            />
-            <img
-                className={styles.image}
-                src={`${window.context?.assetsRoot || ''}/img/snyk.png`}
-                data-skip-percy={true}
-                alt="Snyk logo"
-            />
-        </div>
-
-        <InsightCardBody title="Based on Sourcegraph extensions">
-            Enable the extension and go to the README.md to learn how to set up code insights for selected Sourcegraph
-            extensions.
-            <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
-        </InsightCardBody>
     </InsightCard>
 )
