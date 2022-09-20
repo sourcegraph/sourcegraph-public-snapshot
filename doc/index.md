@@ -18,7 +18,6 @@ title: Get Started
     border: 1px solid;
     background-color: white;
     text-align: center;
-    font-weight: 100;
   }
   .app-btn:hover {
     box-shadow: 0 0 10px #00cbec;
@@ -28,7 +27,6 @@ title: Get Started
   }
   .app-btn > h3 {
     font-size: 1.5em;
-    font-weight: lighter;
     margin-top: .2em;
     margin-bottom: 1em;
   }
