@@ -140,7 +140,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const navigateToUrl = props.nav
+    const customHistoryAction = props.nav
     const onSelection = useCallback(
         (range: SelectedLineRange) => {
             const parameters = new URLSearchParams(locationRef.current.search)
@@ -158,8 +158,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             }
 
             const newSearchParameters = addLineRangeQueryParameter(parameters, query)
-            if (navigateToUrl) {
-                navigateToUrl(
+            if (customHistoryAction) {
+                customHistoryAction(
                     historyRef.current.createHref({
                         ...locationRef.current,
                         search: formatSearchParameters(newSearchParameters),
@@ -169,7 +169,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
             }
         },
-        [navigateToUrl]
+        [customHistoryAction]
     )
 
     const extensions = useMemo(

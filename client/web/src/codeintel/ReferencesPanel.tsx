@@ -293,7 +293,9 @@ export const ReferencesList: React.FunctionComponent<
             setActiveURL(undefined)
             return
         }
-        // Reconstruct the URL instead of using `location.url` to ensure that 5
+        // Reconstruct the URL instead of using `location.url` to ensure that
+        // the commitID is included even when `location.url` doesn't include the
+        // commitID (because it's the default revision '').
         const absoluteURL = toPrettyBlobURL({
             filePath: location.file,
             revision: location.commitID,

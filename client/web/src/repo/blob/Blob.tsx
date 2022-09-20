@@ -117,6 +117,8 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
+    // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
@@ -126,7 +128,6 @@ export interface BlobProps
     ariaLabel?: string
 
     blameHunks?: BlameHunk[]
-    renderLineButtons?: boolean
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
