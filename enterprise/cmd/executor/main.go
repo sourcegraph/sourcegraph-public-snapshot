@@ -77,10 +77,14 @@ func main() {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
-	worker := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
+	w, err := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
+	if err != nil {
+		logger.Error("failed to build worker", log.Error(err))
+		os.Exit(1)
+	}
 
 	routines := []goroutine.BackgroundRoutine{
-		worker,
+		w,
 	}
 
 	if config.UseFirecracker {
@@ -99,7 +103,7 @@ func main() {
 		// in that we want a maximum runtime and/or number of jobs to be
 		// executed by a single instance, after which the service should shut
 		// down without error.
-		worker.Wait()
+		w.Wait()
 
 		// Once the worker has finished its current set of jobs and stops
 		// the dequeue loop, we want to finish off the rest of the sibling
