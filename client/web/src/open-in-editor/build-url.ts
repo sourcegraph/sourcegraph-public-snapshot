@@ -5,6 +5,10 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
+export function buildRepoBaseNameAndPath(repoName: string, filePath: string | undefined): string {
+    return path.join(...[...repoName.split('/').slice(1), ...(filePath ? [filePath] : [])])
+}
+
 export function buildEditorUrl(
     repoBaseNameAndPath: string,
     range: UIRangeSpec['range'] | undefined,
