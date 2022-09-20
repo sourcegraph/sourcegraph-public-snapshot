@@ -52,7 +52,7 @@ describe.only('GitLab', () => {
                     merged: { contents: '', messages: [] },
                 },
             }),
-            RepositoryName: () => ({
+            ResolveRepoName: () => ({
                 repository: {
                     name: 'gitlab.com/sourcegraph/jsonrpc2',
                 },

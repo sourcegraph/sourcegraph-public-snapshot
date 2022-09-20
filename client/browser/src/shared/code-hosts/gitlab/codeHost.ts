@@ -10,7 +10,7 @@ import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensio
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { RepositoryNameResult, RepositoryNameVariables } from '../../../graphql-operations'
+import { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -276,9 +276,9 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     ),
 
     prepareCodeHost: async requestGraphQL =>
-        requestGraphQL<RepositoryNameResult, RepositoryNameVariables>({
+        requestGraphQL<ResolveRepoNameResult, ResolveRepoNameVariables>({
             request: gql`
-                query RepositoryName($cloneURL: String!) {
+                query ResolveRepoName($cloneURL: String!) {
                     repository(cloneURL: $cloneURL) {
                         name
                     }
