@@ -445,8 +445,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        const isPositionOverWhitespace = 'character' in position
-                        if (isPositionOverWhitespace || props.navigateToLineOnAnyClick) {
+                        const isClickOnBlankSpace = !('character' in position)
+                        if (isClickOnBlankSpace || props.navigateToLineOnAnyClick) {
                             if (customHistoryAction) {
                                 const entry: H.LocationDescriptor<unknown> = {
                                     ...location,

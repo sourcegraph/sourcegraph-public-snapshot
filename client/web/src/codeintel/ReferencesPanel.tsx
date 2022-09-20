@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -288,28 +288,31 @@ export const ReferencesList: React.FunctionComponent<
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
         undefined
     )
-    const setActiveLocation = (location: Location | undefined): void => {
-        if (!location) {
-            setActiveURL(undefined)
-            return
-        }
-        // Reconstruct the URL instead of using `location.url` to ensure that
-        // the commitID is included even when `location.url` doesn't include the
-        // commitID (because it's the default revision '').
-        const absoluteURL = toPrettyBlobURL({
-            filePath: location.file,
-            revision: location.commitID,
-            repoName: location.repo,
-            commitID: location.commitID,
-            position: location.range
-                ? {
-                      line: location.range.start.line + 1,
-                      character: location.range.start.character,
-                  }
-                : undefined,
-        })
-        setActiveURL(absoluteURL)
-    }
+    const setActiveLocation = useCallback(
+        (location: Location | undefined): void => {
+            if (!location) {
+                setActiveURL(undefined)
+                return
+            }
+            // Reconstruct the URL instead of using `location.url` to ensure that
+            // the commitID is included even when `location.url` doesn't include the
+            // commitID (because it's the default revision '').
+            const absoluteURL = toPrettyBlobURL({
+                filePath: location.file,
+                revision: location.commitID,
+                repoName: location.repo,
+                commitID: location.commitID,
+                position: location.range
+                    ? {
+                          line: location.range.start.line + 1,
+                          character: location.range.start.character,
+                      }
+                    : undefined,
+            })
+            setActiveURL(absoluteURL)
+        },
+        [setActiveURL]
+    )
 
     const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
 
