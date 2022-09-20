@@ -46,6 +46,28 @@ func TestSandboxHasNoIO(t *testing.T) {
 	})
 }
 
+func TestSandboxHasFun(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	script := `
+		return require("fun")
+	`
+
+	if val, err := sandbox.RunScript(ctx, RunOptions{}, script); err == nil {
+		if val.Type() != lua.LTTable {
+			t.Fatalf("expected 'fun' to be a table: %s", val)
+		}
+	} else if strings.Contains(err.Error(), "module fun not found") {
+		t.Fatalf("unexpected error running script: %s", err)
+	}
+}
+
 func TestSandboxMaxTimeout(t *testing.T) {
 	ctx := context.Background()
 
@@ -218,5 +240,22 @@ func TestCallGenerator(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedValues, values); diff != "" {
 		t.Errorf("unexpected file contents (-want +got):\n%s", diff)
+	}
+}
+
+func TestDefaultLuaModulesFilesLoad(t *testing.T) {
+	ctx := context.Background()
+
+	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error creating sandbox: %s", err)
+	}
+	defer sandbox.Close()
+
+	for mod, script := range DefaultLuaModules {
+		_, err := sandbox.RunScript(ctx, RunOptions{}, script)
+		if err != nil {
+			t.Fatalf("unexpected error loading runtime file %s: %s", mod, err)
+		}
 	}
 }
