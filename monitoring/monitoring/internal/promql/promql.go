@@ -7,11 +7,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Validate applies vars to the expression and asserts that the result is a valid PromQL
+// expression.
 func Validate(expression string, vars VariableApplier) error {
 	_, err := replaceAndParse(expression, vars)
 	return err
 }
 
+// Inject applies vars to the expression, parses the result into a PromQL AST, walks it
+// to inject matchers, and renders it back to a string, using vars again to revert any
+// replacements that occur.
 func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
 	// Generate AST
 	expr, err := replaceAndParse(expression, vars)
@@ -44,6 +49,7 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	return revertExpr(expr)
 }
 
+// replaceAndParse applies vars to the expression and parses the result into a PromQL AST.
 func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr, error) {
 	if vars != nil {
 		expression = vars.ApplySentinelValues(expression)

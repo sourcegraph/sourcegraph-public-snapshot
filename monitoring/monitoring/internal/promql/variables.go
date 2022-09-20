@@ -6,7 +6,9 @@ import (
 )
 
 // VariableApplier converts Prometheus expressions with template variables into valid
-// Prometheus expressions, and vice versa.
+// Prometheus expressions, and vice versa. Keys should just be the name of the variable
+// (i.e. without a leading '$') and the corresponding sentinel values are assumed to be
+// sufficiently unique that a reversal can be safely done.
 type VariableApplier map[string]string
 
 // ApplySentinelValues applies default sentinel variable values to the expression, such
