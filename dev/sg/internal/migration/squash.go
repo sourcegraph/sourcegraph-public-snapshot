@@ -170,28 +170,27 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 
 	versionsAtCommit := parseVersions(strings.Split(output, "\n"), migrationsDir)
 
-	parentsMap := make(map[int]struct{}, len(versionsAtCommit))
-	for _, version := range versionsAtCommit {
-		if definition, ok := ds.GetByID(version); ok {
-			for _, parent := range definition.Parents {
-				parentsMap[parent] = struct{}{}
-			}
-		}
-	}
-
 	filteredDefinitions, err := ds.Filter(versionsAtCommit)
 	if err != nil {
 		return definition.Definition{}, false, err
 	}
 
-	filteredParents := make([]int, 0, len(parentsMap))
-	for id := range parentsMap {
-		if _, ok := filteredDefinitions.GetByID(id); ok {
-			filteredParents = append(filteredParents, id)
+	parentsMap := make(map[int]struct{}, len(versionsAtCommit))
+	for _, migration := range ds.All() {
+		if _, ok := filteredDefinitions.GetByID(migration.ID); !ok {
+			for _, parent := range migration.Parents {
+				if _, ok := filteredDefinitions.GetByID(parent); ok {
+					parentsMap[parent] = struct{}{}
+				}
+			}
 		}
 	}
+	flattenedParents := make([]int, 0, len(parentsMap))
+	for id := range parentsMap {
+		flattenedParents = append(flattenedParents, id)
+	}
 
-	leafDominator, ok := filteredDefinitions.LeafDominator(filteredParents...)
+	leafDominator, ok := filteredDefinitions.LeafDominator(flattenedParents...)
 	if !ok {
 		return definition.Definition{}, false, nil
 	}
