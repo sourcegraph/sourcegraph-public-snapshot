@@ -5,18 +5,17 @@ This guide will take you through how to deploy Sourcegraph with [Docker Compose]
 ## Prerequisites
 
 - An AWS account
-- Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
+- <span class="badge badge-note">RECOMMENDED</span> Fork the [deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config.
 
 ---
 
 ## Configure
 
-Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then configure the instance following the instructions below for each section:
+Click **Launch Instance** from the [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then fill in the following values for each section:
 
 #### Name and tags
 
-1. Name your instance
+Name your instance
 
 #### Application and OS Images
 
@@ -26,11 +25,11 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 
 #### Instance type
 
-1. Select an appropriate instance type using our [resource estimator](../resource_estimator.md) as reference
+Select an appropriate instance type using our [resource estimator](../resource_estimator.md) as reference
 
 #### Key pair (login)
 
-1. Create a new key pair for your instance, or choose an existing key pair from the drop down list
+Create a new key pair for your instance, or choose an existing key pair from the drop down list
 
 #### Network settings
 
@@ -59,13 +58,12 @@ Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.c
 
 #### Advanced details > User Data
 
-1. Copy and paste the *Startup script* below in the **User Data** text box at the bottom
+Copy and paste the *startup script* below into the **User Data** textbox.
 
-<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized copy of the deployment repository:**
+<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized fork of the deployment repository:** Update the *startup script* with the information for your fork of the deployment repository:
 
-- Update the *startup script* with the information of your deployment repository:
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your deployment repository
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision (branch) containing your customizations
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations
 
 ```bash
 #!/usr/bin/env bash
@@ -135,13 +133,9 @@ docker-compose up -d --remove-orphans
 
 ## Deploy
 
-1. Click **Launch Instance** in the *Summary Section* on the right to create your Sourcegraph instance
-   - Please ensure the configurations align with the instructions above before creating the instance 
+1. Click **Launch Instance** in the *Summary Section* on the right to launch the EC2 node running Sourcegraph.
 
-2. Navigate to the public IP address assigned to your instance to visit your newly created Sourcegraph instance
-      - Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel
-
-It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+2. In your web browser, navigate to the public IP address assigned to the EC2 node. (Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel.) It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
 
 You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
 
@@ -152,24 +146,18 @@ tail -f /var/log/cloud-init-output.log
 docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
-## Next
-
-After the initial deployment has been completed, it is strongly recommended to set up the following:
-
-* Restrict the accessibility of ports other than `80` and `443` via [Cloud
-  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) in the Docker Compose deployment
-
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 
-## Upgrade
+## Upgrading
 
-Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions.
+See the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 
 Data is persisted within a [Docker volume](https://docs.docker.com/storage/volumes/) as defined in the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). The startup script configures Docker using a [daemon configuration file](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all the data on the attached data volume, which is mounted at `/mnt/docker-data`, where volumes are stored within `/mnt/docker-data/volumes`.
 
-The most straightforward method to backup this data is to [snapshot the entire `/mnt/docker-data` EBS disk](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+There are two, non-mutually-exclusive ways to back up data:
 
-<span class="badge badge-note">RECOMMENDED</span> Using an external Postgres service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) takes care of backing up all the user data for you. If the Sourcegraph instance ever dies or gets destroyed, creating a fresh new instance connected to the old external Postgres service will get Sourcegraph back to its previous state.
+* [Snapshot the entire `/mnt/docker-data` EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+
+* <span class="badge badge-note">RECOMMENDED</span> Use [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) instead of the Dockerized PostgreSQL instance included by default. All data from Sourcegraph is derivable from the data stored in this database. Note, however, that it may take awhile to reclone repositories and rebuild indices afresh. If you require a faster restoration process, we recommend also snapshotting the EBS volume.

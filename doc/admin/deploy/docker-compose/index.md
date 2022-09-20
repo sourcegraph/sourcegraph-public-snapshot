@@ -34,15 +34,15 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 >NOTE: This guide is not limited to GitHub users. You can create a copy of the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/) in any code host. 
 
-### Step 1: Prepare the deployment repository
+### Step 1: Fork the deployment repository
 
-The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose --it contains everything you need to install and configure a Sourcegraph Docker Compose instance. We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
+[`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose---it contains everything you need to install and configure a Sourcegraph Docker Compose instance. We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
 
 > WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
 
 #### Create a public or private copy of the deployment repository
 
-Use the GithHub GUI to [create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) deployment repository
+Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) deployment repository
 
 <details>
   <summary>**Or click here** for detailed instruction on creating a *private copy*</summary>
