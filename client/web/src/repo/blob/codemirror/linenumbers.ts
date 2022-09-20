@@ -149,6 +149,7 @@ const scrollIntoView = ViewPlugin.fromClass(
 export function selectableLineNumbers(config: {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
+    navigateToLineOnAnyClick: boolean
 }): Extension {
     let dragging = false
 
@@ -159,11 +160,21 @@ export function selectableLineNumbers(config: {
             domEventHandlers: {
                 mousedown(view, block, event) {
                     const line = view.state.doc.lineAt(block.from).number
-
-                    view.dispatch({
-                        effects: (event as MouseEvent).shiftKey ? setEndLine.of(line) : setSelectedLines.of({ line }),
-                        annotations: lineSelectionSource.of('gutter'),
-                    })
+                    if (config.navigateToLineOnAnyClick) {
+                        // Only support single line selection when navigateToLineOnAnyClick is true.
+                        view.dispatch({
+                            effects: setSelectedLines.of({ line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                        })
+                    } else {
+                        const range = view.state.field(selectedLines)
+                        view.dispatch({
+                            effects: (event as MouseEvent).shiftKey
+                                ? setEndLine.of(line)
+                                : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                        })
+                    }
 
                     dragging = true
 
@@ -250,4 +261,8 @@ function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boole
         from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||
         to.top <= view.scrollDOM.scrollTop
     )
+}
+
+function isSingleLine(range: SelectedLineRange): boolean {
+    return !!range && (!range.endLine || range.line === range.endLine)
 }

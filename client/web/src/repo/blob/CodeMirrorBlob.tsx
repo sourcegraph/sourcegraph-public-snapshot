@@ -176,7 +176,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         () => [
             staticExtensions,
             callbacksField,
-            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
+            selectableLineNumbers({
+                onSelection,
+                initialSelection: position.line !== undefined ? position : null,
+                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+            }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
