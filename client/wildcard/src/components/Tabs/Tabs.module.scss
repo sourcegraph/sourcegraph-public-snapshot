@@ -79,6 +79,18 @@
         align-items: stretch;
         justify-content: space-between;
 
+        &::before {
+            left: 0;
+
+            --scroll-gradient-direction: right;
+        }
+
+        &::after {
+            right: 0;
+
+            --scroll-gradient-direction: left;
+        }
+
         &::after,
         &::before {
             content: '';
@@ -98,18 +110,6 @@
             @media (prefers-reduced-motion: reduce) {
                 transition: none;
             }
-        }
-
-        &::before {
-            left: 0;
-
-            --scroll-gradient-direction: right;
-        }
-
-        &::after {
-            right: 0;
-
-            --scroll-gradient-direction: left;
         }
 
         &-obscured-left::before {
