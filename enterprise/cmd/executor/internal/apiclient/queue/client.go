@@ -42,14 +42,18 @@ type Options struct {
 	TelemetryOptions apiclient.TelemetryOptions
 }
 
-func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) *Client {
+func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) (*Client, error) {
+	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		options:         options,
-		client:          apiclient.NewBaseClient(options.BaseClientOptions),
+		client:          client,
 		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationContext),
-	}
+	}, nil
 }
 
 func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
