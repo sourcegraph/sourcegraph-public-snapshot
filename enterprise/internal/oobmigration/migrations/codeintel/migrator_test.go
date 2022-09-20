@@ -22,6 +22,7 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		tableName:     "t_test",
 		targetVersion: 2,
 		batchSize:     200,
+		numRoutines:   1,
 		fields: []fieldSpec{
 			{name: "a", postgresType: "integer not null", primaryKey: true},
 			{name: "b", postgresType: "integer not null", readOnly: true},

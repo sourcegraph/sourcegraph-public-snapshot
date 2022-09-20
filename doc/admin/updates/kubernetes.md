@@ -5,10 +5,29 @@
 ## Upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
+1. Find the relevant entry for your update in the update notes on this page.
+1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
+    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#standard-upgrades)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#standard-upgrades)
+
+## Multi-version upgrade procedure
+
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+1. For each version within the multi-version upgrade range, read the stepwise update notes on this page. For example, when upgrading from 3.20 to 3.23, update notes for the stepwise updates [3.20 -> 3.21](#3-20-3-21), [3.21 -> 3.22](#3-21-3-22), and [3.22 -> 3.23](#3-22-3-23) are relevant. Neglecting this step can cause you to [miss important upgrade notes](#if-you-wish-to-keep-existing-lsif-data) and data that required special treatment can be lost permanently.
+1. Check the [update notes](#multi-version-upgrade-notes) specific to multi-version upgrades.
+1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
+    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
+
+### Multi-version upgrade notes
+
+Some stepwise upgrade notes have multi-version considerations.
+
+- **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
+    - If you are using an external database, follow the [upgrade instructions](../postgres.md#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
+    - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
+- **Upgrades crossing 3.26 -> 3.27** will require a deprecation of TimescaleDB for codeinsights. This should not require special treatment from the user: the old `codeinsights-db` image is compatible with Postgres 12. This database's image should be updated with the rest of the instance after the migrator has ran successfully.
+- **Upgrades crossing 3.20 -> 3.21** wil require a new `codeintel-db` database. This database should be added to the instance prior to starting the upgrade procedure.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -162,17 +181,20 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 ## 3.26 -> 3.27
 
-> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+> WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
 
 If you are using an external
 database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances)
 to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied database
 images.
-> **Note**: The Postgres 12 database migration scales with the size of your database, and the resources provided to the container.
+
+> NOTE: The Postgres 12 database migration scales with the size of your database, and the resources provided to the container.
 > Expect to have downtime relative to the size of your database. Additionally, you must ensure that have enough storage
 > space to accommodate the migration. A rough guide would be 2x the current on-disk database size
 
-> Warning: ⚠️ We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
+<!---->
+
+> WARNING: We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
 
 Afterwards, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
@@ -184,7 +206,7 @@ out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?
 No manual migration required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your
 deployment.
 
-> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+> NOTE: From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.25).*
 
@@ -226,7 +248,7 @@ This release introduces a second database instance, `codeintel-db`. If you have 
 
 ### If you wish to keep existing LSIF data
 
-> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
+> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
 
 If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
@@ -247,7 +269,7 @@ No manual migration is required, follow the [standard upgrade method](../deploy/
 
 No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
-> Warning: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
+> WARNING: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
 to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubectl apply -prune` is used.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.19).*

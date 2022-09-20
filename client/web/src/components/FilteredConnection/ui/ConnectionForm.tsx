@@ -109,9 +109,11 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         ref={mergedReference}
                         spellCheck={false}
                         aria-label={inputAriaLabel}
+                        variant={compact ? 'small' : 'regular'}
                     />
                 )}
             </Form>
         )
     }
 )
+ConnectionForm.displayName = 'ConnectionForm'

@@ -301,6 +301,14 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
     )
 }
 
+export const RECLONE_REPOSITORY_MUTATION = gql`
+    mutation RecloneRepository($repo: ID!) {
+        recloneRepository(repo: $repo) {
+            alwaysNil
+        }
+    }
+`
+
 /**
  * Fetches usage statistics for all users.
  *

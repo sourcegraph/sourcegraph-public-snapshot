@@ -210,14 +210,13 @@ func (r *batchChangeDescriptionResolver) Description() string {
 }
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	added, changed, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
+	added, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlbackend.NewDiffStat(diff.Stat{
 		Added:   int32(added),
-		Changed: int32(changed),
 		Deleted: int32(deleted),
 	}), nil
 }

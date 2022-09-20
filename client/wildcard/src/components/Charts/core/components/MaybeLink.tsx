@@ -10,12 +10,13 @@ interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 export const MaybeLink: React.FunctionComponent<React.PropsWithChildren<MaybeLinkProps>> = ({
     children,
     to,
+    role,
     ...props
 }) =>
     to ? (
-        <Link {...props} to={to}>
+        <Link {...props} to={to} role={role}>
             {children}
         </Link>
     ) : (
-        (children as React.ReactElement)
+        <g role={role}>{children}</g>
     )
