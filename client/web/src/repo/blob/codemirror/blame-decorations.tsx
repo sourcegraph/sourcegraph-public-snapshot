@@ -204,6 +204,7 @@ class BlameDecorationManager implements PluginValue {
  */
 export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
+    compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: [
         ViewPlugin.fromClass(BlameDecorationManager, {
             decorations: manager => manager.decorations,
