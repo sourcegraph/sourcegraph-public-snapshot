@@ -41,3 +41,50 @@ load("@npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "aspect_rules_webpack",
+    sha256 = "ec88e0c330661ed935534229c5e8480cb7ab281da4eca1b9b0b133374a724e66",
+    strip_prefix = "rules_webpack-0.4.0",
+    url = "https://github.com/aspect-build/rules_webpack/archive/refs/tags/v0.4.0.tar.gz",
+)
+
+load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
+
+rules_webpack_dependencies()
+
+load("@aspect_rules_webpack//webpack:repositories.bzl", "webpack_register_toolchains", "LATEST_VERSION")
+
+webpack_register_toolchains(
+    name = "webpack",
+    webpack_version = LATEST_VERSION
+)
+
+http_archive(
+    name = "aspect_rules_ts",
+    sha256 = "3eb3171c26eb5d0951d51ae594695397218fb829e3798eea5557814723a1b3da",
+    strip_prefix = "rules_ts-1.0.0-rc3",
+    url = "https://github.com/aspect-build/rules_ts/archive/refs/tags/v1.0.0-rc3.tar.gz",
+)
+
+load("@aspect_rules_ts//ts:repositories.bzl", "LATEST_VERSION", "rules_ts_dependencies")
+
+rules_ts_dependencies(ts_version = LATEST_VERSION)
+
+http_archive(
+    name = "aspect_rules_jest",
+    sha256 = "bb3226707f9872185865a6381eb3a19311ca7b46e8ed475aad50975906a6cb6a",
+    strip_prefix = "rules_jest-0.10.0",
+    url = "https://github.com/aspect-build/rules_jest/archive/refs/tags/v0.10.0.tar.gz",
+)
+
+load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
+
+rules_jest_dependencies()
+
+load("@aspect_rules_jest//jest:repositories.bzl", "LATEST_VERSION", "jest_repositories")
+
+jest_repositories(
+    name = "jest",
+    jest_version = LATEST_VERSION,
+)

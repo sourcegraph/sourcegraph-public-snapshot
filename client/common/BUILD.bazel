@@ -1,0 +1,20 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+npm_link_all_packages(name = "node_modules")
+
+load("@aspect_rules_jest//jest:defs.bzl", "jest_test")
+
+jest_test(
+    name = "test",
+    config = "jest.config.js",
+    data = [
+        "src/util/url.ts",
+        "src/util/url.test.ts",
+        "//:jest.config.base.js",
+    ],
+    log_level = "debug",
+)
+
+
+# /jest.config.base.js
+# /client/common/jest.config.js 
+# /client/common/src/url.test.ts <- 
