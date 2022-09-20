@@ -8,19 +8,17 @@ If you would like to make changes to the default configurations, we highly recom
 
 ## What is an override file?
 
-Docker Compose allows you to customize configuration settings using an override file called `docker-compose.override.yaml`, which allows customizations to persist through upgrades without needing to manage merge conflicts as changes are not made directly to the original source code.
+Docker Compose allows you to customize configuration settings using an override file called `docker-compose.override.yaml`, which allows customizations to persist through upgrades without needing to manage merge conflicts as changes are not made directly to the base `docker-compose.yaml` file.
 
-When you run the `docker-compose up` command, the override file will be read automatically after the base file [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml), as if both files were merged.
+When you run the `docker-compose up` command, the override file will be automatically merged over the base [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file.
 
-Visit the [official Docker Compose docs](https://docs.docker.com/compose/extends/) to learn more about sharing configurations with override files.
+The [official Docker Compose docs](https://docs.docker.com/compose/extends/) provide details about override files.
 
 ## Examples
 
-In order to make changes to the configuration settings defined in the base file [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml), you will first need to create an empty `docker-compose.override.yaml` file in the same directory as the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file, using the same version number, and then add the customizations under `services`.
+In order to make changes to the configuration settings defined in the base file [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml), create an empty `docker-compose.override.yaml` file in the same directory as the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file, using the same version number, and then add the customizations under the `services` field.
 
 ### Adjust resources
-
-Example: Adjust resources for gitserver.
 
 Note that you will only need to list the fragments that you would like to change from the base file.
 
@@ -33,11 +31,9 @@ services:
     mem_limit: '26g'
 ```
 
-### Create a replica
+### Create multiple gitserver shards
 
-Example: Create a gitserver replica.
-
-To add a gitserver replica , multiple services will need to be updated:
+Split gitserver across multiple shards:
 
 ```yaml
 # docker-compose.override.yaml
@@ -83,11 +79,9 @@ volumes:
   gitserver-1:
 ```
 
-> Important: You cannot create a replica for services with dependents, like `frontend` for example.
-
 ### Disable a service
 
-You can "disable services" by assigning them to one or more [profiles](https://docs.docker.com/compose/profiles/), so that when running the `docker compose up` command, services assigned to profiles will not be started unless specified in the command, like `docker compose --profile disabled up`.
+You can "disable services" by assigning them to one or more [profiles](https://docs.docker.com/compose/profiles/), so that when running the `docker compose up` command, services assigned to profiles will not be started unless explicitly specified in the command (e.g., `docker compose --profile disabled up`).
 
 For example, when you need to disable the internal codeintel-db in order to use an external database, you can assign `codeintel-db` to a profile called `disabled`: 
 
@@ -102,9 +96,9 @@ services:
 
 ### Enable tracing
 
-Tracing should be enabled in the docker-compose.yaml file by default. 
+Tracing should be enabled in the `docker-compose.yaml` file by default. 
 
-If not, you can enable it by setting the environment variabl to `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` in the `jaeger` container:
+If not, you can enable it by setting the environment variable to `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` in the `jaeger` container:
 
 ```yaml
 # docker-compose.override.yaml
@@ -119,7 +113,7 @@ services:
 
 #### Git SSH configuration
 
-Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
+Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`. You can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
 
 For example, in the `gitserver-0` container configuration in your `docker-compose.yaml` file or `docker-compose.override.yaml`, add the volume listed in the following example, while replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
 
@@ -133,7 +127,7 @@ services:
       - '~/path/on/host/.ssh:/home/sourcegraph/.ssh'
 ```
 
-> WARNING: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
+> WARNING: The permissions on your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
 
 #### Git HTTP(S) authentication
 
@@ -176,4 +170,4 @@ See ["Environment variables in Compose"](https://docs.docker.com/compose/environ
 
 The Docker Compose configuration has its own internal PostgreSQL and Redis databases. 
 
-To preserve this data when you kill and recreate the containers, review Sourcegraph's External Services for additional information on how you can [use external services](../../external_services/index.md) for persistence.
+You can alternatively configure Sourcegraph to [use external services](../../external_services/index.md).
