@@ -328,7 +328,7 @@ export const ReferencesList: React.FunctionComponent<
         if (props.jumpToFirst && definitions.length > 0) {
             setActiveLocation(definitions[0])
         }
-    }, [props.jumpToFirst, definitions, setActiveURL])
+    }, [setActiveLocation, props.jumpToFirst, definitions, setActiveURL])
 
     const onBlobNav = (url: string): void => {
         // Store the URL that the user promoted even if no definition/reference
@@ -642,7 +642,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
     const location = useMemo(() => {
         history.replace(props.activeURL)
         return history.location
-    }, [props.activeURL])
+    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
