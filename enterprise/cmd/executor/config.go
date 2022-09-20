@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -103,7 +102,7 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 		ResourceOptions:    c.ResourceOptions(),
 		GitServicePath:     "/.executors/git",
 		QueueOptions:       c.QueueOptions(telemetryOptions),
-		BatchesOptions:     c.BatchesOptions(),
+		FilesOptions:       c.FilesOptions(),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -162,14 +161,12 @@ func (c *Config) QueueOptions(telemetryOptions apiclient.TelemetryOptions) queue
 	}
 }
 
-func (c *Config) BatchesOptions() batches.Options {
-	return batches.Options{
-		BaseClientOptions: apiclient.BaseClientOptions{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:        c.FrontendURL,
-				PathPrefix: "/.executors",
-				Token:      c.FrontendAuthorizationToken,
-			},
+func (c *Config) FilesOptions() apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{
+		EndpointOptions: apiclient.EndpointOptions{
+			URL:        c.FrontendURL,
+			PathPrefix: "/.executors/files",
+			Token:      c.FrontendAuthorizationToken,
 		},
 	}
 }
