@@ -1,12 +1,22 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 # load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_test")
 # load("@pnpm__links//:defs.bzl", npm_link_pnpm = "npm_link_imported_package")
 
 npm_link_all_packages(
-  name = "node_modules",
+    name = "node_modules",
 )
+#
+# exports_files(
+#     ["jest.config.base.js"],
+#     visibility = ["//visibility:public"],
+# )
 
-exports_files(["jest.config.base.js"], visibility = ["//visibility:public"])
+copy_to_bin(
+    name = "jest.config.base",
+    srcs = ["jest.config.base.js"],
+    visibility = ["//client/common:__subpackages__"],
+)
 
 # webpack_bundle(name, args, data, deps, entry_point, entry_points, output_dir, srcs,
 #               supports_workers, webpack, webpack_config, webpack_worker)

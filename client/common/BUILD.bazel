@@ -9,7 +9,7 @@ jest_test(
     data = [
         "src/util/url.ts",
         "src/util/url.test.ts",
-        "//:jest.config.base.js",
+        "//:jest.config.base",
     ],
     log_level = "debug",
 )
