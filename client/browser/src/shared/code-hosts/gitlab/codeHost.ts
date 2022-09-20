@@ -20,7 +20,13 @@ import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
-import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView, repoName, getGitlabRepoURL } from './scrape'
+import {
+    getPageInfo,
+    GitLabPageKind,
+    getFilePathsFromCodeView,
+    repoNameOnSourcegraph,
+    getGitlabRepoURL,
+} from './scrape'
 
 import styles from './codeHost.module.scss'
 
@@ -286,7 +292,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
             .pipe(
                 map(dataOrThrowErrors),
                 tap(({ repository }) => {
-                    repoName.next(repository?.name ?? '')
+                    repoNameOnSourcegraph.next(repository?.name ?? '')
                 }),
                 mapTo(true)
             )

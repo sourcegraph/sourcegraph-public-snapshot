@@ -47,26 +47,6 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
 }
 
 /**
- * Subject to store repo name on the Sourcegraph instance.
- * It may be different from the repo name on the code host because of the name transformations applied
- * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
- * Set in `gitlabCodeHost.prepareCodeHost` method.
- */
-export const repoName = new BehaviorSubject<string>('')
-
-/**
- * Extracts the project name from the repo name.
- * (e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'jsonrpc2')
- */
-const getTransformedProjectName = (): string => {
-    const projectName = last(repoName.value.split('/'))
-    if (!projectName) {
-        throw new Error('Invalid repo name')
-    }
-    return projectName
-}
-
-/**
  * Gets repo URL from on GitLab.
  */
 export const getGitlabRepoURL = (): string => {
@@ -77,27 +57,52 @@ export const getGitlabRepoURL = (): string => {
     return projectLink.href // e.g. 'https://gitlab.com/sourcegraph/jsonrpc2'
 }
 
+const parseFullProjectName = (fullProjectName: string): { owner: string; projectName: string } => {
+    const parts = fullProjectName.split('/')
+    const owner = take(parts, parts.length - 1).join('/')
+    const projectName = last(parts)!
+    return { owner, projectName }
+}
+
+const parseGitLabRepoURL = (): { hostname: string; projectFullName: string; owner: string; projectName: string } => {
+    const url = new URL(getGitlabRepoURL())
+    const projectFullName = url.pathname.slice(1) // e.g. '/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+    const { owner, projectName } = parseFullProjectName(projectFullName)
+    return { hostname: url.hostname, projectFullName, owner, projectName }
+}
+
+const getRepoNameOnSourcegraphInitialValue = (): string => {
+    const { hostname, projectFullName } = parseGitLabRepoURL()
+    return [hostname, projectFullName].join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2'
+}
+
+/**
+ * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/sourcegraph/jsonrpc2').
+ * It may be different from the repo name on the code host because of the name transformations applied
+ * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
+ * Set in `gitlabCodeHost.prepareCodeHost` method.
+ */
+export const repoNameOnSourcegraph = new BehaviorSubject<string>(getRepoNameOnSourcegraphInitialValue())
+
 /**
  * Gets information about the page.
  */
 export function getPageInfo(): GitLabInfo {
-    const projectFullName = new URL(getGitlabRepoURL()).pathname.slice(1) // e.g. 'sourcegraph/jsonrpc2'
-
-    const parts = projectFullName.split('/')
-
-    const owner = take(parts, parts.length - 1).join('/')
-    const projectName = last(parts)!
-
-    const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
-    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
-
-    const transformedProjectName = getTransformedProjectName()
+    const {
+        hostname,
+        projectFullName: projectFullNameOnGitLab,
+        owner: ownerOnGitLab,
+        projectName: projectNameOnGitLab,
+    } = parseGitLabRepoURL()
+    const projectFullNameOnSourcegraph = repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+    const { owner, projectName } = parseFullProjectName(projectFullNameOnSourcegraph)
+    const pageKind = getPageKindFromPathName(ownerOnGitLab, projectNameOnGitLab, window.location.pathname)
 
     return {
         owner,
-        projectName: transformedProjectName,
-        rawRepoName: [hostname, owner, transformedProjectName].join('/'),
-        repoName: projectFullName, // original (untransformed) repo name to be use in GitLab API calls
+        projectName,
+        rawRepoName: [isExtension ? hostname : new URL(gon.gitlab_url).hostname, owner, projectName].join('/'),
+        repoName: projectFullNameOnGitLab, // original (untransformed) repo name to be use in GitLab API calls
         pageKind,
     }
 }
