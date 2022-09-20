@@ -109,7 +109,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
     const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
     return (
-        <Popover data-testid="dropdown" isOpen={isOpen} onOpenChange={handlePopoverToggle}>
+        <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
             <Tooltip content={disabledTooltipText}>
                 <PopoverTrigger
                     type="button"
@@ -149,9 +149,9 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
              */}
             <PopoverContent
-                focusLocked={true}
                 position={Position.bottomStart}
                 className={classNames('a11y-ignore', styles.menu)}
+                data-testid="dropdown-content"
             >
                 <SearchContextMenu
                     {...props}
