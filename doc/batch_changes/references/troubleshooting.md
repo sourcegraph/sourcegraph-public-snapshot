@@ -162,6 +162,14 @@ src batch preview -workspace volume -f my-spec.yaml
 
 If you're using SELinux then neither workspace is fully supported. See [this issue](https://github.com/sourcegraph/src-cli/issues/570) for more details.
 
+### Are you on the latest version of Docker?
+
+If not, please update to the latest version of [Docker Desktop](https://docs.docker.com/desktop/release-notes/).
+
+### Have you pruned your Docker Build Cache and restarted the Docker Daemon?
+
+If you're experiencing `src-cli` hanging at the "Determining Workspace Type" step of the Batch Change we have found that clearing the Docker build cache using `docker builder prune` and restarting the Docker Daemon has resolved the issue. Please contact support if this does not resolve your issue. 
+
 ## Publishing changesets
 
 ### Do you have the right credentials?
