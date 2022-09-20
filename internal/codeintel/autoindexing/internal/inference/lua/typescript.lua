@@ -3,8 +3,8 @@ local path = require "path"
 local patterns = require "sg.patterns"
 local recognizers = require "sg.recognizers"
 
-local shared = loadfile "shared.lua"()
-local util = loadfile "util.lua"()
+local shared = require("sg.autoindex.shared")
+local util = require("sg.autoindex.util")
 
 local indexer = "sourcegraph/scip-typescript:autoindex"
 local typescript_nmusl_command =

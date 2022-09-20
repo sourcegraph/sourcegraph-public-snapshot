@@ -103,7 +103,7 @@ func TestModule(t *testing.T) {
 	ctx := context.Background()
 
 	sandbox, err := newService(&observation.TestContext).CreateSandbox(ctx, CreateOptions{
-		Modules: map[string]lua.LGFunction{
+		GoModules: map[string]lua.LGFunction{
 			"testmod": util.CreateModule(api),
 		},
 	})
