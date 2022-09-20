@@ -127,7 +127,7 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 //	[ root ] -+         +- [ nca ] -+
 //	          |         |           |
 //	          +-- ... --+           +-- [ leaf 2 ]
-func (ds *Definitions) LeafDominator() (Definition, bool) {
+func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
 	leaves := ds.Leaves()
 	if len(leaves) == 0 {
 		return Definition{}, false
@@ -135,9 +135,12 @@ func (ds *Definitions) LeafDominator() (Definition, bool) {
 
 	dominators := ds.dominators()
 
-	ids := make([][]int, 0, len(leaves))
+	ids := make([][]int, 0, len(leaves)+len(extraIDs))
 	for _, leaf := range leaves {
 		ids = append(ids, dominators[leaf.ID])
+	}
+	for _, id := range extraIDs {
+		ids = append(ids, dominators[id])
 	}
 
 	same := intersect(ids[0], ids[1:]...)
