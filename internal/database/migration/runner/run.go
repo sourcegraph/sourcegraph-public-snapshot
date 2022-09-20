@@ -22,6 +22,10 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		return errors.Newf("invalid privileged mode")
 	}
 
+	if options.PrivilegedMode == NoopPrivilegedMigrations && options.MatchPrivilegedHash == nil {
+		return errors.Newf("privileged hash matcher was not supplied")
+	}
+
 	schemaNames := make([]string, 0, len(options.Operations))
 	for _, operation := range options.Operations {
 		schemaNames = append(schemaNames, operation.SchemaName)
@@ -54,7 +58,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 			operationMap[schemaName],
 			schemaContext,
 			options.PrivilegedMode,
-			options.PrivilegedHash,
+			options.MatchPrivilegedHash,
 			options.IgnoreSingleDirtyLog,
 			options.IgnoreSinglePendingLog,
 		); err != nil {
@@ -74,7 +78,7 @@ func (r *Runner) runSchema(
 	operation MigrationOperation,
 	schemaContext schemaContext,
 	privilegedMode PrivilegedMode,
-	privilegedHash string,
+	matchPrivilegedHash func(hash string) bool,
 	ignoreSingleDirtyLog bool,
 	ignoreSinglePendingLog bool,
 ) error {
@@ -145,7 +149,7 @@ func (r *Runner) runSchema(
 			schemaContext,
 			definitions,
 			privilegedMode,
-			privilegedHash,
+			matchPrivilegedHash,
 			ignoreSingleDirtyLog,
 			ignoreSinglePendingLog,
 		); err != nil {
@@ -169,7 +173,7 @@ func (r *Runner) applyMigrations(
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	privilegedMode PrivilegedMode,
-	privilegedHash string,
+	matchPrivilegedHash func(hash string) bool,
 	ignoreSingleDirtyLog bool,
 	ignoreSinglePendingLog bool,
 ) (retry bool, _ error) {
@@ -195,7 +199,7 @@ func (r *Runner) applyMigrations(
 		// flags specified by the user. A nil error value returned here indicates that application of
 		// each migration file can proceed.
 
-		if err := r.checkPrivilegedState(operation, schemaContext, definitions, privilegedMode, privilegedHash); err != nil {
+		if err := r.checkPrivilegedState(operation, schemaContext, definitions, privilegedMode, matchPrivilegedHash); err != nil {
 			return err
 		}
 
@@ -249,7 +253,7 @@ func (r *Runner) checkPrivilegedState(
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	privilegedMode PrivilegedMode,
-	expectedPrivilegedHash string,
+	matchPrivilegedHash func(hash string) bool,
 ) error {
 	up := operation.Type == MigrationOperationTypeTargetedUp
 
@@ -291,19 +295,10 @@ func (r *Runner) checkPrivilegedState(
 		// The user has enabled a mode where we assume the contents of the privileged migrations
 		// have already been applied, or in the down direction will be applied after this operation.
 
-		if privilegedHash := hashDefinitionIDs(privilegedDefinitionIDs); privilegedHash != expectedPrivilegedHash && up {
+		if privilegedHash := hashDefinitionIDs(privilegedDefinitionIDs); !matchPrivilegedHash(privilegedHash) && up {
 			// In order to ensure the user reads the following instructions for this operation, we
 			// fail-fast equivalently to the -unprivileged-only case when a hash of the privileged
 			// migrations to-be-applied is not also supplied.
-
-			if expectedPrivilegedHash != "" {
-				r.logger.Error(
-					"Unexpected value provided for -privileged-hash for this operation. This value is likely left over from an invocation of privileged migrations during a previous upgrade.",
-					log.String("schema", schemaContext.schema.Name),
-					log.String("given", expectedPrivilegedHash),
-					log.String("expected", privilegedHash),
-				)
-			}
 
 			return errors.Newf(
 				"refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `-privileged-hash=%s` to continue.\n\n```\n%s\n```\n",

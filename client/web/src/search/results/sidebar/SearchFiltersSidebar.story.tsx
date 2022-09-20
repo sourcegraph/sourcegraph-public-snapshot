@@ -33,6 +33,7 @@ const defaultProps: SearchFiltersSidebarProps = {
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    setSidebarCollapsed: () => {},
 }
 
 const quicklinks: QuickLink[] = [

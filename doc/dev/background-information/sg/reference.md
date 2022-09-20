@@ -113,6 +113,7 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
+* web-integration-build: Build web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -189,6 +190,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format="<value>"`: Output format for the preview (one of 'markdown', 'json', or 'yaml') (default: markdown)
 
 ### sg ci status
 
@@ -310,17 +312,18 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* client-e2e
-* client-regression
 * docsite
+* web-e2e
 * web-integration
+* web-integration:debug
+* web-regression
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
 $ sg test client
-$ sg test client-e2e
+$ sg test web-e2e
 
 # List available test suites:
 $ sg test -help
@@ -580,7 +583,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
@@ -606,7 +609,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) upto operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -650,7 +653,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 

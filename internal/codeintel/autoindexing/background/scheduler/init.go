@@ -37,10 +37,20 @@ func NewScheduler(
 		},
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), ConfigInst.Interval, &scheduler{
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), ConfigInst.SchedulerInterval, &scheduler{
 		autoindexingSvc: autoindexingSvc,
 		policySvc:       policySvc,
 		uploadSvc:       uploadSvc,
 		policyMatcher:   policyMatcher,
 	}, handleIndexScheduler)
+}
+
+func NewOnDemandScheduler(
+	autoindexingSvc *autoindexing.Service,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.OnDemandSchedulerInterval, &onDemandScheduler{
+		autoindexingSvc: autoindexingSvc,
+		batchSize:       ConfigInst.OnDemandBatchsize,
+	})
 }

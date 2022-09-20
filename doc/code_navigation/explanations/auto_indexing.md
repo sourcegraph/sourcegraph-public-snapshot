@@ -13,7 +13,7 @@ img.screenshot {
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -23,7 +23,7 @@ With Sourcegraph deployments supporting [executors](../../admin/executors.md), y
 
 ## Language support
 
-Auto-indexing is currently available for Go, TypeScript, JavaScript and Python repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on how to setup cross-dependency navigation depending on what language ecosystem you use.
+Auto-indexing is currently available for Go, TypeScript, JavaScript, Python, Ruby and JVM repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on how to setup cross-dependency navigation depending on what language ecosystem you use.
 
 ## Lifecycle of an indexing job
 

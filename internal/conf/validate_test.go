@@ -13,16 +13,18 @@ import (
 )
 
 const (
-	executorsAccessToken              = "executorsAccessToken"
-	authOpenIDClientSecret            = "authOpenIDClientSecret"
-	authGitHubClientSecret            = "authGitHubClientSecret"
-	authGitLabClientSecret            = "authGitLabClientSecret"
-	emailSMTPPassword                 = "emailSMTPPassword"
-	organizationInvitationsSigningKey = "organizationInvitationsSigningKey"
-	githubClientSecret                = "githubClientSecret"
-	dotcomGitHubAppCloudClientSecret  = "dotcomGitHubAppCloudClientSecret"
-	dotcomGitHubAppCloudPrivateKey    = "dotcomGitHubAppCloudPrivateKey"
-	authUnlockAccountLinkSigningKey   = "authUnlockAccountLinkSigningKey"
+	executorsAccessToken                        = "executorsAccessToken"
+	authOpenIDClientSecret                      = "authOpenIDClientSecret"
+	authGitHubClientSecret                      = "authGitHubClientSecret"
+	authGitLabClientSecret                      = "authGitLabClientSecret"
+	emailSMTPPassword                           = "emailSMTPPassword"
+	organizationInvitationsSigningKey           = "organizationInvitationsSigningKey"
+	githubClientSecret                          = "githubClientSecret"
+	dotcomGitHubAppCloudClientSecret            = "dotcomGitHubAppCloudClientSecret"
+	dotcomGitHubAppCloudPrivateKey              = "dotcomGitHubAppCloudPrivateKey"
+	authUnlockAccountLinkSigningKey             = "authUnlockAccountLinkSigningKey"
+	dotcomSrcCliVersionCacheGitHubToken         = "dotcomSrcCliVersionCacheGitHubToken"
+	dotcomSrcCliVersionCacheGitHubWebhookSecret = "dotcomSrcCliVersionCacheGitHubWebhookSecret"
 )
 
 func TestValidate(t *testing.T) {
@@ -152,6 +154,8 @@ func TestRedactSecrets(t *testing.T) {
 				githubClientSecret,
 				dotcomGitHubAppCloudClientSecret,
 				dotcomGitHubAppCloudPrivateKey,
+				dotcomSrcCliVersionCacheGitHubToken,
+				dotcomSrcCliVersionCacheGitHubWebhookSecret,
 				authUnlockAccountLinkSigningKey,
 			),
 		},
@@ -186,6 +190,8 @@ func TestUnredactSecrets(t *testing.T) {
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret,
 		dotcomGitHubAppCloudPrivateKey,
+		dotcomSrcCliVersionCacheGitHubToken,
+		dotcomSrcCliVersionCacheGitHubWebhookSecret,
 		authUnlockAccountLinkSigningKey,
 	)
 
@@ -207,6 +213,8 @@ func TestUnredactSecrets(t *testing.T) {
 			redactedSecret,
 			redactedSecret,
 			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
@@ -220,6 +228,8 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			dotcomSrcCliVersionCacheGitHubToken,
+			dotcomSrcCliVersionCacheGitHubWebhookSecret,
 			authUnlockAccountLinkSigningKey,
 		)
 		assert.Equal(t, want, unredactedSite)
@@ -230,6 +240,8 @@ func TestUnredactSecrets(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
 			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
 			redactedSecret,
 			redactedSecret,
 			redactedSecret,
@@ -250,6 +262,8 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			dotcomSrcCliVersionCacheGitHubToken,
+			dotcomSrcCliVersionCacheGitHubWebhookSecret,
 			authUnlockAccountLinkSigningKey,
 			newEmail,
 		)
@@ -258,7 +272,7 @@ func TestUnredactSecrets(t *testing.T) {
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret)
+	return getTestSiteWithSecrets(redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret)
 }
 
 func getTestSiteWithSecrets(
@@ -268,6 +282,7 @@ func getTestSiteWithSecrets(
 	organizationInvitationsSigningKey,
 	githubClientSecret,
 	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+	dotcomSrcCliVersionCacheGitHubToken, dotcomSrcCliVersionCacheGitHubWebhookSecret,
 	authUnlockAccountLinkSigningKey string,
 	optionalEdit ...string,
 ) string {
@@ -323,6 +338,12 @@ func getTestSiteWithSecrets(
     "githubApp.cloud": {
       "clientSecret": "%s",
       "privateKey": "%s"
+    },
+    "srcCliVersionCache": {
+      "github": {
+        "token": "%s",
+        "webhookSecret": "%s"
+      }
     }
   },
   "auth.unlockAccountLinkSigningKey": "%s",
@@ -334,6 +355,7 @@ func getTestSiteWithSecrets(
 		organizationInvitationsSigningKey,
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+		dotcomSrcCliVersionCacheGitHubToken, dotcomSrcCliVersionCacheGitHubWebhookSecret,
 		authUnlockAccountLinkSigningKey,
 	)
 

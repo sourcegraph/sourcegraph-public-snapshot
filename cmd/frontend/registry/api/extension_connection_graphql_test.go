@@ -8,10 +8,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestRegistryExtensionConnectionResolver(t *testing.T) {
+	enableLegacyExtensions()
+	defer conf.Mock(nil)
+
 	int32Ptr := func(v int32) *int32 { return &v }
 	stringSlicePtr := func(s []string) *[]string { return &s }
 	extensionIDs := func(xs []graphqlbackend.RegistryExtension) (ids []string) {

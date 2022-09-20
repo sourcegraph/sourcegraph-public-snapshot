@@ -41,7 +41,7 @@ func IsEnabled() bool {
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(postgres)
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(postgres, observationContext)
 
 	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {

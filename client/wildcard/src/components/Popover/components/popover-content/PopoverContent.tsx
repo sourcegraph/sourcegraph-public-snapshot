@@ -33,10 +33,11 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         ...otherProps
     } = props
 
+    const { renderRoot } = useContext(PopoverRoot)
+
     const { isOpen: isOpenContext, targetElement: contextTargetElement, tailElement, anchor, setOpen } = useContext(
         PopoverContext
     )
-    const { renderRoot } = useContext(PopoverRoot)
 
     const targetElement = contextTargetElement ?? propertyTargetElement
     const [focusLock, setFocusLock] = useState(false)

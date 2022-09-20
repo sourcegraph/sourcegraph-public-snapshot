@@ -903,6 +903,7 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
 }

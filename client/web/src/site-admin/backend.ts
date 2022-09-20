@@ -145,6 +145,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloneInProgress
         updatedAt
         lastError
+        byteSize
     }
 `
 
@@ -299,6 +300,14 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
         mapTo(undefined)
     )
 }
+
+export const RECLONE_REPOSITORY_MUTATION = gql`
+    mutation RecloneRepository($repo: ID!) {
+        recloneRepository(repo: $repo) {
+            alwaysNil
+        }
+    }
+`
 
 /**
  * Fetches usage statistics for all users.

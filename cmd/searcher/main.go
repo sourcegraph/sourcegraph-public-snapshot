@@ -49,6 +49,8 @@ import (
 var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
 const port = "3181"
@@ -128,6 +130,11 @@ func run(logger log.Logger) error {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	maxTotalPathsLength, err := strconv.Atoi(maxTotalPathsLengthRaw)
+	if err != nil {
+		return errors.Wrapf(err, "invalid int %q for MAX_TOTAL_PATHS_LENGTH", maxTotalPathsLengthRaw)
+	}
+
 	if err := setupTmpDir(); err != nil {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
@@ -175,8 +182,11 @@ func run(logger log.Logger) error {
 			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
-		GitDiffSymbols: git.DiffSymbols,
-		Log:            logger,
+
+		GitDiffSymbols:      git.DiffSymbols,
+		MaxTotalPathsLength: maxTotalPathsLength,
+
+		Log: logger,
 	}
 	service.Store.Start()
 
