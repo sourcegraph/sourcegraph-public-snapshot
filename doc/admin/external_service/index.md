@@ -29,7 +29,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
    <tbody>
       <tr>
         <td>GitHub.com</td>
-        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -40,7 +40,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitHub Self-Hosted Enterprise</td>
-        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -51,7 +51,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitLab.com</td>
-        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -62,7 +62,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>GitLab Self-Hosted</td>
-        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -73,7 +73,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>BitBucket Cloud</td>
-        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-n">✗</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-n">✗</td> <!-- Authentication -->
@@ -84,7 +84,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>BitBucket Server</td>
-        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
@@ -95,7 +95,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
       </tr>
       <tr>
         <td>Perforce</td>
-        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
+        <td>Tier 2 (Working on Tier 1)</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-n">✗</td> <!-- Authentication -->
