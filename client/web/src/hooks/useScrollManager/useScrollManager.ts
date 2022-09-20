@@ -101,7 +101,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
                     })
             }
         } else if (action === 'PUSH') {
-            // In the case of pushing new history, make sure we always start at the top of the container
+            // In the case of pushing new history (e.g. clicking a navigation link), make sure we always start at the top of the container
             containerRef.current?.scrollTo(0, 0)
         }
 
