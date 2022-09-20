@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
@@ -91,7 +92,7 @@ func (c *Dashboard) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Dashboard) renderDashboard() *sdk.Board {
+func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher) (*sdk.Board, error) {
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -111,17 +112,32 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 				Options: []string{"critical", "warning"},
 			},
 		}
-		board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
+		templateVar, err := alertLevelVariable.toGrafanaTemplateVar(injectLabelMatchers)
+		if err != nil {
+			return nil, errors.Wrap(err, "Alert level")
+		}
+		board.Templating.List = []sdk.TemplateVar{templateVar}
 	}
 	for _, variable := range c.Variables {
-		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
+		templateVar, err := variable.toGrafanaTemplateVar(injectLabelMatchers)
+		if err != nil {
+			return nil, errors.Wrap(err, variable.Name)
+		}
+		board.Templating.List = append(board.Templating.List, templateVar)
 	}
 	if !c.noAlertsDefined() {
+		// Show alerts matching the selected alert_level (see template variable above)
+		expr, err := promql.Inject(
+			fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
+			injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return nil, errors.Wrap(err, "alerts overlay query")
+		}
+
 		board.Annotations.List = []sdk.Annotation{{
-			Name:       "Alert events",
-			Datasource: StringPtr("Prometheus"),
-			// Show alerts matching the selected alert_level (see template variable above)
-			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
+			Name:        "Alert events",
+			Datasource:  StringPtr("Prometheus"),
+			Expr:        expr,
 			Step:        "60s",
 			TitleFormat: "{{ description }} ({{ name }})",
 			TagKeys:     "level,owner",
@@ -133,13 +149,22 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
+		// Per version, instance generate an annotation whenever labels change
+		// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
+		// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend
+		// in certain environments
+		expr, err := promql.Inject(
+			fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
+			injectLabelMatchers,
+			newVariableApplier(c.Variables))
+		if err != nil {
+			return nil, errors.Wrap(err, "debug server version expression")
+		}
+
 		board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
-			Name:       "Version changes",
-			Datasource: StringPtr("Prometheus"),
-			// Per version, instance generate an annotation whenever labels change
-			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
-			// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend in certain environments
-			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
+			Name:        "Version changes",
+			Datasource:  StringPtr("Prometheus"),
+			Expr:        expr,
 			Step:        "60s",
 			TitleFormat: "v{{ version }}",
 			TagKeys:     "instance",
@@ -162,11 +187,21 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 	board.Panels = append(board.Panels, description)
 
 	if !c.noAlertsDefined() {
+		expr, err := promql.Inject(fmt.Sprintf(`label_replace(
+			sum(
+				max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})
+			) by (
+				level,description,service_name,grafana_panel_id,
+			),
+			"description", "$1",
+			"description", ".*: (.*)"
+		)`, c.Name), injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return nil, errors.Wrap(err, "alerts overview expression")
+		}
+
 		alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
-			Expr: fmt.Sprintf(`label_replace(
-				sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
-				"description", "$1", "description", ".*: (.*)"
-			)`, c.Name),
+			Expr:    expr,
 			Format:  "table",
 			Instant: true,
 		})
@@ -201,8 +236,16 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 				Show:    true,
 			},
 		}
+		alertsFiringExpr, err := promql.Inject(
+			fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+			injectLabelMatchers,
+			newVariableApplier(c.Variables),
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "Alerts firing")
+		}
 		alertsFiring.AddTarget(&sdk.Target{
-			Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+			Expr:         alertsFiringExpr,
 			LegendFormat: "{{level}}: {{name}}",
 		})
 		alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
@@ -268,6 +311,16 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 				// Build the graph panel
 				o.Panel.build(o, panel)
 
+				// Apply injected label matchers
+				for _, target := range *panel.GetTargets() {
+					var err error
+					target.Expr, err = promql.Inject(target.Expr, injectLabelMatchers, newVariableApplier(c.Variables))
+					if err != nil {
+						return nil, errors.Wrap(err, target.Query)
+					}
+					panel.SetTarget(&target)
+				}
+
 				// Attach panel to board
 				if rowPanel != nil && group.Hidden {
 					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
@@ -277,7 +330,7 @@ func (c *Dashboard) renderDashboard() *sdk.Board {
 			}
 		}
 	}
-	return board
+	return board, nil
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
@@ -315,7 +368,7 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-func (c *Dashboard) renderRules() (*promRulesFile, error) {
+func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
@@ -341,13 +394,22 @@ func (c *Dashboard) renderRules() (*promRulesFile, error) {
 						alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
 					}
 
+					// Inject label matchers
+					var err error
+					alertQuery, err = promql.Inject(alertQuery, injectLabelMatchers, newVariableApplier(c.Variables))
+					if err != nil {
+						return nil, errors.Errorf("%s.%s.%s: unable to generate query: %+v",
+							c.Name, o.Name, level, err)
+					}
+
 					// Build the rule with appropriate labels. Labels are leveraged in various integrations, such as with prom-wrapper.
 					description, err := c.alertDescription(o, a)
 					if err != nil {
 						return nil, errors.Errorf("%s.%s.%s: unable to generate labels: %+v",
 							c.Name, o.Name, level, err)
 					}
-					group.appendRow(alertQuery, map[string]string{
+
+					labels := map[string]string{
 						"name":         o.Name,
 						"level":        level,
 						"service_name": c.Name,
@@ -357,7 +419,12 @@ func (c *Dashboard) renderRules() (*promRulesFile, error) {
 						// in the corresponding dashboard, this label should indicate
 						// the panel associated with this rule
 						"grafana_panel_id": strconv.Itoa(int(observablePanelID(groupIndex, rowIndex, observableIndex))),
-					}, a.duration)
+					}
+					// Inject labels as fixed values for alert rules
+					for _, l := range injectLabelMatchers {
+						labels[l.Name] = l.Value
+					}
+					group.appendRow(alertQuery, labels, a.duration)
 				}
 			}
 		}

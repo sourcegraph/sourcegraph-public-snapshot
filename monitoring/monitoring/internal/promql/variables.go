@@ -15,7 +15,7 @@ func (vars VariableApplier) ApplySentinelValues(expression string) string {
 	for name, sentinelValue := range vars {
 		varKey := "$" + name
 
-		// If the expression uses the variable in a quoted context ("$var") then it's=
+		// If the expression uses the variable in a quoted context ("$var") then it's
 		// interpreted as valid PromQL, we don't need to replace it!
 		if strings.Contains(expression, fmt.Sprintf("%q", varKey)) {
 			continue
@@ -25,4 +25,25 @@ func (vars VariableApplier) ApplySentinelValues(expression string) string {
 		expression = strings.ReplaceAll(expression, varKey, sentinelValue)
 	}
 	return expression
+}
+
+// RevertDefaults returns the expression that has been modified through ApplyDefaults
+// and revert any defaults applied to it.
+func (vars VariableApplier) RevertDefaults(originalExpression, appliedExpression string) string {
+	for name, sentinelValue := range vars {
+		varKey := "$" + name
+
+		if !shouldApplyVar(originalExpression, varKey) {
+			continue
+		}
+
+		appliedExpression = strings.ReplaceAll(appliedExpression, sentinelValue, varKey)
+	}
+	return appliedExpression
+}
+
+// If the expression uses the variable in a quoted context ("$var") then it's
+// interpreted as valid PromQL, we don't need to replace it!
+func shouldApplyVar(originalExpression string, varKey string) bool {
+	return !strings.Contains(originalExpression, fmt.Sprintf("%q", varKey))
 }
