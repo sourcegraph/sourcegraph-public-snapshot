@@ -1,10 +1,10 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -162,15 +162,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
 ]
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
-    const { pathname } = useLocation()
-
     const reference = useRef<HTMLDivElement>(null)
-
-    useLayoutEffect(() => {
-        if (reference.current) {
-            reference.current.scrollIntoView()
-        }
-    }, [pathname])
 
     const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 

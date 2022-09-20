@@ -36,7 +36,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const { repo, resolvedRev, repoName, match, globbing, ...context } = props
+    const { repo, resolvedRevision, repoName, match, globbing, ...context } = props
 
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
@@ -79,7 +79,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     }
 
     const repoRevisionProps = {
-        commitID: resolvedRev?.commitID,
+        commitID: resolvedRevision?.commitID,
         filePath,
         globbing,
     }
@@ -93,7 +93,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 repoName={repoName}
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
-                defaultBranch={resolvedRev?.defaultBranch || 'HEAD'}
+                defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
@@ -116,8 +116,8 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
                             </TraceSpanProvider>
-                        ) : resolvedRev ? (
-                            // TODO: see if we can render without resolvedRev.commitID
+                        ) : resolvedRevision ? (
+                            // TODO: see if we can render without resolvedRevision.commitID
                             <TreePage
                                 {...props}
                                 commitID={context.revision}

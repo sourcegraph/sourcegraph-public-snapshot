@@ -138,7 +138,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		DiffStat: apitest.DiffStat{
 			Added:   changesetSpec.DiffStatAdded,
-			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
@@ -474,9 +473,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
 	want.ApplyURL = nil
-	want.DiffStat.Added = 20
-	want.DiffStat.Deleted = 4
-	want.DiffStat.Changed = 10
+	want.DiffStat.Added = 30
+	want.DiffStat.Deleted = 14
 	want.ViewerCanRetry = true
 
 	codeHosts = apitest.BatchChangesCodeHostsConnection{
@@ -642,7 +640,7 @@ query($batchSpec: ID!) {
       createdAt
       expiresAt
 
-      diffStat { added, deleted, changed }
+      diffStat { added, deleted }
 
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }
