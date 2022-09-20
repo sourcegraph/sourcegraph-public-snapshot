@@ -68,6 +68,10 @@ hello-(\w+)-(\w+)
 
 and a match like `hello-beautiful-world` only `beautiful` will be shown as a result.
 
+### Files with the same paths in distinct repositories
+
+The "file" aggregation groups only by path, not by repository, meaning files with the same path but from different repos will be grouped together. Attach a `repo:` filter to your search to focus on a specific repo. 
+
 ### Saving aggregations to a code insights dashboard
 
 Saving aggregations to a dashboard of code insights is not yet available. 
