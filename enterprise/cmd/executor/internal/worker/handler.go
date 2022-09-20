@@ -25,7 +25,7 @@ import (
 type handler struct {
 	nameSet       *janitor.NameSet
 	store         workerutil.Store
-	uploadStore   FileStore
+	filesStore    FilesStore
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
@@ -152,16 +152,23 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// as well as file-version of each script step.
 	workspaceFileContentsByPath := map[string][]byte{}
 
-	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
-		if err != nil {
-			return err
+	for relativePath, machineFile := range job.VirtualMachineFiles {
+		// Either write raw content that has already been provided or retrieve it from the store.
+		if machineFile.Content != "" {
+			path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
+			if err != nil {
+				return err
+			}
+			if !strings.HasPrefix(path, workspaceRoot) {
+				return errors.Errorf("refusing to write outside of working directory")
+			}
+			workspaceFileContentsByPath[path] = []byte(machineFile.Content)
+		} else if machineFile.Bucket != "" && machineFile.Key != "" {
+			path := filepath.Join(workspaceRoot, job.WorkspaceFilesDirectory, relativePath)
+			if err := writeWorkspaceFile(commandLogger, h.filesStore, ctx, path, machineFile); err != nil {
+				return errors.Wrap(err, "failed to write workspace files")
+			}
 		}
-		if !strings.HasPrefix(path, workspaceRoot) {
-			return errors.Errorf("refusing to write outside of working directory")
-		}
-
-		workspaceFileContentsByPath[path] = []byte(content)
 	}
 
 	scriptNames := make([]string, 0, len(job.DockerSteps))
@@ -175,31 +182,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
 		return errors.Wrap(err, "failed to write virtual machine files")
-	}
-
-	// Write mount files
-	for _, mount := range job.Mounts {
-		content, err := h.uploadStore.Get(ctx, mount.URL)
-		if err != nil {
-			return err
-		}
-		defer content.Close()
-		path := filepath.Join(workspaceRoot, job.MountDirectory, mount.Path, mount.FileName)
-		// Ensure the path exists.
-		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-			return err
-		}
-		f, err := os.Create(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		if _, err = io.Copy(f, content); err != nil {
-			return err
-		}
-		if err = os.Chtimes(path, mount.Modified, mount.Modified); err != nil {
-			return err
-		}
 	}
 
 	logger.Info("Setting up VM")
@@ -309,6 +291,55 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Lo
 		}
 
 		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
+	}
+
+	return nil
+}
+
+func writeWorkspaceFile(logger command.Logger, store FilesStore, ctx context.Context, path string, file executor.VirtualMachineFile) (err error) {
+	handle := logger.Log("writeWorkspaceFile.fs", []string{path})
+	defer func() {
+		if err == nil {
+			handle.Finalize(0)
+		} else {
+			handle.Finalize(1)
+		}
+
+		handle.Close()
+	}()
+
+	exists, err := store.Exists(ctx, file.Bucket, file.Key)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.Newf("workspace file %s does not exist", fmt.Sprintf("%s/%s", file.Bucket, file.Key))
+	}
+
+	content, err := store.Get(ctx, file.Bucket, file.Key)
+	if err != nil {
+		return err
+	}
+	defer content.Close()
+
+	// Ensure the path exists.
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err = io.Copy(f, content); err != nil {
+		return err
+	}
+
+	// Set modified time for caching (if provided)
+	if !file.CacheModifiedAt.IsZero() {
+		if err = os.Chtimes(path, file.CacheModifiedAt, file.CacheModifiedAt); err != nil {
+			return err
+		}
 	}
 
 	return nil
