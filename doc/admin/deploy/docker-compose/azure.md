@@ -2,14 +2,6 @@
 
 This guide will take you through how to set up a Sourcegraph instance on an Azure virtual machine with [Docker Compose](https://docs.docker.com/compose/).
 
-## Prerequisites
-
-- An Azure account
-- Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
-
----
-
 ## Configure
 
 In the [Azure Quickstart Center](https://portal.azure.com/?quickstart=true#view/Microsoft_Azure_Resources/QuickstartCenterBlade), click `Deploy a virtual machine` to `Create a virtual machine`, then configure the instance following the instructions below for each section:
@@ -70,12 +62,6 @@ Click `Create and attach a new disk` to create **two** disks:
 
 * Enable `user data`
 * In the **Custom data** and **User Data** text boxes, copy and paste the [startup script](#startup-script) from below 
-
-<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized copy of the deployment repository:**
-
-- Update the *startup script* with the information of your deployment repository:
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your deployment repository
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision (branch) containing your customizations
 
 ##### Startup script
 
@@ -150,6 +136,11 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
 
+<span class="badge badge-note">RECOMMENDED</span> If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
+
 ## Deploy
 
 1. Click **Review + create** to create the instance
@@ -170,19 +161,11 @@ tail -c +0 -f /var/log/syslog | grep cloud-init
 docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
-## Next
-
-After the initial deployment has been completed, it is strongly recommended to set up the following:
-
-* Restrict the accessibility of ports other than `80` and `443` via [Cloud
-  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) in the Docker Compose deployment
-
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 
 ## Upgrade
 
-Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions.
+See the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 
@@ -190,4 +173,4 @@ Data is persisted within a [Docker volume](https://docs.docker.com/storage/volum
 
 The most straightforward method to [backup the data](https://docs.microsoft.com/en-us/azure/virtual-machines/backup-and-disaster-recovery-for-azure-iaas-disks) is to [enable incremental snapshot](https://docs.microsoft.com/en-us/azure/virtual-machines/disks-incremental-snapshots?tabs=azure-cli)
 
-<span class="badge badge-note">RECOMMENDED</span> Using an external Postgres service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) takes care of backing up all the user data for you. If the Sourcegraph instance ever dies or gets destroyed, creating a fresh new instance connected to the old external Postgres service will get Sourcegraph back to its previous state.
+<span class="badge badge-note">RECOMMENDED</span> Using an external Postgres service such as [Azure Database for PostgreSQL](https://learn.microsoft.com/en-us/azure/postgresql/) takes care of backing up all the user data for you. If the Sourcegraph instance ever dies or gets destroyed, creating a fresh new instance connected to the old external Postgres service will get Sourcegraph back to its previous state.

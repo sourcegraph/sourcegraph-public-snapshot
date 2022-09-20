@@ -2,13 +2,6 @@
 
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
-## Prerequisites
-
-- An AWS account
-- <span class="badge badge-note">RECOMMENDED</span> Fork the [deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config.
-
----
-
 ## Configure
 
 Click **Launch Instance** from the [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then fill in the following values for each section:
@@ -58,12 +51,7 @@ Create a new key pair for your instance, or choose an existing key pair from the
 
 #### Advanced details > User Data
 
-Copy and paste the *startup script* below into the **User Data** textbox.
-
-<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized fork of the deployment repository:** Update the *startup script* with the information for your fork of the deployment repository:
-
-- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
-- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations
+Copy and paste the *startup script* below into the **User Data** textbox:
 
 ```bash
 #!/usr/bin/env bash
@@ -131,6 +119,11 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
 
+<span class="badge badge-note">RECOMMENDED</span> If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
+
 ## Deploy
 
 1. Click **Launch Instance** in the *Summary Section* on the right to launch the EC2 node running Sourcegraph.
@@ -148,7 +141,7 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 
-## Upgrading
+## Upgrade
 
 See the [Docker Compose upgrade docs](upgrade.md).
 

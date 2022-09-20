@@ -2,14 +2,6 @@
 
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
 
-## Prerequisites
-
-- A Google account
-- Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
-
----
-
 ## Configure
 
 Click **Create Instance** in your [Google Cloud Compute Engine Console](https://console.cloud.google.com/compute/instances) to create a new VM instance, then configure the instance following the instructions below for each section:
@@ -48,13 +40,7 @@ Click **Create Instance** in your [Google Cloud Compute Engine Console](https://
 
 1. Expand the **Advanced options** section and the **Management** section within
 
-2. Copy and paste the *Startup script* in the **Automation** field
-
-<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized copy of the deployment repository:**
-
-- Update the *startup script* with the information of your deployment repository:
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your deployment repository
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision (branch) containing your customizations
+2. Copy and paste the *Startup script* below into the **Automation** field
 
 ##### Startup script
 
@@ -129,6 +115,11 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
 
+<span class="badge badge-note">RECOMMENDED</span> If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
+
 ## Deploy
 
 1. Click **CREATE** to create your VM with Sourcegraph installed
@@ -144,14 +135,6 @@ tail -c +0 -f /var/log/syslog | grep startup-script
 # Once installation is completed, check the health of the "sourcegraph-frontend" container
 docker ps --filter="name=sourcegraph-frontend-0"
 ```
-
-## Next
-
-After the initial deployment has been completed, it is strongly recommended to set up the following:
-
-* Restrict the accessibility of ports other than `80` and `443` via [Cloud
-  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) in the Docker Compose deployment
 
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 

@@ -2,14 +2,6 @@
 
 This guide will take you through how to deploy a Sourcegraph instance to a single DigitalOcean Droplet with [Docker Compose](https://docs.docker.com/compose/).
 
-## Prerequisites
-
-- A DigitalOcean account
-- Determine your instance size and resource requirements using the [resource estimator](../resource_estimator.md)
-- <span class="badge badge-note">RECOMMENDED</span> Create your own [customized copy of the deployment repository](../index.md#step-1-prepare-the-deployment-repository)
-
----
-
 ## Configure
 
 [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new) first, then configure the droplet following the instructions below for each section:
@@ -48,13 +40,7 @@ This guide will take you through how to deploy a Sourcegraph instance to a singl
 
 #### Authentication > User data
 
-1. Copy and paste the *Startup script* below into the **User data** text box
-
-<span class="badge badge-warning">IMPORTANT</span> **Required for users deploying with a customized copy of the deployment repository:**
-
-- Update the *startup script* with the information of your deployment repository:
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The git clone URL of your deployment repository
-  - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision (branch) containing your customizations
+1. Copy and paste the *Startup script* below into the **User data** text box:
 
 ##### Startup script
 
@@ -124,6 +110,11 @@ curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSI
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
+
+<span class="badge badge-note">RECOMMENDED</span> If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
 ## Deploy
 
