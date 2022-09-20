@@ -27,6 +27,7 @@ title: Get Started
   }
   .app-btn > h3 {
     font-size: 1.5em;
+    font-weight: 500;
     margin-top: .2em;
     margin-bottom: 1em;
   }
