@@ -15,8 +15,27 @@ npm_link_all_packages(
 copy_to_bin(
     name = "jest.config.base",
     srcs = ["jest.config.base.js"],
-    visibility = ["//client/common:__subpackages__"],
+    visibility = ["//client:__subpackages__"],
 )
+
+copy_to_bin(
+    name = "babel.config",
+    srcs = ["babel.config.js"],
+    visibility = ["//client:__subpackages__"],
+)
+
+# That sounds fishy ...
+copy_to_bin(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//client:__subpackages__"],
+)
+
+# copy_to_bin(
+#     name = "jest-environment",
+#     srcs = ["//client/shared:dev/jest-environment.js"],
+#     visibility = ["//client:__subpackages__"],
+# )
 
 # webpack_bundle(name, args, data, deps, entry_point, entry_points, output_dir, srcs,
 #               supports_workers, webpack, webpack_config, webpack_worker)
