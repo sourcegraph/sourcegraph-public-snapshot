@@ -93,6 +93,37 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
     },
 })
 
+export const createResolveCloningRepoRevisionResult = (
+    treeUrl: string
+): ResolveRepoRevResult & { errors: { message: string }[] } => ({
+    repositoryRedirect: {
+        __typename: 'Repository',
+        id: `RepositoryID:${treeUrl}`,
+        name: treeUrl,
+        url: `/${encodeURIPathComponent(treeUrl)}`,
+        externalURLs: [
+            {
+                url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
+                serviceKind: ExternalServiceKind.GITHUB,
+            },
+        ],
+        description: 'bla',
+        viewerCanAdminister: false,
+        defaultBranch: null,
+        mirrorInfo: {
+            cloneInProgress: true,
+            cloneProgress: 'starting clone',
+            cloned: false,
+        },
+        commit: null,
+    },
+    errors: [
+        {
+            message: `repository does not exist (clone in progress): ${treeUrl}`,
+        },
+    ],
+})
+
 export const createFileNamesResult = (): FileNamesResult => ({
     repository: {
         id: 'repo-123',

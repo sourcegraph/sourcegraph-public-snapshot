@@ -3,12 +3,15 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -18,11 +21,15 @@ import (
 	"github.com/inconshreveable/log15"
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -85,6 +92,110 @@ func TestRepository(t *testing.T) {
 			`,
 		},
 	})
+}
+
+func TestRecloneRepository(t *testing.T) {
+	resetMocks()
+
+	gitserverCalled := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		resp := protocol.RepoUpdateResponse{}
+		gitserverCalled = true
+		json.NewEncoder(w).Encode(&resp)
+	}))
+	defer srv.Close()
+
+	serverURL, err := url.Parse(srv.URL)
+	assert.Nil(t, err)
+	conf.Mock(&conf.Unified{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
+			GitServers: []string{serverURL.Host},
+		},
+	})
+	defer conf.Mock(nil)
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
+
+	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+                mutation {
+                    recloneRepository(repo: "%s") {
+                        alwaysNil
+                    }
+                }
+            `, repoID),
+			ExpectedResult: `
+                {
+                    "recloneRepository": {
+                        "alwaysNil": null
+                    }
+                }
+            `,
+		},
+	})
+
+	assert.True(t, *called)
+	assert.True(t, gitserverCalled)
+}
+
+func TestDeleteRepositoryFromDisk(t *testing.T) {
+	resetMocks()
+
+	repos := database.NewMockRepoStore()
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
+
+	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: fmt.Sprintf(`
+                mutation {
+                    deleteRepositoryFromDisk(repo: "%s") {
+                        alwaysNil
+                    }
+                }
+            `, repoID),
+			ExpectedResult: `
+                {
+                    "deleteRepositoryFromDisk": {
+                        "alwaysNil": null
+                    }
+                }
+            `,
+		},
+	})
+
+	assert.True(t, *called)
 }
 
 func TestResolverTo(t *testing.T) {

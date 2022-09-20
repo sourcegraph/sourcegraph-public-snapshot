@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
-	github.com/RoaringBitmap/roaring v0.9.4
+	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/agext/levenshtein v1.2.3
 	github.com/amit7itz/goset v1.0.1
 	github.com/aws/aws-sdk-go-v2 v1.13.0
@@ -63,7 +63,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gomodule/oauth1 v0.2.0
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-github/v43 v43.0.0
@@ -213,7 +213,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220906183641-6ba33af2cc5f
+	github.com/sourcegraph/zoekt v0.0.0-20220915123039-1c07c86f40a8
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -249,7 +249,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.14.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.2.2
+	github.com/bits-and-blooms/bitset v1.3.2
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/bufbuild/buf v1.4.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect

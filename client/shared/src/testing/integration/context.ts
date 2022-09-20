@@ -15,7 +15,7 @@ import { first, timeoutWith } from 'rxjs/operators'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { asError, keyExistsIn } from '@sourcegraph/common'
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 // eslint-disable-next-line no-restricted-imports
 import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
@@ -249,8 +249,8 @@ export const createSharedIntegrationTestContext = async <
         }
 
         try {
-            const result = handler(variables as any)
-            const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+            const { errors, ...data } = handler(variables as any)
+            const graphQlResult: GraphQLResult<any> = { data, errors }
             response.json(graphQlResult)
         } catch (error) {
             if (!(error instanceof IntegrationTestGraphQlError)) {

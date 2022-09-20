@@ -337,7 +337,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                         enableCodeMonitoring={enableCodeMonitoring}
                         resultsFound={resultsFound}
-                        className={classNames('flex-grow-1', styles.infobar)}
+                        className={styles.infobar}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}

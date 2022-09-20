@@ -17,6 +17,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 4.0.0
+
+### Added
+
 - A new look for Sourcegraph, previously in beta as "Simple UI", is now permanently enabled. [#41021](https://github.com/sourcegraph/sourcegraph/pull/41021)
 - A new [multi-version upgrade](https://docs.sourcegraph.com/admin/updates#multi-version-upgrades) process now allows Sourcegraph instances to upgrade more than a single minor version. Instances at version 3.20 or later can now jump directly to 4.0. [#40628](https://github.com/sourcegraph/sourcegraph/pull/40628)
 - Matching ranges in file paths are now highlighted for path results and content results. Matching paths in repository names are now highlighted for repository results. [#41296](https://github.com/sourcegraph/sourcegraph/pull/41296) [#41385](https://github.com/sourcegraph/sourcegraph/pull/41385) [#41470](https://github.com/sourcegraph/sourcegraph/pull/41470)
@@ -25,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - File links in both the search results and the blob sidebar and now prefetched on hover or focus. [#40354](https://github.com/sourcegraph/sourcegraph/pull/40354) [#41420](https://github.com/sourcegraph/sourcegraph/pull/41420)
 - Negation support for the search predicates `-repo:has.path()` and `-repo:has.content()`. [#40283](https://github.com/sourcegraph/sourcegraph/pull/40283)
 - Experimental clientside OpenTelemetry can now be enabled with `"observability.client": { "openTelemetry": "/-/debug/otlp" }`, which sends OpenTelemetry to the new [bundled OpenTelemetry Collector](https://docs.sourcegraph.com/admin/observability/opentelemetry). [#37907](https://github.com/sourcegraph/sourcegraph/issues/37907)
+- File diff stats are now characterized by 2 figures: lines added and lines removed. Previously, a 3rd figure for lines modified was also used. This is represented by the fields on the `DiffStat` type on the GraphQL API. [#40454](https://github.com/sourcegraph/sourcegraph/pull/40454)
 
 ### Changed
 
