@@ -568,7 +568,7 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
-        it.only('shows repo cloning in progress page', async () => {
+        it('shows repo cloning in progress page', async () => {
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
