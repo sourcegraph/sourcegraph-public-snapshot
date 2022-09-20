@@ -197,7 +197,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     ])
 
     return (
-        <Combobox className={classNames(styles.container, className)} onSelect={handleContextSelect}>
+        <Combobox openOnFocus={true} className={classNames(styles.container, className)} onSelect={handleContextSelect}>
             <div className={styles.title}>
                 <small>Choose search context</small>
                 <Button variant="icon" aria-label="Close" className={styles.titleClose} onClick={() => onMenuClose()}>
