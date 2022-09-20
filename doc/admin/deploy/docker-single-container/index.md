@@ -151,7 +151,34 @@ To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.
 
 A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
 
-Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point. Contact support otherwise for assistance.
+> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
+>
+> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+>
+> **If you do not feel confident running this process solo**, contact customer support team to help guide you thorough the process.
+
+**Before performing a multi-version upgrade**:
+
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Docker Single Container](../../updates/server.md#multi-version-upgrade-procedure).
+
+To perform a multi-version upgrade on a Sourcegraph instance running on Docker Single Container:
+
+1. Stop the container.
+1. If using an [externalized database](../../external_services/postgres.md), it is already accessible from the `migrator` so no action is needed. Otherwise, a local Postgres container must be started so that the `migrator` can upgrade the data in-place. Let `${PATH}` be the directory mounted into `/var/opt/sourcegraph` of your instance (this contains the Postgres data directory). Start a Postgres container via the following:
+
+```
+docker run --rm -it \
+    -p 5455:5432 \
+    -v `pwd`/data/postgresql:/data/pgdata-11 \
+    -u 70 \
+    --entrypoint bash \
+    sourcegraph/postgres-11.4:3.25.0 \
+    -c 'echo "host all all 0.0.0.0/0 trust" >> /data/pgdata-11/pg_hba.conf && postgres -c listen_addresses="*" -D /data/pgdata-11'
+```
+
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the [migrator](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-docker%24+file:docker-compose%5C.yaml+container_name:+migrator) is invoked with a `docker run` command using environment variables indicating the instance's databases.
+1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Single Container](#standard-upgrades).
 
 ## Troubleshooting
 
