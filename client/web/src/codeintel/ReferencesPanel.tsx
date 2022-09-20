@@ -72,9 +72,6 @@ import { isDefined } from './util/helpers'
 import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-function localStorageKeyFromToken(token: Token): string {
-    return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
-}
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
@@ -215,14 +212,6 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     )
 }
 
-interface BlobMemoryHistoryState {
-    /**
-     * Whether or not to sync this change from the blob history object to the
-     * panel's history object.
-     */
-    syncToPanel?: boolean
-}
-
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
@@ -292,7 +281,7 @@ export const ReferencesList: React.FunctionComponent<
 
     // This is the history of the panel, that is inside a memory router
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
-        'sideblob-active-url' + localStorageKeyFromToken(props.token),
+        'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
         undefined
     )
     // activeLocation is the location that is selected/clicked in the list of
@@ -371,7 +360,7 @@ export const ReferencesList: React.FunctionComponent<
         return state
     }, [location])
     const [collapsed, setCollapsed] = useSessionStorage<Record<string, boolean>>(
-        'sideblob-collapse-state-' + localStorageKeyFromToken(props.token),
+        'sideblob-collapse-state-' + sessionStorageKeyFromToken(props.token),
         initialCollapseState
     )
     const handleOpenChange = (id: string, isOpen: boolean): void =>
@@ -1016,4 +1005,8 @@ export const appendJumpToFirstQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('jumpToFirst', 'true')
     return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+}
+
+function sessionStorageKeyFromToken(token: Token): string {
+    return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
 }
