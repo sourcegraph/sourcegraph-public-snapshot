@@ -78,7 +78,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
             if (range) {
                 const endLine = range.endLine ?? range.line
                 const from = Math.min(range.line, endLine)
-                const to = from === endLine ? range.line : endLine
+                const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
 
                 for (let lineNumber = from; lineNumber <= to; lineNumber++) {
                     marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
