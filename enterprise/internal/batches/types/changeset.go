@@ -264,7 +264,6 @@ type Changeset struct {
 	ExternalReviewState   ChangesetReviewState
 	ExternalCheckState    ChangesetCheckState
 	DiffStatAdded         *int32
-	DiffStatChanged       *int32
 	DiffStatDeleted       *int32
 	SyncState             ChangesetSyncState
 
@@ -346,16 +345,15 @@ func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
 	c.SetDiffStat(&diffStat)
 }
 
-// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
+// DiffStat returns a *diff.Stat if DiffStatAdded and
 // DiffStatDeleted are set, or nil if one or more is not.
 func (c *Changeset) DiffStat() *diff.Stat {
-	if c.DiffStatAdded == nil || c.DiffStatChanged == nil || c.DiffStatDeleted == nil {
+	if c.DiffStatAdded == nil || c.DiffStatDeleted == nil {
 		return nil
 	}
 
 	return &diff.Stat{
 		Added:   *c.DiffStatAdded,
-		Changed: *c.DiffStatChanged,
 		Deleted: *c.DiffStatDeleted,
 	}
 }
@@ -363,16 +361,12 @@ func (c *Changeset) DiffStat() *diff.Stat {
 func (c *Changeset) SetDiffStat(stat *diff.Stat) {
 	if stat == nil {
 		c.DiffStatAdded = nil
-		c.DiffStatChanged = nil
 		c.DiffStatDeleted = nil
 	} else {
-		added := stat.Added
+		added := stat.Added + stat.Changed
 		c.DiffStatAdded = &added
 
-		changed := stat.Changed
-		c.DiffStatChanged = &changed
-
-		deleted := stat.Deleted
+		deleted := stat.Deleted + stat.Changed
 		c.DiffStatDeleted = &deleted
 	}
 }

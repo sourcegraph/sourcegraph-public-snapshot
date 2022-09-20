@@ -243,6 +243,9 @@ type Client interface {
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
+
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
@@ -894,6 +897,29 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	var info *protocol.RepoUpdateResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
 
+	return info, err
+}
+
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var info *protocol.RepoCloneResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }
 

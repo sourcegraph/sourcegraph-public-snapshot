@@ -3,31 +3,37 @@
  * text document decorations to CodeMirror decorations. Text document
  * decorations are provided via the {@link showGitBlameDecorations} facet.
  */
-import { Compartment, Extension, Facet } from '@codemirror/state'
-import {
-    Decoration,
-    DecorationSet,
-    EditorView,
-    gutter,
-    GutterMarker,
-    PluginValue,
-    ViewPlugin,
-    ViewUpdate,
-} from '@codemirror/view'
+import { Facet, RangeSet } from '@codemirror/state'
+import { Decoration, EditorView, gutter, gutterLineClass, GutterMarker } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
+
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import blameColumnStyles from '../BlameColumn.module.scss'
 
-/**
- * {@link BlameDecorationManager} creates {@link gutter} dynamically.
- * Using a compartment allows us to change the gutter extensions without
- * impacting any other extensions.
- */
-const decorationGutters = new Compartment()
+const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
+const highlightedLineGutterMarker = new (class extends GutterMarker {
+    public elementClass = 'highlighted-line'
+})()
+
+const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null, field => [
+    EditorView.decorations.compute([field], state => {
+        const line = state.field(field, false) ?? null
+        return line === null
+            ? Decoration.none
+            : Decoration.set(highlightedLineDecoration.range(state.doc.line(line).from))
+    }),
+    gutterLineClass.compute([field], state => {
+        const line = state.field(field, false) ?? null
+        return line === null
+            ? RangeSet.empty
+            : RangeSet.of(highlightedLineGutterMarker.range(state.doc.line(line).from))
+    }),
+])
 
 /**
  * Used to find the blame decoration(s) with the longest text,
@@ -42,31 +48,23 @@ const longestColumnDecorations = (hunks?: BlameHunk[]): BlameHunk | undefined =>
     }, undefined as BlameHunk | undefined)
 
 /**
- * Get HTMLElement containing line number by line number.
- * */
-const getLineNumberCell = (line: number): HTMLElement | null =>
-    document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
-
-/**
- * Get HTMLElement containing code chunk by line number.
- * */
-const getCodeCell = (line: number): HTMLElement | null =>
-    document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
-
-/**
  * Widget class for rendering column git blame text document decorations inside CodeMirror.
  */
 class BlameDecoratorMarker extends GutterMarker {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
 
-    constructor(public readonly item: BlameHunk | undefined, public readonly line: number) {
+    constructor(
+        public view: EditorView,
+        public readonly hunk: BlameHunk | undefined,
+        private isSpacer: boolean = false
+    ) {
         super()
     }
 
     /* eslint-disable-next-line id-length*/
     public eq(other: BlameDecoratorMarker): boolean {
-        return isEqual(this.item, other.item)
+        return isEqual(this.hunk, other.hunk)
     }
 
     public toDOM(): HTMLElement {
@@ -75,8 +73,12 @@ class BlameDecoratorMarker extends GutterMarker {
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <BlameDecoration
-                    line={this.line}
-                    blameHunk={this.item}
+                    /* line has to be set to 0 if this marker is used as spacer,
+                     * otherwise the popover will be rendered twice when
+                     * hovering over the line associated with this hunk
+                     */
+                    line={this.isSpacer ? 0 : this.hunk?.startLine ?? 0}
+                    blameHunk={this.hunk}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
@@ -85,31 +87,13 @@ class BlameDecoratorMarker extends GutterMarker {
         return this.container
     }
 
-    private getDecorationCell = (): HTMLElement | null | undefined => this.container?.closest('.cm-gutterElement')
-
     private selectRow = (line: number): void => {
-        const lineNumberCell = getLineNumberCell(line)
-        const decorationCell = this.getDecorationCell()
-        const codeCell = getCodeCell(line)
-        if (!lineNumberCell || !decorationCell || !codeCell) {
-            return
-        }
-
-        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
-            cell.classList.add('highlighted-line')
-        }
+        setHoveredLine(this.view, line)
     }
 
     private deselectRow = (line: number): void => {
-        const lineNumberCell = getLineNumberCell(line)
-        const decorationCell = this.getDecorationCell()
-        const codeCell = getCodeCell(line)
-        if (!lineNumberCell || !decorationCell || !codeCell) {
-            return
-        }
-
-        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
-            cell.classList.remove('highlighted-line')
+        if (this.view.state.field(hoveredLine) === line) {
+            setHoveredLine(this.view, null)
         }
     }
 
@@ -121,94 +105,38 @@ class BlameDecoratorMarker extends GutterMarker {
     }
 }
 
-class BlameDecorationManager implements PluginValue {
-    public decorations: DecorationSet = Decoration.none
-    private gutter: { gutter: Extension; items: BlameHunk[] } | undefined
-    private reset: number | null = null
-
-    constructor(private readonly view: EditorView) {
-        this.updateDecorations(view.state.facet(showGitBlameDecorations))
-    }
-
-    public update(update: ViewUpdate): void {
-        const currentDecorations = update.state.facet(showGitBlameDecorations)
-
-        if (update.startState.facet(showGitBlameDecorations) !== currentDecorations) {
-            this.updateDecorations(currentDecorations)
-        }
-    }
-
-    private updateDecorations(specs: BlameHunk[]): void {
-        if (this.updateGutter(specs)) {
-            // We cannot synchronously dispatch another transaction during
-            // an update, so we schedule it but also cancel pending
-            // transactions should this be called multiple times in a row
-            if (this.reset !== null) {
-                window.clearTimeout(this.reset)
-            }
-            this.reset = window.setTimeout(() => {
-                this.view.dispatch({
-                    effects: decorationGutters.reconfigure(this.gutter?.gutter || []),
-                })
-            }, 50)
-        }
-    }
-
-    /**
-     * Create or remove gutters.
-     */
-    private updateGutter(specs: BlameHunk[]): boolean {
-        let change = false
-
-        if (!this.gutter) {
-            this.gutter = {
-                gutter: gutter({
-                    class: blameColumnStyles.decoration,
-                    lineMarker: (view, lineBlock) => {
-                        const items = this.gutter?.items
-                        if (!items) {
-                            // This shouldn't be possible but just in case
-                            return null
-                        }
-                        const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
-                        const lineItems = items.find(hunk => hunk.startLine === lineNumber)
-                        if (!lineItems) {
-                            return null
-                        }
-                        return new BlameDecoratorMarker(lineItems, lineNumber)
-                    },
-                    // Without a spacer the whole gutter flickers when the
-                    // decorations for the visible lines are re-rendered
-                    // TODO: update spacer when decorations change
-                    initialSpacer: () => {
-                        const hunk = longestColumnDecorations(this.gutter?.items)
-                        return new BlameDecoratorMarker(hunk, 0)
-                    },
-                    // Markers need to be updated when theme changes
-                    lineMarkerChange: update =>
-                        update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
-                }),
-                items: specs,
-            }
-            change = true
-        } else {
-            this.gutter.items = specs
-        }
-
-        return change
-    }
-}
-
 /**
  * Facet to show git blame decorations.
  */
 export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
-    compareInput: (a, b) => a === b || (a.length === 0 && b.length === 0),
-    enables: [
-        ViewPlugin.fromClass(BlameDecorationManager, {
-            decorations: manager => manager.decorations,
+    enables: facet => [
+        gutter({
+            class: blameColumnStyles.decoration,
+            lineMarker: (view, lineBlock) => {
+                const hunks = view.state.facet(facet)
+                if (!hunks) {
+                    // This shouldn't be possible but just in case
+                    return null
+                }
+                const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
+                const hunk = hunks.find(hunk => hunk.startLine === lineNumber)
+                if (!hunk) {
+                    return null
+                }
+                return new BlameDecoratorMarker(view, hunk)
+            },
+            // Without a spacer the whole gutter flickers when the
+            // decorations for the visible lines are re-rendered
+            // TODO: update spacer when decorations change
+            initialSpacer: view => {
+                const hunk = longestColumnDecorations(view.state.facet(facet))
+                return new BlameDecoratorMarker(view, hunk, true)
+            },
+            // Markers need to be updated when theme changes
+            lineMarkerChange: update =>
+                update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
         }),
-        decorationGutters.of([]),
+        hoveredLine,
     ],
 })

@@ -136,14 +136,14 @@ SELECT * FROM users;
 
 ## Upgrade
 
+### Standard upgrades
+
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+
 **Before upgrading:**
 
 - Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
 - Find the relevant entry for your update in the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
-
-### Standard upgrades
-
-A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is a patch or single minor release away your current version) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
 
@@ -151,7 +151,7 @@ To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.
 
 A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
 
-Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point.
+Multi-version upgrades are not well supported on single-container deployments. Consider migrating to [another deployment type](../index.md#deployment-types) on the same version and begin the upgrade to the new version from that point. Contact support otherwise for assistance.
 
 ## Troubleshooting
 

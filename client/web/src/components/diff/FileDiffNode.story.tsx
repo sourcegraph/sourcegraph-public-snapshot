@@ -10,7 +10,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: null,
         newFile: {
             __typename: 'VirtualFile',
@@ -27,7 +27,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         newFile: null,
         oldFile: {
             __typename: 'VirtualFile',
@@ -44,7 +44,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         oldFile: null,
         newFile: {
             __typename: 'VirtualFile',
@@ -61,7 +61,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         newFile: null,
         oldFile: {
             __typename: 'VirtualFile',
@@ -78,7 +78,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -99,7 +99,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'GitBlob',
             binary: false,
@@ -120,7 +120,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -141,7 +141,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -162,7 +162,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,

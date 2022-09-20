@@ -18,10 +18,6 @@ const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCo
 
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
 
-const RepositoryGitDataContainer = lazyComponent(
-    () => import('./RepositoryGitDataContainer'),
-    'RepositoryGitDataContainer'
-)
 const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
 const RepositoryBranchesArea = lazyComponent(
     () => import('./branches/RepositoryBranchesArea'),
@@ -48,9 +44,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/commit/:revspec+',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                    <RepositoryCommitPage {...context} />
-                </RepositoryGitDataContainer>
+                <RepositoryCommitPage {...context} />
                 {window.context.enableLegacyExtensions && (
                     <ActionItemsBar
                         extensionsController={context.extensionsController}
@@ -66,27 +60,17 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/branches',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepositoryBranchesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryBranchesArea {...context} />,
     },
     {
         path: '/-/tags',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepositoryReleasesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryReleasesArea {...context} />,
     },
     {
         path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                    <RepositoryCompareArea {...context} />
-                </RepositoryGitDataContainer>
+                <RepositoryCompareArea {...context} />
                 {window.context.enableLegacyExtensions && (
                     <ActionItemsBar
                         extensionsController={context.extensionsController}
@@ -102,19 +86,11 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/stats',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepositoryStatsArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryStatsArea {...context} />,
     },
     {
         path: '/-/settings',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepoSettingsArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepoSettingsArea {...context} />,
     },
 ]
 
@@ -193,9 +169,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                    <RepositoryCompareArea {...context} />
-                </RepositoryGitDataContainer>
+                <RepositoryCompareArea {...context} />
                 {window.context.enableLegacyExtensions && (
                     <ActionItemsBar
                         extensionsController={context.extensionsController}

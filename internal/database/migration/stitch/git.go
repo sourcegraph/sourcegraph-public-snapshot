@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -24,12 +25,19 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", doMagicHacking(rev), pathForSchemaAtRev))
-	cmd.Dir = dir
 
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, pathForSchemaAtRev))
+	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to run git show: `%s`", out)
+		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: invalid object name") {
+			cmd := exec.Command("git", "show", fmt.Sprintf("origin/%s:%s", branch, pathForSchemaAtRev))
+			cmd.Dir = dir
+			out, err = cmd.CombinedOutput()
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to run git show: %s", out)
+		}
 	}
 
 	if ok := gitTreePattern.Match(out); !ok {
@@ -93,12 +101,18 @@ func cachedArchiveContents(dir, rev string) (map[string]string, error) {
 // archiveContents calls git archive with the given git revision and returns a map from
 // file paths to file contents.
 func archiveContents(dir, rev string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", doMagicHacking(rev), "migrations")
+	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
 	cmd.Dir = dir
-
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to run git archive: `%s`", out)
+		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: not a valid object name") {
+			cmd := exec.Command("git", "archive", "--format=tar", "origin/"+branch, "migrations")
+			cmd.Dir = dir
+			out, err = cmd.CombinedOutput()
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to run git archive: %s", out)
+		}
 	}
 
 	revContents := map[string]string{}
@@ -141,13 +155,14 @@ func migrationPath(schemaName, rev string) (string, error) {
 	return filepath.Join("migrations", schemaName), nil
 }
 
-func doMagicHacking(rev string) string {
-	if rev == "v4.0.0" {
-		// NOTE: prior to the 4.0 branch cut, this can be updated to be the head of
-		// the main branch to assist in testing upgrades end-to-end. Prior to the 4.0
-		// branch cut, we must remove this condition.
-		rev = "695b52c5151010f275eb7232eb2d6cea27a07026"
+// tagRevToBranch attempts to determine the branch on which the given rev, assumed to be a tag of the
+// form vX.Y.Z, belongs. This is used to support generation of stitched migrations after a branch cut
+// but before the tagged commit is created.
+func tagRevToBranch(rev string) (string, bool) {
+	version, ok := oobmigration.NewVersionFromString(rev)
+	if !ok {
+		return "", false
 	}
 
-	return rev
+	return fmt.Sprintf("%d.%d", version.Major, version.Minor), true
 }
