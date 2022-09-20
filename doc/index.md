@@ -18,6 +18,9 @@ title: Get Started
     border: 1px solid;
     background-color: white;
     text-align: center;
+    font-weight: 400;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
   }
   .app-btn:hover {
     box-shadow: 0 0 10px #00cbec;
