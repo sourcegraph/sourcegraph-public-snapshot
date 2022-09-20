@@ -255,6 +255,7 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 
 		// Do stuff to line
 		if err := s.processLine(parsedLine); err != nil {
+			logger.Error("processLine error", log.Error(err))
 			return err
 		}
 	}
@@ -366,6 +367,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
+			logger.Debug("Processing parsed line", log.String("match", line.match), log.Bool("isExclusion", line.isExclusion))
 			match, err := convertToGlobMatch(line.match)
 			if err != nil {
 				return err
@@ -374,6 +376,11 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 			// Depots that this match pertains to
 			depots := relevantDepots(match)
+
+			if len(depots) == 0 {
+				logger.Debug("Zero relevant depots, returning early")
+				return nil
+			}
 
 			depotStrings := make([]string, len(depots))
 			for i := range depots {
