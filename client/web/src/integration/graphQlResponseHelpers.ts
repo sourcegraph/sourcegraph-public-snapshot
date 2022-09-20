@@ -119,7 +119,7 @@ export const createResolveCloningRepoRevisionResult = (
     },
     errors: [
         {
-            message: 'repository does not exist (clone in progress): github.com/sourcegraph/sourcegraph',
+            message: `repository does not exist (clone in progress): ${treeUrl}`,
         },
     ],
 })
