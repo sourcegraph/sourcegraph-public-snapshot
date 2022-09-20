@@ -464,6 +464,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -1010,6 +1011,31 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
 		}
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// handleRepoClone is an asynchronous (does not wait for update to complete or
+// time out) call to clone a repository.
+// Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
+func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
+	var req protocol.RepoCloneRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var resp protocol.RepoCloneResponse
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+
+	_, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false})
+	if err != nil {
+		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+		resp.Error = err.Error()
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
