@@ -188,6 +188,7 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
                 id
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
+                    content
                 }
             }
         }

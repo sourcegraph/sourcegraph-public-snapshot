@@ -102,8 +102,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 margin: {
                     top: 16,
                     right: 16,
-                    left: yAxisElement?.getBBox().width,
-                    bottom: xAxisReference?.getBBox().height,
+                    left: yAxisElement?.getBBox?.().width ?? 0,
+                    bottom: xAxisReference?.getBBox?.().height ?? 0,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
@@ -181,6 +181,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             width={outerWidth}
             height={outerHeight}
             className={classNames(styles.root, className, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
+            role="group"
             {...attributes}
             {...handlers}
         >
@@ -203,7 +204,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 tickFormat={formatDateTick}
             />
 
-            <Group top={content.top} left={content.left}>
+            <Group top={content.top} left={content.left} role="list">
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {activeSeries.map(line => (
@@ -220,6 +221,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                             hasActivePoint: !!activePoint,
                             isActive: activePoint?.seriesId === line.id,
                         })}
+                        aria-label={line.name}
+                        role="listitem"
                         onDatumClick={onDatumClick}
                         onDatumFocus={setActivePoint}
                     />

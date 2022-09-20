@@ -87,7 +87,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             },
         ],
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
 }
 
 export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
@@ -233,9 +233,8 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 checkState: ChangesetCheckState.PASSED,
                 diffStat: {
                     __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
+                    added: 19,
+                    deleted: 10,
                 },
                 externalID: '123',
                 externalURL: {
@@ -281,9 +280,8 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 checkState: null,
                 diffStat: {
                     __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
+                    added: 19,
+                    deleted: 10,
                 },
                 externalID: null,
                 externalURL: null,
