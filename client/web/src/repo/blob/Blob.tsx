@@ -387,7 +387,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
-    const navigateToURL = props.nav
+    const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
         useMemo(
@@ -404,10 +404,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
+                        if (!position) {
+                            return
+                        }
                         let query: string | undefined
                         let replace = false
                         if (
-                            position &&
                             event.shiftKey &&
                             hoverifier.hoverState.selectedPosition &&
                             hoverifier.hoverState.selectedPosition.line !== undefined
@@ -433,8 +435,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             // will always be added.
                             const currentPosition = parseQueryAndHash(location.search, location.hash)
                             replace = Boolean(
-                                position &&
-                                    currentPosition.line &&
+                                currentPosition.line &&
                                     !currentPosition.endLine &&
                                     Math.abs(position.line - currentPosition.line) < 11
                             )
@@ -443,22 +444,22 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        const notBlankSpace = position && !('character' in position)
-                        if (position && navigateToURL) {
-                            const entry: H.LocationDescriptor<unknown> = {
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                        const isPositionOverWhitespace = 'character' in position
+                        if (isPositionOverWhitespace || props.navigateToLineOnAnyClick) {
+                            if (customHistoryAction) {
+                                const entry: H.LocationDescriptor<unknown> = {
+                                    ...location,
+                                    search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                                }
+                                customHistoryAction(props.history.createHref(entry))
+                            } else {
+                                updateBrowserHistoryIfChanged(
+                                    props.history,
+                                    location,
+                                    addLineRangeQueryParameter(parameters, query),
+                                    replace
+                                )
                             }
-                            navigateToURL(props.history.createHref(entry))
-                        } else if (position && (props.navigateToLineOnAnyClick || notBlankSpace)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfChanged(
-                                props.history,
-                                location,
-                                addLineRangeQueryParameter(parameters, query),
-                                replace
-                            )
                         }
                     }),
                     mapTo(undefined)
@@ -469,7 +470,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 location,
                 props.history,
                 props.navigateToLineOnAnyClick,
-                navigateToURL,
+                customHistoryAction,
             ]
         )
     )
@@ -807,7 +808,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
-    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickab.e
+    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickable.
     useLayoutEffect(() => {
         if (!props.navigateToLineOnAnyClick) {
             return

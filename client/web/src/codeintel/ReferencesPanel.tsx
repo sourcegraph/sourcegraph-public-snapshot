@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -290,13 +290,7 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
-    // We create an in-memory history here so we don't modify the browser
-    // location. This panel is detached from the URL state.
-    const panelHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
-    // TODO: get rid of this history because we don't use it.
-
     // This is the history of the panel, that is inside a memory router
-    // const panelHistory = useHistory()
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + localStorageKeyFromToken(props.token),
         undefined
@@ -304,31 +298,27 @@ export const ReferencesList: React.FunctionComponent<
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const setActiveLocation = (location: Location | undefined): void => {
-        if (location) {
-            // Reconstruct the URL instead of using `location.url` to ensure that 5
-            const absoluteURL = toPrettyBlobURL({
-                filePath: location.file,
-                revision: location.commitID,
-                repoName: location.repo,
-                commitID: location.commitID,
-                position: location.range
-                    ? {
-                          line: location.range.start.line + 1,
-                          character: location.range.start.character,
-                      }
-                    : undefined,
-            })
-            setActiveURL(absoluteURL)
+        if (!location) {
+            setActiveURL(undefined)
+            return
         }
+        // Reconstruct the URL instead of using `location.url` to ensure that 5
+        const absoluteURL = toPrettyBlobURL({
+            filePath: location.file,
+            revision: location.commitID,
+            repoName: location.repo,
+            commitID: location.commitID,
+            position: location.range
+                ? {
+                      line: location.range.start.line + 1,
+                      character: location.range.start.character,
+                  }
+                : undefined,
+        })
+        setActiveURL(absoluteURL)
     }
 
     const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
-
-    if (activeURL) {
-        // NOTE(olafurpg) I tried wrapping this step inside `useEffect()` but it stopped working.
-        panelHistory.replace(activeURL)
-        console.log({ activeURL })
-    }
 
     const isActiveLocation = (location: Location): boolean => {
         const result =
@@ -349,26 +339,12 @@ export const ReferencesList: React.FunctionComponent<
         if (props.jumpToFirst && definitions.length > 0) {
             setActiveLocation(definitions[0])
         }
-    }, [panelHistory, props.jumpToFirst, definitions, setActiveURL])
+    }, [props.jumpToFirst, definitions, setActiveURL])
 
-    // When a user clicks on an item in the list of references, we push it to
-    // the memory history for the code blob on the right, so it will jump to &
-    // highlight the correct line.
-    const onReferenceClick = (location: Location | undefined): void => {
-        setActiveLocation(location)
-    }
-
-    // When we user clicks on a token *inside* the code blob on the right, we
-    // update the history for the panel itself, which is inside a memory router.
-    //
-    // We also '#tab=references' and '?jumpToFirst=true' to the URL.
-    //
-    // '#tab=references' will cause the panel to show the references of the clicked token,
-    // but not navigate the main web app to it.
-    //
-    // '?jumpToFirst=true' causes the panel to select the first reference and
-    // open it in code blob on right.
     const onBlobNav = (url: string): void => {
+        // Store the URL that the user promoted even if no definition/reference
+        // points to the same line. In case they press "back" in the browser history,
+        // the promoted line should be highlighted.
         setActiveURL(url)
         props.externalHistory.push(url)
     }
@@ -448,7 +424,7 @@ export const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
-                        setActiveLocation={onReferenceClick}
+                        setActiveLocation={setActiveLocation}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
@@ -461,7 +437,7 @@ export const ReferencesList: React.FunctionComponent<
                         loadingMore={fetchMoreReferencesLoading}
                         filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
-                        setActiveLocation={onReferenceClick}
+                        setActiveLocation={setActiveLocation}
                         isActiveLocation={isActiveLocation}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
@@ -474,7 +450,7 @@ export const ReferencesList: React.FunctionComponent<
                             hasMore={implementationsHasNextPage}
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={onReferenceClick}
+                            setActiveLocation={setActiveLocation}
                             filter={debouncedFilter}
                             isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
@@ -518,14 +494,7 @@ export const ReferencesList: React.FunctionComponent<
                             )}
                         </small>
                     </CardHeader>
-                    <SideBlob
-                        {...props}
-                        {...sideblob}
-                        blobNav={onBlobNav}
-                        history={panelHistory}
-                        panelHistory={panelHistory}
-                        location={panelHistory.location}
-                    />
+                    <SideBlob {...props} {...sideblob} blobNav={onBlobNav} />
                 </div>
             )}
         </div>
@@ -628,19 +597,17 @@ const CollapsibleLocationList: React.FunctionComponent<
 }
 
 interface SideBlobProps extends ReferencesPanelProps {
+    activeURL: string
     repository: string
     commitID: string
     file: string
     position?: Position
-    location: H.Location<BlobMemoryHistoryState>
-    history: H.History<BlobMemoryHistoryState>
     blobNav: (url: string) => void
-    panelHistory: H.History
 }
 
 function parseSideBlobProps(
     activeURL: string | undefined
-): Pick<SideBlobProps, 'repository' | 'commitID' | 'file' | 'position'> | undefined {
+): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
     if (!activeURL) {
         return undefined
     }
@@ -653,7 +620,7 @@ function parseSideBlobProps(
         const position = url.position
             ? new Position(Math.max(url.position.line - 1), Math.max(0, url.position.character - 1))
             : undefined
-        return { repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
+        return { activeURL, repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
     } catch (error) {
         console.error(`failed to parse activeURL ${activeURL}`, error)
         return undefined
@@ -661,7 +628,6 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    // const { history, panelHistory } = props
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
 
@@ -682,6 +648,12 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
+
+    const history = useMemo(() => H.createMemoryHistory(), [])
+    const location = useMemo(() => {
+        history.replace(props.activeURL)
+        return history.location
+    }, [props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -722,8 +694,8 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            history={props.externalHistory}
-            location={props.location}
+            history={history}
+            location={location}
             disableStatusBar={true}
             disableDecorations={true}
             wrapCode={true}
@@ -855,6 +827,17 @@ const CollapsibleLocationGroup: React.FunctionComponent<
             }
     >
 > = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
+    // On the first load, update the scroll position towards the active
+    // location.  Without this behavior, the scroll position points at the top
+    // of the reference panel when reloading the page or going back/forward in
+    // the browser history.
+    useLayoutEffect(() => {
+        const activeLocationElement = document.querySelector('.' + styles.locationActive)
+        if (activeLocationElement) {
+            activeLocationElement.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+        }
+    }, [])
+
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
