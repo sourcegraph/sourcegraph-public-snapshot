@@ -2,6 +2,8 @@
 
 In version 4.0 and later, Code Insights provides aggregations shown on the search screen.
 
+This lets you track version and license spread, library adoption, common commit messages, lengths of specific files, usage frequencies, and the [many common use case examples here](../references/search_aggregations_use_cases.md).
+
 ## Available aggregations: 
 
 You can aggregate any search by: 
