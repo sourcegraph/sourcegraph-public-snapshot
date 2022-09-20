@@ -40,7 +40,7 @@ nodeComponent type:diff select:commit.diff.added repo:sourcegraph/sourcegraph$ a
 ### What versions of log4j exist in our codebase?
 See all the different subversions of log4j present in your code 
 ```sgquery
-lang:gradle /org\.apache\.logging\.log4j['"].*(2\.\d+\.\d+)/
+lang:gradle /org\.apache\.logging\.log4j['"].*?(2\.\d+\.\d+)/
 ```
 
 ### What breaks most commonly? 
