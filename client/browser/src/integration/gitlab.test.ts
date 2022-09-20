@@ -10,7 +10,7 @@ import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
-describe('GitLab', () => {
+describe.only('GitLab', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest({ loadExtension: true })
@@ -50,6 +50,11 @@ describe('GitLab', () => {
                 viewerConfiguration: {
                     subjects: [],
                     merged: { contents: '', messages: [] },
+                },
+            }),
+            RepositoryName: () => ({
+                repository: {
+                    name: 'gitlab.com/sourcegraph/jsonrpc2',
                 },
             }),
             ResolveRev: () => ({
