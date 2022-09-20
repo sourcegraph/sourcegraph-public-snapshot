@@ -407,7 +407,7 @@ fragment fileDiffNode on FileDiff {
       oldRange { startLine, lines }
       newRange { startLine, lines }
     }
-    stat { added, changed, deleted }
+    stat { added, deleted }
 }
 
 query($changeset: ID!) {
@@ -444,7 +444,7 @@ query($changeset: ID!) {
           fileDiffs {
              totalCount
              rawDiff
-             diffStat { added, changed, deleted }
+             diffStat { added, deleted }
              nodes {
                ... fileDiffNode
              }
@@ -455,7 +455,7 @@ query($changeset: ID!) {
           fileDiffs {
              totalCount
              rawDiff
-             diffStat { added, changed, deleted }
+             diffStat { added, deleted }
              nodes {
                ... fileDiffNode
              }

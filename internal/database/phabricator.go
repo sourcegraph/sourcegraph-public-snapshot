@@ -54,13 +54,13 @@ func (err errPhabricatorRepoNotFound) Error() string {
 
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
-func (p *phabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (s *phabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := p.Handle().QueryRowContext(
+	err := s.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, repo_name, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.Name, r.URL).Scan(&r.ID)
@@ -70,38 +70,38 @@ func (p *phabricatorStore) Create(ctx context.Context, callsign string, name api
 	return r, nil
 }
 
-func (p *phabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (s *phabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := p.Handle().QueryRowContext(
+	err := s.Handle().QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE repo_name=$3 RETURNING id",
 		r.Callsign, r.URL, r.Name).Scan(&r.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return p.Create(ctx, callsign, name, phabURL)
+			return s.Create(ctx, callsign, name, phabURL)
 		}
 		return nil, err
 	}
 	return r, nil
 }
 
-func (p *phabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
-	repo, err := p.GetByName(ctx, name)
+func (s *phabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+	repo, err := s.GetByName(ctx, name)
 	if err != nil {
 		if !errors.HasType(err, errPhabricatorRepoNotFound{}) {
 			return nil, err
 		}
-		return p.Create(ctx, callsign, name, phabURL)
+		return s.Create(ctx, callsign, name, phabURL)
 	}
 	return repo, nil
 }
 
-func (p *phabricatorStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.PhabricatorRepo, error) {
-	rows, err := p.Handle().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
+func (s *phabricatorStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.PhabricatorRepo, error) {
+	rows, err := s.Handle().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (p *phabricatorStore) getBySQL(ctx context.Context, query string, args ...a
 	return repos, nil
 }
 
-func (p *phabricatorStore) getOneBySQL(ctx context.Context, query string, args ...any) (*types.PhabricatorRepo, error) {
-	rows, err := p.getBySQL(ctx, query, args...)
+func (s *phabricatorStore) getOneBySQL(ctx context.Context, query string, args ...any) (*types.PhabricatorRepo, error) {
+	rows, err := s.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (p *phabricatorStore) getOneBySQL(ctx context.Context, query string, args .
 	return rows[0], nil
 }
 
-func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
+func (s *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &LimitOffset{
@@ -141,7 +141,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		},
 	}
 	for {
-		svcs, err := ExternalServicesWith(p.logger, p).List(ctx, opt)
+		svcs, err := ExternalServicesWith(s.logger, s).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}
@@ -161,7 +161,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				p.logger.Error("phabricator.GetByName", log.Error(errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)))
+				s.logger.Error("phabricator.GetByName", log.Error(errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)))
 				continue
 			}
 
@@ -181,5 +181,5 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		}
 	}
 
-	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
+	return s.getOneBySQL(ctx, "WHERE repo_name=$1", name)
 }

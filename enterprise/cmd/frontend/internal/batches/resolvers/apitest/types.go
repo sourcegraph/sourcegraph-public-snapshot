@@ -16,10 +16,10 @@ type GitTarget struct {
 
 type DiffRange struct{ StartLine, Lines int }
 
-type DiffStat struct{ Added, Deleted, Changed int32 }
+type DiffStat struct{ Added, Deleted int32 }
 
 func (ds DiffStat) ToDiffStat() *diff.Stat {
-	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted, Changed: ds.Changed}
+	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted}
 }
 
 type FileDiffHunk struct {

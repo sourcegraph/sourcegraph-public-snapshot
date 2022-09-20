@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
@@ -28,8 +27,14 @@ func optsFromEnv() monitoring.GenerateOptions {
 }
 
 func main() {
-	// Use standard Sourcegraph logging options and flags.
-	logging.Init()
+	// Configure logger
+	if _, set := os.LookupEnv(log.EnvDevelopment); !set {
+		os.Setenv(log.EnvDevelopment, "true")
+	}
+	if _, set := os.LookupEnv(log.EnvLogFormat); !set {
+		os.Setenv(log.EnvLogFormat, "console")
+	}
+
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -62,7 +67,10 @@ func main() {
 		definitions.CodeIntelPolicies(),
 		definitions.Telemetry(),
 	); err != nil {
-		logger.Fatal(err.Error())
+		// Dump error as plain output for readability.
+		println(err.Error())
+
+		logger.Fatal("Error encountered")
 	}
 }
 

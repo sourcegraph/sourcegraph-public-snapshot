@@ -28,6 +28,7 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     getDatumValue: (datum: Datum) => number
     getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
     onBarHover?: (datum: Datum) => void
@@ -47,6 +48,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
         getDatumLink,
         onBarClick,
         onBarHover,
@@ -93,6 +95,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                     getDatumName={getDatumName}
                     getDatumValue={getDatumValue}
                     getDatumColor={getDatumColor}
+                    getDatumFadeColor={getDatumFadeColor}
                     getDatumLink={getDatumLink}
                     height={+height}
                     width={+width}

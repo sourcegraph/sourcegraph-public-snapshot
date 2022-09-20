@@ -60,8 +60,6 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { queryTokens } from './parsedQuery'
 
-import styles from '../CodeMirrorQueryInput.module.scss'
-
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
 // See SymbolIcon
@@ -196,21 +194,6 @@ export function searchQueryAutocompletion(
             position: 30,
         },
     ]
-
-    if (!applyOnEnter) {
-        // This renders the "Tab" indicator after the details text. It's
-        // only visible for the currently selected suggestion (handled
-        // by CSS).
-        addToOptions.push({
-            render() {
-                const node = document.createElement('span')
-                node.classList.add('completion-hint', styles.tabStyle)
-                node.textContent = 'Tab'
-                return node
-            },
-            position: 200,
-        })
-    }
 
     return [
         // Uses the default keymapping but changes accepting suggestions from Enter
