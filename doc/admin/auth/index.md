@@ -441,7 +441,7 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 ## Linking a Sourcegraph account to an auth provider
 
 The link between a Sourcegraph account and an authentication provider account happens via email only.
-Consequently, you can only sign in or sign up with [GitHub](#github), [GitLab](#gitlab), or other supported auth providers ([SAML](saml/index.md),  [OpenID Connect](#openid-connect), [HTTP Proxies](#http-authentication-proxies)) if your email matches the one configured in the auth provider.
+Consequently, you can only sign in with [GitHub](#github), [GitLab](#gitlab), or other supported auth providers ([SAML](saml/index.md),  [OpenID Connect](#openid-connect), [HTTP Proxies](#http-authentication-proxies)) if your email on Sourcegraph matches the one configured in the auth provider.
 
 Let's say the email field in your Sourcegraph account was kept blank when a site admin created the account for you, but the username matches your username on GitHub or GitLab. Will this work? If you try to sign in to SG with GitHub or GitLab, it won't work, and you will see an error informing you that a verified email is missing.
 
