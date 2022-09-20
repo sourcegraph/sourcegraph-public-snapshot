@@ -609,7 +609,7 @@ func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil).Fork(ctx, owner, repo, org) // todo: add token refrehser
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient, nil).Fork(ctx, owner, repo, org)
 }
 
 type RecentCommittersParams struct {
