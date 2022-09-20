@@ -30,7 +30,7 @@ Step 2 of performing a [multi-version upgrade](../deploy/docker-single-container
 Some stepwise upgrade notes have multi-version considerations.
 
 - **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
-    - If you are using an external database, follow the [upgrade instructions](../postgres#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
+    - If you are using an external database, follow the [upgrade instructions](../postgres.md#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
     - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
