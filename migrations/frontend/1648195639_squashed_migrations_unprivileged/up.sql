@@ -280,7 +280,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -308,7 +309,8 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    access_token_id bigint
+    access_token_id bigint,
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -431,6 +433,7 @@ CREATE TABLE changesets (
     ui_publication_state batch_changes_changeset_ui_publication_state,
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
+    queued_at timestamp with time zone DEFAULT now(),
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -521,6 +524,7 @@ CREATE TABLE changeset_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
+    queued_at timestamp with time zone DEFAULT now(),
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -568,6 +572,7 @@ CREATE TABLE cm_action_jobs (
     execution_logs json[],
     webhook bigint,
     slack_webhook bigint,
+    queued_at timestamp with time zone DEFAULT now(),
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -622,6 +627,18 @@ CREATE SEQUENCE cm_emails_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_emails_id_seq OWNED BY cm_emails.id;
+
+CREATE TABLE cm_last_searched (
+    monitor_id bigint NOT NULL,
+    args_hash bigint NOT NULL,
+    commit_oids text[] NOT NULL
+);
+
+COMMENT ON TABLE cm_last_searched IS 'The last searched commit hashes for the given code monitor and unique set of search arguments';
+
+COMMENT ON COLUMN cm_last_searched.args_hash IS 'A unique hash of the gitserver search arguments to identify this search job';
+
+COMMENT ON COLUMN cm_last_searched.commit_oids IS 'The set of commit OIDs that was previously successfully searched and should be excluded on the next run';
 
 CREATE TABLE cm_monitors (
     id bigint NOT NULL,
@@ -728,6 +745,7 @@ CREATE TABLE cm_trigger_jobs (
     last_heartbeat_at timestamp with time zone,
     execution_logs json[],
     search_results jsonb,
+    queued_at timestamp with time zone DEFAULT now(),
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -969,7 +987,8 @@ CREATE TABLE external_service_sync_jobs (
     log_contents text,
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
-    last_heartbeat_at timestamp with time zone
+    last_heartbeat_at timestamp with time zone,
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE external_services (
@@ -997,6 +1016,7 @@ CREATE VIEW external_service_sync_jobs_with_next_sync_at AS
  SELECT j.id,
     j.state,
     j.failure_message,
+    j.queued_at,
     j.started_at,
     j.finished_at,
     j.process_after,
@@ -1059,6 +1079,56 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE gitserver_localclone_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    repo_id integer NOT NULL,
+    source_hostname text NOT NULL,
+    dest_hostname text NOT NULL,
+    delete_source boolean DEFAULT false NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE gitserver_localclone_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE gitserver_localclone_jobs_id_seq OWNED BY gitserver_localclone_jobs.id;
+
+CREATE VIEW gitserver_localclone_jobs_with_repo_name AS
+ SELECT glj.id,
+    glj.state,
+    glj.failure_message,
+    glj.started_at,
+    glj.finished_at,
+    glj.process_after,
+    glj.num_resets,
+    glj.num_failures,
+    glj.last_heartbeat_at,
+    glj.execution_logs,
+    glj.worker_hostname,
+    glj.repo_id,
+    glj.source_hostname,
+    glj.dest_hostname,
+    glj.delete_source,
+    glj.queued_at,
+    r.name AS repo_name
+   FROM (gitserver_localclone_jobs glj
+     JOIN repo r ON ((r.id = glj.repo_id)));
+
 CREATE TABLE gitserver_repos (
     repo_id integer NOT NULL,
     clone_status text DEFAULT 'not_cloned'::text NOT NULL,
@@ -1066,7 +1136,8 @@ CREATE TABLE gitserver_repos (
     last_error text,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_fetched timestamp with time zone DEFAULT now() NOT NULL,
-    last_changed timestamp with time zone DEFAULT now() NOT NULL
+    last_changed timestamp with time zone DEFAULT now() NOT NULL,
+    repo_size_bytes bigint
 );
 
 CREATE TABLE global_state (
@@ -1091,7 +1162,8 @@ CREATE TABLE insights_query_runner_jobs (
     last_heartbeat_at timestamp with time zone,
     priority integer DEFAULT 1 NOT NULL,
     cost integer DEFAULT 500 NOT NULL,
-    persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL
+    persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -1338,6 +1410,8 @@ CREATE TABLE lsif_uploads (
     expired boolean DEFAULT false NOT NULL,
     last_retention_scan_at timestamp with time zone,
     reference_count integer,
+    indexer_version text,
+    queued_at timestamp with time zone,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -1365,10 +1439,13 @@ COMMENT ON COLUMN lsif_uploads.last_retention_scan_at IS 'The last time this upl
 
 COMMENT ON COLUMN lsif_uploads.reference_count IS 'The number of references to this upload data from other upload records (via lsif_references).';
 
+COMMENT ON COLUMN lsif_uploads.indexer_version IS 'The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.';
+
 CREATE VIEW lsif_dumps AS
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -1376,6 +1453,7 @@ CREATE VIEW lsif_dumps AS
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -1402,6 +1480,7 @@ CREATE VIEW lsif_dumps_with_repository_name AS
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -1409,6 +1488,7 @@ CREATE VIEW lsif_dumps_with_repository_name AS
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -1670,6 +1750,7 @@ CREATE VIEW lsif_uploads_with_repository_name AS
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -1677,6 +1758,7 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -1764,15 +1846,6 @@ CREATE TABLE org_members (
     user_id integer NOT NULL
 );
 
-CREATE TABLE org_members_bkup_1514536731 (
-    id integer,
-    org_id integer,
-    user_id_old text,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone,
-    user_id integer
-);
-
 CREATE SEQUENCE org_members_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -1815,6 +1888,14 @@ CREATE SEQUENCE orgs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE orgs_id_seq OWNED BY orgs.id;
+
+CREATE TABLE orgs_open_beta_stats (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id integer,
+    org_id integer,
+    created_at timestamp with time zone DEFAULT now(),
+    data jsonb DEFAULT '{}'::jsonb NOT NULL
+);
 
 CREATE TABLE out_of_band_migrations (
     id integer NOT NULL,
@@ -1977,6 +2058,7 @@ CREATE VIEW reconciler_changesets AS
  SELECT c.id,
     c.batch_change_ids,
     c.repo_id,
+    c.queued_at,
     c.created_at,
     c.updated_at,
     c.metadata,
@@ -2194,16 +2276,6 @@ CREATE TABLE settings (
     user_id integer,
     author_user_id integer,
     CONSTRAINT settings_no_empty_contents CHECK ((contents <> ''::text))
-);
-
-CREATE TABLE settings_bkup_1514702776 (
-    id integer,
-    org_id integer,
-    author_user_id_old text,
-    contents text,
-    created_at timestamp with time zone,
-    user_id integer,
-    author_user_id integer
 );
 
 CREATE SEQUENCE settings_id_seq
@@ -2471,6 +2543,8 @@ ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('execut
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
+ALTER TABLE ONLY gitserver_localclone_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_localclone_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY insights_query_runner_jobs ALTER COLUMN id SET DEFAULT nextval('insights_query_runner_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies ALTER COLUMN id SET DEFAULT nextval('insights_query_runner_jobs_dependencies_id_seq'::regclass);
@@ -2596,6 +2670,9 @@ ALTER TABLE ONLY cm_action_jobs
 ALTER TABLE ONLY cm_emails
     ADD CONSTRAINT cm_emails_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY cm_last_searched
+    ADD CONSTRAINT cm_last_searched_pkey PRIMARY KEY (monitor_id, args_hash);
+
 ALTER TABLE ONLY cm_monitors
     ADD CONSTRAINT cm_monitors_pkey PRIMARY KEY (id);
 
@@ -2652,6 +2729,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY gitserver_localclone_jobs
+    ADD CONSTRAINT gitserver_localclone_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_pkey PRIMARY KEY (repo_id);
@@ -2736,6 +2816,9 @@ ALTER TABLE ONLY org_members
 
 ALTER TABLE ONLY org_stats
     ADD CONSTRAINT org_stats_pkey PRIMARY KEY (org_id);
+
+ALTER TABLE ONLY orgs_open_beta_stats
+    ADD CONSTRAINT orgs_open_beta_stats_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY orgs
     ADD CONSTRAINT orgs_pkey PRIMARY KEY (id);
@@ -3191,6 +3274,9 @@ ALTER TABLE ONLY cm_emails
 ALTER TABLE ONLY cm_emails
     ADD CONSTRAINT cm_emails_monitor FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY cm_last_searched
+    ADD CONSTRAINT cm_last_searched_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY cm_monitors
     ADD CONSTRAINT cm_monitors_changed_by_fk FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE;
 
@@ -3288,7 +3374,7 @@ ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY feature_flag_overrides
-    ADD CONSTRAINT feature_flag_overrides_flag_name_fkey FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON DELETE CASCADE;
+    ADD CONSTRAINT feature_flag_overrides_flag_name_fkey FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
