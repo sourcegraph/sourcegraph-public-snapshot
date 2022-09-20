@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"io"
@@ -27,10 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1506,12 +1504,12 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
-	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
-	req.URL = apiURL.ResolveReference(req.URL)
+func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, c *V3Client, req *http.Request, result any) (responseState *httpResponseState, err error) {
+	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
+	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+	if c.auth != nil {
+		if err := c.auth.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1530,20 +1528,21 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 		span.Finish()
 	}()
 
-	if bearerToken != nil && oauthContext != nil {
-		code, header, _, err := oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
+	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
+	if ok && oauthContext != nil {
+		code, header, _, err := oauthutil.DoRequest(ctx, c.httpClient, req, bearerToken, c.tokenRefresher, *oauthContext)
 		if err != nil {
 			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
-		resp, err = httpClient.Do(req.WithContext(ctx))
+		resp, err = c.httpClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return nil, err
 		}
 		defer resp.Body.Close()
 	}
 
-	logger.Debug("doRequest",
+	c.log.Debug("doRequest",
 		log.String("status", resp.Status),
 		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
@@ -1551,7 +1550,7 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 	// call to block for up to an hour because it believes we have run out of tokens.
 	// Instead, we should fail fast.
 	if resp.StatusCode != 401 {
-		rateLimitMonitor.Update(resp.Header)
+		c.rateLimitMonitor.Update(resp.Header)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {

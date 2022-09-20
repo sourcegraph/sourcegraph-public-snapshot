@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -209,12 +210,35 @@ func (c *V3Client) request(ctx context.Context, oauthContext *oauthutil.OAuthCon
 		return nil, errInternalRateLimitExceeded
 	}
 
-	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
-	if ok {
-		return doRequest(ctx, oauthContext, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
+	return doRequest(ctx, getOAuthContext(c.apiURL.String()), c, req, result)
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func getOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
 	}
 
-	return doRequest(ctx, oauthContext, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+				Scopes: []string{"user:email", "repo", "read:org"},
+			}
+		}
+	}
+	return nil
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
