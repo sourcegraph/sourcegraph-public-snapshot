@@ -28,9 +28,12 @@ func Executor() *monitoring.Dashboard {
 				},
 			},
 			{
-				Label:        "Compute instance",
-				Name:         "instance",
-				OptionsQuery: `label_values(node_exporter_build_info{sg_job="` + executorsJobName + `"}, sg_instance)`,
+				Label: "Compute instance",
+				Name:  "instance",
+				OptionsQuery: monitoring.ContainerVariableOptionsQuery{
+					Query:         `label_values(node_exporter_build_info{sg_job="` + executorsJobName + `"}, sg_instance)`,
+					ExampleOption: "codeintel-cloud-sourcegraph-executor-5rzf-ff9a035d-e34b-4bcf-b862-e78c69b99484",
+				},
 
 				// The options query can generate a massive result set that can cause issues.
 				// shared.NewNodeExporterGroup filters by job as well so this is safe to use
