@@ -13,7 +13,7 @@ file:go\.mod$ go\s*(\d\.\d+)
 ### What are the open source licenses most used in our codebase? 
 See all the licenses included, by frequency (group by capture group)
 ```sgquery
-patterntype:regexp file:package.json "license":\s(.*),
+file:package.json /"license":\s(.*)/,
 ```
 
 ### Which repos use a specific internal library the most?
@@ -25,7 +25,7 @@ from\s'@sourcegraph/wildcard'
 ### Which directories have the longest eslint ignore file? 
 See which files have the most linter override rules within a repo (group by file)
 ```sgquery
-file:^\.eslintignore .\n repo:sourcegraph/sourcegraph$
+file:^\.eslintignore /.\n/ repo:^github\.com/sourcegraph/sourcegraph$
 ```
 
 ### Who knows most about a library or component? 
@@ -40,19 +40,19 @@ nodeComponent type:diff select:commit.diff.added repo:sourcegraph/sourcegraph$ a
 ### What versions of log4j exist in our codebase?
 See all the different subversions of log4j present in your code 
 ```sgquery
-lang:gradle org\.apache\.logging\.log4j['"] (2\.\d+\.\d+)
+lang:gradle /org\.apache\.logging\.log4j['"].*?(2\.\d+\.\d+)/
 ```
 
 ### What breaks most commonly? 
 See what topics most frequently appear in "fix [x]" commit messsages
 ```sgquery
-type:commit repo:^github\.com/sourcegraph/sourcegraph$ after:"5 days ago" /Fix (\\w+)/ patterntype:regexp
+type:commit repo:^github\.com/sourcegraph/sourcegraph$ after:"5 days ago" /Fix (\\w+)/
 ```
 
 ### What are the most common email addresses we direct users to?
 See every email address hardcoded, by frequency
 ```sgquery
-(\w+)@sourcegraph\.com patterntype:regexp
+/(\w+)\@sourcegraph\.com/
 ```
 
 
@@ -61,7 +61,7 @@ See every email address hardcoded, by frequency
 ### Which repos use a specific internal library the most?
 See which repos import a library 
 ```sguqery
-from\s'@sourcegraph/wildcard'
+/from\s'\@sourcegraph\/wildcard/
 ```
 
 ### Which teams (repos) have the most usages of a vulnerable function or library? 
@@ -72,7 +72,7 @@ vulnerableFunc(
 ### Which repos have the longest top-level eslint ignore files? 
 See which repos are using the most linter overrides
 ```sgquery
-file:^\.eslintignore .\n
+file:^\.eslintignore /.\n/
 ```
 
 
@@ -81,11 +81,11 @@ file:^\.eslintignore .\n
 ### Which files should we migrate first? 
 See which files have the most usage of a library you want to deprecate, such as the log15 library
 ```sgquery
-repo:^github\.com/sourcegraph/sourcegraph$ log15\.(Debug|Info|Warn|Error) patterntype:regexp
+repo:^github\.com/sourcegraph/sourcegraph$ /log15\.(?:Debug|Info|Warn|Error)/
 ```
 
 ### Which are our biggest package.json files? 
-See which files have the most scripts or dependencies
+See which repos have the most scripts or dependencies
 ```sgquery
 file:package\.json ,
 ```
@@ -93,7 +93,7 @@ file:package\.json ,
 ### Which directories have the longest eslint ignore file? 
 See which files have the most linter override rules within a repo
 ```sgquery
-file:^\.eslintignore .\n repo:sourcegraph/sourcegraph$
+file:^\.eslintignore /.\n/ repo:^github\.com/sourcegraph/sourcegraph$
 ```
 
 
