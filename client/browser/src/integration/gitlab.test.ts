@@ -10,7 +10,7 @@ import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
-describe.only('GitLab', () => {
+describe('GitLab', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest({ loadExtension: true })
