@@ -1,4 +1,4 @@
-package shared
+package sharedresolvers
 
 import (
 	"context"
@@ -7,9 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -29,20 +27,20 @@ type LSIFIndexResolver interface {
 	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
-	ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
 type indexResolver struct {
 	svc              AutoIndexingService
 	uploadsSvc       UploadsService
 	policyResolver   PolicyResolver
-	index            shared.Index
+	index            types.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(svc AutoIndexingService, uploadsSvc UploadsService, policyResolver PolicyResolver, index shared.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) LSIFIndexResolver {
+func NewIndexResolver(svc AutoIndexingService, uploadsSvc UploadsService, policyResolver PolicyResolver, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -113,7 +111,7 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ LSIFUploadResol
 	return NewUploadResolver(r.uploadsSvc, r.svc, r.policyResolver, upload, r.prefetcher, r.traceErrs), nil
 }
 
-func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *gql.GitTreeEntryResolver, err error) {
+func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolver, err error) {
 	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
 
 	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)

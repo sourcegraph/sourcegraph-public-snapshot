@@ -1,8 +1,10 @@
 package graphql
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,8 +12,10 @@ import (
 
 	"github.com/sourcegraph/go-lsp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -120,4 +124,154 @@ func convertRange(r shared.Range) lsp.Range {
 
 func convertPosition(line, character int) lsp.Position {
 	return lsp.Position{Line: line, Character: character}
+}
+
+func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+	err = relay.UnmarshalSpec(id, &repo)
+	return
+}
+
+const DefaultUploadPageSize = 50
+
+// makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
+// store.GetUploads operations.
+func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (types.GetUploadsOptions, error) {
+	repositoryID, err := resolveRepositoryID(args.RepositoryID)
+	if err != nil {
+		return types.GetUploadsOptions{}, err
+	}
+
+	var dependencyOf int64
+	if args.DependencyOf != nil {
+		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
+		if err != nil {
+			return types.GetUploadsOptions{}, err
+		}
+	}
+
+	var dependentOf int64
+	if args.DependentOf != nil {
+		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
+		if err != nil {
+			return types.GetUploadsOptions{}, err
+		}
+	}
+
+	offset, err := decodeIntCursor(args.After)
+	if err != nil {
+		return types.GetUploadsOptions{}, err
+	}
+
+	return types.GetUploadsOptions{
+		RepositoryID:       repositoryID,
+		State:              strings.ToLower(derefString(args.State, "")),
+		Term:               derefString(args.Query, ""),
+		VisibleAtTip:       derefBool(args.IsLatestForRepo, false),
+		DependencyOf:       int(dependencyOf),
+		DependentOf:        int(dependentOf),
+		Limit:              derefInt32(args.First, DefaultUploadPageSize),
+		Offset:             offset,
+		AllowExpired:       true,
+		AllowDeletedUpload: derefBool(args.IncludeDeleted, false),
+	}, nil
+}
+
+// resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
+func resolveRepositoryID(id graphql.ID) (int, error) {
+	if id == "" {
+		return 0, nil
+	}
+
+	repoID, err := unmarshalRepositoryID(id)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(repoID), nil
+}
+
+// derefString returns the underlying value in the given pointer.
+// If the pointer is nil, the default value is returned.
+func derefString(val *string, defaultValue string) string {
+	if val != nil {
+		return *val
+	}
+	return defaultValue
+}
+
+// derefBool returns the underlying value in the given pointer.
+// If the pointer is nil, the default value is returned.
+func derefBool(val *bool, defaultValue bool) bool {
+	if val != nil {
+		return *val
+	}
+	return defaultValue
+}
+
+// derefInt32 returns the underlying value in the given pointer.
+// If the pointer is nil, the default value is returned.
+func derefInt32(val *int32, defaultValue int) int {
+	if val != nil {
+		return int(*val)
+	}
+	return defaultValue
+}
+
+// EmptyResponse is a type that can be used in the return signature for graphql queries
+// that don't require a return value.
+type EmptyResponse struct{}
+
+// AlwaysNil exists since various graphql tools expect at least one field to be
+// present in the schema so we provide a dummy one here that is always nil.
+func (er *EmptyResponse) AlwaysNil() *string {
+	return nil
+}
+
+// ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
+type ConnectionArgs struct {
+	First *int32 // return the first n items
+}
+
+// Set is a convenience method for setting the DB limit and offset in a DB XyzListOptions struct.
+func (a ConnectionArgs) Set(o **database.LimitOffset) {
+	if a.First != nil {
+		*o = &database.LimitOffset{Limit: int(*a.First)}
+	}
+}
+
+// GetFirst is a convenience method returning the value of First, defaulting to
+// the type's zero value if nil.
+func (a ConnectionArgs) GetFirst() int32 {
+	if a.First == nil {
+		return 0
+	}
+	return *a.First
+}
+
+// DecodeCursor decodes the given cursor value. It is assumed to be a value previously
+// returned from the function encodeCursor. An empty string is returned if no cursor is
+// supplied. Invalid cursors return errors.
+func DecodeCursor(val *string) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(*val)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
+}
+
+// DecodeIntCursor decodes the given integer cursor value. It is assumed to be a value
+// previously returned from the function encodeIntCursor. The zero value is returned if
+// no cursor is supplied. Invalid cursors return errors.
+func decodeIntCursor(val *string) (int, error) {
+	cursor, err := DecodeCursor(val)
+	if err != nil || cursor == "" {
+		return 0, err
+	}
+
+	return strconv.Atoi(cursor)
 }

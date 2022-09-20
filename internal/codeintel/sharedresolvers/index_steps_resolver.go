@@ -1,10 +1,10 @@
-package shared
+package sharedresolvers
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
 // indexStepsResolver resolves the steps of an index record.
@@ -25,10 +25,10 @@ type IndexStepsResolver interface {
 
 type indexStepsResolver struct {
 	svc   AutoIndexingService
-	index shared.Index
+	index types.Index
 }
 
-func NewIndexStepsResolver(svc AutoIndexingService, index shared.Index) IndexStepsResolver {
+func NewIndexStepsResolver(svc AutoIndexingService, index types.Index) IndexStepsResolver {
 	return &indexStepsResolver{svc: svc, index: index}
 }
 
@@ -69,14 +69,14 @@ func (r *indexStepsResolver) Teardown() []ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix("teardown.")
 }
 
-func (r *indexStepsResolver) findExecutionLogEntry(key string) (shared.ExecutionLogEntry, bool) {
+func (r *indexStepsResolver) findExecutionLogEntry(key string) (types.ExecutionLogEntry, bool) {
 	for _, entry := range r.index.ExecutionLogs {
 		if entry.Key == key {
 			return entry, true
 		}
 	}
 
-	return shared.ExecutionLogEntry{}, false
+	return types.ExecutionLogEntry{}, false
 }
 
 func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string) []ExecutionLogEntryResolver {

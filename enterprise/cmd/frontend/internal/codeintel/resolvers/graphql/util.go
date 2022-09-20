@@ -321,7 +321,7 @@ func sharedDiagnosticAtUploadToAdjustedDiagnostic(shared []shared.DiagnosticAtUp
 	return adjustedDiagnostics
 }
 
-func convertSharedIndexToDBStoreIndex(index autoindexingShared.Index) store.Index {
+func convertSharedIndexToDBStoreIndex(index types.Index) store.Index {
 	dockerSteps := make([]store.DockerStep, 0, len(index.DockerSteps))
 	for _, step := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, store.DockerStep(step))

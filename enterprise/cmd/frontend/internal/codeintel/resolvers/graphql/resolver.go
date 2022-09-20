@@ -16,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -64,7 +66,7 @@ func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.R
 func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.LSIFUploadByID(ctx, id)
+			return r.Resolver.LSIFUploadByID(ctx, id)
 		},
 		"LSIFIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.LSIFIndexByID(ctx, id)
@@ -92,79 +94,23 @@ func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
-func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
-	ctx, traceErrs, endObservation := r.observationContext.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-
-	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	return NewUploadResolver(r.db, r.gitserver, r.resolver, upload, prefetcher, r.locationResolver, traceErrs), nil
+func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFUploadResolver, err error) {
+	return r.resolver.UploadRootResolver().LSIFUploadByID(ctx, id)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
-func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	// ctx, _, endObservation := r.observationContext.lsifUploads.With(ctx, &err, observation.Args{})
-	// endObservation.EndOnCancel(ctx, 1, observation.Args{})
-
-	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
-	return r.LSIFUploadsByRepo(ctx, &gql.LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
+func (r *Resolver) LSIFUploads(ctx context.Context, args *uploadsgraphql.LSIFUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+	return r.resolver.UploadRootResolver().LSIFUploads(ctx, args)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
-func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	ctx, traceErrs, endObservation := r.observationContext.lsifUploadsByRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.RepositoryID)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	opts, err := makeGetUploadsOptions(args)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-	uploadConnectionResolver := r.resolver.UploadsResolver().UploadsConnectionResolverFromFactory(opts)
-
-	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, uploadConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
+func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.LSIFRepositoryUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+	return r.resolver.UploadRootResolver().LSIFUploadsByRepo(ctx, args)
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	ctx, _, endObservation := r.observationContext.deleteLsifUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadID", string(args.ID)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	uploadID, err := unmarshalLSIFUploadGQLID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := r.resolver.UploadsResolver().DeleteUploadByID(ctx, int(uploadID)); err != nil {
-		return nil, err
-	}
-
-	return &gql.EmptyResponse{}, nil
+func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *uploadsgraphql.EmptyResponse, err error) {
+	return r.resolver.UploadRootResolver().DeleteLSIFUpload(ctx, args)
 }
 
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
@@ -264,21 +210,28 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 	return &gql.EmptyResponse{}, nil
 }
 
+// // HERE HERE HERE
+// // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
+// func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
+// 	ctx, _, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// 		log.String("repoID", string(id)),
+// 	}})
+// 	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+// 	repositoryID, err := gql.UnmarshalRepositoryID(id)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
+
+// 	return commitGraphResolver, nil
+// }
+
+// HERE HERE HERE
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, _, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	repositoryID, err := gql.UnmarshalRepositoryID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
-
-	return commitGraphResolver, nil
+func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
+	return r.resolver.UploadRootResolver().CommitGraph(ctx, id)
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs

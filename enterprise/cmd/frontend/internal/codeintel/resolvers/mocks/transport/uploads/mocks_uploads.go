@@ -21,10 +21,6 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql)
 // used for unit testing.
 type MockResolver struct {
-	// CommitGraphResolverFromFactoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// CommitGraphResolverFromFactory.
-	CommitGraphResolverFromFactoryFunc *ResolverCommitGraphResolverFromFactoryFunc
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *ResolverDeleteUploadByIDFunc
@@ -49,21 +45,12 @@ type MockResolver struct {
 	// GetUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByIDs.
 	GetUploadsByIDsFunc *ResolverGetUploadsByIDsFunc
-	// UploadsConnectionResolverFromFactoryFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// UploadsConnectionResolverFromFactory.
-	UploadsConnectionResolverFromFactoryFunc *ResolverUploadsConnectionResolverFromFactoryFunc
 }
 
 // NewMockResolver creates a new mock of the Resolver interface. All methods
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
-		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
-			defaultHook: func(context.Context, int) (r0 *graphql.CommitGraphResolver) {
-				return
-			},
-		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
 				return
@@ -99,11 +86,6 @@ func NewMockResolver() *MockResolver {
 				return
 			},
 		},
-		UploadsConnectionResolverFromFactoryFunc: &ResolverUploadsConnectionResolverFromFactoryFunc{
-			defaultHook: func(types.GetUploadsOptions) (r0 *graphql.UploadsResolver) {
-				return
-			},
-		},
 	}
 }
 
@@ -111,11 +93,6 @@ func NewMockResolver() *MockResolver {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockResolver() *MockResolver {
 	return &MockResolver{
-		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
-			defaultHook: func(context.Context, int) *graphql.CommitGraphResolver {
-				panic("unexpected invocation of MockResolver.CommitGraphResolverFromFactory")
-			},
-		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (bool, error) {
 				panic("unexpected invocation of MockResolver.DeleteUploadByID")
@@ -151,11 +128,6 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.GetUploadsByIDs")
 			},
 		},
-		UploadsConnectionResolverFromFactoryFunc: &ResolverUploadsConnectionResolverFromFactoryFunc{
-			defaultHook: func(types.GetUploadsOptions) *graphql.UploadsResolver {
-				panic("unexpected invocation of MockResolver.UploadsConnectionResolverFromFactory")
-			},
-		},
 	}
 }
 
@@ -163,9 +135,6 @@ func NewStrictMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 	return &MockResolver{
-		CommitGraphResolverFromFactoryFunc: &ResolverCommitGraphResolverFromFactoryFunc{
-			defaultHook: i.CommitGraphResolverFromFactory,
-		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
 		},
@@ -187,119 +156,7 @@ func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: i.GetUploadsByIDs,
 		},
-		UploadsConnectionResolverFromFactoryFunc: &ResolverUploadsConnectionResolverFromFactoryFunc{
-			defaultHook: i.UploadsConnectionResolverFromFactory,
-		},
 	}
-}
-
-// ResolverCommitGraphResolverFromFactoryFunc describes the behavior when
-// the CommitGraphResolverFromFactory method of the parent MockResolver
-// instance is invoked.
-type ResolverCommitGraphResolverFromFactoryFunc struct {
-	defaultHook func(context.Context, int) *graphql.CommitGraphResolver
-	hooks       []func(context.Context, int) *graphql.CommitGraphResolver
-	history     []ResolverCommitGraphResolverFromFactoryFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitGraphResolverFromFactory delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockResolver) CommitGraphResolverFromFactory(v0 context.Context, v1 int) *graphql.CommitGraphResolver {
-	r0 := m.CommitGraphResolverFromFactoryFunc.nextHook()(v0, v1)
-	m.CommitGraphResolverFromFactoryFunc.appendCall(ResolverCommitGraphResolverFromFactoryFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// CommitGraphResolverFromFactory method of the parent MockResolver instance
-// is invoked and the hook queue is empty.
-func (f *ResolverCommitGraphResolverFromFactoryFunc) SetDefaultHook(hook func(context.Context, int) *graphql.CommitGraphResolver) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitGraphResolverFromFactory method of the parent MockResolver instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ResolverCommitGraphResolverFromFactoryFunc) PushHook(hook func(context.Context, int) *graphql.CommitGraphResolver) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverCommitGraphResolverFromFactoryFunc) SetDefaultReturn(r0 *graphql.CommitGraphResolver) {
-	f.SetDefaultHook(func(context.Context, int) *graphql.CommitGraphResolver {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverCommitGraphResolverFromFactoryFunc) PushReturn(r0 *graphql.CommitGraphResolver) {
-	f.PushHook(func(context.Context, int) *graphql.CommitGraphResolver {
-		return r0
-	})
-}
-
-func (f *ResolverCommitGraphResolverFromFactoryFunc) nextHook() func(context.Context, int) *graphql.CommitGraphResolver {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverCommitGraphResolverFromFactoryFunc) appendCall(r0 ResolverCommitGraphResolverFromFactoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ResolverCommitGraphResolverFromFactoryFuncCall objects describing the
-// invocations of this function.
-func (f *ResolverCommitGraphResolverFromFactoryFunc) History() []ResolverCommitGraphResolverFromFactoryFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverCommitGraphResolverFromFactoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverCommitGraphResolverFromFactoryFuncCall is an object that
-// describes an invocation of method CommitGraphResolverFromFactory on an
-// instance of MockResolver.
-type ResolverCommitGraphResolverFromFactoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *graphql.CommitGraphResolver
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverCommitGraphResolverFromFactoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverCommitGraphResolverFromFactoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // ResolverDeleteUploadByIDFunc describes the behavior when the
@@ -1094,111 +951,4 @@ func (c ResolverGetUploadsByIDsFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverGetUploadsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// ResolverUploadsConnectionResolverFromFactoryFunc describes the behavior
-// when the UploadsConnectionResolverFromFactory method of the parent
-// MockResolver instance is invoked.
-type ResolverUploadsConnectionResolverFromFactoryFunc struct {
-	defaultHook func(types.GetUploadsOptions) *graphql.UploadsResolver
-	hooks       []func(types.GetUploadsOptions) *graphql.UploadsResolver
-	history     []ResolverUploadsConnectionResolverFromFactoryFuncCall
-	mutex       sync.Mutex
-}
-
-// UploadsConnectionResolverFromFactory delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockResolver) UploadsConnectionResolverFromFactory(v0 types.GetUploadsOptions) *graphql.UploadsResolver {
-	r0 := m.UploadsConnectionResolverFromFactoryFunc.nextHook()(v0)
-	m.UploadsConnectionResolverFromFactoryFunc.appendCall(ResolverUploadsConnectionResolverFromFactoryFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UploadsConnectionResolverFromFactory method of the parent MockResolver
-// instance is invoked and the hook queue is empty.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultHook(hook func(types.GetUploadsOptions) *graphql.UploadsResolver) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UploadsConnectionResolverFromFactory method of the parent MockResolver
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushHook(hook func(types.GetUploadsOptions) *graphql.UploadsResolver) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) SetDefaultReturn(r0 *graphql.UploadsResolver) {
-	f.SetDefaultHook(func(types.GetUploadsOptions) *graphql.UploadsResolver {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) PushReturn(r0 *graphql.UploadsResolver) {
-	f.PushHook(func(types.GetUploadsOptions) *graphql.UploadsResolver {
-		return r0
-	})
-}
-
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) nextHook() func(types.GetUploadsOptions) *graphql.UploadsResolver {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) appendCall(r0 ResolverUploadsConnectionResolverFromFactoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ResolverUploadsConnectionResolverFromFactoryFuncCall objects describing
-// the invocations of this function.
-func (f *ResolverUploadsConnectionResolverFromFactoryFunc) History() []ResolverUploadsConnectionResolverFromFactoryFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverUploadsConnectionResolverFromFactoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverUploadsConnectionResolverFromFactoryFuncCall is an object that
-// describes an invocation of method UploadsConnectionResolverFromFactory on
-// an instance of MockResolver.
-type ResolverUploadsConnectionResolverFromFactoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 types.GetUploadsOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *graphql.UploadsResolver
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverUploadsConnectionResolverFromFactoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverUploadsConnectionResolverFromFactoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }

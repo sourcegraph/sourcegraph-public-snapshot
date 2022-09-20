@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared-resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -26,12 +24,6 @@ type Resolver interface {
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-
-	// Uploads Connection Factory
-	UploadsConnectionResolverFromFactory(opts types.GetUploadsOptions) *UploadsResolver
-
-	// Commit Graph Resolver Factory
-	CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *CommitGraphResolver
 }
 type resolver struct {
 	svc            *uploads.Service
@@ -110,41 +102,4 @@ func (r *resolver) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ [
 	defer endObservation(1, observation.Args{})
 
 	return r.svc.GetAuditLogsForUpload(ctx, uploadID)
-}
-
-func (r *resolver) UploadsConnectionResolverFromFactory(opts types.GetUploadsOptions) *UploadsResolver {
-	return NewUploadsResolver(r.svc, opts)
-}
-
-func (r *resolver) CommitGraphResolverFromFactory(ctx context.Context, repositoryID int) *CommitGraphResolver {
-	stale, updatedAt, err := r.svc.GetCommitGraphMetadata(ctx, repositoryID)
-	if err != nil {
-		return nil
-	}
-
-	return NewCommitGraphResolver(stale, updatedAt)
-}
-
-// 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
-func (r *resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolvers.LSIFUploadResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := resolvers.NewPrefetcher(r.autoindexer, r.svc)
-
-	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	return resolvers.NewUploadResolver(r.svc, r.autoindexer, r.policyResolver, upload, prefetcher, traceErrs), nil
 }

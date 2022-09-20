@@ -13,6 +13,7 @@ import (
 
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	graphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -72,7 +73,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (r0 shared.Index, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 types.Index, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -82,7 +83,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetIndexesByIDsFunc: &ResolverGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []shared.Index, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
 				return
 			},
 		},
@@ -112,7 +113,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
-			defaultHook: func(context.Context, int, string, string) (r0 []shared.Index, r1 error) {
+			defaultHook: func(context.Context, int, string, string) (r0 []types.Index, r1 error) {
 				return
 			},
 		},
@@ -134,7 +135,7 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (shared.Index, bool, error) {
+			defaultHook: func(context.Context, int) (types.Index, bool, error) {
 				panic("unexpected invocation of MockResolver.GetIndexByID")
 			},
 		},
@@ -144,7 +145,7 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		GetIndexesByIDsFunc: &ResolverGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]shared.Index, error) {
+			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
 				panic("unexpected invocation of MockResolver.GetIndexesByIDs")
 			},
 		},
@@ -174,7 +175,7 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
-			defaultHook: func(context.Context, int, string, string) ([]shared.Index, error) {
+			defaultHook: func(context.Context, int, string, string) ([]types.Index, error) {
 				panic("unexpected invocation of MockResolver.QueueAutoIndexJobsForRepo")
 			},
 		},
@@ -334,15 +335,15 @@ func (c ResolverDeleteIndexByIDFuncCall) Results() []interface{} {
 // ResolverGetIndexByIDFunc describes the behavior when the GetIndexByID
 // method of the parent MockResolver instance is invoked.
 type ResolverGetIndexByIDFunc struct {
-	defaultHook func(context.Context, int) (shared.Index, bool, error)
-	hooks       []func(context.Context, int) (shared.Index, bool, error)
+	defaultHook func(context.Context, int) (types.Index, bool, error)
+	hooks       []func(context.Context, int) (types.Index, bool, error)
 	history     []ResolverGetIndexByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (shared.Index, bool, error) {
+func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (types.Index, bool, error) {
 	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
 	m.GetIndexByIDFunc.appendCall(ResolverGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -351,7 +352,7 @@ func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (shared.Index, b
 // SetDefaultHook sets function that is called when the GetIndexByID method
 // of the parent MockResolver instance is invoked and the hook queue is
 // empty.
-func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared.Index, bool, error)) {
+func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Index, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -359,7 +360,7 @@ func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int
 // GetIndexByID method of the parent MockResolver instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (shared.Index, bool, error)) {
+func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (types.Index, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -367,20 +368,20 @@ func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (sha
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverGetIndexByIDFunc) SetDefaultReturn(r0 shared.Index, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (shared.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) SetDefaultReturn(r0 types.Index, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverGetIndexByIDFunc) PushReturn(r0 shared.Index, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (shared.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) PushReturn(r0 types.Index, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ResolverGetIndexByIDFunc) nextHook() func(context.Context, int) (shared.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) nextHook() func(context.Context, int) (types.Index, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -421,7 +422,7 @@ type ResolverGetIndexByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.Index
+	Result0 types.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -558,15 +559,15 @@ func (c ResolverGetIndexConfigurationFuncCall) Results() []interface{} {
 // ResolverGetIndexesByIDsFunc describes the behavior when the
 // GetIndexesByIDs method of the parent MockResolver instance is invoked.
 type ResolverGetIndexesByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]shared.Index, error)
-	hooks       []func(context.Context, ...int) ([]shared.Index, error)
+	defaultHook func(context.Context, ...int) ([]types.Index, error)
+	hooks       []func(context.Context, ...int) ([]types.Index, error)
 	history     []ResolverGetIndexesByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexesByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockResolver) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]shared.Index, error) {
+func (m *MockResolver) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Index, error) {
 	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
 	m.GetIndexesByIDsFunc.appendCall(ResolverGetIndexesByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -575,7 +576,7 @@ func (m *MockResolver) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]shared.
 // SetDefaultHook sets function that is called when the GetIndexesByIDs
 // method of the parent MockResolver instance is invoked and the hook queue
 // is empty.
-func (f *ResolverGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
+func (f *ResolverGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -583,7 +584,7 @@ func (f *ResolverGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, 
 // GetIndexesByIDs method of the parent MockResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ResolverGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
+func (f *ResolverGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -591,20 +592,20 @@ func (f *ResolverGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverGetIndexesByIDsFunc) SetDefaultReturn(r0 []shared.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Index, error) {
+func (f *ResolverGetIndexesByIDsFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverGetIndexesByIDsFunc) PushReturn(r0 []shared.Index, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]shared.Index, error) {
+func (f *ResolverGetIndexesByIDsFunc) PushReturn(r0 []types.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *ResolverGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Index, error) {
+func (f *ResolverGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -645,7 +646,7 @@ type ResolverGetIndexesByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Index
+	Result0 []types.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1235,15 +1236,15 @@ func (c ResolverInferedIndexConfigurationHintsFuncCall) Results() []interface{} 
 // QueueAutoIndexJobsForRepo method of the parent MockResolver instance is
 // invoked.
 type ResolverQueueAutoIndexJobsForRepoFunc struct {
-	defaultHook func(context.Context, int, string, string) ([]shared.Index, error)
-	hooks       []func(context.Context, int, string, string) ([]shared.Index, error)
+	defaultHook func(context.Context, int, string, string) ([]types.Index, error)
+	hooks       []func(context.Context, int, string, string) ([]types.Index, error)
 	history     []ResolverQueueAutoIndexJobsForRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueAutoIndexJobsForRepo delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockResolver) QueueAutoIndexJobsForRepo(v0 context.Context, v1 int, v2 string, v3 string) ([]shared.Index, error) {
+func (m *MockResolver) QueueAutoIndexJobsForRepo(v0 context.Context, v1 int, v2 string, v3 string) ([]types.Index, error) {
 	r0, r1 := m.QueueAutoIndexJobsForRepoFunc.nextHook()(v0, v1, v2, v3)
 	m.QueueAutoIndexJobsForRepoFunc.appendCall(ResolverQueueAutoIndexJobsForRepoFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -1252,7 +1253,7 @@ func (m *MockResolver) QueueAutoIndexJobsForRepo(v0 context.Context, v1 int, v2 
 // SetDefaultHook sets function that is called when the
 // QueueAutoIndexJobsForRepo method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverQueueAutoIndexJobsForRepoFunc) SetDefaultHook(hook func(context.Context, int, string, string) ([]shared.Index, error)) {
+func (f *ResolverQueueAutoIndexJobsForRepoFunc) SetDefaultHook(hook func(context.Context, int, string, string) ([]types.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -1261,7 +1262,7 @@ func (f *ResolverQueueAutoIndexJobsForRepoFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverQueueAutoIndexJobsForRepoFunc) PushHook(hook func(context.Context, int, string, string) ([]shared.Index, error)) {
+func (f *ResolverQueueAutoIndexJobsForRepoFunc) PushHook(hook func(context.Context, int, string, string) ([]types.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1269,20 +1270,20 @@ func (f *ResolverQueueAutoIndexJobsForRepoFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverQueueAutoIndexJobsForRepoFunc) SetDefaultReturn(r0 []shared.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) ([]shared.Index, error) {
+func (f *ResolverQueueAutoIndexJobsForRepoFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverQueueAutoIndexJobsForRepoFunc) PushReturn(r0 []shared.Index, r1 error) {
-	f.PushHook(func(context.Context, int, string, string) ([]shared.Index, error) {
+func (f *ResolverQueueAutoIndexJobsForRepoFunc) PushReturn(r0 []types.Index, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *ResolverQueueAutoIndexJobsForRepoFunc) nextHook() func(context.Context, int, string, string) ([]shared.Index, error) {
+func (f *ResolverQueueAutoIndexJobsForRepoFunc) nextHook() func(context.Context, int, string, string) ([]types.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1330,7 +1331,7 @@ type ResolverQueueAutoIndexJobsForRepoFuncCall struct {
 	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Index
+	Result0 []types.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

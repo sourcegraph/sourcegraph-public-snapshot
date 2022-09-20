@@ -17,6 +17,11 @@ type operations struct {
 	getLastUploadRetentionScanForRepository *observation.Operation
 
 	lsifUploadByID *observation.Operation
+
+	// Refactored stuff new here
+	commitGraph       *observation.Operation
+	lsifUploadsByRepo *observation.Operation
+	deleteLsifUpload  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -43,5 +48,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		getAuditLogsForUpload:                   op("GetAuditLogsForUpload"),
 		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
 		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+
+		// Refactored stuff new here
+		commitGraph:       op("CommitGraph"),
+		lsifUploadsByRepo: op("LSIFUploadsByRepo"),
+		deleteLsifUpload:  op("DeleteLSIFUpload"),
 	}
 }

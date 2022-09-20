@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
 // IndexesResolver wraps store.GetIndexes so that the underlying function can be
@@ -16,7 +17,7 @@ type IndexesResolver struct {
 	opts shared.GetIndexesOptions
 	once sync.Once
 	//
-	Indexes    []shared.Index
+	Indexes    []types.Index
 	TotalCount int
 	NextOffset *int
 	err        error

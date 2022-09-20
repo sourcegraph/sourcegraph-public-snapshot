@@ -6,6 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 )
 
 type frankenResolver struct {
@@ -47,38 +49,28 @@ func (r *frankenResolver) UpdateRepositoryIndexConfiguration(ctx context.Context
 	return r.getAutoindexingServiceResolver().UpdateRepositoryIndexConfiguration(ctx, args)
 }
 
-func (r *frankenResolver) getUploadsServiceResolver() gql.UploadsServiceResolver {
-	return r.Resolver
-
-	// Uncomment after https://github.com/sourcegraph/sourcegraph/issues/33375
-	// return r.UploadsServiceResolver
+func (r *frankenResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFUploadResolver, err error) {
+	return r.Resolver.LSIFUploadByID(ctx, id)
 }
 
-func (r *frankenResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
-	return r.getUploadsServiceResolver().LSIFUploadByID(ctx, id)
+func (r *frankenResolver) LSIFUploads(ctx context.Context, args *uploadsgraphql.LSIFUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+	return r.Resolver.LSIFUploads(ctx, args)
 }
 
-func (r *frankenResolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	return r.getUploadsServiceResolver().LSIFUploads(ctx, args)
+func (r *frankenResolver) LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.LSIFRepositoryUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+	return r.Resolver.LSIFUploadsByRepo(ctx, args)
 }
 
-func (r *frankenResolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	return r.getUploadsServiceResolver().LSIFUploadsByRepo(ctx, args)
+func (r *frankenResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *uploadsgraphql.EmptyResponse, err error) {
+	return r.Resolver.DeleteLSIFUpload(ctx, args)
 }
 
-func (r *frankenResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	return r.getUploadsServiceResolver().DeleteLSIFUpload(ctx, args)
-}
-
-func (r *frankenResolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceCommitGraphResolver, err error) {
-	return r.getUploadsServiceResolver().CommitGraph(ctx, id)
+func (r *frankenResolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
+	return r.Resolver.CommitGraph(ctx, id)
 }
 
 func (r *frankenResolver) getPoliciesServiceResolver() gql.PoliciesServiceResolver {
 	return r.Resolver
-
-	// Uncomment after https://github.com/sourcegraph/sourcegraph/issues/33376
-	// return r.PoliciesServiceResolver
 }
 
 func (r *frankenResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceConfigurationPolicyResolver, err error) {

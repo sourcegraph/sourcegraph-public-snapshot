@@ -1,13 +1,11 @@
-package graphql
+package sharedresolvers
 
 import (
 	"context"
 	"sort"
 	"sync"
 
-	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 )
 
 // Prefetcher is a batch query utility and cache used to reduce the amount of database
@@ -16,21 +14,21 @@ import (
 // well as index records resulting from an upload resolver (and vice versa).
 type Prefetcher struct {
 	sync.RWMutex
-	svc         *uploads.Service
-	indexer     AutoIndexingService
-	uploadIDs   []int
-	indexIDs    []int
-	uploadCache map[int]types.Upload
-	indexCache  map[int]autoindex.Index
+	autoindexingSvc AutoIndexingService
+	uploadSvc       UploadsService
+	uploadIDs       []int
+	indexIDs        []int
+	uploadCache     map[int]types.Upload
+	indexCache      map[int]types.Index
 }
 
 // NewPrefetcher returns a prefetcher with an empty cache.
-func NewPrefetcher(svc *uploads.Service, indexer AutoIndexingService) *Prefetcher {
+func NewPrefetcher(autoindexingSvc AutoIndexingService, uploadSvc UploadsService) *Prefetcher {
 	return &Prefetcher{
-		svc:         svc,
-		indexer:     indexer,
-		uploadCache: map[int]types.Upload{},
-		indexCache:  map[int]autoindex.Index{},
+		autoindexingSvc: autoindexingSvc,
+		uploadSvc:       uploadSvc,
+		uploadCache:     map[int]types.Upload{},
+		indexCache:      map[int]types.Index{},
 	}
 }
 
@@ -74,7 +72,7 @@ func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (types.Upload, b
 	}
 	sort.Ints(ids)
 
-	uploads, err := p.svc.GetUploadsByIDs(ctx, ids...)
+	uploads, err := p.uploadSvc.GetUploadsByIDs(ctx, ids...)
 	if err != nil {
 		return types.Upload{}, false, err
 	}
@@ -101,7 +99,7 @@ func (p *Prefetcher) MarkIndex(id int) {
 // the given identifier will be added to the current batch of identifiers constructed
 // via calls to MarkIndex. All indexes will in the current batch are requested at once
 // and the index with the given identifier is returned from that result set.
-func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (autoindex.Index, bool, error) {
+func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
 	p.RLock()
 	index, ok := p.indexCache[id]
 	p.RUnlock()
@@ -128,9 +126,9 @@ func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (autoindex.Index,
 	}
 	sort.Ints(ids)
 
-	indexes, err := p.indexer.GetIndexesByIDs(ctx, ids...)
+	indexes, err := p.autoindexingSvc.GetIndexesByIDs(ctx, ids...)
 	if err != nil {
-		return autoindex.Index{}, false, err
+		return types.Index{}, false, err
 	}
 	for _, index := range indexes {
 		p.indexCache[index.ID] = index

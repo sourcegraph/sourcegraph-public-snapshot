@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
+	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -48,11 +50,11 @@ type CodeNavResolver interface {
 }
 
 type UploadsServiceResolver interface {
-	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	CommitGraph(ctx context.Context, id graphql.ID) (uploadsgraphql.CodeIntelligenceCommitGraphResolver, error)
+	LSIFUploadByID(ctx context.Context, id graphql.ID) (resolvers.LSIFUploadResolver, error)
+	LSIFUploads(ctx context.Context, args *uploadsgraphql.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.LSIFRepositoryUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*uploadsgraphql.EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)

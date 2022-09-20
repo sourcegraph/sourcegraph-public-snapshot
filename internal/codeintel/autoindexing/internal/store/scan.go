@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -19,8 +20,8 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
-	var executionLogs []shared.ExecutionLogEntry
+func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+	var executionLogs []types.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -76,8 +77,8 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexWithCount(s dbutil.Scanner) (index shared.Index, count int, err error) {
-	var executionLogs []shared.ExecutionLogEntry
+func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err error) {
+	var executionLogs []types.ExecutionLogEntry
 
 	if err := s.Scan(
 		&index.ID,

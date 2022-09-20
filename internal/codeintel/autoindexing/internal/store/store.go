@@ -7,6 +7,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,10 +21,10 @@ type Store interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
 
 	// Indexes
-	InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error)
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)

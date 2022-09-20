@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -15,6 +16,7 @@ type Resolver interface {
 	PoliciesResolver() PoliciesResolver
 	AutoIndexingResolver() AutoIndexingResolver
 	UploadsResolver() UploadsResolver
+	UploadRootResolver() uploadsgraphql.RootResolver
 }
 
 type resolver struct {
@@ -23,6 +25,7 @@ type resolver struct {
 	policiesResolver     PoliciesResolver
 	autoIndexingResolver AutoIndexingResolver
 	uploadsResolver      UploadsResolver
+	uploadsRootResolver  uploadsgraphql.RootResolver
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -32,6 +35,7 @@ func NewResolver(
 	policiesResolver PoliciesResolver,
 	autoIndexingResolver AutoIndexingResolver,
 	uploadsResolver UploadsResolver,
+	uploadsRootResolver uploadsgraphql.RootResolver,
 ) Resolver {
 	return &resolver{
 		executorResolver:     executorResolver,
@@ -39,6 +43,7 @@ func NewResolver(
 		policiesResolver:     policiesResolver,
 		autoIndexingResolver: autoIndexingResolver,
 		uploadsResolver:      uploadsResolver,
+		uploadsRootResolver:  uploadsRootResolver,
 	}
 }
 
@@ -56,6 +61,10 @@ func (r *resolver) AutoIndexingResolver() AutoIndexingResolver {
 
 func (r *resolver) UploadsResolver() UploadsResolver {
 	return r.uploadsResolver
+}
+
+func (r *resolver) UploadRootResolver() uploadsgraphql.RootResolver {
+	return r.uploadsRootResolver
 }
 
 func (r *resolver) ExecutorResolver() executor.Resolver {

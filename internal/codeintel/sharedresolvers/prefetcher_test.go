@@ -1,4 +1,4 @@
-package graphql
+package sharedresolvers
 
 import (
 	"context"
@@ -6,39 +6,26 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
-	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
-	uploadtransportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestPrefetcherUploads(t *testing.T) {
-	mockResolver := resolvermocks.NewMockResolver()
-	prefetcher := NewPrefetcher(mockResolver)
+	mockAutoIndexingResolver := NewMockAutoIndexingService()
+	mockUploadResolver := NewMockUploadsService()
+	prefetcher := NewPrefetcher(mockAutoIndexingResolver, mockUploadResolver)
 
-	uploads := map[int]dbstore.Upload{
+	uploads := map[int]types.Upload{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-	sharedUpload := map[int]types.Upload{
-		1: {ID: 1},
-		2: {ID: 2},
-		3: {ID: 3},
-		4: {ID: 4},
-		5: {ID: 5},
-	}
-	mockUploadResolver := uploadtransportmocks.NewMockResolver()
-	mockResolver.UploadsResolverFunc.SetDefaultReturn(mockUploadResolver)
+
 	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Upload, error) {
 		matching := make([]types.Upload, 0, len(ids))
 		for _, id := range ids {
-			matching = append(matching, sharedUpload[id])
+			matching = append(matching, uploads[id])
 		}
 
 		return matching, nil
@@ -95,32 +82,29 @@ func TestPrefetcherUploads(t *testing.T) {
 }
 
 func TestPrefetcherIndexes(t *testing.T) {
-	indexes := map[int]shared.Index{
+	indexes := map[int]types.Index{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-	mockResolver := resolvermocks.NewMockResolver()
-	mockAutoIndexingResolver := transportmocks.NewMockResolver()
-	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
-		matching := make([]shared.Index, 0, len(ids))
+	// mockResolver := resolvermocks.NewMockResolver()
+	mockAutoIndexingResolver := NewMockAutoIndexingService()
+	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Index, error) {
+		matching := make([]types.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])
 		}
 
 		return matching, nil
 	})
-	mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
-	prefetcher := NewPrefetcher(mockResolver)
+	// mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
+	mockUploadResolver := NewMockUploadsService()
+	prefetcher := NewPrefetcher(mockAutoIndexingResolver, mockUploadResolver)
 
 	// We do a conversion inside the function that I cannot reproduct inside the mock.
-	expectedIndex := dbstore.Index{
-		ID:            1,
-		DockerSteps:   []dbstore.DockerStep{},
-		ExecutionLogs: []workerutil.ExecutionLogEntry{},
-	}
+	expectedIndex := types.Index{ID: 1}
 
 	// Bare fetch
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 1); err != nil {
@@ -150,15 +134,15 @@ func TestPrefetcherIndexes(t *testing.T) {
 	prefetcher.MarkIndex(4)
 	prefetcher.MarkIndex(6) // unknown id
 
-	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
-		matching := make([]shared.Index, 0, len(ids))
+	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Index, error) {
+		matching := make([]types.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])
 		}
 
 		return matching, nil
 	})
-	mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
+	// mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
 
 	expectedIndex.ID = 2
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 2); err != nil {

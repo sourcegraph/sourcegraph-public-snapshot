@@ -1,4 +1,4 @@
-package shared
+package sharedresolvers
 
 import (
 	"context"
@@ -8,13 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -33,7 +28,7 @@ type LSIFUploadResolver interface {
 	Indexer() types.CodeIntelIndexerResolver
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-	ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
@@ -47,7 +42,6 @@ type UploadResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
 	policyResolver   PolicyResolver
-	db               database.DB
 	upload           types.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
@@ -124,7 +118,7 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ LSIFIndexResolv
 	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policyResolver, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
-func (r *UploadResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error) {
 	return r.locationResolver.Path(ctx, api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root)
 }
 
@@ -140,7 +134,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*PageInfo, error)
 }
 
 func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {

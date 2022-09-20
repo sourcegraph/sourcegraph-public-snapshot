@@ -8,18 +8,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type Resolver interface {
 	// Indexes
-	GetIndexByID(ctx context.Context, id int) (shared.Index, bool, error)    // simple dbstore
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]shared.Index, error) // simple dbstore
+	GetIndexByID(ctx context.Context, id int) (types.Index, bool, error)    // simple dbstore
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error) // simple dbstore
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	DeleteIndexByID(ctx context.Context, id int) error                                                                  // simple dbstore
-	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]shared.Index, error) // in the service QueueIndexes
+	DeleteIndexByID(ctx context.Context, id int) error                                                                 // simple dbstore
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]types.Index, error) // in the service QueueIndexes
 
 	// Index Configuration
 	GetIndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)                                        // GetIndexConfigurationByRepositoryID
@@ -43,7 +44,7 @@ func New(svc *autoindexing.Service, observationContext *observation.Context) Res
 	}
 }
 
-func (r *resolver) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
+func (r *resolver) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
 	ctx, _, endObservation := r.operations.getIndexByID.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("id", id)},
 	})
@@ -52,7 +53,7 @@ func (r *resolver) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ 
 	return r.svc.GetIndexByID(ctx, id)
 }
 
-func (r *resolver) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
+func (r *resolver) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
 	ctx, _, endObservation := r.operations.getIndexesByIDs.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("totalIds", len(ids))},
 	})
@@ -89,7 +90,7 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) (err error) {
 	return err
 }
 
-func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) (_ []shared.Index, err error) {
+func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) (_ []types.Index, err error) {
 	ctx, _, endObservation := r.operations.queueAutoIndexJobsForRepo.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("rev", rev), log.String("configuration", configuration)},
 	})

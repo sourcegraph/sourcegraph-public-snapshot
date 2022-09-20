@@ -1,10 +1,10 @@
-package shared
+package sharedresolvers
 
 import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
 type ExecutionLogEntryResolver interface {
@@ -18,10 +18,10 @@ type ExecutionLogEntryResolver interface {
 
 type executionLogEntryResolver struct {
 	svc   AutoIndexingService
-	entry shared.ExecutionLogEntry
+	entry types.ExecutionLogEntry
 }
 
-func NewExecutionLogEntryResolver(svc AutoIndexingService, entry shared.ExecutionLogEntry) ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(svc AutoIndexingService, entry types.ExecutionLogEntry) ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
 		svc:   svc,
 		entry: entry,

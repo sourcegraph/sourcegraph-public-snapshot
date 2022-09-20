@@ -1,8 +1,6 @@
-package shared
+package sharedresolvers
 
-import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-)
+import "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 
 type PreIndexStepResolver interface {
 	Root() string
@@ -13,11 +11,11 @@ type PreIndexStepResolver interface {
 
 type preIndexStepResolver struct {
 	svc   AutoIndexingService
-	step  shared.DockerStep
-	entry *shared.ExecutionLogEntry
+	step  types.DockerStep
+	entry *types.ExecutionLogEntry
 }
 
-func NewPreIndexStepResolver(svc AutoIndexingService, step shared.DockerStep, entry *shared.ExecutionLogEntry) PreIndexStepResolver {
+func NewPreIndexStepResolver(svc AutoIndexingService, step types.DockerStep, entry *types.ExecutionLogEntry) PreIndexStepResolver {
 	return &preIndexStepResolver{
 		svc:   svc,
 		step:  step,

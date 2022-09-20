@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -356,8 +358,8 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
@@ -374,7 +376,7 @@ func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfi
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (uploads.CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
@@ -415,7 +417,8 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 	URL string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if args.Name != nil {
 		args.URI = args.Name
 	}
@@ -436,7 +439,8 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	AuthorEmail *string
 	Description *string
 	Date        *string
-}) (*GitCommitResolver, error) {
+},
+) (*GitCommitResolver, error) {
 	db := r.db
 	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
@@ -609,7 +613,8 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
@@ -626,7 +631,8 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Repo  graphql.ID
 	Key   string
 	Value *string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
@@ -643,7 +649,8 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
 	Repo graphql.ID
 	Key  string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}

@@ -36,8 +36,9 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
 	uploadResolver := uploadgraphql.New(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
+	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver)
+	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver, uploadRootResolver)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
 

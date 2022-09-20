@@ -1,9 +1,8 @@
-package shared
+package sharedresolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -44,6 +43,6 @@ func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) TotalCount(ct
 	return &v, nil
 }
 
-func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(len(r.policies) < r.totalCount), nil
+func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+	return HasNextPage(len(r.policies) < r.totalCount), nil
 }

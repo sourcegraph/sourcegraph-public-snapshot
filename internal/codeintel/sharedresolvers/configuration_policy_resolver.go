@@ -1,4 +1,4 @@
-package shared
+package sharedresolvers
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,7 +19,7 @@ import (
 
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
-	Repository(ctx context.Context) (*gql.RepositoryResolver, error)
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 	RepositoryPatterns() *[]string
 	Name() string
 	Type() (types.GitObjectType, error)
@@ -58,7 +57,7 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
-func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.RepositoryResolver, err error) {
+func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *RepositoryResolver, err error) {
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
@@ -75,7 +74,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(db, repo), nil
+	return NewRepositoryResolver(db, repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

@@ -1,4 +1,4 @@
-package shared
+package sharedresolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
