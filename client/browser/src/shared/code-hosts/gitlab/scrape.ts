@@ -89,10 +89,10 @@ export function getPageInfo(): GitLabInfo {
         owner: ownerOnGitLab,
         projectName: projectNameOnGitLab,
     } = parseGitLabRepoURL()
-    const projectFullNameOnSourcegraph = repoNameOnSourcegraph.value
+    const projectFullName = repoNameOnSourcegraph.value
         ? repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
         : projectFullNameOnGitLab
-    const { owner, projectName } = parseFullProjectName(projectFullNameOnSourcegraph)
+    const { owner, projectName } = parseFullProjectName(projectFullName)
     const pageKind = getPageKindFromPathName(ownerOnGitLab, projectNameOnGitLab, window.location.pathname)
 
     return {
