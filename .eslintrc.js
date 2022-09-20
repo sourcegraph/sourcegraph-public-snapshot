@@ -94,7 +94,8 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           },
           {
             group: ['**/out/*'],
-            message: 'Please don\'t import stuff from the \'out\' directory. It’s generated code. Remove the \'out/\' part and you should be good go to.',
+            message:
+              "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
           },
         ],
       },
