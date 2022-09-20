@@ -45,7 +45,7 @@ var builtins = template.FuncMap{
 // spec template for any templating variables which are not dependent on execution
 // context. It returns a tuple whose first element is whether or not the batch spec is
 // valid and whose second element is an error message if the spec is found to be invalid.
-func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
+func ValidateBatchSpecTemplate(spec string) (bool, error) {
 	// We use empty contexts to create "dummy" `template.FuncMap`s -- function mappings
 	// with all the right keys, but no actual values. We'll use these `FuncMap`s to do a
 	// dry run on the batch spec to determine if it's valid or not, before we actually
@@ -73,7 +73,7 @@ func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
 	// want to fail immediately if we encounter one. We accomplish this by setting the
 	// option "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for
 	// more.
-	t, err := New(name, spec, "missingkey=error", sfm, cstfm)
+	t, err := New("validateBatchSpecTemplate", spec, "missingkey=error", sfm, cstfm)
 
 	if err != nil {
 		// Attempt to extract the specific template variable field that caused the error

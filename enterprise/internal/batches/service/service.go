@@ -261,7 +261,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	_, err = template.ValidateBatchSpecTemplate("spec"+spec.Name, string(rawSpec))
+	_, err = template.ValidateBatchSpecTemplate(string(rawSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -661,7 +661,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	// Also validate that the batch spec only uses known templating variables and
 	// functions. If we get an error here that it's invalid, we also want to surface that
 	// error to the UI.
-	_, err = template.ValidateBatchSpecTemplate("spec"+opts.BatchSpecRandID, opts.RawSpec)
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -711,7 +711,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
 
-	_, err = template.ValidateBatchSpecTemplate("spec"+spec.Spec.Name, opts.RawSpec)
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
