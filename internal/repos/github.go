@@ -674,7 +674,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		}
 		archivedRepos[res.repo.ID] = struct{}{}
 	}
-
+	
 	var sinceRepoID int64
 	for {
 		if err := ctx.Err(); err != nil {
@@ -692,9 +692,9 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
-			if _, isArchived := archivedRepos[r.ID]; isArchived {
-				r.IsArchived = true
-			}
+			_, isArchived := archivedRepos[r.ID]
+			r.IsArchived = isArchived
+
 			results <- &githubResult{repo: r}
 			if sinceRepoID < r.DatabaseID {
 				sinceRepoID = r.DatabaseID
