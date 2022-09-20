@@ -6,7 +6,7 @@ import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
-import { prettyBytesBigint } from '../../repo/settings/RepoSettingsIndexPage'
+import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 export const RepoMirrorInfo: React.FunctionComponent<
     React.PropsWithChildren<{
