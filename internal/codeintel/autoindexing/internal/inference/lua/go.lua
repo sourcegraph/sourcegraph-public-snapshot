@@ -2,7 +2,7 @@ local path = require "path"
 local patterns = require "sg.patterns"
 local recognizers = require "sg.recognizers"
 
-local shared = require("sg.autoindex.shared")
+local shared = require "sg.autoindex.shared"
 
 local indexer = "sourcegraph/lsif-go:latest"
 

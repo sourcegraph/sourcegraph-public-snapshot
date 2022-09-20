@@ -185,6 +185,23 @@ func NewTypeError(expectedType string, actualValue any) error {
 	return errors.Newf("wrong type: expecting %s, have %T", expectedType, actualValue)
 }
 
+// CheckTypeProperty casts the given value as a Lua table, then checks the value
+// of the __type property. If the property value is not the expectedd value, a
+// non-nil error is returned.
+func CheckTypeProperty(value lua.LValue, expected string) error {
+	table, ok := value.(*lua.LTable)
+	if !ok {
+		return NewTypeError(expected, value)
+	}
+	rawType := table.RawGetString("__type")
+
+	if strType, ok := rawType.(lua.LString); !ok || strType.String() != expected {
+		return NewTypeError(expected, rawType)
+	}
+
+	return nil
+}
+
 // assertLuaString returns the given value as a string or an error if the value is
 // of a different type.
 func assertLuaString(value lua.LValue) (string, error) {

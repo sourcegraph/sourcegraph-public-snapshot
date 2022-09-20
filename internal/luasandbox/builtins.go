@@ -17,6 +17,6 @@ var builtinLibs = []struct {
 	{lua.TabLibName, lua.OpenTable},
 
 	// Explicitly omitted
-	// {lua.IoLibName,lua. OpenIo},
+	// {lua.IoLibName, lua.OpenIo},
 	// {lua.OsLibName, lua.OpenOs},
 }
