@@ -41,7 +41,7 @@ func (m *migrator) Config() []env.Config {
 	return nil
 }
 
-func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
