@@ -1,82 +1,88 @@
-# Install Sourcegraph with Docker Compose on Google Cloud
+# Install Sourcegraph on Google Cloud
 
-This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
-
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
+This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
 
 ---
-## Determine server and service requirements 
 
-Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
+## Configure
 
-## Prepare a fork 
+Click **Create Instance** in your [Google Cloud Compute Engine Console](https://console.cloud.google.com/compute/instances) to create a new VM instance, then configure the instance following the instructions below for each section:
 
-We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository. You will make changes to the default configuration, for example to the docker-compose YAML file, in your fork. The fork will also enable you to keep track of your customizations when upgrading your fork from the reference repo. Refer to the following steps for preparing a clone, which use GitHub as an example, then return to this page:
+#### Machine configuration
+1. Select an appropriate machine type using our [resource estimator](../resource_estimator.md) as reference
+  
+#### Boot disk
+1. Click **CHANGE** to update the boot disk:
+   * `Operating System`: Ubuntu
+   * `Version`: Ubuntu 18.04 LTS (x86/64, amd64 bionic image)
+   * `Boot disk type`: SSD persistent disk
+   * `Size (GB)`: Use default
 
-1. [Fork the reference repo](index.md#step-1-fork-the-sourcegraph-docker-compose-deployment-repository)
-2. [Clone your fork](index.md#step-2-clone-the-forked-repository-locally)
-3. [Configure the release branch](index.md#step-3-configure-the-release-branch)
-4. [Configure the YAML file](index.md#step-4-configure-the-yaml-file)
-5. [Publish changes to your branch](index.md#step-5-update-your-release-branch)
+#### Firewall
+1. Check box to **Allow HTTP traffic**
+1. Check box to **Allow HTTPS traffic**
 
-## Deploy to Google Cloud VM
+#### Advanced options > Disks
 
-* [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
-* Choose an appropriate machine type (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment).
-* Under the "Boot Disk" options, select the following:
-  * **Operating System**: Ubuntu
-  * **Version**: Ubuntu 18.04 LTS
-  * **Boot disk type**: SSD persistent disk
-* Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
-* Open the **Management, disks, networking, and SSH keys** dropdown section
-* Under the **Management** section, add the following in the **Startup script** field:
+1. Expand the **Advanced options** section and the **Disks** section within to add an additional disk to store data from the Sourcegraph Docker instance.
 
-> NOTE: replace the following variables in the script based on how you created your fork and release branch
->
-> `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
->
-> `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#configure-a-release-branch) the revision is the `release` branch. 
+1. Click **+ ADD NEW DISK** to setup the new disk with the following settings:
+  * `Name`: "sourcegraph-docker-disk" (or something similarly descriptive)
+  * `Description`: "Disk for storing Docker data for Sourcegraph" (or something similarly descriptive)
+  * `Disk source type`: Blank disk
+  * `Disk type`: SSD persistent disk
+  * `Size`: `250GB` minimum
+      * Sourcegraph needs at least as much space as all your repositories combined take up
+      * Allocating as much disk space as you can upfront minimize the need for [resizing this disk](https://cloud.google.com/compute/docs/disks/add-persistent-disk#resize_pd) later on
+  * `(optional, recommended) Snapshot schedule`: The most straightfoward way of automatically backing Sourcegraph's data is to set up a [snapshot schedule](https://cloud.google.com/compute/docs/disks/scheduled-snapshots) for this disk. We strongly recommend that you take the time to do so here.
+  * `Attachment settings - Mode`: Read/write
+  * `Attachment settings - Deletion rule`: Keep disk
+
+#### Advanced options > Management
+
+1. Expand the **Advanced options** section and the **Management** section within
+
+2. Copy and paste the *Startup script* below into the **Automation** field
+
+##### Startup script
 
 ```bash
 #!/usr/bin/env bash
-
 set -euxo pipefail
-
-PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
-DOCKER_DATA_ROOT='/mnt/docker-data'
-
-DOCKER_COMPOSE_VERSION='1.29.2'
-DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
-
-# 🚨 Update these variables with the correct values from your fork!
+###############################################################################
+# ACTION REQUIRED: REPLACE THE URL AND REVISION WITH YOUR DEPLOYMENT REPO INFO
+###############################################################################
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
-
+##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
+# IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
+DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
+DOCKER_COMPOSE_VERSION='1.29.2'
+DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+DOCKER_DATA_ROOT='/mnt/docker-data'
+PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
+PERSISTENT_DISK_LABEL='sourcegraph'
 # Install git
 sudo apt-get update -y
 sudo apt-get install -y git
-
-# Clone Docker Compose definition
+# Clone the deployment repository
 git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
-
-# Format (if necessary) and mount GCP persistent disk
+# Format (if unformatted) and then mount the attached volume
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
 if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
 then
     sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${PERSISTENT_DISK_DEVICE_NAME}"
 fi
+sudo e2label "${PERSISTENT_DISK_DEVICE_NAME}" "${PERSISTENT_DISK_LABEL}"
 sudo mkdir -p "${DOCKER_DATA_ROOT}"
 sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
-
-# Mount GCP disk on reboots
-DISK_UUID=$(sudo blkid -s UUID -o value "${PERSISTENT_DISK_DEVICE_NAME}")
-sudo echo "UUID=${DISK_UUID}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" >> '/etc/fstab'
+# Mount file system by label on reboot
+sudo echo "LABEL=${PERSISTENT_DISK_LABEL}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" | sudo tee -a /etc/fstab
 umount "${DOCKER_DATA_ROOT}"
 mount -a
-
-# Install Docker
+# Install, configure, and enable Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt-get update -y
 sudo apt-get install -y software-properties-common
@@ -84,70 +90,70 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update -y
 apt-cache policy docker-ce
 apt-get install -y docker-ce docker-ce-cli containerd.io
-
-# Install jq for scripting
+## Enable Docker at startup
+sudo systemctl enable --now docker
+## Install jq for scripting
 sudo apt-get update -y
 sudo apt-get install -y jq
-
-# Edit Docker storage directory to mounted volume
-DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
-
-## initialize the config file with empty json if it doesn't exist
+## Initialize the config file with empty json if it doesn't exist
 if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
 then
     mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
-    echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
+    echo '{}' >"${DOCKER_DAEMON_CONFIG_FILE}"
 fi
-
-## update Docker's 'data-root' to point to our mounted disk
+## Point Docker storage to mounted volume
 tmp_config=$(mktemp)
 trap "rm -f ${tmp_config}" EXIT
 sudo cat "${DOCKER_DAEMON_CONFIG_FILE}" | sudo jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
 sudo cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
-
-## finally, restart Docker daemon to pick up our changes
+## Restart Docker daemon to pick up new changes
 sudo systemctl restart --now docker
-
 # Install Docker Compose
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
-
-# Run Sourcegraph. Restart the containers upon reboot.
+# Start Sourcegraph with Docker Compose
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
-docker-compose up -d
+docker-compose up -d --remove-orphans
 ```
 
-* Under the **Disks** section, click **Add new disk**  and add a disk (for storing Docker data) with the following settings:
-  * **Type**: SSD Persistent Disk
-  * **Description**: "Disk for storing Docker data for Sourcegraph" (or something similarly descriptive)
-  * **(optional, recommended) Snapshot schedule**: The most straightfoward way of automatically backing Sourcegraph's data is to set up a [snapshot schedule](https://cloud.google.com/compute/docs/disks/scheduled-snapshots) for this disk. We strongly recommend that you take the time to do so here.
-  * **Mode**: Read/write
-  * **Deletion rule**: Keep disk
-  * **Size**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing this disk](https://cloud.google.com/compute/docs/disks/add-persistent-disk#resize_pd) later on.)*
-
-* Create your VM, then navigate to its public IP address.
-* If you have configured a DNS entry for the IP, configure `externalURL` to reflect that.
-* You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and running the following diagnostic commands:
-
-```bash
-# Follow the status of the user data script you provided earlier
-tail -c +0 -f /var/log/syslog | grep startup-script
-
-# (Once the user data script completes) monitor the health of the "sourcegraph-frontend" container
-docker ps --filter="name=sourcegraph-frontend-0"
-```
+> NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+> 
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
 ---
 
-## Update your Sourcegraph version
+## Deploy
 
-Refer to the [Docker Compose upgrade docs](upgrade.md).
+1. Click **CREATE** to create your VM with Sourcegraph installed
+2. Navigate to the public IP address assigned to your instance to visit your newly created Sourcegraph instance
+
+It may take a few minutes for the instance to finish initializing before Sourcegraph becomes accessible. 
+
+You can monitor the setup process by SSHing into the instance to run the following diagnostic commands:
+
+```bash
+# Follow the status of the startup script
+tail -c +0 -f /var/log/syslog | grep startup-script
+# Once installation is completed, check the health of the "sourcegraph-frontend" container
+docker ps --filter="name=sourcegraph-frontend-0"
+```
+
+> NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
+
+---
+
+## Upgrade
+
+Please refer to the [Docker Compose upgrade docs](upgrade.md) for detailed instructions on updating your Sourcegraph instance.
+
+---
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional persistent disk that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
+Data is persisted within a [Docker volume](https://docs.docker.com/storage/volumes/) as defined in the [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). The startup script configures Docker using a [daemon configuration file](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all the data on the attached data volume, which is mounted at `/mnt/docker-data`, where volumes are stored within `/mnt/docker-data/volumes`.
 
-* (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` persistsent disk](https://cloud.google.com/compute/docs/disks/create-snapshots) on an [automatic, scheduled basis](https://cloud.google.com/compute/docs/disks/scheduled-snapshots). The directions above tell you how to set up this schedule when the instance is first created, but you can also [create the schedule afterwards](https://cloud.google.com/compute/docs/disks/scheduled-snapshots).
+The most straightforward method to backup the data is to [snapshot the entire `/mnt/docker-data` volume](https://cloud.google.com/compute/docs/disks/create-snapshots) automatically using a [snapshot schedule](https://cloud.google.com/compute/docs/disks/scheduled-snapshots). You can also [set up a snapshot snapshot schedule](https://cloud.google.com/compute/docs/disks/scheduled-snapshots) after your instance has been created.
 
-* Using an external Postgres instance (see below) lets a service such as [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/) take care of backing up all of Sourcegraph's user data for you. If the VM instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
+<span class="badge badge-note">RECOMMENDED</span> Using an external Postgres service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) takes care of backing up all the user data for you. If the Sourcegraph instance ever dies or gets destroyed, creating a fresh new instance connected to the old external Postgres service will get Sourcegraph back to its previous state.
