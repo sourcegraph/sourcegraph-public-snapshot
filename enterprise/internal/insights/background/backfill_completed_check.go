@@ -50,8 +50,8 @@ func checkBackfillCompleted(ctx context.Context, postgres database.DB, insightsd
 	lastCompletedJob := make(map[string]time.Time)
 	inProgressSeries := make(map[string]*bool)
 	for _, r := range statusRows {
-		if r.StatusType == "completed" {
-			lastCompletedJob[r.SeriesId] = r.FinishedAt
+		if r.StatusType == "completed" && r.FinishedAt != nil {
+			lastCompletedJob[r.SeriesId] = *r.FinishedAt
 		} else {
 			// If this is any status other than "completed", the series is still backfilling
 			trueValue := true
@@ -113,5 +113,5 @@ type JobStatus struct {
 	SeriesId    string
 	StatusType  string
 	StatusCount int
-	FinishedAt  time.Time
+	FinishedAt  *time.Time
 }
