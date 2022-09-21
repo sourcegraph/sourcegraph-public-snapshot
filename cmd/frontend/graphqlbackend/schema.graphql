@@ -2007,7 +2007,7 @@ enum ExecutorCompatibility {
     OUTDATED
 
     """
-    Executor is up-to-date with the sourcegraph instance.
+    Executor is up-to-date with the Sourcegraph instance.
     """
     UPTODATE
 
