@@ -6,8 +6,13 @@ local recognizer = require "sg.autoindex.recognizer"
 local shared = require "sg.autoindex.shared"
 
 local indexer = "sourcegraph/scip-typescript:autoindex"
-local typescript_nmusl_command =
-  "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
+local n_node_mirror = "https://unofficial-builds.nodejs.org/download/release"
+local typescript_nmusl_command = "N_NODE_MIRROR=" .. n_node_mirror .. " n --arch x64-musl auto"
+local node_derivable_filenames = {
+  ".nvmrc",
+  ".node-version",
+  ".n-node-version",
+}
 
 local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
@@ -50,26 +55,32 @@ local safe_decode = function(encoded)
   return payload
 end
 
+local check_lerna_file_contents = function(contents)
+  local payload = safe_decode(contents)
+  return payload and payload["npmClient"] == "yarn"
+end
+
+local check_package_json_contents = function(contents)
+  local payload = safe_decode(contents)
+  return payload and payload["engines"] and payload["engines"]["node"]
+end
+
 local check_lerna_file = function(root, contents_by_path)
   return fun.any(function(a)
-    local payload = safe_decode(contents_by_path[path.join(a, "lerna.json")] or "")
-    return payload and payload["npmClient"] == "yarn"
+    return check_lerna_file_contents(contents_by_path[path.join(a, "lerna.json")] or "")
   end, path.ancestors(root))
 end
 
 local can_derive_node_version = function(root, paths, contents_by_path)
-  local ancestors = path.ancestors(root)
-
   return fun.any(function(a)
-    local payload = safe_decode(contents_by_path[path.join(a, "package.json")] or "")
-    return payload and payload["engines"] and payload["engines"]["node"]
-  end, ancestors) or fun.any(function(a)
-    return contains_any(paths, {
-      path.join(a, ".nvmrc"),
-      path.join(a, ".node-version"),
-      path.join(a, ".n-node-version"),
-    })
-  end, ancestors)
+    return check_package_json_contents(contents_by_path[path.join(a, "package.json")] or "")
+      or contains_any(
+        paths,
+        fun.map(function(filename)
+          return path.join(a, filename)
+        end, node_derivable_filenames)
+      )
+  end, path.ancestors(root))
 end
 
 local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
