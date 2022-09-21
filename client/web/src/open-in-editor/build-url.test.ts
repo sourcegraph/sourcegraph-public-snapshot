@@ -21,6 +21,24 @@ describe('buildRepoBaseNameAndPath tests', () => {
         expect(result).toEqual('sourcegraph/tsconfig.json')
     })
 
+    it('builds the correct string for GitLab URLs', () => {
+        const url = 'https://sourcegraph.com/gitlab.com/gitlab-org/gitlab-foss/-/blob/.eslintignore'
+        const { repoName, filePath } = parseBrowserRepoURL(url)
+
+        const result = buildRepoBaseNameAndPath(repoName, filePath)
+
+        expect(result).toEqual('gitlab-foss/.eslintignore')
+    })
+
+    it('builds the correct string for Bitbucket Cloud URLs', () => {
+        const url = 'https://sourcegraph.com/bitbucket.org/atlassian/stash-example-plugin/src/master/README.md'
+        const { repoName, filePath } = parseBrowserRepoURL(url)
+
+        const result = buildRepoBaseNameAndPath(repoName, filePath)
+
+        expect(result).toEqual('stash-example-plugin/src/master/README.md')
+    })
+
     it('builds the correct string for Perforce URLs', () => {
         const url =
             'https://cse-k8s.sgdev.org/perforce.beatrix.com/app/b200/patch/core/-/blob/test/1.js?toast=integrations'
