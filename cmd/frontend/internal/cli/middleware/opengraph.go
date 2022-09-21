@@ -21,8 +21,10 @@ import (
 var openGraphHTML string
 
 type openGraphTemplateData struct {
-	Title       string
-	Description string
+	Title        string
+	Description  string
+	Label        string
+	LabelContent string
 }
 
 var validRequesterUserAgentPrefixes = []string{"Slackbot-LinkExpanding"}
@@ -58,15 +60,15 @@ func getOpenGraphTemplateData(req *http.Request) *openGraphTemplateData {
 		return &openGraphTemplateData{Title: uiRouterMatch.Vars["Repo"], Description: "Explore repository on Sourcegraph"}
 	case "blob":
 		path := strings.TrimPrefix(uiRouterMatch.Vars["Path"], "/")
+		templateData := &openGraphTemplateData{Title: path, Description: fmt.Sprintf("%s/%s", globals.ExternalURL().Host, uiRouterMatch.Vars["Repo"])}
+
 		lineRange := ui.FindLineRangeInQueryParameters(req.URL.Query())
-		formattedLineRange := ui.FormatLineRange(lineRange)
-
-		title := path
+		formattedLineRange := strings.TrimPrefix(ui.FormatLineRange(lineRange), "L")
 		if formattedLineRange != "" {
-			title += "?" + formattedLineRange
+			templateData.Label = "Lines"
+			templateData.LabelContent = formattedLineRange
 		}
-
-		return &openGraphTemplateData{Title: title, Description: fmt.Sprintf("%s/%s", globals.ExternalURL().Host, uiRouterMatch.Vars["Repo"])}
+		return templateData
 	case "search":
 		query := req.URL.Query().Get("q")
 		return &openGraphTemplateData{Title: query, Description: "Sourcegraph search query"}

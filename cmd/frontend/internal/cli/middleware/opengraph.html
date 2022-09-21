@@ -8,6 +8,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="{{.Title}}" />
     <meta property="og:description" content="{{.Description}}" />
+    {{if .Label}}
+    <meta property="twitter:label1" content="{{.Label}}" />
+    <meta property="twitter:data1" content="{{.LabelContent}}" />
+    {{end}}
 </head>
 
 <body></body>
