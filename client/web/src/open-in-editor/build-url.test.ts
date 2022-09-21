@@ -18,7 +18,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
 
         const result = buildRepoBaseNameAndPath(repoName, filePath)
 
-        expect(result).toEqual('sourcegraph/sourcegraph/tsconfig.json')
+        expect(result).toEqual('sourcegraph/tsconfig.json')
     })
 
     it('builds the correct string for Perforce URLs', () => {
