@@ -924,6 +924,58 @@ Flags:
 * `--migration`: Create migration files with the generated SQL.
 * `--name="<value>"`: Specifies the name of the resulting migration. (default: sg_telemetry_allowlist)
 
+## sg monitoring
+
+Sourcegraph's monitoring generator (dashboards, alerts, etc).
+
+Learn more about the Sourcegraph monitoring generator here: https://docs.sourcegraph.com/dev/background-information/observability/monitoring-generator
+
+Also refer to the generated reference documentation available for site admins:
+
+- https://docs.sourcegraph.com/admin/observability/dashboards
+- https://docs.sourcegraph.com/admin/observability/alerts
+
+
+
+### sg monitoring generate
+
+Generate monitoring assets - dashboards, alerts, and more.
+
+```sh
+# Generate all monitoring with default configuration into a temporary directory
+$ sg monitoring generate -all.dir /tmp/monitoring
+
+# Generate and reload local instances of Grafana, Prometheus, etc.
+$ sg monitoring generate -reload
+
+# Render dashboards in a custom directory, and disable rendering of docs
+$ sg monitoring generate -grafana.dir /tmp/my-dashboards -docs.dir ''
+```
+
+Flags:
+
+* `--all.dir="<value>"`: Override all other '-*.dir' directories
+* `--docs.dir="<value>"`: Output directory for generated documentation (default: $SG_ROOT/doc/admin/observability/)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
+* `--grafana.dir="<value>"`: Output directory for generated Grafana assets (default: $SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/)
+* `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
+* `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
+* `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
+* `--prometheus.dir="<value>"`: Output directory for generated Prometheus assets (default: $SG_ROOT/docker-images/prometheus/config/)
+* `--prometheus.url="<value>"`: Address for the Prometheus instance to reload (default: http://127.0.0.1:9090)
+* `--reload`: Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
+
+### sg monitoring dashboards
+
+List and describe the default dashboards.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--groups`: Show row groups
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.

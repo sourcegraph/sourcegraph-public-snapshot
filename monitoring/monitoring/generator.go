@@ -18,13 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	localGrafanaURL         = "http://127.0.0.1:3370"
-	localGrafanaCredentials = "admin:admin"
-
-	localPrometheusURL = "http://127.0.0.1:9090"
-)
-
 // GenerateOptions declares options for the monitoring generator.
 type GenerateOptions struct {
 	// Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
@@ -34,8 +27,17 @@ type GenerateOptions struct {
 
 	// Output directory for generated Grafana assets
 	GrafanaDir string
+	// GrafanaURL is the address for the Grafana instance to reload
+	GrafanaURL string
+	// GrafanaCredentials is the basic auth credentials for the Grafana instance at
+	// GrafanaURL, e.g. "admin:admin"
+	GrafanaCredentials string
+
 	// Output directory for generated Prometheus assets
 	PrometheusDir string
+	// PrometheusURL is the address for the Prometheus instance to reload
+	PrometheusURL string
+
 	// Output directory for generated documentation
 	DocsDir string
 
@@ -47,9 +49,7 @@ type GenerateOptions struct {
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
 func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
-	logger.Info("Regenerating monitoring",
-		log.String("options", fmt.Sprintf("%+v", opts)),
-		log.Int("dashboards", len(dashboards)))
+	logger.Info("Regenerating monitoring", log.String("options", fmt.Sprintf("%+v", opts)))
 
 	var generatedAssets []string
 
@@ -66,15 +66,17 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	}
 
 	// Generate Grafana content for all dashboards
-	dlog := logger.Scoped("grafana", "grafana dashboard generation")
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
-		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))
+		dlog := logger.With(log.String("dashboard", dashboard.Name))
+
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
+			glog := dlog.Scoped("grafana", "grafana dashboard generation").
+				With(log.String("instance", opts.GrafanaURL))
 			os.MkdirAll(opts.GrafanaDir, os.ModePerm)
 
-			clog.Debug("Rendering Grafana assets")
+			glog.Debug("Rendering Grafana assets")
 			board, err := dashboard.renderDashboard(opts.InjectLabelMatchers)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
@@ -93,8 +95,8 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 			// Reload specific dashboard
 			if opts.Reload {
-				clog.Debug("Reloading Grafana instance")
-				client, err := sdk.NewClient(localGrafanaURL, localGrafanaCredentials, sdk.DefaultHTTPClient)
+				glog.Debug("Reloading Grafana instance")
+				client, err := sdk.NewClient(opts.GrafanaURL, opts.GrafanaCredentials, sdk.DefaultHTTPClient)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to initialize Grafana client for dashboard %q", dashboard.Title)
 				}
@@ -102,16 +104,18 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				if err != nil {
 					return errors.Wrapf(err, "Could not reload Grafana instance for dashboard %q", dashboard.Title)
 				} else {
-					clog.Info("Reloaded Grafana instance")
+					glog.Info("Reloaded Grafana instance")
 				}
 			}
 		}
 
 		// Prepare Prometheus assets
 		if opts.PrometheusDir != "" {
+			plog := dlog.Scoped("prometheus", "prometheus rules generation")
+
 			os.MkdirAll(opts.PrometheusDir, os.ModePerm)
 
-			clog.Debug("Rendering Prometheus assets")
+			plog.Debug("Rendering Prometheus assets")
 			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
 			if err != nil {
 				return errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
@@ -149,12 +153,13 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "prometheus alerts generation").With(log.String("instance", localPrometheusURL))
+		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
+			With(log.String("instance", opts.PrometheusURL))
 		// Reload all Prometheus rules
 		rlog.Debug("Reloading Prometheus instance")
-		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
+		resp, err := http.Post(opts.PrometheusURL+"/-/reload", "", nil)
 		if err != nil {
-			return errors.Wrapf(err, "Could not reload Prometheus at %q", localPrometheusURL)
+			return errors.Wrapf(err, "Could not reload Prometheus at %q", opts.PrometheusURL)
 		} else {
 			defer resp.Body.Close()
 			if resp.StatusCode != 200 {
