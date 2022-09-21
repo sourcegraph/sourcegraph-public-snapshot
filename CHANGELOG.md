@@ -17,6 +17,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+### Removed
+
+## 4.0.0
+
+### Fixed
+
 - Fixed a performance issue when serving git repos where it would take an exponentially large amount of time to list the repos. [#810](https://github.com/sourcegraph/src-cli/pull/810)
 - Fixed Bare git repo support when serving git repos. [#810](https://github.com/sourcegraph/src-cli/pull/810)
 
