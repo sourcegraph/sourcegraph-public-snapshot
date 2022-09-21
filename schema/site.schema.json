@@ -536,7 +536,7 @@
           "!go": { "pointer": true }
         },
         "auditLog": {
-          "description": "EXPERIMENTAL: Audit Log",
+          "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
           "type": "object",
           "additionalProperties": false,
           "properties": {
