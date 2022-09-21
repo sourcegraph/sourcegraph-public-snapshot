@@ -1,5 +1,5 @@
 local path = require "path"
-local patterns = require "sg.patterns"
+local pattern = require "sg.autoindex.patterns"
 local recognizers = require "sg.recognizers"
 
 local indexer = "sourcegraph/scip-java"
@@ -11,19 +11,19 @@ end
 
 return recognizers.path_recognizer {
   patterns = {
-    patterns.path_extension "java",
-    patterns.path_extension "scala",
-    patterns.path_extension "kt",
-    patterns.path_basename "pom.xml",
-    patterns.path_basename "build.gradle",
-    patterns.path_basename "build.gradle.kts",
+    pattern.new_path_extension "java",
+    pattern.new_path_extension "scala",
+    pattern.new_path_extension "kt",
+    pattern.new_path_basename "pom.xml",
+    pattern.new_path_basename "build.gradle",
+    pattern.new_path_basename "build.gradle.kts",
   },
 
   -- Invoked when Java, Scala, Kotlin, or Gradle build files exist
   generate = function(api)
     api:register(recognizers.path_recognizer {
       patterns = {
-        patterns.path_literal "lsif-java.json",
+        pattern.new_path_literal "lsif-java.json",
       },
 
       -- Invoked when lsif-java.json exists in root of repository
