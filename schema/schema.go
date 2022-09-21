@@ -66,7 +66,7 @@ type ApiRatelimit struct {
 	PerUser int `json:"perUser"`
 }
 
-// AuditLog description: EXPERIMENTAL: Audit Log
+// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
 	GitserverAccess bool `json:"gitserverAccess"`
@@ -605,8 +605,6 @@ type ExperimentalFeatures struct {
 	AndOrQuery string `json:"andOrQuery,omitempty"`
 	// ApidocsSearchIndexing description: Deprecated.
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
-	// AuditLog description: EXPERIMENTAL: Audit Log
-	AuditLog *AuditLog `json:"auditLog,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
@@ -1121,6 +1119,8 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
+	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
+	AuditLog *AuditLog `json:"auditLog,omitempty"`
 	// GitserverAccessLogs description: Enable gitserver access logging.
 	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
