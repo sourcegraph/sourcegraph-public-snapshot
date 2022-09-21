@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/keegancsmith/sqlf"
@@ -121,9 +119,6 @@ type SeriesPointsOpts struct {
 // SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
-
-	log15.Info("seriesPoints", "opts", opts)
-
 	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 	// time series results. 🚨
