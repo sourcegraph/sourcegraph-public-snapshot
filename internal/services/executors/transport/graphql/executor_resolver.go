@@ -45,13 +45,13 @@ func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor
 func (e *ExecutorResolver) Compatibility() (string, error) {
 	ev := e.executor.ExecutorVersion
 	if !e.Active() {
-		return UpToDateCompatibility.ToGraphQL(), nil
+		return ExecutorCompatibilityUptoDate.ToGraphQL(), nil
 	}
 	return calculateExecutorCompatibility(ev)
 }
 
 func calculateExecutorCompatibility(ev string) (string, error) {
-	var compatibility ExecutorCompaitibility = UpToDateCompatibility
+	var compatibility ExecutorCompatibility = ExecutorCompatibilityUptoDate
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
@@ -78,9 +78,9 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 		}
 
 		if et.Before(st) {
-			compatibility = OutdatedCompatibilty
+			compatibility = ExecutorCompatibilityOutdated
 		} else if et.After(st) {
-			compatibility = VersionAheadCompatibility
+			compatibility = ExecutorCompatibilityVersionAhead
 		}
 
 		return compatibility.ToGraphQL(), nil
@@ -102,9 +102,9 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 	isv := s.IncMinor()
 
 	if s.GreaterThan(&iev) {
-		compatibility = OutdatedCompatibilty
+		compatibility = ExecutorCompatibilityOutdated
 	} else if isv.LessThan(e) {
-		compatibility = VersionAheadCompatibility
+		compatibility = ExecutorCompatibilityVersionAhead
 	}
 
 	return compatibility.ToGraphQL(), nil
