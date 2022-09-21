@@ -1,4 +1,4 @@
-package httpapi
+package auth
 
 import (
 	"crypto/sha256"

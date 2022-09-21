@@ -1,4 +1,4 @@
-package httpapi
+package auth
 
 import (
 	"context"
@@ -32,13 +32,13 @@ var errVerificationNotSupported = errors.New(strings.Join([]string{
 	"please request support for additional code host verification at https://github.com/sourcegraph/sourcegraph/issues/4967",
 }, " - "))
 
-// authMiddleware wraps the given upload handler with an authorization check. On each initial upload
+// AuthMiddleware wraps the given upload handler with an authorization check. On each initial upload
 // request, the target repository is checked against the supplied auth validators. The matching validator
 // is invoked, which coordinates with a remote code host's permissions API to determine if the current
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
+func AuthMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
 			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
