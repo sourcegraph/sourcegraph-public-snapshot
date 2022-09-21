@@ -780,6 +780,19 @@
           "Comment": ""
         },
         {
+          "Name": "backfill_completed_at",
+          "Index": 21,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "backfill_queued_at",
           "Index": 9,
           "TypeName": "timestamp without time zone",
