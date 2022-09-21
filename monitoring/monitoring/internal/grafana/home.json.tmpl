@@ -116,9 +116,9 @@
       "pluginVersion": "7.5.7",
       "targets": [
         {
-          "expr": "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"critical\"}))",
+          "expr": "{{ escape .CriticalAlertsExpr }}",
           "interval": "",
-          "legendFormat": "{{service_name}}",
+          "legendFormat": "{{`{{service_name}}`}}",
           "refId": "A"
         }
       ],
@@ -203,9 +203,9 @@
       "pluginVersion": "7.5.7",
       "targets": [
         {
-          "expr": "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"warning\"}))",
+          "expr": "{{ escape .WarningAlertsExpr }}",
           "interval": "",
-          "legendFormat": "{{service_name}}",
+          "legendFormat": "{{`{{service_name}}`}}",
           "refId": "A"
         }
       ],
@@ -277,7 +277,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(sum(alert_count{name!=\"\"}) by (service_name))",
+          "expr": "{{ escape .AlertCountByServiceExpr }}",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -496,7 +496,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "label_replace(sum by (level,service_name,description,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{name!=\"\"})), \"description\", \"$1\", \"description\", \".*: (.*)\")",
+          "expr": "label_replace({{ escape .AlertLabelQuery }}, \"description\", \"$1\", \"description\", \".*: (.*)\")",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -594,7 +594,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(sum(alert_count{name!=\"\"}) by (level,description))",
+          "expr": "{{ escape .AlertCountByServiceExpr }}",
           "instant": true,
           "interval": "",
           "legendFormat": "",
