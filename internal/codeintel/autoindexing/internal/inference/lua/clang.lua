@@ -11,12 +11,7 @@ end
 
 return recognizer.new_path_recognizer {
   patterns = {
-    pattern.new_path_extension "cpp",
-    pattern.new_path_extension "c",
-    pattern.new_path_extension "h",
-    pattern.new_path_extension "hpp",
-    pattern.new_path_extension "cxx",
-    pattern.new_path_extension "cc",
+    pattern.new_path_extension_set { "c", "cc", "cpp", "cxx", "h", "hpp" },
     pattern.new_path_basename "CMakeLists.txt",
     pattern.new_path_basename "CMakelists.txt",
     pattern.new_path_basename "CmakeLists.txt",

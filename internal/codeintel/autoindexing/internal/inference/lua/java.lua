@@ -12,12 +12,8 @@ end
 
 return recognizer.new_path_recognizer {
   patterns = {
-    pattern.new_path_extension "java",
-    pattern.new_path_extension "scala",
-    pattern.new_path_extension "kt",
-    pattern.new_path_basename "pom.xml",
-    pattern.new_path_basename "build.gradle",
-    pattern.new_path_basename "build.gradle.kts",
+    pattern.new_path_extension_set { "java", "scala", "kt" },
+    pattern.new_path_basename_set { "pom.xml", "build.gradle", "build.gradle.kts" },
   },
 
   -- Invoked when Java, Scala, Kotlin, or Gradle build files exist

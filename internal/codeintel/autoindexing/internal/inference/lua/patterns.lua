@@ -1,3 +1,4 @@
+local fun = require "fun"
 local patterns = require "sg.patterns"
 
 local M = {}
@@ -26,6 +27,14 @@ end
 
 M.new_path_extension = function(pattern)
   return new_pattern("(^|/)[^/]+.", pattern, "$")
+end
+
+M.new_path_basename_set = function(patterns)
+  return M.new_path_combine(fun.totable(fun.map(M.new_path_basename, patterns)))
+end
+
+M.new_path_extension_set = function(patterns)
+  return M.new_path_combine(fun.totable(fun.map(M.new_path_extension, patterns)))
 end
 
 M.new_path_combine = function(...)

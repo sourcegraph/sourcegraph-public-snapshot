@@ -8,6 +8,11 @@ local shared = require "sg.autoindex.shared"
 local indexer = "sourcegraph/scip-typescript:autoindex"
 local n_node_mirror = "https://unofficial-builds.nodejs.org/download/release"
 local typescript_nmusl_command = "N_NODE_MIRROR=" .. n_node_mirror .. " n --arch x64-musl auto"
+local node_derivable_basenames = {
+  ".nvmrc",
+  ".node-version",
+  ".n-node-version",
+}
 
 local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
@@ -58,11 +63,7 @@ local can_derive_node_version = function(root, paths, contents_by_path)
 
     return fun.any(function(v)
       return contains(paths, path.join(a, v))
-    end, {
-      ".nvmrc",
-      ".node-version",
-      ".n-node-version",
-    })
+    end, node_derivable_basenames)
   end, path.ancestors(root))
 end
 
@@ -78,24 +79,25 @@ end
 local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
   local root = path.dirname(tsconfig_path)
   local reverse_ancestors = reverse(path.ancestors(tsconfig_path))
+  local basenames = {
+    -- To disambiguate installation steps
+    "yarn.lock",
+    -- To reinvoke simple cases with no other files
+    "tsconfig.json",
+  }
+  for _, name in ipairs(node_derivable_basenames) do
+    table.insert(basenames, name)
+  end
 
   api:register(recognizer.new_path_recognizer {
     patterns = {
-      -- To disambiguate installation steps
-      pattern.new_path_basename "yarn.lock",
-      -- Try to determine version
-      pattern.new_path_basename ".n-node-version",
-      pattern.new_path_basename ".node-version",
-      pattern.new_path_basename ".nvmrc",
-      -- To reinvoke simple cases with no other files
-      pattern.new_path_basename "tsconfig.json",
+      pattern.new_path_basename_set(basenames),
       pattern.new_path_exclude(exclude_paths),
     },
 
     patterns_for_content = {
       -- To read explicitly configured engines and npm client
-      pattern.new_path_basename "package.json",
-      pattern.new_path_basename "lerna.json",
+      pattern.new_path_basename_set { "package.json", "lerna.json" },
       pattern.new_path_exclude(exclude_paths),
     },
 
@@ -158,8 +160,7 @@ end
 
 return recognizer.new_path_recognizer {
   patterns = {
-    pattern.new_path_basename "package.json",
-    pattern.new_path_basename "tsconfig.json",
+    pattern.new_path_basename_set { "package.json", "tsconfig.json" },
     pattern.new_path_exclude(exclude_paths),
   },
 
