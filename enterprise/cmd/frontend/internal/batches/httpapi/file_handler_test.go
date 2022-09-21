@@ -136,6 +136,30 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "{\"id\":\"abc\"}\n",
 		},
 		{
+			name:   "Upload with marshalled spec ID",
+			method: http.MethodPost,
+			path:   "/files/batch-changes/QmF0Y2hTcGVjOiJ6WW80TVFRdnhFIg==",
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: "zYo4MQQvxE"}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+				mockStore.
+					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(args mock.Arguments) {
+						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
+						workspaceFile.RandID = "abc"
+					}).
+					Return(nil).
+					Once()
+			},
+			userID:               creatorID,
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: "{\"id\":\"abc\"}\n",
+		},
+		{
 			name:   "Upload file as site admin",
 			method: http.MethodPost,
 			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
