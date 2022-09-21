@@ -1,6 +1,14 @@
 package workspace
 
-import "os"
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+)
 
 // MakeTempFile defaults to makeTemporaryFile and can be replaced for testing
 // with determinstic workspace/scripts directories.
@@ -30,4 +38,17 @@ func MakeTemporaryDirectory(prefix string) (string, error) {
 	}
 
 	return os.MkdirTemp("", prefix+"-*")
+}
+
+func CommandLogger(ctx context.Context, handle command.LogEntry, command string, args ...string) (string, error) {
+	fmt.Fprintf(handle, "$ %s %s\n", command, strings.Join(args, " "))
+	cmd := exec.CommandContext(ctx, command, args...)
+	out, err := cmd.CombinedOutput()
+	if len(out) == 0 {
+		fmt.Fprint(handle, "stderr: <no output>\n")
+	} else {
+		fmt.Fprintf(handle, "stderr: %s\n", strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", "\nstderr: "))
+	}
+
+	return string(out), err
 }

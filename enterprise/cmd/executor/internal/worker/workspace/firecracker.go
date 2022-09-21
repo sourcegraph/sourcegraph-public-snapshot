@@ -97,9 +97,9 @@ func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 	if keepWorkspace {
 		fmt.Fprintf(handle, "Preserving workspace files (block device: %s, loop file: %s) as per config", w.blockDevice, w.blockDeviceFile)
 		// Remount the workspace, so that it can be inspected.
-		mountDir, err := mountLoopDevice(ctx, w.blockDevice)
+		mountDir, err := mountLoopDevice(ctx, w.blockDevice, handle)
 		if err != nil {
-			fmt.Fprintf(handle, "Failed to mount workspace device %q, mount manually to inspect the contents: %s\n", err)
+			fmt.Fprintf(handle, "Failed to mount workspace device %q, mount manually to inspect the contents: %s\n", w.blockDevice, err)
 			return
 		}
 		fmt.Fprintf(handle, "Inspect the workspace contents at: %s\n", mountDir)
@@ -107,7 +107,7 @@ func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 	}
 
 	fmt.Fprintf(handle, "Removing loop device %s\n", w.blockDevice)
-	if err := detachLoopDevice(ctx, w.blockDevice); err != nil {
+	if err := detachLoopDevice(ctx, w.blockDevice, handle); err != nil {
 		fmt.Fprintf(handle, "stderr: Failed to detach loop device: %s\n", err)
 	}
 
@@ -128,6 +128,12 @@ func setupLoopDevice(
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
 	handle := commandLogger.Log("setup.fs.workspace", nil)
 	defer func() {
+		// add the error to the bottom of the step's log output,
+		// but only if this isnt from exec.Command, as those get added
+		// by our logging wrapper
+		if !errors.HasType(err, &exec.ExitError{}) {
+			fmt.Fprint(handle, err.Error())
+		}
 		if err != nil {
 			handle.Finalize(1)
 		} else {
@@ -137,16 +143,16 @@ func setupLoopDevice(
 	}()
 
 	// Create a temp file to hold the block device on disk.
-	tempFile, err := MakeTempFile("workspace-loop-" + strconv.Itoa(jobID))
+	loopFile, err := MakeTempFile("workspace-loop-" + strconv.Itoa(jobID))
 	if err != nil {
 		return "", "", "", err
 	}
-	defer func() {
-		if err != nil {
-			os.Remove(tempFile.Name())
-		}
-	}()
-	blockDeviceFile = tempFile.Name()
+	// defer func() {
+	// 	if err == nil {
+	// 		os.Remove(loopFile.Name())
+	// 	}
+	// }()
+	blockDeviceFile = loopFile.Name()
 	fmt.Fprintf(handle, "Created backing workspace file at %q\n", blockDeviceFile)
 
 	// Truncate the file to be of the size of the maximum permissible disk space.
@@ -154,47 +160,45 @@ func setupLoopDevice(
 	if err != nil {
 		return "", "", "", errors.Wrapf(err, "invalid disk size provided: %q", diskSpace)
 	}
-	if err := tempFile.Truncate(int64(diskSize.Bytes())); err != nil {
+	if err := loopFile.Truncate(int64(diskSize.Bytes())); err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to make backing file sparse with %d bytes", diskSize.Bytes())
 	}
 	fmt.Fprintf(handle, "Created sparse file of size %s from %q\n", diskSize.HumanReadable(), blockDeviceFile)
-	if err := tempFile.Close(); err != nil {
-		return "", "", "", errors.Wrap(err, "failed to make close backing file")
+	if err := loopFile.Close(); err != nil {
+		return "", "", "", errors.Wrap(err, "failed to close backing file")
 	}
 
 	// Create an ext4 file system in the device backing file.
-	cmd := exec.CommandContext(ctx, "mkfs.ext4", blockDeviceFile)
-	out, err := cmd.CombinedOutput()
+	out, err := CommandLogger(ctx, handle, "mkfs.ext4", blockDeviceFile)
 	if err != nil {
-		return "", "", "", errors.Newf("failed to create ext4 filesystem in backing file: %q", out)
+		return "", "", "", errors.Wrapf(err, "failed to create ext4 filesystem in backing file: %q", out)
 	}
-	mkfsOutput := "stderr: " + strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", "\nstderr: ")
-	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q:\n%s\n", blockDeviceFile, mkfsOutput)
+
+	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q\n", blockDeviceFile)
 
 	// Create a loop device pointing to our block device.
-	cmd = exec.CommandContext(ctx, "losetup", "--find", "--show", blockDeviceFile)
-	out, err = cmd.CombinedOutput()
+	out, err = CommandLogger(ctx, handle, "losetup", "--find", "--show", blockDeviceFile)
 	if err != nil {
-		return "", "", "", errors.Newf("failed to create loop device: %q", out)
+		return "", "", "", errors.Wrapf(err, "failed to create loop device: %q", out)
 	}
 	blockDevice = strings.TrimSpace(string(out))
 	defer func() {
 		// If something further down in this function failed we detach the loop device
 		// to not hoard them.
 		if err != nil {
-			err2 := detachLoopDevice(ctx, blockDevice)
-			if err2 != nil {
-				formattedErr2 := "stderr: " + strings.ReplaceAll(strings.TrimSpace(err2.Error()), "\n", "\nstderr: ")
-				fmt.Fprint(handle, formattedErr2)
+			err := detachLoopDevice(ctx, blockDevice, handle)
+			if err != nil {
+				fmt.Fprint(handle, "stderr: "+strings.ReplaceAll(strings.TrimSpace(err.Error()), "\n", "\nstderr: "))
 			}
 		}
 	}()
 	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, blockDeviceFile)
 
 	// Mount the loop device at a temporary directory so we can write the workspace contents to it.
-	tmpMountDir, err = mountLoopDevice(ctx, blockDevice)
+	tmpMountDir, err = mountLoopDevice(ctx, blockDevice, handle)
 	if err != nil {
-		return "", "", "", err
+		// important to set at least blockDevice for the above defer
+		return blockDeviceFile, "", blockDevice, err
 	}
 	fmt.Fprintf(handle, "Created temporary workspace mount location at %q\n", tmpMountDir)
 
@@ -202,26 +206,25 @@ func setupLoopDevice(
 }
 
 // detachLoopDevice detaches a loop device by path (/dev/loopX).
-func detachLoopDevice(ctx context.Context, blockDevice string) error {
-	cmd := exec.CommandContext(ctx, "losetup", "--detach", blockDevice)
-	out, err := cmd.CombinedOutput()
+func detachLoopDevice(ctx context.Context, blockDevice string, handle command.LogEntry) error {
+	out, err := CommandLogger(ctx, handle, "losetup", "--detach", blockDevice)
 	if err != nil {
-		return errors.Newf("failed to detach loop device: %s", out)
+		return errors.Wrapf(err, "failed to detach loop device: %s", out)
 	}
 	return nil
 }
 
 // mountLoopDevice takes a path to a loop device (/dev/loopX) and mounts it at a
 // random temporary mount point. The mount point is returned.
-func mountLoopDevice(ctx context.Context, blockDevice string) (string, error) {
+func mountLoopDevice(ctx context.Context, blockDevice string, handle command.LogEntry) (string, error) {
 	tmpMountDir, err := MakeTempDirectory("workspace-mountpoints")
 	if err != nil {
 		return "", err
 	}
-	mountCmd := exec.CommandContext(ctx, "mount", blockDevice, tmpMountDir)
-	if out, err := mountCmd.CombinedOutput(); err != nil {
+
+	if out, err := CommandLogger(ctx, handle, "mount", "-k", blockDevice, tmpMountDir); err != nil {
 		_ = os.RemoveAll(tmpMountDir)
-		return "", errors.Newf("failed to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
+		return "", errors.Wrapf(err, "failed to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
 	}
 
 	return tmpMountDir, nil
