@@ -34,7 +34,7 @@ export function buildEditorUrl(
             : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
-    const {line, column} = range ? {line: range.start.line, column: range.start.character} : {line: 1, column: 1}
+    const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
     const url = urlPattern
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)
