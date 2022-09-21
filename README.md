@@ -44,6 +44,9 @@
 
 ### 🏗️ High-leverage ways to improve your entire codebase
 * Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
+  * Run large-scale or resource-intensive batch changes without clogging your local machine
+  * Run large batch changes quickly by distributing them across an autoscaled pool of compute instances
+  * Get a better debugging experience with the streaming of logs directly into Sourcegraph.
 
 ### ☁️ Dedicated Sourcegraph Cloud instances for enterprise
 * Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
