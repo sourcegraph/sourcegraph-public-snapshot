@@ -181,7 +181,7 @@ func setupLoopDevice(
 	if err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to create loop device: %q", out)
 	}
-	blockDevice = strings.TrimSpace(string(out))
+	blockDevice = strings.TrimSpace(out)
 	defer func() {
 		// If something further down in this function failed we detach the loop device
 		// to not hoard them.

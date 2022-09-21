@@ -86,6 +86,7 @@ Available commands in `sg.config.yaml`:
 * bext
 * caddy
 * codeintel-executor
+* codeintel-executor-firecracker
 * codeintel-worker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
