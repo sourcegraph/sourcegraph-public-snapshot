@@ -1418,6 +1418,18 @@ type Query {
         The parser to use for this query.
         """
         patternType: SearchPatternType = literal
+        """
+        The output corresponding to a phase in the parser pipeline.
+        """
+        outputPhase: SearchQueryOutputPhase = PARSE_TREE
+        """
+        The parser output format.
+        """
+        outputFormat: SearchQueryOutputFormat = JSON
+        """
+        The level of output format verbosity.
+        """
+        outputVerbosity: SearchQueryOutputVerbosity = MINIMAL
     ): JSONValue
     """
     The current site.
@@ -1930,6 +1942,54 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+}
+
+"""
+Represents phases in query parsing. The parse tree corresponds closely to the
+input query syntax. A subsequent processing phase on the parse tree generates a
+job tree. The job tree is an internal representation analogous to a database
+query plan. The job tree discards information about query syntax and corresponds
+closely to backend services (text search, git commit search, etc.).
+"""
+enum SearchQueryOutputPhase {
+     PARSE_TREE
+     JOB_TREE
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputVerbosity {
+     """
+     Minimal verbosity outputs only nodes.
+     """
+     MINIMAL
+     """
+     Basic verbosity outputs nodes and essential fields associated with nodes.
+     """
+     BASIC
+     """
+     Maximal verbosity outputs nodes and all information associated with nodes.
+     """
+     MAXIMAL
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputFormat {
+     """
+     JSON format.
+     """
+     JSON
+     """
+     S-expression format.
+     """
+     SEXP
+     """
+     Mermaid flowchart format.
+     """
+     MERMAID
 }
 
 """
