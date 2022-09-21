@@ -40,7 +40,6 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { useBlameHunks } from '../blame/useBlameHunks'
-import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -282,7 +281,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return `${repoString}`
     }
 
-    const [isBlameVisible] = useBlameVisibility()
     const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
@@ -482,7 +480,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
-                        isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
