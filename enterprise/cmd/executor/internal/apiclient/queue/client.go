@@ -39,7 +39,7 @@ type Options struct {
 	BaseClientOptions apiclient.BaseClientOptions
 
 	// TelemetryOptions captures additional parameters sent in heartbeat requests.
-	TelemetryOptions apiclient.TelemetryOptions
+	TelemetryOptions TelemetryOptions
 }
 
 func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) (*Client, error) {

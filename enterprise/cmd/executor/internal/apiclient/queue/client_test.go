@@ -437,7 +437,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 				Token:      "hunter2",
 			},
 		},
-		TelemetryOptions: apiclient.TelemetryOptions{
+		TelemetryOptions: TelemetryOptions{
 			OS:              "test-os",
 			Architecture:    "test-architecture",
 			DockerVersion:   "test-docker-version",

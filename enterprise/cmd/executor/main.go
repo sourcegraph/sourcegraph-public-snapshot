@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -66,12 +66,12 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Determine telemetry data.
-	telemetryOptions := func() apiclient.TelemetryOptions {
+	telemetryOptions := func() queue.TelemetryOptions {
 		// Run for at most 5s to get telemetry options.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		return apiclient.NewTelemetryOptions(ctx)
+		return queue.NewTelemetryOptions(ctx)
 	}()
 	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
 

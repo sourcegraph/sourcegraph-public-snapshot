@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 )
 
 func TestConfig_Load_Envs(t *testing.T) {
@@ -180,7 +180,7 @@ func TestConfig_APIWorkerOptions(t *testing.T) {
 	config.SetMockGetter(mapGetter(baseEnvs))
 	config.Load()
 
-	options := config.APIWorkerOptions(apiclient.TelemetryOptions{})
+	options := config.APIWorkerOptions(queue.TelemetryOptions{})
 
 	// base options
 	assert.Equal(t, "executor", options.VMPrefix)

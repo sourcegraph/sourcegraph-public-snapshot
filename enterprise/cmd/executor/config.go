@@ -93,7 +93,7 @@ func (c *Config) Validate() error {
 }
 
 // APIWorkerOptions builds the options for the worker.
-func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
+func (c *Config) APIWorkerOptions(telemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
 		KeepWorkspaces:     c.KeepWorkspaces,
@@ -148,7 +148,7 @@ func (c *Config) resourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) queueOptions(telemetryOptions apiclient.TelemetryOptions) queue.Options {
+func (c *Config) queueOptions(telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName: c.WorkerHostname,
 		BaseClientOptions: apiclient.BaseClientOptions{
