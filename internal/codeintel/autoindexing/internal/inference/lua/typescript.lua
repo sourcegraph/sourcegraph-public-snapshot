@@ -34,6 +34,12 @@ local check_lerna_file_contents = function(contents)
   return false
 end
 
+local check_lerna_file = function(root, contents_by_path)
+  return fun.any(function(a)
+    return check_lerna_file_contents(contents_by_path[path.join(a, "lerna.json")] or "")
+  end, path.ancestors(root))
+end
+
 local check_package_json_contents = function(contents)
   local payload = safe_decode(contents)
   if payload and payload["engines"] and payload["engines"]["node"] then
@@ -41,12 +47,6 @@ local check_package_json_contents = function(contents)
   end
 
   return false
-end
-
-local check_lerna_file = function(root, contents_by_path)
-  return fun.any(function(a)
-    return check_lerna_file_contents(contents_by_path[path.join(a, "lerna.json")] or "")
-  end, path.ancestors(root))
 end
 
 local contains = function(table, element)
