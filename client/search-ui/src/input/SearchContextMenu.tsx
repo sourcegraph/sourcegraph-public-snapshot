@@ -241,7 +241,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     </div>
                 )}
                 {loadingState === 'DONE' && filteredList.length === 0 && (
-                    <div data-testid="search-context-menu-item">
+                    <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>No contexts found</small>
                     </div>
                 )}
