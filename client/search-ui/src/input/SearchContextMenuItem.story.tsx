@@ -1,6 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { Combobox } from '@sourcegraph/wildcard'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
@@ -23,13 +24,15 @@ export default config
 export const SelectedDefaultItem: Story = () => (
     <BrandedStory>
         {() => (
-            <SearchContextMenuItem
-                spec="@user/test"
-                description="Default description"
-                query=""
-                selected={true}
-                isDefault={true}
-            />
+            <Combobox>
+                <SearchContextMenuItem
+                    spec="@user/test"
+                    description="Default description"
+                    query=""
+                    selected={true}
+                    isDefault={true}
+                />
+            </Combobox>
         )}
     </BrandedStory>
 )
@@ -39,13 +42,15 @@ SelectedDefaultItem.storyName = 'selected default item'
 export const HighlightedItem: Story = () => (
     <BrandedStory>
         {() => (
-            <SearchContextMenuItem
-                spec="@user/test"
-                description="Default description"
-                query=""
-                selected={false}
-                isDefault={false}
-            />
+            <Combobox>
+                <SearchContextMenuItem
+                    spec="@user/test"
+                    description="Default description"
+                    query=""
+                    selected={false}
+                    isDefault={false}
+                />
+            </Combobox>
         )}
     </BrandedStory>
 )
