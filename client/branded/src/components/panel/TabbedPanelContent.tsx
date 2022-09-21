@@ -22,7 +22,6 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -31,7 +30,6 @@ import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
-import { ReferencesPanelFeedbackCta } from './views/ReferencesPanelFeedbackCta'
 
 import styles from './TabbedPanelContent.module.scss'
 
@@ -148,11 +146,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
             [extensionsController]
         )
     )
-    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
-    const isExperimentalReferencePanelEnabled =
-        (!isErrorLike(props.settingsCascade.final) &&
-            props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
-        redesignedEnabled === true
+
+    const isTabbedReferencesPanelEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final !== null &&
+        props.settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
@@ -201,9 +199,10 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                     panelView.selector !== null ? match(panelView.selector, document) : true
                                 )
                                 .filter(panelView =>
-                                    // If we use the new reference panel we don't want to display additional
+                                    // If we use the tree-view reference panel
+                                    // we don't want to display additional
                                     // 'implementations_' panels
-                                    isExperimentalReferencePanelEnabled
+                                    !isTabbedReferencesPanelEnabled
                                         ? !panelView.component?.locationProvider?.startsWith('implementations_')
                                         : true
                                 )
@@ -237,7 +236,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     )
                 )
             )
-        }, [isExperimentalReferencePanelEnabled, extensionsController])
+        }, [isTabbedReferencesPanelEnabled, extensionsController])
     )
 
     const panelViews = useMemo(() => [...(builtinTabbedPanels || []), ...(extensionPanels || [])], [
@@ -309,9 +308,6 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     <div className="align-items-center d-flex">
                         {activeTab && extensionsController !== null && (
                             <>
-                                {(activeTab.id === 'def' ||
-                                    activeTab.id === 'references' ||
-                                    activeTab.id.startsWith('implementations_')) && <ReferencesPanelFeedbackCta />}
                                 <ActionsNavItems
                                     {...props}
                                     extensionsController={extensionsController}

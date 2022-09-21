@@ -301,7 +301,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         []
     )
 
-    useEffect(() => {
+    // Need to use deep compare effect to avoid infinite loop in the tabbed references panel.
+    useDeepCompareEffect(() => {
         nextBlobInfoChange(blobInfo)
         return () => {
             // Clean up for any resources used by the previous viewer.
@@ -502,7 +503,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
-
     // Data source for `viewerUpdates`
     useObservable(
         useMemo(

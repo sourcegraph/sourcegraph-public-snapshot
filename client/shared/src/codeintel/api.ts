@@ -28,6 +28,7 @@ import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
+import { PanelViewData } from '../api/extension/extensionHostApi'
 
 export type QueryGraphQLFn<T> = () => Promise<T>
 
@@ -193,11 +194,32 @@ export function injectNewCodeintel(
         | 'getDefinition'
         | 'getLocations'
         | 'hasReferenceProvidersForDocument'
+        | 'getPanelViews'
     > = {
+        getPanelViews() {
+            const panels: PanelViewData[] = []
+            for (const spec of languageSpecs) {
+                if (spec.textDocumentImplemenationSupport) {
+                    const id = `implementations_${spec.languageID}`
+                    panels.push({
+                        id,
+                        content: '',
+                        component: { locationProvider: id },
+                        selector: selectorForSpec(spec),
+                        priority: 160,
+                        title: 'Implementations',
+                    })
+                }
+            }
+            return proxySubscribable(of(panels))
+        },
         hasReferenceProvidersForDocument(textParameters) {
             return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
         },
         getLocations(id, parameters) {
+            if (!id.startsWith('implementations_')) {
+                return proxySubscribable(thenMaybeLoadingResult(of([])))
+            }
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
         },
         getDefinition(parameters) {
