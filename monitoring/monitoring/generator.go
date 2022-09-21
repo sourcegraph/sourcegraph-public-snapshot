@@ -129,6 +129,24 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		}
 	}
 
+	// Generate additional Prometheus assets
+	if opts.PrometheusDir != "" {
+		customRules, err := customPrometheusRules(opts.InjectLabelMatchers)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate custom rules")
+		}
+		data, err := yaml.Marshal(customRules)
+		if err != nil {
+			return errors.Wrapf(err, "Invalid custom rules")
+		}
+		fileName := "src_custom_rules.yml"
+		generatedAssets = append(generatedAssets, fileName)
+		err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+		if err != nil {
+			return errors.Wrap(err, "Could not write custom rules")
+		}
+	}
+
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
 		rlog := logger.Scoped("prometheus", "prometheus alerts generation").With(log.String("instance", localPrometheusURL))
