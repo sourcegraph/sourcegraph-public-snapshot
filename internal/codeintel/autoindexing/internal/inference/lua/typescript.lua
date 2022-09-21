@@ -39,15 +39,6 @@ local reverse = function(slice)
   return reversed
 end
 
-local with_new_head = function(slice, element)
-  local new = { element }
-  for _, v in ipairs(slice) do
-    table.insert(new, v)
-  end
-
-  return new
-end
-
 local safe_decode = function(encoded)
   local _, payload = pcall(function()
     return json.decode(encoded)
@@ -137,7 +128,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
       if can_derive_node_version(root, paths, contents_by_path) then
         docker_steps = fun.totable(fun.map(function(s)
           -- Add `n` invocation command before each docker step
-          s.commands = with_new_head(s.commands, typescript_nmusl_command)
+          s.commands = fun.totable(fun.chain({ typescript_nmusl_command }, s.commands))
           return s
         end, docker_steps))
 
