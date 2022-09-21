@@ -24,119 +24,63 @@ p4 protects -u USER | ./scanprotects -d "//some/test/depot/" |& jq '{"Body": .Bo
 ...
 "Processing parsed line"
 {
-  "match": "//depot/main/base/jkl/...",
-  "isExclusion": false
+  "line.match": "//depot/.../.../base/foo-test/...",
+  "line.isExclusion": false
 }
 "Relevant depots"
 {
+  "line.match": "//depot/.../.../base/foo-test/...",
+  "line.isExclusion": false,
   "depots": [
     "//depot/main"
   ]
 }
 "Adding include rules"
 {
-  "rules": [
-    "base/jkl/**"
-  ]
-}
-"Processing parsed line"
-{
-  "match": "//depot/.../.../base/foo/...",
-  "isExclusion": false
-}
-"Relevant depots"
-{
-  "depots": [
-    "//depot/main"
-  ]
-}
-"Adding include rules"
-{
-  "rules": [
-    "**/**/base/foo/**"
-  ]
-}
-"Processing parsed line"
-{
-  "match": "//depot/.../.../base/jkl/...",
-  "isExclusion": false
-}
-"Relevant depots"
-{
-  "depots": [
-    "//depot/main"
-  ]
-}
-"Adding include rules"
-{
-  "rules": [
-    "**/**/base/jkl/**"
-  ]
-}
-"Processing parsed line"
-{
-  "match": "//depot/.../.../base/foo/config/labels/...",
-  "isExclusion": false
-}
-"Relevant depots"
-{
-  "depots": [
-    "//depot/main"
-  ]
-}
-"Adding include rules"
-{
-  "rules": [
-    "**/**/base/foo/config/labels/**"
-  ]
-}
-"Processing parsed line"
-{
-  "match": "//depot/.../.../base/foo-test/...",
-  "isExclusion": false
-}
-"Relevant depots"
-{
-  "depots": [
-    "//depot/main"
-  ]
-}
-"Adding include rules"
-{
+  "line.match": "//depot/.../.../base/foo-test/...",
+  "line.isExclusion": false,
   "rules": [
     "**/**/base/foo-test/**"
   ]
 }
 "Processing parsed line"
 {
-  "match": "//depot/.../.../base/jkl/test/...",
-  "isExclusion": false
+  "line.match": "//depot/.../.../base/jkl/test/...",
+  "line.isExclusion": false
 }
 "Relevant depots"
 {
+  "line.match": "//depot/.../.../base/jkl/test/...",
+  "line.isExclusion": false,
   "depots": [
     "//depot/main"
   ]
 }
 "Adding include rules"
 {
+  "line.match": "//depot/.../.../base/jkl/test/...",
+  "line.isExclusion": false,
   "rules": [
     "**/**/base/jkl/test/**"
   ]
 }
 "Processing parsed line"
 {
-  "match": "//depot/.../base/foo/config/labels/...",
-  "isExclusion": false
+  "line.match": "//depot/.../base/foo/config/labels/...",
+  "line.isExclusion": false
 }
 "Relevant depots"
 {
+  "line.match": "//depot/.../base/foo/config/labels/...",
+  "line.isExclusion": false,
   "depots": [
     "//depot/main"
   ]
 }
 "Adding include rules"
 {
+  "line.match": "//depot/.../base/foo/config/labels/...",
+  "line.isExclusion": false,
   "rules": [
     "**/base/foo/config/labels/**"
   ]

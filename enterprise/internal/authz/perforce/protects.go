@@ -367,7 +367,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
-			logger.Debug("Processing parsed line", log.String("match", line.match), log.Bool("isExclusion", line.isExclusion))
+			lineLogger := logger.With(log.String("line.match", line.match), log.Bool("line.isExclusion", line.isExclusion))
+			lineLogger.Debug("Processing parsed line")
+
 			match, err := convertToGlobMatch(line.match)
 			if err != nil {
 				return err
@@ -378,7 +380,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			depots := relevantDepots(match)
 
 			if len(depots) == 0 {
-				logger.Debug("Zero relevant depots, returning early")
+				lineLogger.Debug("Zero relevant depots, returning early")
 				return nil
 			}
 
@@ -386,7 +388,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			for i := range depots {
 				depotStrings[i] = string(depots[i])
 			}
-			logger.Debug("Relevant depots", log.Strings("depots", depotStrings))
+			lineLogger.Debug("Relevant depots", log.Strings("depots", depotStrings))
 
 			// Handle inclusions
 			if !line.isExclusion {
@@ -395,7 +397,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 					srp := getSubRepoPerms(depot)
 					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
-					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
+					lineLogger.Debug("Adding include rules", log.Strings("rules", newIncludes))
 
 					var i int
 					for _, exclude := range srp.PathExcludes {
@@ -408,7 +410,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 						}
 						checkWithDepotAdded := !strings.HasPrefix(originalExclude.pattern, "//") && match.Match(string(depot)+originalExclude.pattern)
 						if originalExclude.Match(match.original) || checkWithDepotAdded {
-							logger.Debug("Removing conflicting exclude rule", log.String("rule", originalExclude.pattern))
+							lineLogger.Debug("Removing conflicting exclude rule", log.String("rule", originalExclude.pattern))
 							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
 						} else {
 							i++
@@ -424,13 +426,13 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 				// Special case: exclude entire depot
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
-					logger.Debug("Exclude entire depot, removing all include rules")
+					lineLogger.Debug("Exclude entire depot, removing all include rules")
 					srp.PathIncludes = nil
 				}
 
 				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
-				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
+				lineLogger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
 
 				var i int
 				for _, include := range srp.PathIncludes {
@@ -443,7 +445,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 					}
 					checkWithDepotAdded := !strings.HasPrefix(originalInclude.pattern, "//") && match.Match(string(depot)+originalInclude.pattern)
 					if match.Match(originalInclude.original) || checkWithDepotAdded {
-						logger.Debug("Removing conflicting include rule", log.String("rule", originalInclude.pattern))
+						lineLogger.Debug("Removing conflicting include rule", log.String("rule", originalInclude.pattern))
 						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
 					} else {
 						i++
