@@ -12,7 +12,6 @@ type LuaLib interface {
 }
 
 var defaultAPIs = map[string]LuaLib{
-	"json": libs.JSON,
 	"path": libs.Path,
 }
 
