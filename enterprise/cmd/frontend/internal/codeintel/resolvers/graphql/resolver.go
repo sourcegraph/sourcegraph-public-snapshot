@@ -18,6 +18,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
@@ -31,6 +32,8 @@ const (
 	DefaultRepositoryFilterPreviewPageSize = 50
 	DefaultRetentionPolicyMatchesPageSize  = 50
 )
+
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
 

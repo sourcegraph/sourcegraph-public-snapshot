@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
@@ -20,9 +19,6 @@ type DBStore interface {
 }
 
 type CodeNavResolver interface {
-	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
 	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ codenavgraphql.GitBlobLSIFDataResolver, err error)
 }
 
