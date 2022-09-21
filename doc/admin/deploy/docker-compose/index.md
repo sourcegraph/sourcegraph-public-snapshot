@@ -19,15 +19,17 @@ This guide will take you through how to install Sourcegraph with Docker Compose 
     - License is required for instances with **more than 10 users**
   - <span class="badge badge-beta">optional</span> Configure ingress firewall rules to enable secure access to the server
 
->WARNING: Running Sourcegraph on Windows or ARM / ARM64 images is not supported for production deployments.
+>WARNING: Running Sourcegraph on Windows or `ARM`/`ARM64` images is not supported for production deployments.
 
-## Installation
+---
+
+## Installation Steps
 
 A step by step guide to install Sourcegraph with Docker Compose.
 
 ### Overview
 
- 1. [Prepare the deployment repository](#step-1-prepare-the-deployment-repository)
+ 1. <span class="badge badge-note">RECOMMENDED</span> [Prepare the deployment repository](#step-1-prepare-the-deployment-repository)
  2. [Customize the instance](#step-2-configure-the-instance)
  3. [Clone the release branch](#step-3-clone-the-release-branch)
  4. [Build and start the Sourcegraph containers](#step-4-start-sourcegraph)
@@ -36,7 +38,9 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 ### Step 1: Fork the deployment repository
 
-[`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose---it contains everything you need to install and configure a Sourcegraph Docker Compose instance. We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
+[`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker/) is the deployment repository for Docker Compose---it contains everything you need to install and configure a Sourcegraph Docker Compose instance. 
+
+<span class="badge badge-note">RECOMMENDED</span> We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
 
 > WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
 
@@ -104,7 +108,7 @@ Continue with the following steps *after* you have created a public or private c
 
 You can find the default [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file inside the deployment repository.
 
-If you would like to make changes to the default configurations, we highly recommend you to create a new file called `docker-compose.override.yaml` in the same directory where the default docker-compose.yaml file is located, and make your customizations inside the `docker-compose.override.yaml` file.
+If you would like to make changes to the default configurations, we highly recommend you create a new file called `docker-compose.override.yaml` in the same directory where the default docker-compose.yaml file is located, and make your customizations inside the [docker-compose.override.yaml](configuration.md#what-is-an-override-file) file.
 
 - Here is a list of customizations you can make using an override file:
   - Add replicas
@@ -116,7 +120,7 @@ If you would like to make changes to the default configurations, we highly recom
   - Update or add new environment variables
   - And more!
 
-Please ensure to commit the changes to your `release` branch.
+Please make sure to commit any changes to your `release` branch.
 
 For detailed instructions on how to configure the instance using an override file, please refer to the [configuration docs](configuration.md).
 
@@ -130,7 +134,7 @@ Now that you have customized your instance and published the changes to your cod
   git clone --branch release https://github.com/<you/private-repository>.git 
 ```
 
-> NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+> NOTE: The `docker-compose.yaml` file currently depends on configuration files that live in the repository, so you must have the entire repository cloned onto your server.
 
 ### Step 4: Start Sourcegraph
 
@@ -153,6 +157,8 @@ To check if the server is ready, the `sourcegraph-frontend-0` service must be di
 ```
 
 Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or IP address on port `80`.  
+
+---
 
 ## Additional Information
 

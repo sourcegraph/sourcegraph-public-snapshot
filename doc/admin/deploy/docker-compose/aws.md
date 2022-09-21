@@ -2,13 +2,15 @@
 
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
+---
+
 ## Configure
 
 Click **Launch Instance** from the [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home), then fill in the following values for each section:
 
 #### Name and tags
 
-Name your instance
+1. Name your instance
 
 #### Application and OS Images
 
@@ -18,11 +20,11 @@ Name your instance
 
 #### Instance type
 
-Select an appropriate instance type using our [resource estimator](../resource_estimator.md) as reference
+1. Select an appropriate instance type using our [resource estimator](../resource_estimator.md) as reference
 
 #### Key pair (login)
 
-Create a new key pair for your instance, or choose an existing key pair from the drop down list
+1. Create a new key pair for your instance, or choose an existing key pair from the drop down list
 
 #### Network settings
 
@@ -119,10 +121,12 @@ cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
 docker-compose up -d --remove-orphans
 ```
 
-<span class="badge badge-note">RECOMMENDED</span> If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+> NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
+> 
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
-- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
-- `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
+---
 
 ## Deploy
 
@@ -141,9 +145,13 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 > NOTE: If you have configured a DNS entry for the IP, please ensure to update `externalURL` in your Sourcegraph instance's Site Configuration to reflect that
 
+---
+
 ## Upgrade
 
 See the [Docker Compose upgrade docs](upgrade.md).
+
+---
 
 ## Storage and Backups
 
