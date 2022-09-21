@@ -1,13 +1,18 @@
-import { act, createEvent, fireEvent, render } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import * as React from 'react'
 
-import { ModifierKey } from '../keys'
-import Shortcut from '../Shortcut'
-import ShortcutProvider from '../ShortcutProvider'
+import { act, createEvent, fireEvent, render } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import * as sinon from 'sinon'
+
+import { ModifierKey } from './keys'
+
+import { Shortcut, ShortcutProvider } from '.'
 
 describe('ShortcutManager', () => {
-    let originalGetModifierState = KeyboardEvent.prototype.getModifierState
+    // We only want to preserve the original implementation, not call it as a
+    // function.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const originalGetModifierState = KeyboardEvent.prototype.getModifierState
 
     beforeAll(() => {
         jest.useFakeTimers()
@@ -33,9 +38,9 @@ describe('ShortcutManager', () => {
         KeyboardEvent.prototype.getModifierState = originalGetModifierState
     })
 
-    it('calls the matching shortcut immediately if there are no other similar shortcuts', async () => {
-        const fooSpy = jest.fn()
-        const barSpy = jest.fn()
+    it('calls the matching shortcut immediately if there are no other similar shortcuts', () => {
+        const fooSpy = sinon.spy()
+        const barSpy = sinon.spy()
 
         render(
             <ShortcutProvider>
@@ -46,13 +51,14 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('foo')
 
-        expect(fooSpy).toHaveBeenCalled()
-        expect(barSpy).not.toHaveBeenCalled()
+        sinon.assert.called(fooSpy)
+        sinon.assert.notCalled(barSpy)
     })
 
     it('calls multiple shortcuts', () => {
-        const fooSpy = jest.fn()
-        const barSpy = jest.fn()
+        const fooSpy = sinon.spy()
+        const barSpy = sinon.spy()
+
         render(
             <ShortcutProvider>
                 <Shortcut key="foo" ordered={['f', 'o', 'o']} onMatch={fooSpy} />
@@ -63,14 +69,14 @@ describe('ShortcutManager', () => {
         userEvent.keyboard('foo')
         userEvent.keyboard('bar')
 
-        expect(fooSpy).toHaveBeenCalledTimes(1)
-        expect(barSpy).toHaveBeenCalledTimes(1)
+        sinon.assert.calledOnce(fooSpy)
+        sinon.assert.calledOnce(fooSpy)
     })
 
     it('matches the longest fully matched shortcut when there are conflicting shortcuts after a timeout', () => {
-        const fooSpy = jest.fn()
-        const foSpy = jest.fn()
-        const fSpy = jest.fn()
+        const fooSpy = sinon.spy()
+        const foSpy = sinon.spy()
+        const fSpy = sinon.spy()
 
         render(
             <ShortcutProvider>
@@ -82,17 +88,17 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('fo')
 
-        expect(foSpy).not.toBeCalled()
+        sinon.assert.notCalled(foSpy)
 
         jest.runAllTimers()
 
-        expect(fSpy).not.toHaveBeenCalled()
-        expect(foSpy).toHaveBeenCalledTimes(1)
-        expect(fooSpy).not.toHaveBeenCalled()
+        sinon.assert.notCalled(fSpy)
+        sinon.assert.calledOnce(foSpy)
+        sinon.assert.notCalled(fooSpy)
     })
 
     it('does not call shortcuts that do not match the keys pressed', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
         render(
             <ShortcutProvider>
                 <Shortcut ordered={['b', 'a', 'r']} onMatch={spy} />
@@ -101,15 +107,15 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('baz')
 
-        expect(spy).not.toBeCalled()
+        sinon.assert.notCalled(spy)
 
         jest.runAllTimers()
 
-        expect(spy).not.toBeCalled()
+        sinon.assert.notCalled(spy)
     })
 
     it('does not call shortcuts that only partially match', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
         render(
             <ShortcutProvider>
                 <Shortcut key="foo" ordered={['f', 'o', 'o']} onMatch={spy} />
@@ -121,14 +127,14 @@ describe('ShortcutManager', () => {
 
         jest.runAllTimers()
 
-        expect(spy).not.toBeCalled()
+        sinon.assert.notCalled(spy)
     })
 
     it.skip('calls shortcuts that are scoped to a specific node only when that node is focused', () => {
         // This test is meaningless atm because the current implementation of
         // Shortcut doesn't actually work for scoped events.
 
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         act(() => {
             render(
@@ -139,11 +145,11 @@ describe('ShortcutManager', () => {
         })
 
         userEvent.keyboard('z')
-        expect(spy).toBeCalled()
+        sinon.assert.called(spy)
     })
 
     it('only registers a unique shortcut once', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         render(
             <ShortcutProvider>
@@ -156,11 +162,11 @@ describe('ShortcutManager', () => {
 
         jest.runAllTimers()
 
-        expect(spy).toHaveBeenCalledTimes(1)
+        sinon.assert.calledOnce(spy)
     })
 
     it('unsubscribes keys when Shortcut unmounts', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         const app = render(
             <ShortcutProvider>
@@ -174,11 +180,11 @@ describe('ShortcutManager', () => {
         userEvent.keyboard('foo')
         userEvent.keyboard('bar')
 
-        expect(spy).not.toBeCalled()
+        sinon.assert.notCalled(spy)
     })
 
     it('resets keys when there are no matching shortcuts', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         render(
             <ShortcutProvider>
@@ -188,27 +194,27 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('{shift}{/shift}a?')
 
-        expect(spy).toHaveBeenCalledTimes(1)
+        sinon.assert.calledOnce(spy)
     })
 
     it('allows default event to occur', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         render(
             <ShortcutProvider>
-                <Shortcut ordered={['a']} onMatch={spy} allowDefault />
+                <Shortcut ordered={['a']} onMatch={spy} allowDefault={true} />
             </ShortcutProvider>
         )
 
         const event = createEvent.keyDown(document, { key: 'a' })
         fireEvent(document, event)
 
-        expect(spy).toHaveBeenCalledTimes(1)
+        sinon.assert.calledOnce(spy)
         expect(event.defaultPrevented).toBe(false)
     })
 
     it('prevents the default event by default', () => {
-        const spy = jest.fn()
+        const spy = sinon.spy()
 
         render(
             <ShortcutProvider>
@@ -219,13 +225,13 @@ describe('ShortcutManager', () => {
         const event = createEvent.keyDown(document, { key: 'a' })
         fireEvent(document, event)
 
-        expect(spy).toHaveBeenCalledTimes(1)
+        sinon.assert.calledOnce(spy)
         expect(event.defaultPrevented).toBe(true)
     })
 
     describe('modifier keys', () => {
         it('matches shortcut when all modifier keys are pressed', () => {
-            const fooSpy = jest.fn()
+            const fooSpy = sinon.spy()
             const held: ModifierKey[] = ['Control', 'Shift', 'Alt', 'Meta']
 
             render(
@@ -236,11 +242,11 @@ describe('ShortcutManager', () => {
 
             userEvent.keyboard('{Control>}{Shift>}{Alt>}{Meta>}/{/Meta}{/Alt}{/Shift}{/Control}')
 
-            expect(fooSpy).toHaveBeenCalled()
+            sinon.assert.called(fooSpy)
         })
 
         it('doesn’t match shortcut when all modifier keys not pressed', () => {
-            const fooSpy = jest.fn()
+            const fooSpy = sinon.spy()
             const heldToCheck: ModifierKey[] = ['Control', 'Shift', 'Alt', 'Meta']
 
             render(
@@ -251,25 +257,28 @@ describe('ShortcutManager', () => {
 
             userEvent.keyboard('{Control>}{Shift>}/{/Shift}{/Control}')
 
-            expect(fooSpy).not.toHaveBeenCalled()
+            sinon.assert.notCalled(fooSpy)
         })
     })
 })
 
 interface Props {
-    spy: jest.Mock<{}>
+    spy: sinon.SinonSpy
 }
 
 interface State {
     node: HTMLElement | null
 }
 
+// This component isn't used currently. It and the corresponding test need
+// to be updated.
+// eslint-disable-next-line react/no-unsafe
 class ShortcutWithFocus extends React.Component<Props, State> {
-    state: State = {
+    public state: State = {
         node: null,
     }
 
-    componentWillUpdate() {
+    public UNSAFE_componentWillUpdate(): void {
         const { node } = this.state
 
         if (!node) {
@@ -279,7 +288,7 @@ class ShortcutWithFocus extends React.Component<Props, State> {
         node.focus()
     }
 
-    render() {
+    public render(): React.ReactNode {
         const { spy } = this.props
         const { node } = this.state
         return (

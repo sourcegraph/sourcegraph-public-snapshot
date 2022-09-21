@@ -1,7 +1,6 @@
 import React, { forwardRef, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiConsole, mdiPuzzle } from '@mdi/js'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
@@ -13,6 +12,7 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     ButtonProps,
     ForwardReferenceComponent,

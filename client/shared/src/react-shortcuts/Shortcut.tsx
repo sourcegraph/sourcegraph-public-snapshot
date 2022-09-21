@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Consumer, Context } from '../ShortcutProvider'
-import Key, { ModifierKey } from '../keys'
+
+import { Key, ModifierKey } from './keys'
+import { Consumer, Context } from './ShortcutProvider'
 
 export interface Props {
     ordered: Key[]
@@ -15,9 +16,9 @@ export interface Subscription {
     unsubscribe(): void
 }
 
-export default function Shortcut(props: Props) {
-    return <Consumer>{(context: Context) => <ShortcutConsumer {...props} {...context} />}</Consumer>
-}
+export const Shortcut: React.FunctionComponent<Props> = props => (
+    <Consumer>{(context: Context) => <ShortcutConsumer {...props} {...context} />}</Consumer>
+)
 
 class ShortcutConsumer extends React.Component<Props & Context, never> {
     public data = {
@@ -28,31 +29,31 @@ class ShortcutConsumer extends React.Component<Props & Context, never> {
         onMatch: this.props.onMatch,
         allowDefault: this.props.allowDefault || false,
     }
-    public subscription!: Subscription
+    public subscription: Subscription | null = null
 
-    componentDidMount() {
+    public componentDidMount(): void {
         const { node } = this.data
 
-        if (node != null) {
+        if (node !== null && node !== undefined) {
             return
         }
 
         const { shortcutManager } = this.props
-        if (shortcutManager == null) {
+        if (shortcutManager === undefined) {
             return
         }
         this.subscription = shortcutManager.subscribe(this.data)
     }
 
-    componentWillUnmount() {
-        if (this.subscription == null) {
+    public componentWillUnmount(): void {
+        if (this.subscription === null) {
             return
         }
 
         this.subscription.unsubscribe()
     }
 
-    render() {
+    public render(): React.ReactNode {
         return null
     }
 }

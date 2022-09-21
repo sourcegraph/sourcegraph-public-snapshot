@@ -1,5 +1,6 @@
 import * as React from 'react'
-import ShortcutManager from '../ShortcutManager'
+
+import { ShortcutManager } from './ShortcutManager'
 
 export interface Context {
     shortcutManager?: ShortcutManager
@@ -11,14 +12,14 @@ export interface Props {
 
 export const { Provider, Consumer } = React.createContext<Context>({})
 
-export default class ShortcutProvider extends React.Component<Props, never> {
+export class ShortcutProvider extends React.Component<Props, never> {
     private shortcutManager = new ShortcutManager()
 
-    componentDidMount() {
+    public componentDidMount(): void {
         this.shortcutManager.setup()
     }
 
-    render() {
+    public render(): React.ReactNode {
         const context: Context = {
             shortcutManager: this.shortcutManager,
         }

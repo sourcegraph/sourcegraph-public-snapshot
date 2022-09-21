@@ -1,4 +1,4 @@
-type Key =
+export type Key =
     | AlphabetKey
     | NumericKey
     | SymbolKey
@@ -18,8 +18,6 @@ type Key =
     | DocumentKey
     | ApplicationSelectorKey
     | BrowserControlKey
-
-export default Key
 
 export type AlphabetKey =
     | 'a'

@@ -1,4 +1,4 @@
-import Key, { ModifierKey } from '../keys'
+import { Key, ModifierKey } from './keys'
 
 const ON_MATCH_DELAY = 500
 
@@ -11,17 +11,17 @@ export interface Data {
     allowDefault: boolean
 }
 
-export default class ShortcutManager {
+export class ShortcutManager {
     private keysPressed: Key[] = []
     private shortcuts: Data[] = []
     private shortcutsMatched: Data[] = []
     private timer!: number
 
-    setup() {
+    public setup(): void {
         document.addEventListener('keydown', this.handleKeyDown)
     }
 
-    subscribe(data: Data) {
+    public subscribe(data: Data): { unsubscribe: () => void } {
         const { shortcuts } = this
 
         shortcuts.push(data)
@@ -34,12 +34,12 @@ export default class ShortcutManager {
         }
     }
 
-    private resetKeys() {
+    private resetKeys(): void {
         this.keysPressed = []
         this.shortcutsMatched = []
     }
 
-    private handleKeyDown = (event: KeyboardEvent) => {
+    private handleKeyDown = (event: KeyboardEvent): void => {
         const { key } = event
 
         this.keysPressed.push(key as Key)
@@ -59,7 +59,7 @@ export default class ShortcutManager {
         }
     }
 
-    private updateMatchingShortcuts(event: KeyboardEvent) {
+    private updateMatchingShortcuts(event: KeyboardEvent): void {
         const shortcuts = this.shortcutsMatched.length > 0 ? this.shortcutsMatched : this.shortcuts
 
         this.shortcutsMatched = shortcuts.filter(({ ordered, held, node, ignoreInput }) => {
@@ -82,7 +82,7 @@ export default class ShortcutManager {
         })
     }
 
-    private callMatchedShortcut(event: Event) {
+    private callMatchedShortcut(event: Event): void {
         const longestMatchingShortcut = this.shortcutsMatched.find(({ ordered }) =>
             arraysMatch(ordered, this.keysPressed)
         )
@@ -106,21 +106,21 @@ export default class ShortcutManager {
     }
 }
 
-function isFocusedInput() {
+function isFocusedInput(): boolean {
     const target = document.activeElement
-    if (target.tagName == null) {
+    if (target?.tagName === null) {
         return false
     }
 
-    return (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'SELECT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.hasAttribute('contenteditable')
+    return Boolean(
+        target?.tagName === 'INPUT' ||
+            target?.tagName === 'SELECT' ||
+            target?.tagName === 'TEXTAREA' ||
+            target?.hasAttribute('contenteditable')
     )
 }
 
-function arraysMatch<T>(first: T[], second: T[]) {
+function arraysMatch<T>(first: T[], second: T[]): boolean {
     if (first.length !== second.length) {
         return false
     }
