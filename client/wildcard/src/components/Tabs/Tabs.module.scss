@@ -79,18 +79,6 @@
         align-items: stretch;
         justify-content: space-between;
 
-        &::before {
-            left: 0;
-
-            --scroll-gradient-direction: right;
-        }
-
-        &::after {
-            right: 0;
-
-            --scroll-gradient-direction: left;
-        }
-
         &::after,
         &::before {
             content: '';
@@ -110,6 +98,16 @@
             @media (prefers-reduced-motion: reduce) {
                 transition: none;
             }
+        }
+
+        // Drawing gradient color changes on scroll
+        &::before {
+            left: 0;
+            background: linear-gradient(to right, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
+        }
+        &::after {
+            right: 0;
+            background: linear-gradient(to left, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
         }
 
         &-obscured-left::before {
