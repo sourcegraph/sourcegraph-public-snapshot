@@ -426,11 +426,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
 
 				// Adding leading "-" sign to indicate exclusion
-				formattedExcludes := make([]string, 0, len(newExcludes))
 				for _, exclude := range newExcludes {
-					formattedExcludes = append(formattedExcludes, "-"+exclude)
+					srp.Paths = append(srp.Paths, "-"+exclude)
 				}
-				srp.Paths = append(srp.Paths, formattedExcludes...)
 				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
 
 				var i int
