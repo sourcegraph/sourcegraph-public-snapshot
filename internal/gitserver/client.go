@@ -243,6 +243,9 @@ type Client interface {
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
+
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
@@ -897,6 +900,29 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	return info, err
 }
 
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var info *protocol.RepoCloneResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
+}
+
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
 var MockIsRepoCloneable func(api.RepoName) error
 
@@ -1123,8 +1149,9 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 // do performs a request to a gitserver instance based on the address in the uri argument.
+//
+//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {

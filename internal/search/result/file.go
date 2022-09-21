@@ -123,8 +123,8 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 // Limit will mutate fm such that it only has limit results. limit is a number
 // greater than 0.
 //
-//   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
-//   if limit < ResultCount then ResultCount becomes limit and we return 0.
+//	if limit >= ResultCount then nothing is done and we return limit - ResultCount.
+//	if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
 	matchCount := fm.ChunkMatches.MatchCount()
 	symbolCount := len(fm.Symbols)

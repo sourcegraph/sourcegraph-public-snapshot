@@ -951,7 +951,6 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
     if (!matches) {
         return undefined
     }
-    console.log(matches)
 
     return [
         {

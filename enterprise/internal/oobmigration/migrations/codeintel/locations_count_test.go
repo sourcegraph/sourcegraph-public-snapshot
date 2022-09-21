@@ -19,7 +19,7 @@ func TestLocationsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250)
+	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250, 1)
 	serializer := newSerializer()
 
 	assertProgress := func(expectedProgress float64, applyReverse bool) {

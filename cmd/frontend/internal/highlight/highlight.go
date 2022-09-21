@@ -304,7 +304,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-/// identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err matches a known error.
 func identifyError(err error) (bool, string) {
 	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
@@ -609,15 +609,15 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
 // following transformations:
 //
-// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
-// 	FOO.Sh → FOO.sh
+//	a/b/c/FOO.TXT → a/b/c/FOO.txt
+//	FOO.Sh → FOO.sh
 //
 // The following are left unmodified, as they already have lowercase extensions:
 //
-// 	a/b/c/FOO.txt
-// 	a/b/c/Makefile
-// 	Makefile.am
-// 	FOO.txt
+//	a/b/c/FOO.txt
+//	a/b/c/Makefile
+//	Makefile.am
+//	FOO.txt
 //
 // It expects the filepath uses forward slashes always.
 func normalizeFilepath(p string) string {

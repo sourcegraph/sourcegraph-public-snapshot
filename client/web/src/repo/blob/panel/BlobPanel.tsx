@@ -1,15 +1,19 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useCallback, useMemo, useRef } from 'react'
 
 import * as H from 'history'
-import { EMPTY, from, ReplaySubject, Subscription } from 'rxjs'
-import { map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
+import { distinct, map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { DocumentSelector } from 'sourcegraph'
 
 import {
     BuiltinTabbedPanelDefinition,
+    BuiltinTabbedPanelView,
     useBuiltinTabbedPanelViews,
 } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -97,7 +101,56 @@ function useBlobPanelViews({
         }, [activeCodeEditorPositions, extensionsController])
     )
 
+    const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const isTabbedReferencesPanelEnabled =
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final !== null &&
+        settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
+
+    // Creates source for definition and reference panels
+    const createLocationProvider = useCallback(
+        <P extends TextDocumentPositionParameters>(
+            id: string,
+            title: string,
+            priority: number,
+            provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
+            extraParameters?: {
+                selector: DocumentSelector | null
+            }
+        ): Observable<BuiltinTabbedPanelView | null> =>
+            activeCodeEditorPositions.pipe(
+                distinct(),
+                map(textDocumentPositionParameters => {
+                    if (!textDocumentPositionParameters) {
+                        return null
+                    }
+
+                    return {
+                        title,
+                        content: '',
+                        selector: extraParameters?.selector ?? null,
+                        priority,
+
+                        maxLocationResults: id === 'references' || id === 'def' ? maxPanelResults : undefined,
+                        // This disable directive is necessary because TypeScript is not yet smart
+                        // enough to know that (typeof params & typeof extraParams) is P.
+                        //
+                        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                        locationProvider: provideLocations({
+                            ...textDocumentPositionParameters,
+                        } as P).pipe(
+                            tap(({ result: locations }) => {
+                                if (activationReference.current && id === 'references' && locations.length > 0) {
+                                    activationReference.current.update({ FoundReferences: true })
+                                }
+                            })
+                        ),
+                    }
+                })
+            ),
+        [activeCodeEditorPositions, maxPanelResults]
+    )
 
     // Source for history panel
     const panelSubject = useMemo(() => {
@@ -152,41 +205,78 @@ function useBlobPanelViews({
                 },
             ]
 
-            panelDefinitions.push({
-                id: 'references',
-                provider: panelSubjectChanges.pipe(
-                    map(({ position, history, location }) => ({
-                        title: 'References',
-                        content: '',
-                        priority: 180,
-                        selector: null,
-                        locationProvider: undefined,
-                        // The new reference panel contains definitoins, references, and implementations. We need it to
-                        // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
-                        matchesTabID: (id: string): boolean =>
-                            id === 'def' || id === 'references' || id.startsWith('implementations_'),
-                        // This panel doesn't need a wrapper
-                        noWrapper: true,
-                        reactElement: position ? (
-                            <ReferencesPanelWithMemoryRouter
-                                settingsCascade={settingsCascade}
-                                platformContext={platformContext}
-                                isLightTheme={isLightTheme}
-                                extensionsController={extensionsController}
-                                telemetryService={telemetryService}
-                                key="references"
-                                externalHistory={history}
-                                externalLocation={location}
-                            />
-                        ) : (
-                            <></>
-                        ),
-                    }))
-                ),
-            })
+            if (isTabbedReferencesPanelEnabled && extensionsController !== null) {
+                panelDefinitions.push(
+                    ...[
+                        {
+                            id: 'def',
+                            provider: createLocationProvider('def', 'Definition', 190, parameters =>
+                                from(extensionsController.extHostAPI).pipe(
+                                    switchMap(extensionHostAPI =>
+                                        wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                                    )
+                                )
+                            ),
+                        },
+                        {
+                            id: 'references',
+                            provider: createLocationProvider<ReferenceParameters>(
+                                'references',
+                                'References',
+                                180,
+                                parameters =>
+                                    from(extensionsController.extHostAPI).pipe(
+                                        switchMap(extensionHostAPI =>
+                                            wrapRemoteObservable(
+                                                extensionHostAPI.getReferences(parameters, {
+                                                    includeDeclaration: false,
+                                                })
+                                            )
+                                        )
+                                    )
+                            ),
+                        },
+                    ]
+                )
+            } else {
+                panelDefinitions.push({
+                    id: 'references',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ position, history, location }) => ({
+                            title: 'References',
+                            content: '',
+                            priority: 180,
+                            selector: null,
+                            locationProvider: undefined,
+                            // The new reference panel contains definitoins, references, and implementations. We need it to
+                            // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
+                            matchesTabID: (id: string): boolean =>
+                                id === 'def' || id === 'references' || id.startsWith('implementations_'),
+                            // This panel doesn't need a wrapper
+                            noWrapper: true,
+                            reactElement: position ? (
+                                <ReferencesPanelWithMemoryRouter
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    isLightTheme={isLightTheme}
+                                    extensionsController={extensionsController}
+                                    telemetryService={telemetryService}
+                                    key="references"
+                                    externalHistory={history}
+                                    externalLocation={location}
+                                />
+                            ) : (
+                                <></>
+                            ),
+                        }))
+                    ),
+                })
+            }
 
             return panelDefinitions
         }, [
+            isTabbedReferencesPanelEnabled,
+            createLocationProvider,
             panelSubjectChanges,
             preferAbsoluteTimestamps,
             isLightTheme,
@@ -198,6 +288,13 @@ function useBlobPanelViews({
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
+}
+
+function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
+    }
+    return undefined
 }
 
 function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {

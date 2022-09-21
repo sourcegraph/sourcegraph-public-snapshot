@@ -9,10 +9,12 @@ import { createDefaultSuggestions } from '@sourcegraph/search-ui'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
+import { useExperimentalFeatures } from '../../../stores'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
@@ -47,6 +49,11 @@ const editorAttributes = [
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
 > = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+        enableCoreWorkflowImprovements
+
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -98,8 +105,9 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
                 isSourcegraphDotCom,
                 globbing,
                 fetchSuggestions: fetchStreamSuggestions,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, globbing]
+        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
     )
 
     return (

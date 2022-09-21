@@ -19,6 +19,7 @@ import (
 	sgrun "github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -201,6 +202,11 @@ sg ci build --help
 		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
 		Flags: []cli.Flag{
 			&ciBranchFlag,
+			&cli.StringFlag{
+				Name:  "format",
+				Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
+				Value: "markdown",
+			},
 		},
 		Action: func(cmd *cli.Context) error {
 			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
@@ -220,16 +226,39 @@ sg ci build --help
 				return err
 			}
 
-			previewCmd := usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
-				Env(map[string]string{
-					"BUILDKITE_BRANCH":  target.target, // this must be a branch
-					"BUILDKITE_MESSAGE": message,
-				})
-			out, err := root.Run(previewCmd).String()
-			if err != nil {
-				return err
+			var previewCmd *sgrun.Command
+			env := map[string]string{
+				"BUILDKITE_BRANCH":  target.target, // this must be a branch
+				"BUILDKITE_MESSAGE": message,
 			}
-			return std.Out.WriteMarkdown(out)
+			switch cmd.String("format") {
+			case "markdown":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteMarkdown(out)
+			case "json":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("json", out)
+			case "yaml":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("yaml", out)
+			default:
+				return errors.Newf("unsupported format type: %q", cmd.String("format"))
+			}
 		},
 	}, {
 		Name:    "status",
@@ -370,7 +399,7 @@ can provide it directly (for example, 'sg ci build [runtype] [argument]').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
-		BashComplete: completeOptions(getAllowedBuildTypeArgs),
+		BashComplete: cliutil.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&ciPipelineFlag,
 			&cli.StringFlag{
@@ -423,7 +452,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				if rt == runtype.PullRequest {
 					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
 					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					return NewEmptyExitErr(1)
+					return cliutil.NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {

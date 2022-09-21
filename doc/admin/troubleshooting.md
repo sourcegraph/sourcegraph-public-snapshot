@@ -136,3 +136,13 @@ If you can get repository results when you explicitly include `repo:{your reposi
 - Your site config file does not include `"search.index.enabled": true`. It should be included, and you should set it to true; if it's false, it means Sourcegraph won't index anything and will only search in real-time.
 - There is an issue indexing the repository: check the logs of repo-updater and/or search-indexer.
 - The search index is unavailable for some reason: try the search query `repo:<the_repository> index:only`. If it returns no results, the repository has not been indexed.
+
+### Sourcegraph is making unauthorized requests to the git server
+
+This is normal and happens whenever git is used over HTTP. To avoid unnecessarily sending a password over HTTP, git first
+makes a request without the password included. If a 401 Unauthorized is returned, git sends the request with the password.
+
+More information can be found [here](https://confluence.atlassian.com/bitbucketserverkb/two-401-responses-for-every-git-opperation-938854756.html).
+
+If this behaviour is undesired, the `gitURLType` in the [external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration)
+should be set to `ssh` instead of `http`. This will also require [ssh keys to be set up](https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication).

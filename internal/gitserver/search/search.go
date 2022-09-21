@@ -64,7 +64,6 @@ var (
 		"log",
 		"--decorate=full",
 		"-z",
-		"--no-merges",
 		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
