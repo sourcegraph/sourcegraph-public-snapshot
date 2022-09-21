@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
-// eslint-disable-next-line no-restricted-imports
-import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
@@ -109,7 +107,7 @@ describe('SearchContextMenu', () => {
         selectSearchContextSpec: () => {},
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts,
         fetchSearchContexts: mockFetchSearchContexts,
-        closeMenu: () => {},
+        onMenuClose: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         searchContextsEnabled: true,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -132,13 +130,7 @@ describe('SearchContextMenu', () => {
     it('should select item when clicking on it', () => {
         const selectSearchContextSpec = sinon.spy()
 
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} selectSearchContextSpec={selectSearchContextSpec} />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
+        render(<SearchContextMenu {...defaultProps} selectSearchContextSpec={selectSearchContextSpec} />)
 
         act(() => {
             // Wait for debounce
@@ -152,36 +144,8 @@ describe('SearchContextMenu', () => {
         sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
     })
 
-    it('should close menu when pressing Escape button', () => {
-        const selectSearchContextSpec = sinon.spy()
-        const closeMenu = sinon.spy()
-
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu
-                        {...defaultProps}
-                        selectSearchContextSpec={selectSearchContextSpec}
-                        selectedSearchContextSpec="@username"
-                        closeMenu={closeMenu}
-                    />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
-
-        const button = screen.getAllByTestId('search-context-menu-header-input')[0]
-        userEvent.type(button, '{esc}')
-        sinon.assert.calledOnce(closeMenu)
-    })
-
     it('should filter list by spec when searching', () => {
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
+        render(<SearchContextMenu {...defaultProps} />)
 
         const searchInput = screen.getByTestId('search-context-menu-header-input')
         // Search by spec
@@ -200,13 +164,7 @@ describe('SearchContextMenu', () => {
     })
 
     it('should show message if search does not find anything', () => {
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
+        render(<SearchContextMenu {...defaultProps} />)
 
         const searchInput = screen.getByTestId('search-context-menu-header-input')
         // Search by spec
@@ -221,13 +179,7 @@ describe('SearchContextMenu', () => {
     })
 
     it('should not search by description', () => {
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
+        render(<SearchContextMenu {...defaultProps} />)
 
         const searchInput = screen.getByTestId('search-context-menu-header-input')
         userEvent.type(searchInput, 'version 1.5')
@@ -244,13 +196,7 @@ describe('SearchContextMenu', () => {
         const errorFetchSearchContexts = () => {
             throw new Error('unknown error')
         }
-        render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} fetchSearchContexts={errorFetchSearchContexts} />
-                </DropdownMenu>
-            </UncontrolledDropdown>
-        )
+        render(<SearchContextMenu {...defaultProps} fetchSearchContexts={errorFetchSearchContexts} />)
 
         act(() => {
             // Wait for debounce
@@ -258,7 +204,7 @@ describe('SearchContextMenu', () => {
         })
 
         const items = screen.getAllByTestId('search-context-menu-item')
-        expect(items[items.length - 1]).toHaveTextContent('Error occured while loading search contexts')
+        expect(items[items.length - 1]).toHaveTextContent('Error occurred while loading search contexts')
     })
 
     it('should default to empty array if fetching auto-defined contexts fails', () => {
@@ -266,14 +212,7 @@ describe('SearchContextMenu', () => {
             throwError(new Error('unknown error'))
 
         render(
-            <UncontrolledDropdown>
-                <DropdownMenu>
-                    <SearchContextMenu
-                        {...defaultProps}
-                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts}
-                    />
-                </DropdownMenu>
-            </UncontrolledDropdown>
+            <SearchContextMenu {...defaultProps} fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts} />
         )
 
         act(() => {
