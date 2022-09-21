@@ -1,4 +1,4 @@
-package httpapi
+package uploadhandler
 
 import (
 	"context"
@@ -11,13 +11,12 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
 // with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
-func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState, body io.Reader) (_ any, statusCode int, err error) {
+func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueSinglePayload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -31,17 +30,12 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, err := tx.InsertUpload(ctx, dbstore.Upload{
-		Commit:            uploadState.commit,
-		Root:              uploadState.root,
-		RepositoryID:      uploadState.repositoryID,
-		Indexer:           uploadState.indexer,
-		IndexerVersion:    uploadState.indexerVersion,
-		AssociatedIndexID: &uploadState.associatedIndexID,
-		State:             "uploading",
-		NumParts:          1,
-		UploadedParts:     []int{0},
-		UncompressedSize:  uploadState.uncompressedSize,
+	id, err := tx.InsertUpload(ctx, Upload[T]{
+		State:            "uploading",
+		NumParts:         1,
+		UploadedParts:    []int{0},
+		UncompressedSize: uploadState.uncompressedSize,
+		Metadata:         uploadState.metadata,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -59,10 +53,8 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	}
 
 	h.logger.Info(
-		"codeintel.httpapi: enqueued upload",
+		"uploadhandler: enqueued upload",
 		sglog.Int("id", id),
-		sglog.Int("repository_id", uploadState.repositoryID),
-		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string
