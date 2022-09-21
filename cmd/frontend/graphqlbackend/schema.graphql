@@ -2002,7 +2002,7 @@ The compatibility of the executor with the sourcegraph instance.
 """
 enum ExecutorCompatibility {
     """
-    Executor version is more than one version behind the sourcegraph instance.
+    Executor version is more than one version behind the Sourcegraph instance.
     """
     OUTDATED
 
