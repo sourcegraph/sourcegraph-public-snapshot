@@ -148,7 +148,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
 			"test.txt":  {Content: "<file payload>"},
-			"script.sh": {Bucket: "batches", Key: "123/abc", CacheModifiedAt: virtualFileCacheModifiedat},
+			"script.sh": {Bucket: "batch-changes", Key: "123/abc", CacheModifiedAt: virtualFileCacheModifiedat},
 		},
 		DockerSteps: []executor.DockerStep{
 			{
@@ -229,11 +229,11 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	// Ensure the files store was called properly
 	existsHistory := filesStore.ExistsFunc.History()
 	assert.Len(t, existsHistory, 1)
-	assert.Equal(t, "batches", existsHistory[0].Arg1)
+	assert.Equal(t, "batch-changes", existsHistory[0].Arg1)
 	assert.Equal(t, "123/abc", existsHistory[0].Arg2)
 	getHistory := filesStore.GetFunc.History()
 	assert.Len(t, getHistory, 1)
-	assert.Equal(t, "batches", getHistory[0].Arg1)
+	assert.Equal(t, "batch-changes", getHistory[0].Arg1)
 	assert.Equal(t, "123/abc", getHistory[0].Arg2)
 
 	expectedCommands := [][]string{
