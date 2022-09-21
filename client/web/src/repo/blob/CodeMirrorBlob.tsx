@@ -39,19 +39,25 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
+            backgroundColor: 'var(--code-bg)',
+        },
+        '.cm-scroller': {
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
+            lineHeight: '1rem',
+        },
+        '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
+            borderRight: 'initial',
+        },
+        '.cm-line': {
+            paddingLeft: '1rem',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.cm-gutters': {
-            backgroundColor: 'var(--code-bg)',
-            borderRight: 'initial',
         },
     }),
     // Note that these only work out-of-the-box because the editor is

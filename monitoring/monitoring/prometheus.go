@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
 )
 
 const (
@@ -24,7 +26,7 @@ type promRule struct {
 	Record string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
 	Alert  string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
 
-	Labels map[string]string
+	Labels map[string]string `yaml:",omitempty"`
 	Expr   string
 
 	// for Alert only
@@ -93,4 +95,47 @@ func (g *promGroup) appendRow(alertQuery string, labels map[string]string, durat
 			Labels: labels,
 			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
 		})
+}
+
+func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
+	// Hardcode the desired label matcher values as labels
+	labels := make(map[string]string)
+	for _, matcher := range injectLabelMatchers {
+		labels[matcher.Name] = matcher.Value
+	}
+
+	var injectErrors error
+	injectExpr := func(expr string) string {
+		injected, err := promql.Inject(expr, injectLabelMatchers, nil)
+		if err != nil {
+			injectErrors = errors.Append(injectErrors, err)
+		}
+		return injected
+	}
+
+	rulesFile := &promRulesFile{
+		Groups: []promGroup{{
+			Name: "cadvisor.rules",
+			Rules: []promRule{{
+				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
+				Record: "cadvisor_container_cpu_limit",
+				Expr:   injectExpr("avg by (name)(container_spec_cpu_quota) / avg by (name)(container_spec_cpu_period)"),
+				Labels: labels,
+			}, {
+				// Percentage of CPU cores the container consumed on average over a 1m period.
+				// For example, if a container has a 4 CPU limit and this metric reports 50%,
+				// it means the container consumed 2 cores on average over that 1m period.
+				Record: "cadvisor_container_cpu_usage_percentage_total",
+				Expr:   injectExpr("(avg by (name)(rate(container_cpu_usage_seconds_total[1m])) / cadvisor_container_cpu_limit) * 100.0"),
+				Labels: labels,
+			}, {
+				// Percentage of memory usage the container is consuming.
+				Record: "cadvisor_container_memory_usage_percentage_total",
+				Expr:   injectExpr("max by (name)(container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100.0"),
+				Labels: labels,
+			}},
+		}},
+	}
+
+	return rulesFile, injectErrors
 }

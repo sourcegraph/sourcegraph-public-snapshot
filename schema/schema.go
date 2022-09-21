@@ -1725,6 +1725,8 @@ type Settings struct {
 	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
 	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
+	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
+	CodeIntelReferencesPanel string `json:"codeIntel.referencesPanel,omitempty"`
 	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.

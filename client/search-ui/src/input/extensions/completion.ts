@@ -9,6 +9,9 @@ import {
     snippet,
     CompletionSource,
     acceptCompletion,
+    selectedCompletion,
+    currentCompletions,
+    setSelectedCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
@@ -201,7 +204,25 @@ export function searchQueryAutocompletion(
         Prec.highest(
             keymap.of(
                 applyOnEnter
-                    ? [...completionKeymap, { key: 'Tab', run: acceptCompletion }]
+                    ? [
+                          ...completionKeymap,
+                          {
+                              key: 'Tab',
+                              run(view) {
+                                  // Select first completion item if none is selected
+                                  // and items are available.
+                                  if (selectedCompletion(view.state) === null) {
+                                      if (currentCompletions(view.state).length > 0) {
+                                          view.dispatch({ effects: setSelectedCompletion(0) })
+                                          return true
+                                      }
+                                      return false
+                                  }
+                                  // Otherwise apply the selected completion item
+                                  return acceptCompletion(view)
+                              },
+                          },
+                      ]
                     : completionKeymap.map(keybinding =>
                           keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
                       )
