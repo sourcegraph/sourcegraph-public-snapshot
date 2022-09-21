@@ -88,6 +88,12 @@
 
     &--selected {
         background-color: var(--color-bg-3);
+
+        /* Badge-secondary variant for improved contrast when background color changes */
+        > .item-default {
+            background-color: var(--color-bg-1);
+            border-color: var(--color-bg-1);
+        }
     }
 }
 
