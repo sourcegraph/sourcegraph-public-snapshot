@@ -1,17 +1,16 @@
-local languages = {
-  "clang",
-  "go",
-  "java",
-  "python",
-  "rust",
-  "test",
-  "typescript",
-}
+local config = require("sg.autoindex.config").new {}
 
-local recognizers = require("sg.autoindex.config").new {}
-for _, name in ipairs(languages) do
+for _, name in ipairs({
+    "clang",
+    "go",
+    "java",
+    "python",
+    "rust",
+    "test",
+    "typescript",
+  }) do
   -- Backdoor set `sg.`-prefixed recognizers
-  rawset(recognizers, "sg." .. name, require("sg.autoindex." .. name))
+  rawset(config, "sg." .. name, require("sg.autoindex." .. name))
 end
 
-return recognizers
+return config
