@@ -1,6 +1,6 @@
 local path = require "path"
 local patterns = require "sg.patterns"
-local recognizers = require "sg.recognizers"
+local recognizer = require "sg.autoindex.recognizer"
 
 local indexer = "sourcegraph/lsif-clang"
 
@@ -8,7 +8,7 @@ local is_cmakelist_file = function(base)
   return string.lower(base) == "cmakelists.txt"
 end
 
-return recognizers.path_recognizer {
+return recognizer.new_path_recognizer {
   patterns = {
     patterns.path_extension "cpp",
     patterns.path_extension "c",
