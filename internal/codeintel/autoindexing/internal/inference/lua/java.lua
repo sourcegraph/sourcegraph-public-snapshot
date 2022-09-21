@@ -1,6 +1,7 @@
+local fun = require "fun"
 local path = require "path"
-local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
+local recognizer = require "sg.autoindex.recognizer"
 
 local indexer = "sourcegraph/scip-java"
 local outfile = "index.scip"
@@ -46,7 +47,7 @@ return recognizer.new_path_recognizer {
     local hints = {}
     local visited = {}
 
-    for i, p in ipairs(paths) do
+    fun.each(function(p)
       local dir = path.dirname(p)
       local base = path.basename(p)
 
@@ -59,9 +60,9 @@ return recognizer.new_path_recognizer {
 
         visited[dir] = true
       end
-    end
+    end, paths)
 
-    for i, p in ipairs(paths) do
+    fun.each(function(p)
       local dir = path.dirname(p)
       local base = path.basename(p)
 
@@ -74,7 +75,7 @@ return recognizer.new_path_recognizer {
 
         visited[dir] = true
       end
-    end
+    end, paths)
 
     return hints
   end,

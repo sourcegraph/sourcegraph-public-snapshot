@@ -1,7 +1,7 @@
+local fun = require "fun"
 local path = require "path"
-local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
-
+local recognizer = require "sg.autoindex.recognizer"
 local shared = require "sg.autoindex.shared"
 
 local indexer = "sourcegraph/lsif-go:latest"
@@ -18,11 +18,10 @@ local gomod_recognizer = recognizer.new_path_recognizer {
 
   -- Invoked when go.mod files exist
   generate = function(_, paths)
-    local jobs = {}
-    for _, p in ipairs(paths) do
+    return fun.totable(fun.map(function(p)
       local root = path.dirname(p)
 
-      table.insert(jobs, {
+      return {
         steps = {
           {
             root = root,
@@ -34,10 +33,8 @@ local gomod_recognizer = recognizer.new_path_recognizer {
         indexer = indexer,
         indexer_args = { "lsif-go", "--no-animation" },
         outfile = "",
-      })
-    end
-
-    return jobs
+      }
+    end, paths))
   end,
 }
 
@@ -51,16 +48,16 @@ local goext_recognizer = recognizer.new_path_recognizer {
   -- in the repository. Within this function we filter out files that are
   -- not directly in the root of the repository (the simple pre-mod libs).
   generate = function(_, paths)
-    for _, p in ipairs(paths) do
-      if path.dirname(p) == "" then
-        return {
-          steps = {},
-          root = "",
-          indexer = indexer,
-          indexer_args = { "GO111MODULE=off", "lsif-go", "--no-animation" },
-          outfile = "",
-        }
-      end
+    if fun.any(function(p)
+      return path.dirname(p) == ""
+    end, paths) then
+      return {
+        steps = {},
+        root = "",
+        indexer = indexer,
+        indexer_args = { "GO111MODULE=off", "lsif-go", "--no-animation" },
+        outfile = "",
+      }
     end
 
     return {}

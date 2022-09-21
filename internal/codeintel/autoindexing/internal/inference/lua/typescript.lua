@@ -1,10 +1,9 @@
+local fun = require "fun"
 local json = require "json"
 local path = require "path"
-local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
-
+local recognizer = require "sg.autoindex.recognizer"
 local shared = require "sg.autoindex.shared"
-local util = require "sg.autoindex.util"
 
 local indexer = "sourcegraph/scip-typescript:autoindex"
 local typescript_nmusl_command =
@@ -14,6 +13,36 @@ local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
 })
 
+local contains = function(table, element)
+  return fun.any(function(v)
+    return v == element
+  end, table)
+end
+
+local contains_any = function(paths, candidates)
+  return fun.any(function(v)
+    return contains(paths, v)
+  end, candidates)
+end
+
+local reverse = function(slice)
+  local reversed = {}
+  for i = #slice, 1, -1 do
+    reversed[#reversed + 1] = slice[i]
+  end
+
+  return reversed
+end
+
+local with_new_head = function(slice, element)
+  local new = { element }
+  for _, v in ipairs(slice) do
+    table.insert(new, v)
+  end
+
+  return new
+end
+
 local safe_decode = function(encoded)
   local _, payload = pcall(function()
     return json.decode(encoded)
@@ -22,44 +51,30 @@ local safe_decode = function(encoded)
 end
 
 local check_lerna_file = function(root, contents_by_path)
-  local ancestors = path.ancestors(root)
-  for _, a in ipairs(ancestors) do
+  return fun.any(function(a)
     local payload = safe_decode(contents_by_path[path.join(a, "lerna.json")] or "")
-    if payload and payload["npmClient"] == "yarn" then
-      return true
-    end
-  end
-
-  return false
+    return payload and payload["npmClient"] == "yarn"
+  end, path.ancestors(root))
 end
 
 local can_derive_node_version = function(root, paths, contents_by_path)
   local ancestors = path.ancestors(root)
 
-  for _, a in ipairs(ancestors) do
+  return fun.any(function(a)
     local payload = safe_decode(contents_by_path[path.join(a, "package.json")] or "")
-    if payload and payload["engines"] and payload["engines"]["node"] then
-      return true
-    end
-  end
-
-  for _, a in ipairs(ancestors) do
-    local candidates = {
+    return payload and payload["engines"] and payload["engines"]["node"]
+  end, ancestors) or fun.any(function(a)
+    return contains_any(paths, {
       path.join(a, ".nvmrc"),
       path.join(a, ".node-version"),
       path.join(a, ".n-node-version"),
-    }
-    if util.contains_any(paths, candidates) then
-      return true
-    end
-  end
-
-  return false
+    })
+  end, ancestors)
 end
 
 local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
   local root = path.dirname(tsconfig_path)
-  local reverse_ancestors = util.reverse(path.ancestors(tsconfig_path))
+  local reverse_ancestors = reverse(path.ancestors(tsconfig_path))
 
   api:register(recognizer.new_path_recognizer {
     patterns = {
@@ -86,10 +101,10 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
       local is_yarn = check_lerna_file(root, contents_by_path)
 
       local docker_steps = {}
-      for _, ra in ipairs(reverse_ancestors) do
+      fun.each(function(ra)
         if contents_by_path[path.join(ra, "package.json")] then
           local install_command = ""
-          if is_yarn or util.contains(paths, path.join(ra, "yarn.lock")) then
+          if is_yarn or contains(paths, path.join(ra, "yarn.lock")) then
             install_command = "yarn --ignore-engines"
           else
             install_command = "npm install"
@@ -106,14 +121,15 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
             commands = { install_command .. install_command_suffix },
           })
         end
-      end
+      end, reverse_ancestors)
 
       local local_steps = {}
       if can_derive_node_version(root, paths, contents_by_path) then
-        for i, s in ipairs(docker_steps) do
+        docker_steps = fun.totable(fun.map(function(s)
           -- Add `n` invocation command before each docker step
-          docker_steps[i].commands = util.with_new_head(s.commands, typescript_nmusl_command)
-        end
+          s.commands = with_new_head(s.commands, typescript_nmusl_command)
+          return s
+        end, docker_steps))
 
         -- Add `n` invocation (in indexing container) before indexer runs
         local_steps = { typescript_nmusl_command }
@@ -148,13 +164,13 @@ return recognizer.new_path_recognizer {
   -- Invoked when package.json or tsconfig.json files exist
   generate = function(api, paths)
     local has_tsconfig = false
-    for _, p in ipairs(paths) do
+    fun.each(function(p)
       if path.basename(p) == "tsconfig.json" then
         -- Infer typescript jobs
         infer_typescript_job(api, p, false)
         has_tsconfig = true
       end
-    end
+    end, paths)
 
     if not has_tsconfig then
       -- Infer javascript jobs if there's no tsconfig.json found

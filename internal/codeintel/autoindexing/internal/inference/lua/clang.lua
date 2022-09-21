@@ -1,3 +1,4 @@
+local fun = require "fun"
 local path = require "path"
 local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
@@ -31,7 +32,7 @@ return recognizer.new_path_recognizer {
     local hints = {}
     local visited = {}
 
-    for _, p in ipairs(paths) do
+    fun.each(function(p)
       local dir = path.dirname(p)
       local base = path.basename(p)
 
@@ -44,9 +45,9 @@ return recognizer.new_path_recognizer {
 
         visited[dir] = true
       end
-    end
+    end, paths)
 
-    for _, p in ipairs(paths) do
+    fun.each(function(p)
       local dir = path.dirname(p)
       local base = path.basename(p)
 
@@ -59,7 +60,7 @@ return recognizer.new_path_recognizer {
 
         visited[dir] = true
       end
-    end
+    end, paths)
 
     return hints
   end,

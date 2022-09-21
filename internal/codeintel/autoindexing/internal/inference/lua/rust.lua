@@ -1,5 +1,5 @@
-local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
+local recognizer = require "sg.autoindex.recognizer"
 
 local indexer = "sourcegraph/lsif-rust"
 local outfile = "dump.lsif"

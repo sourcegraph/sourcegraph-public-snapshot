@@ -1,3 +1,4 @@
+local fun = require "fun"
 local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
 
@@ -114,9 +115,9 @@ return recognizer.new_path_recognizer {
 
   generate = function(_, paths, contents_by_path)
     local libraries = {}
-    for _, p in ipairs(paths) do
+    fun.each(function(p)
       handle_one_pkg_info(libraries, p, contents_by_path[p])
-    end
+    end, paths)
 
     -- If we didn't find any libraries, just insert this as the index job.
     -- Don't worry about excluding or including anything in particular
@@ -137,14 +138,12 @@ return recognizer.new_path_recognizer {
     -- to the other PKG-INFOs that are inside of .egg-info,
     -- then we're going to add a job that runs from the base
     -- but excludes all of the paths that we've seen thus far.
-    local jobs = {}
-    for _, lib in ipairs(libraries) do
-      table.insert(jobs, make_job(lib.root, lib.name, lib.version))
-    end
-    local to_exclude = {}
-    for _, lib in ipairs(libraries) do
-      table.insert(to_exclude, lib.root)
-    end
+    local jobs = fun.totable(fun.map(function(lib)
+      return make_job(lib.root, lib.name, lib.version)
+    end, libraries))
+    local to_exclude = fun.totable(fun.map(function(lib)
+      return lib.root
+    end, libraries))
     -- Sort to_exclude list so the tests are stable
     table.sort(to_exclude)
     local exclude = table.concat(to_exclude, ",")
