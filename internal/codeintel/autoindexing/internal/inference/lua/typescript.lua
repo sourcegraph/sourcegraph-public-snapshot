@@ -62,14 +62,9 @@ local can_derive_node_version = function(root, paths, contents_by_path)
       return true
     end
 
-    return fun.any(
-      function(v)
-        return contains(paths, v)
-      end,
-      fun.map(function(filename)
-        return path.join(a, filename)
-      end, node_derivable_filenames)
-    )
+    return fun.any(function(v)
+      return contains(paths, path.join(a, v))
+    end, node_derivable_filenames)
   end, path.ancestors(root))
 end
 
