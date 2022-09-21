@@ -9,6 +9,7 @@ import (
 )
 
 type LsifStore interface {
+	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 }
 

@@ -165,7 +165,7 @@ export function createExtensionAPIFactory(
         showInputBox: options => clientAPI.showInputBox(options),
     }
 
-    const app: Omit<typeof sourcegraph['app'], 'createDecorationType'> = {
+    const app: typeof sourcegraph['app'] = {
         get activeWindow() {
             return window
         },
@@ -241,6 +241,7 @@ export function createExtensionAPIFactory(
                     return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
             }
         },
+        createDecorationType,
         createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
@@ -340,7 +341,6 @@ export function createExtensionAPIFactory(
                             })
                     }
                 },
-                createDecorationType: createDecorationType(extensionID),
             },
 
             workspace,

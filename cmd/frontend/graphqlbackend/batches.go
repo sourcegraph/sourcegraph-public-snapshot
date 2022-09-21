@@ -366,7 +366,7 @@ type BatchSpecResolver interface {
 
 	Source() string
 
-	Files(ctx context.Context, args *ListWorkspaceFilesArgs) (WorkspaceFileConnectionResolver, error)
+	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -509,7 +509,6 @@ type GitBranchChangesetDescriptionResolver interface {
 	BaseRef() string
 	BaseRev() string
 
-	HeadRepository() *RepositoryResolver
 	HeadRef() string
 
 	Title() string
@@ -596,10 +595,9 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
-type ListWorkspaceFilesArgs struct {
-	First     int32
-	After     *string
-	BatchSpec graphql.ID
+type ListBatchSpecWorkspaceFilesArgs struct {
+	First int32
+	After *string
 }
 
 type AvailableBulkOperationsArgs struct {
@@ -639,11 +637,9 @@ type BatchChangeResolver interface {
 	Name() string
 	Description() *string
 	State() string
-	InitialApplier(ctx context.Context) (*UserResolver, error)
 	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
 	LastAppliedAt() *DateTime
-	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
@@ -671,7 +667,7 @@ type BatchSpecConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type WorkspaceFileConnectionResolver interface {
+type BatchSpecWorkspaceFileConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
@@ -697,7 +693,7 @@ type BatchWorkspaceFileResolver interface {
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 type CommonChangesetsStatsResolver interface {
@@ -743,12 +739,6 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	// PublicationState returns a value of type btypes.ChangesetPublicationState.
-	PublicationState() string
-	// ReconcilerState returns a value of type btypes.ReconcilerState.
-	ReconcilerState() string
-	// ExternalState returns a value of type *btypes.ChangesetExternalState.
-	ExternalState() *string
 	// State returns a value of type *btypes.ChangesetState.
 	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)

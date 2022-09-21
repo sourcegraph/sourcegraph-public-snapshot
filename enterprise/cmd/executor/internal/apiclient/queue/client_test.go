@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -436,7 +437,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 				Token:      "hunter2",
 			},
 		},
-		TelemetryOptions: apiclient.TelemetryOptions{
+		TelemetryOptions: TelemetryOptions{
 			OS:              "test-os",
 			Architecture:    "test-architecture",
 			DockerVersion:   "test-docker-version",
@@ -447,7 +448,8 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	client, err := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	require.NoError(t, err)
 	f(client)
 }
 

@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
 import { Tour, TourProps } from './components/Tour/Tour'
@@ -35,8 +37,8 @@ type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | '
     isSourcegraphDotCom: boolean
 }
 
-const TourWithErrorBoundary = withErrorBoundary(
-    ({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
+const TourWithErrorBoundary = memo(
+    withErrorBoundary(({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
         // Do not show if on prem
         if (!isSourcegraphDotCom) {
             return null
@@ -55,7 +57,7 @@ const TourWithErrorBoundary = withErrorBoundary(
                 extraTask={authenticatedExtraTask}
             />
         )
-    }
+    })
 )
 
 // Show for enabled control group

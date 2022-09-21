@@ -5,11 +5,11 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
@@ -28,7 +28,7 @@ export const NOTEBOOKS_STATISTICS = gql`
                     blockRuns {
                         summary {
                             totalCount
-                            totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                 }

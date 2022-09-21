@@ -847,29 +847,6 @@ CREATE SEQUENCE batch_spec_execution_cache_entries_id_seq
 
 ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq OWNED BY batch_spec_execution_cache_entries.id;
 
-CREATE TABLE batch_spec_mounts (
-    id integer NOT NULL,
-    rand_id text NOT NULL,
-    batch_spec_id bigint NOT NULL,
-    filename text NOT NULL,
-    path text NOT NULL,
-    size bigint NOT NULL,
-    content bytea NOT NULL,
-    modified_at timestamp with time zone NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE batch_spec_mounts_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE batch_spec_mounts_id_seq OWNED BY batch_spec_mounts.id;
-
 CREATE TABLE batch_spec_resolution_jobs (
     id bigint NOT NULL,
     batch_spec_id integer NOT NULL,
@@ -970,6 +947,29 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
    FROM (batch_spec_workspace_execution_jobs j
      LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
+CREATE TABLE batch_spec_workspace_files (
+    id integer NOT NULL,
+    rand_id text NOT NULL,
+    batch_spec_id bigint NOT NULL,
+    filename text NOT NULL,
+    path text NOT NULL,
+    size bigint NOT NULL,
+    content bytea NOT NULL,
+    modified_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE batch_spec_workspace_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspace_files_id_seq OWNED BY batch_spec_workspace_files.id;
+
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
     batch_spec_id integer NOT NULL,
@@ -1033,7 +1033,6 @@ CREATE TABLE changeset_specs (
     repo_id integer NOT NULL,
     user_id integer,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -1068,7 +1067,6 @@ CREATE TABLE changesets (
     external_review_state text,
     external_check_state text,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     sync_state jsonb DEFAULT '{}'::jsonb NOT NULL,
     current_spec_id bigint,
@@ -1448,6 +1446,24 @@ CREATE SEQUENCE cm_webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
+
+CREATE TABLE codeintel_autoindex_queue (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    rev text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_autoindex_queue_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
@@ -3012,7 +3028,6 @@ CREATE VIEW reconciler_changesets AS
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
@@ -3498,11 +3513,11 @@ ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY batch_spec_execution_cache_entries ALTER COLUMN id SET DEFAULT nextval('batch_spec_execution_cache_entries_id_seq'::regclass);
 
-ALTER TABLE ONLY batch_spec_mounts ALTER COLUMN id SET DEFAULT nextval('batch_spec_mounts_id_seq'::regclass);
-
 ALTER TABLE ONLY batch_spec_resolution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_resolution_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY batch_spec_workspace_files ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_files_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspaces_id_seq'::regclass);
 
@@ -3531,6 +3546,8 @@ ALTER TABLE ONLY cm_slack_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_slack
 ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
@@ -3653,9 +3670,6 @@ ALTER TABLE ONLY batch_spec_execution_cache_entries
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique UNIQUE (user_id, key);
 
-ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_unique UNIQUE (batch_spec_id);
 
@@ -3667,6 +3681,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
@@ -3718,6 +3735,9 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_autoindex_queue
+    ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
@@ -3982,10 +4002,6 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
-CREATE UNIQUE INDEX batch_spec_mounts_batch_spec_id_filename_path ON batch_spec_mounts USING btree (batch_spec_id, filename, path);
-
-CREATE INDEX batch_spec_mounts_rand_id ON batch_spec_mounts USING btree (rand_id);
-
 CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
@@ -3993,6 +4009,10 @@ CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_
 CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path);
+
+CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);
 
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
@@ -4043,6 +4063,8 @@ CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finishe
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
+
+CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
@@ -4367,9 +4389,6 @@ ALTER TABLE ONLY batch_changes
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -4381,6 +4400,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;

@@ -36,7 +36,7 @@ import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
 import { ActionsMenu } from './ActionsMenu'
-import { FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import { FETCH_BATCH_SPEC_EXECUTION, queryWorkspacesList as _queryWorkspacesList } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { ExecutionStat, ExecutionStatsBar } from './ExecutionStatsBar'
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
@@ -55,6 +55,7 @@ export interface AuthenticatedExecuteBatchSpecPageProps
     authenticatedUser: AuthenticatedUser
     /** FOR TESTING ONLY */
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
@@ -111,6 +112,7 @@ interface ExecuteBatchSpecPageContentProps
         TelemetryProps,
         RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 const ExecuteBatchSpecPageContent: React.FunctionComponent<
@@ -137,6 +139,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
     batchChange,
     batchSpec,
     errors,
+    queryWorkspacesList,
 }) {
     const { executionURL, workspaceResolution, source, applyURL } = batchSpec
 
@@ -229,6 +232,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                             <ExecutionWorkspaces
                                 selectedWorkspaceID={match.params.workspaceID}
                                 isLightTheme={isLightTheme}
+                                queryWorkspacesList={queryWorkspacesList}
                             />
                         </>
                     )}
@@ -238,7 +242,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ExecutionWorkspaces isLightTheme={isLightTheme} />
+                            <ExecutionWorkspaces
+                                isLightTheme={isLightTheme}
+                                queryWorkspacesList={queryWorkspacesList}
+                            />
                         </>
                     )}
                 />

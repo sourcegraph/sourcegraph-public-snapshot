@@ -65,6 +65,8 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 		return nil, err
 	}
 
+	s.operations.indexesInserted.Add(float64(len(ids)))
+
 	return tx.GetIndexesByIDs(ctx, ids...)
 }
 
@@ -437,6 +439,78 @@ SELECT COUNT(*) WHERE EXISTS (
 	UNION
 	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 )
+`
+
+// QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
+// This method is ultimately used to index on-demand (with deduplication) from transport layers.
+func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+	if err != nil {
+		return err
+	}
+	if isQueued {
+		return nil
+	}
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+}
+
+const queueRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:QueuedRepoRev
+INSERT INTO codeintel_autoindex_queue (repository_id, rev)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
+`
+
+// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
+// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
+// has been committed or rolled back.
+func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+}
+
+const getQueuedRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:GetQueuedRepoRev
+SELECT id, repository_id, rev
+FROM codeintel_autoindex_queue
+WHERE processed_at IS NULL
+ORDER BY queued_at ASC
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
+func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markRepoRevsAsProcessedQuery, pq.Array(ids)))
+}
+
+const markRepoRevsAsProcessedQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:MarkRepoRevsAsProcessed
+UPDATE codeintel_autoindex_queue
+SET processed_at = NOW()
+WHERE id = ANY(%s)
 `
 
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.

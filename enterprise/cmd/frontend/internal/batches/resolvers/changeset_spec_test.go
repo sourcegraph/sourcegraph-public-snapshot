@@ -67,7 +67,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,12 +91,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -116,16 +113,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -146,12 +141,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -171,16 +163,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -201,12 +191,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: "",
 						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
-						},
-						HeadRef: gitdomain.AbbreviateRef(spec.HeadRef),
-						Title:   spec.Title,
-						Body:    spec.Body,
+						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						Title:      spec.Title,
+						Body:       spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{
 								Author: apitest.Person{
@@ -226,16 +213,14 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
@@ -312,9 +297,6 @@ query($id: ID!) {
           baseRef
           baseRev
 
-          headRepository {
-              id
-          }
           headRef
 
           title
@@ -338,10 +320,10 @@ query($id: ID!) {
 
           diff {
             fileDiffs {
-              diffStat { added, changed, deleted }
+              diffStat { added, deleted }
             }
           }
-          diffStat { added, changed, deleted }
+          diffStat { added, deleted }
         }
       }
 

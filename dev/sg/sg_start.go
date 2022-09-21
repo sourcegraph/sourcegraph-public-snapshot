@@ -11,6 +11,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -86,7 +87,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 				Destination: &critStartServices,
 			},
 		},
-		BashComplete: completeOptions(func() (options []string) {
+		BashComplete: cliutil.CompleteOptions(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -165,14 +166,14 @@ func startExec(ctx *cli.Context) error {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
@@ -190,7 +191,7 @@ func startExec(ctx *cli.Context) error {
 `, set.Name))
 			std.Out.Write("")
 
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 	}
 

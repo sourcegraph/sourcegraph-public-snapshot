@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -44,6 +44,14 @@ type Config struct {
 	WorkerHostname                string
 }
 
+func defaultFirecrackerImageTag() string {
+	// In dev, just use latest for convenience.
+	if version.IsDev(version.Version()) {
+		return "latest"
+	}
+	return version.Version()
+}
+
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
@@ -51,7 +59,7 @@ func (c *Config) Load() {
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
-	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
+	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", fmt.Sprintf("sourcegraph/executor-vm:%s", defaultFirecrackerImageTag()), "The base image to use for virtual machines.")
 	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", "sourcegraph/ignite-kernel:5.10.135-amd64", "The base image containing the kernel binary to use for virtual machines.")
 	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
 	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
@@ -77,21 +85,25 @@ func (c *Config) Validate() error {
 		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
 		c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
 	}
+	if c.QueueName != "batches" && c.QueueName != "codeintel" {
+		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
 
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
+// APIWorkerOptions builds the options for the worker.
+func (c *Config) APIWorkerOptions(telemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
 		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
-		WorkerOptions:      c.WorkerOptions(),
-		FirecrackerOptions: c.FirecrackerOptions(),
-		ResourceOptions:    c.ResourceOptions(),
+		WorkerOptions:      c.workerOptions(),
+		FirecrackerOptions: c.firecrackerOptions(),
+		ResourceOptions:    c.resourceOptions(),
 		GitServicePath:     "/.executors/git",
-		QueueOptions:       c.QueueOptions(telemetryOptions),
-		BatchesOptions:     c.BatchesOptions(),
+		QueueOptions:       c.queueOptions(telemetryOptions),
+		FilesOptions:       c.filesOptions(),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -103,7 +115,7 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 	}
 }
 
-func (c *Config) WorkerOptions() workerutil.WorkerOptions {
+func (c *Config) workerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
 		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
 		NumHandlers:          c.MaximumNumJobs,
@@ -118,7 +130,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	}
 }
 
-func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
+func (c *Config) firecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
 		Enabled:             c.UseFirecracker,
 		Image:               c.FirecrackerImage,
@@ -127,7 +139,7 @@ func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	}
 }
 
-func (c *Config) ResourceOptions() command.ResourceOptions {
+func (c *Config) resourceOptions() command.ResourceOptions {
 	return command.ResourceOptions{
 		NumCPUs:             c.JobNumCPUs,
 		Memory:              c.JobMemory,
@@ -136,7 +148,7 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) QueueOptions(telemetryOptions apiclient.TelemetryOptions) queue.Options {
+func (c *Config) queueOptions(telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName: c.WorkerHostname,
 		BaseClientOptions: apiclient.BaseClientOptions{
@@ -150,14 +162,12 @@ func (c *Config) QueueOptions(telemetryOptions apiclient.TelemetryOptions) queue
 	}
 }
 
-func (c *Config) BatchesOptions() batches.Options {
-	return batches.Options{
-		BaseClientOptions: apiclient.BaseClientOptions{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:        c.FrontendURL,
-				PathPrefix: "/.executors",
-				Token:      c.FrontendAuthorizationToken,
-			},
+func (c *Config) filesOptions() apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{
+		EndpointOptions: apiclient.EndpointOptions{
+			URL:        c.FrontendURL,
+			PathPrefix: "/.executors/files",
+			Token:      c.FrontendAuthorizationToken,
 		},
 	}
 }

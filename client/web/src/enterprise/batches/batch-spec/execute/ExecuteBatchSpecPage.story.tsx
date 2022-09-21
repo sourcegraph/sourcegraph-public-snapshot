@@ -1,6 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes } from 'date-fns'
 import { MemoryRouter } from 'react-router'
+import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -32,7 +33,11 @@ import {
     PROCESSING_WORKSPACE,
 } from '../batch-spec.mock'
 
-import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import {
+    BATCH_SPEC_WORKSPACE_BY_ID,
+    FETCH_BATCH_SPEC_EXECUTION,
+    queryWorkspacesList as _queryWorkspacesList,
+} from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
 const decorator: DecoratorFn = story => (
@@ -98,19 +103,8 @@ const COMMON_MOCKS: MockedResponses = [
     },
 ]
 
-const buildMocks = (
-    batchSpec: BatchSpecExecutionFields,
-    workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>
-): MockedResponses => [
+const buildMocks = (batchSpec: BatchSpecExecutionFields): MockedResponses => [
     ...COMMON_MOCKS,
-    {
-        request: {
-            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaces(50, workspaceFields) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
     {
         request: {
             query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
@@ -120,6 +114,12 @@ const buildMocks = (
         nMatches: Number.POSITIVE_INFINITY,
     },
 ]
+
+const buildWorkspacesQuery = (
+    workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>
+): typeof _queryWorkspacesList =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    () => of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
 
 // A true executing batch spec wouldn't have a finishedAt set, but we need to have one so
 // that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
@@ -140,6 +140,7 @@ export const Executing: Story = () => (
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
+                    queryWorkspacesList={buildWorkspacesQuery()}
                 />
             </MockedTestProvider>
         )}
@@ -199,6 +200,7 @@ export const ExecuteWithAWorkspaceSelected: Story = () => (
                             path: '/users/my-username/batch-changes/:batchChangeName/executions/:batchSpecID',
                             url: '/users/my-username/batch-changes/my-batch-change/executions/spec1234',
                         }}
+                        queryWorkspacesList={buildWorkspacesQuery()}
                     />
                 </MemoryRouter>
             </MockedTestProvider>
@@ -208,7 +210,7 @@ export const ExecuteWithAWorkspaceSelected: Story = () => (
 
 ExecuteWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
 
-const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
+const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC)
 
 export const Completed: Story = () => (
     <WebStory>
@@ -220,15 +222,14 @@ export const Completed: Story = () => (
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
+                    queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.COMPLETED })}
                 />
             </MockedTestProvider>
         )}
     </WebStory>
 )
 
-const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC, {
-    state: BatchSpecWorkspaceState.COMPLETED,
-})
+const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC)
 
 export const CompletedWithErrors: Story = () => (
     <WebStory>
@@ -240,6 +241,7 @@ export const CompletedWithErrors: Story = () => (
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
+                    queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.FAILED })}
                 />
             </MockedTestProvider>
         )}

@@ -79,7 +79,7 @@ func checkLicense() error {
 // maxUnlicensedChangesets is the maximum number of changesets that can be
 // attached to a batch change when Sourcegraph is unlicensed or the Batch
 // Changes feature is disabled.
-const maxUnlicensedChangesets = 5
+const maxUnlicensedChangesets = 10
 
 type batchSpecCreatedArg struct {
 	ChangesetSpecsCount int `json:"changeset_specs_count"`

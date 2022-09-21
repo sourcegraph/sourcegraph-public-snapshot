@@ -437,6 +437,14 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
   ]
 }
 ```
+
+## Linking a Sourcegraph account to an auth provider
+
+The link between a Sourcegraph account and an authentication provider account happens via email only.
+Consequently, you can only sign in with [GitHub](#github), [GitLab](#gitlab), or other supported auth providers ([SAML](saml/index.md),  [OpenID Connect](#openid-connect), [HTTP Proxies](#http-authentication-proxies)) if your email on Sourcegraph matches the one configured in the auth provider.
+
+Let's say the email field in your Sourcegraph account was kept blank when a site admin created the account for you, but the username matches your username on GitHub or GitLab. Will this work? If you try to sign in to SG with GitHub or GitLab, it won't work, and you will see an error informing you that a verified email is missing.
+
 ## Linking accounts from multiple auth providers
 Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
 

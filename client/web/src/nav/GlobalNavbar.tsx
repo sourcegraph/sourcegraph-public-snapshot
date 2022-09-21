@@ -6,31 +6,19 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import { of } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import {
-    useObservable,
-    Button,
-    Link,
-    FeedbackPrompt,
-    ButtonLink,
-    PopoverTrigger,
-    useWindowSize,
-} from '@sourcegraph/wildcard'
+import { Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -48,7 +36,6 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
-import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
@@ -140,7 +127,7 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
 
     return (
         <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+            <Link to="/site-admin" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
             </Link>
         </NavAction>
@@ -165,33 +152,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
-
-    const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
-
-    // UI includes repositories section as part of the user navigation bar
-    // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = props.authenticatedUser
-        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
-        : false
-
-    const isSearchContextAvailable = useObservable(
-        useMemo(
-            () =>
-                globalSearchContextSpec && searchContextsEnabled
-                    ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
-                      // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
-                      // user selects a search context from the dropdown.
-                      // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable({
-                          spec: globalSearchContextSpec.spec,
-                          platformContext: props.platformContext,
-                      }).pipe(startWith(true))
-                    : of(false),
-            [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
-        )
-    )
-
     const routeMatch = useRoutesMatch(props.routes)
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch,
@@ -210,27 +170,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
             onNavbarQueryChange({ query: '' })
             return
         }
-        // Do nothing if there is no query in the URL
-        if (!query) {
-            return
-        }
-
-        // If a global search context spec is available to the user, we omit it from the
-        // query and move it to the search contexts dropdown
-        const finalQuery =
-            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-                ? omitFilter(query, globalSearchContextSpec.filter)
-                : query
-
-        onNavbarQueryChange({ query: finalQuery })
-    }, [
-        showSearchBox,
-        onNavbarQueryChange,
-        query,
-        globalSearchContextSpec,
-        isSearchContextAvailable,
-        showSearchContext,
-    ])
+    }, [showSearchBox, onNavbarQueryChange])
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
@@ -366,7 +306,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && extensionsController !== null && (
+                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
@@ -376,20 +316,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             />
                         </NavAction>
                     )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <NavAction>
+                            <StatusMessagesNavItem />
+                        </NavAction>
+                    )}
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>
@@ -417,7 +348,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}
-                                showRepositorySection={showRepositorySection}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||

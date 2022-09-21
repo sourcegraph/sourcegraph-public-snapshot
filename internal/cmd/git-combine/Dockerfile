@@ -12,6 +12,7 @@ RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine \
 
 
 COPY git-combine.go .
+COPY default-branch.sh .
 
 RUN go mod download \
     && go mod tidy
@@ -23,7 +24,12 @@ RUN go build .
 # alpine_base CHECK:ALPINE_OK
 FROM alpine:3.15 as alpine_base
 
-RUN apk add --no-cache git ca-certificates tini
+RUN apk add --no-cache\
+    bash \
+    ca-certificates \
+    git \
+    parallel \
+    tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/
 

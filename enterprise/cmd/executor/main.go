@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -56,7 +56,7 @@ func main() {
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("service", "executor service"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -66,21 +66,25 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Determine telemetry data.
-	telemetryOptions := func() apiclient.TelemetryOptions {
+	telemetryOptions := func() queue.TelemetryOptions {
 		// Run for at most 5s to get telemetry options.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		return apiclient.NewTelemetryOptions(ctx)
+		return queue.NewTelemetryOptions(ctx)
 	}()
 	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
-	worker := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
+	w, err := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
+	if err != nil {
+		logger.Error("failed to build worker", log.Error(err))
+		os.Exit(1)
+	}
 
 	routines := []goroutine.BackgroundRoutine{
-		worker,
+		w,
 	}
 
 	if config.UseFirecracker {
@@ -99,7 +103,7 @@ func main() {
 		// in that we want a maximum runtime and/or number of jobs to be
 		// executed by a single instance, after which the service should shut
 		// down without error.
-		worker.Wait()
+		w.Wait()
 
 		// Once the worker has finished its current set of jobs and stops
 		// the dequeue loop, we want to finish off the rest of the sibling
@@ -113,7 +117,7 @@ func main() {
 func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("executor_processor", "executor worker processor"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

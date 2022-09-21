@@ -18,6 +18,7 @@ const (
 	DatabaseSchema
 	Docs
 	Dockerfiles
+	ExecutorVMImage
 	ExecutorDockerRegistryMirror
 	CIScripts
 	Terraform
@@ -55,7 +56,7 @@ var topLevelGoDirs = []string{
 // ParseDiff identifies what has changed in files by generating a Diff that can be used
 // to check for specific changes, e.g.
 //
-// 	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//	if diff.Has(changed.Client | changed.GraphQL) { ... }
 //
 // To introduce a new type of Diff, add it a new Diff constant above and add a check in
 // this function to identify the Diff.
@@ -86,6 +87,11 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, "dev/ci/yarn-test.sh") {
 			diff |= Client
 		}
+		// dev/release contains a nodejs script that doesn't have tests but needs to be
+		// linted with Client linters
+		if strings.HasPrefix(p, "dev/release/") {
+			diff |= Client
+		}
 
 		// Affects GraphQL
 		if strings.HasSuffix(p, ".graphql") {
@@ -101,11 +107,13 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 
 		// Affects docs
-		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
+		if strings.HasPrefix(p, "doc/") || strings.HasSuffix(p, ".md") {
 			diff |= Docs
 		}
-		// dev/release contains a nodejs script that doesn't have tests but needs to be linted
-		if strings.HasPrefix(p, "dev/release/") {
+		if strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".yml") {
+			diff |= Docs
+		}
+		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") || strings.HasSuffix(p, ".json5") {
 			diff |= Docs
 		}
 
@@ -122,6 +130,11 @@ func ParseDiff(files []string) (diff Diff) {
 		// Affects executor docker registry mirror
 		if strings.HasPrefix(p, "enterprise/cmd/executor/docker-mirror/") {
 			diff |= ExecutorDockerRegistryMirror
+		}
+
+		// Affects executor VM image
+		if strings.HasPrefix(p, "docker-images/executor-vm/") {
+			diff |= ExecutorVMImage
 		}
 
 		// Affects CI scripts
@@ -143,10 +156,9 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, ".sh") {
 			diff |= Shell
 		}
-
+		// Read the file to check if it is secretly a shell script
 		f, err := os.Open(p)
 		if err == nil {
-			defer f.Close()
 			b := make([]byte, 19) // "#!/usr/bin/env bash" = 19 chars
 			_, _ = f.Read(b)
 			if bytes.Compare(b[0:2], []byte("#!")) == 0 && bytes.Contains(b, []byte("bash")) {
@@ -154,6 +166,9 @@ func ParseDiff(files []string) (diff Diff) {
 				// some shell script.
 				diff |= Shell
 			}
+			// Close the file immediately - we don't want to defer, this loop can go for
+			// quite a while.
+			f.Close()
 		}
 	}
 	return
@@ -178,6 +193,8 @@ func (d Diff) String() string {
 		return "Dockerfiles"
 	case ExecutorDockerRegistryMirror:
 		return "ExecutorDockerRegistryMirror"
+	case ExecutorVMImage:
+		return "ExecutorVMImage"
 	case CIScripts:
 		return "CIScripts"
 	case Terraform:

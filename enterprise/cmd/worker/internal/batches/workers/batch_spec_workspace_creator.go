@@ -299,8 +299,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
 
-func listBatchSpecMounts(ctx context.Context, s *store.Store, batchSpecID int64) ([]*btypes.BatchSpecMount, error) {
-	mounts, _, err := s.ListBatchSpecMounts(ctx, store.ListBatchSpecMountsOpts{BatchSpecID: batchSpecID})
+func listBatchSpecMounts(ctx context.Context, s *store.Store, batchSpecID int64) ([]*btypes.BatchSpecWorkspaceFile, error) {
+	mounts, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecID: batchSpecID})
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func listBatchSpecMounts(ctx context.Context, s *store.Store, batchSpecID int64)
 }
 
 type remoteFileMetadataRetriever struct {
-	mounts []*btypes.BatchSpecMount
+	mounts []*btypes.BatchSpecWorkspaceFile
 }
 
 func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
@@ -325,7 +325,7 @@ func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.Moun
 	return mountsMetadata, nil
 }
 
-func getMountMetadata(mounts []*btypes.BatchSpecMount, path string) (metadata cache.MountMetadata, err error) {
+func getMountMetadata(mounts []*btypes.BatchSpecWorkspaceFile, path string) (metadata cache.MountMetadata, err error) {
 	dir, file := filepath.Split(path)
 	dir = strings.TrimSuffix(dir, string(filepath.Separator))
 	dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))

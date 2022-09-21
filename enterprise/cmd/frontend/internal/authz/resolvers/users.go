@@ -34,9 +34,10 @@ type userConnectionResolver struct {
 // is the site admin because this method computes data from all available information in
 // the database.
 // This function takes returns a pagination of the user IDs
-// 	r.ids - the full slice of sorted user IDs
-// 	r.after - (optional) the user ID to start the paging after (does not include the after ID itself)
-// 	r.first - the # of user IDs to return
+//
+//	r.ids - the full slice of sorted user IDs
+//	r.after - (optional) the user ID to start the paging after (does not include the after ID itself)
+//	r.first - the # of user IDs to return
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32

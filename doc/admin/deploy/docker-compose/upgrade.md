@@ -2,23 +2,14 @@
 
 This document describes the process to update a Docker Compose Sourcegraph instance.
 
-## Process Overview 
+### Standard upgrades
 
-1\. [Gather upgrade information](#1-gather-upgrade-information)  
-2\. [Upgrade to the next minor version](#2-upgrade-to-the-next-minor-version)  
-3\. [Restart Sourcegraph and allow migrations to finish](#3-restart-sourcegraph-and-allow-migrations-to-finish)  
-4\. [Repeat steps 2 and 3 until Sourcegraph is up to date](#4-repeat-steps-2-and-3-until-sourcegraph-is-up-to-date)  
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
-## 1. Gather upgrade information
+**Before upgrading**:
 
-To start, familiarise yourself with the details of the upgrade that you will be performing:
-
-- The version number of your current instance.
-- The version number of the latest Sourcegraph release.
-- The sequence of minor releases required to upgrade from your version to the latest version (your upgrade sequence). This is required because Sourcegraph only supports upgrading one minor version at a time. 
-- Details of the changes for each minor version in your upgrade sequence in the [product changelog](../../../CHANGELOG.md) and also in the [docker-compose changelog](../../updates/docker_compose.md). 
-
-## 2. Upgrade to the next minor version
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for Sourcegraph with Docker Compose](../../updates/docker_compose.md).
 
 If you [configured Docker Compose with a release branch](index.md#step-3-configure-the-release-branch), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.40.2.
 
@@ -32,7 +23,7 @@ git checkout release
 git merge v3.40.2
 ```
 
-### Address any merge conflicts you might have
+#### Address any merge conflicts you might have
 
 For each conflict, you need to reconcile any customizations you made with the updates from the new version. Use the information you gathered earlier from the change log and changes list to interpret the merge conflict and to ensure that it doesn't over-write your customizations. You may need to update your customizations to accommodate the new version. 
 
@@ -42,7 +33,7 @@ For each conflict, you need to reconcile any customizations you made with the up
 >
 > If you do this, make sure your configuration is correct before proceeding because it may have made changes to your docker-compose YAML file.
 
-### Clone the updated release branch to your server
+#### Clone the updated release branch to your server
 
 SSH into your instance and navigate to the appropriate folder:  
 - AWS: `/home/ec2-user/deploy-sourcegraph-docker/docker-compose`  
@@ -54,25 +45,35 @@ Download all the latest docker images to your local docker daemon:
 ```bash
 docker-compose pull --include-deps
 ```
-## 3. Restart Sourcegraph and allow migrations to finish
-
-### Restart 
 
 Restart Docker Compose using the new minor version along with your customizations:
 
 ```bash
-docker-compose up -d ---remove-orphans
+docker-compose up -d --remove-orphans
 ```
-### Check on the status of migrations
 
-Before upgrading to the next minor version in your upgrade sequence, you must allow the migrator service to finish any required database and out-of-band migrations associated with the upgrade. Check the migrator service and frontend service logs for information regarding the database migration status. Check the out of band migration status in Sourcegraph in the `Site Admin > Maintenance > Migrations` page to show the progress of all active migrations. This page will also display a prominent warning if an upgrade (or downgrade) would result in an instance that refuses to start due to an illegal migration state.
+### Multi-version upgrades
 
-![Unfinished migration warning](https://storage.googleapis.com/sourcegraph-assets/oobmigration-warning.png)
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
 
-In this situation, upgrading to the next version will not result in any data loss, but all new instances will detect the illegal migration state and refuse to start up with a fatal message (`Unfinished migrations`).
+> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
+>
+> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+>
+> **If you do not feel confident running this process solo**, contact customer support team to help guide you thorough the process.
 
-See [How to troubleshoot an unfinished migration](../../how-to/unfinished_migration.md) for more information.
+**Before performing a multi-version upgrade**:
+ 
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Docker Compose](../../updates/docker_compose.md#multi-version-upgrade-procedure).
 
-## 4. Repeat steps 2 and 3 until Sourcegraph is up to date 
+To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose:
 
-Now that Sourcegraph is stable after the minor version upgrade, you can continue to the next minor version in your upgrade sequence and repeat this process until you are at the latest version. 
+1. Spin down the instance:
+  - `docker-compose stop`
+1. Spin back up each in-use local database so that the `migrator` can access them. Any [externalized database](../../external_services/postgres.md) is already accessible from the `migrator` so no action is needed for them.
+  - `docker-compose up -d pgsql`
+  - `docker-compose up -d codeintel-db`
+  - `docker-compose up -d codeinsights-db`
+1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the [migrator](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-docker%24+file:docker-compose%5C.yaml+container_name:+migrator) is invoked with a `docker run` command using the same compose network and using environment variables indicating the instance's databases.
+1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Compose](#standard-upgrades).

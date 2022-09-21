@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
@@ -40,12 +40,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -132,7 +132,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.SetMetrics(m)
 	}
 
-	cf := httpcli.ExternalClientFactory
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
 
 	var src repos.Sourcer
 	{
@@ -140,8 +143,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db)
-		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -226,7 +228,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		handler = repoupdater.ObservedHandler(
 			logger,
 			m,
-			opentracing.GlobalTracer(),
+			otel.GetTracerProvider(),
 		)(server.Handler())
 	}
 
@@ -256,7 +258,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
+		Handler: instrumentation.HTTPMiddleware("",
+			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }

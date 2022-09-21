@@ -199,21 +199,20 @@ The integration test suite for the webapp can be found in [`web/src/integration`
 
 Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
 
-#### Running client integration tests
+#### Running integration tests
 
 To run integration tests for the web app:
 
-1. Run `INTEGRATION_TESTS=true yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-    - Alternatively, `INTEGRATION_TESTS=true yarn build-web` will only build a bundle once.
-1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
-1. Run `yarn test-integration` in the repository root to run the tests.
+1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+    - Alternatively, `sg run web-integration-build` will only build a bundle once.
+1. Run `sg test web-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
 To run a specific web app integration test in the debug mode:
 
 1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
-2. Run `yarn test-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
+2. Run `sg test web-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
 
 See the above sections for more details on how to debug the tests, which applies to both integration and end-to-end tests.
 
@@ -279,7 +278,7 @@ TAG=insiders sg run server
 In the repository root:
 
 ```
-GH_TOKEN=XXX sg test client-e2e
+GH_TOKEN=XXX sg test web-e2e
 ```
 
 You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
@@ -288,7 +287,7 @@ If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will
 If you run the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test client-e2e
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test web-e2e
 ```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
@@ -301,13 +300,13 @@ This will open Chromium, add a code host, clone repositories, and execute the e2
 4. Run in the repository root:
 
 ```
-GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
 ```
 
 And if you're running the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
 ```
 
 Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
@@ -495,6 +494,19 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
+#### Analyzing the Bundlesize check failure
+
+To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
+
+1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
+2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main yarn workspace @sourcegraph/web run analyze-bundle`.
+3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch yarn workspace @sourcegraph/web run analyze-bundle`.
+4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
+5. The generated HTML report should be automatically opened in the new browser tab.
+6. Click "Diff" at the top right corner and select the `reference.json` stats.
+7. Go to "chunks" and inspect the chunk diff failing in the CI check. Clicking on the chunk should reveal the list of modules added or removed from the chunk.
+8. 🎉
 
 ### Assessing flaky client steps
 

@@ -23,6 +23,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -31,7 +32,6 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { useExperimentalFeatures } from '../../../stores'
-import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -88,6 +88,10 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
+        const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+        const applySuggestionsOnEnter =
+            useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+            enableCoreWorkflowImprovements
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -142,8 +146,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     isSourcegraphDotCom,
                     globbing,
                     fetchSuggestions: fetchStreamSuggestions,
+                    applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, globbing]
+            [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
         )
 
         // Focus editor on component creation if necessary
@@ -205,10 +210,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                authenticatedUser={props.authenticatedUser}
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 platformContext={props.platformContext}
                                 extensionsController={props.extensionsController}
                                 hoverifier={hoverifier}

@@ -1,5 +1,7 @@
 # Gitolite
 
+> NOTE: While it is possible to connect Gitolite repositories to Sourcegraph, we currently do not recommend it. If you have specific questions, please discuss with your account team. 
+
 Site admins can link and sync Git repositories on [Gitolite](https://gitolite.com) with Sourcegraph so that users can search and navigate the repositories.
 
 To connect Gitolite to Sourcegraph:

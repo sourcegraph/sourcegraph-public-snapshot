@@ -15,8 +15,9 @@ type StitchedMigration struct {
 
 // MigrationBounds indicates version boundaries within a StitchedMigration.
 type MigrationBounds struct {
-	RootID  int
-	LeafIDs []int
+	RootID      int
+	LeafIDs     []int
+	PreCreation bool
 }
 
 // IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken

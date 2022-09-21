@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,10 +18,11 @@ import (
 	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 )
 
-func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesMountHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := executorDB.New(db)
 	gitserverClient := gitserver.NewClient(db)
+	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -36,9 +39,10 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		base.Path("/batches/mount/{spec}/{mount}").Methods("GET").Handler(batchesMountHandler)
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
 
-		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
+		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
 	}
 
 	return factory, nil

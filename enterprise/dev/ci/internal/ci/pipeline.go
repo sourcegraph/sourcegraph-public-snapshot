@@ -81,6 +81,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
+	if op, err := exposeBuildMetadata(c); err == nil {
+		ops.Merge(operations.NewNamedSet("Metadata", op))
+	}
+
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
@@ -217,10 +221,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case runtype.ExecutorPatchNoTest:
+		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildExecutor(c, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			buildExecutor(c, true),
 			buildExecutorDockerMirror(c),
+			wait,
+			publishFinalDockerImage(c, executorVMImage),
+			publishExecutor(c, true),
 			publishExecutorDockerMirror(c),
 		)
 
@@ -240,7 +249,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease)
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
@@ -301,8 +310,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
+		Env: env,
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

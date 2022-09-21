@@ -223,15 +223,15 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		return batchSpec
 	}
 
-	createBatchSpecMounts := func(t *testing.T, mounts []*btypes.BatchSpecMount) {
+	createBatchSpecMounts := func(t *testing.T, mounts []*btypes.BatchSpecWorkspaceFile) {
 		for _, mount := range mounts {
-			if err := s.UpsertBatchSpecMount(context.Background(), mount); err != nil {
+			if err := s.UpsertBatchSpecWorkspaceFile(context.Background(), mount); err != nil {
 				t.Fatal(err)
 			}
 		}
 	}
 
-	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, mounts []*btypes.BatchSpecMount) *btypes.BatchSpecExecutionCacheEntry {
+	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, mounts []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
 		key := cache.KeyForWorkspace(
@@ -618,7 +618,7 @@ changesetTemplate:
 `
 
 		batchSpec := createBatchSpec(t, false, rawSpec)
-		mounts := []*btypes.BatchSpecMount{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Size: 6, ModifiedAt: time.Now().UTC()}}
+		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
 		createBatchSpecMounts(t, mounts)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
 
@@ -713,9 +713,9 @@ changesetTemplate:
 `
 
 		batchSpec := createBatchSpec(t, false, rawSpec)
-		mounts := []*btypes.BatchSpecMount{
-			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Size: 6, ModifiedAt: time.Now().UTC()},
-			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Size: 6, ModifiedAt: time.Now().UTC()},
+		mounts := []*btypes.BatchSpecWorkspaceFile{
+			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
 		}
 		createBatchSpecMounts(t, mounts)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)

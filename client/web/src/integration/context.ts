@@ -4,7 +4,6 @@ import path from 'path'
 import html from 'tagged-template-noop'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { SearchUIGraphQlOperations } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -23,7 +22,7 @@ import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
-        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations & SearchUIGraphQlOperations,
+        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     > {
     /**

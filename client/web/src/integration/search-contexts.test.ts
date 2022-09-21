@@ -13,7 +13,6 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
@@ -48,27 +47,6 @@ describe('Search contexts', () => {
                 experimentalFeatures: {
                     showSearchContext: true,
                     showSearchContextManagement: true,
-                },
-            },
-        }),
-        UserRepositories: () => ({
-            node: {
-                __typename: 'User',
-                repositories: {
-                    totalCount: 1,
-                    nodes: [
-                        {
-                            id: '1',
-                            name: 'repo',
-                            viewerCanAdminister: false,
-                            createdAt: '',
-                            url: '',
-                            isPrivate: false,
-                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null, lastError: null },
-                            externalRepository: { serviceType: '', serviceID: '' },
-                        },
-                    ],
-                    pageInfo: { hasNextPage: false },
                 },
             },
         }),
@@ -427,7 +405,6 @@ describe('Search contexts', () => {
     test('Delete search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
             DeleteSearchContext: () => ({
                 deleteSearchContext: {
                     alwaysNil: '',
@@ -605,7 +582,9 @@ describe('Search contexts', () => {
             // A search will be submitted on context click, wait for the navigation
             driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
             // Click second context item in the dropdown
-            driver.page.click('[data-testid="search-context-menu-item-name"][title="ctx-1"]'),
+            driver.page.click(
+                '[data-testid="search-context-menu-item"]:nth-child(2) [data-testid="search-context-menu-item-name"]'
+            ),
         ])
 
         await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })

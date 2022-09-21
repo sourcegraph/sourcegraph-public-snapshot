@@ -781,7 +781,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     )
 
     // Apply defaults
-    const resolvedOptions: typeof config & typeof options = {
+    const resolvedOptions: DriverOptions = {
         ...config,
         ...options,
     }

@@ -2,7 +2,6 @@
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
-export { Calendar } from './Calendar'
 export { Container } from './Container'
 export { LineChart, BarChart, PieChart, LegendList, LegendItem, ScrollBox, ParentSize } from './Charts'
 export {
@@ -46,6 +45,15 @@ export {
     createRectangle,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
+export {
+    Combobox,
+    ComboboxInput,
+    ComboboxPopover,
+    ComboboxList,
+    ComboboxOptionGroup,
+    ComboboxOption,
+    ComboboxOptionText,
+} from './Combobox'
 
 /**
  * Type Exports

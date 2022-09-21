@@ -9,18 +9,18 @@ import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
-import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import {
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+    LineOrPositionOrRange,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
-
-import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import {
-    enableExtensionsDecorationsColumnView as enableColumnView,
-    showTextDocumentDecorations,
-} from './codemirror/decorations'
+import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
@@ -39,16 +39,25 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
             backgroundColor: 'var(--code-bg)',
         },
-        '.selected-line': {
-            backgroundColor: 'var(--code-selection-bg)',
+        '.cm-scroller': {
+            fontFamily: 'var(--code-font-family)',
+            fontSize: 'var(--code-font-size)',
+            lineHeight: '1rem',
         },
         '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
+        },
+        '.cm-line': {
+            paddingLeft: '1rem',
+        },
+        '.selected-line': {
+            backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.highlighted-line': {
+            backgroundColor: 'var(--code-selection-bg)',
         },
     }),
     // Note that these only work out-of-the-box because the editor is
@@ -97,15 +106,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ariaLabel,
         role,
         extensionsController,
-        settingsCascade,
         location,
         history,
-        blameDecorations: blameTextDocumentDecorations,
+        blameHunks,
 
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
         onHandleFuzzyFinder,
+        navigateToLineOnAnyClick,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -113,32 +122,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
     const settings = useMemo(
-        () => [
-            wrapCode ? EditorView.lineWrapping : [],
-            EditorView.darkTheme.of(isLightTheme === false),
-            enableColumnView.of(enableExtensionsDecorationsColumnView),
-        ],
-        [wrapCode, isLightTheme, enableExtensionsDecorationsColumnView]
+        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
+        [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(
-        () =>
-            blameTextDocumentDecorations
-                ? [
-                      // Force column view if blameDecorations is set
-                      enableColumnView.of(true),
-                      showTextDocumentDecorations.of([[blameDecorationType, blameTextDocumentDecorations]]),
-                  ]
-                : [],
-
-        [blameTextDocumentDecorations]
-    )
+    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -148,36 +142,50 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange) => {
-        const parameters = new URLSearchParams(locationRef.current.search)
-        let query: string | undefined
+    const customHistoryAction = props.nav
+    const onSelection = useCallback(
+        (range: SelectedLineRange) => {
+            const parameters = new URLSearchParams(locationRef.current.search)
+            let query: string | undefined
 
-        if (range?.line !== range?.endLine && range?.endLine) {
-            query = toPositionOrRangeQueryParameter({
-                range: {
-                    start: { line: range.line },
-                    end: { line: range.endLine },
-                },
-            })
-        } else if (range?.line) {
-            query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
-        }
+            if (range?.line !== range?.endLine && range?.endLine) {
+                query = toPositionOrRangeQueryParameter({
+                    range: {
+                        start: { line: range.line },
+                        end: { line: range.endLine },
+                    },
+                })
+            } else if (range?.line) {
+                query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
+            }
 
-        updateBrowserHistoryIfChanged(
-            historyRef.current,
-            locationRef.current,
-            addLineRangeQueryParameter(parameters, query)
-        )
-    }, [])
+            const newSearchParameters = addLineRangeQueryParameter(parameters, query)
+            if (customHistoryAction) {
+                customHistoryAction(
+                    historyRef.current.createHref({
+                        ...locationRef.current,
+                        search: formatSearchParameters(newSearchParameters),
+                    })
+                )
+            } else {
+                updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+            }
+        },
+        [customHistoryAction]
+    )
 
     const extensions = useMemo(
         () => [
             staticExtensions,
             callbacksField,
-            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
+            selectableLineNumbers({
+                onSelection,
+                initialSelection: position.line !== undefined ? position : null,
+                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+            }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            extensionsController !== null
+            extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,

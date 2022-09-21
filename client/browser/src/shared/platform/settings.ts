@@ -6,15 +6,16 @@ import { isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     mergeSettings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
+    SubjectSettingsContents,
 } from '@sourcegraph/shared/src/settings/settings'
 
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
+import { ViewerConfigurationResult } from '../../graphql-operations'
 import { isInPage } from '../context'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
@@ -100,19 +101,18 @@ const configurationCascadeFragment = gql`
         subjects {
             __typename
             ... on Org {
-                id
                 name
                 displayName
             }
             ... on User {
-                id
                 username
                 displayName
             }
             ... on Site {
-                id
                 siteID
+                allowSiteSettingsEdits
             }
+            id
             latestSettings {
                 id
                 contents
@@ -134,9 +134,12 @@ const configurationCascadeFragment = gql`
  */
 export function fetchViewerSettings(
     requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
+): Observable<{
+    final: string
+    subjects: (SettingsSubject & SubjectSettingsContents)[]
+}> {
     return from(
-        requestGraphQL<GQL.IQuery>({
+        requestGraphQL<ViewerConfigurationResult>({
             request: gql`
                 query ViewerConfiguration {
                     viewerConfiguration {

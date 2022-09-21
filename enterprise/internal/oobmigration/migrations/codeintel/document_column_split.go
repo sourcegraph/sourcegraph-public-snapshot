@@ -14,7 +14,7 @@ type documentColumnSplitMigrator struct {
 // the lsif_data_documents table with a schema version of 2 and unsets the payload in favor
 // of populating the new ranges, hovers, monikers, packages, and diagnostics columns. Updated
 // records will have a schema version of 3.
-func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) *migrator {
+func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
 	driver := &documentColumnSplitMigrator{
 		serializer: newSerializer(),
 	}
@@ -23,6 +23,7 @@ func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) *migr
 		tableName:     "lsif_data_documents",
 		targetVersion: 3,
 		batchSize:     batchSize,
+		numRoutines:   numRoutines,
 		fields: []fieldSpec{
 			{name: "path", postgresType: "text not null", primaryKey: true},
 			{name: "data", postgresType: "bytea"},
@@ -76,7 +77,8 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, erro
 	}, nil
 }
 
-// MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
+// MigrateRowDown recombines the split payloads into a single column to undo the migration
+// up direction.
 func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte

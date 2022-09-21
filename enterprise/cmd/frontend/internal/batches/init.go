@@ -38,8 +38,12 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore)
 	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
+
 	operations := httpapi.NewOperations(observationContext)
-	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(bstore, operations, false)
+	fileHandler := httpapi.NewFileHandler(db, bstore, operations)
+	enterpriseServices.BatchesChangesFileGetHandler = fileHandler.Get()
+	enterpriseServices.BatchesChangesFileExistsHandler = fileHandler.Exists()
+	enterpriseServices.BatchesChangesFileUploadHandler = fileHandler.Upload()
 
 	return nil
 }

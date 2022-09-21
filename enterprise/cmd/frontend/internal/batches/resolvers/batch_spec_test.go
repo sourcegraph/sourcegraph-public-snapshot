@@ -89,7 +89,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		DiffStat: apitest.DiffStat{
 			Added:   changesetSpec.DiffStatAdded,
-			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
@@ -293,7 +292,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,9 +473,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
 	want.ApplyURL = nil
-	want.DiffStat.Added = 20
-	want.DiffStat.Deleted = 4
-	want.DiffStat.Changed = 10
+	want.DiffStat.Added = 30
+	want.DiffStat.Deleted = 14
 	want.ViewerCanRetry = true
 
 	codeHosts = apitest.BatchChangesCodeHostsConnection{
@@ -498,7 +496,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
-func TestBatchSpecResolver_Mounts(t *testing.T) {
+func TestBatchSpecResolver_Files(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -514,10 +512,9 @@ func TestBatchSpecResolver_Mounts(t *testing.T) {
 	}
 
 	after := "1"
-	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListWorkspaceFilesArgs{
-		First:     int32(10),
-		After:     &after,
-		BatchSpec: "123",
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
+		First: int32(10),
+		After: &after,
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, connectionResolver)
@@ -643,7 +640,7 @@ query($batchSpec: ID!) {
       createdAt
       expiresAt
 
-      diffStat { added, deleted, changed }
+      diffStat { added, deleted }
 
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }

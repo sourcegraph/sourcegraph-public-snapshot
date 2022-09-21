@@ -66,6 +66,22 @@ func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
 	return &adminanalytics.CodeIntel{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
+/* Code-intel by language */
+
+func (r *siteAnalyticsResolver) CodeIntelByLanguage(ctx context.Context, args *struct {
+	DateRange *string
+}) ([]*adminanalytics.CodeIntelByLanguage, error) {
+	return adminanalytics.GetCodeIntelByLanguage(ctx, r.db, r.cache, *args.DateRange)
+}
+
+/* Code-intel by language */
+
+func (r *siteAnalyticsResolver) CodeIntelTopRepositories(ctx context.Context, args *struct {
+	DateRange *string
+}) ([]*adminanalytics.CodeIntelTopRepositories, error) {
+	return adminanalytics.GetCodeIntelTopRepositories(ctx, r.db, r.cache, *args.DateRange)
+}
+
 /* Repos */
 
 func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.ReposSummary, error) {
@@ -90,4 +106,13 @@ func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
 	Grouping  *string
 }) *adminanalytics.Extensions {
 	return &adminanalytics.Extensions{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}
+
+/* Insights */
+
+func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
+	DateRange *string
+	Grouping  *string
+}) *adminanalytics.CodeInsights {
+	return &adminanalytics.CodeInsights{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }

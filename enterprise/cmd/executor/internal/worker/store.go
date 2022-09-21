@@ -69,6 +69,10 @@ func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, er
 	return s.queueStore.CanceledJobs(ctx, s.queueName, knownIDs)
 }
 
-type FileStore interface {
-	Get(ctx context.Context, path string) (io.ReadCloser, error)
+// FilesStore handles interactions with the file store.
+type FilesStore interface {
+	// Exists determines if the file exists.
+	Exists(ctx context.Context, bucket string, key string) (bool, error)
+	// Get retrieves the file.
+	Get(ctx context.Context, bucket string, key string) (io.ReadCloser, error)
 }

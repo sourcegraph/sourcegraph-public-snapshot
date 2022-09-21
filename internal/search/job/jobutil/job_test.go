@@ -6,11 +6,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"regexp/syntax"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -35,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 func TestNewPlanJob(t *testing.T) {
@@ -75,7 +78,8 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           NoopJob
           (REPOSEARCH
-            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)))))))`),
+            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)
+            (repoNamePatterns . [(?i)foo])))))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
@@ -97,7 +101,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.searchContextSpec . global))
         (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global))))))`),
+          (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global)
+          (repoNamePatterns . [(?i)foo]))))))`),
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
@@ -119,7 +124,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo))))))`),
+          (repoOpts.repoFilters.0 . foo)
+          (repoNamePatterns . [(?i)foo]))))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
@@ -152,7 +158,8 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           NoopJob
           (REPOSEARCH
-            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)))))))`),
+            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)
+            (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))))))`),
 	}, {
 		query:      `ok ok`,
 		protocol:   search.Streaming,
@@ -174,7 +181,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
-          (repoOpts.repoFilters.0 . (?:ok).*?(?:ok)))))))`),
+          (repoOpts.repoFilters.0 . (?:ok).*?(?:ok))
+          (repoNamePatterns . [(?i)(?:ok).*?(?:ok)]))))))`),
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
@@ -196,7 +204,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           )
         (REPOSEARCH
-          (repoOpts.repoFilters.0 . ok ))))))`),
+          (repoOpts.repoFilters.0 . ok )
+          (repoNamePatterns . [(?i)ok ]))))))`),
 	}, {
 		query:      `@nope`,
 		protocol:   search.Streaming,
@@ -379,7 +388,8 @@ func TestNewPlanJob(t *testing.T) {
                 (numRepos . 0)
                 (limit . 500))))
           (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)))))))`),
+            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
+            (repoNamePatterns . [(?i)test (?i)test])))))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -455,7 +465,8 @@ func TestNewPlanJob(t *testing.T) {
                 (numRepos . 0)
                 (limit . 500))))
           (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)))))))`),
+            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
+            (repoNamePatterns . [(?i)test (?i)test])))))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
 		protocol:   search.Streaming,
@@ -515,7 +526,8 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSCOMPUTEEXCLUDED
             )
           (REPOSEARCH
-            (repoOpts.repoFilters.0 . a)))))
+            (repoOpts.repoFilters.0 . a)
+            (repoNamePatterns . [(?i)a])))))
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -569,7 +581,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))
         (REPOSEARCH
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))))))`),
+          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b)
+          (repoNamePatterns . []))))))`),
 		}, {
 			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
@@ -587,7 +600,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
         (REPOSEARCH
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))))))`),
+          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b)
+          (repoNamePatterns . []))))))`),
 		}, {
 			query:      `repo:has(key:value)`,
 			protocol:   search.Streaming,
@@ -605,7 +619,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
         (REPOSEARCH
-          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))))))`),
+          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value)
+          (repoNamePatterns . []))))))`),
 		}, {
 			query:      `repo:has.tag(tag)`,
 			protocol:   search.Streaming,
@@ -623,7 +638,8 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.hasKVPs[0].key . tag))
         (REPOSEARCH
-          (repoOpts.hasKVPs[0].key . tag))))))`),
+          (repoOpts.hasKVPs[0].key . tag)
+          (repoNamePatterns . []))))))`),
 		}, {
 			query:      `(...)`,
 			protocol:   search.Streaming,
@@ -641,8 +657,6 @@ func TestNewPlanJob(t *testing.T) {
         (REPOSCOMPUTEEXCLUDED
           )
         (STRUCTURALSEARCH
-          (query . regex:"(:_)")
-          (type . text)
           (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
           )))))`),
 		},
@@ -686,12 +700,14 @@ func TestToEvaluateJob(t *testing.T) {
 
 	autogold.Want("root limit for streaming search", `
 (REPOSEARCH
-  (repoOpts.repoFilters.0 . foo))
+  (repoOpts.repoFilters.0 . foo)
+  (repoNamePatterns . [(?i)foo]))
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
 (REPOSEARCH
-  (repoOpts.repoFilters.0 . foo))
+  (repoOpts.repoFilters.0 . foo)
+  (repoNamePatterns . [(?i)foo]))
 `).Equal(t, test("foo", search.Batch))
 }
 
@@ -1150,6 +1166,81 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
 	require.Equal(t, wantResultKeys, matchKeys)
+}
+
+func TestZoektQueryPatternsAsRegexps(t *testing.T) {
+	tests := []struct {
+		name  string
+		input zoektquery.Q
+		want  []*regexp.Regexp
+	}{
+		{
+			name:  "literal substring query",
+			input: &zoektquery.Substring{Pattern: "foobar"},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
+		},
+		{
+			name:  "regex query",
+			input: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
+		},
+		{
+			name: "and query",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "or query",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "literal and regex",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name: "literal or regex",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name:  "respect case sensitivity setting",
+			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
+			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := zoektQueryPatternsAsRegexps(tc.input)
+			require.Equal(t, tc.want, got)
+		})
+	}
 }
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {

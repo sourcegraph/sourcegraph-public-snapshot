@@ -72,15 +72,15 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const [hideSearchHistory] = useFeatureFlag('search-input-hide-history')
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+        coreWorkflowImprovementsEnabled
+    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser && !hideSearchHistory
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && showSearchHistory
                 ? [
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
@@ -99,7 +99,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.authenticatedUser,
             props.selectedSearchContextSpec,
             props.telemetryService,
-            hideSearchHistory,
+            showSearchHistory,
         ]
     )
 
@@ -165,10 +165,10 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
                         defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}

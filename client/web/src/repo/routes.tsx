@@ -1,15 +1,16 @@
 import React from 'react'
 
+import { RouteComponentProps } from 'react-router-dom'
+
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
-import { ToggleBlameAction } from './actions/ToggleBlameAction'
+import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
-import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
 
@@ -17,10 +18,6 @@ const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCo
 
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
 
-const RepositoryGitDataContainer = lazyComponent(
-    () => import('./RepositoryGitDataContainer'),
-    'RepositoryGitDataContainer'
-)
 const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
 const RepositoryBranchesArea = lazyComponent(
     () => import('./branches/RepositoryBranchesArea'),
@@ -40,129 +37,91 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
     'ActionItemsBar'
 )
 
+export const compareSpecPath = '/-/compare/:spec*'
+
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                    <RepositoryCommitPage {...context} />
-                </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                <RepositoryCommitPage {...context} />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="commit"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
     {
         path: '/-/branches',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryBranchesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryBranchesArea {...context} />,
     },
     {
         path: '/-/tags',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryReleasesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryReleasesArea {...context} />,
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                    <RepositoryCompareArea {...context} />
-                </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                <RepositoryCompareArea {...context} />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="compare"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },
     {
         path: '/-/stats',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryStatsArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryStatsArea {...context} />,
     },
     {
         path: '/-/settings',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepoSettingsArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepoSettingsArea {...context} />,
     },
 ]
 
-export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    useBreadcrumb,
-    setBreadcrumb,
-    repo,
-    history,
-    location,
-    match,
-    globbing,
-}) => (
-    <>
-        <RepositoryStatsArea
-            useBreadcrumb={useBreadcrumb}
-            setBreadcrumb={setBreadcrumb}
-            repo={repo}
-            history={history}
-            location={location}
-            match={match}
-            globbing={globbing}
-        />
-    </>
+export const RepoContributors: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionContainerContext & RouteComponentProps>
+> = ({ useBreadcrumb, setBreadcrumb, repo, history, location, match, globbing, repoName }) => (
+    <RepositoryStatsArea
+        useBreadcrumb={useBreadcrumb}
+        setBreadcrumb={setBreadcrumb}
+        repo={repo}
+        repoName={repoName}
+        history={history}
+        location={location}
+        match={match}
+        globbing={globbing}
+    />
 )
 
-export const RepoCommits: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    resolvedRev: { commitID },
-    repoHeaderContributionsLifecycleProps,
-    ...context
-}) => (
-    <>
-        <RepositoryCommitsPage
-            {...context}
-            commitID={commitID}
-            repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
-        />
-    </>
-)
+export const RepoCommits: React.FunctionComponent<
+    Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
+> = ({ revision, repo, ...context }) => <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
+
+const blobPath = '/-/:objectType(blob)/:filePath*'
+const treePath = '/-/:objectType(tree)/:filePath*'
+export const commitsPath = '/-/commits'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
         '',
-        '/-/:objectType(blob|tree)/:filePath*',
+        blobPath,
+        treePath,
         '/-/docs/tab/:pathID*',
         '/-/commits/tab',
         '/-/branch/tab',
@@ -180,11 +139,20 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 }}
             >
                 <RepositoryFileTreePage {...props} />
+                <ActionItemsBar
+                    repo={props.repo}
+                    useActionItemsBar={props.useActionItemsBar}
+                    location={props.location}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                    source={routePath === blobPath ? 'blob' : undefined}
+                />
             </TraceSpanProvider>
         ),
     })),
     {
-        path: '/-/commits',
+        path: commitsPath,
         render: RepoCommits,
     },
     {
@@ -198,26 +166,20 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
-        path: '/-/compare/:spec*',
+        path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                    <RepositoryCompareArea {...context} />
-                </RepositoryGitDataContainer>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="toggle-blame"
-                    repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
-                </RepoHeaderContributionPortal>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
+                <RepositoryCompareArea {...context} />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                        source="compare"
+                    />
+                )}
             </RepoRevisionWrapper>
         ),
     },

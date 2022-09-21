@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -94,7 +94,6 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
 		})),
 	}
@@ -126,6 +125,19 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	defer mockState.Unmock()
 
 	bstore := store.New(db, &observation.TestContext, nil)
+
+	if err := bstore.CreateSiteCredential(ctx,
+		&btypes.SiteCredential{
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+		},
+		&auth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: auth.OAuthBearerToken{Token: gitHubToken},
+		},
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{
@@ -173,7 +185,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForRepo(ctx, bstore, githubRepo)
+		src, err := sourcer.ForChangeset(ctx, bstore, c)
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
@@ -182,7 +194,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(bstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, New(bstore))
 	if err != nil {
 		t.Fatal(err)
 	}

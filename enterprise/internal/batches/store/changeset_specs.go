@@ -28,7 +28,6 @@ var changesetSpecInsertColumns = []string{
 	"repo_id",
 	"user_id",
 	"diff_stat_added",
-	"diff_stat_changed",
 	"diff_stat_deleted",
 	"created_at",
 	"updated_at",
@@ -57,7 +56,6 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.repo_id",
 	"changeset_specs.user_id",
 	"changeset_specs.diff_stat_added",
-	"changeset_specs.diff_stat_changed",
 	"changeset_specs.diff_stat_deleted",
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
@@ -75,6 +73,8 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.commit_author_email",
 	"changeset_specs.type",
 }
+
+var oneGigabyte = 1000000000
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
 func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
@@ -99,9 +99,19 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				}
 			}
 
-			published, err := json.Marshal(c.Published)
-			if err != nil {
-				return err
+			var published []byte
+			if c.Published.Val != nil {
+				published, err = json.Marshal(c.Published)
+				if err != nil {
+					return err
+				}
+			}
+
+			// We check if the resulting diff is greater than 1GB, since the limit
+			// for the diff column (which is bytea) is 1GB
+			if len(c.Diff) > oneGigabyte {
+				link := "https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges"
+				return errors.Errorf("The changeset patch generated is over the size limit. You can make use of [transformChanges](%s) to break down the changesets into smaller pieces.", link)
 			}
 
 			if err := inserter.Insert(
@@ -111,7 +121,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.BaseRepoID,
 				nullInt32Column(c.UserID),
 				c.DiffStatAdded,
-				c.DiffStatChanged,
 				c.DiffStatDeleted,
 				c.CreatedAt,
 				c.UpdatedAt,
@@ -419,7 +428,7 @@ ORDER BY repo_id ASC, head_ref ASC
 `
 
 func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
-	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listChangesetSpecsWithConflictingHeadRef.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
@@ -546,7 +555,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.BaseRepoID,
 		&dbutil.NullInt32{N: &c.UserID},
 		&c.DiffStatAdded,
-		&c.DiffStatChanged,
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
@@ -570,8 +578,10 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 
 	c.Type = btypes.ChangesetSpecType(typ)
 
-	if err := json.Unmarshal(published, &c.Published); err != nil {
-		return err
+	if len(published) != 0 {
+		if err := json.Unmarshal(published, &c.Published); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -604,14 +614,14 @@ type GetRewirerMappingsOpts struct {
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 //
 // We need to:
-// 1. Find out whether our new specs should _update_ an existing
-//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
-// 2. Since we can have multiple changesets per repository, we need to match
-//    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
-// 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
-//    In that case, we need to check whether the branch on which we _might_
-//    push the commit (because the changeset might not be published
-//    yet) is the same or compare the external IDs in the current and new specs.
+//  1. Find out whether our new specs should _update_ an existing
+//     changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
+//  2. Since we can have multiple changesets per repository, we need to match
+//     based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
+//  3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
+//     In that case, we need to check whether the branch on which we _might_
+//     push the commit (because the changeset might not be published
+//     yet) is the same or compare the external IDs in the current and new specs.
 //
 // What we want:
 //

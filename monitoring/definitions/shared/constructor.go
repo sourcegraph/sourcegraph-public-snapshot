@@ -3,6 +3,8 @@ package shared
 import (
 	"fmt"
 	"strings"
+
+	"github.com/prometheus/common/model"
 )
 
 type ObservableConstructorOptions struct {
@@ -44,6 +46,10 @@ type ObservableConstructorOptions struct {
 	//                             batches-01 store operations
 	// queue + shared label values ^^^^^^^^^^ ^^^^^^^^^^^^^^^^ metric desc + generic term (chosen by constructor)
 	By []string
+
+	// RangeWindow allows setting a custom window for functions like `rate` and `increase`. By default it is
+	// set to 5m.
+	RangeWindow model.Duration
 }
 
 // observableConstructor is a type of constructor function used in this package that creates
@@ -88,10 +94,14 @@ func makeFilters(containerLabel, containerName string, filters ...string) string
 	return strings.Join(filters, ",")
 }
 
-// makeBy returns the suffix if the aggregator expression (e.g., max by (queue)),
-//                                                                   ^^^^^^^^^^
-// as well as a prefix to be used as part of the legend consisting of placeholder
-// values that will render to the value of the label/variable in the Grafana UI.
+// makeBy returns the suffix if the aggregator expression.
+//
+//	e.g. max by (queue)
+//	         ^^^^^^^^^^
+//
+// legendPrefix is a prefix to be used as part of the legend consisting of
+// placeholder values that will render to the value of the label/variable in
+// the Grafana UI.
 func makeBy(labels ...string) (aggregateExprSuffix string, legendPrefix string) {
 	if len(labels) == 0 {
 		return "", ""

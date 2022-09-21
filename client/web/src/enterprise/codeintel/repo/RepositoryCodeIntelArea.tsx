@@ -133,7 +133,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Code Graph data' },
+        header: { label: 'Code graph data' },
         items: [
             {
                 to: '/uploads',
@@ -163,7 +163,7 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 export const RepositoryCodeIntelArea: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>
 > = ({ match, useBreadcrumb, ...props }) => {
-    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Graph data' }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code graph data' }), []))
 
     return (
         <div className="container d-flex mt-3">

@@ -10,7 +10,6 @@ import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import isAbsoluteUrl from 'is-absolute-url'
 
 import {
     ConsoleBatchSpanExporter,
@@ -18,6 +17,7 @@ import {
     HistoryInstrumentation,
     SharedSpanStoreProcessor,
     ClientAttributesSpanProcessor,
+    getTracingURL,
 } from '@sourcegraph/observability-client'
 
 export function initOpenTelemetry(): void {
@@ -39,13 +39,7 @@ export function initOpenTelemetry(): void {
             }),
         })
 
-        const url = isAbsoluteUrl(openTelemetry.endpoint)
-            ? openTelemetry.endpoint
-            : new URL(openTelemetry.endpoint, externalURL).toString()
-
-        // As per spec non-signal-specific configuration should have signal-specific paths appended.
-        // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#endpoint-urls-for-otlphttp
-        const collectorExporter = new OTLPTraceExporter({ url: new URL('/v1/traces', url).toString() })
+        const collectorExporter = new OTLPTraceExporter({ url: getTracingURL(openTelemetry.endpoint, externalURL) })
 
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
         provider.addSpanProcessor(new SharedSpanStoreProcessor())

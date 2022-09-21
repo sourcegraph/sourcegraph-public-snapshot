@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -48,17 +49,20 @@ func (e ErrRepoSeeOther) Error() string {
 // more idiomatic solution.
 func NewRepos(logger log.Logger, db database.DB) *repos {
 	repoStore := db.Repos()
+	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		db:    db,
-		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(logger, repoStore),
+		logger: logger,
+		db:     db,
+		store:  repoStore,
+		cache:  dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	db    database.DB
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	logger log.Logger
+	db     database.DB
+	store  database.RepoStore
+	cache  *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -222,7 +226,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
@@ -241,4 +245,41 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 	return &inv, nil
+}
+
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
+		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+	}
+
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
+	defer done()
+
+	err = gitserver.NewClient(s.db).Remove(ctx, repo.Name)
+	return err
+}
+
+func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "RequestRepositoryClone", repoID, &err)
+	defer done()
+
+	resp, err := gitserver.NewClient(s.db).RequestRepoClone(ctx, repo.Name)
+	if err != nil {
+		return err
+	}
+	if resp.Error != "" {
+		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+	}
+
+	return nil
 }

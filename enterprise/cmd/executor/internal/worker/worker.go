@@ -12,7 +12,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/batches"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -59,8 +60,8 @@ type Options struct {
 	// QueueOptions configures the client that interacts with the queue API.
 	QueueOptions queue.Options
 
-	// QueueOptions configures the client that interacts with the queue API.
-	BatchesOptions batches.Options
+	// FilesOptions configures the client that interacts with the files API.
+	FilesOptions apiclient.BaseClientOptions
 
 	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
 	FirecrackerOptions command.FirecrackerOptions
@@ -83,10 +84,16 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore := queue.New(options.QueueOptions, gatherer, observationContext)
-	uploadStore := batches.New(options.BatchesOptions, observationContext)
+	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building queue store")
+	}
+	filesStore, err := files.New(options.FilesOptions, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building files store")
+	}
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
 	if !connectToFrontend(queueStore, options) {
@@ -96,7 +103,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 	h := &handler{
 		nameSet:       nameSet,
 		store:         store,
-		uploadStore:   uploadStore,
+		filesStore:    filesStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
@@ -104,7 +111,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, store, h, options.WorkerOptions)
+	return workerutil.NewWorker(ctx, store, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

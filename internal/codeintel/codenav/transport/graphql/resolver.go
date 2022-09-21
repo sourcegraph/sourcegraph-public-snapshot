@@ -2,10 +2,13 @@ package graphql
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -13,12 +16,21 @@ import (
 )
 
 type Resolver interface {
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+
+	// Factory for GitBlobLSIFDataResolver
 	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolver, err error)
 }
 
 type resolver struct {
 	svc                            Service
 	gitserver                      GitserverClient
+	autoindexingSvc                AutoindexingService
 	maximumIndexesPerMonikerSearch int
 	hunkCacheSize                  int
 
@@ -26,14 +38,42 @@ type resolver struct {
 	operations *operations
 }
 
-func New(svc Service, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) Resolver {
+func New(svc Service, gitserver GitserverClient, autoindexingSvc AutoindexingService, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) Resolver {
 	return &resolver{
 		svc:                            svc,
 		gitserver:                      gitserver,
+		autoindexingSvc:                autoindexingSvc,
 		operations:                     newOperations(observationContext),
 		hunkCacheSize:                  hunkCacheSize,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
 	}
+}
+
+func (r *resolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {
+	ctx, _, endObservation := r.operations.getSupportedByCtags.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("repoName", string(repoName))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetSupportedByCtags(ctx, filepath, repoName)
+}
+
+func (r *resolver) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := r.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("userID", userID), log.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (r *resolver) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := r.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.svc.GetLanguagesRequestedBy(ctx, userID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second
@@ -51,7 +91,15 @@ func (r *resolver) GitBlobLSIFDataResolverFactory(ctx context.Context, repo *typ
 	defer endObservation()
 
 	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(repo.ID), commit, path, exactPath, toolName)
-	if err != nil || len(uploads) == 0 {
+	if err != nil {
+		return nil, err
+	}
+	if len(uploads) == 0 {
+		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
+		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repo.Name), "crates/") {
+			err = r.autoindexingSvc.QueueRepoRev(ctx, int(repo.ID), commit)
+		}
+
 		return nil, err
 	}
 

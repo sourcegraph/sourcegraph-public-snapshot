@@ -577,6 +577,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
 		stats.sr = r
 		return stats, nil
 	}
@@ -636,6 +637,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		return nil, err // sparkline generation failed, so don't cache.
 	}
 	stats = &searchResultsStats{
+		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,

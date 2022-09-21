@@ -1,6 +1,7 @@
 {
   "variables": {
     "name": "{{env `NAME`}}",
+    "version": "{{env `VERSION`}}",
     "srcCliVersion": "{{env `SRC_CLI_VERSION`}}",
     "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
     "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
@@ -70,7 +71,7 @@
     },
     {
       "type": "file",
-      "sources": ["ignite-ubuntu"],
+      "sources": ["executor-vm"],
       "destination": "/tmp"
     },
     {
@@ -79,10 +80,18 @@
       "script": "install.sh",
       "override": {
         "gcp": {
-          "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=gcp"]
+          "environment_vars": [
+            "SRC_CLI_VERSION={{user `srcCliVersion`}}",
+            "VERSION={{user `version`}}",
+            "PLATFORM_TYPE=gcp"
+          ]
         },
         "aws": {
-          "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=aws"]
+          "environment_vars": [
+            "SRC_CLI_VERSION={{user `srcCliVersion`}}",
+            "VERSION={{user `version`}}",
+            "PLATFORM_TYPE=aws"
+          ]
         }
       }
     }

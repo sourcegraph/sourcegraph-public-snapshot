@@ -10,15 +10,9 @@ import {
 import { hasProperty } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
-// LINE AND COLUMN DECORATIONS
+// LINE DECORATIONS
 
-export const createDecorationType = (extensionID?: string) => (
-    config: TextDocumentDecorationType['config'] = { display: 'inline' }
-): TextDocumentDecorationType => ({
-    extensionID,
-    key: uniqueId('TextDocumentDecorationType'),
-    config,
-})
+export const createDecorationType = (): TextDocumentDecorationType => ({ key: uniqueId('TextDocumentDecorationType') })
 
 /**
  * Resolves the actual styles to use for the attachment based on the current theme.
@@ -127,7 +121,3 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
 
     return !textContentIsObject
 }
-
-export const flattenDecorations = (
-    decorationsByExtension: [TextDocumentDecorationType, TextDocumentDecoration[]][]
-): TextDocumentDecoration[] => decorationsByExtension.map(([, values]) => values).flat()

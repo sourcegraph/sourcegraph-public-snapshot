@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -49,7 +50,6 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_review_state"),
 	sqlf.Sprintf("changesets.external_check_state"),
 	sqlf.Sprintf("changesets.diff_stat_added"),
-	sqlf.Sprintf("changesets.diff_stat_changed"),
 	sqlf.Sprintf("changesets.diff_stat_deleted"),
 	sqlf.Sprintf("changesets.sync_state"),
 	sqlf.Sprintf("changesets.owned_by_batch_change_id"),
@@ -89,7 +89,6 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_review_state"),
 	sqlf.Sprintf("external_check_state"),
 	sqlf.Sprintf("diff_stat_added"),
-	sqlf.Sprintf("diff_stat_changed"),
 	sqlf.Sprintf("diff_stat_deleted"),
 	sqlf.Sprintf("sync_state"),
 	sqlf.Sprintf("owned_by_batch_change_id"),
@@ -124,7 +123,6 @@ var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_review_state"),
 	sqlf.Sprintf("external_check_state"),
 	sqlf.Sprintf("diff_stat_added"),
-	sqlf.Sprintf("diff_stat_changed"),
 	sqlf.Sprintf("diff_stat_deleted"),
 	sqlf.Sprintf("sync_state"),
 	sqlf.Sprintf("syncer_error"),
@@ -173,7 +171,6 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		nullStringColumn(string(c.ExternalReviewState)),
 		nullStringColumn(string(c.ExternalCheckState)),
 		c.DiffStatAdded,
-		c.DiffStatChanged,
 		c.DiffStatDeleted,
 		syncState,
 		nullInt64Column(c.OwnedByBatchChangeID),
@@ -234,7 +231,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -741,7 +738,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -851,7 +848,6 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		nullStringColumn(string(c.ExternalReviewState)),
 		nullStringColumn(string(c.ExternalCheckState)),
 		c.DiffStatAdded,
-		c.DiffStatChanged,
 		c.DiffStatDeleted,
 		syncState,
 		c.SyncErrorMessage,
@@ -866,7 +862,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 var updateChangesetCodeHostStateQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:UpdateChangesetCodeHostState
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1137,7 +1133,6 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &externalReviewState},
 		&dbutil.NullString{S: &externalCheckState},
 		&t.DiffStatAdded,
-		&t.DiffStatChanged,
 		&t.DiffStatDeleted,
 		&syncState,
 		&dbutil.NullInt64{N: &t.OwnedByBatchChangeID},
@@ -1180,7 +1175,10 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	case extsvc.TypeGitLab:
 		t.Metadata = new(gitlab.MergeRequest)
 	case extsvc.TypeBitbucketCloud:
-		t.Metadata = new(bbcs.AnnotatedPullRequest)
+		m := new(bbcs.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")
 	}

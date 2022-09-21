@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -36,11 +36,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,6 +49,8 @@ import (
 var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
 const port = "3181"
@@ -128,6 +130,11 @@ func run(logger log.Logger) error {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	maxTotalPathsLength, err := strconv.Atoi(maxTotalPathsLengthRaw)
+	if err != nil {
+		return errors.Wrapf(err, "invalid int %q for MAX_TOTAL_PATHS_LENGTH", maxTotalPathsLengthRaw)
+	}
+
 	if err := setupTmpDir(); err != nil {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
@@ -135,7 +142,7 @@ func run(logger log.Logger) error {
 	storeObservationContext := &observation.Context{
 		// Explicitly don't scope Store logger under the parent logger
 		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -175,15 +182,18 @@ func run(logger log.Logger) error {
 			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
-		GitDiffSymbols: git.DiffSymbols,
-		Log:            logger,
+
+		GitDiffSymbols:      git.DiffSymbols,
+		MaxTotalPathsLength: maxTotalPathsLength,
+
+		Log: logger,
 	}
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
+	handler := actor.HTTPMiddleware(logger, service)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -64,7 +64,7 @@ import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-ap
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -78,7 +78,6 @@ import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -97,6 +96,7 @@ import {
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
@@ -709,7 +709,7 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
 }
 
 const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<UserSettingsURLResult>({
         request: gql`
             query UserSettingsURL {
                 currentUser {
@@ -1376,9 +1376,7 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) =>
-                                update(flattenDecorations(decorations), isLightTheme)
-                            )
+                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
                     )
                 }
 

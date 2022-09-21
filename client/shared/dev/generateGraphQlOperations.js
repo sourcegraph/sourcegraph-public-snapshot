@@ -10,7 +10,6 @@ const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SEARCH_FOLDER = path.resolve(ROOT_FOLDER, './client/search')
-const SEARCH_UI_FOLDER = path.resolve(ROOT_FOLDER, './client/search-ui')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
@@ -34,7 +33,6 @@ const BROWSER_DOCUMENTS_GLOB = [
 ]
 
 const SEARCH_DOCUMENTS_GLOB = [`${SEARCH_FOLDER}/src/**/*.{ts,tsx}`]
-const SEARCH_UI_DOCUMENTS_GLOB = [`${SEARCH_UI_FOLDER}/src/**/*.{ts,tsx}`]
 
 const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
 
@@ -47,7 +45,6 @@ const ALL_DOCUMENTS_GLOB = [
     ...WEB_DOCUMENTS_GLOB,
     ...BROWSER_DOCUMENTS_GLOB,
     ...SEARCH_DOCUMENTS_GLOB,
-    ...SEARCH_UI_DOCUMENTS_GLOB,
     ...VSCODE_DOCUMENTS_GLOB,
     ...JETBRAINS_DOCUMENTS_GLOB,
   ]),
@@ -127,17 +124,6 @@ async function generateGraphQlOperations() {
               interfaceNameForOperations: 'SharedGraphQlOperations',
             },
             plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
-          },
-
-          [path.join(SEARCH_UI_FOLDER, './src/graphql-operations.ts')]: {
-            documents: SEARCH_UI_DOCUMENTS_GLOB,
-            config: {
-              onlyOperationTypes: true,
-              noExport: false,
-              enumValues: '@sourcegraph/shared/src/graphql-operations',
-              interfaceNameForOperations: 'SearchUIGraphQlOperations',
-            },
-            plugins: SHARED_PLUGINS,
           },
 
           [path.join(SEARCH_FOLDER, './src/graphql-operations.ts')]: {

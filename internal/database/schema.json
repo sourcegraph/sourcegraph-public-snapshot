@@ -231,15 +231,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "batch_spec_mounts_id_seq",
-      "TypeName": "integer",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 2147483647,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "batch_spec_resolution_jobs_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -254,6 +245,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "batch_spec_workspace_files_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -380,6 +380,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_autoindex_queue_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -1672,184 +1681,6 @@
       "Triggers": []
     },
     {
-      "Name": "batch_spec_mounts",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "batch_spec_id",
-          "Index": 3,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "content",
-          "Index": 7,
-          "TypeName": "bytea",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "created_at",
-          "Index": 9,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": false,
-          "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "filename",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('batch_spec_mounts_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "modified_at",
-          "Index": 8,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "path",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "rand_id",
-          "Index": 2,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "size",
-          "Index": 6,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "updated_at",
-          "Index": 10,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": false,
-          "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "batch_spec_mounts_batch_spec_id_filename_path",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_mounts_batch_spec_id_filename_path ON batch_spec_mounts USING btree (batch_spec_id, filename, path)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "batch_spec_mounts_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_mounts_pkey ON batch_spec_mounts USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "batch_spec_mounts_rand_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX batch_spec_mounts_rand_id ON batch_spec_mounts USING btree (rand_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "batch_spec_mounts_batch_spec_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "batch_specs",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE"
-        }
-      ],
-      "Triggers": []
-    },
-    {
       "Name": "batch_spec_resolution_jobs",
       "Comment": "",
       "Columns": [
@@ -2463,6 +2294,184 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "batch_spec_workspace_files",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "batch_spec_id",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "content",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "filename",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('batch_spec_workspace_files_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "modified_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "path",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "rand_id",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "size",
+          "Index": 6,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "batch_spec_workspace_files_batch_spec_id_filename_path",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_files_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_files_pkey ON batch_spec_workspace_files USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "batch_spec_workspace_files_rand_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "batch_spec_workspace_files_batch_spec_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "batch_specs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -3591,19 +3600,6 @@
           "Comment": ""
         },
         {
-          "Name": "diff_stat_changed",
-          "Index": 8,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "diff_stat_deleted",
           "Index": 9,
           "TypeName": "integer",
@@ -3968,19 +3964,6 @@
         {
           "Name": "diff_stat_added",
           "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "diff_stat_changed",
-          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -6182,6 +6165,101 @@
           "ConstraintDefinition": "FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE"
         }
       ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_autoindex_queue",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_autoindex_queue_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "processed_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "rev",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_autoindex_queue_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_autoindex_queue_pkey ON codeintel_autoindex_queue USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_autoindex_queue_repository_id_commit",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -19253,7 +19331,7 @@
     },
     {
       "Name": "reconciler_changesets",
-      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
     },
     {
       "Name": "site_config",

@@ -69,6 +69,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     if (path.length === 0) {
         return tree
     }
+
+    // repo:contains() and file:contains() are not supported
+    if (path.length === 1 && path[0] === 'contains') {
+        return undefined
+    }
+
     const subtree = tree.find(value => value.name === path[0])
     if (!subtree) {
         return undefined
@@ -143,6 +149,10 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    // Remove negation from the field for lookup
+    if (field.startsWith('-')) {
+        field = field.slice(1)
+    }
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {

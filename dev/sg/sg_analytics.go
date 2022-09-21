@@ -18,7 +18,7 @@ import (
 var analyticsCommand = &cli.Command{
 	Name:     "analytics",
 	Usage:    "Manage analytics collected by sg",
-	Category: CategoryCompany,
+	Category: CategoryUtil,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "submit",

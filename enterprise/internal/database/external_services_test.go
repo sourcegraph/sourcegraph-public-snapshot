@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1275,6 +1276,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 	} {
+		licensing.MockCheckFeatureError("")
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string

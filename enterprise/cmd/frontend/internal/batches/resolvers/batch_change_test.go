@@ -62,7 +62,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,6 @@ func TestBatchChangeResolver(t *testing.T) {
 		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		Creator:       apiUser,
 		LastApplier:   apiUser,
-		SpecCreator:   apiUser,
 		LastAppliedAt: marshalDateTime(t, now),
 		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
 		CreatedAt:     marshalDateTime(t, now),
@@ -115,7 +114,6 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	wantBatchChange.Creator = nil
 	wantBatchChange.LastApplier = nil
-	wantBatchChange.SpecCreator = nil
 
 	{
 		var response struct{ Node apitest.BatchChange }
@@ -158,7 +156,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	clock := func() time.Time { return now }
 	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +257,6 @@ query($batchChange: ID!){
       id, name, description, state
       creator { ...u }
       lastApplier    { ...u }
-      specCreator    { ...u }
       lastAppliedAt
       createdAt
       updatedAt
@@ -283,7 +280,6 @@ query($namespace: ID!, $name: String!){
     id, name, description, state
     creator { ...u }
     lastApplier    { ...u }
-    specCreator    { ...u }
     lastAppliedAt
     createdAt
     updatedAt

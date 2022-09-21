@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -33,7 +33,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	operations := store.NewOperations(observationContext)
@@ -64,6 +64,11 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 		registerEnterpriseMigrators,
 	)
 
+	schemaFactories := []cliutil.ExpectedSchemaFactory{
+		cliutil.GCSExpectedSchemaFactory,
+		cliutil.GitHubExpectedSchemaFactory,
+	}
+
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -74,10 +79,11 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
-			cliutil.AddLog(logger, appName, newRunner, outputFactory),
-			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
-			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, registerMigrators),
+			cliutil.Drift(appName, newRunner, outputFactory, schemaFactories...),
+			cliutil.AddLog(appName, newRunner, outputFactory),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}
 

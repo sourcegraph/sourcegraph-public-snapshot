@@ -249,7 +249,9 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/repo-updater
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -329,12 +331,12 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
@@ -343,7 +345,7 @@ commands:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
-      yarn --no-progress
+      yarn
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
@@ -357,6 +359,13 @@ commands:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-integration-build:
+    description: Build web application for integration tests
+    cmd: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
 
   docsite:
     description: Docsite instance serving the docs
@@ -420,7 +429,8 @@ commands:
       env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
-      JAEGER_DISABLED: false
+      JAEGER_DISABLED: true
+      OPENTELEMETRY_DISABLED: false
       GOGC: 25
 
   zoekt-web-0:
@@ -432,7 +442,9 @@ commands:
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/codeintel-worker
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -804,6 +816,7 @@ commandsets:
       - minio
       - codeintel-worker
       - codeintel-executor
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -903,6 +916,7 @@ commandsets:
       - docker
     commands:
       - jaeger
+      - otel-collector
       - prometheus
       - grafana
       - postgres_exporter
@@ -970,9 +984,6 @@ tests:
       EMAIL: 'joe@sourcegraph.com'
       PASSWORD: '12345'
 
-  web-integration:
-    cmd: yarn test-integration
-
   bext:
     cmd: yarn workspace @sourcegraph/browser test
 
@@ -990,14 +1001,18 @@ tests:
   client:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
-  client-e2e:
+  docsite:
+    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
+    env:
+      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+
+  web-e2e:
     preamble: |
       A Sourcegraph isntance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
-    cmd: |
-      yarn run test-e2e
+    cmd: yarn run test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword
@@ -1009,22 +1024,34 @@ tests:
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
-  client-regression:
+  web-regression:
     preamble: |
       A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
 
-    cmd: |
-      yarn run test-regression
+    cmd: yarn run test-regression
     env:
       SOURCEGRAPH_SUDO_USER: test
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
       TEST_USER_PASSWORD: supersecurepassword
       BROWSER: chrome
 
-  docsite:
-    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
-    env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+  web-integration:
+    preamble: |
+      A web application should be built for these tests to work, most
+      commonly with: `sg run web-integration-build`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration
+
+  web-integration:debug:
+    preamble: |
+      A Sourcegraph instance must be already running for these tests to work, most
+      commonly with: `sg start web-standalone`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration:debug

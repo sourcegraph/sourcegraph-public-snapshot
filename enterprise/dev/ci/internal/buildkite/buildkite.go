@@ -2,8 +2,8 @@
 //
 // Usage:
 //
-//    pipeline := buildkite.Pipeline{}
-//    pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
+//	pipeline := buildkite.Pipeline{}
+//	pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
 package buildkite
 
 import (

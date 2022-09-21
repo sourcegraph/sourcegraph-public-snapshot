@@ -119,7 +119,8 @@ describe('Code monitoring', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('[data-testid="name-input"]')
 
-            await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
+            // Screenshot test disabled: https://github.com/sourcegraph/sourcegraph/issues/41743
+            // await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
             await accessibilityAudit(driver.page)
 
             await driver.page.type('[data-testid="name-input"]', 'test monitor')

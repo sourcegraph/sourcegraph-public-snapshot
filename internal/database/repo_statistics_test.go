@@ -238,6 +238,61 @@ func TestRepoStatistics_DeleteAndUndelete(t *testing.T) {
 	})
 }
 
+func TestRepoStatistics_AvoidZeros(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	repos := types.Repos{
+		&types.Repo{Name: "repo1"},
+		&types.Repo{Name: "repo2"},
+		&types.Repo{Name: "repo3"},
+		&types.Repo{Name: "repo4"},
+		&types.Repo{Name: "repo5"},
+		&types.Repo{Name: "repo6"},
+	}
+
+	createTestRepos(ctx, t, db, repos)
+
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 6, NotCloned: 6, SoftDeleted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: "", Total: 6, NotCloned: 6},
+	})
+
+	wantCount := 2 // initial row and then the 6 repos
+	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+
+	// Update a repo row, which should _not_ affect the statistics
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE repo SET updated_at = now() WHERE id = %s;", repos[0].ID))
+	if err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+
+	// Count should stay the same
+	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+
+	// Update a gitserver_repos row, which should _not_ affect the statistics
+	err = s.Exec(ctx, sqlf.Sprintf("UPDATE gitserver_repos SET updated_at = now() WHERE repo_id = %s;", repos[0].ID))
+	if err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+
+	// Count should stay the same
+	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+}
+
 func TestRepoStatistics_Compaction(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -19,12 +19,11 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -126,7 +125,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.dataOrError === LOADING) {
-            return null // loading
+            return <LoadingSpinner inline={false} />
         }
         if (isErrorLike(this.state.dataOrError)) {
             return (
@@ -170,7 +169,6 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
-                <PageTitle title="Settings" />
                 <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>

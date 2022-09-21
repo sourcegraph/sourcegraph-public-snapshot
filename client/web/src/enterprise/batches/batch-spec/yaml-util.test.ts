@@ -436,7 +436,6 @@ describe('Batch spec yaml utils', () => {
             const quotedString = quoteYAMLString(
                 String.raw`fork:yes repo:^github\.com/foo/bar$ file:package.json "scaling-palm-tree": "..."`
             )
-            console.log(quotedString)
             expect(quotedString).toEqual(
                 String.raw`"fork:yes repo:^github\\.com/foo/bar$ file:package.json \"scaling-palm-tree\": \"...\""`
             )

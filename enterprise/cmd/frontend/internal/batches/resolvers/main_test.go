@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -61,7 +62,7 @@ index 6f8b5d9..17400bc 100644
 var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
 	RawDiff:    testDiff,
-	DiffStat:   apitest.DiffStat{Changed: 2},
+	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
 	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
 		{
@@ -75,7 +76,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 		{
 			OldPath: "urls.txt",
@@ -88,7 +89,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 	},
 }
@@ -116,6 +117,10 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	}
 
 	return timestamp
+}
+
+func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {

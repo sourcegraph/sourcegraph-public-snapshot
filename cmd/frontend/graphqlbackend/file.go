@@ -24,7 +24,7 @@ type FileResolver interface {
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 func richHTML(content, ext string) (string, error) {

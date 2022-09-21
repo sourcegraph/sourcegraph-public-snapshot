@@ -15,8 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -1153,9 +1153,16 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
 		}
 
+		// we poll, so lets set an aggressive deadline
+		deadline := time.Now().Add(10 * time.Second)
+		if tDeadline, ok := t.Deadline(); ok && tDeadline.Before(deadline) {
+			// give time to report errors
+			deadline = tDeadline.Add(-100 * time.Millisecond)
+		}
+
 		// it should add a job for all external services
 		var jobCount int
-		for i := 0; i < 10; i++ {
+		for time.Now().Before(deadline) {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
 			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
@@ -1188,7 +1195,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		}
 
 		var jobsCompleted int
-		for i := 0; i < 10; i++ {
+		for time.Now().Before(deadline) {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
 			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
@@ -2466,7 +2473,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()
-		workerStore := webhookworker.CreateWorkerStore(s.Handle())
+		workerStore := webhookworker.CreateWorkerStore(logger, s.Handle())
 
 		repo := &types.Repo{
 			ID:   1,
@@ -2512,7 +2519,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		jobChan := make(chan *webhookworker.Job)
 		metrics := workerutil.NewMetrics(&observation.Context{
 			Logger:     logger,
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
 

@@ -150,7 +150,6 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 }
 
 type SearchJob struct {
-	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
@@ -197,14 +196,10 @@ func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
 			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
 			log.String("useIndex", string(s.UseIndex)),
-			trace.Printf("select", "%q", s.ZoektArgs.Select),
-			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", s.ZoektArgs.Query),
-			log.String("type", string(s.ZoektArgs.Typ)),
 			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		)

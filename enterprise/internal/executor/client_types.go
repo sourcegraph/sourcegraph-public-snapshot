@@ -20,8 +20,8 @@ type Job struct {
 	// unset, defaults to the workspace root.
 	RepositoryDirectory string `json:"repositoryDirectory"`
 
-	Mounts         []Mount `json:"mounts"`
-	MountDirectory string  `json:"mountDirectory"`
+	// WorkspaceFilesDirectory is the relative path to where the workspace files are written to.
+	WorkspaceFilesDirectory string `json:"workspaceFilesDirectory"`
 
 	// Commit is the revhash that should be checked out prior to job execution.
 	Commit string `json:"commit"`
@@ -40,7 +40,7 @@ type Job struct {
 	// VirtualMachineFiles is a map from file names to content. Each entry in
 	// this map will be written into the workspace prior to job execution.
 	// The file paths must be relative and within the working directory.
-	VirtualMachineFiles map[string]string `json:"files"`
+	VirtualMachineFiles map[string]VirtualMachineFile `json:"files"`
 
 	// DockerSteps describe a series of docker run commands to be invoked in the
 	// workspace. This may be done inside or outside of a Firecracker virtual
@@ -57,6 +57,22 @@ type Job struct {
 	// environment variables, as well as secret values passed along with the dequeued job
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
+}
+
+// VirtualMachineFile is a file ...
+type VirtualMachineFile struct {
+	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
+	// configured Bucket and Key.
+	Content string `json:"content"`
+
+	// Bucket is the bucket in the files store the file belongs to. A Key must also be configured.
+	Bucket string `json:"bucket"`
+
+	// Key the key or coordinates of the files in the Bucket. The Bucket must be configured.
+	Key string `json:"key"`
+
+	// CacheModifiedAt an optional field that specifies when the file was last modified. This is used for caching.
+	CacheModifiedAt time.Time `json:"cacheModifiedAt,omitempty"`
 }
 
 func (j Job) RecordID() int {
@@ -86,13 +102,6 @@ type CliStep struct {
 
 	// Env specifies a set of NAME=value pairs to supply to the src command.
 	Env []string `json:"env"`
-}
-
-type Mount struct {
-	FileName string    `json:"fileName"`
-	Path     string    `json:"path"`
-	Modified time.Time `json:"modified"`
-	URL      string    `json:"url"`
 }
 
 type DequeueRequest struct {

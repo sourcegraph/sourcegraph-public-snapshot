@@ -27,8 +27,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=DL3020
 ADD config /sg_config_grafana
-COPY home.json /usr/share/grafana/public/dashboards/home.json
-
+COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3020
