@@ -121,131 +121,96 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
-export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => {
-    const renderAlert = (): JSX.Element | null => {
-        switch (node.compatibility) {
-            case ExecutorCompatibility.OUTDATED:
-                return (
-                    <Alert variant="warning" className="mt-3">
-                        <Text className="m-0">{node.hostname} is outdated.</Text>
-                        <Text className="m-0">
-                            Please{' '}
-                            <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
-                                upgrade this executor
-                            </Link>{' '}
-                            to a version compatible with your Sourcegraph version.
-                        </Text>
-                    </Alert>
-                )
-            case ExecutorCompatibility.VERSION_AHEAD:
-                return (
-                    <Alert variant="warning" className="mt-3">
-                        <Text className="m-0">Your Sourcegraph instance is out of date.</Text>
-                        <Text className="m-0">
-                            Please{' '}
-                            <Link to="/help/admin/updates" target="_blank" rel="noopener">
-                                upgrade your sourcegraph instance
-                            </Link>
-                            .
-                        </Text>
-                    </Alert>
-                )
-            default:
-                return null
-        }
-    }
-
-    return (
-        <li className="list-group-item">
-            <Collapsible
-                wholeTitleClickable={false}
-                titleClassName="flex-grow-1"
-                title={
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <H4 className="mb-0">
-                                {node.active ? (
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => (
+    <li className="list-group-item">
+        <Collapsible
+            wholeTitleClickable={false}
+            titleClassName="flex-grow-1"
+            title={
+                <div className="d-flex justify-content-between">
+                    <div>
+                        <H4 className="mb-0">
+                            {node.active ? (
+                                <Icon
+                                    aria-hidden={true}
+                                    className="text-success mr-2"
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
+                            ) : (
+                                <Tooltip content="This executor missed at least three heartbeats.">
                                     <Icon
-                                        aria-hidden={true}
-                                        className="text-success mr-2"
+                                        aria-label="This executor missed at least three heartbeats."
+                                        className="text-warning mr-2"
                                         svgPath={mdiCheckboxBlankCircle}
                                     />
-                                ) : (
-                                    <Tooltip content="This executor missed at least three heartbeats.">
-                                        <Icon
-                                            aria-label="This executor missed at least three heartbeats."
-                                            className="text-warning mr-2"
-                                            svgPath={mdiCheckboxBlankCircle}
-                                        />
-                                    </Tooltip>
-                                )}
-                                {node.hostname}{' '}
-                                <Badge
-                                    variant="secondary"
-                                    tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
-                                >
-                                    {node.queueName}
-                                </Badge>
-                            </H4>
-                        </div>
-                        <span>
-                            last seen <Timestamp date={node.lastSeenAt} />
-                        </span>
+                                </Tooltip>
+                            )}
+                            {node.hostname}{' '}
+                            <Badge
+                                variant="secondary"
+                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            >
+                                {node.queueName}
+                            </Badge>
+                        </H4>
                     </div>
-                }
-            >
-                <dl className="mt-2 mb-0">
-                    <div className="d-flex w-100">
-                        <div className="flex-grow-1">
-                            <dt>OS</dt>
-                            <dd>
-                                <TelemetryData data={node.os} />
-                            </dd>
+                    <span>
+                        last seen <Timestamp date={node.lastSeenAt} />
+                    </span>
+                </div>
+            }
+        >
+            <dl className="mt-2 mb-0">
+                <div className="d-flex w-100">
+                    <div className="flex-grow-1">
+                        <dt>OS</dt>
+                        <dd>
+                            <TelemetryData data={node.os} />
+                        </dd>
 
-                            <dt>Architecture</dt>
-                            <dd>
-                                <TelemetryData data={node.architecture} />
-                            </dd>
+                        <dt>Architecture</dt>
+                        <dd>
+                            <TelemetryData data={node.architecture} />
+                        </dd>
 
-                            <dt>Executor version</dt>
-                            <dd>
-                                <TelemetryData data={node.executorVersion} />
-                            </dd>
+                        <dt>Executor version</dt>
+                        <dd>
+                            <TelemetryData data={node.executorVersion} />
+                        </dd>
 
-                            <dt>Docker version</dt>
-                            <dd>
-                                <TelemetryData data={node.dockerVersion} />
-                            </dd>
-                        </div>
-                        <div className="flex-grow-1">
-                            <dt>Git version</dt>
-                            <dd>
-                                <TelemetryData data={node.gitVersion} />
-                            </dd>
-
-                            <dt>Ignite version</dt>
-                            <dd>
-                                <TelemetryData data={node.igniteVersion} />
-                            </dd>
-
-                            <dt>src-cli version</dt>
-                            <dd>
-                                <TelemetryData data={node.srcCliVersion} />
-                            </dd>
-
-                            <dt>First seen at</dt>
-                            <dd>
-                                <Timestamp date={node.firstSeenAt} />
-                            </dd>
-                        </div>
+                        <dt>Docker version</dt>
+                        <dd>
+                            <TelemetryData data={node.dockerVersion} />
+                        </dd>
                     </div>
-                </dl>
-            </Collapsible>
+                    <div className="flex-grow-1">
+                        <dt>Git version</dt>
+                        <dd>
+                            <TelemetryData data={node.gitVersion} />
+                        </dd>
 
-            {renderAlert()}
-        </li>
-    )
-}
+                        <dt>Ignite version</dt>
+                        <dd>
+                            <TelemetryData data={node.igniteVersion} />
+                        </dd>
+
+                        <dt>src-cli version</dt>
+                        <dd>
+                            <TelemetryData data={node.srcCliVersion} />
+                        </dd>
+
+                        <dt>First seen at</dt>
+                        <dd>
+                            <Timestamp date={node.firstSeenAt} />
+                        </dd>
+                    </div>
+                </div>
+            </dl>
+        </Collapsible>
+
+        <ExecutorCompatibilityAlert node={node} />
+    </li>
+)
 
 export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
@@ -260,4 +225,37 @@ const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: str
         return <>{data}</>
     }
     return <>n/a</>
+}
+
+const ExecutorCompatibilityAlert: React.FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => {
+    switch (node.compatibility) {
+        case ExecutorCompatibility.OUTDATED:
+            return (
+                <Alert variant="warning" className="mt-3">
+                    <Text className="m-0">{node.hostname} is outdated.</Text>
+                    <Text className="m-0">
+                        Please{' '}
+                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                            upgrade this executor
+                        </Link>{' '}
+                        to a version compatible with your Sourcegraph version.
+                    </Text>
+                </Alert>
+            )
+        case ExecutorCompatibility.VERSION_AHEAD:
+            return (
+                <Alert variant="warning" className="mt-3">
+                    <Text className="m-0">Your Sourcegraph instance is out of date.</Text>
+                    <Text className="m-0">
+                        Please{' '}
+                        <Link to="/help/admin/updates" target="_blank" rel="noopener">
+                            upgrade your Sourcegraph instance
+                        </Link>
+                        .
+                    </Text>
+                </Alert>
+            )
+        default:
+            return null
+    }
 }

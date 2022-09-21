@@ -67,10 +67,22 @@ func TestExecutorResolver(t *testing.T) {
 				isActive:           true,
 				expected:           ExecutorCompatibilityOutdated.ToGraphQL(),
 			},
+			{
+				executorVersion:    "3.43.0",
+				sourcegraphVersion: "4.0.0",
+				isActive:           true,
+				expected:           ExecutorCompatibilityOutdated.ToGraphQL(),
+			},
 			// The executor is too new if the executor is more than one version ahead of the sourcegraph version.
 			{
 				executorVersion:    "3.43.0",
 				sourcegraphVersion: "3.40.0",
+				isActive:           true,
+				expected:           ExecutorCompatibilityVersionAhead.ToGraphQL(),
+			},
+			{
+				executorVersion:    "4.0.0",
+				sourcegraphVersion: "3.43.0",
 				isActive:           true,
 				expected:           ExecutorCompatibilityVersionAhead.ToGraphQL(),
 			},

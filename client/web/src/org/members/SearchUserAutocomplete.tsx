@@ -138,7 +138,7 @@ const UserResultItem: FC<UserResultItemProps> = props => {
 }
 
 interface EmptyResultsItemProps {
-  userNameOrEmail: string
+    userNameOrEmail: string
 }
 
 const EmptyResultsItem: FC<EmptyResultsItemProps> = ({ userNameOrEmail }) => (
