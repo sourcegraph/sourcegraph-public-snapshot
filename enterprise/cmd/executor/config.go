@@ -97,12 +97,12 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 		VMPrefix:           c.VMPrefix,
 		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
-		WorkerOptions:      c.WorkerOptions(),
-		FirecrackerOptions: c.FirecrackerOptions(),
-		ResourceOptions:    c.ResourceOptions(),
+		WorkerOptions:      c.workerOptions(),
+		FirecrackerOptions: c.firecrackerOptions(),
+		ResourceOptions:    c.resourceOptions(),
 		GitServicePath:     "/.executors/git",
-		QueueOptions:       c.QueueOptions(telemetryOptions),
-		FilesOptions:       c.FilesOptions(),
+		QueueOptions:       c.queueOptions(telemetryOptions),
+		FilesOptions:       c.filesOptions(),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -114,7 +114,7 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 	}
 }
 
-func (c *Config) WorkerOptions() workerutil.WorkerOptions {
+func (c *Config) workerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
 		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
 		NumHandlers:          c.MaximumNumJobs,
@@ -129,7 +129,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	}
 }
 
-func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
+func (c *Config) firecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
 		Enabled:             c.UseFirecracker,
 		Image:               c.FirecrackerImage,
@@ -138,7 +138,7 @@ func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	}
 }
 
-func (c *Config) ResourceOptions() command.ResourceOptions {
+func (c *Config) resourceOptions() command.ResourceOptions {
 	return command.ResourceOptions{
 		NumCPUs:             c.JobNumCPUs,
 		Memory:              c.JobMemory,
@@ -147,7 +147,7 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) QueueOptions(telemetryOptions apiclient.TelemetryOptions) queue.Options {
+func (c *Config) queueOptions(telemetryOptions apiclient.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName: c.WorkerHostname,
 		BaseClientOptions: apiclient.BaseClientOptions{
@@ -161,7 +161,7 @@ func (c *Config) QueueOptions(telemetryOptions apiclient.TelemetryOptions) queue
 	}
 }
 
-func (c *Config) FilesOptions() apiclient.BaseClientOptions {
+func (c *Config) filesOptions() apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
 		EndpointOptions: apiclient.EndpointOptions{
 			URL:        c.FrontendURL,
