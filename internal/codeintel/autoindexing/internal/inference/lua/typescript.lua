@@ -8,11 +8,6 @@ local shared = require "sg.autoindex.shared"
 local indexer = "sourcegraph/scip-typescript:autoindex"
 local n_node_mirror = "https://unofficial-builds.nodejs.org/download/release"
 local typescript_nmusl_command = "N_NODE_MIRROR=" .. n_node_mirror .. " n --arch x64-musl auto"
-local node_derivable_filenames = {
-  ".nvmrc",
-  ".node-version",
-  ".n-node-version",
-}
 
 local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
@@ -63,7 +58,11 @@ local can_derive_node_version = function(root, paths, contents_by_path)
 
     return fun.any(function(v)
       return contains(paths, path.join(a, v))
-    end, node_derivable_filenames)
+    end, {
+      ".nvmrc",
+      ".node-version",
+      ".n-node-version",
+    })
   end, path.ancestors(root))
 end
 
