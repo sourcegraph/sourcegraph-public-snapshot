@@ -222,7 +222,7 @@ func mountLoopDevice(ctx context.Context, blockDevice string, handle command.Log
 		return "", err
 	}
 
-	if out, err := CommandLogger(ctx, handle, "mount", "-k", blockDevice, tmpMountDir); err != nil {
+	if out, err := CommandLogger(ctx, handle, "mount", blockDevice, tmpMountDir); err != nil {
 		_ = os.RemoveAll(tmpMountDir)
 		return "", errors.Wrapf(err, "failed to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
 	}
