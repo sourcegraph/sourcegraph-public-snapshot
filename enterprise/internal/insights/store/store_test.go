@@ -43,20 +43,17 @@ func TestSeriesPoints(t *testing.T) {
 	_, err = insightsDB.ExecContext(context.Background(), `
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
-INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
 SELECT setseed(0.5);
 INSERT INTO series_points(
     time,
 	series_id,
     value,
-    metadata_id,
     repo_id,
     repo_name_id,
     original_repo_name_id)
 SELECT time,
     'somehash',
     random()*80 - 40,
-    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
@@ -238,7 +235,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
@@ -338,7 +334,6 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
@@ -403,7 +398,6 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
@@ -469,7 +463,6 @@ func TestDeleteSnapshots(t *testing.T) {
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,

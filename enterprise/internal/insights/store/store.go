@@ -99,7 +99,6 @@ type SeriesPointsOpts struct {
 	Included []api.RepoID
 
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
-	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
@@ -475,7 +474,7 @@ INSERT INTO %s (
 	repo_id,
 	repo_name_id,
 	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
