@@ -1730,7 +1730,7 @@ type Executor implements Node {
     """
     lastSeenAt: DateTime!
     """
-    The compatibility of the executor with respect to the sourcegraph instance.
+    The compatibility of the executor with respect to the Sourcegraph instance.
     If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
     If too new, please update the sourcegraph instance to match the version of the executor.
     """
