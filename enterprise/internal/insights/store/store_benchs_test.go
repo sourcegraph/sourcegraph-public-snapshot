@@ -20,10 +20,7 @@ import (
 )
 
 func initializeData(ctx context.Context, store *Store, repos, times int, withCapture bool) string {
-	// captureVals := []string{"one", "two"}
-	//
 	var cv []*string
-	//
 	strPtr := func(s string) *string {
 		return &s
 	}
@@ -52,7 +49,7 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 					},
 					RepoName:    &repoName,
 					RepoID:      &id,
-					PersistMode: "record",
+					PersistMode: RecordMode,
 				})
 				if err != nil {
 					panic(err)
@@ -142,16 +139,6 @@ func BenchmarkLoadTimes(b *testing.B) {
 		repos int
 		times int
 	}{
-		// {
-		// 	name:  "simple",
-		// 	repos: 10000,
-		// 	times: 12,
-		// },
-		// {
-		// 	name:  "simple",
-		// 	repos: 1000,
-		// 	times: 12,
-		// },
 		{
 			name:  "simple",
 			repos: 1000,
