@@ -211,7 +211,7 @@ export function searchQueryAutocompletion(
                               run(view) {
                                   // Select first completion item if none is selected
                                   // and items are available.
-                                  if (selectedCompletion(view.state) == null) {
+                                  if (selectedCompletion(view.state) === null) {
                                       if (currentCompletions(view.state).length > 0) {
                                           view.dispatch({ effects: setSelectedCompletion(0) })
                                           return true
