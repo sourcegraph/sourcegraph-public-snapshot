@@ -9,9 +9,8 @@ import { BlameDecoration } from './BlameDecoration'
 
 import styles from './BlameColumn.module.scss'
 
-interface BlameColumnProps {
-    isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+interface ColumnDecoratorProps {
+    blameHunks: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -23,7 +22,7 @@ const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
 const selectRow = (line: number): void => getRowByLine(line)?.classList.add('highlighted')
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
-export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeViewElements, blameHunks }) => {
+export const BlameColumn = React.memo<ColumnDecoratorProps>(({ codeViewElements, blameHunks }) => {
     /**
      * Array to store the DOM element and the blame hunk to render in it.
      * As blame decorations are displayed in the column view, we need to add a corresponding
@@ -76,10 +75,6 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         // add decorations wrapper
                         const wrapper = document.createElement('div')
                         wrapper.classList.add(styles.wrapper)
-                        if (isBlameVisible) {
-                            // ensure blame column has needed width to avoid content jumping after blame hunks are loaded
-                            wrapper.classList.add(styles.visible)
-                        }
                         cell.append(wrapper)
 
                         // add extra spacers to first and last rows (if table has only one row add both spacers)
@@ -96,7 +91,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cell and corresponding blame hunk (or undefined if no blame hunk)
                     addedCells.push([cell, currentLineDecorations])
@@ -113,7 +108,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
             subscription.unsubscribe()
             cleanup()
         }
-    }, [codeViewElements, isBlameVisible, blameHunks])
+    }, [codeViewElements, blameHunks])
 
     return (
         <>
