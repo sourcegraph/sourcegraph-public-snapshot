@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://sourcegraph.com" target="_blank">
+  <a href="https://about.sourcegraph.com/sourcegraph-4" target="_blank">
     <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/YEuWmEJA/38872827-37f4-4d2f-992d-c6870d794f57.svg" alt="Sourcegraph 4.0" width="300px">
   </a>
 
