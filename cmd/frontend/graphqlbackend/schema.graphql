@@ -2012,7 +2012,7 @@ enum ExecutorCompatibility {
     UPTODATE
 
     """
-    Executor version is more than one version ahead of the sourcegraph instance.
+    Executor version is more than one version ahead of the Sourcegraph instance.
     """
     VERSION_AHEAD
 }
