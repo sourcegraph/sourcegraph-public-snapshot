@@ -18,21 +18,6 @@ local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
 })
 
-local reverse = function(slice)
-  local reversed = {}
-  for i = #slice, 1, -1 do
-    reversed[#reversed + 1] = slice[i]
-  end
-
-  return reversed
-end
-
-local contains = function(table, element)
-  return fun.any(function(v)
-    return v == element
-  end, table)
-end
-
 local safe_decode = function(encoded)
   local _, payload = pcall(function()
     return json.decode(encoded)
@@ -64,6 +49,12 @@ local check_lerna_file = function(root, contents_by_path)
   end, path.ancestors(root))
 end
 
+local contains = function(table, element)
+  return fun.any(function(v)
+    return v == element
+  end, table)
+end
+
 local can_derive_node_version = function(root, paths, contents_by_path)
   return fun.any(function(a)
     if check_package_json_contents(contents_by_path[path.join(a, "package.json")] or "") then
@@ -74,6 +65,15 @@ local can_derive_node_version = function(root, paths, contents_by_path)
       return contains(paths, path.join(a, v))
     end, node_derivable_filenames)
   end, path.ancestors(root))
+end
+
+local reverse = function(slice)
+  local reversed = {}
+  for i = #slice, 1, -1 do
+    reversed[#reversed + 1] = slice[i]
+  end
+
+  return reversed
 end
 
 local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
