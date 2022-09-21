@@ -272,7 +272,6 @@ export const bitbucketServerCodeHost: CodeHost = {
             styles.commandPalettePopover,
             'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
         ),
-        popoverInnerClassName: 'aui-dropdown2-section',
         formClassName: 'aui',
         inputClassName: 'text',
         resultsContainerClassName: 'results',

@@ -65,6 +65,8 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))
 		// Prepare Grafana assets
 		if opts.GrafanaDir != "" {
+			os.MkdirAll(opts.GrafanaDir, os.ModePerm)
+
 			clog.Debug("Rendering Grafana assets")
 			board := dashboard.renderDashboard()
 			data, err := json.MarshalIndent(board, "", "  ")
@@ -97,6 +99,8 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 		// Prepare Prometheus assets
 		if opts.PrometheusDir != "" {
+			os.MkdirAll(opts.PrometheusDir, os.ModePerm)
+
 			clog.Debug("Rendering Prometheus assets")
 			promAlertsFile, err := dashboard.renderRules()
 			if err != nil {
@@ -134,6 +138,8 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 	// Generate documentation
 	if opts.DocsDir != "" {
+		os.MkdirAll(opts.DocsDir, os.ModePerm)
+
 		logger.Debug("Rendering docs")
 		docs, err := renderDocumentation(dashboards)
 		if err != nil {
