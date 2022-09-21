@@ -3,6 +3,7 @@ import React, { useEffect, useCallback, useMemo, useRef } from 'react'
 import * as H from 'history'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { distinct, map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { DocumentSelector } from 'sourcegraph'
 
 import {
     BuiltinTabbedPanelDefinition,
@@ -26,7 +27,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
-import { DocumentSelector } from 'sourcegraph'
 
 interface Props
     extends AbsoluteRepoFile,

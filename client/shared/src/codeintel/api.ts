@@ -19,6 +19,7 @@ import { match } from '../api/client/types/textDocument'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
+import { PanelViewData } from '../api/extension/extensionHostApi'
 import { getModeFromPath } from '../languages'
 import { parseRepoURI } from '../util/url'
 
@@ -28,7 +29,6 @@ import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
-import { PanelViewData } from '../api/extension/extensionHostApi'
 
 export type QueryGraphQLFn<T> = () => Promise<T>
 
