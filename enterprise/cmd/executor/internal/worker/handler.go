@@ -192,7 +192,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
-		// cancellation error we don't want to skip cleaning up the resources that we'vew
+		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
 		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)
