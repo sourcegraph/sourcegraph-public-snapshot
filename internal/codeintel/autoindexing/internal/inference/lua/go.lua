@@ -1,6 +1,6 @@
 local path = require "path"
+local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
-local recognizers = require "sg.recognizers"
 
 local shared = require "sg.autoindex.shared"
 
@@ -10,7 +10,7 @@ local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "vendor",
 })
 
-local gomod_recognizer = recognizers.path_recognizer {
+local gomod_recognizer = recognizer.new_path_recognizer {
   patterns = {
     pattern.new_path_basename "go.mod",
     pattern.new_path_exclude(exclude_paths),
@@ -41,7 +41,7 @@ local gomod_recognizer = recognizers.path_recognizer {
   end,
 }
 
-local goext_recognizer = recognizers.path_recognizer {
+local goext_recognizer = recognizer.new_path_recognizer {
   patterns = {
     pattern.new_path_extension "go",
     pattern.new_path_exclude(exclude_paths),
@@ -67,7 +67,7 @@ local goext_recognizer = recognizers.path_recognizer {
   end,
 }
 
-return recognizers.fallback_recognizer {
+return recognizer.new_fallback_recognizer {
   gomod_recognizer,
   goext_recognizer,
 }
