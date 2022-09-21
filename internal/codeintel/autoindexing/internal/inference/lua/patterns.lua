@@ -28,8 +28,9 @@ M.new_path_extension = function(pattern)
   return new_pattern("(^|/)[^/]+.", pattern, "$")
 end
 
-M.new_path_combine = function(pattern)
-  return patterns.path_combine(pattern)
+M.new_path_combine = function(...)
+  local arg = { ... }
+  return patterns.path_combine(unpack(arg))
 end
 
 M.new_path_exclude = function(pattern)
