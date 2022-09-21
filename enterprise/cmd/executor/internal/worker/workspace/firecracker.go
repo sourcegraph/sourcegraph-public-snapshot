@@ -99,7 +99,7 @@ func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 		// Remount the workspace, so that it can be inspected.
 		mountDir, err := mountLoopDevice(ctx, w.blockDevice)
 		if err != nil {
-			fmt.Fprintf(handle, "Failed to mount workspace: %s\n", err)
+			fmt.Fprintf(handle, "Failed to mount workspace device %q, mount manually to inspect the contents: %s\n", err)
 			return
 		}
 		fmt.Fprintf(handle, "Inspect the workspace contents at: %s\n", mountDir)
