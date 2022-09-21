@@ -166,7 +166,6 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	}
 
 	type loadStruct struct {
-		// Time (always UTC).
 		Time    time.Time
 		Value   float64
 		RepoID  int
@@ -196,11 +195,6 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	filter := func(id int) bool {
 		return denyBitmap.Contains(uint32(id))
 	}
-	// SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
-	//	FROM (  select * from series_points
-	//			union
-	//			select * from series_points_snapshots
-	//	) AS sp
 
 	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
 				select * from series_points
