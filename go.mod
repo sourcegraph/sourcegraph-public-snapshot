@@ -220,7 +220,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220915123039-1c07c86f40a8
+	github.com/sourcegraph/zoekt v0.0.0-20220921122446-2fa5f478abb8
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
