@@ -33,8 +33,8 @@ func TestHandle(t *testing.T) {
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		VirtualMachineFiles: map[string]string{
-			"test.txt": "<file payload>",
+		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
+			"test.txt": {Content: "<file payload>"},
 		},
 		DockerSteps: []executor.DockerStep{
 			{
@@ -64,7 +64,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	handler := &handler{
+	h := &handler{
 		store:      NewMockStore(),
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
@@ -83,7 +83,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	if err := handler.Handle(context.Background(), logtest.Scoped(t), job); err != nil {
+	if err := h.Handle(context.Background(), logtest.Scoped(t), job); err != nil {
 		t.Fatalf("unexpected error handling record: %s", err)
 	}
 
