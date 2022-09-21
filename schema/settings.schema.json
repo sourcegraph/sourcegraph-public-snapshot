@@ -562,6 +562,11 @@
         }
       }
     },
+    "codeIntel.referencesPanel": {
+      "description": "What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.",
+      "type": "string",
+      "enum": ["tree-view", "tabbed"]
+    },
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
