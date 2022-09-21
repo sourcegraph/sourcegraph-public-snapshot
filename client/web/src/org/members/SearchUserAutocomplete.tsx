@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-// eslint-disable-next-line no-restricted-imports
-import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Input, Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, Combobox, ComboboxInput, ComboboxPopover, ComboboxList, ComboboxOption } from '@sourcegraph/wildcard'
 
 import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -16,13 +14,8 @@ import { SEARCH_USERS_AUTOCOMPLETE_QUERY } from './gqlQueries'
 
 import styles from './SearchUserAutocomplete.module.scss'
 
-interface IUserItem {
-    id: string
-    username: string
-    inOrg: boolean
-    displayName: Maybe<string>
-    avatarURL: Maybe<string>
-}
+const MIN_SEARCH_LENGTH = 3
+const EMAIL_PATTERN = new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/)
 
 interface AutocompleteSearchUsersProps {
     disabled?: boolean
@@ -30,89 +23,10 @@ interface AutocompleteSearchUsersProps {
     orgId: string
 }
 
-const UserResultItem: React.FunctionComponent<
-    React.PropsWithChildren<{
-        onSelectUser: (user: IUserItem) => void
-        onKeyDown: (key: string, index: number) => void
-        index: number
-        user: IUserItem
-    }>
-> = ({ user, onSelectUser, onKeyDown, index }) => {
-    const selectUser = useCallback(() => {
-        onSelectUser(user)
-    }, [onSelectUser, user])
-
-    const keyDown = useCallback(
-        (event: React.KeyboardEvent) => {
-            onKeyDown(event.key, index)
-        },
-        [onKeyDown, index]
-    )
-
-    return (
-        <DropdownItem
-            data-testid="search-context-menu-item"
-            data-res-user-id={user.id}
-            className={styles.item}
-            onClick={selectUser}
-            role="menuitem"
-            disabled={user.inOrg}
-            onKeyDown={keyDown}
-        >
-            <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
-                <div className={styles.avatarContainer}>
-                    <Tooltip content={user.displayName || user.username}>
-                        <UserAvatar
-                            size={24}
-                            className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
-                            user={user}
-                        />
-                    </Tooltip>
-                </div>
-                <div className="d-flex flex-column">
-                    <div>
-                        <strong>{user.displayName || user.username}</strong>{' '}
-                        {user.displayName && <span className={styles.userName}>{user.username}</span>}
-                    </div>
-                    {user.inOrg && <small className="text-muted">Already in this organization</small>}
-                </div>
-            </div>
-        </DropdownItem>
-    )
-}
-
-const EmptyResultsItem: React.FunctionComponent<
-    React.PropsWithChildren<{
-        userNameOrEmail: string
-    }>
-> = ({ userNameOrEmail }) => (
-    <DropdownItem data-testid="search-context-menu-item" role="menuitem">
-        <div className={classNames('d-flex', 'flex-column', styles.emptyResults)}>
-            <span>
-                <small>
-                    <strong>{`Nobody found with the username “${userNameOrEmail}”`}</strong>
-                </small>
-            </span>
-            <span className="text-muted">
-                <small>Try sending invite via email instead</small>
-            </span>
-        </div>
-    </DropdownItem>
-)
-
-const getUserSearchResultItem = (userId: string): HTMLButtonElement | null =>
-    document.querySelector(`[data-res-user-id="${userId}"]`)
-
-export const AutocompleteSearchUsers: React.FunctionComponent<
-    React.PropsWithChildren<AutocompleteSearchUsersProps>
-> = props => {
+export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props => {
     const { disabled, onValueChanged, orgId } = props
-    const MinSearchLength = 3
-    const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
+
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
-    const [isEmail, setIsEmail] = useState<boolean>(false)
-    const inputReference = useRef<HTMLInputElement | null>(null)
-    const [openResults, setOpenResults] = useState<boolean>(true)
 
     const [getUsers, { loading, data, error }] = useLazyQuery<
         AutocompleteMembersSearchResult,
@@ -121,22 +35,12 @@ export const AutocompleteSearchUsers: React.FunctionComponent<
         variables: { organization: orgId, query: userNameOrEmail },
     })
 
-    const results = (data
-        ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1))
-        : []) as IUserItem[]
-
-    const firstResult = results.length > 0 ? results[0] : undefined
-    const resultsEnabled = !isEmail && !error && userNameOrEmail.length >= MinSearchLength && openResults
-    const renderResults = resultsEnabled && results.length > 0
-    const renderNoMatch = resultsEnabled && results.length === 0
-
     useEffect(() => {
-        onValueChanged(userNameOrEmail, isEmail)
-    }, [onValueChanged, isEmail, userNameOrEmail])
+        onValueChanged(userNameOrEmail, EMAIL_PATTERN.test(userNameOrEmail))
+    }, [onValueChanged, userNameOrEmail])
 
     const searchUsers = useCallback(
         (query: string): void => {
-            setOpenResults(true)
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             getUsers({ variables: { query, organization: orgId } })
         },
@@ -145,97 +49,107 @@ export const AutocompleteSearchUsers: React.FunctionComponent<
 
     const debounceGetUsers = useRef(debounce(searchUsers, 250, { leading: false }))
 
-    const focusInputElement = (): void => {
-        inputReference.current?.focus()
-    }
-
-    const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+    const handleUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         const newValue = event.currentTarget.value
-        const isEmail = emailPattern.current.test(newValue)
-        setIsEmail(isEmail)
+
         setUsernameOrEmail(newValue)
-        if (!isEmail && newValue.length >= MinSearchLength) {
+
+        if (!EMAIL_PATTERN.test(newValue) && newValue.length >= MIN_SEARCH_LENGTH) {
             debounceGetUsers.current(newValue)
         }
     }, [])
 
-    const onInputKeyDown = useCallback(
-        (event: React.KeyboardEvent) => {
-            if (firstResult && event.key === 'ArrowDown') {
-                event.stopPropagation()
-                event.preventDefault()
-                getUserSearchResultItem(firstResult.id)?.focus()
-            } else if (event.key === 'Escape') {
-                setOpenResults(false)
-                event.stopPropagation()
-            }
-        },
-        [firstResult]
-    )
+    const handleUserSelect = (username: string): void => {
+        setUsernameOrEmail(username)
+        eventLogger.log(
+            'InviteAutocompleteUserSelected',
+            { organizationId: orgId, user: username },
+            { organizationId: orgId }
+        )
+    }
 
-    const onSelectUser = useCallback(
-        (user: IUserItem) => {
-            eventLogger.log(
-                'InviteAutocompleteUserSelected',
-                { organizationId: orgId, user: user.username },
-                { organizationId: orgId }
-            )
-            setOpenResults(false)
-            setUsernameOrEmail(user.username)
-        },
-        [orgId]
-    )
+    const results = (data
+        ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1))
+        : []) as IUserItem[]
 
-    const onMenuKeyDown = useCallback((event: React.KeyboardEvent): void => {
-        if (event.key === 'Escape') {
-            setOpenResults(false)
-            event.stopPropagation()
-            event.preventDefault()
-            focusInputElement()
-        }
-    }, [])
-
-    const toggleOpen = useCallback(() => {
-        setOpenResults(false)
-    }, [])
-
-    const onResultItemKeydown = useCallback((key: string, index: number) => {
-        if (index === 0 && key === 'ArrowUp') {
-            window.requestAnimationFrame(() => focusInputElement())
-        }
-    }, [])
+    const resultsEnabled = !EMAIL_PATTERN.test(userNameOrEmail) && !error && userNameOrEmail.length >= MIN_SEARCH_LENGTH
+    const renderResults = resultsEnabled && results.length > 0
+    const renderNoMatch = resultsEnabled && !loading && results.length === 0
 
     return (
-        <div className={styles.inputContainer} onKeyDown={onMenuKeyDown} tabIndex={-1} role="menu">
-            <Dropdown isOpen={resultsEnabled} toggle={toggleOpen}>
-                <DropdownToggle tag="div" data-toggle="dropdown">
-                    <Input
-                        autoFocus={true}
-                        ref={inputReference}
-                        value={userNameOrEmail}
-                        label="Email address or username"
-                        title="Email address or username"
-                        onChange={onUsernameChange}
-                        onKeyDown={onInputKeyDown}
-                        aria-expanded={renderResults ? 'true' : 'false'}
-                        disabled={disabled}
-                        status={loading ? 'loading' : error ? 'error' : undefined}
-                    />
-                </DropdownToggle>
-                <DropdownMenu className={styles.suggestionsContainer}>
-                    {renderResults &&
-                        results.map((usr, index) => (
-                            <UserResultItem
-                                key={usr.id}
-                                index={index}
-                                user={usr}
-                                onSelectUser={onSelectUser}
-                                onKeyDown={onResultItemKeydown}
-                            />
-                        ))}
+        <Combobox className={styles.inputContainer} onSelect={handleUserSelect}>
+            <ComboboxInput
+                autocomplete={false}
+                label="Email address or username"
+                title="Email address or username"
+                autoFocus={true}
+                disabled={disabled}
+                status={loading ? 'loading' : error ? 'error' : undefined}
+                onChange={handleUsernameChange}
+            />
+
+            <ComboboxPopover className={styles.suggestionsContainer}>
+                <ComboboxList>
+                    {renderResults && results.map(usr => <UserResultItem key={usr.id} user={usr} />)}
                     {renderNoMatch && <EmptyResultsItem userNameOrEmail={userNameOrEmail} />}
-                </DropdownMenu>
-            </Dropdown>
-        </div>
+                </ComboboxList>
+            </ComboboxPopover>
+        </Combobox>
     )
 }
+
+interface IUserItem {
+    id: string
+    username: string
+    inOrg: boolean
+    displayName: Maybe<string>
+    avatarURL: Maybe<string>
+}
+
+interface UserResultItemProps {
+    user: IUserItem
+}
+
+const UserResultItem: FC<UserResultItemProps> = props => {
+    const { user } = props
+
+    return (
+        <ComboboxOption value={user.username} disabled={user.inOrg} data-res-user-id={user.id} className={styles.item}>
+            <div className={styles.userContainer}>
+                <div className={styles.avatarContainer}>
+                    <Tooltip content={user.displayName || user.username}>
+                        <UserAvatar
+                            user={user}
+                            size={24}
+                            className={classNames(styles.avatar, user.inOrg && styles.avatarDisabled)}
+                        />
+                    </Tooltip>
+                </div>
+                <div className={styles.itemDescription}>
+                    <div>
+                        <strong>{user.displayName || user.username}</strong>{' '}
+                        {user.displayName && <span className={styles.userName}>{user.username}</span>}
+                    </div>
+                    {user.inOrg && <small className={styles.userDescription}>Already in this organization</small>}
+                </div>
+            </div>
+        </ComboboxOption>
+    )
+}
+
+interface EmptyResultsItemProps {
+  userNameOrEmail: string
+}
+
+const EmptyResultsItem: FC<EmptyResultsItemProps> = ({ userNameOrEmail }) => (
+    <div role="menuitem" className={styles.emptyResults}>
+        <span>
+            <small>
+                <strong>{`Nobody found with the username “${userNameOrEmail}”`}</strong>
+            </small>
+        </span>
+        <span className="text-muted">
+            <small>Try sending invite via email instead</small>
+        </span>
+    </div>
+)

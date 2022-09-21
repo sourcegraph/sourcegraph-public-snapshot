@@ -50,9 +50,9 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				local recognizers = {}
-				recognizers["custom.test"] = custom_recognizer
-				return recognizers
+				return require("sg.autoindex.config").new({
+					["custom.test"] = custom_recognizer,
+				})
 			`,
 			repositoryContents: map[string]string{
 				"sg-test":     "",
@@ -100,10 +100,10 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				local recognizers = {}
-				recognizers["sg.test"] = false -- Disable builtin recognizer
-				recognizers["mycompany.test"] = custom_recognizer
-				return recognizers
+				return require("sg.autoindex.config").new({
+					["sg.test"] = false,
+					["mycompany.test"] = custom_recognizer,
+				})
 			`,
 			repositoryContents: map[string]string{
 				"sg-test":     "",

@@ -3009,7 +3009,7 @@ type MirrorRepositoryInfo {
     """
     The byte size of the repo.
     """
-    byteSize: Int!
+    byteSize: BigInt!
 }
 
 """

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -117,6 +117,9 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
+    // and clicking on any line should navigate to that specific line.
+    navigateToLineOnAnyClick?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -386,6 +389,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
+    const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
         useMemo(
@@ -402,10 +406,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
+                        if (!position) {
+                            return
+                        }
                         let query: string | undefined
                         let replace = false
                         if (
-                            position &&
                             event.shiftKey &&
                             hoverifier.hoverState.selectedPosition &&
                             hoverifier.hoverState.selectedPosition.line !== undefined
@@ -431,8 +437,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             // will always be added.
                             const currentPosition = parseQueryAndHash(location.search, location.hash)
                             replace = Boolean(
-                                position &&
-                                    currentPosition.line &&
+                                currentPosition.line &&
                                     !currentPosition.endLine &&
                                     Math.abs(position.line - currentPosition.line) < 11
                             )
@@ -441,20 +446,34 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        if (position && !('character' in position)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfChanged(
-                                props.history,
-                                location,
-                                addLineRangeQueryParameter(parameters, query),
-                                replace
-                            )
+                        const isClickOnBlankSpace = !('character' in position)
+                        if (isClickOnBlankSpace || props.navigateToLineOnAnyClick) {
+                            if (customHistoryAction) {
+                                const entry: H.LocationDescriptor<unknown> = {
+                                    ...location,
+                                    search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                                }
+                                customHistoryAction(props.history.createHref(entry))
+                            } else {
+                                updateBrowserHistoryIfChanged(
+                                    props.history,
+                                    location,
+                                    addLineRangeQueryParameter(parameters, query),
+                                    replace
+                                )
+                            }
                         }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
+            [
+                codeViewElements,
+                hoverifier.hoverState.selectedPosition,
+                location,
+                props.history,
+                props.navigateToLineOnAnyClick,
+                customHistoryAction,
+            ]
         )
     )
 
@@ -791,6 +810,29 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
+    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickable.
+    useLayoutEffect(() => {
+        if (!props.navigateToLineOnAnyClick) {
+            return
+        }
+
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                for (const row of table.rows) {
+                    if (row.cells.length === 0) {
+                        continue
+                    }
+                    row.className = styles.clickableRow
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements, props.navigateToLineOnAnyClick])
+
     const logEventOnCopy = useCallback(() => {
         props.telemetryService.log(...codeCopiedEvent('blob'))
     }, [props.telemetryService])
@@ -813,7 +855,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         __html: blobInfo.html,
                     }}
                 />
-                {hoverState.hoverOverlayProps && extensionsController !== null && (
+                {!props.navigateToLineOnAnyClick && hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}

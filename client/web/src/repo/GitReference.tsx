@@ -78,7 +78,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
                     Rule: "color-contrast" (Elements must have sufficient color contrast)
                     GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                 */}
-                    <Badge className="a11y-ignore" as="code">
+                    <Badge className="a11y-ignore px-1 py-0" as="code">
                         {node.displayName}
                     </Badge>
                     {mostRecentSig && (
