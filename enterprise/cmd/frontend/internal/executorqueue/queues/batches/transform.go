@@ -118,7 +118,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 	workspaceFiles, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: batchSpec.RandID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching mounts")
+		return apiclient.Job{}, errors.Wrap(err, "fetching workspace files")
 	}
 	for _, workspaceFile := range workspaceFiles {
 		files[filepath.Join(workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
