@@ -4,7 +4,7 @@ import { useLocation } from 'react-router'
 
 import { parseBrowserRepoURL } from '../util/url'
 
-import { buildEditorUrl } from './build-url'
+import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
 import { EditorSettings } from './editor-settings'
 
 /**
@@ -20,7 +20,7 @@ export const useOpenCurrentUrlInEditor = (): ((
         (editorSettings: EditorSettings, sourcegraphURL: string, editorIndex = 0) => {
             const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
             const url = buildEditorUrl(
-                `${repoName.split('/').pop() ?? ''}/${filePath}`,
+                buildRepoBaseNameAndPath(repoName, filePath),
                 range,
                 editorSettings,
                 sourcegraphURL,
