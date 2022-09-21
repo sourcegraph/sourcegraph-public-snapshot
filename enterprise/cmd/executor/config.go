@@ -47,7 +47,7 @@ type Config struct {
 func defaultFirecrackerImageTag() string {
 	// In dev, just use latest for convenience.
 	if version.IsDev(version.Version()) {
-		return "latest"
+		return "insiders"
 	}
 	return version.Version()
 }
