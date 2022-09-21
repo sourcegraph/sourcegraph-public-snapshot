@@ -60,3 +60,26 @@ func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr
 	}
 	return expr, nil
 }
+
+// ListMetrics returns all unique metrics used in the expression.
+func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
+	// Generate AST
+	expr, err := replaceAndParse(expression, vars)
+	if err != nil {
+		return nil, err // return original
+	}
+
+	// Collect all metrics mentioned in the expression
+	foundMetrics := make(map[string]struct{})
+	var metrics []string
+	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
+		if vec, ok := n.(*promqlparser.VectorSelector); ok {
+			if _, exists := foundMetrics[vec.Name]; !exists {
+				metrics = append(metrics, vec.Name)
+				foundMetrics[vec.Name] = struct{}{}
+			}
+		}
+		return nil
+	})
+	return metrics, nil
+}

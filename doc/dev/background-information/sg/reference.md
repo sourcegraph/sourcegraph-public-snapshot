@@ -975,6 +975,7 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--groups`: Show row groups
+* `--metrics`: Show metrics used in dashboards
 
 ## sg secret
 
