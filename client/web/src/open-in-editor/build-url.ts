@@ -5,6 +5,13 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
+export function buildRepoBaseNameAndPath(repoName: string, filePath: string | undefined): string {
+    const codeHostsWithOwnerInUrl = ['github.com', 'gitlab.com', 'bitbucket.org']
+    const repoNameIncludesOwner = codeHostsWithOwnerInUrl.some(url => repoName.startsWith(url + '/'))
+    const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1)
+    return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
+}
+
 export function buildEditorUrl(
     repoBaseNameAndPath: string,
     range: UIRangeSpec['range'] | undefined,

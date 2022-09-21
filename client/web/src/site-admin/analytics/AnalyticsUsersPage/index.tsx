@@ -5,10 +5,8 @@ import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
 
-import { GlobalAlert } from '../../../global/GlobalAlert'
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -132,15 +130,6 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
-                <GlobalAlert
-                    alert={{
-                        message:
-                            'Note these charts are experimental. For billing information, use [usage stats](/site-admin/usage-statistics).',
-                        type: AlertType.INFO,
-                        isDismissibleWithKey: '',
-                    }}
-                    className="my-3"
-                />
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {activities && (
                     <div>

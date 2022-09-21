@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -38,7 +39,7 @@ sg run gitserver frontend repo-updater
 	Category: CategoryDev,
 	Flags:    []cli.Flag{},
 	Action:   runExec,
-	BashComplete: completeOptions(func() (options []string) {
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
