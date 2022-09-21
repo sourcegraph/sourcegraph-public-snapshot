@@ -325,7 +325,7 @@ func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
 	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
 }
 
-func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
+func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
 	u := vcs.URL{
 		URL: url.URL{Path: examplePackageURL},
 	}
@@ -335,13 +335,13 @@ func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bare
 	assert.Nil(t, cmd.Run())
 }
 
-func (s vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
+func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
 	t.Helper()
 
 	require.Equal(t, want, depsSource.downloadCount)
 }
 
-func (s vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
+func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
 	t.Helper()
 
 	cmd := exec.Command("git", "show-ref", "--head", "--dereference")

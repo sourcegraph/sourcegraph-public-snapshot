@@ -22,32 +22,124 @@ p4 protects -u USER | ./scanprotects -d "//some/test/depot/" |& jq '{"Body": .Bo
 
 ```
 ...
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "list group everyone * -//..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": ["//depot/main/"]}
-DEBUG fullRepoPermsScanner perforce/protects.go:426 Adding exclude rules {"rules": ["//**"]}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "read group readonly * //..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": ["//depot/main/"]}
-DEBUG fullRepoPermsScanner perforce/protects.go:391 Adding include rules {"rules": ["//**"]}
-DEBUG fullRepoPermsScanner perforce/protects.go:404 Removing conflicting exclude rule {"rule": "//**"}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "write group dev * //depot/main/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": ["//depot/main/"]}
-DEBUG fullRepoPermsScanner perforce/protects.go:391 Adding include rules {"rules": ["**"]}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "open group dev * //depot/main/migration/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": ["//depot/main/"]}
-DEBUG fullRepoPermsScanner perforce/protects.go:391 Adding include rules {"rules": ["migration/**"]}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "write group dev * //depot/training/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": []}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "write group dev * //depot/test/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": []}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "read group baseapp_readonly * //depot/630/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": []}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "read group baseapp_readonly * //depot/636/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": []}
-DEBUG scanProtects perforce/protects.go:228 Scanning protects line {"line": "write group dev * //depot/630/..."}
-DEBUG fullRepoPermsScanner perforce/protects.go:382 Relevant depots {"depots": []}
+"Processing parsed line"
+{
+  "match": "//depot/main/base/jkl/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "base/jkl/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../.../base/foo/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/**/base/foo/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../.../base/jkl/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/**/base/jkl/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../.../base/foo/config/labels/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/**/base/foo/config/labels/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../.../base/foo-test/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/**/base/foo-test/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../.../base/jkl/test/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/**/base/jkl/test/**"
+  ]
+}
+"Processing parsed line"
+{
+  "match": "//depot/.../base/foo/config/labels/...",
+  "isExclusion": false
+}
+"Relevant depots"
+{
+  "depots": [
+    "//depot/main"
+  ]
+}
+"Adding include rules"
+{
+  "rules": [
+    "**/base/foo/config/labels/**"
+  ]
+}
 ...
-DEBUG scanprotects scanprotects/main.go:50 Depot {"depot": "//depot/main/"}
-DEBUG scanprotects scanprotects/main.go:53 Sub repo permissions {"depot": "//depot/main/"}
-DEBUG scanprotects scanprotects/main.go:55 Include rule {"rule": "base/foo/**"}
-DEBUG scanprotects scanprotects/main.go:55 Include rule {"rule": "base/jkl/**"}
 ```
