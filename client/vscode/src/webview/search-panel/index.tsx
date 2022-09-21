@@ -2,7 +2,7 @@ import '../platform/polyfills'
 
 import React, { useMemo } from 'react'
 
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { createRoot } from 'react-dom/client'

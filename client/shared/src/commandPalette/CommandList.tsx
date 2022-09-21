@@ -1,7 +1,7 @@
 import React, { forwardRef, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiConsole, mdiPuzzle } from '@mdi/js'
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
@@ -416,7 +416,7 @@ export const CommandListPopoverButton = forwardRef((props, ref) => {
                 ref={ref}
                 // Support legacy buttonElement prop since it's used in the different code hosts
                 // specifications
-                as={buttonElement as 'button' ?? Component}
+                as={(buttonElement as 'button') ?? Component}
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 variant={variant}

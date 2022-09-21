@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
 import { Subscription, Subject } from 'rxjs'

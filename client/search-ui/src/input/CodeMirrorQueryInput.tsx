@@ -25,7 +25,7 @@ import {
     TooltipView,
     WidgetType,
 } from '@codemirror/view'
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'

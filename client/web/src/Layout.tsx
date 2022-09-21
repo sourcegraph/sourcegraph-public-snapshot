@@ -1,6 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'

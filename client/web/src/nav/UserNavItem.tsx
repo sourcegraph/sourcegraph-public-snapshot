@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import classNames from 'classnames'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'

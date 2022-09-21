@@ -3,7 +3,7 @@ import 'focus-visible'
 import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'

@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { ModifierKey, Key } from '@slimsag/react-shortcuts'
+import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
