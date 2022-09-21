@@ -10,7 +10,7 @@ import { BlameDecoration } from './BlameDecoration'
 import styles from './BlameColumn.module.scss'
 
 interface BlameColumnProps {
-    isBlameVisible: boolean
+    isBlameVisible?: boolean
     blameHunks?: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
