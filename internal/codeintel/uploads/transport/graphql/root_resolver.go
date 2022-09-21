@@ -18,20 +18,20 @@ type RootResolver interface {
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (resolvers.LSIFUploadResolver, error)
 	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
 }
 
 type rootResolver struct {
-	svc            *uploads.Service
-	autoindexer    AutoIndexingService
+	uploadSvc      *uploads.Service
+	autoindexSvc   AutoIndexingService
 	policyResolver PolicyResolver
 	operations     *operations
 }
 
-func NewRootResolver(svc *uploads.Service, autoindexer AutoIndexingService, policyResolver PolicyResolver, observationContext *observation.Context) RootResolver {
+func NewRootResolver(uploadSvc *uploads.Service, autoindexSvc AutoIndexingService, policyResolver PolicyResolver, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
-		svc:            svc,
-		autoindexer:    autoindexer,
+		uploadSvc:      uploadSvc,
+		autoindexSvc:   autoindexSvc,
 		policyResolver: policyResolver,
 		operations:     newOperations(observationContext),
 	}
@@ -50,7 +50,7 @@ func (r *rootResolver) CommitGraph(ctx context.Context, id graphql.ID) (_ CodeIn
 	}
 
 	// commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
-	stale, updatedAt, err := r.svc.GetCommitGraphMetadata(ctx, int(repositoryID))
+	stale, updatedAt, err := r.uploadSvc.GetCommitGraphMetadata(ctx, int(repositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +74,14 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
-	prefetcher := resolvers.NewPrefetcher(r.autoindexer, r.svc)
+	prefetcher := resolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
 	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return resolvers.NewUploadResolver(r.svc, r.autoindexer, r.policyResolver, upload, prefetcher, traceErrs), nil
+	return resolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policyResolver, upload, prefetcher, traceErrs), nil
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -124,21 +124,21 @@ func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFReposito
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
-	prefetcher := resolvers.NewPrefetcher(r.autoindexer, r.svc)
+	prefetcher := resolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 	// uploadConnectionResolver := r.resolver.UploadsResolver().UploadsConnectionResolverFromFactory(opts)
-	uploadsResolver := resolvers.NewUploadsResolver(r.svc, opts)
+	uploadsResolver := resolvers.NewUploadsResolver(r.uploadSvc, opts)
 
-	return resolvers.NewUploadConnectionResolver(r.svc, r.autoindexer, r.policyResolver, uploadsResolver, prefetcher, traceErrs), nil
+	return resolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policyResolver, uploadsResolver, prefetcher, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *EmptyResponse, err error) {
+func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolvers.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteLsifUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadID", string(args.ID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexer.GetUnsafeDB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -147,9 +147,9 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 		return nil, err
 	}
 
-	if _, err := r.svc.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+	if _, err := r.uploadSvc.DeleteUploadByID(ctx, int(uploadID)); err != nil {
 		return nil, err
 	}
 
-	return &EmptyResponse{}, nil
+	return &resolvers.EmptyResponse{}, nil
 }

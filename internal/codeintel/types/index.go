@@ -33,6 +33,14 @@ type Index struct {
 	AssociatedUploadID *int                `json:"associatedUpload"`
 }
 
+type GetIndexesOptions struct {
+	RepositoryID int
+	State        string
+	Term         string
+	Limit        int
+	Offset       int
+}
+
 type DockerStep struct {
 	Root     string   `json:"root"`
 	Image    string   `json:"image"`

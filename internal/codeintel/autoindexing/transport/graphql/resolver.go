@@ -29,7 +29,7 @@ type Resolver interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error                 // simple dbstore
 
 	// Index Connection Factory
-	IndexConnectionResolverFromFactory(opts shared.GetIndexesOptions) *IndexesResolver // for the resolver
+	// IndexConnectionResolverFromFactory(opts types.GetIndexesOptions) *resolvers.IndexesResolver // for the resolver
 }
 
 type resolver struct {
@@ -157,6 +157,6 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	return r.svc.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }
 
-func (r *resolver) IndexConnectionResolverFromFactory(opts shared.GetIndexesOptions) *IndexesResolver {
-	return NewIndexesResolver(r.svc, opts)
-}
+// func (r *resolver) IndexConnectionResolverFromFactory(opts types.GetIndexesOptions) *resolvers.IndexesResolver {
+// 	return NewIndexesResolver(r.svc, opts)
+// }

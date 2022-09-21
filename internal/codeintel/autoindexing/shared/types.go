@@ -99,14 +99,6 @@ type IndexConfiguration struct {
 	Data         []byte `json:"data"`
 }
 
-type GetIndexesOptions struct {
-	RepositoryID int
-	State        string
-	Term         string
-	Limit        int
-	Offset       int
-}
-
 type IndexesWithRepositoryNamespace struct {
 	Root    string
 	Indexer string

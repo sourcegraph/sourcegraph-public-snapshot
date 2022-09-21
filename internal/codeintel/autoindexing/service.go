@@ -32,7 +32,7 @@ type service interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error)
 
 	// Indexes
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
@@ -83,7 +83,7 @@ func newService(
 	}
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

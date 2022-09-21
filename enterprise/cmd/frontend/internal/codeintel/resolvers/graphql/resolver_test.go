@@ -16,7 +16,7 @@ import (
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
 	uploadmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
-	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -99,6 +99,7 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 	}
 }
 
+// Move test out of here
 func TestMakeGetUploadsOptions(t *testing.T) {
 	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{
@@ -168,7 +169,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := autoindexingShared.GetIndexesOptions{
+	expected := codeinteltypes.GetIndexesOptions{
 		RepositoryID: 50,
 		State:        "s",
 		Term:         "q",
@@ -188,7 +189,7 @@ func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := autoindexingShared.GetIndexesOptions{
+	expected := codeinteltypes.GetIndexesOptions{
 		RepositoryID: 0,
 		State:        "",
 		Term:         "",

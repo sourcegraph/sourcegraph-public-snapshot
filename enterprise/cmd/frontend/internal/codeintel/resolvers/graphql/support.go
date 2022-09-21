@@ -30,6 +30,7 @@ type searchBasedSupportResolver struct {
 	language string
 }
 
+// move to autoindexing service
 func NewSearchBasedCodeIntelResolver(language string) gql.SearchBasedSupportResolver {
 	return &searchBasedSupportResolver{language}
 }
@@ -49,6 +50,7 @@ type preciseCodeIntelSupportResolver struct {
 	indexers []gql.CodeIntelIndexerResolver
 }
 
+// move to autoindexing service
 func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseSupportResolver {
 	return &preciseCodeIntelSupportResolver{
 		indexers: languageToIndexer[path.Ext(filepath)],
@@ -91,6 +93,7 @@ func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *gql.Request
 		return nil, errors.Newf("language support requests only logged for authenticated users")
 	}
 
+	// move to autoindexing service
 	codeNavResolver := r.resolver.CodeNavResolver()
 	if err := codeNavResolver.SetRequestLanguageSupport(ctx, userID, args.Language); err != nil {
 		return nil, err
@@ -108,6 +111,7 @@ func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, er
 		return nil, errors.Newf("language support requests only logged for authenticated users")
 	}
 
+	// move to autoindexing service
 	codeNavResolver := r.resolver.CodeNavResolver()
 	return codeNavResolver.GetLanguagesRequestedBy(ctx, userID)
 }

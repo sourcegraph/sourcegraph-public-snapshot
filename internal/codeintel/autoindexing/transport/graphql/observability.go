@@ -21,6 +21,15 @@ type operations struct {
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferedIndexConfiguration              *observation.Operation
 	inferedIndexConfigurationHints         *observation.Operation
+
+	// NEW stuff here
+	deleteLsifIndexes        *observation.Operation
+	lsifIndexByID            *observation.Operation
+	lsifIndexes              *observation.Operation
+	lsifIndexesByRepo        *observation.Operation
+	indexConfiguration       *observation.Operation
+	updateIndexConfiguration *observation.Operation
+	repositorySummary        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -53,5 +62,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferedIndexConfiguration:              op("InferedIndexConfiguration"),
 		inferedIndexConfigurationHints:         op("InferedIndexConfigurationHints"),
+
+		// NEW stuff here
+		deleteLsifIndexes:        op("DeleteLsifIndexes"),
+		lsifIndexByID:            op("LsifIndexByID"),
+		lsifIndexes:              op("LsifIndexes"),
+		lsifIndexesByRepo:        op("LsifIndexesByRepo"),
+		indexConfiguration:       op("IndexConfiguration"),
+		updateIndexConfiguration: op("UpdateIndexConfiguration"),
+		repositorySummary:        op("RepositorySummary"),
 	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	codeintelType "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -43,8 +42,7 @@ type AutoIndexingResolver interface {
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error) // in the service InferIndexConfiguration first return
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)       // in the service InferIndexConfiguration second return
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error                 // simple dbstore
-
-	IndexConnectionResolverFromFactory(opts autoindexingShared.GetIndexesOptions) *autoindexinggraphql.IndexesResolver
+	// IndexConnectionResolverFromFactory(opts codeintelType.GetIndexesOptions) *resolvers.IndexesResolver
 }
 
 type UploadsResolver interface {

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -365,8 +366,8 @@ func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIF
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &LSIFRepositoryIndexesQueryArgs{
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
@@ -380,7 +381,7 @@ func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (u
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 

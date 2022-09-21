@@ -31,7 +31,7 @@ type LSIFIndexResolver interface {
 }
 
 type indexResolver struct {
-	svc              AutoIndexingService
+	autoindexingSvc  AutoIndexingService
 	uploadsSvc       UploadsService
 	policyResolver   PolicyResolver
 	index            types.Index
@@ -40,7 +40,7 @@ type indexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(svc AutoIndexingService, uploadsSvc UploadsService, policyResolver PolicyResolver, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) LSIFIndexResolver {
+func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policyResolver PolicyResolver, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -50,12 +50,12 @@ func NewIndexResolver(svc AutoIndexingService, uploadsSvc UploadsService, policy
 	}
 
 	return &indexResolver{
-		svc:              svc,
+		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policyResolver:   policyResolver,
 		index:            index,
 		prefetcher:       prefetcher,
-		locationResolver: locationResolver,
+		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
 		traceErrs:        errTrace,
 	}
 }
@@ -69,12 +69,12 @@ func (r *indexResolver) Failure() *string      { return r.index.FailureMessage }
 func (r *indexResolver) StartedAt() *DateTime  { return DateTimeOrNil(r.index.StartedAt) }
 func (r *indexResolver) FinishedAt() *DateTime { return DateTimeOrNil(r.index.FinishedAt) }
 func (r *indexResolver) Steps() IndexStepsResolver {
-	return NewIndexStepsResolver(r.svc, r.index)
+	return NewIndexStepsResolver(r.autoindexingSvc, r.index)
 }
 func (r *indexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
 
 func (r *indexResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
-	tags, err := r.svc.GetListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
+	tags, err := r.autoindexingSvc.GetListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ LSIFUploadResol
 		return nil, err
 	}
 
-	return NewUploadResolver(r.uploadsSvc, r.svc, r.policyResolver, upload, r.prefetcher, r.traceErrs), nil
+	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policyResolver, upload, r.prefetcher, r.traceErrs), nil
 }
 
 func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolver, err error) {

@@ -28,6 +28,7 @@ type codeIntelTreeInfoResolver struct {
 	errTracer *observation.ErrCollector
 }
 
+// move to autoindexing service
 func NewCodeIntelTreeInfoResolver(
 	resolver resolvers.Resolver,
 	repo *types.Repo,
@@ -71,8 +72,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]gql.GitTreePreciseCoverage, error) {
-	autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	configurations, ok, err := autoIndexingResolver.InferedIndexConfiguration(ctx, int(r.repo.ID), r.commit)
+	configurations, ok, err := r.resolver.AutoIndexingRootResolver().InferedIndexConfiguration(ctx, int(r.repo.ID), r.commit)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]gql.
 		}
 	}
 
-	hints, err := autoIndexingResolver.InferedIndexConfigurationHints(ctx, int(r.repo.ID), r.commit)
+	hints, err := r.resolver.AutoIndexingRootResolver().InferedIndexConfigurationHints(ctx, int(r.repo.ID), r.commit)
 	if err != nil {
 		return nil, err
 	}

@@ -222,7 +222,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
+				indexes, totalCount, err := store.GetIndexes(ctx, types.GetIndexesOptions{
 					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
@@ -257,7 +257,7 @@ func TestGetIndexes(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		indexes, totalCount, err := store.GetIndexes(ctx,
-			shared.GetIndexesOptions{
+			types.GetIndexesOptions{
 				Limit: 1,
 			},
 		)

@@ -108,7 +108,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
+			defaultHook: func(context.Context, types.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
 				return
 			},
 		},
@@ -190,7 +190,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
+			defaultHook: func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
 				panic("unexpected invocation of MockStore.GetIndexes")
 			},
 		},
@@ -856,15 +856,15 @@ func (c StoreGetIndexConfigurationByRepositoryIDFuncCall) Results() []interface{
 // StoreGetIndexesFunc describes the behavior when the GetIndexes method of
 // the parent MockStore instance is invoked.
 type StoreGetIndexesFunc struct {
-	defaultHook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
-	hooks       []func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
+	defaultHook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
+	hooks       []func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
 	history     []StoreGetIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]types.Index, int, error) {
+func (m *MockStore) GetIndexes(v0 context.Context, v1 types.GetIndexesOptions) ([]types.Index, int, error) {
 	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
 	m.GetIndexesFunc.appendCall(StoreGetIndexesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -872,7 +872,7 @@ func (m *MockStore) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) 
 
 // SetDefaultHook sets function that is called when the GetIndexes method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -880,7 +880,7 @@ func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.G
 // GetIndexes method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -889,19 +889,19 @@ func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared.GetInde
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
+	f.SetDefaultHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
+	f.PushHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *StoreGetIndexesFunc) nextHook() func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -939,7 +939,7 @@ type StoreGetIndexesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.GetIndexesOptions
+	Arg1 types.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Index

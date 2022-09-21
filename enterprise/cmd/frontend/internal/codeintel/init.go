@@ -34,11 +34,13 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	executorResolver := executorgraphql.New(db)
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
+
 	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingSvc, services.UploadSvc, policyResolver, oc("autoindexing"))
 	uploadResolver := uploadgraphql.New(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
 	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver, uploadRootResolver)
+	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, autoindexingRootResolver, uploadResolver, uploadRootResolver)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
 

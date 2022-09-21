@@ -115,7 +115,7 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ LSIFIndexResolv
 		return nil, err
 	}
 
-	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policyResolver, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
+	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policyResolver, index, r.prefetcher, r.traceErrs), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error) {

@@ -22,7 +22,7 @@ type Store interface {
 
 	// Indexes
 	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)

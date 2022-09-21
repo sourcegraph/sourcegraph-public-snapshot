@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
@@ -19,7 +20,6 @@ type CodeIntelResolver interface {
 	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
 	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
 
-	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
 
 	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
@@ -31,16 +31,6 @@ type CodeIntelResolver interface {
 	PoliciesServiceResolver
 }
 
-type AutoindexingServiceResolver interface {
-	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
-	LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error)
-	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
-	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
-	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
-}
-
 type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
 }
@@ -49,12 +39,23 @@ type CodeNavResolver interface {
 	CodeNavResolver() codenav.Resolver
 }
 
+type AutoindexingServiceResolver interface {
+	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
+	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
+	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ resolvers.LSIFIndexResolver, err error)
+	LSIFIndexes(ctx context.Context, args *autoindexinggraphql.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error)
+	LSIFIndexesByRepo(ctx context.Context, args *autoindexinggraphql.LSIFRepositoryIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, args *autoindexinggraphql.QueueAutoIndexJobsForRepoArgs) ([]resolvers.LSIFIndexResolver, error)
+	UpdateRepositoryIndexConfiguration(ctx context.Context, args *autoindexinggraphql.UpdateRepositoryIndexConfigurationArgs) (*resolvers.EmptyResponse, error)
+	RepositorySummary(ctx context.Context, id graphql.ID) (resolvers.CodeIntelRepositorySummaryResolver, error)
+}
+
 type UploadsServiceResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (uploadsgraphql.CodeIntelligenceCommitGraphResolver, error)
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (resolvers.LSIFUploadResolver, error)
 	LSIFUploads(ctx context.Context, args *uploadsgraphql.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.LSIFRepositoryUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*uploadsgraphql.EmptyResponse, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
@@ -196,11 +197,11 @@ type IndexStepResolver interface {
 	LogEntry() ExecutionLogEntryResolver
 }
 
-type LSIFIndexConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
+// type LSIFIndexConnectionResolver interface {
+// 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
+// 	TotalCount(ctx context.Context) (*int32, error)
+// 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+// }
 
 type QueueAutoIndexJobsForRepoArgs struct {
 	Repository    graphql.ID
@@ -333,25 +334,6 @@ type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
 
 type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 	Policy graphql.ID
-}
-
-type CodeIntelRepositorySummaryResolver interface {
-	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
-	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
-	LastUploadRetentionScan() *DateTime
-	LastIndexScan() *DateTime
-}
-
-type LSIFUploadsWithRepositoryNamespaceResolver interface {
-	Root() string
-	Indexer() CodeIntelIndexerResolver
-	Uploads() []LSIFUploadResolver
-}
-
-type LSIFIndexesWithRepositoryNamespaceResolver interface {
-	Root() string
-	Indexer() CodeIntelIndexerResolver
-	Indexes() []LSIFIndexResolver
 }
 
 type IndexConfigurationResolver interface {

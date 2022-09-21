@@ -15,11 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
@@ -69,7 +68,7 @@ func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.Resolver.LSIFUploadByID(ctx, id)
 		},
 		"LSIFIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.LSIFIndexByID(ctx, id)
+			return r.Resolver.LSIFIndexByID(ctx, id)
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.ConfigurationPolicyByID(ctx, id)
@@ -81,17 +80,17 @@ func (r *Resolver) ExecutorResolver() executor.Resolver {
 	return r.resolver.ExecutorResolver()
 }
 
-func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
-	return r.resolver.CodeNavResolver()
-}
+// func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
+// 	return r.resolver.CodeNavResolver()
+// }
 
-func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
-	return r.resolver.PoliciesResolver()
-}
+// func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
+// 	return r.resolver.PoliciesResolver()
+// }
 
-func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
-	return r.resolver.AutoIndexingResolver()
-}
+// func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
+// 	return r.resolver.AutoIndexingResolver()
+// }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFUploadResolver, err error) {
@@ -109,176 +108,38 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.L
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *uploadsgraphql.EmptyResponse, err error) {
+func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
 	return r.resolver.UploadRootResolver().DeleteLSIFUpload(ctx, args)
 }
 
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
-
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexByID
-func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIFIndexResolver, err error) {
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	ctx, traceErrs, endObservation := r.observationContext.lsifIndexByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	indexID, err := unmarshalLSIFIndexGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-
-	index, exists, err := prefetcher.GetIndexByID(ctx, int(indexID))
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	return NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs), nil
+func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().LSIFIndexByID(ctx, id)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
-func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (_ gql.LSIFIndexConnectionResolver, err error) {
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	ctx, _, endObservation := r.observationContext.lsifIndexes.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	// Delegate behavior to LSIFIndexesByRepo with no specified repository identifier
-	return r.LSIFIndexesByRepo(ctx, &gql.LSIFRepositoryIndexesQueryArgs{LSIFIndexesQueryArgs: args})
+func (r *Resolver) LSIFIndexes(ctx context.Context, args *autoindexinggraphql.LSIFIndexesQueryArgs) (_ sharedresolvers.LSIFIndexConnectionResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().LSIFIndexes(ctx, args)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
-func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (_ gql.LSIFIndexConnectionResolver, err error) {
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	ctx, traceErrs, endObservation := r.observationContext.lsifIndexesByRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.RepositoryID)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	opts, err := makeGetIndexesOptions(args)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-
-	// Create a new indexConnectionResolver here as we only want to index records in
-	// the same graphQL request, not across different request.
-	indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
-
-	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, indexConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
+func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *autoindexinggraphql.LSIFRepositoryIndexesQueryArgs) (_ sharedresolvers.LSIFIndexConnectionResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().LSIFIndexesByRepo(ctx, args)
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
-func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *gql.EmptyResponse, err error) {
-	ctx, _, endObservation := r.observationContext.deleteLsifIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexID", string(args.ID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	if err := autoIndexingResolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
-		return nil, err
-	}
-
-	return &gql.EmptyResponse{}, nil
+func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.resolver.AutoIndexingRootResolver().DeleteLSIFIndex(ctx, args)
 }
 
-// // HERE HERE HERE
-// // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-// func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
-// 	ctx, _, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-// 		log.String("repoID", string(id)),
-// 	}})
-// 	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-// 	repositoryID, err := gql.UnmarshalRepositoryID(id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
-
-// 	return commitGraphResolver, nil
-// }
-
-// HERE HERE HERE
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
 	return r.resolver.UploadRootResolver().CommitGraph(ctx, id)
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
-func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) (_ []gql.LSIFIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.observationContext.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.Repository)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	repositoryID, err := gql.UnmarshalRepositoryID(args.Repository)
-	if err != nil {
-		return nil, err
-	}
-
-	rev := "HEAD"
-	if args.Rev != nil {
-		rev = *args.Rev
-	}
-
-	configuration := ""
-	if args.Configuration != nil {
-		configuration = *args.Configuration
-	}
-
-	autoindexingResolver := r.resolver.AutoIndexingResolver()
-	indexes, err := autoindexingResolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-
-	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
-	for i := range indexes {
-		index := convertSharedIndexToDBStoreIndex(indexes[i])
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs))
-	}
-	return resolvers, nil
+func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *autoindexinggraphql.QueueAutoIndexJobsForRepoArgs) (_ []sharedresolvers.LSIFIndexResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().QueueAutoIndexJobsForRepo(ctx, args)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
@@ -295,13 +156,16 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
+// move to autoindexing service
 func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	// move to autoindexing service
 	return NewCodeIntelSupportResolver(r.resolver, args.Repo.Name, args.Path, errTracer), nil
 }
 
+// move to autoindexing service
 func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (resolver gql.GitTreeCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(args.Repo.ID)),
@@ -523,105 +387,18 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ gql.CodeIntelRepositorySummaryResolver, err error) {
-	ctx, errTracer, endObservation := r.observationContext.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	repositoryID, err := gql.UnmarshalRepositoryID(id)
-	if err != nil {
-		return nil, err
-	}
-	repoID := int(repositoryID)
-
-	uploadResolver := r.resolver.UploadsResolver()
-	recentUploads, err := uploadResolver.GetRecentUploadsSummary(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
-	lastUploadRetentionScan, err := uploadResolver.GetLastUploadRetentionScanForRepository(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
-	autoindexingResolver := r.resolver.AutoIndexingResolver()
-	recentIndexes, err := autoindexingResolver.GetRecentIndexesSummary(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
-	lastIndexScan, err := autoindexingResolver.GetLastIndexScanForRepository(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
-	summary := RepositorySummary{
-		RecentUploads:           recentUploads,
-		RecentIndexes:           recentIndexes,
-		LastUploadRetentionScan: lastUploadRetentionScan,
-		LastIndexScan:           lastIndexScan,
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := NewPrefetcher(r.resolver)
-
-	return NewRepositorySummaryResolver(
-		r.db,
-		r.resolver,
-		r.gitserver,
-		summary,
-		prefetcher,
-		r.locationResolver,
-		errTracer,
-	), nil
+func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ sharedresolvers.CodeIntelRepositorySummaryResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().RepositorySummary(ctx, id)
 }
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ gql.IndexConfigurationResolver, err error) {
-	_, traceErrs, endObservation := r.observationContext.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	repositoryID, err := gql.UnmarshalRepositoryID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewIndexConfigurationResolver(r.resolver, int(repositoryID), traceErrs), nil
+func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ autoindexinggraphql.IndexConfigurationResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().IndexConfiguration(ctx, id)
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
-func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (_ *gql.EmptyResponse, err error) {
-	ctx, _, endObservation := r.observationContext.updateIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.Repository)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
-	if err != nil {
-		return nil, err
-	}
-	autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	if err := autoIndexingResolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
-		return nil, err
-	}
-
-	return &gql.EmptyResponse{}, nil
+func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *autoindexinggraphql.UpdateRepositoryIndexConfigurationArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.resolver.AutoIndexingRootResolver().UpdateRepositoryIndexConfiguration(ctx, args)
 }
 
 func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) (_ gql.RepositoryFilterPreviewResolver, err error) {
@@ -753,18 +530,18 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (types.GetU
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (autoindexingShared.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (types.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return autoindexingShared.GetIndexesOptions{}, err
+		return types.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return autoindexingShared.GetIndexesOptions{}, err
+		return types.GetIndexesOptions{}, err
 	}
 
-	return autoindexingShared.GetIndexesOptions{
+	return types.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),

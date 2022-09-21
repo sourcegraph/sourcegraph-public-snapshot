@@ -89,7 +89,7 @@ RETURNING id
 `
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
