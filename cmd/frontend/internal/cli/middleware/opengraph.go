@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	approuter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
@@ -38,6 +37,15 @@ func isValidOpenGraphRequesterUserAgent(userAgent string) bool {
 	return false
 }
 
+func displayRepoName(repoName string) string {
+	repoNameParts := strings.Split(repoName, "/")
+	// Heuristic to remove hostname from repo name to reduce visual noise
+	if len(repoNameParts) >= 3 && strings.Contains(repoNameParts[0], ".") {
+		repoNameParts = repoNameParts[1:]
+	}
+	return strings.Join(repoNameParts, "/")
+}
+
 func getOpenGraphTemplateData(req *http.Request) *openGraphTemplateData {
 	if envvar.SourcegraphDotComMode() || actor.FromContext(req.Context()).IsAuthenticated() || !isValidOpenGraphRequesterUserAgent(req.UserAgent()) {
 		return nil
@@ -57,10 +65,11 @@ func getOpenGraphTemplateData(req *http.Request) *openGraphTemplateData {
 
 	switch uiRouterMatch.Route.GetName() {
 	case "repo":
-		return &openGraphTemplateData{Title: uiRouterMatch.Vars["Repo"], Description: "Explore repository on Sourcegraph"}
+		repoName := displayRepoName(uiRouterMatch.Vars["Repo"])
+		return &openGraphTemplateData{Title: repoName, Description: fmt.Sprintf("Explore %s repository on Sourcegraph", repoName)}
 	case "blob":
 		path := strings.TrimPrefix(uiRouterMatch.Vars["Path"], "/")
-		templateData := &openGraphTemplateData{Title: path, Description: fmt.Sprintf("%s/%s", globals.ExternalURL().Host, uiRouterMatch.Vars["Repo"])}
+		templateData := &openGraphTemplateData{Title: path, Description: displayRepoName(uiRouterMatch.Vars["Repo"])}
 
 		lineRange := ui.FindLineRangeInQueryParameters(req.URL.Query())
 		formattedLineRange := strings.TrimPrefix(ui.FormatLineRange(lineRange), "L")
