@@ -23,6 +23,7 @@ func (h *handler) prepareWorkspace(
 			ctx,
 			job,
 			h.options.ResourceOptions.DiskSpace,
+			h.options.KeepWorkspaces,
 			commandRunner,
 			commandLogger,
 			workspace.CloneOptions{

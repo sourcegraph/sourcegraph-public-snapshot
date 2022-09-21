@@ -25,6 +25,7 @@ func NewFirecrackerWorkspace(
 	ctx context.Context,
 	job executor.Job,
 	diskSpace string,
+	keepWorkspace bool,
 	commandRunner command.Runner,
 	commandLogger command.Logger,
 	cloneOpts CloneOptions,
@@ -34,6 +35,7 @@ func NewFirecrackerWorkspace(
 		ctx,
 		job.ID,
 		diskSpace,
+		keepWorkspace,
 		commandLogger,
 	)
 	if err != nil {
@@ -124,6 +126,7 @@ func setupLoopDevice(
 	ctx context.Context,
 	jobID int,
 	diskSpace string,
+	keepWorkspace bool,
 	commandLogger command.Logger,
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
 	handle := commandLogger.Log("setup.fs.workspace", nil)
@@ -147,11 +150,11 @@ func setupLoopDevice(
 	if err != nil {
 		return "", "", "", err
 	}
-	// defer func() {
-	// 	if err == nil {
-	// 		os.Remove(loopFile.Name())
-	// 	}
-	// }()
+	defer func() {
+		if err != nil && !keepWorkspace {
+			os.Remove(loopFile.Name())
+		}
+	}()
 	blockDeviceFile = loopFile.Name()
 	fmt.Fprintf(handle, "Created backing workspace file at %q\n", blockDeviceFile)
 
