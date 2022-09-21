@@ -12,7 +12,7 @@ type LuaLib interface {
 }
 
 var defaultAPIs = map[string]LuaLib{
-	"path": libs.Path,
+	"backdoor_path": libs.Path,
 }
 
 var DefaultGoModules = func() map[string]lua.LGFunction {
