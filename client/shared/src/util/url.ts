@@ -70,7 +70,7 @@ interface ComparisonSpec {
  * 1-indexed position in a blob.
  * Positions in URLs are 1-indexed.
  */
-interface UIPosition {
+export interface UIPosition {
     /** 1-indexed line number */
     line: number
 
@@ -82,7 +82,7 @@ interface UIPosition {
  * 1-indexed range in a blob.
  * Ranges in URLs are 1-indexed.
  */
-interface UIRange {
+export interface UIRange {
     start: UIPosition
     end: UIPosition
 }

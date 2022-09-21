@@ -42,31 +42,49 @@ The plugin works with all JetBrains IDEs, including:
 - To share a link to your code or search through the website, right-click in the editor, and choose an action under the `Sourcegraph` context menu item.
 - To use your private Sourcegraph instance, open `Settings | Tools | Sourcegraph` and enter your URL and access token.
 
-## Advanced settings
+## Settings
 
-You can configure the plugin at three levels:
+You can configure the plugin on three levels:
 
-1. **Application level:** This is what you edit by default when you go to Settings and make changes in the UI.
-   - Advanced tip: App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
-2. **Project level:** You can set up project-level settings in a less intuitive way:
-   1. Create a new file at `{project root}/.idea/sourcegraph.xml` if it doesn't exist, with this content:
-      ```xml
-      <?xml version="1.0" encoding="UTF-8"?>
-      <project version="4">
-        <component name="Config">
-          <option name="instanceType" value="DOTCOM" />
-          <option name="url" value="https://company.sourcegraph.com/" />
-          <option name="accessToken" value="" />
-          <option name="defaultBranch" value="main" />
-          <option name="remoteUrlReplacements" value="" />
-          <option name="isGlobbingEnabled" value="false" />
-        </component>
-      </project>
-      ```
-      If the file already exists, then just add the option lines next to the original ones.
-   2. Reopen your project to let the IDE catch up with the changes. Now you have custom settings enabled for this project. In the future, when you have this project open and you edit your settings in the Settings UI, they will be saved to the **project-level** file.
-   3. To remove the project-level settings, open the XML again and remove the lines you want to set on the app level.
-3. **User level:** This is something that's rarely used and is only kept for backwards compatibility. So, the plugin is also configurable by removing all creating a file called `.sourcegraph-jetbrains.properties` in your home directory. Both the app-level and project-level XMLs override this, plus it only supports three settings:
+1. **Project-level** settings take the highest priority.
+2. **Application-level** settings are second: For _each specific setting_, if the plugin finds no project-level value, then the app-level setting is used.
+3. **User-level** (legacy) settings take the lowest priority. Also, note that only three of the settings are available on the user level.
+
+Here is each level in detail.
+
+### Project level
+
+These settings have the highest priority. You can set them in a less than intuitive way:
+
+1. Create a new file at `{project root}/.idea/sourcegraph.xml` if it doesn't exist, with this content:
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <project version="4">
+     <component name="Config">
+       <option name="instanceType" value="DOTCOM" />
+       <option name="url" value="https://company.sourcegraph.com/" />
+       <option name="accessToken" value="" />
+       <option name="defaultBranch" value="main" />
+       <option name="remoteUrlReplacements" value="" />
+       <option name="isGlobbingEnabled" value="false" />
+     </component>
+   </project>
+   ```
+   If the file already exists, then just add the option lines next to the original ones.
+2. Reopen your project to let the IDE catch up with the changes. Now you have custom settings enabled for this project. In the future, when you have this project open and you edit your settings in the Settings UI, they will be saved to the **project-level** file.
+3. To remove the project-level settings, open the XML again and remove the lines you want to set on the app level.
+
+**Storage location:** `{project root}/.idea/sourcegraph.xml`
+
+### Application level
+
+This is what you edit when you go to Settings and make changes in the UI. That is, unless you have project-specific settings for your current project.
+
+**Storage location:** App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
+
+### User level – ⚠️ DEPRECATED ⚠️
+
+This type of settings take the lowest priority, and is something that's rarely used and is only kept for backwards compatibility, and might be removed in the future. So, the plugin is also configurable by removing all creating a file called `.sourcegraph-jetbrains.properties` in your home directory. Both the app-level and project-level XMLs override this, plus it only supports three settings:
 
 ```
 url = https://sourcegraph.example.com
@@ -74,7 +92,9 @@ defaultBranch = example-branch
 remoteUrlReplacements = git.example.com, git-web.example.com
 ```
 
-**+1 tip for git remotes:** By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by the name of `sourcegraph`. It will take priority when creating Sourcegraph links.
+### Git remote setting
+
+By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by the name of `sourcegraph`. It will take priority when creating Sourcegraph links.
 
 ## Managing Custom Keymaps
 

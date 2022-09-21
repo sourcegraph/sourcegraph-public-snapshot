@@ -582,7 +582,9 @@ describe('Search contexts', () => {
             // A search will be submitted on context click, wait for the navigation
             driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
             // Click second context item in the dropdown
-            driver.page.click('[data-testid="search-context-menu-item-name"][title="ctx-1"]'),
+            driver.page.click(
+                '[data-testid="search-context-menu-item"]:nth-child(2) [data-testid="search-context-menu-item-name"]'
+            ),
         ])
 
         await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })

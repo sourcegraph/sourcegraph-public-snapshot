@@ -18,6 +18,7 @@ type Config struct {
 
 	S3Region          string
 	S3Endpoint        string
+	S3UsePathStyle    bool
 	S3AccessKeyID     string
 	S3SecretAccessKey string
 	S3SessionToken    string
@@ -40,6 +41,7 @@ func (c *Config) Load() {
 	if c.Backend == "minio" || c.Backend == "s3" {
 		c.S3Region = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_REGION", "us-east-1", "The target AWS region.")
 		c.S3Endpoint = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://minio:9000", "The target AWS endpoint.")
+		c.S3UsePathStyle = c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_PATH_STYLE", "false", "Whether to use path calling (vs subdomain calling).")
 		ec2RoleCredentials := c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS", "false", "Whether to use the EC2 metadata API, or use the provided static credentials.")
 
 		if !ec2RoleCredentials {

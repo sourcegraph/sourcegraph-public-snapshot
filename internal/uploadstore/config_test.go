@@ -8,45 +8,32 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestS3ClientOptions(t *testing.T) {
 	config := Config{
 		S3: S3Config{
-			Endpoint: "http://minio:9000",
+			Endpoint:     "http://minio:9000",
+			UsePathStyle: true,
 		},
 	}
 
-	// minIO
-	{
-		options := &s3.Options{}
-		s3ClientOptions("minio", config.S3)(options)
+	options := &s3.Options{}
+	s3ClientOptions(config.S3)(options)
 
-		if options.EndpointResolver == nil {
-			t.Fatalf("unexpected endpoint option")
-		}
-		endpoint, err := options.EndpointResolver.ResolveEndpoint("us-east-2", s3.EndpointResolverOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if endpoint.URL != "http://minio:9000" {
-			t.Errorf("unexpected endpoint. want=%s have=%s", "http://minio:9000", endpoint.URL)
-		}
-
-		if !options.UsePathStyle {
-			t.Errorf("invalid UsePathStyle setting for S3Options")
-		}
+	if options.EndpointResolver == nil {
+		t.Fatalf("unexpected endpoint option")
+	}
+	endpoint, err := options.EndpointResolver.ResolveEndpoint("us-east-2", s3.EndpointResolverOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if endpoint.URL != "http://minio:9000" {
+		t.Errorf("unexpected endpoint. want=%s have=%s", "http://minio:9000", endpoint.URL)
 	}
 
-	// S3
-	{
-		options := &s3.Options{}
-		s3ClientOptions("s3", config.S3)(options)
-
-		if diff := cmp.Diff(&s3.Options{}, options, cmpopts.IgnoreUnexported(s3.Options{})); diff != "" {
-			t.Fatalf("invalid s3 options returned for S3: %s", diff)
-		}
+	if !options.UsePathStyle {
+		t.Errorf("invalid UsePathStyle setting for S3Options")
 	}
 }
 
