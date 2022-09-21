@@ -92,6 +92,7 @@ func (c *Config) Validate() error {
 	return c.BaseConfig.Validate()
 }
 
+// APIWorkerOptions builds the options for the worker.
 func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
