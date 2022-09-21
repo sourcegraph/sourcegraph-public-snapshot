@@ -10,7 +10,7 @@ return recognizer.new_path_recognizer {
   },
 
   -- Invoked when Cargo.toml exists anywhere in repository
-  generate = function(_, paths)
+  generate = function(_, _)
     return {
       steps = {},
       root = "",

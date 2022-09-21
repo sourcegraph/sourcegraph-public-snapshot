@@ -27,7 +27,7 @@ return recognizer.new_path_recognizer {
       },
 
       -- Invoked when lsif-java.json exists in root of repository
-      generate = function(api, paths)
+      generate = function(_, _)
         return {
           steps = {},
           root = "",
