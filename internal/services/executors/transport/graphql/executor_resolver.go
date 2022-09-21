@@ -110,7 +110,7 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 		return nil, err
 	}
 
-	// it's okay for an executor to be one version behind or ahead of the sourcegraph version.
+	// it's okay for an executor to be one minor version behind or ahead of the sourcegraph version.
 	iev := e.IncMinor()
 
 	isv := s.IncMinor()
