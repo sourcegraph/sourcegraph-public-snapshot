@@ -71,8 +71,8 @@ func (s *subRepoPermsStore) Done(err error) error {
 // Upsert will upsert sub repo permissions data.
 func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
-VALUES (%s, %s, %s, %s, %s, now())
+INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, paths, version, updated_at)
+VALUES (%s, %s, %s, %s, %s, %s, now())
 ON CONFLICT (user_id, repo_id, version)
 DO UPDATE
 SET
@@ -80,9 +80,10 @@ SET
   repo_id = EXCLUDED.repo_id,
   path_includes = EXCLUDED.path_includes,
   path_excludes = EXCLUDED.path_excludes,
+  paths = EXCLUDED.paths,
   version = EXCLUDED.version,
   updated_at = now()
-`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion)
+`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), pq.Array(perms.Paths), SubRepoPermsVersion)
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
@@ -91,8 +92,8 @@ SET
 // nothing is written.
 func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
-SELECT %s, id, %s, %s, %s, now()
+INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, paths, version, updated_at)
+SELECT %s, id, %s, %s, %s, %s, now()
 FROM repo
 WHERE external_service_id = %s
   AND external_service_type = %s
@@ -104,9 +105,10 @@ SET
   repo_id = EXCLUDED.repo_id,
   path_includes = EXCLUDED.path_includes,
   path_excludes = EXCLUDED.path_excludes,
+  paths = EXCLUDED.paths,
   version = EXCLUDED.version,
   updated_at = now()
-`, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
+`, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
 
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions with spec")
 }
