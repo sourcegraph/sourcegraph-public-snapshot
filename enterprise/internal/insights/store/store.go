@@ -201,11 +201,22 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	filter := func(id int) bool {
 		return denyBitmap.Contains(uint32(id))
 	}
-	q := `select time, value, repo_id, capture from series_points sp
+	// SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
+	//	FROM (  select * from series_points
+	//			union
+	//			select * from series_points_snapshots
+	//	) AS sp
+
+	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
+				select * from series_points
+				union
+				select * from series_points_snapshots
+				) as sp
 		  JOIN repo_names rn ON sp.repo_name_id = rn.id
-          where %s;`
+          where %s
+		  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
+;`
 	fullQ := seriesPointsQuery(q, opts)
-	log15.Info("fullQ", "q", fullQ.Query(sqlf.PostgresBindVar), "args", fullQ.Args())
 	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
 		var row loadStruct
 		err = sc.Scan(
