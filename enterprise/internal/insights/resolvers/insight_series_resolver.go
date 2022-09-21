@@ -395,7 +395,6 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 			return nil, err
 		}
 	} else {
-		log15.Info("alternative")
 		points, err = r.timeSeriesStore.LoadSeriesInMem(ctx, *opts)
 		if err != nil {
 			return nil, err
