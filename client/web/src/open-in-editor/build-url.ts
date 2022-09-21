@@ -8,7 +8,7 @@ import { Editor, getEditor, supportedEditors } from './editors'
 export function buildRepoBaseNameAndPath(repoName: string, filePath: string | undefined): string {
     const codeHostsWithOwnerInUrl = ['github.com', 'gitlab.com', 'bitbucket.org']
     const repoNameIncludesOwner = codeHostsWithOwnerInUrl.some(url => repoName.startsWith(url + '/'))
-    const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1);
+    const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1)
     return path.join(...[...bareRepoNamePieces, ...(filePath ? [filePath] : [])])
 }
 
@@ -34,7 +34,7 @@ export function buildEditorUrl(
             : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
-    const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
+    const {line, column} = range ? {line: range.start.line, column: range.start.character} : {line: 1, column: 1}
     const url = urlPattern
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)
