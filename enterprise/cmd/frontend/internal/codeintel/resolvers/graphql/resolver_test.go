@@ -5,19 +5,14 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
 	uploadmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -96,107 +91,5 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 
 	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
-	}
-}
-
-// Move test out of here
-func TestMakeGetUploadsOptions(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
-				First: intPtr(5),
-			},
-			Query:           strPtr("q"),
-			State:           strPtr("s"),
-			IsLatestForRepo: boolPtr(true),
-			After:           graphqlutil.EncodeIntCursor(intPtr(25)).EndCursor(),
-		},
-		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := uploadsShared.GetUploadsOptions{
-		RepositoryID: 50,
-		State:        "s",
-		Term:         "q",
-		VisibleAtTip: true,
-		Limit:        5,
-		Offset:       25,
-		AllowExpired: true,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
-	}
-}
-
-func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{},
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := uploadsShared.GetUploadsOptions{
-		RepositoryID: 0,
-		State:        "",
-		Term:         "",
-		VisibleAtTip: false,
-		Limit:        DefaultUploadPageSize,
-		Offset:       0,
-		AllowExpired: true,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
-	}
-}
-
-func TestMakeGetIndexesOptions(t *testing.T) {
-	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
-				First: intPtr(5),
-			},
-			Query: strPtr("q"),
-			State: strPtr("s"),
-			After: graphqlutil.EncodeIntCursor(intPtr(25)).EndCursor(),
-		},
-		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := codeinteltypes.GetIndexesOptions{
-		RepositoryID: 50,
-		State:        "s",
-		Term:         "q",
-		Limit:        5,
-		Offset:       25,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
-	}
-}
-
-func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
-	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{},
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := codeinteltypes.GetIndexesOptions{
-		RepositoryID: 0,
-		State:        "",
-		Term:         "",
-		Limit:        DefaultIndexPageSize,
-		Offset:       0,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
 	}
 }

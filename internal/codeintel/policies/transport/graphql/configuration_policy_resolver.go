@@ -10,25 +10,41 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type CodeIntelligenceConfigurationPolicyResolver interface {
+	ID() graphql.ID
+	Repository(ctx context.Context) (*sharedresolvers.RepositoryResolver, error)
+	RepositoryPatterns() *[]string
+	Name() string
+	Type() (sharedresolvers.GitObjectType, error)
+	Pattern() string
+	Protected() bool
+	RetentionEnabled() bool
+	RetentionDurationHours() *int32
+	RetainIntermediateCommits() bool
+	IndexingEnabled() bool
+	IndexCommitMaxAgeHours() *int32
+	IndexIntermediateCommits() bool
+}
+
 type configurationPolicyResolver struct {
 	logger              sglog.Logger
-	db                  database.DB
-	configurationPolicy store.ConfigurationPolicy
+	policySvc           *policies.Service
+	configurationPolicy types.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(policySvc *policies.Service, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
+		policySvc:           policySvc,
 		logger:              sglog.Scoped("configurationPolicyResolver", ""),
-		db:                  db,
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
 	}
@@ -42,7 +58,7 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
-func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.RepositoryResolver, err error) {
+func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *sharedresolvers.RepositoryResolver, err error) {
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
@@ -53,19 +69,19 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	repo, err := backend.NewRepos(r.logger, r.db).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.logger, r.policySvc.GetUnsafeDB()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(r.db, repo), nil
+	return sharedresolvers.NewRepositoryResolver(r.policySvc.GetUnsafeDB(), repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 	return r.configurationPolicy.RepositoryPatterns
 }
 
-func (r *configurationPolicyResolver) Type() (_ gql.GitObjectType, err error) {
+func (r *configurationPolicyResolver) Type() (_ sharedresolvers.GitObjectType, err error) {
 	defer r.errTracer.Collect(&err,
 		log.String("configurationPolicyResolver.field", "type"),
 		log.Int("configurationPolicyID", r.configurationPolicy.ID),
@@ -73,12 +89,12 @@ func (r *configurationPolicyResolver) Type() (_ gql.GitObjectType, err error) {
 	)
 
 	switch r.configurationPolicy.Type {
-	case store.GitObjectTypeCommit:
-		return gql.GitObjectTypeCommit, nil
-	case store.GitObjectTypeTag:
-		return gql.GitObjectTypeTag, nil
-	case store.GitObjectTypeTree:
-		return gql.GitObjectTypeTree, nil
+	case types.GitObjectTypeCommit:
+		return sharedresolvers.GitObjectTypeCommit, nil
+	case types.GitObjectTypeTag:
+		return sharedresolvers.GitObjectTypeTag, nil
+	case types.GitObjectTypeTree:
+		return sharedresolvers.GitObjectTypeTree, nil
 	default:
 		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)
 	}

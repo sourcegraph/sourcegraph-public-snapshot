@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -385,7 +386,7 @@ func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.Co
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *policies.PreviewGitObjectFilterArgs) ([]policies.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 

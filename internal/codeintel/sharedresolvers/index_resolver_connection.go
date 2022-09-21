@@ -17,17 +17,18 @@ type LSIFIndexConnectionResolver interface {
 type IndexConnectionResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
-	policyResolver   PolicyResolver
+	policySvc        PolicyService
 	indexesResolver  *IndexesResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, indexesResolver *IndexesResolver, policyResolver PolicyResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
+		policySvc:        policySvc,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,
 		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
@@ -43,7 +44,7 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]LSIFIndexResolve
 	resolvers := make([]LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
 		// index := convertSharedIndexToDBStoreIndex(r.indexesResolver.Indexes[i])
-		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policyResolver, r.indexesResolver.Indexes[i], r.prefetcher, r.errTracer))
+		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.indexesResolver.Indexes[i], r.prefetcher, r.errTracer))
 	}
 	return resolvers, nil
 }

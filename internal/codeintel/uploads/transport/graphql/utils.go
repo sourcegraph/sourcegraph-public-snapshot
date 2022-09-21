@@ -265,3 +265,23 @@ func decodeIntCursor(val *string) (int, error) {
 
 	return strconv.Atoi(cursor)
 }
+
+// strPtr creates a pointer to the given value. If the value is an
+// empty string, a nil pointer is returned.
+func strPtr(val string) *string {
+	if val == "" {
+		return nil
+	}
+
+	return &val
+}
+
+// intPtr creates a pointer to the given value.
+func intPtr(val int32) *int32 {
+	return &val
+}
+
+// intPtr creates a pointer to the given value.
+func boolPtr(val bool) *bool {
+	return &val
+}

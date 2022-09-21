@@ -28,6 +28,13 @@ type operations struct {
 
 	// Factory
 	getPolicyResolverFactory *observation.Operation
+
+	// NEW STUFF
+	configurationPolicies     *observation.Operation
+	configurationPolicyByID   *observation.Operation
+	deleteConfigurationPolicy *observation.Operation
+	previewRepoFilter         *observation.Operation
+	previewGitObjectFilter    *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -63,6 +70,13 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Factory
 		getPolicyResolverFactory: op("GetPolicyResolverFactory"),
+
+		// NEW STUFF
+		configurationPolicies:     op("ConfigurationPolicies"),
+		configurationPolicyByID:   op("ConfigurationPolicyByID"),
+		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
+		previewRepoFilter:         op("PreviewRepoFilter"),
+		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
 	}
 }
 

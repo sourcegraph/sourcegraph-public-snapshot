@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	policy "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -21,6 +20,6 @@ type UploadsService interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 }
 
-type PolicyResolver interface {
-	PolicyResolverFactory(ctx context.Context) (_ policy.PolicyResolver, err error)
+type PolicyService interface {
+	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
 }

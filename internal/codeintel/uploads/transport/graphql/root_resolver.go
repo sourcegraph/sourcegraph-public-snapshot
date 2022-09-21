@@ -22,18 +22,18 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	uploadSvc      *uploads.Service
-	autoindexSvc   AutoIndexingService
-	policyResolver PolicyResolver
-	operations     *operations
+	uploadSvc    *uploads.Service
+	autoindexSvc AutoIndexingService
+	policySvc    PolicyService
+	operations   *operations
 }
 
-func NewRootResolver(uploadSvc *uploads.Service, autoindexSvc AutoIndexingService, policyResolver PolicyResolver, observationContext *observation.Context) RootResolver {
+func NewRootResolver(uploadSvc *uploads.Service, autoindexSvc AutoIndexingService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
-		uploadSvc:      uploadSvc,
-		autoindexSvc:   autoindexSvc,
-		policyResolver: policyResolver,
-		operations:     newOperations(observationContext),
+		uploadSvc:    uploadSvc,
+		autoindexSvc: autoindexSvc,
+		policySvc:    policySvc,
+		operations:   newOperations(observationContext),
 	}
 }
 
@@ -81,7 +81,7 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 		return nil, err
 	}
 
-	return resolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policyResolver, upload, prefetcher, traceErrs), nil
+	return resolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, upload, prefetcher, traceErrs), nil
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -128,7 +128,7 @@ func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFReposito
 	// uploadConnectionResolver := r.resolver.UploadsResolver().UploadsConnectionResolverFromFactory(opts)
 	uploadsResolver := resolvers.NewUploadsResolver(r.uploadSvc, opts)
 
-	return resolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policyResolver, uploadsResolver, prefetcher, traceErrs), nil
+	return resolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, uploadsResolver, prefetcher, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data

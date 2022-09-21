@@ -11,7 +11,8 @@ import (
 
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	graphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
-	graphql2 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	graphql2 "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	graphql3 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	graphql1 "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -20,9 +21,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockResolver struct {
-	// AutoIndexingResolverFunc is an instance of a mock function object
-	// controlling the behavior of the method AutoIndexingResolver.
-	AutoIndexingResolverFunc *ResolverAutoIndexingResolverFunc
 	// AutoIndexingRootResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method AutoIndexingRootResolver.
 	AutoIndexingRootResolverFunc *ResolverAutoIndexingRootResolverFunc
@@ -32,26 +30,18 @@ type MockResolver struct {
 	// ExecutorResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method ExecutorResolver.
 	ExecutorResolverFunc *ResolverExecutorResolverFunc
-	// PoliciesResolverFunc is an instance of a mock function object
-	// controlling the behavior of the method PoliciesResolver.
-	PoliciesResolverFunc *ResolverPoliciesResolverFunc
+	// PoliciesRootResolverFunc is an instance of a mock function object
+	// controlling the behavior of the method PoliciesRootResolver.
+	PoliciesRootResolverFunc *ResolverPoliciesRootResolverFunc
 	// UploadRootResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method UploadRootResolver.
 	UploadRootResolverFunc *ResolverUploadRootResolverFunc
-	// UploadsResolverFunc is an instance of a mock function object
-	// controlling the behavior of the method UploadsResolver.
-	UploadsResolverFunc *ResolverUploadsResolverFunc
 }
 
 // NewMockResolver creates a new mock of the Resolver interface. All methods
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
-		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
-			defaultHook: func() (r0 resolvers.AutoIndexingResolver) {
-				return
-			},
-		},
 		AutoIndexingRootResolverFunc: &ResolverAutoIndexingRootResolverFunc{
 			defaultHook: func() (r0 graphql.RootResolver) {
 				return
@@ -67,18 +57,13 @@ func NewMockResolver() *MockResolver {
 				return
 			},
 		},
-		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
-			defaultHook: func() (r0 resolvers.PoliciesResolver) {
-				return
-			},
-		},
-		UploadRootResolverFunc: &ResolverUploadRootResolverFunc{
+		PoliciesRootResolverFunc: &ResolverPoliciesRootResolverFunc{
 			defaultHook: func() (r0 graphql2.RootResolver) {
 				return
 			},
 		},
-		UploadsResolverFunc: &ResolverUploadsResolverFunc{
-			defaultHook: func() (r0 resolvers.UploadsResolver) {
+		UploadRootResolverFunc: &ResolverUploadRootResolverFunc{
+			defaultHook: func() (r0 graphql3.RootResolver) {
 				return
 			},
 		},
@@ -89,11 +74,6 @@ func NewMockResolver() *MockResolver {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockResolver() *MockResolver {
 	return &MockResolver{
-		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
-			defaultHook: func() resolvers.AutoIndexingResolver {
-				panic("unexpected invocation of MockResolver.AutoIndexingResolver")
-			},
-		},
 		AutoIndexingRootResolverFunc: &ResolverAutoIndexingRootResolverFunc{
 			defaultHook: func() graphql.RootResolver {
 				panic("unexpected invocation of MockResolver.AutoIndexingRootResolver")
@@ -109,19 +89,14 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.ExecutorResolver")
 			},
 		},
-		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
-			defaultHook: func() resolvers.PoliciesResolver {
-				panic("unexpected invocation of MockResolver.PoliciesResolver")
+		PoliciesRootResolverFunc: &ResolverPoliciesRootResolverFunc{
+			defaultHook: func() graphql2.RootResolver {
+				panic("unexpected invocation of MockResolver.PoliciesRootResolver")
 			},
 		},
 		UploadRootResolverFunc: &ResolverUploadRootResolverFunc{
-			defaultHook: func() graphql2.RootResolver {
+			defaultHook: func() graphql3.RootResolver {
 				panic("unexpected invocation of MockResolver.UploadRootResolver")
-			},
-		},
-		UploadsResolverFunc: &ResolverUploadsResolverFunc{
-			defaultHook: func() resolvers.UploadsResolver {
-				panic("unexpected invocation of MockResolver.UploadsResolver")
 			},
 		},
 	}
@@ -131,9 +106,6 @@ func NewStrictMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 	return &MockResolver{
-		AutoIndexingResolverFunc: &ResolverAutoIndexingResolverFunc{
-			defaultHook: i.AutoIndexingResolver,
-		},
 		AutoIndexingRootResolverFunc: &ResolverAutoIndexingRootResolverFunc{
 			defaultHook: i.AutoIndexingRootResolver,
 		},
@@ -143,116 +115,13 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
 			defaultHook: i.ExecutorResolver,
 		},
-		PoliciesResolverFunc: &ResolverPoliciesResolverFunc{
-			defaultHook: i.PoliciesResolver,
+		PoliciesRootResolverFunc: &ResolverPoliciesRootResolverFunc{
+			defaultHook: i.PoliciesRootResolver,
 		},
 		UploadRootResolverFunc: &ResolverUploadRootResolverFunc{
 			defaultHook: i.UploadRootResolver,
 		},
-		UploadsResolverFunc: &ResolverUploadsResolverFunc{
-			defaultHook: i.UploadsResolver,
-		},
 	}
-}
-
-// ResolverAutoIndexingResolverFunc describes the behavior when the
-// AutoIndexingResolver method of the parent MockResolver instance is
-// invoked.
-type ResolverAutoIndexingResolverFunc struct {
-	defaultHook func() resolvers.AutoIndexingResolver
-	hooks       []func() resolvers.AutoIndexingResolver
-	history     []ResolverAutoIndexingResolverFuncCall
-	mutex       sync.Mutex
-}
-
-// AutoIndexingResolver delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
-	r0 := m.AutoIndexingResolverFunc.nextHook()()
-	m.AutoIndexingResolverFunc.appendCall(ResolverAutoIndexingResolverFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the AutoIndexingResolver
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverAutoIndexingResolverFunc) SetDefaultHook(hook func() resolvers.AutoIndexingResolver) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AutoIndexingResolver method of the parent MockResolver instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ResolverAutoIndexingResolverFunc) PushHook(hook func() resolvers.AutoIndexingResolver) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverAutoIndexingResolverFunc) SetDefaultReturn(r0 resolvers.AutoIndexingResolver) {
-	f.SetDefaultHook(func() resolvers.AutoIndexingResolver {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverAutoIndexingResolverFunc) PushReturn(r0 resolvers.AutoIndexingResolver) {
-	f.PushHook(func() resolvers.AutoIndexingResolver {
-		return r0
-	})
-}
-
-func (f *ResolverAutoIndexingResolverFunc) nextHook() func() resolvers.AutoIndexingResolver {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverAutoIndexingResolverFunc) appendCall(r0 ResolverAutoIndexingResolverFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverAutoIndexingResolverFuncCall
-// objects describing the invocations of this function.
-func (f *ResolverAutoIndexingResolverFunc) History() []ResolverAutoIndexingResolverFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverAutoIndexingResolverFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverAutoIndexingResolverFuncCall is an object that describes an
-// invocation of method AutoIndexingResolver on an instance of MockResolver.
-type ResolverAutoIndexingResolverFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 resolvers.AutoIndexingResolver
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverAutoIndexingResolverFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverAutoIndexingResolverFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // ResolverAutoIndexingRootResolverFunc describes the behavior when the
@@ -555,35 +424,36 @@ func (c ResolverExecutorResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ResolverPoliciesResolverFunc describes the behavior when the
-// PoliciesResolver method of the parent MockResolver instance is invoked.
-type ResolverPoliciesResolverFunc struct {
-	defaultHook func() resolvers.PoliciesResolver
-	hooks       []func() resolvers.PoliciesResolver
-	history     []ResolverPoliciesResolverFuncCall
+// ResolverPoliciesRootResolverFunc describes the behavior when the
+// PoliciesRootResolver method of the parent MockResolver instance is
+// invoked.
+type ResolverPoliciesRootResolverFunc struct {
+	defaultHook func() graphql2.RootResolver
+	hooks       []func() graphql2.RootResolver
+	history     []ResolverPoliciesRootResolverFuncCall
 	mutex       sync.Mutex
 }
 
-// PoliciesResolver delegates to the next hook function in the queue and
+// PoliciesRootResolver delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockResolver) PoliciesResolver() resolvers.PoliciesResolver {
-	r0 := m.PoliciesResolverFunc.nextHook()()
-	m.PoliciesResolverFunc.appendCall(ResolverPoliciesResolverFuncCall{r0})
+func (m *MockResolver) PoliciesRootResolver() graphql2.RootResolver {
+	r0 := m.PoliciesRootResolverFunc.nextHook()()
+	m.PoliciesRootResolverFunc.appendCall(ResolverPoliciesRootResolverFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the PoliciesResolver
+// SetDefaultHook sets function that is called when the PoliciesRootResolver
 // method of the parent MockResolver instance is invoked and the hook queue
 // is empty.
-func (f *ResolverPoliciesResolverFunc) SetDefaultHook(hook func() resolvers.PoliciesResolver) {
+func (f *ResolverPoliciesRootResolverFunc) SetDefaultHook(hook func() graphql2.RootResolver) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PoliciesResolver method of the parent MockResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverPoliciesResolverFunc) PushHook(hook func() resolvers.PoliciesResolver) {
+// PoliciesRootResolver method of the parent MockResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ResolverPoliciesRootResolverFunc) PushHook(hook func() graphql2.RootResolver) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -591,20 +461,20 @@ func (f *ResolverPoliciesResolverFunc) PushHook(hook func() resolvers.PoliciesRe
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverPoliciesResolverFunc) SetDefaultReturn(r0 resolvers.PoliciesResolver) {
-	f.SetDefaultHook(func() resolvers.PoliciesResolver {
+func (f *ResolverPoliciesRootResolverFunc) SetDefaultReturn(r0 graphql2.RootResolver) {
+	f.SetDefaultHook(func() graphql2.RootResolver {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverPoliciesResolverFunc) PushReturn(r0 resolvers.PoliciesResolver) {
-	f.PushHook(func() resolvers.PoliciesResolver {
+func (f *ResolverPoliciesRootResolverFunc) PushReturn(r0 graphql2.RootResolver) {
+	f.PushHook(func() graphql2.RootResolver {
 		return r0
 	})
 }
 
-func (f *ResolverPoliciesResolverFunc) nextHook() func() resolvers.PoliciesResolver {
+func (f *ResolverPoliciesRootResolverFunc) nextHook() func() graphql2.RootResolver {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -617,55 +487,55 @@ func (f *ResolverPoliciesResolverFunc) nextHook() func() resolvers.PoliciesResol
 	return hook
 }
 
-func (f *ResolverPoliciesResolverFunc) appendCall(r0 ResolverPoliciesResolverFuncCall) {
+func (f *ResolverPoliciesRootResolverFunc) appendCall(r0 ResolverPoliciesRootResolverFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ResolverPoliciesResolverFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverPoliciesResolverFunc) History() []ResolverPoliciesResolverFuncCall {
+// History returns a sequence of ResolverPoliciesRootResolverFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverPoliciesRootResolverFunc) History() []ResolverPoliciesRootResolverFuncCall {
 	f.mutex.Lock()
-	history := make([]ResolverPoliciesResolverFuncCall, len(f.history))
+	history := make([]ResolverPoliciesRootResolverFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ResolverPoliciesResolverFuncCall is an object that describes an
-// invocation of method PoliciesResolver on an instance of MockResolver.
-type ResolverPoliciesResolverFuncCall struct {
+// ResolverPoliciesRootResolverFuncCall is an object that describes an
+// invocation of method PoliciesRootResolver on an instance of MockResolver.
+type ResolverPoliciesRootResolverFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 resolvers.PoliciesResolver
+	Result0 graphql2.RootResolver
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ResolverPoliciesResolverFuncCall) Args() []interface{} {
+func (c ResolverPoliciesRootResolverFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ResolverPoliciesResolverFuncCall) Results() []interface{} {
+func (c ResolverPoliciesRootResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
 // ResolverUploadRootResolverFunc describes the behavior when the
 // UploadRootResolver method of the parent MockResolver instance is invoked.
 type ResolverUploadRootResolverFunc struct {
-	defaultHook func() graphql2.RootResolver
-	hooks       []func() graphql2.RootResolver
+	defaultHook func() graphql3.RootResolver
+	hooks       []func() graphql3.RootResolver
 	history     []ResolverUploadRootResolverFuncCall
 	mutex       sync.Mutex
 }
 
 // UploadRootResolver delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockResolver) UploadRootResolver() graphql2.RootResolver {
+func (m *MockResolver) UploadRootResolver() graphql3.RootResolver {
 	r0 := m.UploadRootResolverFunc.nextHook()()
 	m.UploadRootResolverFunc.appendCall(ResolverUploadRootResolverFuncCall{r0})
 	return r0
@@ -674,7 +544,7 @@ func (m *MockResolver) UploadRootResolver() graphql2.RootResolver {
 // SetDefaultHook sets function that is called when the UploadRootResolver
 // method of the parent MockResolver instance is invoked and the hook queue
 // is empty.
-func (f *ResolverUploadRootResolverFunc) SetDefaultHook(hook func() graphql2.RootResolver) {
+func (f *ResolverUploadRootResolverFunc) SetDefaultHook(hook func() graphql3.RootResolver) {
 	f.defaultHook = hook
 }
 
@@ -682,7 +552,7 @@ func (f *ResolverUploadRootResolverFunc) SetDefaultHook(hook func() graphql2.Roo
 // UploadRootResolver method of the parent MockResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ResolverUploadRootResolverFunc) PushHook(hook func() graphql2.RootResolver) {
+func (f *ResolverUploadRootResolverFunc) PushHook(hook func() graphql3.RootResolver) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -690,20 +560,20 @@ func (f *ResolverUploadRootResolverFunc) PushHook(hook func() graphql2.RootResol
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ResolverUploadRootResolverFunc) SetDefaultReturn(r0 graphql2.RootResolver) {
-	f.SetDefaultHook(func() graphql2.RootResolver {
+func (f *ResolverUploadRootResolverFunc) SetDefaultReturn(r0 graphql3.RootResolver) {
+	f.SetDefaultHook(func() graphql3.RootResolver {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverUploadRootResolverFunc) PushReturn(r0 graphql2.RootResolver) {
-	f.PushHook(func() graphql2.RootResolver {
+func (f *ResolverUploadRootResolverFunc) PushReturn(r0 graphql3.RootResolver) {
+	f.PushHook(func() graphql3.RootResolver {
 		return r0
 	})
 }
 
-func (f *ResolverUploadRootResolverFunc) nextHook() func() graphql2.RootResolver {
+func (f *ResolverUploadRootResolverFunc) nextHook() func() graphql3.RootResolver {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -738,7 +608,7 @@ func (f *ResolverUploadRootResolverFunc) History() []ResolverUploadRootResolverF
 type ResolverUploadRootResolverFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 graphql2.RootResolver
+	Result0 graphql3.RootResolver
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -750,104 +620,5 @@ func (c ResolverUploadRootResolverFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverUploadRootResolverFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// ResolverUploadsResolverFunc describes the behavior when the
-// UploadsResolver method of the parent MockResolver instance is invoked.
-type ResolverUploadsResolverFunc struct {
-	defaultHook func() resolvers.UploadsResolver
-	hooks       []func() resolvers.UploadsResolver
-	history     []ResolverUploadsResolverFuncCall
-	mutex       sync.Mutex
-}
-
-// UploadsResolver delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) UploadsResolver() resolvers.UploadsResolver {
-	r0 := m.UploadsResolverFunc.nextHook()()
-	m.UploadsResolverFunc.appendCall(ResolverUploadsResolverFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UploadsResolver
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverUploadsResolverFunc) SetDefaultHook(hook func() resolvers.UploadsResolver) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UploadsResolver method of the parent MockResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverUploadsResolverFunc) PushHook(hook func() resolvers.UploadsResolver) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverUploadsResolverFunc) SetDefaultReturn(r0 resolvers.UploadsResolver) {
-	f.SetDefaultHook(func() resolvers.UploadsResolver {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverUploadsResolverFunc) PushReturn(r0 resolvers.UploadsResolver) {
-	f.PushHook(func() resolvers.UploadsResolver {
-		return r0
-	})
-}
-
-func (f *ResolverUploadsResolverFunc) nextHook() func() resolvers.UploadsResolver {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverUploadsResolverFunc) appendCall(r0 ResolverUploadsResolverFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ResolverUploadsResolverFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverUploadsResolverFunc) History() []ResolverUploadsResolverFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverUploadsResolverFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverUploadsResolverFuncCall is an object that describes an invocation
-// of method UploadsResolver on an instance of MockResolver.
-type ResolverUploadsResolverFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 resolvers.UploadsResolver
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverUploadsResolverFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverUploadsResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

@@ -33,14 +33,14 @@ type LSIFIndexResolver interface {
 type indexResolver struct {
 	autoindexingSvc  AutoIndexingService
 	uploadsSvc       UploadsService
-	policyResolver   PolicyResolver
+	policySvc        PolicyService
 	index            types.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policyResolver PolicyResolver, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) LSIFIndexResolver {
+func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -52,7 +52,7 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 	return &indexResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
-		policyResolver:   policyResolver,
+		policySvc:        policySvc,
 		index:            index,
 		prefetcher:       prefetcher,
 		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
@@ -108,7 +108,7 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ LSIFUploadResol
 		return nil, err
 	}
 
-	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policyResolver, upload, r.prefetcher, r.traceErrs), nil
+	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, upload, r.prefetcher, r.traceErrs), nil
 }
 
 func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolver, err error) {

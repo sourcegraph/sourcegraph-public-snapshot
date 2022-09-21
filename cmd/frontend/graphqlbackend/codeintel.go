@@ -9,8 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -58,13 +59,13 @@ type UploadsServiceResolver interface {
 	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
-	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
-	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (CodeIntelligenceConfigurationPolicyResolver, error)
-	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
-	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
-	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
-	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (RepositoryFilterPreviewResolver, error)
-	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
+	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *policiesgraphql.CodeIntelligenceConfigurationPoliciesArgs) (policiesgraphql.CodeIntelligenceConfigurationPolicyConnectionResolver, error)
+	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (policiesgraphql.CodeIntelligenceConfigurationPolicyResolver, error)
+	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *policiesgraphql.CreateCodeIntelligenceConfigurationPolicyArgs) (policiesgraphql.CodeIntelligenceConfigurationPolicyResolver, error)
+	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *policiesgraphql.DeleteCodeIntelligenceConfigurationPolicyArgs) (*sharedresolvers.EmptyResponse, error)
+	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *policiesgraphql.PreviewGitObjectFilterArgs) ([]policiesgraphql.GitObjectFilterPreviewResolver, error)
+	PreviewRepositoryFilter(ctx context.Context, args *policiesgraphql.PreviewRepositoryFilterArgs) (policiesgraphql.RepositoryFilterPreviewResolver, error)
+	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *policiesgraphql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*sharedresolvers.EmptyResponse, error)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -90,112 +91,112 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 	Query       *string
 }
 
-type LSIFUploadResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	IsLatestForRepo() bool
-	UploadedAt() DateTime
-	State() string
-	Failure() *string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
-	InputIndexer() string
-	Indexer() codeinteltypes.CodeIntelIndexerResolver
-	PlaceInQueue() *int32
-	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
-	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
-	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
-}
+// type LSIFUploadResolver interface {
+// 	ID() graphql.ID
+// 	InputCommit() string
+// 	Tags(ctx context.Context) ([]string, error)
+// 	InputRoot() string
+// 	IsLatestForRepo() bool
+// 	UploadedAt() DateTime
+// 	State() string
+// 	Failure() *string
+// 	StartedAt() *DateTime
+// 	FinishedAt() *DateTime
+// 	InputIndexer() string
+// 	Indexer() codeinteltypes.CodeIntelIndexerResolver
+// 	PlaceInQueue() *int32
+// 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+// 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+// 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
+// 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+// 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
+// }
 
-type LSIFUploadConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
+// type LSIFUploadConnectionResolver interface {
+// 	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
+// 	TotalCount(ctx context.Context) (*int32, error)
+// 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+// }
 
-type LSIFUploadDocumentPathsQueryArgs struct {
-	Pattern string
-}
+// type LSIFUploadDocumentPathsQueryArgs struct {
+// 	Pattern string
+// }
 
-type LSIFUploadDocumentPathsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]string, error)
-	TotalCount(ctx context.Context) (*int32, error)
-}
+// type LSIFUploadDocumentPathsConnectionResolver interface {
+// 	Nodes(ctx context.Context) ([]string, error)
+// 	TotalCount(ctx context.Context) (*int32, error)
+// }
 
-type LSIFUploadsAuditLogsResolver interface {
-	LogTimestamp() DateTime
-	UploadDeletedAt() *DateTime
-	Reason() *string
-	ChangedColumns() []AuditLogColumnChange
-	UploadID() graphql.ID
-	InputCommit() string
-	InputRoot() string
-	InputIndexer() string
-	UploadedAt() DateTime
-	Operation() string
-	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-}
+// type LSIFUploadsAuditLogsResolver interface {
+// 	LogTimestamp() DateTime
+// 	UploadDeletedAt() *DateTime
+// 	Reason() *string
+// 	ChangedColumns() []AuditLogColumnChange
+// 	UploadID() graphql.ID
+// 	InputCommit() string
+// 	InputRoot() string
+// 	InputIndexer() string
+// 	UploadedAt() DateTime
+// 	Operation() string
+// 	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+// }
 
-type AuditLogColumnChange interface {
-	Column() string
-	Old() *string
-	New() *string
-}
+// type AuditLogColumnChange interface {
+// 	Column() string
+// 	Old() *string
+// 	New() *string
+// }
 
-type LSIFIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
-	Query *string
-	State *string
-	After *string
-}
+// type LSIFIndexesQueryArgs struct {
+// 	graphqlutil.ConnectionArgs
+// 	Query *string
+// 	State *string
+// 	After *string
+// }
 
-type LSIFRepositoryIndexesQueryArgs struct {
-	*LSIFIndexesQueryArgs
-	RepositoryID graphql.ID
-}
+// type LSIFRepositoryIndexesQueryArgs struct {
+// 	*LSIFIndexesQueryArgs
+// 	RepositoryID graphql.ID
+// }
 
-type LSIFIndexResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	InputIndexer() string
-	Indexer() codeinteltypes.CodeIntelIndexerResolver
-	QueuedAt() DateTime
-	State() string
-	Failure() *string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
-	Steps() IndexStepsResolver
-	PlaceInQueue() *int32
-	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-}
+// type LSIFIndexResolver interface {
+// 	ID() graphql.ID
+// 	InputCommit() string
+// 	Tags(ctx context.Context) ([]string, error)
+// 	InputRoot() string
+// 	InputIndexer() string
+// 	Indexer() codeinteltypes.CodeIntelIndexerResolver
+// 	QueuedAt() DateTime
+// 	State() string
+// 	Failure() *string
+// 	StartedAt() *DateTime
+// 	FinishedAt() *DateTime
+// 	Steps() IndexStepsResolver
+// 	PlaceInQueue() *int32
+// 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
+// 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+// }
 
-type IndexStepsResolver interface {
-	Setup() []ExecutionLogEntryResolver
-	PreIndex() []PreIndexStepResolver
-	Index() IndexStepResolver
-	Upload() ExecutionLogEntryResolver
-	Teardown() []ExecutionLogEntryResolver
-}
+// type IndexStepsResolver interface {
+// 	Setup() []ExecutionLogEntryResolver
+// 	PreIndex() []PreIndexStepResolver
+// 	Index() IndexStepResolver
+// 	Upload() ExecutionLogEntryResolver
+// 	Teardown() []ExecutionLogEntryResolver
+// }
 
-type PreIndexStepResolver interface {
-	Root() string
-	Image() string
-	Commands() []string
-	LogEntry() ExecutionLogEntryResolver
-}
+// type PreIndexStepResolver interface {
+// 	Root() string
+// 	Image() string
+// 	Commands() []string
+// 	LogEntry() ExecutionLogEntryResolver
+// }
 
-type IndexStepResolver interface {
-	IndexerArgs() []string
-	Outfile() *string
-	LogEntry() ExecutionLogEntryResolver
-}
+// type IndexStepResolver interface {
+// 	IndexerArgs() []string
+// 	Outfile() *string
+// 	LogEntry() ExecutionLogEntryResolver
+// }
 
 // type LSIFIndexConnectionResolver interface {
 // 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
@@ -203,21 +204,21 @@ type IndexStepResolver interface {
 // 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 // }
 
-type QueueAutoIndexJobsForRepoArgs struct {
-	Repository    graphql.ID
-	Rev           *string
-	Configuration *string
-}
+// type QueueAutoIndexJobsForRepoArgs struct {
+// 	Repository    graphql.ID
+// 	Rev           *string
+// 	Configuration *string
+// }
 
 type GitTreeLSIFDataResolver interface {
-	LSIFUploads(ctx context.Context) ([]LSIFUploadResolver, error)
+	LSIFUploads(ctx context.Context) ([]sharedresolvers.LSIFUploadResolver, error)
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
 }
 
-type CodeIntelligenceCommitGraphResolver interface {
-	Stale(ctx context.Context) (bool, error)
-	UpdatedAt(ctx context.Context) (*DateTime, error)
-}
+// type CodeIntelligenceCommitGraphResolver interface {
+// 	Stale(ctx context.Context) (bool, error)
+// 	UpdatedAt(ctx context.Context) (*DateTime, error)
+// }
 
 type GitBlobLSIFDataResolver interface {
 	GitTreeLSIFDataResolver
@@ -298,43 +299,43 @@ type DiagnosticResolver interface {
 	Location(ctx context.Context) (LocationResolver, error)
 }
 
-type CodeIntelConfigurationPolicy struct {
-	Name                      string
-	RepositoryID              *int32
-	RepositoryPatterns        *[]string
-	Type                      GitObjectType
-	Pattern                   string
-	RetentionEnabled          bool
-	RetentionDurationHours    *int32
-	RetainIntermediateCommits bool
-	IndexingEnabled           bool
-	IndexCommitMaxAgeHours    *int32
-	IndexIntermediateCommits  bool
-}
+// type CodeIntelConfigurationPolicy struct {
+// 	Name                      string
+// 	RepositoryID              *int32
+// 	RepositoryPatterns        *[]string
+// 	Type                      GitObjectType
+// 	Pattern                   string
+// 	RetentionEnabled          bool
+// 	RetentionDurationHours    *int32
+// 	RetainIntermediateCommits bool
+// 	IndexingEnabled           bool
+// 	IndexCommitMaxAgeHours    *int32
+// 	IndexIntermediateCommits  bool
+// }
 
-type CodeIntelligenceConfigurationPoliciesArgs struct {
-	graphqlutil.ConnectionArgs
-	Repository       *graphql.ID
-	Query            *string
-	ForDataRetention *bool
-	ForIndexing      *bool
-	After            *string
-}
+// type CodeIntelligenceConfigurationPoliciesArgs struct {
+// 	graphqlutil.ConnectionArgs
+// 	Repository       *graphql.ID
+// 	Query            *string
+// 	ForDataRetention *bool
+// 	ForIndexing      *bool
+// 	After            *string
+// }
 
-type CreateCodeIntelligenceConfigurationPolicyArgs struct {
-	Repository *graphql.ID
-	CodeIntelConfigurationPolicy
-}
+// type CreateCodeIntelligenceConfigurationPolicyArgs struct {
+// 	Repository *graphql.ID
+// 	CodeIntelConfigurationPolicy
+// }
 
-type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID         graphql.ID
-	Repository *graphql.ID
-	CodeIntelConfigurationPolicy
-}
+// type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
+// 	ID         graphql.ID
+// 	Repository *graphql.ID
+// 	CodeIntelConfigurationPolicy
+// }
 
-type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
-	Policy graphql.ID
-}
+// type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
+// 	Policy graphql.ID
+// }
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
@@ -352,57 +353,57 @@ type PreviewRepositoryFilterArgs struct {
 	After    *string
 }
 
-type RepositoryFilterPreviewResolver interface {
-	Nodes() []*RepositoryResolver
-	TotalCount() int32
-	Limit() *int32
-	TotalMatches() int32
-	PageInfo() *graphqlutil.PageInfo
-}
+// type RepositoryFilterPreviewResolver interface {
+// 	Nodes() []*RepositoryResolver
+// 	TotalCount() int32
+// 	Limit() *int32
+// 	TotalMatches() int32
+// 	PageInfo() *graphqlutil.PageInfo
+// }
 
-type PreviewGitObjectFilterArgs struct {
-	Type    GitObjectType
-	Pattern string
-}
+// type PreviewGitObjectFilterArgs struct {
+// 	Type    GitObjectType
+// 	Pattern string
+// }
 
-type GitObjectFilterPreviewResolver interface {
-	Name() string
-	Rev() string
-}
+// type GitObjectFilterPreviewResolver interface {
+// 	Name() string
+// 	Rev() string
+// }
 
-type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
+// type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
+// 	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
+// 	TotalCount(ctx context.Context) (*int32, error)
+// 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+// }
 
-type CodeIntelligenceConfigurationPolicyResolver interface {
-	ID() graphql.ID
-	Repository(ctx context.Context) (*RepositoryResolver, error)
-	RepositoryPatterns() *[]string
-	Name() string
-	Type() (GitObjectType, error)
-	Pattern() string
-	Protected() bool
-	RetentionEnabled() bool
-	RetentionDurationHours() *int32
-	RetainIntermediateCommits() bool
-	IndexingEnabled() bool
-	IndexCommitMaxAgeHours() *int32
-	IndexIntermediateCommits() bool
-}
+// type CodeIntelligenceConfigurationPolicyResolver interface {
+// 	ID() graphql.ID
+// 	Repository(ctx context.Context) (*RepositoryResolver, error)
+// 	RepositoryPatterns() *[]string
+// 	Name() string
+// 	Type() (GitObjectType, error)
+// 	Pattern() string
+// 	Protected() bool
+// 	RetentionEnabled() bool
+// 	RetentionDurationHours() *int32
+// 	RetainIntermediateCommits() bool
+// 	IndexingEnabled() bool
+// 	IndexCommitMaxAgeHours() *int32
+// 	IndexIntermediateCommits() bool
+// }
 
-type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
+// type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
+// 	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
+// 	TotalCount(ctx context.Context) (*int32, error)
+// 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+// }
 
-type CodeIntelligenceRetentionPolicyMatchResolver interface {
-	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
-	Matches() bool
-	ProtectingCommits() *[]string
-}
+// type CodeIntelligenceRetentionPolicyMatchResolver interface {
+// 	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
+// 	Matches() bool
+// 	ProtectingCommits() *[]string
+// }
 
 // type GitTreeEntryCodeIntelInfoArgs struct {
 // 	Repo   *types.Repo

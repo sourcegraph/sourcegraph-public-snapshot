@@ -17,18 +17,18 @@ type LSIFUploadConnectionResolver interface {
 type UploadConnectionResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
-	policyResolver   PolicyResolver
+	policySvc        PolicyService
 	uploadsResolver  *UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policyResolver PolicyResolver, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
-		policyResolver:   policyResolver,
+		policySvc:        policySvc,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
 		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
@@ -45,9 +45,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []LSIFUploadRes
 
 	resolvers := make([]LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		// upload := convertSharedUploadsToDBStoreUploads(r.uploadsResolver.Uploads[i])
-		// upload := NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policyResolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.traceErrs)
-		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policyResolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.traceErrs))
+		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.uploadsResolver.Uploads[i], r.prefetcher, r.traceErrs))
 	}
 	return resolvers, nil
 }

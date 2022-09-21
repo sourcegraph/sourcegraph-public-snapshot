@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
@@ -14,20 +15,16 @@ import (
 type Resolver interface {
 	ExecutorResolver() executor.Resolver
 	CodeNavResolver() CodeNavResolver
-	PoliciesResolver() PoliciesResolver
-	AutoIndexingResolver() AutoIndexingResolver
+	PoliciesRootResolver() policiesgraphql.RootResolver
 	AutoIndexingRootResolver() autoindexinggraphql.RootResolver
-	UploadsResolver() UploadsResolver
 	UploadRootResolver() uploadsgraphql.RootResolver
 }
 
 type resolver struct {
 	executorResolver         executor.Resolver
 	codenavResolver          CodeNavResolver
-	policiesResolver         PoliciesResolver
-	autoIndexingResolver     AutoIndexingResolver
+	policiesRootResolver     policiesgraphql.RootResolver
 	autoIndexingRootResolver autoindexinggraphql.RootResolver
-	uploadsResolver          UploadsResolver
 	uploadsRootResolver      uploadsgraphql.RootResolver
 }
 
@@ -35,19 +32,15 @@ type resolver struct {
 func NewResolver(
 	codenavResolver CodeNavResolver,
 	executorResolver executor.Resolver,
-	policiesResolver PoliciesResolver,
-	autoIndexingResolver AutoIndexingResolver,
+	policiesRootResolver policiesgraphql.RootResolver,
 	autoIndexingRootResolver autoindexinggraphql.RootResolver,
-	uploadsResolver UploadsResolver,
 	uploadsRootResolver uploadsgraphql.RootResolver,
 ) Resolver {
 	return &resolver{
 		executorResolver:         executorResolver,
 		codenavResolver:          codenavResolver,
-		policiesResolver:         policiesResolver,
-		autoIndexingResolver:     autoIndexingResolver,
+		policiesRootResolver:     policiesRootResolver,
 		autoIndexingRootResolver: autoIndexingRootResolver,
-		uploadsResolver:          uploadsResolver,
 		uploadsRootResolver:      uploadsRootResolver,
 	}
 }
@@ -56,20 +49,12 @@ func (r *resolver) CodeNavResolver() CodeNavResolver {
 	return r.codenavResolver
 }
 
-func (r *resolver) PoliciesResolver() PoliciesResolver {
-	return r.policiesResolver
-}
-
-func (r *resolver) AutoIndexingResolver() AutoIndexingResolver {
-	return r.autoIndexingResolver
+func (r *resolver) PoliciesRootResolver() policiesgraphql.RootResolver {
+	return r.policiesRootResolver
 }
 
 func (r *resolver) AutoIndexingRootResolver() autoindexinggraphql.RootResolver {
 	return r.autoIndexingRootResolver
-}
-
-func (r *resolver) UploadsResolver() UploadsResolver {
-	return r.uploadsResolver
 }
 
 func (r *resolver) UploadRootResolver() uploadsgraphql.RootResolver {

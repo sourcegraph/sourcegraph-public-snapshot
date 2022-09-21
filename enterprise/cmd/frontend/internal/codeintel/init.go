@@ -33,14 +33,12 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 
 	executorResolver := executorgraphql.New(db)
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
-	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 
-	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingSvc, services.UploadSvc, policyResolver, oc("autoindexing"))
-	uploadResolver := uploadgraphql.New(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
-	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadSvc, services.AutoIndexingSvc, policyResolver, oc("upload"))
+	policyRootResolver := policiesgraphql.NewRootResolver(services.PoliciesSvc, oc("policies"))
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingSvc, services.UploadSvc, services.PoliciesSvc, oc("autoindexing"))
+	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadSvc, services.AutoIndexingSvc, services.PoliciesSvc, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, autoindexingRootResolver, uploadResolver, uploadRootResolver)
+	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
 

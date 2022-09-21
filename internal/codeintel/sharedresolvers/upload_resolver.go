@@ -41,14 +41,14 @@ type LSIFUploadDocumentPathsQueryArgs struct {
 type UploadResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
-	policyResolver   PolicyResolver
+	policySvc        PolicyService
 	upload           types.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policyResolver PolicyResolver, upload types.Upload, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadResolver {
+func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, upload types.Upload, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -60,7 +60,7 @@ func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingSe
 	return &UploadResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
-		policyResolver:   policyResolver,
+		policySvc:        policySvc,
 		upload:           upload,
 		prefetcher:       prefetcher,
 		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
@@ -115,7 +115,7 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ LSIFIndexResolv
 		return nil, err
 	}
 
-	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policyResolver, index, r.prefetcher, r.traceErrs), nil
+	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, index, r.prefetcher, r.traceErrs), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error) {
@@ -156,12 +156,7 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIF
 		term = *args.Query
 	}
 
-	policyResolver, err := r.policyResolver.PolicyResolverFactory(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	matches, totalCount, err := policyResolver.GetRetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	matches, totalCount, err := r.policySvc.GetRetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
 	if err != nil {
 		return nil, err
 	}

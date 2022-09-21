@@ -48,18 +48,18 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	autoindexSvc   *autoindexing.Service
-	uploadSvc      UploadsService
-	policyResolver PolicyResolver
-	operations     *operations
+	autoindexSvc *autoindexing.Service
+	uploadSvc    UploadsService
+	policySvc    PolicyService
+	operations   *operations
 }
 
-func NewRootResolver(autoindexSvc *autoindexing.Service, uploadSvc UploadsService, policyResolver PolicyResolver, observationContext *observation.Context) RootResolver {
+func NewRootResolver(autoindexSvc *autoindexing.Service, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
-		autoindexSvc:   autoindexSvc,
-		uploadSvc:      uploadSvc,
-		policyResolver: policyResolver,
-		operations:     newOperations(observationContext),
+		autoindexSvc: autoindexSvc,
+		uploadSvc:    uploadSvc,
+		policySvc:    policySvc,
+		operations:   newOperations(observationContext),
 	}
 }
 
@@ -139,7 +139,7 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ reso
 		return nil, err
 	}
 
-	return resolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policyResolver, index, prefetcher, traceErrs), nil
+	return resolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, index, prefetcher, traceErrs), nil
 }
 
 type LSIFIndexesQueryArgs struct {
@@ -192,7 +192,7 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFReposito
 	// indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
 	indexConnectionResolver := resolvers.NewIndexesResolver(r.autoindexSvc, opts)
 
-	return resolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, indexConnectionResolver, r.policyResolver, prefetcher, traceErrs), nil
+	return resolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexConnectionResolver, prefetcher, traceErrs), nil
 }
 
 type QueueAutoIndexJobsForRepoArgs struct {
@@ -244,7 +244,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 	lsifIndexResolvers := make([]resolvers.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
 		// index := convertSharedIndexToDBStoreIndex(indexes[i])
-		lsifIndexResolvers = append(lsifIndexResolvers, resolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policyResolver, indexes[i], prefetcher, traceErrs))
+		lsifIndexResolvers = append(lsifIndexResolvers, resolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, traceErrs))
 	}
 
 	return lsifIndexResolvers, nil
@@ -413,7 +413,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// the same graphQL request, not across different request.
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
-	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policyResolver, summary, prefetcher, errTracer), nil
+	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, summary, prefetcher, errTracer), nil
 }
 
 // HERE HERE HERE

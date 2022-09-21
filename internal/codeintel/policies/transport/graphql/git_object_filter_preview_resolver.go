@@ -1,13 +1,18 @@
 package graphql
 
-import gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+type GitObjectFilterPreviewResolver interface {
+	Name() string
+	Rev() string
+}
 
 type gitObjectFilterPreviewResolver struct {
 	name string
 	rev  string
 }
 
-var _ gql.GitObjectFilterPreviewResolver = &gitObjectFilterPreviewResolver{}
+func NewGitObjectFilterPreviewResolver(name, rev string) GitObjectFilterPreviewResolver {
+	return &gitObjectFilterPreviewResolver{name: name, rev: rev}
+}
 
 func (r *gitObjectFilterPreviewResolver) Name() string {
 	return r.name

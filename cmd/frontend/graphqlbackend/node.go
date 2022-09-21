@@ -6,6 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -218,18 +220,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
-	n, ok := r.Node.(LSIFUploadResolver)
+func (r *NodeResolver) ToLSIFUpload() (sharedresolvers.LSIFUploadResolver, bool) {
+	n, ok := r.Node.(sharedresolvers.LSIFUploadResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
-	n, ok := r.Node.(LSIFIndexResolver)
+func (r *NodeResolver) ToLSIFIndex() (sharedresolvers.LSIFIndexResolver, bool) {
+	n, ok := r.Node.(sharedresolvers.LSIFIndexResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (CodeIntelligenceConfigurationPolicyResolver, bool) {
-	n, ok := r.Node.(CodeIntelligenceConfigurationPolicyResolver)
+func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (policiesgraphql.CodeIntelligenceConfigurationPolicyResolver, bool) {
+	n, ok := r.Node.(policiesgraphql.CodeIntelligenceConfigurationPolicyResolver)
 	return n, ok
 }
 

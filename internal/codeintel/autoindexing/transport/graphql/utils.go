@@ -1,7 +1,9 @@
 package graphql
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -121,6 +123,19 @@ func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	return
 }
 
+// EncodeIntCursor creates a PageInfo object from the given new offset value. If the
+// new offset value, then an object indicating the end of the result set is returned.
+// The cursor is base64 encoded for transfer, and should be decoded using the function
+// decodeIntCursor.
+func EncodeIntCursor(val *int32) *PageInfo {
+	if val == nil {
+		return EncodeCursor(nil)
+	}
+
+	str := strconv.FormatInt(int64(*val), 10)
+	return EncodeCursor(&str)
+}
+
 // derefString returns the underlying value in the given pointer.
 // If the pointer is nil, the default value is returned.
 func derefString(val *string, defaultValue string) string {
@@ -137,4 +152,45 @@ func derefInt32(val *int32, defaultValue int) int {
 		return int(*val)
 	}
 	return defaultValue
+}
+
+// intPtr creates a pointer to the given value.
+func intPtr(val int32) *int32 {
+	return &val
+}
+
+// intPtr creates a pointer to the given value.
+func boolPtr(val bool) *bool {
+	return &val
+}
+
+// PageInfo implements the GraphQL type PageInfo.
+type PageInfo struct {
+	endCursor   *string
+	hasNextPage bool
+}
+
+// HasNextPage returns a new PageInfo with the given hasNextPage value.
+func HasNextPage(hasNextPage bool) *PageInfo {
+	return &PageInfo{hasNextPage: hasNextPage}
+}
+
+// NextPageCursor returns a new PageInfo indicating there is a next page with
+// the given end cursor.
+func NextPageCursor(endCursor string) *PageInfo {
+	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
+}
+
+func (r *PageInfo) EndCursor() *string { return r.endCursor }
+func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
+
+// EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
+// defined, then an object indicating the end of the result set is returned. The cursor
+// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
+func EncodeCursor(val *string) *PageInfo {
+	if val != nil {
+		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
+	}
+
+	return HasNextPage(false)
 }
