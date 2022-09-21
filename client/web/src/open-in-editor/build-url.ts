@@ -9,7 +9,7 @@ export function buildRepoBaseNameAndPath(repoName: string, filePath: string | un
     const codeHostsWithOwnerInUrl = ['github.com', 'gitlab.com', 'bitbucket.org']
     const repoNameIncludesOwner = codeHostsWithOwnerInUrl.some(url => repoName.startsWith(url + '/'))
     const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1)
-    return path.join(...[...bareRepoNamePieces, ...(filePath ? [filePath] : [])])
+    return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 
 export function buildEditorUrl(
