@@ -18,18 +18,6 @@ local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "node_modules",
 })
 
-local contains = function(table, element)
-  return fun.any(function(v)
-    return v == element
-  end, table)
-end
-
-local contains_any = function(paths, candidates)
-  return fun.any(function(v)
-    return contains(paths, v)
-  end, candidates)
-end
-
 local reverse = function(slice)
   local reversed = {}
   for i = #slice, 1, -1 do
@@ -37,6 +25,13 @@ local reverse = function(slice)
   end
 
   return reversed
+end
+
+local contains = function(table, element)
+  local eq_elem = function(v)
+    return v == element
+  end
+  return fun.any(eq_elem, table)
 end
 
 local safe_decode = function(encoded)
@@ -64,13 +59,18 @@ end
 
 local can_derive_node_version = function(root, paths, contents_by_path)
   return fun.any(function(a)
-    return check_package_json_contents(contents_by_path[path.join(a, "package.json")] or "")
-      or contains_any(
-        paths,
-        fun.map(function(filename)
-          return path.join(a, filename)
-        end, node_derivable_filenames)
-      )
+    if check_package_json_contents(contents_by_path[path.join(a, "package.json")] or "") then
+      return true
+    end
+
+    return fun.any(
+      function(v)
+        return contains(paths, v)
+      end,
+      fun.map(function(filename)
+        return path.join(a, filename)
+      end, node_derivable_filenames)
+    )
   end, path.ancestors(root))
 end
 
