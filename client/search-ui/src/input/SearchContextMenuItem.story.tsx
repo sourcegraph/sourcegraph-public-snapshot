@@ -1,8 +1,6 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
-import { noop } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
@@ -27,14 +25,10 @@ export const SelectedDefaultItem: Story = () => (
         {() => (
             <SearchContextMenuItem
                 spec="@user/test"
-                searchFilter=""
                 description="Default description"
                 query=""
                 selected={true}
                 isDefault={true}
-                selectSearchContextSpec={noop}
-                onKeyDown={noop}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
     </BrandedStory>
@@ -47,14 +41,10 @@ export const HighlightedItem: Story = () => (
         {() => (
             <SearchContextMenuItem
                 spec="@user/test"
-                searchFilter="@us/te"
                 description="Default description"
                 query=""
                 selected={false}
                 isDefault={false}
-                selectSearchContextSpec={noop}
-                onKeyDown={noop}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
     </BrandedStory>
