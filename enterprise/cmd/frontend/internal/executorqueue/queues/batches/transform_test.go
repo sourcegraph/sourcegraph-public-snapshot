@@ -112,20 +112,32 @@ func TestTransformRecord(t *testing.T) {
 		}
 
 		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]string{
-				"input.json": string(marshaledInput),
+			ID:                      int(workspaceExecutionJob.ID),
+			RepositoryName:          "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory:     "repository",
+			WorkspaceFilesDirectory: "workspace-files",
+			Commit:                  workspace.Commit,
+			ShallowClone:            true,
+			SparseCheckout:          []string{"a/b/c/*"},
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json": {Content: string(marshaledInput)},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
-					Dir:      ".",
-					Env:      []string{},
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+						"-workspaceFiles",
+						"workspace-files",
+					},
+					Dir: ".",
+					Env: []string{},
 				},
 			},
 			RedactedValues: map[string]string{},
@@ -150,20 +162,32 @@ func TestTransformRecord(t *testing.T) {
 		}
 
 		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]string{
-				"input.json": string(marshaledInput),
+			ID:                      int(workspaceExecutionJob.ID),
+			RepositoryName:          "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory:     "repository",
+			WorkspaceFilesDirectory: "workspace-files",
+			Commit:                  workspace.Commit,
+			ShallowClone:            true,
+			SparseCheckout:          []string{"a/b/c/*"},
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json": {Content: string(marshaledInput)},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
-					Dir:      ".",
-					Env:      []string{},
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+						"-workspaceFiles",
+						"workspace-files",
+					},
+					Dir: ".",
+					Env: []string{},
 				},
 			},
 			RedactedValues: map[string]string{},
