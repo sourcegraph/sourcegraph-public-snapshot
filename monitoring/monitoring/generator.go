@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/prometheus/model/labels"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,6 +38,11 @@ type GenerateOptions struct {
 	PrometheusDir string
 	// Output directory for generated documentation
 	DocsDir string
+
+	// InjectLabelMatchers specifies labels to inject into all selectors in Prometheus
+	// expressions - this includes dashboard template variables, observable queries,
+	// alert queries, and so on - using internal/promql.Inject(...).
+	InjectLabelMatchers []*labels.Matcher
 }
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
@@ -58,8 +64,9 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
 	}
+
+	// Generate Grafana content for all dashboards
 	dlog := logger.Scoped("grafana", "grafana dashboard generation")
-	// Generate output for all dashboards
 	for _, dashboard := range dashboards {
 		// Logger for dashboard
 		clog := dlog.With(log.String("dashboard", dashboard.Name), log.String("instance", localGrafanaURL))
@@ -68,7 +75,10 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			os.MkdirAll(opts.GrafanaDir, os.ModePerm)
 
 			clog.Debug("Rendering Grafana assets")
-			board := dashboard.renderDashboard()
+			board, err := dashboard.renderDashboard(opts.InjectLabelMatchers)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
+			}
 			data, err := json.MarshalIndent(board, "", "  ")
 			if err != nil {
 				return errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name)
@@ -102,7 +112,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			os.MkdirAll(opts.PrometheusDir, os.ModePerm)
 
 			clog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := dashboard.renderRules()
+			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
 			if err != nil {
 				return errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
 			}
