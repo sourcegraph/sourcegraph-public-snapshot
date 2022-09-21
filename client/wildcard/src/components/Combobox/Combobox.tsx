@@ -171,7 +171,7 @@ export const ComboboxOption = forwardRef((props, ref) => {
     }
 
     return (
-        <ReachComboboxOption ref={ref} value={value} {...attributes}>
+        <ReachComboboxOption ref={ref} value={value} className={className} {...attributes}>
             {children}
         </ReachComboboxOption>
     )
