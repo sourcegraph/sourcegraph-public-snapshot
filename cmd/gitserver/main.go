@@ -141,7 +141,7 @@ func main() {
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo, db)
+			return getRemoteURLFunc(ctx, nil, repo, db)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
@@ -319,16 +319,17 @@ func getDB() (*sql.DB, error) {
 
 func getRemoteURLFunc(
 	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
-	repoStore database.RepoStore,
 	cli httpcli.Doer,
 	repo api.RepoName,
 	db database.DB,
 ) (string, error) {
+	repoStore := db.Repos()
 	r, err := repoStore.GetByName(ctx, repo)
 	if err != nil {
 		return "", err
 	}
+
+	externalServiceStore := db.ExternalServices()
 
 	for _, info := range r.Sources {
 		// build the clone url using the external service config instead of using
