@@ -42,12 +42,20 @@ end
 
 local check_lerna_file_contents = function(contents)
   local payload = safe_decode(contents)
-  return payload and payload["npmClient"] == "yarn"
+  if payload and payload["npmClient"] == "yarn" then
+    return true
+  end
+
+  return false
 end
 
 local check_package_json_contents = function(contents)
   local payload = safe_decode(contents)
-  return payload and payload["engines"] and payload["engines"]["node"]
+  if payload and payload["engines"] and payload["engines"]["node"] then
+    return true
+  end
+
+  return false
 end
 
 local check_lerna_file = function(root, contents_by_path)
