@@ -284,9 +284,11 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
             data-selected={selected || undefined}
             className={classNames(styles.item, selected && styles.itemSelected)}
         >
-            <small data-testid="search-context-menu-item-name" className={styles.itemName} title={spec}>
-                <ComboboxOptionText />
-            </small>{' '}
+            <Tooltip content={spec}>
+                <small data-testid="search-context-menu-item-name" className={styles.itemName}>
+                    <ComboboxOptionText />
+                </small>
+            </Tooltip>{' '}
             <Tooltip content={descriptionOrQuery}>
                 <small className={styles.itemDescription}>{descriptionOrQuery}</small>
             </Tooltip>
