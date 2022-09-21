@@ -348,22 +348,22 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			haveMaxQueueDepth, haveMaxReorderDuration, haveMaxQueueMatchCount, haveMaxSizesBytes := resultQueueSettingsFromConfig(tt.siteConfig)
+			settings := resultQueueSettingsFromConfig(tt.siteConfig)
 
-			if haveMaxQueueDepth != tt.wantMaxQueueDepth {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, haveMaxQueueDepth)
+			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
 			}
 
-			if haveMaxReorderDuration != tt.wantMaxReorderDuration {
-				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, haveMaxReorderDuration)
+			if settings.maxReorderDuration != tt.wantMaxReorderDuration {
+				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, settings.maxReorderDuration)
 			}
 
-			if haveMaxQueueMatchCount != tt.wantMaxQueueMatchCount {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, haveMaxQueueMatchCount)
+			if settings.maxMatchCount != tt.wantMaxQueueMatchCount {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, settings.maxMatchCount)
 			}
 
-			if haveMaxSizesBytes != tt.wantMaxSizeBytes {
-				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, haveMaxSizesBytes)
+			if settings.maxSizeBytes != tt.wantMaxSizeBytes {
+				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, settings.maxSizeBytes)
 			}
 		})
 	}

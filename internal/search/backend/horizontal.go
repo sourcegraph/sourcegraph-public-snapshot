@@ -78,11 +78,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint)
 	}
 
-	maxQueueDepth, maxReorderDuration, maxQueueMatchCount, maxQueueSizeBytes := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
+	queueSettings := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
 
 	// rq is used to re-order results by priority.
 	var mu sync.Mutex
-	rq := newResultQueue(maxQueueDepth, maxQueueMatchCount, maxQueueSizeBytes, endpoints)
+	rq := newResultQueue(queueSettings, endpoints)
 
 	defer func() {
 		mu.Lock()
@@ -109,7 +109,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	//
 	// maxQueueDepth should be chosen as large as possible given the available
 	// resources.
-	if maxReorderDuration > 0 {
+	if queueSettings.maxReorderDuration > 0 {
 		done := make(chan struct{})
 		defer close(done)
 
@@ -125,7 +125,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		go func() {
 			select {
 			case <-done:
-			case <-time.After(maxReorderDuration):
+			case <-time.After(queueSettings.maxReorderDuration):
 				mu.Lock()
 				defer mu.Unlock()
 				if searchDone {
@@ -188,31 +188,41 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	return nil
 }
 
-func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration, maxQueueMatchCount int, maxQueueSizeBytes int) {
+type resultQueueSettings struct {
+	maxQueueDepth      int
+	maxMatchCount      int
+	maxSizeBytes       int
+	maxReorderDuration time.Duration
+}
+
+func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) *resultQueueSettings {
 	// defaults
-	maxQueueDepth = 24
-	maxQueueMatchCount = -1
-	maxReorderDuration = 0
-	maxQueueSizeBytes = -1
+	settings := &resultQueueSettings{
+		maxQueueDepth:      24,
+		maxMatchCount:      -1,
+		maxReorderDuration: 0,
+		maxSizeBytes:       -1,
+	}
 
 	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
-		return
+		return settings
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+		settings.maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount != nil {
-		maxQueueMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
+		settings.maxMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes != nil {
-		maxQueueSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
+		settings.maxSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
 	}
 
-	maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
-	return
+	settings.maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+
+	return settings
 }
 
 // The results from each endpoint are mostly sorted by priority, with bounded
@@ -262,7 +272,7 @@ type resultQueue struct {
 	stats zoekt.Stats
 }
 
-func newResultQueue(maxQueueDepth, maxQueueMatchCount, maxQueueSizeBytes int, endpoints []string) *resultQueue {
+func newResultQueue(settings *resultQueueSettings, endpoints []string) *resultQueue {
 	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
 	endpointMaxPendingPriority := map[string]float64{}
 	for _, endpoint := range endpoints {
@@ -270,9 +280,9 @@ func newResultQueue(maxQueueDepth, maxQueueMatchCount, maxQueueSizeBytes int, en
 	}
 
 	return &resultQueue{
-		maxQueueDepth:              maxQueueDepth,
-		maxMatchCount:              maxQueueMatchCount,
-		maxSizeBytes:               maxQueueSizeBytes,
+		maxQueueDepth:              settings.maxQueueDepth,
+		maxMatchCount:              settings.maxMatchCount,
+		maxSizeBytes:               settings.maxSizeBytes,
 		endpointMaxPendingPriority: endpointMaxPendingPriority,
 	}
 }
