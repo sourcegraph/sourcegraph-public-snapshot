@@ -111,8 +111,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
     generate = function(api, paths, contents_by_path)
       local is_yarn = check_lerna_file(root, contents_by_path)
 
-      local docker_steps = {}
-      fun.each(function(ra)
+      local docker_steps = fun.totable(fun.map(function(ra)
         if contents_by_path[path.join(ra, "package.json")] then
           local install_command = ""
           if is_yarn or contains(paths, path.join(ra, "yarn.lock")) then
@@ -126,13 +125,13 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
             install_command_suffix = " --ignore-scripts"
           end
 
-          table.insert(docker_steps, {
+          return {
             root = ra,
             image = indexer,
             commands = { install_command .. install_command_suffix },
-          })
+          }
         end
-      end, reverse_ancestors)
+      end, reverse_ancestors))
 
       local local_steps = {}
       if can_derive_node_version(root, paths, contents_by_path) then
