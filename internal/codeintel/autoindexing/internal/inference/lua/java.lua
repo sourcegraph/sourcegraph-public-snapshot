@@ -48,8 +48,7 @@ return recognizer.new_path_recognizer {
     local visited = {}
 
     fun.each(function(p)
-      local dir = path.dirname(p)
-      local base = path.basename(p)
+      local dir, base = path.split(p)
 
       if visited[dir] == nil and is_project_structure_supported(base) then
         table.insert(hints, {
@@ -63,8 +62,7 @@ return recognizer.new_path_recognizer {
     end, paths)
 
     fun.each(function(p)
-      local dir = path.dirname(p)
-      local base = path.basename(p)
+      local dir, base = path.split(p)
 
       if visited[dir] == nil and not is_project_structure_supported(base) then
         table.insert(hints, {
