@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -46,7 +47,7 @@ type Config struct {
 func defaultFirecrackerImageTag() string {
 	// In dev, just use latest for convenience.
 	if version.IsDev(version.Version()) {
-		return "latest"
+		return "insiders"
 	}
 	return version.Version()
 }
@@ -80,9 +81,16 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
-	if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 && c.UseFirecracker {
-		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
-		c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
+	if c.UseFirecracker {
+		if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 {
+			// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
+			c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
+		}
+
+		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
+		if err != nil {
+			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
+		}
 	}
 	if c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
