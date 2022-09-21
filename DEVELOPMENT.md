@@ -1,23 +1,5 @@
 This file covers things that are good to know if you're developing or maintaining `src`. It is likely incomplete, and contributions would be most welcome!
 
-## Things are a bit weird right now, August-September 2022 edition
-
-With 3.43 having been released, we now want to remove a bunch of old backward compatibility code before 4.0 is released in late September. However, we also need to be able to fix bugs and make 3.43.x releases in the interim.
-
-**Until 4.0 is released, `main` is the 4.0 branch.**
-
-### Releasing a 3.43.x bug fix
-
-You must merge the fix into **both** the `3.43` and `main` branches. Then [perform the release normally](#releasing), except note that you **must** be on the `3.43` branch when you run `./release.sh`.
-
-### Releasing a 4.0 pre-release
-
-[Perform the release normally](#releasing), but be careful to use a version number that is clearly a pre-release, specifically in the format `4.0.0-rc.X`, where `X` is one higher than the previous pre-release.
-
-### Releasing 4.0 proper
-
-If you're reading this because you're about to release the stable 4.0.0 release, please merge #828 first to put the release machinery back the way it was.
-
 ## Contents
 
 * [Developing `src`](#development)

@@ -50,13 +50,10 @@ dockers:
     - "sourcegraph/src-cli:{{ .Tag }}"
     - "sourcegraph/src-cli:{{ .Major }}"
     - "sourcegraph/src-cli:{{ .Major }}.{{ .Minor }}"
-    # Disabled until 4.0 stable is released.
-    #- "sourcegraph/src-cli:latest"
+    - "sourcegraph/src-cli:latest"
 changelog:
   sort: asc
   filters:
     exclude:
     - '^docs:'
     - '^test:'
-release:
-  prerelease: true
