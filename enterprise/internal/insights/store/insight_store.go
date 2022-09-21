@@ -947,6 +947,14 @@ func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) er
 	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
+func (s *InsightStore) GetSeriesIdsBackfillNotComplete(ctx context.Context) ([]string, error) {
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getSeriesBackfillNotComplete)))
+}
+
+func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -1169,4 +1177,14 @@ WHERE id IN (
 const getUnfrozenInsightUniqueIdsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
+`
+
+const getSeriesBackfillNotComplete = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetSeriesBackfillNotComplete
+SELECT series_id FROM insight_series WHERE backfill_completed_at IS NULL;
+`
+
+const setSeriesBackfillComplete = `
+-- source: enterprise/internal/insights/store/insight_store.go:SetSeriesBackfillComplete
+update insight_series set backfill_completed_at = %s where series_id = %s;
 `
