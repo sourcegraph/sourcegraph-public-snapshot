@@ -27,7 +27,7 @@ func NewFirecrackerWorkspace(
 	diskSpace string,
 	keepWorkspace bool,
 	commandRunner command.Runner,
-	commandLogger command.Logger,
+	logger command.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
@@ -36,7 +36,7 @@ func NewFirecrackerWorkspace(
 		job.ID,
 		diskSpace,
 		keepWorkspace,
-		commandLogger,
+		logger,
 	)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func NewFirecrackerWorkspace(
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, job, tmpMountDir, commandRunner, commandLogger)
+	scriptPaths, err := prepareScripts(ctx, job, tmpMountDir, commandRunner, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func NewFirecrackerWorkspace(
 		scriptFilenames: scriptPaths,
 		blockDeviceFile: blockDeviceFile,
 		blockDevice:     blockDevice,
-		commandLogger:   commandLogger,
+		logger:          logger,
 	}, err
 }
 
@@ -76,7 +76,7 @@ type firecrackerWorkspace struct {
 	scriptFilenames []string
 	blockDeviceFile string
 	blockDevice     string
-	commandLogger   command.Logger
+	logger          command.Logger
 }
 
 func (w firecrackerWorkspace) Path() string {
@@ -88,7 +88,7 @@ func (w firecrackerWorkspace) ScriptFilenames() []string {
 }
 
 func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.commandLogger.Log("teardown.fs", nil)
+	handle := w.logger.Log("teardown.fs", nil)
 	defer func() {
 		// We always finish this with exit code 0 even if it errored, because workspace
 		// cleanup doesn't fail the execution job. We can deal with it separately.
@@ -127,9 +127,9 @@ func setupLoopDevice(
 	jobID int,
 	diskSpace string,
 	keepWorkspace bool,
-	commandLogger command.Logger,
+	logger command.Logger,
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
-	handle := commandLogger.Log("setup.fs.workspace", nil)
+	handle := logger.Log("setup.fs.workspace", nil)
 	defer func() {
 		// add the error to the bottom of the step's log output,
 		// but only if this isnt from exec.Command, as those get added
@@ -172,7 +172,7 @@ func setupLoopDevice(
 	}
 
 	// Create an ext4 file system in the device backing file.
-	out, err := CommandLogger(ctx, handle, "mkfs.ext4", blockDeviceFile)
+	out, err := commandLogger(ctx, handle, "mkfs.ext4", blockDeviceFile)
 	if err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to create ext4 filesystem in backing file: %q", out)
 	}
@@ -180,7 +180,7 @@ func setupLoopDevice(
 	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q\n", blockDeviceFile)
 
 	// Create a loop device pointing to our block device.
-	out, err = CommandLogger(ctx, handle, "losetup", "--find", "--show", blockDeviceFile)
+	out, err = commandLogger(ctx, handle, "losetup", "--find", "--show", blockDeviceFile)
 	if err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to create loop device: %q", out)
 	}
@@ -210,7 +210,7 @@ func setupLoopDevice(
 
 // detachLoopDevice detaches a loop device by path (/dev/loopX).
 func detachLoopDevice(ctx context.Context, blockDevice string, handle command.LogEntry) error {
-	out, err := CommandLogger(ctx, handle, "losetup", "--detach", blockDevice)
+	out, err := commandLogger(ctx, handle, "losetup", "--detach", blockDevice)
 	if err != nil {
 		return errors.Wrapf(err, "failed to detach loop device: %s", out)
 	}
@@ -225,7 +225,7 @@ func mountLoopDevice(ctx context.Context, blockDevice string, handle command.Log
 		return "", err
 	}
 
-	if out, err := CommandLogger(ctx, handle, "mount", blockDevice, tmpMountDir); err != nil {
+	if out, err := commandLogger(ctx, handle, "mount", blockDevice, tmpMountDir); err != nil {
 		_ = os.RemoveAll(tmpMountDir)
 		return "", errors.Wrapf(err, "failed to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
 	}

@@ -16,7 +16,7 @@ func NewDockerWorkspace(
 	ctx context.Context,
 	job executor.Job,
 	commandRunner command.Runner,
-	commandLogger command.Logger,
+	logger command.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
@@ -32,7 +32,7 @@ func NewDockerWorkspace(
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, job, workspaceDir, commandRunner, commandLogger)
+	scriptPaths, err := prepareScripts(ctx, job, workspaceDir, commandRunner, logger)
 	if err != nil {
 		_ = os.RemoveAll(workspaceDir)
 		return nil, err
@@ -42,7 +42,7 @@ func NewDockerWorkspace(
 		path:            workspaceDir,
 		scriptFilenames: scriptPaths,
 		workspaceDir:    workspaceDir,
-		commandLogger:   commandLogger,
+		logger:          logger,
 	}, nil
 }
 
@@ -50,7 +50,7 @@ type dockerWorkspace struct {
 	path            string
 	scriptFilenames []string
 	workspaceDir    string
-	commandLogger   command.Logger
+	logger          command.Logger
 }
 
 func (w dockerWorkspace) Path() string {
@@ -62,7 +62,7 @@ func (w dockerWorkspace) ScriptFilenames() []string {
 }
 
 func (w dockerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.commandLogger.Log("teardown.fs", nil)
+	handle := w.logger.Log("teardown.fs", nil)
 	defer func() {
 		// We always finish this with exit code 0 even if it errored, because workspace
 		// cleanup doesn't fail the execution job. We can deal with it separately.

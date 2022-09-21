@@ -40,7 +40,8 @@ func MakeTemporaryDirectory(prefix string) (string, error) {
 	return os.MkdirTemp("", prefix+"-*")
 }
 
-func CommandLogger(ctx context.Context, handle command.LogEntry, command string, args ...string) (string, error) {
+// runs the given command with args and logs the invocation and output to the provided log entry handle.
+func commandLogger(ctx context.Context, handle command.LogEntry, command string, args ...string) (string, error) {
 	fmt.Fprintf(handle, "$ %s %s\n", command, strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, command, args...)
 	out, err := cmd.CombinedOutput()
