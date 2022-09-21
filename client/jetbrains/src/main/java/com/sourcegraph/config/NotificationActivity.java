@@ -75,7 +75,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         AnAction learnMoreAction = new DumbAwareAction("Learn More", "Opens browser to describe the latest changes", null) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                String whatsNewUrl = "https://plugins.jetbrains.com/plugin/9682-sourcegraph#:~:text=What%E2%80%99s%20New";
+                String whatsNewUrl = "https://about.sourcegraph.com/blog/jetbrains-plugin";
 
                 BrowserOpener.openInBrowser(project, whatsNewUrl);
             }
