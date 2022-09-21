@@ -1,10 +1,10 @@
+local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
-local recognizers = require "sg.recognizers"
 
 local indexer = "sourcegraph/lsif-rust"
 local outfile = "dump.lsif"
 
-return recognizers.path_recognizer {
+return recognizer.new_path_recognizer {
   patterns = {
     pattern.new_path_basename "Cargo.toml",
   },
