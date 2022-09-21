@@ -67,8 +67,11 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
+	filesStore := NewMockFilesStore()
+
 	h := &handler{
 		store:      NewMockStore(),
+		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
@@ -108,6 +111,10 @@ func TestHandle(t *testing.T) {
 			commands = append(commands, call.Arg1.Command)
 		}
 	}
+
+	// Ensure the files store was not called
+	assert.Len(t, filesStore.ExistsFunc.History(), 0)
+	assert.Len(t, filesStore.GetFunc.History(), 0)
 
 	expectedCommands := [][]string{
 		{"/bin/sh", "42.0_linux@deadbeef.sh"},
