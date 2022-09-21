@@ -33,11 +33,28 @@
 
 ---
 
-## Features
+## 4.0 Features
 
-- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
-- Code intelligence for many languages via [SCIP](https://about.sourcegraph.com/blog/announcing-scip).
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
+* 🧠 Code intelligence: more useful, more times daily for every dev
+    * Understand usage and search structure with high-level aggregations of search results
+    * A faster, simpler search experience
+    * Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
+    * Your favorite extensions are now available by default
+    * Quickly access answers within your codebase with a revamped reference panel 
+
+* 🏗️ High-leverage ways to improve your entire codebase
+    * Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
+
+* ☁️ Dedicated Sourcegraph Cloud instances for enterprise
+    * Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
+
+* 💖 Advanced admin capabilities
+    * Save time upgrading to Sourcegraph 4.0 with multi-version upgrades
+    * View usage and measure the value of our platform with new and enhanced in-product analytics
+    * Uncover developer time saved using Browser and IDE extensions
+    * Easily export traces using OpenTelemetry
+    * Quickly see the status on your repository and permissions syncing
+    * Measure precise code navigation coverage with an enhanced analytics dashboard
 
 ## Try it now
 
