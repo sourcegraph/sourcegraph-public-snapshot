@@ -251,6 +251,10 @@ const ExecutorCompatibilityAlert: React.FunctionComponent<React.PropsWithChildre
                         <Link to="/help/admin/updates" target="_blank" rel="noopener">
                             upgrade your Sourcegraph instance
                         </Link>
+                        or{' '}
+                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                            downgrade this executor
+                        </Link>
                         .
                     </Text>
                 </Alert>

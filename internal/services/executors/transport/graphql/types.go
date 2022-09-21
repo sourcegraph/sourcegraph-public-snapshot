@@ -16,4 +16,7 @@ const (
 )
 
 // ToGraphQL returns the GraphQL representation of the state.
-func (c ExecutorCompatibility) ToGraphQL() string { return string(c) }
+func (c ExecutorCompatibility) ToGraphQL() *string {
+	s := string(c)
+	return &s
+}

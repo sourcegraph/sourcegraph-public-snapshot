@@ -42,15 +42,15 @@ func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVe
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
 
-func (e *ExecutorResolver) Compatibility() (string, error) {
+func (e *ExecutorResolver) Compatibility() (*string, error) {
 	ev := e.executor.ExecutorVersion
 	if !e.Active() {
-		return ExecutorCompatibilityUptoDate.ToGraphQL(), nil
+		return nil, nil
 	}
 	return calculateExecutorCompatibility(ev)
 }
 
-func calculateExecutorCompatibility(ev string) (string, error) {
+func calculateExecutorCompatibility(ev string) (*string, error) {
 	var compatibility ExecutorCompatibility = ExecutorCompatibilityUptoDate
 	sv := version.Version()
 
@@ -58,23 +58,37 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 	isSgDev := sv != "" && version.IsDev(sv)
 
 	if isSgDev || isExecutorDev {
-		return compatibility.ToGraphQL(), nil
+		return nil, nil
 	}
 
 	r := regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
 	evm := r.FindStringSubmatch(ev)
 	svm := r.FindStringSubmatch(sv)
+
+	// check for version mismatch
+	if len(evm) > 1 && len(svm) <= 1 {
+		// this means that the executor is an insiert version while the Sourcegraph
+		// instance is not.
+		return nil, nil
+	}
+
+	if len(evm) <= 1 && len(svm) > 1 {
+		// this means that the Sourcegraph instance is an insider version while the
+		// executor is not.
+		return nil, nil
+	}
+
 	if len(evm) > 1 && len(svm) > 1 {
 		layout := "2006-01-02"
 
 		st, err := time.Parse(layout, svm[1])
 		if err != nil {
-			return compatibility.ToGraphQL(), err
+			return nil, err
 		}
 
 		et, err := time.Parse(layout, evm[1])
 		if err != nil {
-			return compatibility.ToGraphQL(), err
+			return nil, err
 		}
 
 		if et.Before(st) {
@@ -88,12 +102,12 @@ func calculateExecutorCompatibility(ev string) (string, error) {
 
 	s, err := semver.NewVersion(sv)
 	if err != nil {
-		return compatibility.ToGraphQL(), err
+		return nil, err
 	}
 
 	e, err := semver.NewVersion(ev)
 	if err != nil {
-		return compatibility.ToGraphQL(), err
+		return nil, err
 	}
 
 	// it's okay for an executor to be one version behind or ahead of the sourcegraph version.
