@@ -16,6 +16,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
 // GenerateOptions declares options for the monitoring generator.
@@ -106,6 +107,19 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				} else {
 					glog.Info("Reloaded Grafana instance")
 				}
+			}
+		}
+
+		// Generate home page
+		if opts.GrafanaDir != "" {
+			data, err := grafana.Home(opts.InjectLabelMatchers)
+			if err != nil {
+				return errors.Wrap(err, "failed to generate home dashboard")
+			}
+			generatedDashboard := "home.json"
+			generatedAssets = append(generatedAssets, generatedDashboard)
+			if err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm); err != nil {
+				return errors.Wrap(err, "failed to generate home dashboard")
 			}
 		}
 
