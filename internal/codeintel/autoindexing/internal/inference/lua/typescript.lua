@@ -28,10 +28,9 @@ local reverse = function(slice)
 end
 
 local contains = function(table, element)
-  local eq_elem = function(v)
+  return fun.any(function(v)
     return v == element
-  end
-  return fun.any(eq_elem, table)
+  end, table)
 end
 
 local safe_decode = function(encoded)
