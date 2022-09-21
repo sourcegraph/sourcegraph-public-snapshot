@@ -2009,7 +2009,7 @@ enum ExecutorCompatibility {
     """
     Executor is up-to-date with the Sourcegraph instance.
     """
-    UPTODATE
+    UP_TO_DATE
 
     """
     Executor version is more than one version ahead of the Sourcegraph instance.
