@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 
@@ -88,6 +94,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(points))
 	for _, point := range points {
 		resolvers = append(resolvers, insightsDataPointResolver{point})
@@ -363,16 +370,47 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	return opts, nil
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
+
+func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
 	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.workerBaseStore), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}
 
-	points, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
-	if err != nil {
-		return nil, err
+	getAltFlag := func() bool {
+		ex := conf.Get().ExperimentalFeatures
+		if ex == nil {
+			return false
+		}
+		return ex.InsightsAlternateLoadingStrategy
 	}
+	alternativeLoadingStrategy := getAltFlag()
+
+	var start, end time.Time
+	start = time.Now()
+	if !alternativeLoadingStrategy {
+		points, err = r.timeSeriesStore.SeriesPoints(ctx, *opts)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log15.Info("alternative")
+		points, err = r.timeSeriesStore.LoadSeriesInMem(ctx, *opts)
+		if err != nil {
+			return nil, err
+		}
+		sort.Slice(points, func(i, j int) bool {
+			return points[i].Time.Before(points[j].Time)
+		})
+	}
+	end = time.Now()
+	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+	return points, err
+}
+
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) (_ []graphqlbackend.InsightSeriesResolver, err error) {
+	points, err := fetchSeries(ctx, definition, filters, &r)
 
 	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
 	if err != nil {
@@ -397,16 +435,8 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 }
 
 func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("expandCaptureGroupSeriesRecorded", ""), r.workerBaseStore), definition, filters)
-	if err != nil {
-		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
-	}
-
+	allPoints, err := fetchSeries(ctx, definition, filters, &r)
 	groupedByCapture := make(map[string][]store.SeriesPoint)
-	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
-	if err != nil {
-		return nil, err
-	}
 
 	for i := range allPoints {
 		point := allPoints[i]
