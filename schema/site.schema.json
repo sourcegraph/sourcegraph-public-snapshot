@@ -1192,6 +1192,36 @@
           "description": "Enable gitserver access logging.",
           "type": "boolean",
           "default": false
+        },
+        "auditLog": {
+          "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "securityEvents": {
+              "description": "Capture security events as part of the audit log.",
+              "type": "boolean",
+              "default": true
+            },
+            "graphQL": {
+              "description": "Capture GraphQL requests and responses as part of the audit log.",
+              "type": "boolean",
+              "default": false
+            },
+            "gitserverAccess": {
+              "description": "Capture gitserver access logs as part of the audit log.",
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": ["securityEvents", "graphQL", "gitserverAccess"],
+          "examples": [
+            {
+              "securityEvents": true,
+              "graphQL": false,
+              "gitserverAccess": false
+            }
+          ]
         }
       }
     },
