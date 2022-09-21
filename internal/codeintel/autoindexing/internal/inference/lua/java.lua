@@ -46,9 +46,9 @@ return recognizer.new_path_recognizer {
     local hints = {}
     local visited = {}
 
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
+    for i, p in ipairs(paths) do
+      local dir = path.dirname(p)
+      local base = path.basename(p)
 
       if visited[dir] == nil and is_project_structure_supported(base) then
         table.insert(hints, {
@@ -61,9 +61,9 @@ return recognizer.new_path_recognizer {
       end
     end
 
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
+    for i, p in ipairs(paths) do
+      local dir = path.dirname(p)
+      local base = path.basename(p)
 
       if visited[dir] == nil and not is_project_structure_supported(base) then
         table.insert(hints, {

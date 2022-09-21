@@ -3,15 +3,17 @@ local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
 
 return recognizer.new_path_recognizer {
-  patterns = { pattern.new_path_basename "sg-test" },
+  patterns = {
+    pattern.new_path_basename "sg-test",
+  },
 
   -- Invoked as part of unit tests for the autoindexing service
   generate = function(_, paths)
     local jobs = {}
-    for i = 1, #paths do
+    for _, p in ipairs(paths) do
       table.insert(jobs, {
         steps = {},
-        root = path.dirname(paths[i]),
+        root = path.dirname(p),
         indexer = "test",
         indexer_args = {},
         outfile = "",

@@ -23,8 +23,8 @@ end
 
 local check_lerna_file = function(root, contents_by_path)
   local ancestors = path.ancestors(root)
-  for i = 1, #ancestors do
-    local payload = safe_decode(contents_by_path[path.join(ancestors[i], "lerna.json")] or "")
+  for _, a in ipairs(ancestors) do
+    local payload = safe_decode(contents_by_path[path.join(a, "lerna.json")] or "")
     if payload and payload["npmClient"] == "yarn" then
       return true
     end
@@ -36,18 +36,18 @@ end
 local can_derive_node_version = function(root, paths, contents_by_path)
   local ancestors = path.ancestors(root)
 
-  for i = 1, #ancestors do
-    local payload = safe_decode(contents_by_path[path.join(ancestors[i], "package.json")] or "")
+  for _, a in ipairs(ancestors) do
+    local payload = safe_decode(contents_by_path[path.join(a, "package.json")] or "")
     if payload and payload["engines"] and payload["engines"]["node"] then
       return true
     end
   end
 
-  for i = 1, #ancestors do
+  for _, a in ipairs(ancestors) do
     local candidates = {
-      path.join(ancestors[i], ".nvmrc"),
-      path.join(ancestors[i], ".node-version"),
-      path.join(ancestors[i], ".n-node-version"),
+      path.join(a, ".nvmrc"),
+      path.join(a, ".node-version"),
+      path.join(a, ".n-node-version"),
     }
     if util.contains_any(paths, candidates) then
       return true
@@ -86,10 +86,10 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
       local is_yarn = check_lerna_file(root, contents_by_path)
 
       local docker_steps = {}
-      for i = 1, #reverse_ancestors do
-        if contents_by_path[path.join(reverse_ancestors[i], "package.json")] then
+      for _, ra in ipairs(reverse_ancestors) do
+        if contents_by_path[path.join(ra, "package.json")] then
           local install_command = ""
-          if is_yarn or util.contains(paths, path.join(reverse_ancestors[i], "yarn.lock")) then
+          if is_yarn or util.contains(paths, path.join(ra, "yarn.lock")) then
             install_command = "yarn --ignore-engines"
           else
             install_command = "npm install"
@@ -101,7 +101,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
           end
 
           table.insert(docker_steps, {
-            root = reverse_ancestors[i],
+            root = ra,
             image = indexer,
             commands = { install_command .. install_command_suffix },
           })
@@ -110,9 +110,9 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 
       local local_steps = {}
       if can_derive_node_version(root, paths, contents_by_path) then
-        for i = 1, #docker_steps do
+        for i, s in ipairs(docker_steps) do
           -- Add `n` invocation command before each docker step
-          docker_steps[i].commands = util.with_new_head(docker_steps[i].commands, typescript_nmusl_command)
+          docker_steps[i].commands = util.with_new_head(s.commands, typescript_nmusl_command)
         end
 
         -- Add `n` invocation (in indexing container) before indexer runs
@@ -148,10 +148,10 @@ return recognizer.new_path_recognizer {
   -- Invoked when package.json or tsconfig.json files exist
   generate = function(api, paths)
     local has_tsconfig = false
-    for i = 1, #paths do
-      if path.basename(paths[i]) == "tsconfig.json" then
+    for _, p in ipairs(paths) do
+      if path.basename(p) == "tsconfig.json" then
         -- Infer typescript jobs
-        infer_typescript_job(api, paths[i], false)
+        infer_typescript_job(api, p, false)
         has_tsconfig = true
       end
     end

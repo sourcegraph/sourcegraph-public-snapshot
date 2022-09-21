@@ -19,8 +19,8 @@ local gomod_recognizer = recognizer.new_path_recognizer {
   -- Invoked when go.mod files exist
   generate = function(_, paths)
     local jobs = {}
-    for i = 1, #paths do
-      local root = path.dirname(paths[i])
+    for _, p in ipairs(paths) do
+      local root = path.dirname(p)
 
       table.insert(jobs, {
         steps = {
@@ -51,8 +51,8 @@ local goext_recognizer = recognizer.new_path_recognizer {
   -- in the repository. Within this function we filter out files that are
   -- not directly in the root of the repository (the simple pre-mod libs).
   generate = function(_, paths)
-    for i = 1, #paths do
-      if path.dirname(paths[i]) == "" then
+    for _, p in ipairs(paths) do
+      if path.dirname(p) == "" then
         return {
           steps = {},
           root = "",

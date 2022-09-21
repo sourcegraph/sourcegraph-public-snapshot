@@ -114,11 +114,8 @@ return recognizer.new_path_recognizer {
 
   generate = function(_, paths, contents_by_path)
     local libraries = {}
-    for i = 1, #paths do
-      local pkg_info_filepath = paths[i]
-      local content = contents_by_path[pkg_info_filepath]
-
-      handle_one_pkg_info(libraries, pkg_info_filepath, content)
+    for _, p in ipairs(paths) do
+      handle_one_pkg_info(libraries, p, contents_by_path[p])
     end
 
     -- If we didn't find any libraries, just insert this as the index job.

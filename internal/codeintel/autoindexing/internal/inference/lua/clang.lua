@@ -31,9 +31,9 @@ return recognizer.new_path_recognizer {
     local hints = {}
     local visited = {}
 
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
+    for _, p in ipairs(paths) do
+      local dir = path.dirname(p)
+      local base = path.basename(p)
 
       if visited[dir] == nil and is_cmakelist_file(base) then
         table.insert(hints, {
@@ -46,9 +46,9 @@ return recognizer.new_path_recognizer {
       end
     end
 
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
+    for _, p in ipairs(paths) do
+      local dir = path.dirname(p)
+      local base = path.basename(p)
 
       if visited[dir] == nil and not is_cmakelist_file(base) then
         table.insert(hints, {

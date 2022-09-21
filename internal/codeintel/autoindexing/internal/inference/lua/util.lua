@@ -1,6 +1,6 @@
 local contains = function(table, element)
-  for i = 1, #table do
-    if table[i] == element then
+  for _, v in ipairs(table) do
+    if v == element then
       return true
     end
   end
