@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
 
@@ -192,7 +194,15 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 		return resp, http.StatusBadRequest, errors.New("spec ID not provided")
 	}
 
-	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: specID})
+	// There is a case where the specID may be marshalled (e.g. from src-cli).
+	// Try to unmarshal it, else use the regular value
+	var actualSpecID string
+	if err = relay.UnmarshalSpec(graphql.ID(specID), &actualSpecID); err != nil {
+		// The specID is not marshalled, just set it to the original value
+		actualSpecID = specID
+	}
+
+	spec, err := h.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: actualSpecID})
 	if err != nil {
 		if errors.Is(err, store.ErrNoResults) {
 			return resp, http.StatusNotFound, errors.New("batch spec does not exist")
