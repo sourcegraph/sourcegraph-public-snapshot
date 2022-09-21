@@ -41,10 +41,6 @@ type MockResolver struct {
 	// GetRecentIndexesSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRecentIndexesSummary.
 	GetRecentIndexesSummaryFunc *ResolverGetRecentIndexesSummaryFunc
-	// IndexConnectionResolverFromFactoryFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// IndexConnectionResolverFromFactory.
-	IndexConnectionResolverFromFactoryFunc *ResolverIndexConnectionResolverFromFactoryFunc
 	// InferedIndexConfigurationFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InferedIndexConfiguration.
@@ -94,11 +90,6 @@ func NewMockResolver() *MockResolver {
 		},
 		GetRecentIndexesSummaryFunc: &ResolverGetRecentIndexesSummaryFunc{
 			defaultHook: func(context.Context, int) (r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
-				return
-			},
-		},
-		IndexConnectionResolverFromFactoryFunc: &ResolverIndexConnectionResolverFromFactoryFunc{
-			defaultHook: func(shared.GetIndexesOptions) (r0 *graphql.IndexesResolver) {
 				return
 			},
 		},
@@ -159,11 +150,6 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.GetRecentIndexesSummary")
 			},
 		},
-		IndexConnectionResolverFromFactoryFunc: &ResolverIndexConnectionResolverFromFactoryFunc{
-			defaultHook: func(shared.GetIndexesOptions) *graphql.IndexesResolver {
-				panic("unexpected invocation of MockResolver.IndexConnectionResolverFromFactory")
-			},
-		},
 		InferedIndexConfigurationFunc: &ResolverInferedIndexConfigurationFunc{
 			defaultHook: func(context.Context, int, string) (*config.IndexConfiguration, bool, error) {
 				panic("unexpected invocation of MockResolver.InferedIndexConfiguration")
@@ -208,9 +194,6 @@ func NewMockResolverFrom(i graphql.Resolver) *MockResolver {
 		},
 		GetRecentIndexesSummaryFunc: &ResolverGetRecentIndexesSummaryFunc{
 			defaultHook: i.GetRecentIndexesSummary,
-		},
-		IndexConnectionResolverFromFactoryFunc: &ResolverIndexConnectionResolverFromFactoryFunc{
-			defaultHook: i.IndexConnectionResolverFromFactory,
 		},
 		InferedIndexConfigurationFunc: &ResolverInferedIndexConfigurationFunc{
 			defaultHook: i.InferedIndexConfiguration,
@@ -892,112 +875,6 @@ func (c ResolverGetRecentIndexesSummaryFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverGetRecentIndexesSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// ResolverIndexConnectionResolverFromFactoryFunc describes the behavior
-// when the IndexConnectionResolverFromFactory method of the parent
-// MockResolver instance is invoked.
-type ResolverIndexConnectionResolverFromFactoryFunc struct {
-	defaultHook func(shared.GetIndexesOptions) *graphql.IndexesResolver
-	hooks       []func(shared.GetIndexesOptions) *graphql.IndexesResolver
-	history     []ResolverIndexConnectionResolverFromFactoryFuncCall
-	mutex       sync.Mutex
-}
-
-// IndexConnectionResolverFromFactory delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockResolver) IndexConnectionResolverFromFactory(v0 shared.GetIndexesOptions) *graphql.IndexesResolver {
-	r0 := m.IndexConnectionResolverFromFactoryFunc.nextHook()(v0)
-	m.IndexConnectionResolverFromFactoryFunc.appendCall(ResolverIndexConnectionResolverFromFactoryFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// IndexConnectionResolverFromFactory method of the parent MockResolver
-// instance is invoked and the hook queue is empty.
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) SetDefaultHook(hook func(shared.GetIndexesOptions) *graphql.IndexesResolver) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IndexConnectionResolverFromFactory method of the parent MockResolver
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) PushHook(hook func(shared.GetIndexesOptions) *graphql.IndexesResolver) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) SetDefaultReturn(r0 *graphql.IndexesResolver) {
-	f.SetDefaultHook(func(shared.GetIndexesOptions) *graphql.IndexesResolver {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) PushReturn(r0 *graphql.IndexesResolver) {
-	f.PushHook(func(shared.GetIndexesOptions) *graphql.IndexesResolver {
-		return r0
-	})
-}
-
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) nextHook() func(shared.GetIndexesOptions) *graphql.IndexesResolver {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) appendCall(r0 ResolverIndexConnectionResolverFromFactoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ResolverIndexConnectionResolverFromFactoryFuncCall objects describing the
-// invocations of this function.
-func (f *ResolverIndexConnectionResolverFromFactoryFunc) History() []ResolverIndexConnectionResolverFromFactoryFuncCall {
-	f.mutex.Lock()
-	history := make([]ResolverIndexConnectionResolverFromFactoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ResolverIndexConnectionResolverFromFactoryFuncCall is an object that
-// describes an invocation of method IndexConnectionResolverFromFactory on
-// an instance of MockResolver.
-type ResolverIndexConnectionResolverFromFactoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 shared.GetIndexesOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *graphql.IndexesResolver
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ResolverIndexConnectionResolverFromFactoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ResolverIndexConnectionResolverFromFactoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // ResolverInferedIndexConfigurationFunc describes the behavior when the

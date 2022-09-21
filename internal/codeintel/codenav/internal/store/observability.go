@@ -8,8 +8,7 @@ import (
 )
 
 type operations struct {
-	getLanguagesRequestedBy   *observation.Operation
-	setRequestLanguageSupport *observation.Operation
+	noop *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -29,7 +28,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+		noop: op("noop"),
 	}
 }

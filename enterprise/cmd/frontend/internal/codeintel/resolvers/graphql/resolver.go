@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -142,6 +141,14 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *autoinde
 	return r.resolver.AutoIndexingRootResolver().QueueAutoIndexJobsForRepo(ctx, args)
 }
 
+func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *autoindexinggraphql.RequestLanguageSupportArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.resolver.AutoIndexingRootResolver().RequestLanguageSupport(ctx, args)
+}
+
+func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
+	return r.resolver.AutoIndexingRootResolver().RequestedLanguageSupport(ctx)
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ gql.GitBlobLSIFDataResolver, err error) {
 	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
@@ -157,34 +164,13 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 }
 
 // move to autoindexing service
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelSupportResolver, err error) {
-	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	// move to autoindexing service
-	return NewCodeIntelSupportResolver(r.resolver, args.Repo.Name, args.Path, errTracer), nil
+func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (_ autoindexinggraphql.GitBlobCodeIntelSupportResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().GitBlobCodeIntelInfo(ctx, args)
 }
 
 // move to autoindexing service
-func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (resolver gql.GitTreeCodeIntelSupportResolver, err error) {
-	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repoID", int(args.Repo.ID)),
-		log.String("path", args.Path),
-		log.String("commit", args.Commit),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	filesRegex, err := regexp.Compile("^" + regexp.QuoteMeta(args.Path) + "[^.]{1}[^/]*$")
-	if err != nil {
-		return nil, errors.Wrapf(err, "path '%s' caused invalid regex", args.Path)
-	}
-
-	files, err := r.gitserver.ListFiles(ctx, int(args.Repo.ID), args.Commit, filesRegex)
-	if err != nil {
-		return nil, errors.Wrapf(err, "gitserver.ListFiles: error listing files at %s for repo %d", args.Path, args.Repo.ID)
-	}
-
-	return NewCodeIntelTreeInfoResolver(r.resolver, args.Repo, args.Commit, args.Path, files, errTracer), nil
+func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (resolver autoindexinggraphql.GitTreeCodeIntelSupportResolver, err error) {
+	return r.resolver.AutoIndexingRootResolver().GitTreeCodeIntelInfo(ctx, args)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID

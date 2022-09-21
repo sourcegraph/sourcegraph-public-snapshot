@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,12 +54,21 @@ type service interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language Support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 }
 
 type Service struct {
 	store            store.Store
 	uploadSvc        shared.UploadService
 	gitserverClient  shared.GitserverClient
+	symbolsClient    *symbols.Client
 	repoUpdater      shared.RepoUpdaterClient
 	inferenceService shared.InferenceService
 	operations       *operations
@@ -68,6 +79,7 @@ func newService(
 	store store.Store,
 	uploadSvc shared.UploadService,
 	gitserver shared.GitserverClient,
+	symbolsClient *symbols.Client,
 	repoUpdater shared.RepoUpdaterClient,
 	inferenceSvc shared.InferenceService,
 	observationContext *observation.Context,
@@ -76,6 +88,7 @@ func newService(
 		store:            store,
 		uploadSvc:        uploadSvc,
 		gitserverClient:  gitserver,
+		symbolsClient:    symbolsClient,
 		repoUpdater:      repoUpdater,
 		inferenceService: inferenceSvc,
 		operations:       newOperations(observationContext),
@@ -216,6 +229,45 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 
 func (s *Service) GetUnsafeDB() database.DB {
 	return s.store.GetUnsafeDB()
+}
+
+func (s *Service) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	return s.gitserverClient.ListFiles(ctx, repositoryID, commit, pattern)
+}
+
+func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
+			}
+		}
+	}
+
+	return false, "", nil
+}
+
+func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID), traceLog.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetLanguagesRequestedBy(ctx, userID)
 }
 
 func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {

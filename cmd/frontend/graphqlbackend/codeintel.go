@@ -10,6 +10,7 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,13 +18,12 @@ import (
 
 type CodeIntelResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
-	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (_ autoindexinggraphql.GitBlobCodeIntelSupportResolver, err error)
+	GitTreeCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (resolver autoindexinggraphql.GitTreeCodeIntelSupportResolver, err error)
+	RequestLanguageSupport(ctx context.Context, args *autoindexinggraphql.RequestLanguageSupportArgs) (*resolvers.EmptyResponse, error)
+	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
-
-	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
-	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 
 	AutoindexingServiceResolver
 	ExecutorResolver
@@ -102,7 +102,7 @@ type LSIFUploadResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	InputIndexer() string
-	Indexer() CodeIntelIndexerResolver
+	Indexer() codeinteltypes.CodeIntelIndexerResolver
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
@@ -164,7 +164,7 @@ type LSIFIndexResolver interface {
 	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	InputIndexer() string
-	Indexer() CodeIntelIndexerResolver
+	Indexer() codeinteltypes.CodeIntelIndexerResolver
 	QueuedAt() DateTime
 	State() string
 	Failure() *string
@@ -404,47 +404,47 @@ type CodeIntelligenceRetentionPolicyMatchResolver interface {
 	ProtectingCommits() *[]string
 }
 
-type GitTreeEntryCodeIntelInfoArgs struct {
-	Repo   *types.Repo
-	Path   string
-	Commit string
-}
+// type GitTreeEntryCodeIntelInfoArgs struct {
+// 	Repo   *types.Repo
+// 	Path   string
+// 	Commit string
+// }
 
-type GitTreeCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
-}
+// type GitTreeCodeIntelSupportResolver interface {
+// 	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
+// 	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
+// }
 
-type GitTreeSearchBasedCoverage interface {
-	CoveredPaths() []string
-	Support() SearchBasedSupportResolver
-}
+// type GitTreeSearchBasedCoverage interface {
+// 	CoveredPaths() []string
+// 	Support() SearchBasedSupportResolver
+// }
 
-type GitTreePreciseCoverage interface {
-	Support() PreciseSupportResolver
-	Confidence() string
-}
+// type GitTreePreciseCoverage interface {
+// 	Support() PreciseSupportResolver
+// 	Confidence() string
+// }
 
-type GitBlobCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (SearchBasedSupportResolver, error)
-	PreciseSupport(context.Context) (PreciseSupportResolver, error)
-}
+// type GitBlobCodeIntelSupportResolver interface {
+// 	SearchBasedSupport(context.Context) (SearchBasedSupportResolver, error)
+// 	PreciseSupport(context.Context) (PreciseSupportResolver, error)
+// }
 
-type PreciseSupportResolver interface {
-	SupportLevel() string
-	Indexers() *[]CodeIntelIndexerResolver
-}
+// type PreciseSupportResolver interface {
+// 	SupportLevel() string
+// 	Indexers() *[]CodeIntelIndexerResolver
+// }
 
-type CodeIntelIndexerResolver interface {
-	Name() string
-	URL() string
-}
+// type CodeIntelIndexerResolver interface {
+// 	Name() string
+// 	URL() string
+// }
 
-type SearchBasedSupportResolver interface {
-	SupportLevel() string
-	Language() string
-}
+// type SearchBasedSupportResolver interface {
+// 	SupportLevel() string
+// 	Language() string
+// }
 
-type RequestLanguageSupportArgs struct {
-	Language string
-}
+// type RequestLanguageSupportArgs struct {
+// 	Language string
+// }

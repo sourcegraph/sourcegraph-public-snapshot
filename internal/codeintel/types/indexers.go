@@ -124,7 +124,7 @@ var AllIndexers = []CodeIntelIndexerResolver{
 
 // A map of file extension to a list of indexers in order of recommendation
 // from most to least.
-var languageToIndexer = map[string][]CodeIntelIndexerResolver{
+var LanguageToIndexer = map[string][]CodeIntelIndexerResolver{
 	".go":      {&lsifGo},
 	".java":    {&scipJava, &msftJava},
 	".kt":      {&scipJava},

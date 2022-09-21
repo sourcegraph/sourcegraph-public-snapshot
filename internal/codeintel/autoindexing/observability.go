@@ -34,6 +34,10 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
+
+	// Language support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -79,5 +83,9 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
+
+		// Language support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 	}
 }

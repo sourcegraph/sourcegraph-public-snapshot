@@ -23,13 +23,19 @@ type operations struct {
 	inferedIndexConfigurationHints         *observation.Operation
 
 	// NEW stuff here
-	deleteLsifIndexes        *observation.Operation
-	lsifIndexByID            *observation.Operation
-	lsifIndexes              *observation.Operation
-	lsifIndexesByRepo        *observation.Operation
-	indexConfiguration       *observation.Operation
-	updateIndexConfiguration *observation.Operation
-	repositorySummary        *observation.Operation
+	deleteLsifIndexes         *observation.Operation
+	lsifIndexByID             *observation.Operation
+	lsifIndexes               *observation.Operation
+	lsifIndexesByRepo         *observation.Operation
+	indexConfiguration        *observation.Operation
+	updateIndexConfiguration  *observation.Operation
+	repositorySummary         *observation.Operation
+	getSupportedByCtags       *observation.Operation
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+	gitBlobCodeIntelInfo      *observation.Operation
+	requestLanguageSupport    *observation.Operation
+	requestedLanguageSupport  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -64,12 +70,18 @@ func newOperations(observationContext *observation.Context) *operations {
 		inferedIndexConfigurationHints:         op("InferedIndexConfigurationHints"),
 
 		// NEW stuff here
-		deleteLsifIndexes:        op("DeleteLsifIndexes"),
-		lsifIndexByID:            op("LsifIndexByID"),
-		lsifIndexes:              op("LsifIndexes"),
-		lsifIndexesByRepo:        op("LsifIndexesByRepo"),
-		indexConfiguration:       op("IndexConfiguration"),
-		updateIndexConfiguration: op("UpdateIndexConfiguration"),
-		repositorySummary:        op("RepositorySummary"),
+		deleteLsifIndexes:         op("DeleteLsifIndexes"),
+		lsifIndexByID:             op("LsifIndexByID"),
+		lsifIndexes:               op("LsifIndexes"),
+		lsifIndexesByRepo:         op("LsifIndexesByRepo"),
+		indexConfiguration:        op("IndexConfiguration"),
+		updateIndexConfiguration:  op("UpdateIndexConfiguration"),
+		repositorySummary:         op("RepositorySummary"),
+		getSupportedByCtags:       op("GetSupportedByCtags"),
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+		gitBlobCodeIntelInfo:      op("GitBlobCodeIntelInfo"),
+		requestLanguageSupport:    op("RequestLanguageSupport"),
+		requestedLanguageSupport:  op("RequestedLanguageSupport"),
 	}
 }

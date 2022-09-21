@@ -4,21 +4,26 @@ import (
 	"context"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RootResolver interface {
+	// Mirrors AutoindexingServiceResolver in graphqlbackend
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ resolvers.LSIFIndexResolver, err error)
@@ -26,13 +31,20 @@ type RootResolver interface {
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]resolvers.LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*resolvers.EmptyResponse, error)
+	RepositorySummary(ctx context.Context, id graphql.ID) (_ resolvers.CodeIntelRepositorySummaryResolver, err error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
+	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
+	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (_ *sharedresolvers.EmptyResponse, err error)
+	RequestedLanguageSupport(ctx context.Context) (_ []string, err error)
 
 	// AutoIndexing
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
-	RepositorySummary(ctx context.Context, id graphql.ID) (_ resolvers.CodeIntelRepositorySummaryResolver, err error)
+
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
 }
 
 type rootResolver struct {
@@ -275,6 +287,40 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	return &resolvers.EmptyResponse{}, nil
 }
 
+type GitTreeEntryCodeIntelInfoArgs struct {
+	Repo   *types.Repo
+	Path   string
+	Commit string
+}
+
+func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return NewCodeIntelSupportResolver(r.autoindexSvc, args.Repo.Name, args.Path, errTracer), nil
+}
+
+func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(args.Repo.ID)),
+		log.String("path", args.Path),
+		log.String("commit", args.Commit),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	filesRegex, err := regexp.Compile("^" + regexp.QuoteMeta(args.Path) + "[^.]{1}[^/]*$")
+	if err != nil {
+		return nil, errors.Wrapf(err, "path '%s' caused invalid regex", args.Path)
+	}
+
+	files, err := r.autoindexSvc.ListFiles(ctx, int(args.Repo.ID), args.Commit, filesRegex)
+	if err != nil {
+		return nil, errors.Wrapf(err, "gitserver.ListFiles: error listing files at %s for repo %d", args.Path, args.Repo.ID)
+	}
+
+	return NewCodeIntelTreeInfoResolver(r.autoindexSvc, args.Repo, args.Commit, args.Path, files, errTracer), nil
+}
+
 func (r *rootResolver) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error) {
 	ctx, _, endObservation := r.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
@@ -368,4 +414,55 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
 	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policyResolver, summary, prefetcher, errTracer), nil
+}
+
+// HERE HERE HERE
+func (r *rootResolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {
+	ctx, _, endObservation := r.operations.getSupportedByCtags.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("repoName", string(repoName))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.autoindexSvc.GetSupportedByCtags(ctx, filepath, repoName)
+}
+
+type RequestLanguageSupportArgs struct {
+	Language string
+}
+
+func (r *rootResolver) RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.requestLanguageSupport.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	userID := int(actor.FromContext(ctx).UID)
+	if userID == 0 {
+		return nil, errors.Newf("language support requests only logged for authenticated users")
+	}
+
+	if err := r.autoindexSvc.SetRequestLanguageSupport(ctx, userID, args.Language); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+func (r *rootResolver) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := r.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("userID", userID), log.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return r.autoindexSvc.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (r *rootResolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
+	ctx, _, endObservation := r.operations.requestedLanguageSupport.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	userID := int(actor.FromContext(ctx).UID)
+	if userID == 0 {
+		return nil, errors.Newf("language support requests only logged for authenticated users")
+	}
+
+	return r.autoindexSvc.GetLanguagesRequestedBy(ctx, userID)
 }

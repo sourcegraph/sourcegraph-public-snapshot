@@ -35,6 +35,10 @@ type Store interface {
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
 
+	// Language support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+
 	// GetUnsafeDB returns the underlying database handle. This is used by the
 	// resolvers that have the old convention of using the database handle directly.
 	GetUnsafeDB() database.DB
