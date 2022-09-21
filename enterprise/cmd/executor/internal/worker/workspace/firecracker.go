@@ -131,13 +131,13 @@ func setupLoopDevice(
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
 	handle := logger.Log("setup.fs.workspace", nil)
 	defer func() {
-		// add the error to the bottom of the step's log output,
-		// but only if this isnt from exec.Command, as those get added
-		// by our logging wrapper
-		if !errors.HasType(err, &exec.ExitError{}) {
-			fmt.Fprint(handle, err.Error())
-		}
 		if err != nil {
+			// add the error to the bottom of the step's log output,
+			// but only if this isnt from exec.Command, as those get added
+			// by our logging wrapper
+			if !errors.HasType(err, &exec.ExitError{}) {
+				fmt.Fprint(handle, err.Error())
+			}
 			handle.Finalize(1)
 		} else {
 			handle.Finalize(0)
