@@ -33,14 +33,6 @@
 
 ---
 
-## Use cases
-
-- [Improve code security](https://about.sourcegraph.com/use-cases#code-security)
-- [Accelerate developer onboarding](https://about.sourcegraph.com/use-cases#onboarding)
-- [Resolve incidents faster](https://about.sourcegraph.com/use-cases#incident-response)
-- [Streamline code reuse](https://about.sourcegraph.com/use-cases#code-reuse)
-- [Boost code health](https://about.sourcegraph.com/use-cases#code-health)
-
 ## Features
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
