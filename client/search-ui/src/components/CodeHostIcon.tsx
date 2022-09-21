@@ -14,6 +14,7 @@ export const CodeHostIcon: React.FunctionComponent<
         'github.com': mdiGithub,
         'gitlab.com': mdiGitlab,
         'bitbucket.com': mdiBitbucket,
+        'bitbucket.org': mdiBitbucket,
     }
 
     const hostName = repoName.split('/')[0]

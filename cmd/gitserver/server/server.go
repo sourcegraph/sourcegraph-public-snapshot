@@ -2460,7 +2460,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 
 			err = s.doBackgroundRepoUpdate(repo, revspec)
 			if err != nil {
-				s.Logger.Error("performing background repo update", log.Error(err))
+				// We don't want to spam our logs when the rate limiter has been set to block all
+				// updates
+				if !errors.Is(err, ratelimit.ErrBlockAll) {
+					s.Logger.Error("performing background repo update", log.Error(err))
+				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})

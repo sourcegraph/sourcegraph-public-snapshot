@@ -129,10 +129,6 @@ export type HovercardSource = (view: EditorView, position: UIPosition) => Observ
  * Some style overrides to replicate the existing hovercard style.
  */
 const hovercardTheme = EditorView.theme({
-    '.cm-code-intel-hovercard': {
-        // Without this all text in the hovercard is monospace
-        fontFamily: 'sans-serif',
-    },
     [`.${webOverlayStyles.webHoverOverlay}`]: {
         // This is normally "position: 'absolute'". CodeMirror does the
         // positioning. Without this CodeMirror thinks the hover content is

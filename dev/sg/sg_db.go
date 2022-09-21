@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -199,7 +200,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
 		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
 	if ok := getBool(); !ok {
-		return NewEmptyExitErr(1)
+		return cliutil.NewEmptyExitErr(1)
 	}
 
 	for _, dsn := range dsnMap {
