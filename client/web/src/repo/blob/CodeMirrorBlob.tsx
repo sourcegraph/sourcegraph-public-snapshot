@@ -126,11 +126,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(
-        () => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []),
-
-        [blameHunks]
-    )
+    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
