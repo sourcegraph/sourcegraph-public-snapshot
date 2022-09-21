@@ -56,16 +56,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
   </button>
 </form>
-
-### Self-hosted
-
 <form class="grid">
-  <!-- AWS -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws">
-    <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
-    <h3>AWS</h3>
-    <p>Deploy onto AWS EC2</p>
-  </button>
   <!-- AWS One Click-->
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
     <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
@@ -73,6 +64,11 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <span class="badge badge-warning">Coming soon</span> 
     <!-- <p>Deploy onto AWS in one click</p> -->
   </button>
+</form>
+
+### Self-hosted
+
+<form class="grid">
   <!-- Azure -->
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/azure">
     <img alt="azure-logo" src="https://user-images.githubusercontent.com/1646931/187978161-771cfb91-6cb3-4f00-befd-657502b95ed4.png"/>
