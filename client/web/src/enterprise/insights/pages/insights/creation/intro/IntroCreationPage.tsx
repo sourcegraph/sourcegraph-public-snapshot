@@ -14,7 +14,6 @@ import { CodeInsightsPage } from '../../../../components'
 import {
     CaptureGroupInsightCard,
     ComputeInsightCard,
-    ExtensionInsightsCard,
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
@@ -49,11 +48,6 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
         history.push(`/insights/create/lang-stats${search}`)
-    }
-
-    const handleExploreExtensionsClick = (): void => {
-        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
-        history.push('/extensions?query=category:Insights&experimental=true')
     }
 
     useEffect(() => {
@@ -105,8 +99,6 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
                         use cases.
                     </Link>
                 </div>
-
-                <ExtensionInsightsCard data-testid="explore-extensions" handleCreate={handleExploreExtensionsClick} />
             </div>
         </CodeInsightsPage>
     )

@@ -129,8 +129,15 @@ func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (recognizers map[string]*Recognizer, err error) {
 	recognizers = map[string]*Recognizer{}
 
+	if err := util.CheckTypeProperty(value, "sg.recognizer"); err != nil {
+		return nil, err
+	}
+
 	err = util.ForEach(value, func(key, value lua.LValue) error {
 		name := key.String()
+		if name == "__type" {
+			return nil
+		}
 
 		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
 			if allowFalseAsNil {

@@ -127,6 +127,7 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    isBlameVisible?: boolean
     blameHunks?: BlameHunk[]
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
@@ -301,7 +302,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         []
     )
 
-    useEffect(() => {
+    // Need to use deep compare effect to avoid infinite loop in the tabbed references panel.
+    useDeepCompareEffect(() => {
         nextBlobInfoChange(blobInfo)
         return () => {
             // Clean up for any resources used by the previous viewer.
@@ -502,7 +504,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
-
     // Data source for `viewerUpdates`
     useObservable(
         useMemo(
@@ -866,7 +867,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
+                <BlameColumn
+                    isBlameVisible={props.isBlameVisible}
+                    blameHunks={props.blameHunks}
+                    codeViewElements={codeViewElements}
+                />
 
                 {groupedDecorations &&
                     iterate(groupedDecorations)

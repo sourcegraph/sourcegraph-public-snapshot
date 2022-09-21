@@ -66,9 +66,9 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	}
 
 	return []goroutine.BackgroundRoutine{
-		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(ctx, logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
-		webhookworker.NewCleaner(ctx, baseStore, observationContext),
+		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
+		webhookworker.NewResetter(context.Background(), logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewCleaner(context.Background(), baseStore, observationContext),
 	}, nil
 }
 

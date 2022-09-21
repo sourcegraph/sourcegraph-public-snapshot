@@ -19,6 +19,7 @@ import (
 	sgrun "github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -398,7 +399,7 @@ can provide it directly (for example, 'sg ci build [runtype] [argument]').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
-		BashComplete: completeOptions(getAllowedBuildTypeArgs),
+		BashComplete: cliutil.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&ciPipelineFlag,
 			&cli.StringFlag{
@@ -451,7 +452,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				if rt == runtype.PullRequest {
 					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
 					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					return NewEmptyExitErr(1)
+					return cliutil.NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {
