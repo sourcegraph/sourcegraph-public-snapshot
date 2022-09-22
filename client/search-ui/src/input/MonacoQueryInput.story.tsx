@@ -31,7 +31,6 @@ const defaultProps: MonacoQueryInputProps = {
     selectedSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},
-    onHandleFuzzyFinder: () => {},
 }
 
 export const MonacoQueryInputStory: Story = () => (

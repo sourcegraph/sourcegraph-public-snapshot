@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
+import React, { Suspense, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
@@ -28,7 +28,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { FuzzyFinder } from './components/fuzzyFinder/FuzzyFinder'
+import { FuzzyFinderContainer } from './components/fuzzyFinder/FuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -130,22 +130,12 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
-    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
-
     let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
     if (fuzzyFinder === undefined) {
         // Happens even when `"default": true` is defined in
         // settings.schema.json.
         fuzzyFinder = true
     }
-
-    useEffect(() => {
-        if (!isRepositoryRelatedPage && isFuzzyFinderVisible) {
-            setIsFuzzyFinderVisible(false)
-        }
-    }, [isRepositoryRelatedPage, isFuzzyFinderVisible])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -250,7 +240,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    onHandleFuzzyFinder={setIsFuzzyFinderVisible}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
@@ -310,27 +299,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
-            {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        setIsFuzzyFinderVisible(true)
-                        setRetainFuzzyFinderCache(true)
-                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                        input?.focus()
-                        input?.select()
-                    }}
-                />
-            ))}
-            {isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
-                <FuzzyFinder
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    isVisible={isFuzzyFinderVisible}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
-                />
+            {isRepositoryRelatedPage && fuzzyFinder && (
+                <FuzzyFinderContainer telemetryService={props.telemetryService} location={props.location} />
             )}
         </div>
     )
