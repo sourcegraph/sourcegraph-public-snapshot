@@ -5,10 +5,40 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
-export function buildRepoBaseNameAndPath(repoName: string, filePath: string | undefined): string {
-    const codeHostsWithOwnerInUrl = ['github.com', 'gitlab.com', 'bitbucket.org']
-    const repoNameIncludesOwner = codeHostsWithOwnerInUrl.some(url => repoName.startsWith(url + '/'))
-    const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1)
+// A hard-coded copy of the Type* constants of `extsvc/types.go`
+export enum ExternalServiceType {
+    AWSCodeCommit = 'awscodecommit',
+    BitbucketServer = 'bitbucketServer',
+    BitbucketCloud = 'bitbucketCloud',
+    Gerrit = 'gerrit',
+    GitHub = 'github',
+    GitHubApp = 'githubApp',
+    GitLab = 'gitlab',
+    Gitolite = 'gitolite',
+    Perforce = 'perforce',
+    Phabricator = 'phabricator',
+    JVMPackages = 'jvmPackages',
+    Pagure = 'pagure',
+    NpmPackages = 'npmPackages',
+    GoModules = 'goModules',
+    PythonPackages = 'pythonPackages',
+    RustPackages = 'rustPackages',
+    Other = 'other',
+}
+
+export function buildRepoBaseNameAndPath(
+    repoName: string,
+    externalServiceType: string | undefined,
+    filePath: string | undefined
+): string {
+    const serviceTypesWithOwnerInUrl: string[] = [
+        ExternalServiceType.GitHub,
+        ExternalServiceType.GitLab,
+        ExternalServiceType.BitbucketCloud,
+    ]
+    const bareRepoNamePieces = repoName
+        .split('/')
+        .slice(serviceTypesWithOwnerInUrl.includes(externalServiceType || '') ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 
