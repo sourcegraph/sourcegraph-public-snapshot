@@ -97,6 +97,17 @@ func TestRepository(t *testing.T) {
 }
 
 func TestGraphQLRequestsAreAuditLogged(t *testing.T) {
+	orig, present := os.LookupEnv("NO_GRAPHQL_LOG")
+	if present {
+		// for this test we don't want GraphQL logs disabled, as we want to capture the audit log
+		_ = os.Unsetenv("NO_GRAPHQL_LOG")
+
+		// reset back to whatever the previous value was
+		defer func(key, value string) {
+			_ = os.Setenv(key, value)
+		}("NO_GRAPHQL_LOG", orig)
+	}
+
 	resetMocks()
 
 	db := database.NewMockDB()
