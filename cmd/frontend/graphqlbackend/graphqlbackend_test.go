@@ -22,7 +22,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -139,16 +138,36 @@ func TestGraphQLRequestsAreAuditLogged(t *testing.T) {
 	})
 
 	logs := exportLogs()
-	require.Len(t, logs, 3) // index 0 and 2 contain additional debug messages, index 1 contains the audit log
-	auditField := logs[1].Fields["audit"].(map[string]interface{})
+	auditIdx := findAuditIndex(t, logs)
+
+	auditField := logs[auditIdx].Fields["audit"].(map[string]interface{})
 	assert.Equal(t, "GraphQL", auditField["entity"])
 	assert.NotNilf(t, auditField["actor"], "audit log must contain an actor")
 
-	requestField := logs[1].Fields["request"].(map[string]interface{})
+	requestField := logs[auditIdx].Fields["request"].(map[string]interface{})
 	assert.Equal(t, requestField["name"], "unknown")
 	assert.NotNilf(t, requestField["source"], "audit log must contain request source")
 	assert.NotNilf(t, requestField["variables"], "audit log must contain request variables")
 	assert.NotNilf(t, requestField["query"], "audit log must contain request query")
+}
+
+func findAuditIndex(t *testing.T, logs []logtest.CapturedLog) int {
+	t.Helper()
+
+	auditIdx := -1
+	for i, cl := range logs {
+		if cl.Fields["audit"] != nil {
+			if auditIdx != -1 {
+				t.Fatal("expected exactly one audit log entry")
+			} else {
+				auditIdx = i
+			}
+		}
+	}
+	if auditIdx == -1 {
+		t.Fatal("expected exactly one audit log entry")
+	}
+	return auditIdx
 }
 
 func TestRecloneRepository(t *testing.T) {
