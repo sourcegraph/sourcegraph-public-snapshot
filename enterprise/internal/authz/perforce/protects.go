@@ -388,6 +388,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 					srp := getSubRepoPerms(depot)
 					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
+					srp.Paths = append(srp.Paths, newIncludes...)
 					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
 
 					var i int
@@ -423,6 +424,11 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
+
+				// Adding leading "-" sign to indicate exclusion
+				for _, exclude := range newExcludes {
+					srp.Paths = append(srp.Paths, "-"+exclude)
+				}
 				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
 
 				var i int
@@ -464,12 +470,24 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// which are included in all Helix server rules.
 				depotString := string(depot)
 				for i := range srp.PathIncludes {
-					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], depotString)
-					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], "//")
+					srp.PathIncludes[i] = trimDepotNameAndSlashes(srp.PathIncludes[i], depotString)
 				}
 				for i := range srp.PathExcludes {
-					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], depotString)
-					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], "//")
+					srp.PathExcludes[i] = trimDepotNameAndSlashes(srp.PathExcludes[i], depotString)
+				}
+				for i := range srp.Paths {
+					path := srp.Paths[i]
+
+					// Covering exclusion paths
+					if strings.HasPrefix(path, "-") {
+						path = strings.TrimPrefix(path, "-")
+						path = trimDepotNameAndSlashes(path, depotString)
+						path = "-" + path
+					} else {
+						path = trimDepotNameAndSlashes(path, depotString)
+					}
+
+					srp.Paths[i] = path
 				}
 
 				// Add to repos users can access
@@ -478,6 +496,12 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			return nil
 		},
 	}
+}
+
+func trimDepotNameAndSlashes(s, depotName string) string {
+	s = strings.TrimPrefix(s, depotName)
+	s = strings.TrimPrefix(s, "//")
+	return s
 }
 
 func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {
