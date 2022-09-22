@@ -136,7 +136,8 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	got, err := getRemoteURLFunc(context.Background(), externalServiceStore, repoStore, doer, "test-repo-1")
+	db := database.NewMockDB()
+	got, err := getRemoteURLFunc(context.Background(), doer, "test-repo-1", db)
 	require.NoError(t, err)
 
 	want := "https://x-access-token:mock-installtion-access-token@github.com/sgtest/test-repo-1"

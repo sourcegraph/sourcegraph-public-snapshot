@@ -209,16 +209,8 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
-	scopes, err := c.GetAuthenticatedOAuthScopes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ok {
-		return doRequest(ctx, GetOAuthContext(c.apiURL.String(), scopes), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
-	}
-	return doRequest(ctx, GetOAuthContext(c.apiURL.String(), scopes), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, nil, c.tokenRefresher, req, result)
+	bearerToken, _ := c.auth.(*auth.OAuthBearerToken)
+	return doRequest(ctx, GetOAuthContext(c.apiURL.String()), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, result)
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with

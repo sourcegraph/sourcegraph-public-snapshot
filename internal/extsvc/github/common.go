@@ -2026,7 +2026,7 @@ func IsGitHubAppAccessToken(token string) bool {
 
 var MockGetOAuthContext func() *oauthutil.OAuthContext
 
-func GetOAuthContext(baseURL string, scopes []string) *oauthutil.OAuthContext {
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
@@ -2046,7 +2046,6 @@ func GetOAuthContext(baseURL string, scopes []string) *oauthutil.OAuthContext {
 					AuthURL:  ghURL + "/login/oauth/authorize",
 					TokenURL: ghURL + "/login/oauth/access_token",
 				},
-				Scopes: scopes,
 			}
 		}
 	}

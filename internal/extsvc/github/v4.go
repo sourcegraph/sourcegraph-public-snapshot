@@ -160,14 +160,8 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	bearerToken, ok := c.auth.(*auth.OAuthBearerToken)
-	if ok {
-		if _, err = doRequest(ctx, GetOAuthContext(c.apiURL.String()), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, &respBody); err != nil {
-			return err
-		}
-	}
-
-	if _, err = doRequest(ctx, GetOAuthContext(c.apiURL.String()), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, nil, c.tokenRefresher, req, &respBody); err != nil {
+	bearerToken, _ := c.auth.(*auth.OAuthBearerToken)
+	if _, err = doRequest(ctx, GetOAuthContext(c.apiURL.String()), c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, bearerToken, c.tokenRefresher, req, &respBody); err != nil {
 		return err
 	}
 
